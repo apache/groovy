@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,15 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 
 /**
- * <p>Utility class to guess the encoding of a given text file.</p>
- *
- * <p>Unicode files encoded in UTF-16 (low or big endian) or UTF-8 files
+ * Utility class to guess the encoding of a given text file.
+ * <p>
+ * Unicode files encoded in UTF-16 (low or big endian) or UTF-8 files
  * with a Byte Order Marker are correctly discovered. For UTF-8 files with no BOM, if the buffer
- * is wide enough, the charset should also be discovered.</p>
- *
- * <p>A byte buffer of 4KB is used to be able to guess the encoding.</p>
- *
- * <p>Usage:</p>
+ * is wide enough, the charset should also be discovered.
+ * <p>
+ * A byte buffer of 4KB is used to be able to guess the encoding.
+ * <p>
+ * Usage:
  * <pre>
  * CharsetToolkit toolkit = new CharsetToolkit(file);
  *
@@ -136,16 +136,16 @@ public class CharsetToolkit {
     }
 
     /**
-     * <p>Guess the encoding of the provided buffer.</p>
+     * Guess the encoding of the provided buffer.
      * If Byte Order Markers are encountered at the beginning of the buffer, we immediately
      * return the charset implied by this BOM. Otherwise, the file would not be a human
-     * readable text file.</p>
-     *
-     * <p>If there is no BOM, this method tries to discern whether the file is UTF-8 or not.
+     * readable text file.
+     * <p>
+     * If there is no BOM, this method tries to discern whether the file is UTF-8 or not.
      * If it is not UTF-8, we assume the encoding is the default system encoding
-     * (of course, it might be any 8-bit charset, but usually, an 8-bit charset is the default one).</p>
-     *
-     * <p>It is possible to discern UTF-8 thanks to the pattern of characters with a multi-byte sequence.</p>
+     * (of course, it might be any 8-bit charset, but usually, an 8-bit charset is the default one).
+     * <p>
+     * It is possible to discern UTF-8 thanks to the pattern of characters with a multi-byte sequence.
      * <pre>
      * UCS-4 range (hex.)        UTF-8 octet sequence (binary)
      * 0000 0000-0000 007F       0xxxxxxx
@@ -155,7 +155,7 @@ public class CharsetToolkit {
      * 0020 0000-03FF FFFF       111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
      * 0400 0000-7FFF FFFF       1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
      * </pre>
-     * <p>With UTF-8, 0xFE and 0xFF never appear.</p>
+     * With UTF-8, 0xFE and 0xFF never appear.
      *
      * @return the Charset recognized.
      */

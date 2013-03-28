@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.util.ListHashMap;
 
 /**
- * Base class for any AST node. This class supports basic information used in all
- * nodes of the AST<ul>
+ * Base class for any AST node. This class supports basic information used in all nodes of the AST:
+ * <ul>
  * <li> line and column number information. Usually a node represents a certain
  * area in a text file determined by a starting position and an ending position.
  * For nodes that do not represent this, this information will be -1. A node can
@@ -31,14 +31,14 @@ import org.codehaus.groovy.util.ListHashMap;
  * transform. The only requirement is that the other phase operation or transform
  * runs after the part storing the information. If the information transport is 
  * done it is strongly recommended to remove that meta data.</li> 
- * </ul>
- * <li> a text representation of this node trough getText(). This was in the 
+ * <li> a text representation of this node trough getText(). This was in the
  * past used for assertion messages. Since the usage of power asserts this 
  * method will not be called for this purpose anymore and might be removed in
  * future versions of Groovy</li>
+ * </ul>
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author <a href="maito:blackdrag@gmx.org>Jochen "blackdrag" Theodorou</a>
- * @version $Revision$
+ * @author <a href="maito:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class ASTNode {
 

@@ -236,8 +236,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
 
     /**
      * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
-     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.<p/>
-     *
+     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * <p>
      * Annotations with {@link GeneratedClosure} members are not supported by now.
      */
     private List<AnnotationNode> copyAnnotatedNodeAnnotations(final List<AnnotationNode> candidateAnnotations, final AnnotatedNode annotatedNode) {

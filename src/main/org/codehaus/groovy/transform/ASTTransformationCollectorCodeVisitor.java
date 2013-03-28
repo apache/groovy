@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import java.util.List;
  * This visitor walks the AST tree and collects references to Annotations that
  * are annotated themselves by {@link GroovyASTTransformation}. Each such
  * annotation is added.
- * <p/>
+ * <p>
  * This visitor is only intended to be executed once, during the
  * SEMANTIC_ANALYSIS phase of compilation.
  *

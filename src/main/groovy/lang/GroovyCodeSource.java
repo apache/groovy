@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,11 +75,11 @@ public class GroovyCodeSource {
 
     /**
      * Construct a GroovyCodeSource for an inputStream of groovyCode that has an
-     * unknown provenance -- meaning it didn't come from a File or a URL (e.g.&nbsp;a String).
+     * unknown provenance -- meaning it didn't come from a File or a URL (e.g.&#160;a String).
      * The supplied codeBase will be used to construct a File URL that should match up
      * with a java Policy entry that determines the grants to be associated with the
      * class that will be built from the InputStream.
-     * <p/>
+     * <p>
      * The permission groovy.security.GroovyCodeSourcePermission will be used to determine if the given codeBase
      * may be specified.  That is, the current Policy set must have a GroovyCodeSourcePermission that implies
      * the codeBase, or an exception will be thrown.  This is to prevent callers from hijacking

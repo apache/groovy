@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -447,10 +447,10 @@ public class SwingGroovyMethods {
 
     /**
      * Overloads the left shift operator to provide an easy way to add
-     * rows to a DefaultTableModel.<p>
-     * <p/>
-     * if row.size &lt; model.size -&gt; row will be padded with nulls<br/>
-     * if row.size &gt; model.size -&gt; additional columns will be discarded<br/>
+     * rows to a DefaultTableModel.
+     * <p>
+     * if row.size &lt; model.size -&gt; row will be padded with nulls<br>
+     * if row.size &gt; model.size -&gt; additional columns will be discarded<br>
      *
      * @param self a DefaultTableModel
      * @param row  a row to be added to the model.
@@ -472,9 +472,9 @@ public class SwingGroovyMethods {
      * <b>WARNING:</b> this operation does not replace the item at the
      * specified index, rather it inserts the item at that index, thus
      * increasing the size of the model by 1.<p>
-     * <p/>
-     * if row.size &lt; model.size -&gt; row will be padded with nulls<br/>
-     * if row.size &gt; model.size -&gt; additional columns will be discarded<br/>
+     * <p>
+     * if row.size &lt; model.size -&gt; row will be padded with nulls<br>
+     * if row.size &gt; model.size -&gt; additional columns will be discarded
      *
      * @param self  a DefaultTableModel
      * @param index an index

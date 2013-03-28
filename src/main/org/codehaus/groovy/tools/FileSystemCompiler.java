@@ -152,7 +152,7 @@ public class FileSystemCompiler {
     /**
      * Primary entry point for compiling from the command line
      * (using the groovyc script).
-     * <p/>
+     * <p>
      * If calling inside a process and you don't want the JVM to exit on an
      * error call commandLineCompile(String[]), which this method simply wraps
      *
@@ -165,7 +165,7 @@ public class FileSystemCompiler {
     /**
      * Primary entry point for compiling from the command line
      * (using the groovyc script).
-     * <p/>
+     * <p>
      * If calling inside a process and you don't want the JVM to exit on an
      * error call commandLineCompile(String[]), which this method simply wraps
      *

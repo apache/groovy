@@ -1,14 +1,12 @@
 package groovy.bugs
 
 /**
-  * <p>
   * Test that ensures that:
   * <ul>
   *   <li>it is possible to write a builder in Groovy</li>
   *   <li>it is possible to call normal methods from the builder,
   *       without the methods being trapped endlessly by createNode()</li>
   * </ul>
-  * </p>
   *
   * @author Guillaume Laforge
   */

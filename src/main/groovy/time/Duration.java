@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,15 @@ import java.util.Calendar;
 import java.util.Date;
 
 /**
- * <p>Duration represents time periods which have values independent of the context.
+ * Duration represents time periods which have values independent of the context.
  * So, whilst we can't say how long a month is without knowing the year and the name of the month,
- * we know how long a day is independent of the date.</p>
- * 
- * <p>This is not 100% true for days.
- * Days can actually be 23, 24 or 25 hours long (due to daylight saving adjustments.)</p>
- * 
- * <p>If you ask Duration to convert itself to milliseconds then it will work on the basis of 24 hours
- * in a day. If you add or subtract it from a date it will take daylight saving into account.</p>
+ * we know how long a day is independent of the date.
+ * <p>
+ * This is not 100% true for days.
+ * Days can actually be 23, 24 or 25 hours long (due to daylight saving adjustments.)
+ * <p>
+ * If you ask Duration to convert itself to milliseconds then it will work on the basis of 24 hours
+ * in a day. If you add or subtract it from a date it will take daylight saving into account.
  *
  * @author John Wilson tug@wilson.co.uk
  */

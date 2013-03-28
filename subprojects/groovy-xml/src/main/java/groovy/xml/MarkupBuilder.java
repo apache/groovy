@@ -26,10 +26,10 @@ import java.util.Map;
 import java.util.Iterator;
 
 /**
- * <p>A helper class for creating XML or HTML markup.
- * The builder supports various 'pretty printed' formats.</p>
- * <p/>
- * <p>Example:</p>
+ * A helper class for creating XML or HTML markup.
+ * The builder supports various 'pretty printed' formats.
+ * <p>
+ * Example:
  * <pre>new MarkupBuilder().root {
  *   a( a1:'one' ) {
  *     b { mkp.yield( '3 < 5' ) }
@@ -78,9 +78,9 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     /**
-     * Defaults to true.&nbsp;If set to false then you must escape any special
+     * Defaults to true.&#160;If set to false then you must escape any special
      * characters within attribute values such as '&amp;', '&lt;', CR/LF, single
-     * and double quotes etc.&nbsp;manually as needed. The builder will not guard
+     * and double quotes etc.&#160;manually as needed. The builder will not guard
      * against producing invalid XML when in this mode and the output may not
      * be able to be parsed/round-tripped but it does give you full control when
      * producing for instance HTML output.

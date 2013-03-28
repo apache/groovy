@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -268,7 +268,7 @@ public class Groovydoc extends Task {
     }
 
     /**
-     * Specifies the charset to be used in the templates, i.e.&nbsp; the value output within:
+     * Specifies the charset to be used in the templates, i.e.&#160;the value output within:
      * &lt;meta http-equiv="Content-Type" content="text/html; charset=<em>charset</em>"&gt;.
      *
      * @param charset the charset value
@@ -485,37 +485,36 @@ public class Groovydoc extends Task {
     }
     
     /**
-     * Creates and returns an array of package template classpath entries.<p/>
-     * 
+     * Creates and returns an array of package template classpath entries.
+     * <p>
      * This method is meant to be overridden by custom GroovyDoc implementations, using custom package templates.
      * 
      * @return an array of package templates, whereas each entry is resolved as classpath entry, defaults to
-     *  {@link GroovyDocTemplateInfo#DEFAULT_PACKAGE_TEMPLATES}.
+     * {@link GroovyDocTemplateInfo#DEFAULT_PACKAGE_TEMPLATES}.
      */
     protected String[] getPackageTemplates() {
         return GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES;
     }
 
     /**
-     * Creates and returns an array of doc template classpath entries.<p/>
-     * 
+     * Creates and returns an array of doc template classpath entries.
+     * <p>
      * This method is meant to be overridden by custom GroovyDoc implementations, using custom doc templates.
      * 
      * @return an array of doc templates, whereas each entry is resolved as classpath entry, defaults to
-     *  {@link GroovyDocTemplateInfo#DEFAULT_DOC_TEMPLATES}.
-     *
+     * {@link GroovyDocTemplateInfo#DEFAULT_DOC_TEMPLATES}.
      */
     protected String[] getDocTemplates() {
         return GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES;
     }
 
     /**
-     * Creates and returns an array of class template classpath entries.<p/>
-     * 
+     * Creates and returns an array of class template classpath entries.
+     * <p>
      * This method is meant to be overridden by custom GroovyDoc implementations, using custom class templates.
      * 
      * @return an array of class templates, whereas each entry is resolved as classpath entry, defaults to
-     *  {@link GroovyDocTemplateInfo#DEFAULT_CLASS_TEMPLATES}.
+     * {@link GroovyDocTemplateInfo#DEFAULT_CLASS_TEMPLATES}.
      */
     protected String[] getClassTemplates() {
         return GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES;

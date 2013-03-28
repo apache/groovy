@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * Represents an inclusive list of objects from a value to a value using
  * comparators.
- * <p/>
+ * <p>
  * This class is similar to {@link IntRange}. If you make any changes to this
  * class, you might consider making parallel changes to {@link IntRange}.
  *

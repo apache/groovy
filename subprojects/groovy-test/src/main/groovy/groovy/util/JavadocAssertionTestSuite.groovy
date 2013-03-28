@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import junit.textui.TestRunner
  *
  * You can also run this class as an application from the command line (assumes Groovy, JUnit and Ant
  * are on the classpath). As an example:
- * <p/>
+ * <p>
  * <code>
  * java groovy.util.JavadocAssertionTestSuite src/main
  * </code>

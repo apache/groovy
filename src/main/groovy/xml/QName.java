@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.io.Serializable;
 
 /**
  * <code>QName</code> class represents the value of a qualified name
- * as specified in <a href=" http://www.w3.org/TR/xmlschema-2/#QName ">XML
+ * as specified in <a href="http://www.w3.org/TR/xmlschema-2/#QName">XML
  * Schema Part2: Datatypes specification</a>.
  * <p>
  * The value of a QName contains a <b>namespaceURI</b>, a <b>localPart</b> and a <b>prefix</b>.
@@ -150,12 +150,12 @@ public class QName implements Serializable {
      * and the first half is compared against the prefix || namespaceURI
      * and the second half is compared against the localPart
      *
-     * i.e. assert new QName("namespace","localPart").equals("namespace:localPart")
+     * i.e.&#160;assert new QName("namespace","localPart").equals("namespace:localPart")
      *
-     * Intended Usage: for gpath accessors, e.g. root.'urn:mynamespace:node'
+     * Intended Usage: for gpath accessors, e.g.&#160;root.'urn:mynamespace:node'
      *
      * Warning: this equivalence is not commutative,
-     * i.e. qname.equals(string) may be true/false  but string.equals(qname) is always false
+     * i.e.&#160;qname.equals(string) may be true/false  but string.equals(qname) is always false
      *
      * <p>
      * This method satisfies the general contract of the <code>Object.equals</code> method.

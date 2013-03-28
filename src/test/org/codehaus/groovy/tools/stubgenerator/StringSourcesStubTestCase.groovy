@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ abstract class StringSourcesStubTestCase extends StubTestCase {
     /**
      * All sub classes should implement this method to provide the sources to be jointly compiled
      * in the form of Strings.
-     * <p/>
+     * <p>
      * Example of mapping:
      * <pre><code>
      *  ['com/foo/Bar.groovy': '''

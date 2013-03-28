@@ -24,17 +24,17 @@ import java.lang.annotation.Target;
 
 /**
  * Note: This annotation is currently experimental! Use at your own risk!
- * <p/>
+ * <p>
  * Class annotation used to assist in the creation of {@code Cloneable} classes.
  * The {@code @AutoClone} annotation instructs the compiler to execute an
  * AST transformation which adds a public {@code clone()} method and adds
  * {@code Cloneable} to the list of interfaces which the class implements.
- * <p/>
+ * <p>
  * Because the JVM doesn't have a one-size fits all cloning strategy, several
  * customizations exist for the cloning implementation. By default, the {@code clone()}
  * method will call {@code super.clone()} before calling {@code clone()} on each
  * {@code Cloneable} property of the class.
- * <p/>
+ * <p>
  * Example usage:
  * <pre>
  * import groovy.transform.AutoClone
@@ -80,15 +80,15 @@ import java.lang.annotation.Target;
  * so it is left as the bit-wise copy. Both {@code Date} and {@code ArrayList}
  * are {@code Cloneable} so the {@code clone()} method on each of those properties
  * will be called. For the list, a shallow copy is made during its {@code clone()} method.
- * <p/>
+ * <p>
  * If your classes require deep cloning, it is up to you to provide the appropriate
  * deep cloning logic in the respective {@code clone()} method for your class.
- * <p/>
+ * <p>
  * If one of your properties contains an object that doesn't support cloning
  * or attempts deep copying of a data structure containing an object that
  * doesn't support cloning, then a {@code CloneNotSupportedException} may occur
  * at runtime.
- * <p/>
+ * <p>
  * Another popular cloning strategy is known as the copy constructor pattern.
  * If any of your fields are {@code final} and {@code Cloneable} you should set
  * {@code style=COPY_CONSTRUCTOR} which will then use the copy constructor pattern.
@@ -138,7 +138,7 @@ import java.lang.annotation.Target;
  * also have a copy constructor (created using this annotation or by hand).
  * This approach can be slightly slower than the traditional cloning approach
  * but the {@code Cloneable} fields of your class can be final.
- * <p/>
+ * <p>
  * As a variation of the last two styles, if you set {@code style=SIMPLE}
  * then the no-arg constructor will be called followed by setting the
  * individual properties (and/or fields) calling {@code clone()} if the
@@ -189,7 +189,7 @@ import java.lang.annotation.Target;
  * You would typically use this style only for base classes where you didn't
  * want the normal {@code Object} {@code clone()} method to be called and
  * you would typically need to use the {@code SIMPLE} style for any child classes.
- * <p/>
+ * <p>
  * As a final example, if your class already implements the {@code Serializable}
  * or {@code Externalizable} interface, you can choose the following cloning style:
  * <pre>
@@ -218,7 +218,7 @@ import java.lang.annotation.Target;
  * allow fields to be final, will take up more memory as even immutable classes
  * like String will be cloned but does have the advantage that it performs
  * deep cloning automatically.
- * <p/>
+ * <p>
  * Further references on cloning:
  * <ul>
  * <li><a href="http://www.codeguru.com/java/tij/tij0128.shtml">http://www.codeguru.com/java/tij/tij0128.shtml</a>
@@ -238,32 +238,36 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.AutoCloneASTTransformation")
 public @interface AutoClone {
     /**
-     * <p>Comma separated list of property (and/or field) names to exclude from cloning.
+     * Comma separated list of property (and/or field) names to exclude from cloning.
      * For convenience, a String with comma separated names can be used in addition
-     * to an array (using Groovy's literal list notation) of String values.</p>
-     * <p>NOTE: When using the {@code CLONE} style, property (and/or field) copying might occur as part of
+     * to an array (using Groovy's literal list notation) of String values.
+     * <p>
+     * NOTE: When using the {@code CLONE} style, property (and/or field) copying might occur as part of
      * calling {@code super.clone()} which will ignore this list. You can then use this list to
      * streamline the provided {@code clone()} implementation by selecting which Cloneable properties
      * (and/or fields) will have a subsequent call to their {@code clone()} method. If you have
      * immutable properties (and/or fields) this can be useful as the extra {@code clone()} will
-     * not be necessary and cloning will be more efficient.</p>
-     * <p>NOTE: This doesn't affect property (and/or field) copying that might occur as part
+     * not be necessary and cloning will be more efficient.
+     * <p>
+     * NOTE: This doesn't affect property (and/or field) copying that might occur as part
      * of serialization when using the {@code SERIALIZATION} style, i.e. this flag is ignored;
      * instead adjust your serialization code to include or exclude the desired
-     * properties (and/or fields) which should carry over during cloning.</p>
+     * properties (and/or fields) which should carry over during cloning.
      */
     String[] excludes() default {};
 
     /**
-     * <p>Include fields as well as properties when cloning.</p>
-     * <p>NOTE: When using the {@code CLONE} style, field copying might occur as part of
+     * Include fields as well as properties when cloning.
+     * <p>
+     * NOTE: When using the {@code CLONE} style, field copying might occur as part of
      * calling {@code super.clone()} and might be all you require; if you turn on
      * this flag, the provided {@code clone()} implementation will also
      * subsequently call {@code clone()} for each {@code Cloneable} field which can be
-     * useful if you have mutable fields.</p>
-     * <p>NOTE: This doesn't affect field copying that might occur as part of
+     * useful if you have mutable fields.
+     * <p>
+     * NOTE: This doesn't affect field copying that might occur as part of
      * serialization when using the {@code SERIALIZATION} style, i.e. this flag is ignored;
-     * instead adjust your serialization code to include or exclude your fields.</p>
+     * instead adjust your serialization code to include or exclude your fields.
      */
     boolean includeFields() default false;
 

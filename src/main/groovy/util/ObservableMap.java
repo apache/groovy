@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,11 @@ import java.util.*;
  * <pre>
  * // skip all properties whose value is a closure
  * def map = new ObservableMap( {!(it instanceof Closure)} )
- * <p/>
+ *
  * // skip all properties whose name matches a regex
  * def map = new ObservableMap( { name, value -&gt; !(name =~ /[A-Z+]/) } )
  * </pre>
- * <p/>
- * <p>The current implementation will trigger specialized events in the following scenarios,
+ * The current implementation will trigger specialized events in the following scenarios,
  * you need not register a different listener as those events extend from PropertyChangeEvent
  * <ul>
  * <li>ObservableMap.PropertyAddedEvent - a new property is added to the map</li>
@@ -44,15 +43,13 @@ import java.util.*;
  * <li>ObservableMap.PropertyUpdatedEvent - a property changes value (same as regular PropertyChangeEvent)</li>
  * <li>ObservableMap.PropertyClearedEvent - all properties have been removed from the map</li>
  * <li>ObservableMap.MultiPropertyEvent - triggered by calling map.putAll(), contains Added|Updated events</li>
- * </ul></p>
- * <p/>
+ * </ul>
  * <p>
  * <strong>Bound properties</strong>
  * <ul>
  * <li><tt>content</tt> - read-only.</li>
  * <li><tt>size</tt> - read-only.</li>
  * </ul>
- * </p>
  *
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */

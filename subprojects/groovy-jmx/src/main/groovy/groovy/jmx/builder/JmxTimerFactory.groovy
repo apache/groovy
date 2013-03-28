@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 package groovy.jmx.builder
 
 import javax.management.MBeanServer
@@ -25,9 +23,8 @@ import javax.management.ObjectName
 /**
  * The JmxTimerFactory class generates a timer() node for JmxBuilder.  This node crates a standard JMX Timer object
  * that can be used to provide timing signals to registered JMX listeners.
- *
- * <p>Syntax</p>
- *
+ * <p>
+ * Syntax:
  * <pre>
  * timer(
  *     name:"object name"|ObjectName(),
@@ -41,7 +38,6 @@ import javax.management.ObjectName
  * </pre>
  *
  * @author Vladimir Vivien
- *
  */
 class JmxTimerFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeParam, Map nodeAttribs) {

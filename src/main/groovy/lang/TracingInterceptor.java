@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ import java.io.Writer;
 /*
  * This {@link Interceptor} traces method calls on the proxied object to a log. 
  * By default, the log is simply <pre>System.out</pre>; however, that can be 
- * changed with the <pre>setWriter(Writer)</pre> method. <br/><br/>
- * 
+ * changed with the <pre>setWriter(Writer)</pre> method.
+ * <p>
  * A message will be written to output before a method is invoked and after a method
  * is invoked. If methods are nested, and invoke one another, then indentation 
- * of two spaces is written. <br/><br/>
- *
- * Here is an example usage on the ArrayList object: <br/>
+ * of two spaces is written.
+ * <p>
+ * Here is an example usage on the ArrayList object: <br>
  * <pre>
  * def proxy = ProxyMetaClass.getInstance(ArrayList.class)
  * proxy.interceptor = new TracingInterceptor()

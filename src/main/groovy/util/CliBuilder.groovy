@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * on the size of the command line (e.g. Windows). The feature is similar to
  * the 'Command Line Argument File' processing supported by javadoc and javac.
  * Consult the corresponding documentation for those tools if you wish to see further examples.
- * <p/>
+ * <p>
  * <b>Supported Option Properties</b>:
  * <pre>
  *   argName:        String
@@ -164,7 +164,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * </pre>
  * See {@link org.apache.commons.cli.Option} for the meaning of these properties
  * and {@link CliBuilderTest} for further examples.
- * <p/>
+ * <p>
  *
  * @author Dierk Koenig
  * @author Paul King

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,12 @@ import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.transform.CompileStatic
 
 /**
- * <p>This factory generates an {@link ASTTransformationCustomizer ast transformation customizer}.</p>
- * <p>Simple syntax:</p>
- * <pre><code>builder.ast(ToString)</code></pre>
- * <p>With AST transformation options:</p>
- * <pre><code>builder.ast(includeNames:true, ToString)</code></pre>
+ * This factory generates an {@link ASTTransformationCustomizer ast transformation customizer}.
+ * <p>
+ * Simple syntax:
+ * <pre>builder.ast(ToString)</pre>
+ * With AST transformation options:
+ * <pre>builder.ast(includeNames:true, ToString)</pre>
  *
  * @author Cedric Champeau
  * @since 2.1.0

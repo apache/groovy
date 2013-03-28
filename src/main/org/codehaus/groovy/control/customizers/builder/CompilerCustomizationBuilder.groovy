@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
 /**
  * <p>A builder which allows easy configuration of compilation customizers. Instead of creating
  * various compilation customizers by hand, you may use this builder instead, which provides a
- * shorter syntax and removes most of the verbosity.</p>
+ * shorter syntax and removes most of the verbosity.
  *
  */
 @CompileStatic

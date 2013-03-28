@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2007-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,10 @@ package groovy.swing.factory
 import javax.swing.border.LineBorder
 
 /**
- * accepts attributes:<br />
- * color: java.awt.Color <br/>
- * color: java.awt.Color, thickness: int <br/>
- * color: java.awt.Color, thickness: int, roundedBorders: boolean <br/>
- *
+ * accepts attributes:<br>
+ * color: java.awt.Color <br>
+ * color: java.awt.Color, thickness: int <br>
+ * color: java.awt.Color, thickness: int, roundedBorders: boolean
  */
 class LineBorderFactory extends SwingBorderFactory {
 

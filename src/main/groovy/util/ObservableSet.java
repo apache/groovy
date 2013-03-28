@@ -29,7 +29,6 @@ import java.util.*;
  * will trigger an event (if the value indeed changed), otherwise it won't. The Closure may receive
  * 1 or 2 parameters, the single one being the value, the other one both the key and value, for
  * example:
- * <p/>
  * <pre>
  * // skip all properties whose value is a closure
  * def set = new ObservableSet( {!(it instanceof Closure)} )
@@ -37,8 +36,6 @@ import java.util.*;
  * // skip all properties whose name matches a regex
  * def set = new ObservableSet( { name, value -&gt; !(name =&tilde; /[A-Z+]/) } )
  * </pre>
- * <p/>
- * <p>
  * The current implementation will trigger specialized events in the following scenarios, you need
  * not register a different listener as those events extend from PropertyChangeEvent
  * <ul>
@@ -51,15 +48,13 @@ import java.util.*;
  * <li>ObservableSet.MultiElementRemovedEvent - triggered by calling
  * set.removeAll()/set.retainAll()</li>
  * </ul>
- * </p>
- * <p/>
+ *
  * <p>
  * <strong>Bound properties</strong>
  * <ul>
  * <li><tt>content</tt> - read-only.</li>
  * <li><tt>size</tt> - read-only.</li>
  * </ul>
- * </p>
  *
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */

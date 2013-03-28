@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,8 +50,8 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * <p>Parse XML into a document tree that may be traversed similar to XPath
- * expressions.  For example:</p>
+ * Parse XML into a document tree that may be traversed similar to XPath
+ * expressions.  For example:
  * <pre>
  * def rootNode = new XmlSlurper().parseText(
  *    '&lt;root&gt;&lt;one a1="uno!"/&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;' )
@@ -61,9 +61,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * assert rootNode.two.text() == 'Some text!'
  * rootNode.children().each { assert it.name() in ['one','two'] }
  * </pre>
- * <p/>
- * <p>Note that in some cases, a 'selector' expression may not resolve to a
- * single node.  For example: </p>
+ * <p>
+ * Note that in some cases, a 'selector' expression may not resolve to a
+ * single node.  For example:
  * <pre>
  * def rootNode = new XmlSlurper().parseText(
  *    '''&lt;root&gt;

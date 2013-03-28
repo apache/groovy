@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,14 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
 
 
 /**
- * This annotation adds Java-style listener support to a class based on an annotated Collection-property. <br/><br/>
- *
+ * This annotation adds Java-style listener support to a class based on an annotated Collection-property.
+ * <p>
  * For any given Collection property, several methods will be written into the enclosing class during the compile phase. These
  * changes are visible from Java or other languages. The List is intended to hold listeners of some sort, and the methods
  * addListener, removeListener, and getListeners are all added to the class. The actual methods names depend on the generic
  * type of the collection.
- *
- * Given the following example:<br/>
+ * <p>
+ * Given the following example:<br>
  * <pre>
  * class MyClass {
  *     &#064;groovy.beans.ListenerList
@@ -40,7 +40,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * The following code is generated:
  * <pre>
  * public class MyClass extends java.lang.Object {
- *
  *     &#064;groovy.beans.ListenerList
  *     private java.util.List&lt;java.awt.event.ActionListener&gt; listeners
  *
@@ -83,8 +82,8 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * }
  * </pre>
  * A fire method is created for each public method in the target class. In this case, ActionListener only has one
- * method. For a four method interface, four fire methods would be created. <br/><br/>
- * 
+ * method. For a four method interface, four fire methods would be created.
+ * <p>
  * The annotation can take the following parameters:
  * <pre>
  * name        = a suffix for creating the add, remove, and get methods.
@@ -95,7 +94,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * synchronize = Whether or not the methods created should be synchronized at the method level. 
  *               Default: false
  * </pre>
- *
+ * <p>
  * <strong>Compilation Errors</strong> - Using this annotation incorrectly results in compilation errors rather
  * than runtime errors. A list of potential problems includes:
  * <ul>
@@ -104,8 +103,8 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * <li>The annotated Collection field must not have a generic wildcard declared</li>
  * <li>The generated methods must not already exist</li>
  * </ul>
- * @see ListenerListASTTransformation
  *
+ * @see ListenerListASTTransformation
  * @author Alexander Klein
  * @author Hamlet D'Arcy
  */

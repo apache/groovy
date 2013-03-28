@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import java.util.*;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @author <a href="mailto:jim@pagesmiths.com">Jim White</a>
  * @author <a href="mailto:cedric.champeau@gmail.com">Cedric Champeau</a>
- * @version $Id$
  */
 
 public class CompilerConfiguration {
@@ -41,7 +40,7 @@ public class CompilerConfiguration {
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5 or later JVM. **/
     public static final String POST_JDK5 = "1.5";
     
-    /** This (<code>"1.4"<code/>) is the value for targetBytecode to compile for a JDK 1.4 JVM. **/
+    /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4 JVM. **/
     public static final String PRE_JDK5 = "1.4";
 
     // Just call getVMVersion() once.
@@ -240,14 +239,16 @@ public class CompilerConfiguration {
      * Copy constructor.  Use this if you have a mostly correct configuration
      * for your compilation but you want to make a some changes programatically.
      * An important reason to prefer this approach is that your code will most
-     * likely be forward compatible with future changes to this configuration API.<br/>
-     * An example of this copy constructor at work:<br/>
+     * likely be forward compatible with future changes to this configuration API.
+     * <p>
+     * An example of this copy constructor at work:
      * <pre>
      *    // In all likelihood there is already a configuration in your code's context
      *    // for you to copy, but for the sake of this example we'll use the global default.
      *    CompilerConfiguration myConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
      *    myConfiguration.setDebug(true);
      *</pre>
+     *
      * @param configuration The configuration to copy.
      */
     public CompilerConfiguration(CompilerConfiguration configuration) {
@@ -281,54 +282,53 @@ public class CompilerConfiguration {
      * for those not supplied.
      * Note that those "defaults" here do <em>not</em> include checking the
      * settings in {@link System#getProperties()} in general, only file.encoding, 
-     * groovy.target.directory and groovy.source.encoding are.<br/>
+     * groovy.target.directory and groovy.source.encoding are.
+     * <p>
      * If you want to set a few flags but keep Groovy's default
      * configuration behavior then be sure to make your settings in
      * a Properties that is backed by <code>System.getProperties()</code> (which
-     * is done using this constructor).<br/>
-     * That might be done like this:<br/>
+     * is done using this constructor). That might be done like this:
      * <pre>
-     *    Properties myProperties = new Properties(System.getProperties());
-     *    myProperties.setProperty("groovy.output.debug", "true");
-     *    myConfiguration = new CompilerConfiguration(myProperties);
+     * Properties myProperties = new Properties(System.getProperties());
+     * myProperties.setProperty("groovy.output.debug", "true");
+     * myConfiguration = new CompilerConfiguration(myProperties);
      * </pre>
      * And you also have to contend with a possible SecurityException when
-     * getting the system properties (See {@link java.lang.System#getProperties()}).<br/> 
-     * An safer method would be to copy a default
-     * CompilerConfiguration and make your changes there using the
-     * setter.<br/>
+     * getting the system properties (See {@link java.lang.System#getProperties()}).
+     * A safer approach would be to copy a default
+     * CompilerConfiguration and make your changes there using the setter:
      * <pre>
-     *    // In all likelihood there is already a configuration for you to copy,
-     *    // but for the sake of this example we'll use the global default.
-     *    CompilerConfiguration myConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
-     *    myConfiguration.setDebug(true);
+     * // In all likelihood there is already a configuration for you to copy,
+     * // but for the sake of this example we'll use the global default.
+     * CompilerConfiguration myConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+     * myConfiguration.setDebug(true);
      * </pre>
      * Another reason to use the copy constructor rather than this one is that you
      * must call {@link #setOutput}.  Calling <code>setOutput(null)</code> is valid and will
      * set up a <code>PrintWriter</code> to a bit bucket.  The copy constructor will of course set
      * the same one as the original.
+     * <p>
+     * <table summary="Groovy Compiler Configuration Properties">
+     *   <tr>
+     *      <th>Property Key</th><th>Get/Set Property Name</th>
+     *   </tr>
+     *      <tr>
+     *      <td><code>"groovy.warnings"</code></td><td>{@link #getWarningLevel}</td></tr>
+     *      <tr><td><code>"groovy.source.encoding"</code></td><td>{@link #getSourceEncoding}</td></tr>
+     *      <tr><td><code>"groovy.target.directory"</code></td><td>{@link #getTargetDirectory}</td></tr>
+     *      <tr><td><code>"groovy.target.bytecode"</code></td><td>{@link #getTargetBytecode}</td></tr>
+     *      <tr><td><code>"groovy.classpath"</code></td><td>{@link #getClasspath}</td></tr>
+     *      <tr><td><code>"groovy.output.verbose"</code></td><td>{@link #getVerbose}</td></tr>
+     *      <tr><td><code>"groovy.output.debug"</code></td><td>{@link #getDebug}</td></tr>
+     *      <tr><td><code>"groovy.errors.tolerance"</code></td><td>{@link #getTolerance}</td></tr>
+     *      <tr><td><code>"groovy.script.extension"</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
+     *      <tr><td><code>"groovy.script.base"</code></td><td>{@link #getScriptBaseClass}</td></tr>
+     *      <tr><td><code>"groovy.recompile"</code></td><td>{@link #getRecompileGroovySource}</td></tr>
+     *      <tr><td><code>"groovy.recompile.minimumInterval"</code></td><td>{@link #getMinimumRecompilationInterval}</td></tr>
+     *      <tr><td>
+     *   </tr>
+     * </table>
      *
-     *<table summary="Groovy Compiler Configuration Properties">
-         <tr>
-            <th>Property Key</th><th>Get/Set Property Name</th>
-         </tr>
-            <tr>
-            <td><code>"groovy.warnings"</code></td><td>{@link #getWarningLevel}</td></tr>
-            <tr><td><code>"groovy.source.encoding"</code></td><td>{@link #getSourceEncoding}</td></tr>
-            <tr><td><code>"groovy.target.directory"</code></td><td>{@link #getTargetDirectory}</td></tr>
-            <tr><td><code>"groovy.target.bytecode"</code></td><td>{@link #getTargetBytecode}</td></tr>
-            <tr><td><code>"groovy.classpath"</code></td><td>{@link #getClasspath}</td></tr>
-            <tr><td><code>"groovy.output.verbose"</code></td><td>{@link #getVerbose}</td></tr>
-            <tr><td><code>"groovy.output.debug"</code></td><td>{@link #getDebug}</td></tr>
-            <tr><td><code>"groovy.errors.tolerance"</code></td><td>{@link #getTolerance}</td></tr>
-            <tr><td><code>"groovy.script.extension"</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
-            <tr><td><code>"groovy.script.base"</code></td><td>{@link #getScriptBaseClass}</td></tr>
-            <tr><td><code>"groovy.recompile"</code></td><td>{@link #getRecompileGroovySource}</td></tr>
-            <tr><td><code>"groovy.recompile.minimumInterval"</code></td><td>{@link #getMinimumRecompilationInterval}</td></tr>
-            <tr><td>
-         </tr>
-     </table>
-     <br/>
      * @param configuration The properties to get flag values from.
      */
     public CompilerConfiguration(Properties configuration) throws ConfigurationException {

@@ -28,7 +28,7 @@ import org.objectweb.asm.Opcodes;
 /**
  * A specialized Groovy AST visitor meant to perform additional verifications upon the
  * current AST. Currently it does checks on annotated nodes and annotations itself.
- * <p/>
+ * <p>
  * Current limitations:
  * - annotations on local variables are not supported
  *

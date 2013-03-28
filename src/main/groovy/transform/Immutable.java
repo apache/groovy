@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 
 /**
  * Class annotation used to assist in the creation of immutable classes.
- * <p/>
+ * <p>
  * It allows you to write classes in this shortened form:
  * <pre>
  * {@code @Immutable} class Customer {
@@ -43,7 +43,7 @@ import java.lang.annotation.Target;
  * AST transformation which adds the necessary getters, constructors,
  * equals, hashCode and other helper methods that are typically written
  * when creating immutable classes with the defined properties.
- * <p/>
+ * <p>
  * A class created in this way has the following characteristics:
  * <ul>
  * <li>The class is automatically made final.
@@ -88,12 +88,12 @@ import java.lang.annotation.Target;
  * Immutable classes are particularly useful for functional and concurrent styles of programming
  * and for use as key values within maps. If you want similar functionality to what this annotation
  * provides but don't need immutability then consider using {@code @Canonical}.
- * <p/>
+ * <p>
  * Customising behaviour:
- * <p/>
+ * <p>
  * You can customise the toString() method provided for you by {@code @Immutable}
  * by also adding the {@code @ToString} annotation to your class definition.
- * <p/>
+ * <p>
  * Limitations:
  * <ul>
  * <li>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ import java.lang.reflect.Modifier;
 /**
  * This exception is thrown if the runtime is unable to select
  * a method. This class builds the exception text when calling 
- * getMessage. <br/>
+ * getMessage.
+ * <p>
  * <b>Note:</b> This exception as for internal use only!
  * 
  * @author Jochen Theodorou

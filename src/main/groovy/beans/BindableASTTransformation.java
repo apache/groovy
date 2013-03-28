@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,14 +40,14 @@ import java.beans.PropertyChangeSupport;
 /**
  * Handles generation of code for the {@code @Bindable} annotation when {@code @Vetoable}
  * is not present.
- * <p/>
+ * <p>
  * Generally, it adds (if needed) a PropertyChangeSupport field and
  * the needed add/removePropertyChangeListener methods to support the
  * listeners.
- * <p/>
+ * <p>
  * It also generates the setter and wires the setter through the
  * PropertyChangeSupport.
- * <p/>
+ * <p>
  * If a {@link Vetoable} annotation is detected it does nothing and
  * lets the {@link VetoableASTTransformation} handle all the changes.
  *
@@ -308,12 +308,12 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
     /**
      * Adds the necessary field and methods to support property change support.
-     * <p/>
+     * <p>
      * Adds a new field:
      * <pre>
      * <code>protected final java.beans.PropertyChangeSupport this$PropertyChangeSupport = new java.beans.PropertyChangeSupport(this)</code>"
      * </pre>
-     * <p/>
+     * <p>
      * Also adds support methods:
      * <pre>
      * <code>public void addPropertyChangeListener(java.beans.PropertyChangeListener)</code>

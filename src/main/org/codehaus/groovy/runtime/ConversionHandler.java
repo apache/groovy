@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.lang.reflect.Proxy;
 /**
  * This class is a general adapter to map a call to a Java interface
  * to a given delegate.
- * <p/>
  *
  * @author Ben Yu
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
@@ -64,7 +63,7 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * of the delegate because they are considered fundamental methods that should
      * not be overwritten. The toString() method gets special treatment as it is
      * deemed to be a method that you might wish to override when called from Groovy.
-     * <p/>
+     * <p>
      * In many scenarios, it is better to overwrite the invokeCustom method where
      * the core Object related methods are filtered out.
      *

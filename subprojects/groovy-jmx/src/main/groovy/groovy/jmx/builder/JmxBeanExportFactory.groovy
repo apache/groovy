@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,20 @@ package groovy.jmx.builder
 
 /**
  * This factory returns a container node for all other nodes that are used to collect meta data for resources that
- *  are exported to the MBeanServer for management.
- *
- * <p>Supported syntax</p>
+ * are exported to the MBeanServer for management.
+ * <p>
+ * Supported syntax:
  * <pre>
- *     def jmx = new JmxBuilder()
- *     jmx.export(registrationPolicy:"replace|ignore|error") {*         bean(...)
- *}* </pre>
- *
- * <p>registrationPolicy indicates how resources will be registered:
- * "replace" - replaces existing bean,  <br/>
- * "ignore" - ignores the registration request if bean already exists.<br/>
+ * def jmx = new JmxBuilder()
+ * jmx.export(registrationPolicy:"replace|ignore|error") {
+ *     bean(...)
+ * }
+ * </pre>
+ * <p>
+ * registrationPolicy indicates how resources will be registered:
+ * "replace" - replaces existing bean,  <br>
+ * "ignore" - ignores the registration request if bean already exists.<br>
  * "error" - throws error if bean is already registered.
- * </p>
  *
  * @author vladimir vivien 
  */

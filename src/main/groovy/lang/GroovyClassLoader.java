@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,7 +148,7 @@ public class GroovyClassLoader extends URLClassLoader {
 
     /**
      * Loads the given class node returning the implementation Class.
-     * <p/>
+     * <p>
      * WARNING: this compilation is not synchronized
      *
      * @param classNode
@@ -578,7 +578,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * recompilation, so the method should always return true here. Only classes that are
      * implementing GroovyObject are compilable and only if the timestamp in the class
      * is lower than Long.MAX_VALUE.
-     * <p/>
+     * <p>
      * NOTE: First the parent loaders will be asked and only if they don't return a
      * class the recompilation will happen. Recompilation also only happen if the source
      * file is newer.
@@ -775,7 +775,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * This method will take a file name and try to "decode" any URL encoded characters.  For example
      * if the file name contains any spaces this method call will take the resulting %20 encoded values
      * and convert them to spaces.
-     * <p/>
+     * <p>
      * This method was added specifically to fix defect:  Groovy-1787.  The defect involved a situation
      * where two scripts were sitting in a directory with spaces in its name.  The code would fail
      * when the class loader tried to resolve the file name and would choke on the URLEncoded space values.

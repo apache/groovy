@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import java.beans.IntrospectionException;
  * an Interceptor. To this end, it acts as a decorator (decorator pattern) allowing
  * to add or withdraw this feature at runtime.
  * See groovy/lang/InterceptorTest.groovy for details.
- * <p/>
- * <p>WARNING: This implementation of ProxyMetaClass is NOT threadsafe and hence should only be used for
+ * <p>
+ * WARNING: This implementation of ProxyMetaClass is NOT thread-safe and hence should only be used for
  * as a per-instance MetaClass running in a single thread. Do not place this MetaClass in the MetaClassRegistry
  * as it will result in unpredictable behaviour
  *

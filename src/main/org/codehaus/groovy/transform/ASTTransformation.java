@@ -23,8 +23,8 @@ import org.codehaus.groovy.control.SourceUnit;
  * This class is instantiated and invoked when an AST transformation is
  * activated. For Global AST Transformations, this interface is called once per SourceUnit, which is usually a
  * Groovy source file. For Local AST Transformations, this interface is invoked once every time the Local annotation
- * marker is encountered. <br/><br/>
- *
+ * marker is encountered.
+ * <p>
  * You must annotate this class with {@link GroovyASTTransformation} so that Groovy knows which
  * {@link org.codehaus.groovy.control.CompilePhase} to run in.
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * <p>This factory allows the generation of an {@link ImportCustomizer import customizer}. You may embed several
- * elements:</p>
+ * This factory allows the generation of an {@link ImportCustomizer import customizer}. You may embed several
+ * elements:
  * <ul>
  *     <li><i>normal</i> for "regular" imports</li>
  *     <li><i>star</i> for "star" imports</li>
@@ -35,7 +35,7 @@ import java.util.Map;
  *     <li><i>staticMember</i> for static imports of individual members</li>
  * </ul>
  *
- * <p>For example:</p>
+ * For example:
  * <pre><code>builder.imports {
  * alias 'AI', 'java.util.concurrent.atomic.AtomicInteger'
  * alias 'AL', 'java.util.concurrent.atomic.AtomicLong'

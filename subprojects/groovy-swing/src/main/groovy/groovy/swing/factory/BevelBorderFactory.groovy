@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2007-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,11 @@ import java.awt.Color
 import javax.swing.BorderFactory
 
 /**
- * accepts no value
- * accepts attributes:<br />
- * none <br />
- * highlight: java.awt.Color, shadow: java.awt.Color<br />
- * highlightOuter: java.awt.Color, highlightInner: java.awt.Color, shadowOuter: java.awt.Color, shadowInner: java.awt.Color<br />
- *
+ * accepts no value<br>
+ * accepts attributes:<br>
+ * none <br>
+ * highlight: java.awt.Color, shadow: java.awt.Color<br>
+ * highlightOuter: java.awt.Color, highlightInner: java.awt.Color, shadowOuter: java.awt.Color, shadowInner: java.awt.Color
  */
 class BevelBorderFactory extends SwingBorderFactory {
 

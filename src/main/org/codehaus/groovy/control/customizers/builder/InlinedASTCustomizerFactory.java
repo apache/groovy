@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * <p>This factory lets a user define a compilation customizer without having to define
- * an anonymous inner class.</p>
- *
- * <p>Here is an example, which only logs the class name during compilation:</p>
- * <pre><code></code>inline(phase:'CONVERSION') { source, context, classNode ->
- *       println "visiting $classNode"
- * }</pre>
+ * This factory lets a user define a compilation customizer without having to define
+ * an anonymous inner class.
+ * <p>
+ * Here is an example, which only logs the class name during compilation:
+ * <pre>
+ * inline(phase:'CONVERSION') { source, context, classNode ->
+ *     println "visiting $classNode"
+ * }
+ * </pre>
  *
  * @author Cedric Champeau
  * @since 2.1.0

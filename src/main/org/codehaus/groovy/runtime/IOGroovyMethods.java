@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.callClosureForLin
  * Static methods are used with the first parameter being the destination class,
  * i.e. <code>public static long size(File self)</code>
  * provides a <code>size()</code> method for <code>File</code>.
- * <p/>
+ * <p>
  * NOTE: While this class contains many 'public' static methods, it is
  * primarily regarded as an internal class (its internal package name
  * suggests this also). We value backwards compatibility of these
@@ -479,7 +479,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * the given regex separator. For each line, the given closure is called with
      * a single parameter being the list of strings computed by splitting the line
      * around matches of the given regular expression.  The Reader is closed afterwards.
-     * <p/>
+     * <p>
      * Here is an example:
      * <pre>
      * def s = 'The 3 quick\nbrown 4 fox'
@@ -509,7 +509,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * the given regex separator Pattern. For each line, the given closure is called with
      * a single parameter being the list of strings computed by splitting the line
      * around matches of the given regular expression.  The Reader is closed afterwards.
-     * <p/>
+     * <p>
      * Here is an example:
      * <pre>
      * def s = 'The 3 quick\nbrown 4 fox'

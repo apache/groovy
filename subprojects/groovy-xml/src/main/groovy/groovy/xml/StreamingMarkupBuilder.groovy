@@ -20,10 +20,10 @@ import groovy.xml.streamingmarkupsupport.StreamingMarkupWriter
 import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
 
 /**
- * <p>A builder class for creating XML markup.  This implementation uses a 
- * {@link StreamingMarkupWriter} to handle output.</p>
- * 
- * <p>Example:</p>
+ * A builder class for creating XML markup.  This implementation uses a
+ * {@link StreamingMarkupWriter} to handle output.
+ * <p>
+ * Example:
  * <pre>System.out << new StreamingMarkupBuilder().bind {
  *   root {
  *     a( a1:'one' ) {
@@ -221,9 +221,10 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
     def encoding = null
 
     /**
-     * <p>Returns a {@link Writable} object, which may be used to render
-     * the markup directly to a String, or send the output to a stream.</p>
-     * <p>Examples:</p>
+     * Returns a {@link Writable} object, which may be used to render
+     * the markup directly to a String, or send the output to a stream.
+     * <p>
+     * Examples:
      * <pre>
      * // get the markup as a string:
      * new StreamingMarkupBuilder().bind { div { out << "hello world" } }.toString()
@@ -232,6 +233,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
      * new StreamingMarkupBuilder().bind { div { out << "hello world" } } \
      *      .writeTo( new File('myFile.xml').newWriter() )
      * </pre>
+     *
      * @return a {@link Writable} to render the markup
      */
     public bind(closure) {
@@ -248,8 +250,9 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
     /**
      * Convenience method for binding a single node.
      * The call <code>bindNode(node)</code> is equivalent to <code>bind{ out << node }</code>.
-     * <p>Returns a {@link Writable} object, which may be used to render
-     * the markup directly to a String, or send the output to a stream.</p>
+     * Returns a {@link Writable} object, which may be used to render
+     * the markup directly to a String, or send the output to a stream.
+     *
      * @see #bind(Closure)
      * @return a {@link Writable} to render the markup
      */

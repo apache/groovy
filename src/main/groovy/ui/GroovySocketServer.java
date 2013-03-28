@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,13 @@ import java.net.Socket;
 import java.net.URL;
 
 /**
- * Simple server that executes supplied script against a socket. <br/><br/>
- *
+ * Simple server that executes supplied script against a socket.
+ * <p>
  * Typically this is used from the groovy command line agent but it can be 
  * invoked programatically. To run this program from the command line please
  * refer to the command line documentation at <a href="http://groovy.codehaus.org/Groovy+CLI">
- * Groovy CLI</a>. <br/><br/>
- * 
+ * Groovy CLI</a>.
+ * <p>
  * Here is an example of how to use this class to open a listening socket on the server, 
  * listen for incoming data, and then echo the data back to the client in reverse order: 
  * <pre>
@@ -45,14 +45,13 @@ import java.net.URL;
  *         true,                   // return result to client
  *         1960)                   //port
  * </pre>
- * There are several variables in the script binding: </br>
+ * There are several variables in the script binding:
  * <ul>
  * <li>line - The data from the socket</li> 
  * <li>out - The output PrintWriter, should you need it for some reason.</li> 
  * <li>socket - The socket, should you need it for some reason.</li> 
  * </ul>
  * 
- * @version $Id$
  * @author Jeremy Rayner
  */
 public class GroovySocketServer implements Runnable {

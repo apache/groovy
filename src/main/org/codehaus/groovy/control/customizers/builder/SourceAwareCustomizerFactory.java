@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <p>Factory for use with {@link CompilerCustomizationBuilder}. Allows the construction of {@link SourceAwareCustomizer
- * source aware customizers}. Syntax:</p>
+ * Factory for use with {@link CompilerCustomizationBuilder}. Allows the construction of {@link SourceAwareCustomizer
+ * source aware customizers}. Syntax:
  * <pre><code>
  *     // apply CompileStatic AST annotation on .sgroovy files
  *     builder.source(extension: 'sgroovy') {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ public final class ListWithDefault<T> implements List<T> {
      * Returns the element at the given index but grows the list if needed. If the requested {@code index} is
      * greater than or equal to {@code size()}, the list will grow to the new size and a default value calculated
      * using the <code>initClosure</code> will be used to populate the missing value and returned.
-     * <p/>
+     * <p>
      * If <code>lazyDefaultValues</code> is <code>true</code> any gaps when growing the list are filled
      * with nulls. Subsequent attempts to retrieve items from the list from those gap index values
      * will, upon finding null, call the <code>initClosure</code> to populate the list for the
@@ -128,7 +128,7 @@ public final class ListWithDefault<T> implements List<T> {
      * eagerly by calling the <code>initClosure</code> for all gap indexes during list growth.
      * No calls to <code>initClosure</code> are made except during list growth and it is ok to
      * store null values in the list when in this mode.
-     * <p/>
+     * <p>
      * This implementation breaks
      * the contract of {@link java.util.List#get(int)} as it a) possibly modifies the underlying list and b) does
      * NOT throw an {@link IndexOutOfBoundsException} when {@code index < 0 || index >= size()}.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,29 +32,28 @@ import java.util.*;
  * This customizer allows securing source code by controlling what code constructs are allowed. For example, if you only
  * want to allow arithmetic operations in a groovy shell, you can configure this customizer to restrict package imports,
  * method calls and so on.
- * <p/>
+ * <p>
  * Most of the securization options found in this class work with either blacklist or whitelist. This means that, for a
  * single option, you can set a whitelist OR a blacklist, but not both. You can mix whitelist/blacklist strategies for
  * different options. For example, you can have import whitelist and tokens blacklist.
- * <p/>
+ * <p>
  * The recommanded way of securing shells is to use whitelists because it is guaranteed that future features of the
  * Groovy language won't be allowed by defaut. Using blacklists, you can limit the features of the languages by opting
  * out, but new language features would require you to update your configuration.
- * <p/>
+ * <p>
  * If you set neither a whitelist nor a blacklist, then everything is authorized.
- * <p/>
+ * <p>
  * Combinations of import and star imports constraints are authorized as long as you use the same type of list for both.
  * For example, you may use an import whitelist and a star import whitelist together, but you cannot use an import white
  * list with a star import blacklist. static imports are handled separately, meaning that blacklisting an import <b>
  * does not</b> prevent from using a static import.
- * <p/>
- * <p/>
+ * <p>
  * Eventually, if the features provided here are not sufficient, you may implement custom AST filtering handlers, either
  * implementing the {@link StatementChecker} interface or {@link ExpressionChecker} interface then register your
  * handlers thanks to the {@link #addExpressionCheckers(org.codehaus.groovy.control.customizers.SecureASTCustomizer.ExpressionChecker...)}
  * and {@link #addStatementCheckers(org.codehaus.groovy.control.customizers.SecureASTCustomizer.StatementChecker...)}
  * methods.
- * <p/>
+ * <p>
  * Here is an example of usage. We will create a groovy classloader which only supports arithmetic operations and imports
  * the java.lang.Math classes by default.
  *
@@ -115,7 +114,6 @@ import java.util.*;
  * @author Cedric Champeau
  * @author Guillaume Laforge
  * @author Hamlet D'Arcy
- * 
  * @since 1.8.0
  */
 public class SecureASTCustomizer extends CompilationCustomizer {

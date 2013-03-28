@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 
 /**
  * Class annotation used to assist in creating appropriate {@code equals()} and {@code hashCode()} methods.
- * <p/>
+ * <p>
  * It allows you to write classes in this shortened form:
  * <pre>
  * import groovy.transform.EqualsAndHashCode
@@ -42,15 +42,15 @@ import java.lang.annotation.Target;
  * </pre>
  * The {@code @EqualsAndHashCode} annotation instructs the compiler to execute an
  * AST transformation which adds the necessary equals and hashCode methods to the class.
- * <p/>
+ * <p>
  * The {@code hashCode()} method is calculated using Groovy's {@code HashCodeHelper} class
  * which implements an algorithm similar to the one outlined in the book <em>Effective Java</em>.
- * <p/>
+ * <p>
  * The {@code equals()} method compares the values of the individual properties (and optionally fields)
  * of the class.  It can also optionally call equals on the super class. Two different equals method
  * implementations are supported both of which support the equals contract outlined in the javadoc
  * for <code>java.lang.Object</code>
- * <p/>
+ * <p>
  * To illustrate the 'canEqual' implementation style (see http://www.artima.com/lejava/articles/equality.html
  * for further details), consider this class:
  * <pre>
@@ -135,12 +135,12 @@ import java.lang.annotation.Target;
  * allowed) which have only <code>java.lang.Object</code> as a super class.
  * Most {@code @Immutable} classes fall in to this category. For such classes,
  * there is no need to introduce the <code>canEqual()</code> method.
- * <p/>
+ * <p>
  * Note that if you explicitly set <code>useCanEqual=false</code> for child nodes
  * in a class hierarchy but have it <code>true</code> for parent nodes and you
  * also have <code>callSuper=true</code> in the child, then your generated
  * equals methods will not strictly follow the equals contract.
- * <p/>
+ * <p>
  * Note that when used in the recommended fashion, the two implementations supported adhere
  * to the equals contract. You can provide your own equivalence relationships if you need,
  * e.g. for comparing instances of the <code>IntPair</code> and <code>IntTriple</code> classes

@@ -30,7 +30,7 @@ import java.io.Writer;
 
 /**
  * Represents any closure object in Groovy.
- * <p/>
+ * <p>
  * Groovy allows instances of Closures to be called in a
  * short form. For example:
  * <pre>
@@ -618,7 +618,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
 
     /**
      * Support for Closure forward composition.
-     * <p/>
+     * <p>
      * Typical usage:
      * <pre>
      * def twice = { a -> a * 2 }
@@ -637,7 +637,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
 
     /**
      * Support for Closure reverse composition.
-     * <p/>
+     * <p>
      * Typical usage:
      * <pre>
      * def twice = { a -> a * 2 }
@@ -656,7 +656,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
 
     /* *
      * Alias for calling a Closure for non-closure arguments.
-     * <p/>
+     * <p>
      * Typical usage:
      * <pre>
      * def twice = { a -> a * 2 }

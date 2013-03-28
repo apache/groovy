@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,12 @@ import javax.management.NotificationFilterSupport
  * This factory class is used to create an listener() node for JmxBuilder.  Listener nodes are used
  * to create a generic event listener (that is automatically registered with the MBean) that can handle
  * any event broadcasted on the MBeanServer's event bus.
- *
- * <p> Syntax supported </p>
- *
+ * <p>
+ * Syntax supported:
  * <pre>
  * JmxBuilder.listener(event:"event type", from:"Object Name"|ObjectName(), call:{event->
  *   // event handling code here.
- *})
+ * })
  * </pre>
  *
  * @author Vladimir Vivien

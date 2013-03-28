@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,14 +30,14 @@ import java.util.Map;
  * Classloaders are ignored first. If a class or resource
  * can't be found in the classpath of the RootLoader, then parent is
  * checked.
- * <p/>
+ * <p>
  * <b>Note:</b> this is very against the normal behavior of
  * classloaders. Normal is to first check parent and then look in
  * the resources you gave this classloader.
- * <p/>
+ * <p>
  * It's possible to add urls to the classpath at runtime through
  * {@link <a href="#addURL(URL)">addURL(URL)</a>}
- * <p/>
+ * <p>
  * <b>Why using RootLoader?</b>
  * If you have to load classes with multiple classloaders and a
  * classloader does know a class which depends on a class only
@@ -46,9 +46,9 @@ import java.util.Map;
  * to redirect it's search for the class to the parent first.
  * That way the child can load the class. If the child does not
  * have all classes to do this, this fails of course.
- * <p/>
+ * <p>
  * For example:
- * <p/>
+ * <p>
  * <pre>
  *       parentLoader   (has classpath: a.jar;c.jar)
  *           |

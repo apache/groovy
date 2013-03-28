@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,24 +45,27 @@ import org.codehaus.groovy.transform.AnnotationCollectorTransform;
  *          }
  *          assert Foo.class.annotations.size()==3 
  *          assert new Foo(1,2).toString() == "Foo(2)"
- * </pre>In the example above we have Alias as the alias annotation and an argument 
+ * </pre>
+ * In the example above we have Alias as the alias annotation and an argument
  * excludes which will be mapped to ToString and EqualsAndHashCode. Immutable 
- * doesn't have excludes, thus nothing will be done there.<br/>
- * The other way is to add annotations to the alias:<pre>
- *          import groovy.transform.*
- *          &#64;ToString(excludes=["a"])
- *          &#64EqualsAndHashCode
- *          &#64Immutable
- *          &#64;AnnotationCollector
- *          &#64;interface Alias {}
-
- *          &#64;Alias
- *          class Foo {
- *              Integer a, b
- *          }
- *          assert Foo.class.annotations.size()==3 
- *          assert new Foo(1,2).toString() == "Foo(2)" 
- * </pre>In the example above we have again Alias as the alias annotation, but
+ * doesn't have excludes, thus nothing will be done there.<br>
+ * The other way is to add annotations to the alias:
+ * <pre>
+ * import groovy.transform.*
+ * &#64;ToString(excludes=["a"])
+ * &#64;EqualsAndHashCode
+ * &#64;Immutable
+ * &#64;AnnotationCollector
+ * &#64;interface Alias {}
+ *
+ * &#64;Alias
+ * class Foo {
+ *     Integer a, b
+ * }
+ * assert Foo.class.annotations.size()==3
+ * assert new Foo(1,2).toString() == "Foo(2)"
+ * </pre>
+ * In the example above we have again Alias as the alias annotation, but
  * this time the argument is part of the alias. Instead of mapping excludes to
  * ToString as well as EqualsAndHashCode, only ToString will have the excludes.
  * Again the alias can have an argument excludes, which would overwrite the 

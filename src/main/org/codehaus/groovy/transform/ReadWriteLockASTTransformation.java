@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 /**
- * Handles generation of code for the {@code @}WithReadLock and {@code @}WithWriteLock annotation. <br/>
- * This transformation adds an instance of ReentrantReadWriteLock to the class. <br/>
- * Any method annotated with @WithReadLock will obtain a read lock and release it in a finally block.<br/>
- * Any method annotated with @WithWriteLock will obtain a write lock and release it in a finally block.<br/>
- * For more information see {@link WithReadLock} and {@link WithWriteLock}<br/>
+ * Handles generation of code for the {@code @}WithReadLock and {@code @}WithWriteLock annotation.<br>
+ * This transformation adds an instance of ReentrantReadWriteLock to the class.<br>
+ * Any method annotated with {@code @}WithReadLock will obtain a read lock and release it in a finally block.<br>
+ * Any method annotated with {@code @}WithWriteLock will obtain a write lock and release it in a finally block.<br>
+ * For more information see {@link WithReadLock} and {@link WithWriteLock}
+ *
  * @author Hamlet D'Arcy
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
