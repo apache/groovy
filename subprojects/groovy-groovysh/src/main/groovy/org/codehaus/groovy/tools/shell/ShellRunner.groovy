@@ -90,7 +90,7 @@ abstract class ShellRunner
         
         // Ignore empty lines
         if (line.trim().size() > 0) {
-            def result = shell << line
+            shell << line
         }
         
         return true
