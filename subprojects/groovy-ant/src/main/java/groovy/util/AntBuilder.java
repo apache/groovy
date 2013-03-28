@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.apache.tools.ant.dispatch.DispatchUtils;
 import org.apache.tools.ant.helper.AntXMLContext;
 import org.apache.tools.ant.helper.ProjectHelper2;
 import org.codehaus.groovy.ant.FileScanner;
+import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXParseException;
@@ -34,6 +35,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,6 +52,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Dierk Koenig (dk)
  * @author Marc Guillemot
+ * @author Paul King
  */
 public class AntBuilder extends BuilderSupport {
 
@@ -63,6 +66,16 @@ public class AntBuilder extends BuilderSupport {
     private Object lastCompletedNode;
     // true when inside a task so special ant.target handling occurs just at top level
     boolean insideTask;
+
+    private boolean savingStreams = true;
+    private static AtomicInteger streamCount = new AtomicInteger();
+    private static InputStream savedIn;
+    private static PrintStream savedErr;
+    private static PrintStream savedOut;
+    private static DemuxInputStream demuxInputStream;
+    private static DemuxOutputStream demuxOutputStream;
+    private static DemuxOutputStream demuxErrorStream;
+    private static InputStream savedProjectInputStream;
 
     public AntBuilder() {
         this(createProject());
@@ -87,14 +100,14 @@ public class AntBuilder extends BuilderSupport {
         collectorTarget.setProject(project);
         antXmlContext.setCurrentTarget(collectorTarget);
         antXmlContext.setLocator(new AntBuilderLocator());
-        antXmlContext.setCurrentTargets(new HashMap());
+        antXmlContext.setCurrentTargets(new HashMap<String, Target>());
 
         implicitTarget = new Target();
         implicitTarget.setProject(project);
         implicitTarget.setName("");
         antXmlContext.setImplicitTarget(implicitTarget);
 
-        // FileScanner is a Groovy hack (utility?)
+        // FileScanner is a Groovy utility
         project.addDataTypeDefinition("fileScanner", FileScanner.class);
     }
 
@@ -132,6 +145,27 @@ public class AntBuilder extends BuilderSupport {
      */
     public AntXMLContext getAntXmlContext() {
         return antXmlContext;
+    }
+
+    /**
+     * Whether stdin, stdout, stderr streams are saved.
+     *
+     * @return true if we are saving streams
+     * @see #setSavingStreams(boolean)
+     */
+    public boolean isSavingStreams() {
+        return savingStreams;
+    }
+
+    /**
+     * Indicates that we save stdin, stdout, stderr and replace them
+     * while AntBuilder is executing tasks with
+     * streams that funnel the normal streams into Ant's logs.
+     *
+     * @param savingStreams set to false to disable this behavior
+     */
+    public void setSavingStreams(boolean savingStreams) {
+        this.savingStreams = savingStreams;
     }
 
     /**
@@ -203,27 +237,47 @@ public class AntBuilder extends BuilderSupport {
                 throw new BuildException("antcall not supported within AntBuilder, consider using 'ant.project.executeTarget('targetName')' instead.");
             }
 
-            // save original streams
-            InputStream savedProjectInputStream = project.getDefaultInputStream();
-            InputStream savedIn = System.in;
-            PrintStream savedErr = System.err;
-            PrintStream savedOut = System.out;
+            if (savingStreams) {
+                // save original streams
+                int currentStreamCount = streamCount.getAndIncrement();
+                if (currentStreamCount == 0) {
+                    // we are first, save the streams
+                    savedProjectInputStream = project.getDefaultInputStream();
+                    savedIn = System.in;
+                    savedErr = System.err;
+                    savedOut = System.out;
 
-            if (!(savedIn instanceof DemuxInputStream)) {
-                project.setDefaultInputStream(savedIn);
-                System.setIn(new DemuxInputStream(project));
+                    if (!(savedIn instanceof DemuxInputStream)) {
+                        project.setDefaultInputStream(savedIn);
+                        demuxInputStream = new DemuxInputStream(project);
+                        System.setIn(demuxInputStream);
+                    }
+                    demuxOutputStream = new DemuxOutputStream(project, false);
+                    System.setOut(new PrintStream(demuxOutputStream));
+                    demuxErrorStream = new DemuxOutputStream(project, true);
+                    System.setErr(new PrintStream(demuxErrorStream));
+                }
             }
-            System.setOut(new PrintStream(new DemuxOutputStream(project, false)));
-            System.setErr(new PrintStream(new DemuxOutputStream(project, true)));
 
             try {
                 lastCompletedNode = performTask(task);
             } finally {
-                // restore original streams
-                project.setDefaultInputStream(savedProjectInputStream);
-                System.setIn(savedIn);
-                System.setOut(savedOut);
-                System.setErr(savedErr);
+                if (savingStreams) {
+                    int currentStreamCount = streamCount.decrementAndGet();
+                    if (currentStreamCount == 0) {
+                        // last to leave, turn out the lights: restore original streams
+                        project.setDefaultInputStream(savedProjectInputStream);
+                        System.setIn(savedIn);
+                        System.setOut(savedOut);
+                        System.setErr(savedErr);
+                        if (demuxInputStream != null) DefaultGroovyMethodsSupport.closeQuietly(demuxInputStream);
+                        DefaultGroovyMethodsSupport.closeQuietly(demuxOutputStream);
+                        DefaultGroovyMethodsSupport.closeQuietly(demuxErrorStream);
+                        demuxInputStream = null;
+                        demuxOutputStream = null;
+                        demuxErrorStream = null;
+                    }
+                }
             }
 
             // restore dummy collector target
