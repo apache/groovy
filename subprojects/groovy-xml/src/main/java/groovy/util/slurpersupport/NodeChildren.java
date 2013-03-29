@@ -32,7 +32,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  *
  * @author John Wilson
  */
-class NodeChildren extends GPathResult {
+public class NodeChildren extends GPathResult {
     private int size = -1;
 
     /**
