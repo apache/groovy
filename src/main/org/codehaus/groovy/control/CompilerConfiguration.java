@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.control;
 
+import groovy.lang.Script;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
@@ -657,6 +658,14 @@ public class CompilerConfiguration {
      */
     public void setScriptBaseClass(String scriptBaseClass) {
         this.scriptBaseClass = scriptBaseClass;
+    }
+
+    /**
+     * Sets the name of the base class for scripts.  It must be a subclass
+     * of Script.
+     */
+    public void setScriptBase(Class<? extends Script> baseClass) {
+        setScriptBaseClass(baseClass==null ? null : baseClass.getName());
     }
 
     public ParserPluginFactory getPluginFactory() {
