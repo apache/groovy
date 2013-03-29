@@ -35,7 +35,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,8 +66,8 @@ public class AntBuilder extends BuilderSupport {
     // true when inside a task so special ant.target handling occurs just at top level
     boolean insideTask;
 
-    private boolean savingStreams = true;
-    private static AtomicInteger streamCount = new AtomicInteger();
+    private boolean saveStreams = true;
+    private static Integer streamCount = 0;
     private static InputStream savedIn;
     private static PrintStream savedErr;
     private static PrintStream savedOut;
@@ -151,10 +150,10 @@ public class AntBuilder extends BuilderSupport {
      * Whether stdin, stdout, stderr streams are saved.
      *
      * @return true if we are saving streams
-     * @see #setSavingStreams(boolean)
+     * @see #setSaveStreams(boolean)
      */
-    public boolean isSavingStreams() {
-        return savingStreams;
+    public boolean isSaveStreams() {
+        return saveStreams;
     }
 
     /**
@@ -162,10 +161,10 @@ public class AntBuilder extends BuilderSupport {
      * while AntBuilder is executing tasks with
      * streams that funnel the normal streams into Ant's logs.
      *
-     * @param savingStreams set to false to disable this behavior
+     * @param saveStreams set to false to disable this behavior
      */
-    public void setSavingStreams(boolean savingStreams) {
-        this.savingStreams = savingStreams;
+    public void setSaveStreams(boolean saveStreams) {
+        this.saveStreams = saveStreams;
     }
 
     /**
@@ -237,45 +236,51 @@ public class AntBuilder extends BuilderSupport {
                 throw new BuildException("antcall not supported within AntBuilder, consider using 'ant.project.executeTarget('targetName')' instead.");
             }
 
-            if (savingStreams) {
+            if (saveStreams) {
                 // save original streams
-                int currentStreamCount = streamCount.getAndIncrement();
-                if (currentStreamCount == 0) {
-                    // we are first, save the streams
-                    savedProjectInputStream = project.getDefaultInputStream();
-                    savedIn = System.in;
-                    savedErr = System.err;
-                    savedOut = System.out;
+                synchronized (AntBuilder.class) {
+                    int currentStreamCount = streamCount++;
+                    if (currentStreamCount == 0) {
+                        // we are first, save the streams
+                        savedProjectInputStream = project.getDefaultInputStream();
+                        savedIn = System.in;
+                        savedErr = System.err;
+                        savedOut = System.out;
 
-                    if (!(savedIn instanceof DemuxInputStream)) {
-                        project.setDefaultInputStream(savedIn);
-                        demuxInputStream = new DemuxInputStream(project);
-                        System.setIn(demuxInputStream);
+                        if (!(savedIn instanceof DemuxInputStream)) {
+                            project.setDefaultInputStream(savedIn);
+                            demuxInputStream = new DemuxInputStream(project);
+                            System.setIn(demuxInputStream);
+                        }
+                        demuxOutputStream = new DemuxOutputStream(project, false);
+                        System.setOut(new PrintStream(demuxOutputStream));
+                        demuxErrorStream = new DemuxOutputStream(project, true);
+                        System.setErr(new PrintStream(demuxErrorStream));
                     }
-                    demuxOutputStream = new DemuxOutputStream(project, false);
-                    System.setOut(new PrintStream(demuxOutputStream));
-                    demuxErrorStream = new DemuxOutputStream(project, true);
-                    System.setErr(new PrintStream(demuxErrorStream));
                 }
             }
 
             try {
                 lastCompletedNode = performTask(task);
             } finally {
-                if (savingStreams) {
-                    int currentStreamCount = streamCount.decrementAndGet();
-                    if (currentStreamCount == 0) {
-                        // last to leave, turn out the lights: restore original streams
-                        project.setDefaultInputStream(savedProjectInputStream);
-                        System.setIn(savedIn);
-                        System.setOut(savedOut);
-                        System.setErr(savedErr);
-                        if (demuxInputStream != null) DefaultGroovyMethodsSupport.closeQuietly(demuxInputStream);
-                        DefaultGroovyMethodsSupport.closeQuietly(demuxOutputStream);
-                        DefaultGroovyMethodsSupport.closeQuietly(demuxErrorStream);
-                        demuxInputStream = null;
-                        demuxOutputStream = null;
-                        demuxErrorStream = null;
+                if (saveStreams) {
+                    synchronized (AntBuilder.class) {
+                        int currentStreamCount = --streamCount;
+                        if (currentStreamCount == 0) {
+                            // last to leave, turn out the lights: restore original streams
+                            project.setDefaultInputStream(savedProjectInputStream);
+                            System.setOut(savedOut);
+                            System.setErr(savedErr);
+                            if (demuxInputStream != null) {
+                                System.setIn(savedIn);
+                                DefaultGroovyMethodsSupport.closeQuietly(demuxInputStream);
+                                demuxInputStream = null;
+                            }
+                            DefaultGroovyMethodsSupport.closeQuietly(demuxOutputStream);
+                            DefaultGroovyMethodsSupport.closeQuietly(demuxErrorStream);
+                            demuxOutputStream = null;
+                            demuxErrorStream = null;
+                        }
                     }
                 }
             }
