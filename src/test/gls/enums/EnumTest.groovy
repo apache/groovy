@@ -496,6 +496,22 @@ class EnumTest extends CompilableTestSupport {
             assert "foo1" == MyEnum.INSTANCE.foo()
         """
     }
+
+    void testLenientTypeDefinitions() {
+        // GROOVY-4794
+        assertScript """
+            enum E {
+              enConst {
+                @Lazy pi = 3.14
+                def twopi = 6.28
+                def foo(){ "" + pi + " " + twopi }
+                public bar(){ "" + twopi + " " + pi }
+              }
+            }
+            assert E.enConst.foo() == '3.14 6.28'
+            assert E.enConst.bar() == '6.28 3.14'
+        """
+    }
 }
 
 enum UsCoin {
