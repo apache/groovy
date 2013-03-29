@@ -61,7 +61,7 @@ public final class Logger {
             color = RED;
         }
 
-        io.out.println(ansi().a(INTENSITY_BOLD).a(color).a(level).reset().a(" [").a(name).a("] ").a(msg));
+        io.out.println(ansi().a(INTENSITY_BOLD).fg(color).a(level).reset().a(" [").a(name).a("] ").a(msg));
 
         if (cause != null) {
             cause.printStackTrace(io.out);
