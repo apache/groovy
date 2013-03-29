@@ -32,7 +32,7 @@ import java.util.ArrayList;
  *
  * @author John Wilson
  */
-class Attributes extends NodeChildren {
+public class Attributes extends NodeChildren {
     final String attributeName;
 
     /**
