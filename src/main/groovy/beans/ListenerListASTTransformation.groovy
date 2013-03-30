@@ -140,7 +140,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                                 )
                         ),
                         new ReturnStatement(ConstantExpression.NULL),
-                        new EmptyStatement()
+                        EmptyStatement.INSTANCE
                 ),
                 new IfStatement(
                         new BooleanExpression(
@@ -157,7 +157,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                                         new ListExpression()
                                 )
                         ),
-                        new EmptyStatement()
+                        EmptyStatement.INSTANCE
                 ),
                 new ExpressionStatement(
                         new MethodCallExpression(new VariableExpression(field.name), new ConstantExpression('add'), new ArgumentListExpression(new VariableExpression('listener')))
@@ -202,7 +202,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                                 )
                         ),
                         new ReturnStatement(ConstantExpression.NULL),
-                        new EmptyStatement()
+                        EmptyStatement.INSTANCE
                 ),
                 new IfStatement(
                         new BooleanExpression(
@@ -219,7 +219,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                                         new ListExpression()
                                 )
                         ),
-                        new EmptyStatement()
+                        EmptyStatement.INSTANCE
                 ),
                 new ExpressionStatement(
                         new MethodCallExpression(new VariableExpression(field.name), new ConstantExpression('remove'), new ArgumentListExpression(new VariableExpression("listener")))
@@ -269,7 +269,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                         new ExpressionStatement(
                                 new MethodCallExpression(new VariableExpression('__result'), new ConstantExpression('addAll'), new ArgumentListExpression(new VariableExpression(field.name)))
                         ),
-                        new EmptyStatement()
+                        EmptyStatement.INSTANCE
                 ),
                 new ReturnStatement(
                         new CastExpression(
@@ -343,7 +343,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                                         ], new VariableScope())
                                 )
                         ], new VariableScope()),
-                        new EmptyStatement()
+                        EmptyStatement.INSTANCE
                 )
         ])
 

@@ -45,26 +45,26 @@ class BytecodeHelperTest extends GroovyTestCase {
 
     void testMethodDescriptorMethodNode() {
         assertEquals("()V",
-                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], new EmptyStatement())))
+                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
 
         assertEquals("()Ljava/lang/String;",
-                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], new EmptyStatement())))
+                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
 
         assertEquals("()B",
-                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.byte_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], new EmptyStatement())))
+                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.byte_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
         assertEquals("()C",
-                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.char_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], new EmptyStatement())))
+                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.char_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
         assertEquals("()D",
-                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.double_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], new EmptyStatement())))
+                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.double_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
         assertEquals("()F",
-                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.float_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], new EmptyStatement())))
+                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.float_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
         assertEquals("()I",
-                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], new EmptyStatement())))
+                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
         assertEquals("()J",
-                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.long_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], new EmptyStatement())))
+                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.long_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
         assertEquals("()S",
-                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.short_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], new EmptyStatement())))
+                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.short_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
         assertEquals("()Z",
-                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.boolean_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], new EmptyStatement())))
+                BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.boolean_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
     }
 }

@@ -115,7 +115,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             body.addStatement(new IfStatement(
                     equalsNullExpr(savedToString),
                     assignStatement(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, body)),
-                    new EmptyStatement()
+                    EmptyStatement.INSTANCE
             ));
             tempToString = savedToString;
         } else {

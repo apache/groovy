@@ -783,7 +783,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
                         ),
                         new CaseStatement(
                                 new ConstantExpression(1),
-                                new EmptyStatement()
+                                EmptyStatement.INSTANCE
                         ),
                         new CaseStatement(
                                 new ConstantExpression(2),
@@ -936,7 +936,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
                         )],
                         new VariableScope()
                 ),
-                new EmptyStatement()
+                EmptyStatement.INSTANCE
         )
         expected.addCatch(
                 new CatchStatement(

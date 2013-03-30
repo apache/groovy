@@ -157,7 +157,7 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
                         new ConstructorCallExpression(thrownExceptionType,
                                 new ArgumentListExpression(new ConstantExpression(getErrorMessage())))
                 ),
-                new EmptyStatement()
+                EmptyStatement.INSTANCE
         );
     }
 

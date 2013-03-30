@@ -89,7 +89,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             body.addStatement(new IfStatement(
                     isZeroExpr(hash),
                     calculateHashStatements(cNode, hash, includeFields, callSuper, excludes, includes),
-                    new EmptyStatement()
+                    EmptyStatement.INSTANCE
             ));
             body.addStatement(new ReturnStatement(hash));
         } else {
@@ -179,7 +179,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             body.addStatement(returnFalseIfNotInstanceof(cNode, other));
             body.addStatement(new IfStatement(
                     new BooleanExpression(new MethodCallExpression(other, "canEqual", VariableExpression.THIS_EXPRESSION)),
-                    new EmptyStatement(),
+                    EmptyStatement.INSTANCE,
                     new ReturnStatement(ConstantExpression.FALSE)
             ));
         } else {
@@ -205,7 +205,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         if (callSuper) {
             body.addStatement(new IfStatement(
                     isTrueExpr(new MethodCallExpression(VariableExpression.SUPER_EXPRESSION, "equals", other)),
-                    new EmptyStatement(),
+                    EmptyStatement.INSTANCE,
                     new ReturnStatement(ConstantExpression.FALSE)
             ));
         }

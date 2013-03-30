@@ -434,7 +434,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             Expression pExpr = new VariableExpression(pNode);
             Statement thenBlock = assignStatement(pExpr, new PropertyExpression(namedArgs, pNode.getName()));
             knownNames.add(pNode.getName());
-            IfStatement ifStatement = new IfStatement(ifTest, thenBlock, new EmptyStatement());
+            IfStatement ifStatement = new IfStatement(ifTest, thenBlock, EmptyStatement.INSTANCE);
             code.addStatement(ifStatement);
         }
         Expression checkArgs = new ArgumentListExpression(new VariableExpression("this"), namedArgs);

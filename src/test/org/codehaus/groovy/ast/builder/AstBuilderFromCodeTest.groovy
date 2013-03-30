@@ -536,7 +536,7 @@ public class AstBuilderFromCodeTest extends GroovyTestCase {
                                 ),
                                 new CaseStatement(
                                         new ConstantExpression(1),
-                                        new EmptyStatement()
+                                        EmptyStatement.INSTANCE
                                 ),
                                 new CaseStatement(
                                         new ConstantExpression(2),

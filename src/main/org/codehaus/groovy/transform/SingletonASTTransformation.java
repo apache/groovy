@@ -123,7 +123,7 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
                         new ConstructorCallExpression(ClassHelper.make(RuntimeException.class),
                                 new ArgumentListExpression(
                                             new ConstantExpression("Can't instantiate singleton " + classNode.getName() + ". Use " + classNode.getName() + "." + propertyName)))),
-                new EmptyStatement()));
+                    EmptyStatement.INSTANCE));
             classNode.addConstructor(new ConstructorNode(ACC_PRIVATE, body));
         }
     }

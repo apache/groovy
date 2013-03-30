@@ -161,7 +161,7 @@ public class TimedInterruptibleASTTransformation implements ASTTransformation {
                               )
                       )
               ),
-              new EmptyStatement()
+              EmptyStatement.INSTANCE
       )
     }
 

@@ -285,7 +285,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         final Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
         doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
                 equalsNullExpr(new VariableExpression("args")),
-                new EmptyStatement(),
+                EmptyStatement.INSTANCE,
                 body)));
     }
 
@@ -294,7 +294,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         Expression value = findArg(name);
         return new IfStatement(
                 equalsNullExpr(value),
-                new EmptyStatement(),
+                EmptyStatement.INSTANCE,
                 new ThrowStatement(new ConstructorCallExpression(READONLYEXCEPTION_TYPE,
                         new ArgumentListExpression(new ConstantExpression(name),
                                 new ConstantExpression(cNode.getName())))));
@@ -310,7 +310,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 equalsNullExpr(baseArgs),
                 new IfStatement(
                         equalsNullExpr(initExpr),
-                        new EmptyStatement(),
+                        EmptyStatement.INSTANCE,
                         assignStatement(fieldExpr, cloneCollectionExpr(initExpr))),
                 new IfStatement(
                         equalsNullExpr(namedArgs),
@@ -381,7 +381,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 equalsNullExpr(unknown),
                 new IfStatement(
                         equalsNullExpr(initExpr),
-                        new EmptyStatement(),
+                        EmptyStatement.INSTANCE,
                         assignStatement(fieldExpr, checkUnresolved(cNode, fNode, initExpr))),
                 assignStatement(fieldExpr, checkUnresolved(cNode, fNode, unknown)));
     }
@@ -400,7 +400,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 equalsNullExpr(collection),
                 new IfStatement(
                         equalsNullExpr(initExpr),
-                        new EmptyStatement(),
+                        EmptyStatement.INSTANCE,
                         assignStatement(fieldExpr, cloneCollectionExpr(initExpr))),
                 new IfStatement(
                         isInstanceOf(collection, CLONEABLE_TYPE),

@@ -133,7 +133,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         BlockStatement initBody = new BlockStatement();
         if (cNode.getDeclaredConstructors().size() == 0) {
             // add no-arg constructor
-            initBody.addStatement(new EmptyStatement());
+            initBody.addStatement(EmptyStatement.INSTANCE);
             cNode.addConstructor(ACC_PUBLIC, new Parameter[0], ClassNode.EMPTY_ARRAY, initBody);
             initBody = new BlockStatement();
         }
@@ -164,7 +164,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         if (cNode.getDeclaredConstructors().size() == 0) {
             // add no-arg constructor
             BlockStatement initBody = new BlockStatement();
-            initBody.addStatement(new EmptyStatement());
+            initBody.addStatement(EmptyStatement.INSTANCE);
             cNode.addConstructor(ACC_PUBLIC, new Parameter[0], ClassNode.EMPTY_ARRAY, initBody);
         }
         final BlockStatement cloneBody = new BlockStatement();
@@ -211,7 +211,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             Expression from = new MethodCallExpression(fieldExpr, "clone", MethodCallExpression.NO_ARGUMENTS);
             Expression to = new PropertyExpression(result, fieldNode.getName());
             Statement doClone = assignStatement(to, from);
-            Statement doNothing = new EmptyStatement();
+            Statement doNothing = EmptyStatement.INSTANCE;
             body.addStatement(new IfStatement(isInstanceOf(fieldExpr, CLONEABLE_TYPE), doClone, doNothing));
         }
         body.addStatement(new ReturnStatement(result));
