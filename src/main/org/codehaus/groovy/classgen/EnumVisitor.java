@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,44 @@
  */
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.ImmutableASTTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
+import static org.codehaus.groovy.transform.AbstractASTTransformUtil.assignStatement;
 
 public class EnumVisitor extends ClassCodeVisitorSupport {
-
+    private static final ClassNode MAP_TYPE = ClassHelper.makeWithoutCaching(Map.class, false);
+    private static final ClassNode COLLECTIONS_TYPE = ClassHelper.makeWithoutCaching(Collections.class);
+    private static final ClassNode CHECK_METHOD_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
     // some constants for modifiers
     private static final int FS = Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
     private static final int PS = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
@@ -309,9 +331,10 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                 }
             } else {
                 ListExpression oldArgs = (ListExpression) field.getInitialExpression();
+                List<MapEntryExpression> savedMapEntries = new ArrayList<MapEntryExpression>();
                 for (Expression exp : oldArgs.getExpressions()) {
                     if (exp instanceof MapEntryExpression) {
-                        addError(exp, "The usage of a map entry expression to initialize an Enum is currently not supported, please use an explicit map instead.");
+                        savedMapEntries.add((MapEntryExpression) exp);
                         continue;
                     }
 
@@ -344,6 +367,12 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                         }
                     }
                     args.addExpression(exp);
+                }
+                if (savedMapEntries.size() > 0) {
+                    args.getExpressions().add(2, new MapExpression(savedMapEntries));
+                    if (enumClass.getDeclaredConstructors().size() == 0) {
+                        addMapConstructor(enumClass);
+                    }
                 }
             }
             field.setInitialValueExpression(null);
@@ -391,6 +420,32 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             enumClass.addField(values);
         }
         enumClass.addStaticInitializerStatements(block, true);
+    }
+
+    private void addMapConstructor(ClassNode enumClass) {
+        Parameter[] parameters = new Parameter[1];
+        parameters[0] = new Parameter(MAP_TYPE, "namedArgs");
+        BlockStatement code = new BlockStatement();
+        List<String> knownNames = new ArrayList<String>();
+        VariableExpression namedArgs = new VariableExpression("namedArgs");
+        for (PropertyNode pNode : enumClass.getProperties()) {
+            // if namedArgs.containsKey(propertyName) setProperty(propertyName, namedArgs.get(propertyName));
+            BooleanExpression ifTest = new BooleanExpression(new MethodCallExpression(namedArgs, "containsKey", new ConstantExpression(pNode.getName())));
+            Expression pExpr = new VariableExpression(pNode);
+            Statement thenBlock = assignStatement(pExpr, new PropertyExpression(namedArgs, pNode.getName()));
+            knownNames.add(pNode.getName());
+            IfStatement ifStatement = new IfStatement(ifTest, thenBlock, new EmptyStatement());
+            code.addStatement(ifStatement);
+        }
+        Expression checkArgs = new ArgumentListExpression(new VariableExpression("this"), namedArgs);
+        code.addStatement(new ExpressionStatement(new StaticMethodCallExpression(CHECK_METHOD_TYPE, "checkPropNames", checkArgs)));
+        ConstructorNode init = new ConstructorNode(Opcodes.ACC_PUBLIC, parameters, ClassNode.EMPTY_ARRAY, code);
+        enumClass.addConstructor(init);
+        // add a no-arg constructor too
+        code = new BlockStatement();
+        code.addStatement(new ExpressionStatement(new ConstructorCallExpression(ClassNode.THIS, new StaticMethodCallExpression(COLLECTIONS_TYPE, "emptyMap", MethodCallExpression.NO_ARGUMENTS))));
+        init = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
+        enumClass.addConstructor(init);
     }
 
     private void addError(AnnotatedNode exp, String msg) {

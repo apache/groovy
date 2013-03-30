@@ -409,24 +409,6 @@ class EnumTest extends CompilableTestSupport {
         """
     }
 
-    void testNamedArguments() {
-        // this test is a result of GROOVY-4219 and should be changed once
-        // GROOVY-4582 is implemented.
-        shouldNotCompile """
-            enum ImageSortField {
-                FILENAME(field: null, name: null),
-                TIME(field: null, name: null)
-                
-                def field
-                def name
-            
-                public String toString(){
-                    name
-                }
-            }
-        """
-    }
-
     void testOverridingMethodsWithExplicitConstructor() {
         // GROOVY-6065
         assertScript """
@@ -510,6 +492,26 @@ class EnumTest extends CompilableTestSupport {
             }
             assert E.enConst.foo() == '3.14 6.28'
             assert E.enConst.bar() == '6.28 3.14'
+        """
+    }
+
+    void testNamedArgs() {
+        // GROOVY-4485
+        assertScript """
+            enum ExportFormat {
+                EXCEL_OOXML(mime: "application/vnd.ms-excel", extension: "xlsx"),
+                EXCEL_BINARY(mime: "application/vnd.ms-excel", extension: "xls"),
+                EXCEL_HTML(mime: "application/vnd.ms-excel", extension: "xls"),
+                FOO() // dummy const for testing
+                String mime, extension = 'default'
+            }
+
+            assert ExportFormat.EXCEL_BINARY.extension == 'xls'
+            ExportFormat.values().each{
+                assert it == ExportFormat.FOO || it.mime == 'application/vnd.ms-excel'
+            }
+            assert ExportFormat.EXCEL_HTML.ordinal() == 2
+            assert ExportFormat.FOO.extension == 'default'
         """
     }
 }
