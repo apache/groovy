@@ -608,7 +608,7 @@ options:
     void fileNewWindow(EventObject evt = null) {
         Console consoleController = new Console(
             new Binding(
-                new HashMap(shell.context.variables)))
+                new HashMap(shell.getContext().variables)))
         consoleController.systemOutInterceptor = systemOutInterceptor
         consoleController.systemErrorInterceptor = systemErrorInterceptor
         SwingBuilder swing = new SwingBuilder()
@@ -755,7 +755,7 @@ options:
             statusLabel.text = 'Execution complete.'
             appendOutputNl("Result: ", promptStyle)
             def obj = (visualizeScriptResults
-                ? OutputTransforms.transformResult(result, shell.context._outputTransforms)
+                ? OutputTransforms.transformResult(result, shell.getContext()._outputTransforms)
                 : result.toString())
 
             // multi-methods are magical!
@@ -825,7 +825,7 @@ options:
     }
 
     void inspectVariables(EventObject evt = null) {
-        ObjectBrowser.inspect(shell.context.variables)
+        ObjectBrowser.inspect(shell.getContext().variables)
     }
 
     void inspectAst(EventObject evt = null) {
@@ -1058,7 +1058,7 @@ options:
     // Adds a variable to the binding
     // Useful for adding variables before opening the console
     void setVariable(String name, Object value) {
-        shell.context.setVariable(name, value)
+        shell.getContext().setVariable(name, value)
     }
 
     void showAbout(EventObject evt = null) {
