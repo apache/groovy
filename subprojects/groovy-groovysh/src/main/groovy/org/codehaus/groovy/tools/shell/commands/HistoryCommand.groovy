@@ -111,7 +111,12 @@ class HistoryCommand
                 // so we need to shift by one
                 id--
             };
-            line = id<0?shell.evictedLine:history.historyList[id]
+            if (id < 0) {
+                line = shell.evictedLine
+            } else {
+                List histList = history.getHistoryList()
+                line = histList.get(id)
+            }
         }
         catch (Exception e) {
             fail("Invalid history identifier: $id", e)
