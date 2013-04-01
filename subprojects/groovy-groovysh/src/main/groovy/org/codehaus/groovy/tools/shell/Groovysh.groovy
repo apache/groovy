@@ -175,7 +175,7 @@ class Groovysh extends Shell {
     /**
      * Display the given buffer.
      */
-    private void displayBuffer(final List buffer) {
+    void displayBuffer(final List buffer) {
         assert buffer
 
         buffer.eachWithIndex { line, index ->
