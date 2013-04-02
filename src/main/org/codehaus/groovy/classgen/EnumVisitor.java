@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.assignStatement;
+import static org.codehaus.groovy.transform.AbstractASTTransformUtil.equalsNullExpr;
 
 public class EnumVisitor extends ClassCodeVisitorSupport {
     private static final ClassNode MAP_TYPE = ClassHelper.makeWithoutCaching(Map.class, false);
@@ -370,9 +372,9 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                 }
                 if (savedMapEntries.size() > 0) {
                     args.getExpressions().add(2, new MapExpression(savedMapEntries));
-                    if (enumClass.getDeclaredConstructors().size() == 0) {
-                        addMapConstructor(enumClass);
-                    }
+                }
+                if (enumClass.getDeclaredConstructors().size() == 0) {
+                    addMapConstructor(enumClass);
                 }
             }
             field.setInitialValueExpression(null);
@@ -424,21 +426,12 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
     private void addMapConstructor(ClassNode enumClass) {
         Parameter[] parameters = new Parameter[1];
-        parameters[0] = new Parameter(MAP_TYPE, "namedArgs");
+        parameters[0] = new Parameter(MAP_TYPE, "__namedArgs");
         BlockStatement code = new BlockStatement();
-        List<String> knownNames = new ArrayList<String>();
-        VariableExpression namedArgs = new VariableExpression("namedArgs");
-        for (PropertyNode pNode : enumClass.getProperties()) {
-            // if namedArgs.containsKey(propertyName) setProperty(propertyName, namedArgs.get(propertyName));
-            BooleanExpression ifTest = new BooleanExpression(new MethodCallExpression(namedArgs, "containsKey", new ConstantExpression(pNode.getName())));
-            Expression pExpr = new VariableExpression(pNode);
-            Statement thenBlock = assignStatement(pExpr, new PropertyExpression(namedArgs, pNode.getName()));
-            knownNames.add(pNode.getName());
-            IfStatement ifStatement = new IfStatement(ifTest, thenBlock, EmptyStatement.INSTANCE);
-            code.addStatement(ifStatement);
-        }
-        Expression checkArgs = new ArgumentListExpression(new VariableExpression("this"), namedArgs);
-        code.addStatement(new ExpressionStatement(new StaticMethodCallExpression(CHECK_METHOD_TYPE, "checkPropNames", checkArgs)));
+        VariableExpression namedArgs = new VariableExpression("__namedArgs");
+        code.addStatement(new IfStatement(equalsNullExpr(namedArgs),
+                illegalArgumentBlock(enumClass),
+                processArgsBlock(enumClass, namedArgs)));
         ConstructorNode init = new ConstructorNode(Opcodes.ACC_PUBLIC, parameters, ClassNode.EMPTY_ARRAY, code);
         enumClass.addConstructor(init);
         // add a no-arg constructor too
@@ -446,6 +439,32 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         code.addStatement(new ExpressionStatement(new ConstructorCallExpression(ClassNode.THIS, new StaticMethodCallExpression(COLLECTIONS_TYPE, "emptyMap", MethodCallExpression.NO_ARGUMENTS))));
         init = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
         enumClass.addConstructor(init);
+    }
+
+    private BlockStatement illegalArgumentBlock(ClassNode enumClass) {
+        BlockStatement outerElseBlock = new BlockStatement();
+        outerElseBlock.addStatement(new ThrowStatement(new ConstructorCallExpression(ClassHelper.make(IllegalArgumentException.class),
+                new ArgumentListExpression(new ConstantExpression(
+                        "One of the enum constants for enum " + enumClass.getName() +
+                                " was initialized with null. Please use a non-null value or define your own constructor.")))));
+        return outerElseBlock;
+    }
+
+    private BlockStatement processArgsBlock(ClassNode enumClass, VariableExpression namedArgs) {
+        BlockStatement outerThenBlock = new BlockStatement();
+        for (PropertyNode pNode : enumClass.getProperties()) {
+            if (pNode.isStatic()) continue;
+
+            // if namedArgs.containsKey(propertyName) setProperty(propertyName, namedArgs.get(propertyName));
+            BooleanExpression ifTest = new BooleanExpression(new MethodCallExpression(namedArgs, "containsKey", new ConstantExpression(pNode.getName())));
+            Expression pExpr = new VariableExpression(pNode);
+            Statement thenBlock = assignStatement(pExpr, new PropertyExpression(namedArgs, pNode.getName()));
+            IfStatement ifStatement = new IfStatement(ifTest, thenBlock, EmptyStatement.INSTANCE);
+            outerThenBlock.addStatement(ifStatement);
+        }
+        Expression checkArgs = new ArgumentListExpression(new VariableExpression("this"), namedArgs);
+        outerThenBlock.addStatement(new ExpressionStatement(new StaticMethodCallExpression(CHECK_METHOD_TYPE, "checkPropNames", checkArgs)));
+        return outerThenBlock;
     }
 
     private void addError(AnnotatedNode exp, String msg) {
