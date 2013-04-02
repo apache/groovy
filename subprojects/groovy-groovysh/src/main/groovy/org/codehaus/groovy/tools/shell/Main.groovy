@@ -20,10 +20,8 @@ import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.NoExitSecurityManager
-import java.util.concurrent.Callable
 import org.fusesource.jansi.Ansi
 import org.fusesource.jansi.AnsiConsole
-import jline.Terminal
 
 /**
  * Main CLI entry-point for <tt>groovysh</tt>.
@@ -203,10 +201,4 @@ class Main
     }
 }
 
-class AnsiDetector
-    implements Callable<Boolean>
-{
-    public Boolean call() throws Exception {
-        return Terminal.getTerminal().isANSISupported()
-    }
-}
+
