@@ -55,7 +55,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         javaSources = new LinkedList<String>();
         Map options = configuration.getJointCompilationOptions();
         generationGoal = (File) options.get("stubDir");
-        boolean useJava5 = configuration.getTargetBytecode().equals(CompilerConfiguration.POST_JDK5);
+        boolean useJava5 = CompilerConfiguration.isPostJDK5(configuration.getTargetBytecode());
         stubGenerator = new JavaStubGenerator(generationGoal, false, useJava5);
         keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
 

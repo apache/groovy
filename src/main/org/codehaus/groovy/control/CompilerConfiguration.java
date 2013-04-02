@@ -37,11 +37,24 @@ public class CompilerConfiguration {
 
     private static final String JDK5_CLASSNAME_CHECK = "java.lang.annotation.Annotation";
 
+    /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. **/
+    public static final String JDK4 = "1.4";
+    /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. **/
+    public static final String JDK5 = "1.5";
+    /** This (<code>"1.6"</code>) is the value for targetBytecode to compile for a JDK 1.6. **/
+    public static final String JDK6 = "1.6";
+    /** This (<code>"1.7"</code>) is the value for targetBytecode to compile for a JDK 1.7. **/
+    public static final String JDK7 = "1.7";
+    /** This (<code>"1.8"</code>) is the value for targetBytecode to compile for a JDK 1.8. **/
+    public static final String JDK8 = "1.8";
+
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5 or later JVM. **/
-    public static final String POST_JDK5 = "1.5";
-    
-    /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4 JVM. **/
-    public static final String PRE_JDK5 = "1.4";
+    public static final String POST_JDK5 = JDK5; // for backwards compatibility
+
+    /** This (<code>"1.4"<code/>) is the value for targetBytecode to compile for a JDK 1.4 JVM. **/
+    public static final String PRE_JDK5 = JDK4;
+
+    private static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7 };
 
     // Just call getVMVersion() once.
     public static final String currentJVMVersion = getVMVersion();
@@ -335,7 +348,31 @@ public class CompilerConfiguration {
         this();
         configure(configuration);
     }
-    
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 1.5+ compatible
+     * bytecode version.
+     * @param bytecodeVersion the bytecode version string (1.4, 1.5, 1.6, 1.7 or 1.8)
+     * @return true if the bytecode version is JDK 1.5+
+     */
+    public static boolean isPostJDK5(String bytecodeVersion) {
+        return JDK5.equals(bytecodeVersion)
+            || JDK6.equals(bytecodeVersion)
+            || JDK7.equals(bytecodeVersion)
+            || JDK8.equals(bytecodeVersion);
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 1.7+ compatible
+     * bytecode version.
+     * @param bytecodeVersion the bytecode version string (1.4, 1.5, 1.6, 1.7 or 1.8)
+     * @return true if the bytecode version is JDK 1.7+
+     */
+    public static boolean isPostJDK7(String bytecodeVersion) {
+        return JDK7.equals(bytecodeVersion)
+            || JDK8.equals(bytecodeVersion);
+    }
+
     /**
      * Method to configure a this CompilerConfiguration by using Properties.
      * For a list of available properties look at {link {@link #CompilerConfiguration(Properties)}.
@@ -679,14 +716,16 @@ public class CompilerConfiguration {
 
     /**
      * Allow setting the bytecode compatibility. The parameter can take
-     * one of the values <tt>1.5</tt> or <tt>1.4</tt>. If wrong parameter
-     * then the value will default to VM determined version.
+     * one of the values <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or <tt>1.4</tt>.
+     * If wrong parameter then the value will default to VM determined version.
      * 
      * @param version the bytecode compatibility mode
      */
     public void setTargetBytecode(String version) {
-        if(PRE_JDK5.equals(version) || POST_JDK5.equals(version)) {
-            this.targetBytecode = version;
+        for (String allowedJdk : ALLOWED_JDKS) {
+            if (allowedJdk.equals(version)) {
+                this.targetBytecode = version;
+            }
         }
     }
 

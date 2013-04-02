@@ -816,7 +816,8 @@ public class CompilationUnit extends ProcessingUnit {
     protected ClassVisitor createClassVisitor() {
         CompilerConfiguration config = getConfiguration();
         int computeMaxStackAndFrames = ClassWriter.COMPUTE_MAXS;
-        if (Boolean.TRUE.equals(config.getOptimizationOptions().get("indy"))) {
+        if (CompilerConfiguration.isPostJDK7(config.getTargetBytecode())
+                || Boolean.TRUE.equals(config.getOptimizationOptions().get("indy"))) {
             computeMaxStackAndFrames += ClassWriter.COMPUTE_FRAMES;
         }
         return new ClassWriter(computeMaxStackAndFrames) {

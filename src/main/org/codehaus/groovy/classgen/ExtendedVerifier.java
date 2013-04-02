@@ -162,7 +162,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
      * @return true if running on a 1.5+ runtime
      */
     protected boolean isAnnotationCompatible() {
-        return CompilerConfiguration.POST_JDK5.equals(this.source.getConfiguration().getTargetBytecode());
+        return CompilerConfiguration.isPostJDK5(this.source.getConfiguration().getTargetBytecode());
     }
 
     protected void addError(String msg, ASTNode expr) {

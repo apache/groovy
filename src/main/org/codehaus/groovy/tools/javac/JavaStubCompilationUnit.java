@@ -52,7 +52,7 @@ public class JavaStubCompilationUnit extends CompilationUnit {
         if (destDir == null) {
             destDir = (File) options.get("stubDir");
         }
-        boolean useJava5 = config.getTargetBytecode().equals(CompilerConfiguration.POST_JDK5);
+        boolean useJava5 = CompilerConfiguration.isPostJDK5(configuration.getTargetBytecode());
         stubGenerator = new JavaStubGenerator(destDir, false, useJava5);
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
