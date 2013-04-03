@@ -195,11 +195,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (!isStaticProperty) {
             if (receiverType.implementsInterface(MAP_TYPE) || MAP_TYPE.equals(receiverType)) {
                 // for maps, replace map.foo with map.get('foo')
-                writeMapDotProperty(receiver, methodName, mv);
+                writeMapDotProperty(receiver, methodName, mv, safe);
                 return;
             }
             if (receiverType.implementsInterface(LIST_TYPE) || LIST_TYPE.equals(receiverType)) {
-                writeListDotProperty(receiver, methodName, mv);
+                writeListDotProperty(receiver, methodName, mv, safe);
                 return;
             }
         }
@@ -214,14 +214,29 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         controller.getOperandStack().push(OBJECT_TYPE);
     }
 
-    private void writeMapDotProperty(final Expression receiver, final String methodName, final MethodVisitor mv) {
+    private void writeMapDotProperty(final Expression receiver, final String methodName, final MethodVisitor mv, final boolean safe) {
         receiver.visit(controller.getAcg()); // load receiver
+
+        Label exit = new Label();
+        if (safe) {
+            Label doGet = new Label();
+            mv.visitJumpInsn(IFNONNULL, doGet);
+            controller.getOperandStack().remove(1);
+            mv.visitInsn(ACONST_NULL);
+            mv.visitJumpInsn(GOTO, exit);
+            mv.visitLabel(doGet);
+            receiver.visit(controller.getAcg());
+        }
+
         mv.visitLdcInsn(methodName); // load property name
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+        if (safe) {
+            mv.visitLabel(exit);
+        }
         controller.getOperandStack().replace(OBJECT_TYPE);
     }
 
-    private void writeListDotProperty(final Expression receiver, final String methodName, final MethodVisitor mv) {
+    private void writeListDotProperty(final Expression receiver, final String methodName, final MethodVisitor mv, final boolean safe) {
         ClassNode componentType = (ClassNode) receiver.getNodeMetaData(StaticCompilationMetadataKeys.COMPONENT_TYPE);
         if (componentType==null) {
             componentType = OBJECT_TYPE;
@@ -231,6 +246,18 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         // for (e in list) { result.add (e.foo) }
         // result
         CompileStack compileStack = controller.getCompileStack();
+
+        Label exit = new Label();
+        if (safe) {
+            receiver.visit(controller.getAcg());
+            Label doGet = new Label();
+            mv.visitJumpInsn(IFNONNULL, doGet);
+            controller.getOperandStack().remove(1);
+            mv.visitInsn(ACONST_NULL);
+            mv.visitJumpInsn(GOTO, exit);
+            mv.visitLabel(doGet);
+        }
+
         Variable tmpList = new VariableExpression("tmpList", make(ArrayList.class));
         int var = compileStack.defineTemporaryVariable(tmpList, false);
         Variable iterator = new VariableExpression("iterator", Iterator_TYPE);
@@ -286,6 +313,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         mv.visitJumpInsn(GOTO, l2);
         mv.visitLabel(l3);
         mv.visitVarInsn(ALOAD, var);
+        if (safe) {
+            mv.visitLabel(exit);
+        }
         controller.getOperandStack().push(make(ArrayList.class));
         controller.getCompileStack().removeVar(next);
         controller.getCompileStack().removeVar(it);
