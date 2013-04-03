@@ -764,5 +764,26 @@ import groovy.transform.TypeCheckingMode
             def str = value[0]
         ''', 'Cannot find matching method java.lang.Object#getAt(int)'
     }
+
+    void testChainedNullSafePropertyOnMap() {
+        assertScript '''
+        Map<String, Map<String,Map<String,Integer>>> m=[:]
+        // this is ok
+        assert m?.a == null
+        assert m?.a?.b == null
+        assert m?.a?.b?.c == null
+        assert m?.a?.b?.c?.intValue() == null
+        '''
+    }
+
+    void testNullSafePropertyOnList() {
+        assertScript '''
+        List<Class> classes = null
+        // this is ok
+        assert classes?.name == null
+        '''
+    }
+
+
 }
 
