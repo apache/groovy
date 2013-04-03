@@ -18,23 +18,9 @@ package groovy.bugs
 
 class Groovy6072Bug extends GroovyTestCase {
     void testShouldNotChangeBinExpToClassExp() {
-        assertScript '''import groovy.transform.ASTTest
-            import org.codehaus.groovy.ast.expr.BinaryExpression
-
-            class OhNo {}
-
+        assertScript '''
             try {
-            @ASTTest(phase=CANONICALIZATION, value={
-                def right = node.rightExpression
-                assert right instanceof BinaryExpression
-            })
-            def expr1 = OhNo | []
-
-            @ASTTest(phase=SEMANTIC_ANALYSIS, value={
-                def right = node.rightExpression
-                assert right instanceof BinaryExpression
-            })
-            def expr2 = OhNo | []
+                def expr2 = OhNo | []
             } catch (MissingMethodException ex) {
                 assert ex.message.contains('or()')
                 // alright, what we wanted to test has gone
