@@ -575,16 +575,16 @@ public class StatementWriter {
 
         Expression expression = statement.getExpression();
         expression.visit(controller.getAcg());
-        
+
+        operandStack.doGroovyCast(returnType);
+
         if (controller.getCompileStack().hasBlockRecorder()) {
             ClassNode type = operandStack.getTopOperand();
-            // value is always saved in boxed form, so no need to have a special load routine here
-            int returnValueIdx = controller.getCompileStack().defineTemporaryVariable("returnValue", type, true);
+            int returnValueIdx = controller.getCompileStack().defineTemporaryVariable("returnValue", returnType, true);
             controller.getCompileStack().applyBlockRecorder();
             operandStack.load(type, returnValueIdx);
         }
-        
-        operandStack.doGroovyCast(returnType); 
+
         BytecodeHelper.doReturn(mv, returnType);
         operandStack.remove(1);
     }
