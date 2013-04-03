@@ -872,6 +872,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return !Character.isLowerCase(name.charAt(0));
     }
 
+    private boolean isLeftSquareBracket(int op) {
+        return op == Types.ARRAY_EXPRESSION
+                || op == Types.LEFT_SQUARE_BRACKET
+                || op == Types.SYNTH_LIST
+                || op == Types.SYNTH_MAP;
+    }
+
     protected Expression transformBinaryExpression(BinaryExpression be) {
         Expression left = transform(be.getLeftExpression());
         int type = be.getOperation().getType();
@@ -885,7 +892,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             addError(error, be.getLeftExpression());
             return be;
         }
-        if (left instanceof ClassExpression) {
+        if (left instanceof ClassExpression && isLeftSquareBracket(type)) {
             if (be.getRightExpression() instanceof ListExpression) {
                 ListExpression list = (ListExpression) be.getRightExpression();
                 if (list.getExpressions().isEmpty()) {
