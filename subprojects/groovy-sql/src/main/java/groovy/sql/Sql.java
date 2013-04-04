@@ -3996,11 +3996,19 @@ public class Sql {
         }
 
         protected PreparedStatement execute(Connection connection, String sql) throws SQLException {
-            if (returnGeneratedKeys != 0)
+            if (returnGeneratedKeys != 0) {
                 return connection.prepareStatement(sql, returnGeneratedKeys);
-            if (appearsLikeStoredProc(sql))
-                return connection.prepareCall(sql);
-            return connection.prepareStatement(sql);
+            }
+            if (appearsLikeStoredProc(sql)) {
+                if (resultSetHoldability == -1) {
+                    return connection.prepareCall(sql, resultSetType, resultSetConcurrency);
+                }
+                return connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
+            }
+            if (resultSetHoldability == -1) {
+                return connection.prepareStatement(sql, resultSetType, resultSetConcurrency);
+            }
+            return connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
         }
 
         private boolean appearsLikeStoredProc(String sql) {
