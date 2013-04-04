@@ -19,6 +19,7 @@ package groovy.bugs
 class Groovy6072Bug extends GroovyTestCase {
     void testShouldNotChangeBinExpToClassExp() {
         assertScript '''
+            class OhNo {}
             try {
                 def expr2 = OhNo | []
             } catch (MissingMethodException ex) {
