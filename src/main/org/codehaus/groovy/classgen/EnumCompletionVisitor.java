@@ -18,14 +18,23 @@ package org.codehaus.groovy.classgen;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.ImmutableASTTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
+import static org.codehaus.groovy.transform.AbstractASTTransformUtil.assignStatement;
+import static org.codehaus.groovy.transform.AbstractASTTransformUtil.equalsNullExpr;
 
 /**
  * Enums have a parent constructor with two arguments from java.lang.Enum.
@@ -33,8 +42,10 @@ import java.util.List;
  * and performs the necessary super call.
  */
 public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
+    private static final ClassNode MAP_TYPE = ClassHelper.makeWithoutCaching(Map.class, false);
+    private static final ClassNode COLLECTIONS_TYPE = ClassHelper.makeWithoutCaching(Collections.class);
+    private static final ClassNode CHECK_METHOD_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
     private final SourceUnit sourceUnit;
-
 
     public EnumCompletionVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
@@ -50,45 +61,40 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
     }
 
     private void completeEnum(ClassNode enumClass) {
-        addConstructor(enumClass);
-    }
-
-    private void addConstructor(ClassNode enumClass) {
-        // first look if there are declared constructors
-        List<ConstructorNode> ctors = new ArrayList<ConstructorNode>(enumClass.getDeclaredConstructors());
         boolean isAic = isAnonymousInnerClass(enumClass);
-        if (ctors.size() == 0) {
-            if (isAic) {
-                ClassNode sn = enumClass.getSuperClass();
-                List<ConstructorNode> sctors = new ArrayList<ConstructorNode>(sn.getDeclaredConstructors());
-                if (sctors.size() == 0) {
-                    ctors.add(defaultConstructor(enumClass));
-                } else {
-                    for (ConstructorNode constructorNode : sctors) {
-                        ConstructorNode init = new ConstructorNode(Opcodes.ACC_PUBLIC, constructorNode.getParameters(), ClassNode.EMPTY_ARRAY, new BlockStatement());
-                        enumClass.addConstructor(init);
-                        ctors.add(init);
-                    }
-                }
-            } else {
-                ctors.add(defaultConstructor(enumClass));
-            }
+        if (enumClass.getDeclaredConstructors().size() == 0) {
+            addImplicitConstructors(enumClass, isAic);
         }
 
-        // for each constructor:
-        // if constructor does not define a call to super, then transform constructor
-        // to get String,int parameters at beginning and add call super(String,int)
-        for (ConstructorNode ctor : ctors) {
+        for (ConstructorNode ctor : enumClass.getDeclaredConstructors()) {
             transformConstructor(ctor, isAic);
         }
     }
 
-    private ConstructorNode defaultConstructor(ClassNode enumClass) {
-        ConstructorNode init = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[0], ClassNode.EMPTY_ARRAY, new BlockStatement());
-        enumClass.addConstructor(init);
-        return init;
+    /**
+     * Add map and no-arg constructor or mirror those of the superclass (i.e. base enum).
+     */
+    private void addImplicitConstructors(ClassNode enumClass, boolean aic) {
+        if (aic) {
+            ClassNode sn = enumClass.getSuperClass();
+            List<ConstructorNode> sctors = new ArrayList<ConstructorNode>(sn.getDeclaredConstructors());
+            if (sctors.size() == 0) {
+                addMapConstructors(enumClass);
+            } else {
+                for (ConstructorNode constructorNode : sctors) {
+                    ConstructorNode init = new ConstructorNode(Opcodes.ACC_PUBLIC, constructorNode.getParameters(), ClassNode.EMPTY_ARRAY, new BlockStatement());
+                    enumClass.addConstructor(init);
+                }
+            }
+        } else {
+            addMapConstructors(enumClass);
+        }
     }
 
+    /**
+     * If constructor does not define a call to super, then transform constructor
+     * to get String,int parameters at beginning and add call super(String,int).
+     */
     private void transformConstructor(ConstructorNode ctor, boolean isAic) {
         boolean chainedThisConstructorCall = false;
         ConstructorCallExpression cce = null;
@@ -130,6 +136,49 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
             if (oldCode != null) code.addStatement(oldCode);
             ctor.setCode(code);
         }
+    }
+
+    private void addMapConstructors(ClassNode enumClass) {
+        Parameter[] parameters = new Parameter[1];
+        parameters[0] = new Parameter(MAP_TYPE, "__namedArgs");
+        BlockStatement code = new BlockStatement();
+        VariableExpression namedArgs = new VariableExpression("__namedArgs");
+        code.addStatement(new IfStatement(equalsNullExpr(namedArgs),
+                illegalArgumentBlock(enumClass),
+                processArgsBlock(enumClass, namedArgs)));
+        ConstructorNode init = new ConstructorNode(Opcodes.ACC_PUBLIC, parameters, ClassNode.EMPTY_ARRAY, code);
+        enumClass.addConstructor(init);
+        // add a no-arg constructor too
+        code = new BlockStatement();
+        code.addStatement(new ExpressionStatement(new ConstructorCallExpression(ClassNode.THIS, new StaticMethodCallExpression(COLLECTIONS_TYPE, "emptyMap", MethodCallExpression.NO_ARGUMENTS))));
+        init = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
+        enumClass.addConstructor(init);
+    }
+
+    private BlockStatement illegalArgumentBlock(ClassNode enumClass) {
+        BlockStatement outerElseBlock = new BlockStatement();
+        outerElseBlock.addStatement(new ThrowStatement(new ConstructorCallExpression(ClassHelper.make(IllegalArgumentException.class),
+                new ArgumentListExpression(new ConstantExpression(
+                        "One of the enum constants for enum " + enumClass.getName() +
+                                " was initialized with null. Please use a non-null value or define your own constructor.")))));
+        return outerElseBlock;
+    }
+
+    private BlockStatement processArgsBlock(ClassNode enumClass, VariableExpression namedArgs) {
+        BlockStatement outerThenBlock = new BlockStatement();
+        for (PropertyNode pNode : enumClass.getProperties()) {
+            if (pNode.isStatic()) continue;
+
+            // if namedArgs.containsKey(propertyName) setProperty(propertyName, namedArgs.get(propertyName));
+            BooleanExpression ifTest = new BooleanExpression(new MethodCallExpression(namedArgs, "containsKey", new ConstantExpression(pNode.getName())));
+            Expression pExpr = new VariableExpression(pNode);
+            Statement thenBlock = assignStatement(pExpr, new PropertyExpression(namedArgs, pNode.getName()));
+            IfStatement ifStatement = new IfStatement(ifTest, thenBlock, EmptyStatement.INSTANCE);
+            outerThenBlock.addStatement(ifStatement);
+        }
+        Expression checkArgs = new ArgumentListExpression(new VariableExpression("this"), namedArgs);
+        outerThenBlock.addStatement(new ExpressionStatement(new StaticMethodCallExpression(CHECK_METHOD_TYPE, "checkPropNames", checkArgs)));
+        return outerThenBlock;
     }
 
     private String getUniqueVariableName(final String name, Statement code) {
