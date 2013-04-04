@@ -784,6 +784,24 @@ import groovy.transform.TypeCheckingMode
         '''
     }
 
+    // GROOVY-6061
+    void testShouldCallPutAt() {
+        try {
+        assertScript '''
+            def swapUseStatic(List<Integer> a, int i, int j) {
+                int temp = a[i]
+                a[i] = a[j]  //BUG HERE, a[i] = ... doesn't call "putAt"
+                a[j] = temp
+            }
+            def list = [1,2]
+            swapUseStatic(list, 0, 1)
+            assert list == [2,1]
+        '''
+        } finally {
+            println astTrees
+        }
+    }
+
 
 }
 
