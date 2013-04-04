@@ -363,7 +363,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         return false;
     }
 
-    protected void assignToArray(Expression parrent, Expression receiver, Expression index, Expression rhsValueLoader) {
+    protected void assignToArray(Expression parent, Expression receiver, Expression index, Expression rhsValueLoader) {
         ClassNode current = getController().getClassNode();
         ClassNode arrayType = getController().getTypeChooser().resolveType(receiver, current);
         ClassNode arrayComponentType = arrayType.getComponentType();
@@ -401,6 +401,12 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             // -> (x, [], 5), =, 10
             // -> methodCall(x, "putAt", [5, 10])
             ArgumentListExpression ae = new ArgumentListExpression(index, rhsValueLoader);
+            if (rhsValueLoader instanceof VariableSlotLoader && parent instanceof BinaryExpression) {
+                // GROOVY-6061
+                Expression right = ((BinaryExpression) parent).getRightExpression();
+                rhsValueLoader.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE,
+                        controller.getTypeChooser().resolveType(right, controller.getClassNode()));
+            }
             MethodCallExpression mce = new MethodCallExpression(
                     receiver,
                     "putAt",
