@@ -217,7 +217,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
             final Parameter[] params = candidate.getParameters();
             final Parameter[] newParams = new Parameter[params.length];
             for (int i = 0; i < newParams.length; i++) {
-                Parameter newParam = new Parameter(nonGeneric(params[i].getType()), params[i].getName());
+                Parameter newParam = new Parameter(nonGeneric(params[i].getType()), getParamName(params, i, fieldNode.getName()));
                 newParam.setInitialExpression(params[i].getInitialExpression());
 
                 if (includeParameterAnnotations) newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i].getAnnotations(), newParam));
@@ -242,6 +242,22 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
                 newMethod.addAnnotations(copyAnnotatedNodeAnnotations(candidate.getAnnotations(), newMethod));
             }
         }
+    }
+
+    private String getParamName(Parameter[] params, int i, String fieldName) {
+        String name = params[i].getName();
+        while(name.equals(fieldName) || clashesWithOtherParams(name, params, i)) {
+            name = "_" + name;
+        }
+        return name;
+    }
+
+    private boolean clashesWithOtherParams(String name, Parameter[] params, int i) {
+        for (int j = 0; j < params.length; j++) {
+            if (i == j) continue;
+            if (params[j].getName().equals(name)) return true;
+        }
+        return false;
     }
 
     /**

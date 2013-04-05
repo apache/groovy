@@ -446,6 +446,21 @@ class DelegateTransformTest extends CompilableTestSupport {
             assert f.bar + f.baz == 'barbaz'
         """
     }
+
+    // GROOVY-5211
+    void testAvoidFieldNameClashWithParameterName() {
+        assertScript """
+            class A {
+                def foo(a) { a * 2 }
+            }
+
+            class B {
+                @Delegate A a = new A()
+            }
+
+            assert new B().foo(10) == 20
+        """
+    }
 }
 
 interface DelegateFoo {
