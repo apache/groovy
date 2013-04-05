@@ -1,13 +1,30 @@
-package org.codehaus.groovy.runtime.memoize
+/*
+ * Copyright 2003-2013 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import java.lang.ref.ReferenceQueue
-import java.lang.ref.SoftReference
+package org.codehaus.groovy.runtime.memoize
 
 /**
  * @author Rafael Luque
  */
 public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {   
 
+    // TODO delete this once another test below is re-enabled
+    public void testNothing_dummyTestToKeepJUnitTestCollectorHappy() {
+        assert true
+    }
 
     // TODO re-enable this test once CI server can safely handle it
     public void manual_testCollectedCacheValuesAreEnqueued() {
@@ -28,9 +45,7 @@ public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
         def softReference = cache.get([1])
         checkSoftReferenceAreSoftlyReachable(softReference)
         checkCollectedSoftReferenceAreEnqueued(softReference)
-
     }
-
 
     // TODO re-enable this test once CI server can safely handle it
     public void manual_testCollectedCacheValuesAreRemovedFromCache() {
@@ -59,20 +74,15 @@ public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
 
 
     private void checkSoftReferenceAreSoftlyReachable(softReference) {
-
         assert softReference.get() == null : 
-            'cache values should be softly reachable and collected before an OOME' 
-
+            'cache values should be softly reachable and collected before an OOME'
     }
 
     private void checkCollectedSoftReferenceAreEnqueued(softReference) {
-
         assert softReference.enqueued : 'collected cache values should be enqueued'
-
     }
 
     private void forceSoftReferencesRecollection() {
-
         try {
             int maxMemory = Runtime.getRuntime().maxMemory()
             Object[] fillingMemory = new Object[maxMemory]
@@ -81,6 +91,4 @@ public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
         }
 
     }
-
-
 }
