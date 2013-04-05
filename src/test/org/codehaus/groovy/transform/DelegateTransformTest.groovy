@@ -426,6 +426,26 @@ class DelegateTransformTest extends CompilableTestSupport {
         }
         assert message.contains('@Delegate does not support keeping Closure annotation members.')
     }
+
+    // GROOVY-5445
+    void testDelegateToSuperProperties() {
+        assertScript """
+            class Foo {
+                @Delegate Bar delegate = new Bar()
+                def foo() {
+                    bar = "bar"
+                    baz = "baz"
+                }
+            }
+
+            class Bar extends Baz { String bar }
+            class Baz { String baz }
+
+            def f = new Foo()
+            f.foo()
+            assert f.bar + f.baz == 'barbaz'
+        """
+    }
 }
 
 interface DelegateFoo {

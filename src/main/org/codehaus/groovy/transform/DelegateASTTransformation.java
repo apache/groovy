@@ -84,7 +84,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
                 addDelegateMethod(node, fieldNode, owner, ownerMethods, mn, includeDeprecated);
             }
 
-            for (PropertyNode prop : type.getProperties()) {
+            for (PropertyNode prop : getAllProperties(type)) {
                 if (prop.isStatic() || !prop.isPublic())
                     continue;
                 String name = prop.getName();
@@ -127,6 +127,16 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
         List<MethodNode> result = new ArrayList<MethodNode>();
         while (node != null) {
             result.addAll(node.getMethods());
+            node = node.getSuperClass();
+        }
+        return result;
+    }
+
+    private List<PropertyNode> getAllProperties(ClassNode type) {
+        ClassNode node = type;
+        List<PropertyNode> result = new ArrayList<PropertyNode>();
+        while (node != null) {
+            result.addAll(node.getProperties());
             node = node.getSuperClass();
         }
         return result;
