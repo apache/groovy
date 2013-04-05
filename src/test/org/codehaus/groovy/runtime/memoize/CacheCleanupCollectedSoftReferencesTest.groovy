@@ -9,7 +9,8 @@ import java.lang.ref.SoftReference
 public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {   
 
 
-    public void testCollectedCacheValuesAreEnqueued() {
+    // TODO re-enable this test once CI server can safely handle it
+    public void manual_testCollectedCacheValuesAreEnqueued() {
 
         Closure cl = { 
             new Integer(it + 1) 
@@ -31,7 +32,8 @@ public class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
     }
 
 
-    public void testCollectedCacheValuesAreRemovedFromCache() {
+    // TODO re-enable this test once CI server can safely handle it
+    public void manual_testCollectedCacheValuesAreRemovedFromCache() {
 
         Closure cl = { 
             new Integer(it + 1) 
