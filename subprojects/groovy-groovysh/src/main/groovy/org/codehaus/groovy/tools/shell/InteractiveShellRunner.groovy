@@ -87,11 +87,16 @@ class InteractiveShellRunner
     protected String readLine() {
         try {
             return reader.readLine(prompt.call() as String)
-        }
-        catch (StringIndexOutOfBoundsException e) {
+        } catch (StringIndexOutOfBoundsException e) {
             log.debug("HACK: Try and work around GROOVY-2152 for now", e)
-
+            reader.printNewline()
             return "";
+        } catch (Throwable t) {
+            if (shell.io.verbosity == IO.Verbosity.DEBUG) {
+                throw t
+            }
+            reader.printNewline()
+            return ""
         }
     }
 
