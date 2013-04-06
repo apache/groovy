@@ -356,7 +356,17 @@ class Groovysh extends Shell {
 
             def buff = new StringBuffer()
 
+            boolean doBreak = false;
+
             for (e in trace) {
+                // Stop the trace once we find the root of the evaluated script
+                if (e.className == Interpreter.SCRIPT_FILENAME && e.methodName == 'run') {
+                    if (io.verbosity != IO.Verbosity.DEBUG && io.verbosity != IO.Verbosity.VERBOSE) {
+                        break
+                    }
+                    doBreak = true
+                }
+
                 buff << "        @|bold at|@ ${e.className}.${e.methodName} (@|bold "
 
                 buff << (e.nativeMethod ? 'Native Method' :
@@ -368,9 +378,7 @@ class Groovysh extends Shell {
                 io.err.println(buff)
 
                 buff.setLength(0) // Reset the buffer
-
-                // Stop the trace once we find the root of the evaluated script
-                if (e.className == Interpreter.SCRIPT_FILENAME && e.methodName == 'run') {
+                if (doBreak) {
                     io.err.println('        @|bold ...|@')
                     break
                 }

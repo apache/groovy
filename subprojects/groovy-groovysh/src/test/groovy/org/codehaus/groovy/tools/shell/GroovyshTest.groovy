@@ -77,8 +77,8 @@ extends GroovyTestCase {
         })
         assertEquals("", mockOut.toString())
         assertTrue(mockErr.toString(), mockErr.toString().contains("foo"))
-        assertTrue(mockErr.toString(), mockErr.toString().contains(Interpreter.SCRIPT_FILENAME))
-        assertTrue(mockErr.toString(), mockErr.toString().contains("..."))
+        assertFalse(mockErr.toString(), mockErr.toString().contains(Interpreter.SCRIPT_FILENAME))
+        assertFalse(mockErr.toString(), mockErr.toString().contains("..."))
     }
 
 }
