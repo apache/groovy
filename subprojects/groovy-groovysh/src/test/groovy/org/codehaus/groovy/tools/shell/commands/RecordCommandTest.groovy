@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.tools.shell.CommandException
+
 /**
  * Tests for the {@link RecordCommand} class.
  *
@@ -37,5 +39,17 @@ class RecordCommandTest
         File file = shell << 'record stop'
 
         file.delete()
+    }
+
+    void testInvoke() {
+        RecordCommand command = new RecordCommand(shell)
+
+        try {
+            // too many args
+            command.do_start([1, 2, 3])
+            fail()
+        } catch (CommandException e) {
+            // pass
+        }
     }
 }

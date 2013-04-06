@@ -89,11 +89,12 @@ class RecordCommand
             fail("Already recording to: $file")
         }
 
-        if (args.size() != 1) {
+        if (args.size() == 0) {
             file = File.createTempFile('groovysh-', '.txt')
-        }
-        else {
+        } else if (args.size() == 1) {
             file = new File(args[0] as String)
+        } else {
+            fail("Too many arguments. Usage: record start [filename]")
         }
 
         if (file.parentFile) file.parentFile.mkdirs()
