@@ -108,6 +108,10 @@ class ReflectionCompletor implements Completor {
         if (clazz == null) {
             return rv;
         }
+        if (clazz == Class) {
+            clazz = instance as Class
+        }
+
         clazz.fields.each { Field fit ->
             if (fit.name.startsWith(prefix)) {
                 rv << fit.name

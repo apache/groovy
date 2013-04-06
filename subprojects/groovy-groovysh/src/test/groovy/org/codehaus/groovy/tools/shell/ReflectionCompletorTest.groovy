@@ -51,26 +51,23 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
         result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "una")
         assertEquals(["unaryMinus()"], result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "MA")
-        // bug
-        assertEquals([], result)
+        assertEquals(["MAX_VALUE"], result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "getI")
-        // bug
-        assertEquals(["getInterfaces()"], result)
+        assertEquals(["getInteger("], result)
     }
 
     void testGetFieldsAndMethodsInterface() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(Set, "")
-        assertEquals(157, result.size())
+        assertEquals(105, result.size())
         result = ReflectionCompletor.getPublicFieldsAndMethods(Set, "toA")
-        assertEquals([], result)
+        assertEquals(["toArray(", "toArray()"], result)
     }
 
     void testGetInterfaceFields() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "")
-        assertEquals(110, result.size())
+        assertEquals(421, result.size())
         result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "LITERAL_as")
-        // bug
-        assertEquals([], result)
+        assertEquals(["LITERAL_as", "LITERAL_assert"], result)
         GroovyLexer lexer = new GroovyLexer(new ByteArrayInputStream("".getBytes()))
         result = ReflectionCompletor.getPublicFieldsAndMethods(lexer, "LITERAL_as")
         assertEquals(["LITERAL_as", "LITERAL_assert"], result)
@@ -78,11 +75,11 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsClass() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "")
-        assertEquals(157, result.size())
-        result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "fo")
-        assertEquals(["forName("], result)
-        result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "toA")
+        assertEquals(111, result.size())
+        result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "pro")
         assertEquals([], result)
+        result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "toA")
+        assertEquals(["toArray(", "toArray()"], result)
     }
 }
 
@@ -139,6 +136,18 @@ class ReflectionCompletorTest extends CompletorTestSupport {
             def candidates = []
             assertEquals(0, completor.complete("xyz", 2, candidates))
             assertEquals(["xyzabc", "xyzfff"], candidates)
+        }
+    }
+
+    void testKnownClassMember() {
+        groovyshMocker.demand.getInterp(1) { [evaluate: {Math}] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            String buffer = "Math.ma"
+            assertEquals(5, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals(["max("], candidates)
         }
     }
 
