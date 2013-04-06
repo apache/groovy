@@ -37,11 +37,10 @@ class ReflectionCompletor implements Completor {
 
                 }
             }
-        }
-        else {
+        } else {
             // there are 1 or more dots
             // if ends in a dot, or if there is a valid identifier prefix
-            if (lastDot == cursor-1 || identifierStart != -1){
+            if (lastDot == cursor - 1 || identifierStart != -1) {
                 // evaluate the part before the dot to get an instance
                 String instanceRefExpression = buffer.substring(0, lastDot)
                 try {
@@ -51,7 +50,7 @@ class ReflectionCompletor implements Completor {
                         List myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
                         if (myCandidates.size() > 0) {
                             candidates.addAll(myCandidates)
-                            return lastDot+1
+                            return lastDot + 1
                         }
                     }
                 } catch (MissingPropertyException |
@@ -69,7 +68,7 @@ class ReflectionCompletor implements Completor {
     /**
      * Parse a buffer to determine the start index of the groovy identifier
      * @param buffer the buffer to parse
-     * @param endingAt the end index with the buffer
+     * @param endingAt the end index within the buffer
      * @return the start index of the identifier, or -1 if the buffer
      * does not contain a valid identifier that ends at endingAt
      */
@@ -79,13 +78,13 @@ class ReflectionCompletor implements Completor {
             return -1
         }
         // if the last character is not valid then there is no expression
-        char lastChar = buffer.charAt(endingAt-1)
+        char lastChar = buffer.charAt(endingAt - 1)
         if (!Character.isJavaIdentifierPart(lastChar)) {
             return -1
         }
         // scan backwards until the beginning of the expression is found
-        int startIndex = endingAt-1
-        while (startIndex > 0 && Character.isJavaIdentifierPart(buffer.charAt(startIndex-1))) {
+        int startIndex = endingAt - 1
+        while (startIndex > 0 && Character.isJavaIdentifierPart(buffer.charAt(startIndex - 1))) {
             --startIndex
         }
         return startIndex
