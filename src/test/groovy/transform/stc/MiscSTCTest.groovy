@@ -28,7 +28,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             int fib(int i) {
                 i < 2 ? 1 : fib(i - 2) + fib(i - 1);
             }
-            println fib(40)
+            println fib(20)
             long dur = System.currentTimeMillis()-sd
             println "${dur}ms"
          '''

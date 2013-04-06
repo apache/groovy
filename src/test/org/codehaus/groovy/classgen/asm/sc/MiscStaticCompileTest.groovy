@@ -33,9 +33,15 @@ class MiscStaticCompileTest extends MiscSTCTest {
 
     void testEachFileRecurse() {
         assertScript '''import groovy.io.FileType
-            File dir = new File(System.getProperty('java.io.tmpdir'))
+            File dir = File.createTempDir()
+            for(int i in 1..3){
+              new File(dir, "testEachFileRecurse${i}.txt").createNewFile()
+            }
+
             dir.eachFileRecurse(FileType.FILES) { File spec ->
             }
+
+            dir.deleteDir()
         '''
     }
 }
