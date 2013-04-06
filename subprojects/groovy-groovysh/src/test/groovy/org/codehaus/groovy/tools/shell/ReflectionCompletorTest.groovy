@@ -74,13 +74,24 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
     }
 
     void testGetFieldsAndMethodsClass() {
-        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "")
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet.getClass(), "")
         assertEquals(111, result.size())
         result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "pro")
         assertEquals([], result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "toA")
         assertEquals(["toArray(", "toArray()"], result)
     }
+
+    void testGetFieldsAndMethodsCustomClass() {
+        Interpreter interp = new Interpreter(Thread.currentThread().contextClassLoader, new Binding())
+        Object instance = interp.evaluate(["class Foo{} extends HashSet implements Comparable"])
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(instance.getClass(), "")
+        assertEquals([], result)
+        result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "fo")
+        // bug
+        assertEquals([], result)
+    }
+
 }
 
 class ReflectionCompletorTest extends CompletorTestSupport {
@@ -148,6 +159,17 @@ class ReflectionCompletorTest extends CompletorTestSupport {
             String buffer = "Math.ma"
             assertEquals(5, completor.complete(buffer, buffer.length(), candidates))
             assertEquals(["max("], candidates)
+        }
+    }
+
+    void testKnownVarAfterDot() {
+        groovyshMocker.demand.getInterp(1) { [evaluate: {expr -> assert(expr == ["xyz"])}, context: [variables: [xyzabc: ""]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            assertEquals(8, completor.complete("Foo.bar(xyz", "Foo.bar(xyz".length(), candidates))
+            assertEquals(["xyzabc"], candidates)
         }
     }
 

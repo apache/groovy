@@ -27,8 +27,9 @@ class ReflectionCompletor implements Completor {
         String identifierPrefix = identifierStart != -1 ? buffer.substring(identifierStart, cursor) : ""
         int lastDot = buffer.lastIndexOf('.')
 
-        // if there are no dots, and there is a valid identifier prefix
-        if (lastDot == -1 ) {
+        // if there are no dots, or the dit is not before the prefix
+        if (lastDot == -1 || (identifierStart > -1 && lastDot < identifierStart - 1)) {
+            //if there is a valid identifier prefix
             if (identifierStart != -1) {
                 List myCandidates = findMatchingVariables(identifierPrefix)
                 if (myCandidates.size() > 0) {
