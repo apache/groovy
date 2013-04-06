@@ -58,6 +58,14 @@ public class InnerClassNode extends ClassNode {
         return outerClass;
     }
 
+    public ClassNode getOuterMostClass()  {
+        ClassNode outerClass = getOuterClass();
+        while (outerClass instanceof InnerClassNode)  {
+            outerClass = outerClass.getOuterClass();
+        }
+        return outerClass;
+    }
+
     /**
      * @return the field node on the outer class or null if this is not an inner class
      */

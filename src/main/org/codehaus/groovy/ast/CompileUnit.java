@@ -19,6 +19,7 @@ import groovy.lang.GroovyClassLoader;
 
 import java.security.CodeSource;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -182,5 +183,9 @@ public class CompileUnit {
     
     public void addGeneratedInnerClass(InnerClassNode icn) {
         generatedInnerClasses.put(icn.getName(), icn);
+    }
+
+    public Map<String, InnerClassNode> getGeneratedInnerClasses() {
+        return Collections.unmodifiableMap(generatedInnerClasses);
     }
 }

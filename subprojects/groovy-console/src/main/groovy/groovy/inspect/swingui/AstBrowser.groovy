@@ -58,7 +58,7 @@ import org.objectweb.asm.util.TraceClassVisitor
 public class AstBrowser {
 
     private inputArea, rootElement, decompiledSource, jTree, propertyTable, splitterPane, mainSplitter, bytecodeView
-    boolean showScriptFreeForm, showScriptClass, showTreeView
+    boolean showScriptFreeForm, showScriptClass, showClosureClasses, showTreeView
     GeneratedBytecodeAwareGroovyClassLoader classLoader
     def prefs = new AstBrowserUiPreferences()
 
@@ -97,6 +97,7 @@ public class AstBrowser {
 
         showScriptFreeForm = prefs.showScriptFreeForm
         showScriptClass = prefs.showScriptClass
+        showClosureClasses = prefs.showClosureClasses
         showTreeView = prefs.showTreeView
 
         frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name" : ''),
@@ -104,7 +105,7 @@ public class AstBrowser {
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
-                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, phasePicker.selectedItem, showTreeView) }) {
+                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, showClosureClasses, phasePicker.selectedItem, showTreeView) }) {
 
             menuBar {
                 menu(text: 'Show Script', mnemonic: 'S') {
@@ -115,6 +116,10 @@ public class AstBrowser {
                     checkBoxMenuItem(selected: showScriptClass) {
                         action(name: 'Class Form', closure: this.&showScriptClass,
                                 mnemonic: 'C')
+                    }
+                    checkBoxMenuItem(selected: showClosureClasses) {
+                        action(name: 'Generated Closure Classes', closure: this.&showClosureClasses,
+                                mnemonic: 'G')
                     }
                     checkBoxMenuItem(selected: showTreeView) {
                         action(name: 'Tree View', closure: this.&showTreeView,
@@ -323,6 +328,10 @@ public class AstBrowser {
         showScriptClass = evt.source.selected
     }
 
+    void showClosureClasses(EventObject evt)  {
+        showClosureClasses = evt.source.selected
+    }
+
     void showTreeView(EventObject evt = null) {
         showTreeView = !showTreeView
         splitterPane.visible = showTreeView
@@ -370,7 +379,7 @@ public class AstBrowser {
         swing.doOutside {
             try {
                 def nodeMaker = new SwingTreeNodeMaker()
-                def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker)
+                def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker)
                 classLoader.clearBytecodeTable()
                 def result = adapter.compile(script, compilePhase)
                 swing.doLater {
@@ -402,6 +411,7 @@ class AstBrowserUiPreferences {
     final boolean showScriptFreeForm
     final boolean showTreeView
     final boolean showScriptClass
+    final boolean showClosureClasses
     int decompiledSourceFontSize
     final CompilePhaseAdapter selectedPhase
 
@@ -419,6 +429,7 @@ class AstBrowserUiPreferences {
         horizontalDividerLocation = Math.max(prefs.getInt("horizontalSplitterLocation", 100), 100)
         showScriptFreeForm = prefs.getBoolean("showScriptFreeForm", false)
         showScriptClass = prefs.getBoolean("showScriptClass", true)
+        showClosureClasses = prefs.getBoolean("showClosureClasses", false)
         showTreeView = prefs.getBoolean("showTreeView", true)
         int phase = prefs.getInt('compilerPhase', Phases.SEMANTIC_ANALYSIS)
         selectedPhase = CompilePhaseAdapter.values().find {
@@ -426,7 +437,7 @@ class AstBrowserUiPreferences {
         }
     }
 
-    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, CompilePhaseAdapter phase, showTreeView) {
+    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, closureClassesPref, CompilePhaseAdapter phase, showTreeView) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         prefs.putInt("decompiledFontSize", decompiledSourceFontSize as int)
         prefs.putInt("frameX", frame.location.x as int)
@@ -437,6 +448,7 @@ class AstBrowserUiPreferences {
         prefs.putInt("horizontalSplitterLocation", hSplitter.dividerLocation)
         prefs.putBoolean("showScriptFreeForm", scriptFreeFormPref)
         prefs.putBoolean("showScriptClass", scriptClassPref)
+        prefs.putBoolean("showClosureClasses", closureClassesPref)
         prefs.putBoolean("showTreeView", showTreeView)
         prefs.putInt('compilerPhase', phase.phaseId)
     }

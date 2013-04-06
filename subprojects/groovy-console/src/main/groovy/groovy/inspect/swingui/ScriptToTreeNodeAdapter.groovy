@@ -50,7 +50,7 @@ import org.codehaus.groovy.control.CompilationFailedException
 class ScriptToTreeNodeAdapter {
 
     static Properties classNameToStringForm
-    boolean showScriptFreeForm, showScriptClass
+    boolean showScriptFreeForm, showScriptClass, showClosureClasses
     final GroovyClassLoader classLoader
     final AstBrowserNodeMaker nodeMaker
 
@@ -80,10 +80,11 @@ class ScriptToTreeNodeAdapter {
         }
     }
     
-    def ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker) {
+    def ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker) {
         this.classLoader = classLoader ?: new GroovyClassLoader(getClass().classLoader)
         this.showScriptFreeForm = showScriptFreeForm
         this.showScriptClass = showScriptClass
+        this.showClosureClasses = showClosureClasses
         this.nodeMaker = nodeMaker
     }
 
@@ -100,7 +101,8 @@ class ScriptToTreeNodeAdapter {
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, "/groovy/script")
         CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
         cu.setClassgenCallback(classLoader.createCollector(cu, null))
-        TreeNodeBuildingNodeOperation operation = new TreeNodeBuildingNodeOperation(this, showScriptFreeForm, showScriptClass)
+
+        TreeNodeBuildingNodeOperation operation = new TreeNodeBuildingNodeOperation(this, showScriptFreeForm, showScriptClass, showClosureClasses)
         cu.addPhaseOperation(operation, compilePhase)
         cu.addSource(codeSource.getName(), script);
         try {
@@ -194,15 +196,23 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
     final def root
     final def sourceCollected = new AtomicBoolean(false)
     final ScriptToTreeNodeAdapter adapter
+
     final def showScriptFreeForm
     final def showScriptClass
+    final def showClosureClasses
+
     final def nodeMaker
 
     def TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter, showScriptFreeForm, showScriptClass) {
+        this(adapter, showScriptFreeForm, showScriptClass, false)
+    }
+
+    def TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter, showScriptFreeForm, showScriptClass, showClosureClasses) {
         if (!adapter) throw new IllegalArgumentException("Null: adapter")
         this.adapter = adapter
         this.showScriptFreeForm = showScriptFreeForm
         this.showScriptClass = showScriptClass
+        this.showClosureClasses = showClosureClasses
         nodeMaker = adapter.nodeMaker
         root = nodeMaker.makeNode("root")
     }
@@ -219,7 +229,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
 
         if(classNode.isScript() && !showScriptClass) return
-        
+
         def child = adapter.make(classNode)
         root.add(child)
 
@@ -228,6 +238,30 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         collectFieldData(child, "Fields", classNode)
         collectPropertyData(child, "Properties", classNode)
         collectAnnotationData(child, "Annotations", classNode)
+
+        if (showClosureClasses)  {
+            makeClosureClassTreeNodes(classNode)
+        }
+    }
+
+    protected void makeClosureClassTreeNodes(ClassNode classNode) {
+        def compileUnit = classNode.compileUnit
+        if (!compileUnit.generatedInnerClasses) return
+
+        def innerClassNodes = compileUnit.generatedInnerClasses.values().sort { it.name }
+        innerClassNodes.each { InnerClassNode innerClassNode ->
+            if (!innerClassNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)) return
+            if (innerClassNode.outerMostClass != classNode) return
+
+            def child = adapter.make(innerClassNode)
+            root.add(child)
+
+            collectConstructorData(child, "Constructors", innerClassNode)
+            collectMethodData(child, "Methods", innerClassNode)
+            collectFieldData(child, "Fields", innerClassNode)
+            collectPropertyData(child, "Properties", innerClassNode)
+            collectAnnotationData(child, "Annotations", innerClassNode)
+        }
     }
 
     private List collectAnnotationData(parent, String name, ClassNode classNode) {

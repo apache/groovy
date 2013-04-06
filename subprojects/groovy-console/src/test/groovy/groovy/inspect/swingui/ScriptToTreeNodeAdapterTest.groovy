@@ -15,7 +15,9 @@
  */
 package groovy.inspect.swingui
 
+import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.Phases
+
 import javax.swing.tree.TreeNode
 import junit.framework.AssertionFailedError
 
@@ -32,9 +34,9 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
      def classLoader = new GroovyClassLoader()
      
-     def createAdapter(showScriptFreeForm, showScriptClass) {
+     def createAdapter(showScriptFreeForm, showScriptClass, showClosureClasses) {
         def nodeMaker = new SwingTreeNodeMaker()
-        new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker)
+        new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker)
      }
      
     /**
@@ -43,12 +45,16 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
      */
 
      def assertTreeStructure(String script, List<Closure> specification) {
-         ScriptToTreeNodeAdapter adapter = createAdapter(true, true)
+         ScriptToTreeNodeAdapter adapter = createAdapter(true, true, true)
          assertTreeStructure(script, specification, adapter)
      }
      
      def assertTreeStructure(String script, List<Closure> specification, ScriptToTreeNodeAdapter adapter) {
-         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
+         assertTreeStructure(script, CompilePhase.SEMANTIC_ANALYSIS, specification, adapter)
+     }
+
+    def assertTreeStructure(String script, CompilePhase compilePhase, List<Closure> specification, ScriptToTreeNodeAdapter adapter) {
+         TreeNode root = adapter.compile(script, compilePhase.phaseNumber)
          def original = root
          def lastSpec = 0
          specification.each { spec ->
@@ -108,6 +114,15 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
      */
     def startsWith(String target) {
         return { it.toString().startsWith(target) }
+    }
+
+    /**
+     * Returns a function that acts much like String#contains for Objects.
+     */
+    def contains(String target)  {
+        return {
+            it.toString().contains(target)
+        }
     }
 
     public void testHelloWorld() {
@@ -191,7 +206,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
     public void testNamedArgumentListExpression() {
         def script = "new String(foo: 'bar', baz: 'qux')"
-        ScriptToTreeNodeAdapter adapter = createAdapter(true, true)
+        ScriptToTreeNodeAdapter adapter = createAdapter(true, true, true)
         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
 
         def namedArgList = root.children()?.find {
@@ -380,7 +395,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     public void testScriptWithAdapterThatLoadsClassButNotFreeForm() {
-        ScriptToTreeNodeAdapter adapter = createAdapter(false, true)
+        ScriptToTreeNodeAdapter adapter = createAdapter(false, true, true)
 
         // since free standing script is not being loaded, it should fail
         shouldFail(AssertionFailedError) {
@@ -409,7 +424,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     public void testScriptWithAdapterThatLoadsFreeFormButNotClass() {
-        ScriptToTreeNodeAdapter adapter = createAdapter(true, false)
+        ScriptToTreeNodeAdapter adapter = createAdapter(true, false, false)
 
         // since free standing script is being loaded, it should go through
         assertTreeStructure(
@@ -438,7 +453,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
    public void testScriptWithAdapterThatLoadsNitherFreeFormNorClass() {
-        ScriptToTreeNodeAdapter adapter = createAdapter(false, false)
+        ScriptToTreeNodeAdapter adapter = createAdapter(false, false, false)
 
         // since free standing script is not being loaded, it should fail
         shouldFail(AssertionFailedError) {
@@ -469,7 +484,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     public void testScriptWithAdapterThatAddsDescriptorToMethodNodeProperties() {
-        ScriptToTreeNodeAdapter adapter = createAdapter(true, false)
+        ScriptToTreeNodeAdapter adapter = createAdapter(true, false, false)
         TreeNode root = adapter.compile('''
             class Test {
                 void test() {}
@@ -483,5 +498,62 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
         assert methodNodeTest.properties.any { name, value, type -> name == 'descriptor' && value == '()V' && type == 'String' }
     }
-    
+
+    public void testScriptWithAdapterThatLoadsGeneratedClosureClass() {
+        ScriptToTreeNodeAdapter adapter = createAdapter(false, true, true)
+
+        assertTreeStructure(
+                "def c = { println 'hello world' }", CompilePhase.CLASS_GENERATION,
+                [
+                    contains('closure1'),
+                    eq('Methods'),
+                    eq('MethodNode - doCall'),
+                ],
+                adapter
+            )
+    }
+
+    public void testScriptWithAdapterThatLoadsMultipleGeneratedClosureClasses() {
+        ScriptToTreeNodeAdapter adapter = createAdapter(false, true, true)
+
+        def source = """
+            class Controller {
+
+                def show = { println 'show' }
+                def edit = { println 'edit' }
+                def delete = { println 'delete' }
+
+            }
+            """
+
+        assertTreeStructure(source, CompilePhase.CLASS_GENERATION,
+                [
+                        startsWith('ClassNode - Controller')
+                ],
+                adapter)
+
+        assertTreeStructure(source, CompilePhase.CLASS_GENERATION,
+                [
+                        contains('closure1'),
+                        eq('Methods'),
+                        eq('MethodNode - doCall'),
+                ],
+                adapter)
+
+        assertTreeStructure(source, CompilePhase.CLASS_GENERATION,
+                [
+                        contains('closure2'),
+                        eq('Methods'),
+                        eq('MethodNode - doCall'),
+                ],
+                adapter)
+
+        assertTreeStructure(source, CompilePhase.CLASS_GENERATION,
+                [
+                        contains('closure3'),
+                        eq('Methods'),
+                        eq('MethodNode - doCall'),
+                ],
+                adapter)
+    }
 }
