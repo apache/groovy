@@ -81,4 +81,39 @@ extends GroovyTestCase {
         assertFalse(mockErr.toString(), mockErr.toString().contains("..."))
     }
 
+    void testDefaultResultHookString() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.defaultResultHook("foo bar".split())
+        assertTrue(mockOut.toString(), mockOut.toString().trim().endsWith("[foo, bar] (class java.lang.String)"))
+        assertEquals("", mockErr.toString())
+    }
+
+    void testDefaultResultHookObject() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.defaultResultHook(Object.fields)
+        assertTrue(mockOut.toString(), mockOut.toString().trim().endsWith("[] (class java.lang.reflect.Field)"))
+        assertEquals("", mockErr.toString())
+    }
+
+    void testDefaultResultPrimitive() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.defaultResultHook(3)
+        assertTrue(mockOut.toString(), mockOut.toString().trim().endsWith("3"))
+        assertEquals("", mockErr.toString())
+    }
+
+    void testDefaultResultNull() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.defaultResultHook(null)
+        assertTrue(mockOut.toString(), mockOut.toString().trim().endsWith("null"))
+        assertEquals("", mockErr.toString())
+    }
+
+    void testDefaultResultList() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.defaultResultHook([])
+        assertTrue(mockOut.toString(), mockOut.toString().trim().endsWith("[]"))
+        assertEquals("", mockErr.toString())
+    }
+
 }

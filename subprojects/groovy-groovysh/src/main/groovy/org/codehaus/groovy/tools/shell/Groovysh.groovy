@@ -306,10 +306,22 @@ class Groovysh extends Shell {
 
     final Closure defaultResultHook = { result ->
         boolean showLastResult = !io.quiet && (io.verbose || Preferences.showLastResult)
-
         if (showLastResult) {
             // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-            io.out.println("@|bold ===>|@ ${String.valueOf(result)}")
+            if (result != null && result.class && result.class.isArray()) {
+                Class typeClass = result.class.getComponentType()
+                StringBuilder output = new StringBuilder()
+                if (result.length > 0) {
+                    output.append(String.valueOf(Arrays.toString(result)))
+                } else {
+                    output.append("[]")
+                }
+                output.append(" ($typeClass)")
+
+                io.out.println("@|bold ===>|@ $output")
+            } else {
+                io.out.println("@|bold ===>|@ ${String.valueOf(result)}")
+            }
         }
     }
 
