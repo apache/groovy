@@ -118,13 +118,21 @@ class ReflectionCompletor implements Completor {
         }
 
         clazz.fields.each { Field fit ->
-            if (fit.name.startsWith(prefix)) {
-                rv << fit.name
+            if (!fit.name.contains('$') && !fit.name.startsWith('_')) {
+                if (fit.name.startsWith(prefix)) {
+                    rv << fit.name
+                }
             }
         }
-        clazz.methods.each { Method mit ->
-            if (mit.name.startsWith(prefix)) {
-                rv << mit.name + (mit.parameterTypes.length == 0 ? "()" : "(")
+        clazz.methods.each { Method methIt ->
+            String name = methIt.name
+            if (name.startsWith("super\$")) {
+                name = name.substring(name.find("^super\\\$.*\\\$").length())
+            }
+            if (!(name.contains('$')) && ! name.startsWith('_')) {
+                if (name.startsWith(prefix)) {
+                    rv << name + (methIt.parameterTypes.length == 0 ? "()" : "(")
+                }
             }
         }
         InvokerHelper.getMetaClass(instance).metaMethods.each { MetaMethod mmit ->

@@ -18,6 +18,69 @@ package org.codehaus.groovy.tools.shell
 
 import org.codehaus.groovy.antlr.parser.GroovyLexer
 
+class GroovyshCompletorTest extends GroovyTestCase {
+
+    void testLiveClass() {
+        /* This test setup looks weird, but it is the only I found that can reproduce this behavior:
+groovy:000> class Foo extends HashSet implements Comparable {int compareTo(Object) {0}}
+===> true
+groovy:000> Foo.
+__$stMC              __$swapInit()            __timeStamp
+super$1$getClass()   super$1$notify()         super$1$notifyAll()
+*/
+        IO testio
+        ByteArrayOutputStream mockOut
+        ByteArrayOutputStream mockErr
+        mockOut = new ByteArrayOutputStream();
+        mockErr = new ByteArrayOutputStream();
+        testio = new IO(
+                new ByteArrayInputStream(),
+                mockOut,
+                mockErr)
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.run("import org.codehaus.groovy.tools.shell.ReflectionCompletor")
+        groovysh.run("""class Foo extends HashSet implements Comparable {
+int compareTo(Object) {0}; int foo; static int bar; int foom(){1}; static int barm(){2}}""")
+        groovysh.run("ReflectionCompletor.getPublicFieldsAndMethods(Foo, \"\")")
+        String rawout = mockOut.toString()
+        List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({it -> it.trim()[0..-2]})
+        assertEquals([], findResult.findAll({it.startsWith("_")}))
+        assertEquals([], findResult.findAll({it.startsWith("super\$")}))
+        assertEquals([], findResult.findAll({it.startsWith("this\$")}))
+        assertEquals(rawout, 121, findResult.size())
+    }
+
+    void testLiveInstance() {
+        /* This test setup looks weird, but it is the only I found that can reproduce this behavior:
+groovy:000> class Foo extends HashSet implements Comparable {int compareTo(Object) {0}}
+===> true
+groovy:000> Foo.
+__$stMC              __$swapInit()            __timeStamp
+super$1$getClass()   super$1$notify()         super$1$notifyAll()
+*/
+        IO testio
+        ByteArrayOutputStream mockOut
+        ByteArrayOutputStream mockErr
+        mockOut = new ByteArrayOutputStream();
+        mockErr = new ByteArrayOutputStream();
+        testio = new IO(
+                new ByteArrayInputStream(),
+                mockOut,
+                mockErr)
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.run("import org.codehaus.groovy.tools.shell.ReflectionCompletor")
+        groovysh.run("""class Foo extends HashSet implements Comparable {
+int compareTo(Object) {0}; int foo; static int bar; int foom(){1}; static int barm(){2}}""")
+        groovysh.run("ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), \"\")")
+        String rawout = mockOut.toString()
+        List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({it -> it.trim()[0..-2]})
+        assertEquals([], findResult.findAll({it.startsWith("_")}))
+        assertEquals([], findResult.findAll({it.startsWith("super\$")}))
+        assertEquals([], findResult.findAll({it.startsWith("this\$")}))
+        assertEquals(rawout, 121, findResult.size())
+    }
+}
+
 class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsArray() {
@@ -65,7 +128,7 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetInterfaceFields() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "")
-        assertEquals(421, result.size())
+        assertEquals(405, result.size())
         result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "LITERAL_as")
         assertEquals(["LITERAL_as", "LITERAL_assert"], result)
         GroovyLexer lexer = new GroovyLexer(new ByteArrayInputStream("".getBytes()))
@@ -75,7 +138,7 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsClass() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet.getClass(), "")
-        assertEquals(111, result.size())
+        assertEquals(112, result.size())
         result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "pro")
         assertEquals([], result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "toA")
@@ -84,12 +147,11 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsCustomClass() {
         Interpreter interp = new Interpreter(Thread.currentThread().contextClassLoader, new Binding())
-        Object instance = interp.evaluate(["class Foo{} extends HashSet implements Comparable"])
+        Object instance = interp.evaluate(["class Foo extends HashSet implements Comparable {int compareTo(Object) {0}}"])
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(instance.getClass(), "")
-        assertEquals([], result)
-        result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "fo")
-        // bug
-        assertEquals([], result)
+        assertEquals(60, result.size)
+        result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "si")
+        assertEquals(["size()"], result)
     }
 
 }
@@ -209,6 +271,4 @@ class ReflectionCompletorTest extends CompletorTestSupport {
             assertEquals(["substring("], candidates)
         }
     }
-
-
 }
