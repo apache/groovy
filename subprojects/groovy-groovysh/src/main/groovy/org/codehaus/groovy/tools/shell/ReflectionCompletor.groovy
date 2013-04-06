@@ -42,7 +42,12 @@ class ReflectionCompletor implements Completor {
             // if ends in a dot, or if there is a valid identifier prefix
             if (lastDot == cursor - 1 || identifierStart != -1) {
                 // evaluate the part before the dot to get an instance
-                String instanceRefExpression = buffer.substring(0, lastDot)
+                int previousIdentifierStart = findIdentifierStart(buffer, lastDot)
+                if (previousIdentifierStart == -1) {
+                    // this should rarely happen, example: foo(.baz
+                    return -1
+                }
+                String instanceRefExpression = buffer.substring(previousIdentifierStart , lastDot)
                 try {
                     def instance = shell.interp.evaluate([instanceRefExpression])
                     if (instance != null) {

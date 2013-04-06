@@ -152,7 +152,6 @@ class ReflectionCompletorTest extends CompletorTestSupport {
     }
 
     void testKnownVarAfterMethod() {
-        groovyshMocker.demand.getInterp(1) { [evaluate: {}, context: [variables: [xyzabc: ""]]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -166,12 +165,25 @@ class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testLiteralStringMethod() {
         // mock doing the right thing
-        groovyshMocker.demand.getInterp(1) { [evaluate: { expr -> "foo" }] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
             def candidates = []
-            assertEquals(6, completor.complete("\"foo\".subs", "\"foo\".subs".length(), candidates))
+            String buffer = "\"foo\".subs"
+            assertEquals(-1, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals([], candidates)
+        }
+    }
+
+    void testDontEvaluateMethod() {
+        // mock doing the right thing
+        groovyshMocker.demand.getInterp(1) { [evaluate: { expr -> assert(expr == ["foo"]); "foo" }] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            String buffer = "deletehardDisk(); foo.subs"
+            assertEquals(22, completor.complete(buffer, buffer.length(), candidates))
             assertEquals(["substring("], candidates)
         }
     }
