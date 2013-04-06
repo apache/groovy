@@ -250,6 +250,28 @@ class ReflectionCompletorTest extends CompletorTestSupport {
         }
     }
 
+    void testKnownMethod() {
+        groovyshMocker.demand.getInterp(1) { [context: [variables: [javup: String.&toString]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            assertEquals(0, completor.complete("jav", 2, candidates))
+            assertEquals(["javup()"], candidates)
+        }
+    }
+
+    void testKnownMethodWithArgs() {
+        groovyshMocker.demand.getInterp(1) { [context: [variables: [javup: Math.&max]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            assertEquals(0, completor.complete("jav", 2, candidates))
+            assertEquals(["javup("], candidates)
+        }
+    }
+
     void testKnownVarAfterMethod() {
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()

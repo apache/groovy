@@ -3,6 +3,7 @@ package org.codehaus.groovy.tools.shell
 import jline.Completor
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.MethodClosure
 
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -174,10 +175,18 @@ class ReflectionCompletor implements Completor {
      * @param prefix the prefix to match
      * @return the list of variables that match the prefix
      */
-    List findMatchingVariables(String prefix) {
-        def matches = []
-        for (String varName in shell.interp.context.variables.keySet()) {
-            if (varName.startsWith(prefix)) {
+    List<String> findMatchingVariables(String prefix) {
+        List<String> matches = []
+        Map vars = shell.interp.context.variables
+        for (String varName in vars.keySet()) {
+            if (acceptName(varName, prefix)) {
+                if (vars.get(varName) instanceof MethodClosure) {
+                    if (((MethodClosure)vars.get(varName)).getMaximumNumberOfParameters() > 0) {
+                        varName += "("
+                    } else {
+                        varName += "()"
+                    }
+                }
                 matches << varName
             }
         }
