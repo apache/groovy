@@ -39,6 +39,18 @@ extends CompletorTestSupport {
     }
 
 
+    void testPackageAccess() {
+        groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            String prompt = "println(java."
+            assertEquals(-1, completor.complete(prompt, prompt.length(), candidates))
+            assertEquals([], candidates)
+        }
+    }
+
     void testKnownVar() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [xyzabc: ""]]] }
         groovyshMocker.use {

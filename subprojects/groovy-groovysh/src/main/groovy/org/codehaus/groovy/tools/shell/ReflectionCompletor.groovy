@@ -1,6 +1,7 @@
 package org.codehaus.groovy.tools.shell
 
 import jline.Completor
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.runtime.InvokerHelper
 
 import java.lang.reflect.Field
@@ -43,14 +44,20 @@ class ReflectionCompletor implements Completor {
             if (lastDot == cursor-1 || identifierStart != -1){
                 // evaluate the part before the dot to get an instance
                 String instanceRefExpression = buffer.substring(0, lastDot)
-                def instance = shell.interp.evaluate([instanceRefExpression])
-                if (instance != null) {
-                    // look for public methods/fields that match the prefix
-                    List myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
-                    if (myCandidates.size() > 0) {
-                        candidates.addAll(myCandidates)
-                        return lastDot+1
+                try {
+                    def instance = shell.interp.evaluate([instanceRefExpression])
+                    if (instance != null) {
+                        // look for public methods/fields that match the prefix
+                        List myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
+                        if (myCandidates.size() > 0) {
+                            candidates.addAll(myCandidates)
+                            return lastDot+1
+                        }
                     }
+                } catch (MissingPropertyException |
+                         MissingMethodException |
+                         MissingFieldException |
+                         MultipleCompilationErrorsException e) {
                 }
             }
         }
