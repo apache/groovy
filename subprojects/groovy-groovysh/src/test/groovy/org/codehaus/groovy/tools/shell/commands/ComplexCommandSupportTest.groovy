@@ -94,7 +94,7 @@ class ComplexCommandSupportTest
                 return 2
             }
         }
-        assertEquals(["bar", "foo"], com.do_all().sort());
+        assertEquals([1, 2], com.do_all().sort());
         assertEquals(["bar", "foo"], com.invoked.sort())
     }
 

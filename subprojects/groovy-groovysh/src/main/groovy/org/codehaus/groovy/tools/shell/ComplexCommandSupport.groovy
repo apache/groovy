@@ -97,7 +97,7 @@ abstract class ComplexCommandSupport
     }
     
     def do_all = {
-        getFunctions().findAll {it != 'all'}.each {executeFunction(it, [])}
+        getFunctions().findAll {it != 'all'}.collect {executeFunction(it, [])}
     }
 }
 
