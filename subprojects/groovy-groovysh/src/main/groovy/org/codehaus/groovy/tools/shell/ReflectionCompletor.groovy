@@ -27,13 +27,13 @@ class ReflectionCompletor implements Completor {
 
         int identifierStart = findIdentifierStart(buffer, cursor)
         String identifierPrefix = identifierStart != -1 ? buffer.substring(identifierStart, cursor) : ""
-        int lastDot = buffer.lastIndexOf('.')
-
-        // if there are no dots, or the dit is not before the prefix
+        // get last dot before cursor
+        int lastDot = buffer.substring(0, cursor).lastIndexOf('.')
+        // if there are no dots, or the dot is not before the prefix
         if (lastDot == -1 || (identifierStart > -1 && lastDot < identifierStart - 1)) {
             //if there is a valid identifier prefix
             if (identifierStart != -1) {
-                List myCandidates = findMatchingVariables(identifierPrefix)
+                List<String> myCandidates = findMatchingVariables(identifierPrefix)
                 if (myCandidates.size() > 0) {
                     candidates.addAll(myCandidates)
                     return identifierStart
@@ -50,7 +50,13 @@ class ReflectionCompletor implements Completor {
                     // this should rarely happen, example: foo(.baz
                     return -1
                 }
-                String instanceRefExpression = buffer.substring(previousIdentifierStart , lastDot)
+                // prevent misleading completion for variable foo != Bar.foo
+                // scanning over points is dangerous in Groovy because Bar.foo can evaluate to Bar.getFoo(),
+                // which should not be evaluated during completion
+                if (previousIdentifierStart > 0 && buffer.charAt(previousIdentifierStart - 1) == '.') {
+                    return -1
+                }
+                String instanceRefExpression = buffer.substring(previousIdentifierStart, lastDot)
                 try {
                     def instance = shell.interp.evaluate([instanceRefExpression])
                     if (instance != null) {

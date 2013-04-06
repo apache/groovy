@@ -227,6 +227,18 @@ class ReflectionCompletorTest extends CompletorTestSupport {
         }
     }
 
+    void testKnownVarBeforeDot() {
+        groovyshMocker.demand.getInterp(1) { [evaluate: {expr -> assert(expr == "xyz"); "foo"}, context: [variables: [xyzabc: ""]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            // cursor is BEFORE dot
+            assertEquals(8, completor.complete("Foo.bar(xyz.", "Foo.bar(xyz".length(), candidates))
+            assertEquals(["xyzabc"], candidates)
+        }
+    }
+
     void testKnownClassMember() {
         groovyshMocker.demand.getInterp(1) { [evaluate: {Math}] }
         groovyshMocker.use {
@@ -272,6 +284,18 @@ class ReflectionCompletorTest extends CompletorTestSupport {
         }
     }
 
+    void testKnownVarMultipleDots() {
+        //mock asserts (flawed) "baz" is not evaluated
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            String buffer = "foo(Bar.baz.xyz"
+            assertEquals(-1, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals([], candidates)
+        }
+    }
+
     void testKnownVarAfterMethod() {
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
@@ -296,16 +320,19 @@ class ReflectionCompletorTest extends CompletorTestSupport {
         }
     }
 
-    void testDontEvaluateMethod() {
-        // mock doing the right thing
-        groovyshMocker.demand.getInterp(1) { [evaluate: { expr -> assert(expr == ["foo"]); "foo" }] }
+
+    /**
+     * Evaluating Gstrings with $ is dangerous, as this may invoke method
+     */
+    void testLiteralStringMethodEval() {
+        // mock asserting GString is not evaluated
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
             def candidates = []
-            String buffer = "deletehardDisk(); foo.subs"
-            assertEquals(22, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["substring("], candidates)
+            String buffer = "\"\${foo.delete()}\".subs"
+            assertEquals(-1, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals([], candidates)
         }
     }
 }
