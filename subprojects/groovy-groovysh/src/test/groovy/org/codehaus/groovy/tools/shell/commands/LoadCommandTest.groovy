@@ -28,10 +28,6 @@ class LoadCommandTest
     extends CommandTestSupport
 {
     void testLoad() {
-        try {
-            shell << 'load'
-            fail()
-        }
-        catch (CommandException expected) {}
+        shell << 'load'
     }
 }

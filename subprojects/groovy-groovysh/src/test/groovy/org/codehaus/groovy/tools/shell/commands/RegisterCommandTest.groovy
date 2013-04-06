@@ -39,21 +39,13 @@ class RegisterCommandTest
     }
 
     void testRegisterDupesFail() {
-        try {
-            shell << 'register org.codehaus.groovy.tools.shell.commands.EchoCommand'
-            shell << 'register org.codehaus.groovy.tools.shell.commands.EchoCommand'
-            fail()
-        }
-        catch (CommandException expected) {}
+        shell << 'register org.codehaus.groovy.tools.shell.commands.EchoCommand'
+        shell << 'register org.codehaus.groovy.tools.shell.commands.EchoCommand'
     }
 
     void testRegisterFail() {
-        try {
             shell << 'register'
-            fail()
         }
-        catch (CommandException expected) {}
-    }
 }
 
 class EchoCommand

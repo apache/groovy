@@ -26,23 +26,15 @@ class RecordCommandTest
     extends CommandTestSupport
 {
     void testStopNotStarted() {
-        try {
-            shell << 'record stop'
-            fail()
-        }
-        catch (Exception expected) {}
+        shell << 'record stop'
     }
 
     void testStartAlreadyStarted() {
         shell << 'record start'
 
-        try {
-            shell << 'record start'
-            fail()
-        }
-        catch (Exception expected) {}
+        shell << 'record start'
 
-        def file = shell << 'record stop'
+        File file = shell << 'record stop'
 
         file.delete()
     }

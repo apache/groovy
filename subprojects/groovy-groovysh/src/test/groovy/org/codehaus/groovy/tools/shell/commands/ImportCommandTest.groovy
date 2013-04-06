@@ -28,10 +28,7 @@ class ImportCommandTest
     extends CommandTestSupport
 {
     void testImport() {
-        try {
-            shell << 'import'
-            fail()
-        }
-        catch (CommandException expected) {}
+
+        shell << 'import'
     }
 }

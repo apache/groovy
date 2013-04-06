@@ -116,4 +116,57 @@ extends GroovyTestCase {
         assertEquals("", mockErr.toString())
     }
 
+    void testFindCommandDuplicate() {
+        Groovysh groovysh = new Groovysh(testio)
+        CommandSupport command = new CommandSupport(groovysh, "import", "imp") {
+            @Override
+            Object execute(List args) {
+                return null
+            }
+        }
+        try {
+            groovysh.register(command)
+            fail()
+        } catch (AssertionError e) {
+            // pass
+        }
+    }
+
+    void testFindCommandFoo() {
+        Groovysh groovysh = new Groovysh(testio)
+        assertEquals(null, groovysh.findCommand(" foo import "))
+        assertFalse(groovysh.isExecutable(" foo import "))
+        CommandSupport command2 = new CommandSupport(groovysh, "foo", "/foo") {
+            @Override
+            Object execute(List args) {
+                return null
+            }
+        }
+        groovysh.register(command2)
+        assertEquals(command2, groovysh.findCommand(" foo bar "))
+        assertTrue(groovysh.isExecutable(" foo import "))
+        assertEquals(command2, groovysh.findCommand(" /foo bar "))
+        assertEquals(null, groovysh.findCommand(" bar foo "))
+    }
+
+
+    void testExecuteCommandFoo() {
+        Groovysh groovysh = new Groovysh(testio)
+        assertEquals(null, groovysh.findCommand(" foo import "))
+        assertFalse(groovysh.isExecutable(" foo import "))
+        CommandSupport command2 = new CommandSupport(groovysh, "foo", "/foo") {
+            @Override
+            Object execute(List args) {
+                throw new CommandException(this, "Test Command failure")
+            }
+        }
+        groovysh.register(command2)
+        // also assert CommandException caught
+        assertNull(groovysh.execute(" foo import "))
+        assertTrue(mockErr.toString(), mockErr.toString().contains("Test Command failure"))
+        assertEquals(1, mockErr.toString().count("\n"))
+        assertEquals("", mockOut.toString())
+    }
+
+
 }

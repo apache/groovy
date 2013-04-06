@@ -28,10 +28,6 @@ class ShowCommandTest
     extends CommandTestSupport
 {
     void testShow() {
-        try {
-            shell << 'show'
-            fail()
-        }
-        catch (CommandException expected) {}
+        shell << 'show nocommandhere'
     }
 }

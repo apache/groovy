@@ -28,10 +28,10 @@ class HistoryCommandTest
     extends CommandTestSupport
 {
     void testHistory() {
-        try {
-            shell << 'history'
-            fail()
-        }
-        catch (CommandException expected) {}
+        shell << 'history nocommandhere'
+    }
+
+    void testHistoryNoArg() {
+        shell << 'history'
     }
 }

@@ -51,7 +51,7 @@ abstract class ComplexCommandSupport
                 args = [ defaultFunction ]
             }
             else {
-                fail("Command '$name' requires at least one argument")
+                fail("Command '$name' requires at least one argument of $functions")
             }
         }
         
@@ -80,7 +80,7 @@ abstract class ComplexCommandSupport
             return func.call(args)
         }
         else {
-            fail("Unknown function name: $fname")
+            fail("Unknown function name: '$fname'. Valid arguments: $functions")
         }
     }
     

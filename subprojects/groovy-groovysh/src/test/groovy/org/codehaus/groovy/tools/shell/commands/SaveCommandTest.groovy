@@ -28,10 +28,7 @@ class SaveCommandTest
     extends CommandTestSupport
 {
     void testSave() {
-        try {
-            shell << 'save'
-            fail()
-        }
-        catch (CommandException expected) {}
+        shell << 'save'
+
     }
 }

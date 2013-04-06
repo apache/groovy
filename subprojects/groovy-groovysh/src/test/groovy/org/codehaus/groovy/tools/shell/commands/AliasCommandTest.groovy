@@ -28,10 +28,7 @@ class AliasCommandTest
     extends CommandTestSupport
 {
     void testAlias() {
-        try {
-            shell << 'alias'
-            fail()
-        }
-        catch (CommandException expected) {}
+
+        shell << 'alias'
     }
 }
