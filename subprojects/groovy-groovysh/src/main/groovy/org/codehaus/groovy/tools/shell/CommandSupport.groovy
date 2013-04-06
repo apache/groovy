@@ -64,7 +64,7 @@ abstract class CommandSupport
     boolean hidden = false
     
     protected CommandSupport(final Shell shell, final String name, final String shortcut) {
-        assert shell
+        assert shell != null
         assert name
         assert shortcut
         

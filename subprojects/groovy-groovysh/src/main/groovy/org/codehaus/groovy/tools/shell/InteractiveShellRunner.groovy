@@ -34,7 +34,7 @@ class InteractiveShellRunner
     extends ShellRunner
     implements Runnable
 {
-    final ConsoleReader reader
+    ConsoleReader reader
     
     final Closure prompt
     

@@ -34,8 +34,8 @@ class XmlCommandRegistrar
     private final ClassLoader classLoader
     
     XmlCommandRegistrar(final Shell shell, final ClassLoader classLoader) {
-        assert shell
-        assert classLoader
+        assert shell != null
+        assert classLoader != null
         
         this.shell = shell
         this.classLoader = classLoader
