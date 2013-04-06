@@ -33,18 +33,14 @@ class HistoryCommand
     extends ComplexCommandSupport
 {
     HistoryCommand(final Groovysh shell) {
-        super(shell, 'history', '\\H')
-        
-        this.functions = [ 'show', 'clear', 'flush', 'recall' ]
-        
-        this.defaultFunction = 'show'
+        super(shell, 'history', '\\H', [ 'show', 'clear', 'flush', 'recall' ], 'show')
     }
     
     protected List createCompletors() {
         def loader = {
             def list = []
             
-            functions.each { String fun -> list << fun }
+            getFunctions().each { String fun -> list << fun }
             
             return list
         }

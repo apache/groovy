@@ -31,9 +31,7 @@ class PurgeCommand
     extends ComplexCommandSupport
 {
     PurgeCommand(final Groovysh shell) {
-        super(shell, 'purge', '\\p')
-        
-        this.functions = [ 'variables', 'classes', 'imports', 'preferences', 'all' ]
+        super(shell, 'purge', '\\p', [ 'variables', 'classes', 'imports', 'preferences', 'all' ])
     }
     
     def do_variables = {

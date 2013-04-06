@@ -33,9 +33,7 @@ class ShowCommand
     extends ComplexCommandSupport
 {
     ShowCommand(final Groovysh shell) {
-        super(shell, 'show', '\\S')
-        
-        this.functions = [ 'variables', 'classes', 'imports', 'preferences', 'all' ]
+        super(shell, 'show', '\\S', [ 'variables', 'classes', 'imports', 'preferences', 'all' ])
     }
     
     def do_variables = {
