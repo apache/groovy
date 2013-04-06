@@ -75,16 +75,19 @@ class ReflectionCompletor implements Completor {
      */
     int findIdentifierStart(String buffer, int endingAt) {
         // if the string is empty then there is no expression
-        if (endingAt == 0)
+        if (endingAt == 0) {
             return -1
+        }
         // if the last character is not valid then there is no expression
         char lastChar = buffer.charAt(endingAt-1)
-        if (!Character.isJavaIdentifierPart(lastChar))
+        if (!Character.isJavaIdentifierPart(lastChar)) {
             return -1
+        }
         // scan backwards until the beginning of the expression is found
         int startIndex = endingAt-1
-        while (startIndex > 0 && Character.isJavaIdentifierPart(buffer.charAt(startIndex-1)))
+        while (startIndex > 0 && Character.isJavaIdentifierPart(buffer.charAt(startIndex-1))) {
             --startIndex
+        }
         return startIndex
     }
 
@@ -98,17 +101,20 @@ class ReflectionCompletor implements Completor {
      */
     Collection<String> getPublicFieldsAndMethods(Object instance, String prefix) {
         List<String> rv = []
-        instance.class.fields.each {Field fit ->
-            fit (fit.name.startsWith(prefix))
-                rv << it.name
+        instance.class.fields.each { Field fit ->
+            if (fit.name.startsWith(prefix)) {
+                rv << fit.name
+            }
         }
         instance.class.methods.each { Method mit ->
-            if (mit.name.startsWith(prefix))
+            if (mit.name.startsWith(prefix)) {
                 rv << mit.name + (mit.parameterTypes.length == 0 ? "()" : "(")
+            }
         }
         InvokerHelper.getMetaClass(instance).metaMethods.each { MetaMethod mmit ->
-            if (mmit.name.startsWith(prefix))
+            if (mmit.name.startsWith(prefix)) {
                 rv << mmit.name + (mmit.parameterTypes.length == 0 ? "()" : "(")
+            }
         }
         return rv.sort().unique()
     }
@@ -121,9 +127,11 @@ class ReflectionCompletor implements Completor {
      */
     List findMatchingVariables(String prefix) {
         def matches = []
-        for (String varName in shell.interp.context.variables.keySet())
-            if (varName.startsWith(prefix))
+        for (String varName in shell.interp.context.variables.keySet()) {
+            if (varName.startsWith(prefix)) {
                 matches << varName
+            }
+        }
         return matches
     }
 }
