@@ -156,6 +156,12 @@ class ComplexCommandSupportTest
             def do_foo = fun
         }
         assertEquals(fun, com.loadFunction("foo"))
+        try {
+            com.loadFunction("bar")
+            fail()
+        } catch(CommandException e) {
+            // pass
+        }
     }
 
 
