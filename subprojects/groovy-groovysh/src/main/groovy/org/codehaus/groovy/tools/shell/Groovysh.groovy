@@ -391,6 +391,12 @@ class Groovysh extends Shell {
         if (errorHook == null) {
             throw new IllegalStateException("Error hook is not set")
         }
+        if (cause instanceof MissingPropertyException) {
+            if (cause.type && cause.type.canonicalName == Interpreter.SCRIPT_FILENAME) {
+                io.err.println("@|bold,red Unknown property|@: " + cause.property)
+                return
+            }
+        }
 
         errorHook.call(cause)
     }
