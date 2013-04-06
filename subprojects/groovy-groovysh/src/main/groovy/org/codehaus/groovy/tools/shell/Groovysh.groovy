@@ -200,17 +200,19 @@ class Groovysh extends Shell {
         The code will always assume you want the line number in the prompt.  To implement differently overhead the render
         prompt variable.
      */
-    private String buildPrompt(){
-       def lineNum = formatLineNumber(buffers.current().size())
-       def formattedPrompt = "@|bold groovy:|@${lineNum}@|bold >|@ "
+    private String buildPrompt() {
+        def lineNum = formatLineNumber(buffers.current().size())
 
-       def GROOVYSHELL_PROPERTY =  System.getProperty("groovysh.prompt")
-       def GROOVYSHELL_ENV      =  System.getenv("GROOVYSH_PROMPT")
+        def GROOVYSHELL_PROPERTY = System.getProperty("groovysh.prompt")
+        if (GROOVYSHELL_PROPERTY) {
+            return  "@|bold ${GROOVYSHELL_PROPERTY}:|@${lineNum}@|bold >|@ "
+        }
+        def GROOVYSHELL_ENV = System.getenv("GROOVYSH_PROMPT")
+        if (GROOVYSHELL_ENV) {
+            return  "@|bold ${GROOVYSHELL_ENV}:|@${lineNum}@|bold >|@ "
+        }
+        return "@|bold groovy:|@${lineNum}@|bold >|@ "
 
-       if (GROOVYSHELL_PROPERTY)  return  "@|bold ${GROOVYSHELL_PROPERTY}:|@${lineNum}@|bold >|@ "
-       if (GROOVYSHELL_ENV)       return  "@|bold ${GROOVYSHELL_ENV}:|@${lineNum}@|bold >|@ "
-
-       return formattedPrompt
     }
 
     public String renderPrompt() {
