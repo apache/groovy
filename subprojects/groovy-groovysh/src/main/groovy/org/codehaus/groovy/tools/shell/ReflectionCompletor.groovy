@@ -3,6 +3,9 @@ package org.codehaus.groovy.tools.shell
 import jline.Completor
 import org.codehaus.groovy.runtime.InvokerHelper
 
+import java.lang.reflect.Field
+import java.lang.reflect.Method
+
 /**
  * Implements the Completor interface to provide competions for
  * GroovyShell by using reflection on global variables.
@@ -11,9 +14,9 @@ import org.codehaus.groovy.runtime.InvokerHelper
  */
 class ReflectionCompletor implements Completor {
 
-    private Shell shell;
+    private Groovysh shell;
 
-    ReflectionCompletor(Shell shell) {
+    ReflectionCompletor(Groovysh shell) {
         this.shell = shell
     }
 
@@ -86,19 +89,19 @@ class ReflectionCompletor implements Completor {
      * @param prefix the prefix that must be matched
      * @return the list of public methods and fields that begin with the prefix
      */
-    List getPublicFieldsAndMethods(Object instance, String prefix) {
-        def rv = []
-        instance.class.fields.each {
-            if (it.name.startsWith(prefix))
+    Collection<String> getPublicFieldsAndMethods(Object instance, String prefix) {
+        List<String> rv = []
+        instance.class.fields.each {Field fit ->
+            fit (fit.name.startsWith(prefix))
                 rv << it.name
         }
-        instance.class.methods.each {
-            if (it.name.startsWith(prefix))
-                rv << it.name + (it.parameterTypes.length == 0 ? "()" : "(")
+        instance.class.methods.each { Method mit ->
+            if (mit.name.startsWith(prefix))
+                rv << mit.name + (mit.parameterTypes.length == 0 ? "()" : "(")
         }
-        InvokerHelper.getMetaClass(instance).metaMethods.each {
-            if (it.name.startsWith(prefix))
-                rv << it.name + (it.parameterTypes.length == 0 ? "()" : "(")
+        InvokerHelper.getMetaClass(instance).metaMethods.each { MetaMethod mmit ->
+            if (mmit.name.startsWith(prefix))
+                rv << mmit.name + (mmit.parameterTypes.length == 0 ? "()" : "(")
         }
         return rv.sort().unique()
     }

@@ -51,7 +51,7 @@ class Groovysh extends Shell {
 
     final Interpreter interp
     
-    final List imports = []
+    final List<String> imports = []
     
     InteractiveShellRunner runner
     
@@ -74,15 +74,15 @@ class Groovysh extends Shell {
         registrar.call(this)
     }
 
-    private static Closure createDefaultRegistrar() {
-        return { shell ->
+    private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
+        return {Shell shell ->
             def r = new XmlCommandRegistrar(shell, classLoader)
             r.register(getClass().getResource('commands.xml'))
         }
     }
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
-        this(classLoader, binding, io, createDefaultRegistrar())
+        this(classLoader, binding, io, createDefaultRegistrar(classLoader))
     }
 
     Groovysh(final Binding binding, final IO io) {
@@ -129,8 +129,7 @@ class Groovysh extends Shell {
         }
         
         // Otherwise treat the line as Groovy
-        def current = []
-        current += buffers.current()
+        List<String> current = new ArrayList<String>(buffers.current())
 
         // Append the line to the current buffer
         current << line
@@ -147,7 +146,7 @@ class Groovysh extends Shell {
                 }
 
                 // Evaluate the current buffer w/imports and dummy statement
-                def buff = imports + [ 'true' ] + current
+                List buff = imports + [ 'true' ] + current
 
                 lastResult = result = interp.evaluate(buff)
                 buffers.clearSelected()
@@ -244,7 +243,7 @@ class Groovysh extends Shell {
         def file = new File(userStateDirectory, filename)
         
         if (file.exists()) {
-            def command = registry['load']
+            Command command = registry['load'] as Command
 
             if (command) {
                 log.debug("Loading user-script: $file")

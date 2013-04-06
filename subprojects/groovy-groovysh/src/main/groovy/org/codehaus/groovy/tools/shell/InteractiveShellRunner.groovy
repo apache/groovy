@@ -40,7 +40,7 @@ class InteractiveShellRunner
     
     final CommandsMultiCompletor completor
     
-    InteractiveShellRunner(final Shell shell, final Closure prompt) {
+    InteractiveShellRunner(final Groovysh shell, final Closure prompt) {
         super(shell)
         
         this.prompt = prompt
@@ -86,7 +86,7 @@ class InteractiveShellRunner
     
     protected String readLine() {
         try {
-            return reader.readLine(prompt.call())
+            return reader.readLine(prompt.call() as String)
         }
         catch (StringIndexOutOfBoundsException e) {
             log.debug("HACK: Try and work around GROOVY-2152 for now", e)

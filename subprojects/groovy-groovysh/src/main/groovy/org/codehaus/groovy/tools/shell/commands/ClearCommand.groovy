@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 
 /**
@@ -28,7 +29,7 @@ import org.codehaus.groovy.tools.shell.Shell
 class ClearCommand
     extends CommandSupport
 {
-    ClearCommand(final Shell shell) {
+    ClearCommand(final Groovysh shell) {
         super(shell, 'clear', '\\c')
     }
     

@@ -58,7 +58,7 @@ class Main
         cli.D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.define.description'])
         cli.T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
 
-        def options = cli.parse(args)
+        OptionAccessor options = cli.parse(args)
 
         if (options.h) {
             cli.usage()

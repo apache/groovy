@@ -30,9 +30,8 @@ abstract class CompletorTestSupport extends GroovyTestCase {
                 mockOut,
                 mockErr)
         groovyshMocker = new MockFor(Groovysh)
-        //groovyshMocker.demand.createDefaultRegistrar() {{shell -> null}}
+        groovyshMocker.demand.createDefaultRegistrar() {{shell -> null}}
         groovyshMocker.demand.getClass() { Groovysh.class }
-        groovyshMocker.demand.getClassLoader(1) { Thread.currentThread().contextClassLoader }
 
         for (i in 1..19) {
             groovyshMocker.demand.getIo(0..1) {testio}

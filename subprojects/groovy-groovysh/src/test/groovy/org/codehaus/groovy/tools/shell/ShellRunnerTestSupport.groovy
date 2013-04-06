@@ -52,15 +52,20 @@ extends GroovyTestCase {
         // setup mock and stub with calls expected from InteractiveShellRunner Constructor
 
         shellMocker = new MockFor(Groovysh.class)
+        shellMocker.demand.createDefaultRegistrar(1) { {Shell shell -> null} }
         shellMocker.demand.getClass(1) { Groovysh }
-        shellMocker.demand.getClassLoader(1) { Thread.currentThread().contextClassLoader }
+        shellMocker.demand.getIo(2) { testio }
+        shellMocker.demand.getRegistry(1) {[]}
+        shellMocker.demand.getHistory(2) {[size: 0, maxsize: 1]}
+        shellMocker.demand.setHistoryFull(1) {}
+        shellMocker.demand.getHistoryFull(1) {false}
         // adding number of commands from xml file
         for (i in 1..19) {
             shellMocker.demand.getIo(0..1) { testio }
             shellMocker.demand.leftShift(0..1) { testio }
             shellMocker.demand.getIo(0..1) { testio }
         }
-//        shellMocker.demand.createDefaultRegistrar(1) { {Shell shell -> null} }
+
 //        shellMocker.demand.getClass(1) {Groovysh}
 //        // don't care how often this is called
 //        shellMocker.demand.getIo(2..10) {testio}

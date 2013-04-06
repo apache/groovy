@@ -20,16 +20,13 @@ public class ErrorDisplayTest extends ShellRunnerTestSupport {
 
                 InteractiveShellRunner shellRunner = new InteractiveShellRunner(shellMock, { ">" })
                 shellRunner.reader = readerStub
-                assertEquals("foo", shellRunner.readLine())
+                // assert no exception
+                shellRunner.run()
             }
         }
     }
 
     void testError() {
-        shellMocker.demand.getRegistry(1) {[]}
-        shellMocker.demand.getHistory(2) {[size: 0, maxsize: 1]}
-        shellMocker.demand.setHistoryFull(1) {}
-        shellMocker.demand.getHistoryFull(1) {false}
         readerStubber.demand.readLine() { throw new StringIndexOutOfBoundsException() }
         shellMocker.use {
             readerStubber.use {
@@ -45,10 +42,6 @@ public class ErrorDisplayTest extends ShellRunnerTestSupport {
     }
 
     void testError2() {
-        shellMocker.demand.getRegistry(1) {[]}
-        shellMocker.demand.getHistory(2) {[size: 0, maxsize: 1]}
-        shellMocker.demand.setHistoryFull(1) {}
-        shellMocker.demand.getHistoryFull(1) {false}
         readerStubber.demand.readLine() { throw new Throwable("MockException") }
         shellMocker.use { readerStubber.use {
             Groovysh shellMock = new Groovysh()

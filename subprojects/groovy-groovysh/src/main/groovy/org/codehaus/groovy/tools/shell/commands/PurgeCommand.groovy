@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.util.Preferences
 
@@ -29,7 +30,7 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 class PurgeCommand
     extends ComplexCommandSupport
 {
-    PurgeCommand(final Shell shell) {
+    PurgeCommand(final Groovysh shell) {
         super(shell, 'purge', '\\p')
         
         this.functions = [ 'variables', 'classes', 'imports', 'preferences', 'all' ]

@@ -28,7 +28,7 @@ class BufferManager
 {
     protected final Logger log = Logger.create(this.class)
     
-    final List buffers = []
+    final List<List<String>> buffers = []
 
     int selected
 
@@ -44,7 +44,7 @@ class BufferManager
         log.debug('Buffers reset')
     }
     
-    List current() {
+    List<String> current() {
         assert !buffers.isEmpty()
         
         return buffers[selected]

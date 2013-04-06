@@ -28,6 +28,11 @@ import antlr.collections.AST
 import antlr.RecognitionException
 import antlr.TokenStreamException
 
+
+interface Parsing {
+    ParseStatus parse(final List<String> buffer);
+}
+
 /**
  * Provides a facade over the parser to recognize valid Groovy syntax.
  *
@@ -40,7 +45,7 @@ class Parser
 
     private static final Logger log = Logger.create(Parser.class)
 
-    private final def delegate
+    private final Parsing delegate
 
     Parser() {
         def f = Preferences.parserFlavor
@@ -63,7 +68,7 @@ class Parser
         }
     }
     
-    ParseStatus parse(final List buffer) {
+    ParseStatus parse(final List<String> buffer) {
         return delegate.parse(buffer)
     }
 }
@@ -71,7 +76,7 @@ class Parser
 /**
  * A relaxed parser, which tends to allow more, but won't really catch valid syntax errors.
  */
-final class RelaxedParser
+final class RelaxedParser implements Parsing
 {
     private final Logger log = Logger.create(this.class)
 
@@ -112,7 +117,7 @@ final class RelaxedParser
     }
 
     protected AST doParse(final UnicodeEscapingReader reader) throws Exception {
-        def lexer = new GroovyLexer(reader)
+        GroovyLexer lexer = new GroovyLexer(reader)
         reader.setLexer(lexer)
 
         def parser = GroovyRecognizer.make(lexer)
@@ -127,13 +132,13 @@ final class RelaxedParser
 /**
  * A more rigid parser which catches more syntax errors, but also tends to barf on stuff that is really valid from time to time.
  */
-final class RigidParser
+final class RigidParser implements Parsing
 {
     static final String SCRIPT_FILENAME = 'groovysh_parse'
 
     private final Logger log = Logger.create(this.class)
 
-    ParseStatus parse(final List buffer) {
+    ParseStatus parse(final List<String> buffer) {
         assert buffer
 
         String source = buffer.join(Parser.NEWLINE)

@@ -19,6 +19,7 @@ package org.codehaus.groovy.tools.shell.commands
 import jline.FileNameCompletor
 
 import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 
 /**
@@ -30,7 +31,7 @@ import org.codehaus.groovy.tools.shell.Shell
 class SaveCommand
     extends CommandSupport
 {
-    SaveCommand(final Shell shell) {
+    SaveCommand(final Groovysh shell) {
         super(shell, 'save', '\\s')
     }
 

@@ -27,18 +27,18 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 abstract class ComplexCommandSupport
     extends CommandSupport
 {
-    protected List/*<String>*/ functions
+    protected List<String> functions
     
     protected String defaultFunction
     
-    ComplexCommandSupport(final Shell shell, final String name, final String shortcut) {
+    ComplexCommandSupport(final Groovysh shell, final String name, final String shortcut) {
         super(shell, name, shortcut)
     }
     
     protected List createCompletors() {
         def c = new SimpleCompletor()
         
-        functions.each { c.add(it) }
+        functions.each { String it -> c.add(it) }
         
         return [ c, null ]
     }
@@ -63,7 +63,7 @@ abstract class ComplexCommandSupport
         
         assert functions
         
-        def fname = args[0]
+        String fname = args[0]
         
         if (args.size() > 1) {
             args = args[1..-1]

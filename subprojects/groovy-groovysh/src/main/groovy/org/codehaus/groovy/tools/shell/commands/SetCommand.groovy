@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
@@ -31,7 +32,7 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 class SetCommand
     extends CommandSupport
 {
-    SetCommand(final Shell shell) {
+    SetCommand(final Groovysh shell) {
         super(shell, 'set', '\\=')
     }
 
@@ -64,9 +65,9 @@ class SetCommand
             }
             else {
                 io.out.println('Preferences:')
-                keys.each {
-                    def value = Preferences.get(it, null)
-                    println("    $it=$value")
+                keys.each { String key ->
+                    def keyvalue = Preferences.get(key, null)
+                    println("    $key=$keyvalue")
                 }
             }
             return
@@ -76,7 +77,7 @@ class SetCommand
             fail("Command '$name' requires arguments: <name> [<value>]")
         }
         
-        def name = args[0]
+        String name = args[0]
         def value
         
         if (args.size() == 1) {

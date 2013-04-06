@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 
 /**
@@ -28,7 +29,7 @@ import org.codehaus.groovy.tools.shell.Shell
 class RecordCommand
     extends ComplexCommandSupport
 {
-    RecordCommand(final Shell shell) {
+    RecordCommand(final Groovysh shell) {
         super(shell, 'record', '\\r')
 
         this.functions = [ 'start', 'stop', 'status' ]
@@ -36,8 +37,8 @@ class RecordCommand
         this.defaultFunction = 'status'
 
         addShutdownHook {
-            if (recording) {
-                do_stop()
+            if (isRecording()) {
+                this.do_stop()
             }
         }
     }
@@ -53,7 +54,7 @@ class RecordCommand
     def recordInput(final String line) {
         assert line != null
 
-        if (recording) {
+        if (isRecording()) {
             writer.println(line)
             writer.flush()
         }
@@ -62,7 +63,7 @@ class RecordCommand
     def recordResult(final Object result) {
         // result maybe null
 
-        if (recording) {
+        if (isRecording()) {
             // Using String.valueOf() to prevent crazy exceptions
             writer.println("// RESULT: ${String.valueOf(result)}")
             writer.flush()
@@ -72,7 +73,7 @@ class RecordCommand
     def recordError(final Throwable cause) {
         assert cause != null
 
-        if (recording) {
+        if (isRecording()) {
             writer.println("// ERROR: $cause")
 
             cause.stackTrace.each {
@@ -83,8 +84,8 @@ class RecordCommand
         }
     }
 
-    def do_start = { args ->
-        if (recording) {
+    def do_start = {args ->
+        if (isRecording()) {
             fail("Already recording to: $file")
         }
 
@@ -95,7 +96,7 @@ class RecordCommand
             file = new File(args[0] as String)
         }
 
-        if(file.parentFile) file.parentFile.mkdirs()
+        if (file.parentFile) file.parentFile.mkdirs()
 
         writer = file.newPrintWriter()
         writer.println("// OPENED: " + new Date())
@@ -107,7 +108,7 @@ class RecordCommand
     }
 
     def do_stop = {
-        if (!recording) {
+        if (!isRecording()) {
             fail("Not recording")
         }
 
@@ -126,7 +127,7 @@ class RecordCommand
     }
 
     def do_status = {
-        if (!recording) {
+        if (!isRecording()) {
             io.out.println("Not recording")
 
             return null

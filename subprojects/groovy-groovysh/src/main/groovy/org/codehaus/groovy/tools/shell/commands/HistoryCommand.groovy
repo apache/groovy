@@ -16,7 +16,9 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import jline.History
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
@@ -30,7 +32,7 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 class HistoryCommand
     extends ComplexCommandSupport
 {
-    HistoryCommand(final Shell shell) {
+    HistoryCommand(final Groovysh shell) {
         super(shell, 'history', '\\H')
         
         this.functions = [ 'show', 'clear', 'flush', 'recall' ]
@@ -42,7 +44,7 @@ class HistoryCommand
         def loader = {
             def list = []
             
-            functions.each { list << it }
+            functions.each { String fun -> list << fun }
             
             return list
         }
@@ -88,8 +90,8 @@ class HistoryCommand
         }
     }
     
-    def do_recall = { args ->
-        def line
+    def do_recall = {args ->
+        String line
         
         if (args.size() != 1) {
             fail("History recall requires a single history identifer")
