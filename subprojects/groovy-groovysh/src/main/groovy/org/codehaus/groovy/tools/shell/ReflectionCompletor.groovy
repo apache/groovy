@@ -115,7 +115,9 @@ class ReflectionCompletor implements Completor {
         if (clazz == null) {
             return rv;
         }
+        boolean isClass = false
         if (clazz == Class) {
+            isClass = true
             clazz = instance as Class
         }
 
@@ -125,27 +127,39 @@ class ReflectionCompletor implements Completor {
             }
         }
 
-        addClassFieldsAndMethods(clazz, prefix, rv)
-
+        Class loopclazz = clazz
+        while (loopclazz != null) {
+            addClassFieldsAndMethods(loopclazz, isClass, prefix, rv)
+            loopclazz = loopclazz.superclass
+        }
         return rv.sort()
     }
 
-    private static Collection<String> addClassFieldsAndMethods(final Class clazz, final String prefix, Collection rv) {
-        Field[] fields = clazz.fields
+    private static Collection<String> addClassFieldsAndMethods(final Class clazz, final boolean staticOnly, final String prefix, Collection rv) {
+        Field[] fields = staticOnly ? clazz.fields : clazz.getDeclaredFields()
         fields.each { Field fit ->
             if (acceptName(fit.name, prefix)) {
-                rv << fit.name
+                int modifiers = fit.getModifiers()
+                if (Modifier.isPublic(modifiers) && (!staticOnly || Modifier.isStatic(modifiers))) {
+                    rv << fit.name
+                }
             }
         }
-        Method[] methods = clazz.methods
+        Method[] methods = staticOnly ? clazz.methods : clazz.getDeclaredMethods()
         methods.each { Method methIt ->
             String name = methIt.getName()
             if (name.startsWith("super\$")) {
                 name = name.substring(name.find("^super\\\$.*\\\$").length())
             }
             if (acceptName(name, prefix)) {
-                rv << name + (methIt.parameterTypes.length == 0 ? "()" : "(")
+                int modifiers = methIt.getModifiers()
+                if (Modifier.isPublic(modifiers) && (!staticOnly || Modifier.isStatic(modifiers))) {
+                    rv << name + (methIt.parameterTypes.length == 0 ? "()" : "(")
+                }
             }
+        }
+        for (interface_ in clazz.getInterfaces()) {
+            addClassFieldsAndMethods(interface_, staticOnly, prefix, rv)
         }
     }
 

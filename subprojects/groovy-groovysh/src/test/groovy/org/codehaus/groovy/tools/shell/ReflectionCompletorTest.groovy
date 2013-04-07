@@ -47,7 +47,7 @@ int compareTo(Object) {0}; int foo; static int bar; int foom(){1}; static int ba
         assertEquals([], findResult.findAll({it.startsWith("_")}))
         assertEquals([], findResult.findAll({it.startsWith("super\$")}))
         assertEquals([], findResult.findAll({it.startsWith("this\$")}))
-        assertEquals(rawout, 121, findResult.size())
+        assertEquals(rawout, 99, findResult.size())
     }
 
     void testLiveInstance() {
@@ -94,6 +94,7 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "")
         assertEquals(96, result.size())
         result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "size")
+        // e.g. don't show non-public inherited size field
         assertEquals(["size()"], result)
     }
 
@@ -121,14 +122,14 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsInterface() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(Set, "")
-        assertEquals(105, result.size())
+        assertEquals(96, result.size())
         result = ReflectionCompletor.getPublicFieldsAndMethods(Set, "toA")
-        assertEquals(["toArray(", "toArray()"], result)
+        assertEquals([], result)
     }
 
     void testGetInterfaceFields() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "")
-        assertEquals(405, result.size())
+        assertEquals(277, result.size())
         result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "LITERAL_as")
         assertEquals(["LITERAL_as", "LITERAL_assert"], result)
         GroovyLexer lexer = new GroovyLexer(new ByteArrayInputStream("".getBytes()))
@@ -138,10 +139,12 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsClass() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet.getClass(), "")
-        assertEquals(112, result.size())
+        assertEquals(52, result.size())
         result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "pro")
         assertEquals([], result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "toA")
+        assertEquals([], result)
+        result = ReflectionCompletor.getPublicFieldsAndMethods(new HashSet(), "toA")
         assertEquals(["toArray(", "toArray()"], result)
     }
 
@@ -149,7 +152,7 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
         Interpreter interp = new Interpreter(Thread.currentThread().contextClassLoader, new Binding())
         Object instance = interp.evaluate(["class Foo extends HashSet implements Comparable {int compareTo(Object) {0}}"])
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(instance.getClass(), "")
-        assertEquals(60, result.size)
+        assertEquals(49, result.size)
         result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "si")
         assertEquals(["size()"], result)
     }
@@ -212,6 +215,18 @@ class ReflectionCompletorTest extends CompletorTestSupport {
         }
     }
 
+    void testKnownField() {
+        groovyshMocker.demand.getInterp(1) { [evaluate: { expr -> Math }] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            // xyz cannot be not a var here
+            assertEquals(5, completor.complete("Math.P", "Math.P".length(), candidates))
+            assertEquals(["PI"], candidates)
+        }
+    }
+
     void testKnownClassMember() {
         groovyshMocker.demand.getInterp(1) { [evaluate: {Math}] }
         groovyshMocker.use {
@@ -223,7 +238,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
             assertEquals(["max("], candidates)
         }
     }
-
+    
     void testKnownVarAfterDot() {
         groovyshMocker.demand.getInterp(1) { [evaluate: {expr -> assert(expr == ["xyz"])}, context: [variables: [xyzabc: ""]]] }
         groovyshMocker.use {
