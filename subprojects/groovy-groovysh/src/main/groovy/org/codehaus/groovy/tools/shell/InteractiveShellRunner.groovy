@@ -24,6 +24,8 @@ import jline.Completor
 import jline.MultiCompletor
 import jline.SimpleCompletor
 import org.codehaus.groovy.tools.shell.util.Logger
+import org.codehaus.groovy.tools.shell.util.Preferences
+import org.codehaus.groovy.tools.shell.util.WrappedInputStream
 
 /**
  * Support for running a {@link Shell} interactively using the JLine library.
@@ -40,13 +42,14 @@ class InteractiveShellRunner
     final Closure prompt
     
     final CommandsMultiCompletor completor
+    WrappedInputStream wrappedInputStream
 
     InteractiveShellRunner(final Groovysh shell, final Closure prompt) {
         super(shell)
         
         this.prompt = prompt
-        
-        this.reader = new ConsoleReader(shell.io.inputStream, new PrintWriter(shell.io.outputStream, true))
+        this.wrappedInputStream = new WrappedInputStream(shell.io.inputStream)
+        this.reader = new ConsoleReader(wrappedInputStream, new PrintWriter(shell.io.outputStream, true))
 
         // complete groovysh commands, display, import, ... as first word in line
         this.completor = new CommandsMultiCompletor()
@@ -89,6 +92,12 @@ class InteractiveShellRunner
     
     protected String readLine() {
         try {
+            if (Boolean.valueOf(Preferences.get(Groovysh.AUTOINDENT_PREFERENCE_KEY))) {
+                // prevent auto-indent when pasting code blocks
+                if (shell.io.inputStream.available() == 0) {
+                    wrappedInputStream.insert(((Groovysh) shell).getIndentPrefix())
+                }
+            }
             return reader.readLine(prompt.call() as String)
         } catch (StringIndexOutOfBoundsException e) {
             log.debug("HACK: Try and work around GROOVY-2152 for now", e)

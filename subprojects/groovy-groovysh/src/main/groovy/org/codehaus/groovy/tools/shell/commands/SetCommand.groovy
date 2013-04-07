@@ -49,6 +49,7 @@ class SetCommand
             set << Preferences.PARSER_FLAVOR_KEY
             set << Preferences.SANITIZE_STACK_TRACE_KEY
             set << Preferences.SHOW_LAST_RESULT_KEY
+            set << Groovysh.AUTOINDENT_PREFERENCE_KEY
 
             return set.toList()
         }

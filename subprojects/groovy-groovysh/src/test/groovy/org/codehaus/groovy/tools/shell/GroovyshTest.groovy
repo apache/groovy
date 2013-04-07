@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.tools.shell
 
+import groovy.mock.interceptor.MockFor
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 class GroovyshTest
@@ -149,7 +150,6 @@ extends GroovyTestCase {
         assertEquals(null, groovysh.findCommand(" bar foo "))
     }
 
-
     void testExecuteCommandFoo() {
         Groovysh groovysh = new Groovysh(testio)
         assertEquals(null, groovysh.findCommand(" foo import "))
@@ -168,5 +168,15 @@ extends GroovyTestCase {
         assertEquals("", mockOut.toString())
     }
 
+    void testGetIndentLevel() {
+        Groovysh groovysh = new Groovysh(testio)
+        assertEquals("", groovysh.getIndentPrefix())
+        groovysh.buffers.buffers.add(["Foo {"])
+        groovysh.buffers.select(1)
+        assertEquals(" " * groovysh.indentSize, groovysh.getIndentPrefix())
+        groovysh.buffers.buffers.add(["Foo {{"])
+        groovysh.buffers.select(2)
+        assertEquals(" " * groovysh.indentSize * 2, groovysh.getIndentPrefix())
 
+    }
 }
