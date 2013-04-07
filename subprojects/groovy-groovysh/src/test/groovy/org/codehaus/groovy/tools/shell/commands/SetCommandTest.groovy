@@ -16,6 +16,10 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import groovy.mock.interceptor.MockFor
+import org.codehaus.groovy.tools.shell.util.Preferences
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
+
 /**
  * Tests for the {@link SetCommand} class.
  *
@@ -27,5 +31,24 @@ class SetCommandTest
 {
     void testSet() {
         shell << 'set'
+    }
+
+    void testComplete() {
+
+        MockFor preferencesMocker = new MockFor(Preferences)
+        preferencesMocker.demand.keys(1) { [:] }
+        preferencesMocker.demand.getVERBOSITY_KEY(1) { 'k1' }
+        preferencesMocker.demand.getEDITOR_KEY(1) { 'k2' }
+        preferencesMocker.demand.getPARSER_FLAVOR_KEY(1) { 'k3' }
+        preferencesMocker.demand.getSANITIZE_STACK_TRACE_KEY(1) { 'k4' }
+        preferencesMocker.demand.getSHOW_LAST_RESULT_KEY(1) { 'k5' }
+        preferencesMocker.use {
+            SetCommand command = new SetCommand(shell)
+            ArrayList<SimpleCompletor> completors = command.createCompletors()
+            assertEquals(2, completors.size())
+            List<String> candidates = []
+            assertEquals(0, completors[0].complete("", 0, candidates))
+            assertEquals(["k1", "k2", "k3", "k4", "k5"], candidates)
+        }
     }
 }

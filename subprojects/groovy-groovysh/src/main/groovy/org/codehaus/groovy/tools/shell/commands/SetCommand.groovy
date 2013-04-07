@@ -38,13 +38,19 @@ class SetCommand
 
     protected List createCompletors() {
         def loader = {
-            def list = []
+            Set<String> set = [] as Set<String>
 
-            def keys = Preferences.keys()
+            String[] keys = Preferences.keys()
 
-            keys.each { list << it }
+            keys.each { String key -> set.add(key) }
 
-            return list
+            set << Preferences.VERBOSITY_KEY
+            set << Preferences.EDITOR_KEY
+            set << Preferences.PARSER_FLAVOR_KEY
+            set << Preferences.SANITIZE_STACK_TRACE_KEY
+            set << Preferences.SHOW_LAST_RESULT_KEY
+
+            return set.toList()
         }
 
         return [
