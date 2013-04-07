@@ -35,72 +35,72 @@ class HistoryCommand
     HistoryCommand(final Groovysh shell) {
         super(shell, 'history', '\\H', [ 'show', 'clear', 'flush', 'recall' ], 'show')
     }
-    
+
     protected List createCompletors() {
         def loader = {
             def list = []
-            
+
             getFunctions().each { String fun -> list << fun }
-            
+
             return list
         }
-        
+
         return [
             new SimpleCompletor(loader),
             null
         ]
     }
-    
+
     Object execute(List args) {
         if (!history) {
             fail("Shell does not appear to be interactive; Can not query history")
         }
-        
+
         super.execute(args)
 
         // Don't return anything
         return null
     }
-    
+
     def do_show = {
         history.historyList.eachWithIndex { item, i ->
             i = i.toString().padLeft(3, ' ')
-            
+
             io.out.println(" @|bold $i|@  $item")
         }
     }
-    
+
     def do_clear = {
         history.clear()
-        
+
         if (io.verbose) {
             io.out.println('History cleared')
         }
     }
-    
+
     def do_flush = {
         history.flushBuffer()
-        
+
         if (io.verbose) {
             io.out.println('History flushed')
         }
     }
-    
+
     def do_recall = {args ->
         String line
-        
-        if (args.size() != 1) {
+
+        if (!args || ((List)args).size() != 1) {
             fail("History recall requires a single history identifer")
         }
-        
-        def id = args[0]
+
+        String ids = ((List<String>)args)[0]
 
         //
         // FIXME: This won't work as desired because the history shifts when we run recall and could internally shift more from alias redirection
         //
-        
+
         try {
-            id = Integer.parseInt(id)
+            int id = Integer.parseInt(ids)
             if (shell.historyFull) {
                 // if history was full before execution of the command, then the recall command itself
                 // has been added to history before it actually gets executed
@@ -115,11 +115,11 @@ class HistoryCommand
             }
         }
         catch (Exception e) {
-            fail("Invalid history identifier: $id", e)
+            fail("Invalid history identifier: $ids", e)
         }
-        
-        log.debug("Recalling history item #$id: $line")
-        
+
+        log.debug("Recalling history item #$ids: $line")
+
         return shell.execute(line)
     }
 }
