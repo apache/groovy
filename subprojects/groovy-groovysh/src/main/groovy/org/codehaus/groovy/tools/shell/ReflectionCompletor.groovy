@@ -6,6 +6,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 
 import java.lang.reflect.Field
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 
 /**
  * Implements the Completor interface to provide competions for
@@ -105,7 +106,8 @@ class ReflectionCompletor implements Completor {
      * @return the list of public methods and fields that begin with the prefix
      */
     static Collection<String> getPublicFieldsAndMethods(Object instance, String prefix) {
-        List<String> rv = []
+        Set<String> rv = new HashSet<String>()
+        Set.getInterfaces()
         Class clazz = instance.class
         if (clazz == null) {
             clazz = instance.getClass()
@@ -117,30 +119,39 @@ class ReflectionCompletor implements Completor {
             clazz = instance as Class
         }
 
-        clazz.fields.each { Field fit ->
-            if (!fit.name.contains('$') && !fit.name.startsWith('_')) {
-                if (fit.name.startsWith(prefix)) {
-                    rv << fit.name
-                }
+        InvokerHelper.getMetaClass(instance).metaMethods.each { MetaMethod mmit ->
+            if (acceptName(mmit.name, prefix)) {
+                rv << mmit.getName() + (mmit.parameterTypes.length == 0 ? "()" : "(")
             }
         }
-        clazz.methods.each { Method methIt ->
-            String name = methIt.name
+
+        addClassFieldsAndMethods(clazz, prefix, rv)
+
+        return rv.sort()
+    }
+
+    private static Collection<String> addClassFieldsAndMethods(final Class clazz, final String prefix, Collection rv) {
+        Field[] fields = clazz.fields
+        fields.each { Field fit ->
+            if (acceptName(fit.name, prefix)) {
+                rv << fit.name
+            }
+        }
+        Method[] methods = clazz.methods
+        methods.each { Method methIt ->
+            String name = methIt.getName()
             if (name.startsWith("super\$")) {
                 name = name.substring(name.find("^super\\\$.*\\\$").length())
             }
-            if (!(name.contains('$')) && ! name.startsWith('_')) {
-                if (name.startsWith(prefix)) {
-                    rv << name + (methIt.parameterTypes.length == 0 ? "()" : "(")
-                }
+            if (acceptName(name, prefix)) {
+                rv << name + (methIt.parameterTypes.length == 0 ? "()" : "(")
             }
         }
-        InvokerHelper.getMetaClass(instance).metaMethods.each { MetaMethod mmit ->
-            if (mmit.name.startsWith(prefix)) {
-                rv << mmit.name + (mmit.parameterTypes.length == 0 ? "()" : "(")
-            }
-        }
-        return rv.sort().unique()
+    }
+
+    private static boolean acceptName(String name, String prefix) {
+        return (!prefix || name.startsWith(prefix)) &&
+                (!(name.contains('$')) && !name.startsWith("_"));
     }
 
     /**
