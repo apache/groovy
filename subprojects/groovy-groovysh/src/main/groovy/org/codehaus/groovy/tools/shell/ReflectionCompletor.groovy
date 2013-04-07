@@ -23,17 +23,28 @@ class ReflectionCompletor implements Completor {
         this.shell = shell
     }
 
-    int complete(String buffer, int cursor, List candidates) {
+    int complete(String bufferLine, int cursor, List candidates) {
+        // for shell commands, don't complete
+        int commandEnd = bufferLine.indexOf(' ')
+        if (commandEnd != -1) {
+            String commandToken = bufferLine.substring(0, commandEnd);
+            for (command in shell.registry.commands()) {
+                if (commandToken == command.name || commandToken in command.aliases) {
+                    return -1
+                }
+            }
+        }
 
-        int identifierStart = findIdentifierStart(buffer, cursor)
-        String identifierPrefix = identifierStart != -1 ? buffer.substring(identifierStart, cursor) : ""
+        int identifierStart = findIdentifierStart(bufferLine, cursor)
+        String identifierPrefix = identifierStart != -1 ? bufferLine.substring(identifierStart, cursor) : ""
         // get last dot before cursor
-        int lastDot = buffer.substring(0, cursor).lastIndexOf('.')
+        int lastDot = bufferLine.substring(0, cursor).lastIndexOf('.')
         // if there are no dots, or the dot is not before the prefix
         if (lastDot == -1 || (identifierStart > -1 && lastDot < identifierStart - 1)) {
             //if there is a valid identifier prefix
             if (identifierStart != -1) {
                 List<String> myCandidates = findMatchingVariables(identifierPrefix)
+                myCandidates.addAll(findMatchingKeywords(identifierPrefix))
                 if (myCandidates.size() > 0) {
                     candidates.addAll(myCandidates)
                     return identifierStart
@@ -45,7 +56,7 @@ class ReflectionCompletor implements Completor {
             // if ends in a dot, or if there is a valid identifier prefix
             if (lastDot == cursor - 1 || identifierStart != -1) {
                 // evaluate the part before the dot to get an instance
-                int previousIdentifierStart = findIdentifierStart(buffer, lastDot)
+                int previousIdentifierStart = findIdentifierStart(bufferLine, lastDot)
                 if (previousIdentifierStart == -1) {
                     // this should rarely happen, example: foo(.baz
                     return -1
@@ -53,10 +64,10 @@ class ReflectionCompletor implements Completor {
                 // prevent misleading completion for variable foo != Bar.foo
                 // scanning over points is dangerous in Groovy because Bar.foo can evaluate to Bar.getFoo(),
                 // which should not be evaluated during completion
-                if (previousIdentifierStart > 0 && buffer.charAt(previousIdentifierStart - 1) == '.') {
+                if (previousIdentifierStart > 0 && bufferLine.charAt(previousIdentifierStart - 1) == '.') {
                     return -1
                 }
-                String instanceRefExpression = buffer.substring(previousIdentifierStart, lastDot)
+                String instanceRefExpression = bufferLine.substring(previousIdentifierStart, lastDot)
                 try {
                     def instance = shell.interp.evaluate([instanceRefExpression])
                     if (instance != null) {
@@ -193,6 +204,85 @@ class ReflectionCompletor implements Completor {
                         varName += "()"
                     }
                 }
+                matches << varName
+            }
+        }
+        return matches
+    }
+
+    final String[] KEYWORDS = [
+            "abstract",
+            "assert", "boolean", "break", "byte",
+            "case",
+            // "catch (", // special
+            "char", "class", "continue",
+            "def", // short, but keep, else "default" completes, annoyingly
+            "default",
+            "do",
+            "double",
+            "else", "enum", "extends",
+            //"false",// value
+            "final",
+            //"finally {", // special
+            "float",
+            //"for (", // special
+            //"if (", // special
+            //"import",
+            "in",
+            "instanceof",
+            "int", // short, but keeping for consistency, all primitives
+            "interface",
+            "long",
+            //"native",
+            "new",
+            //"null", // value
+            "private", "protected", "public",
+            "return", "short",
+            "static",
+            //"super",// value
+            //"switch (", // special
+            "synchronized",
+            //"this", // value
+            //threadsafe,
+            "throw", "throws",
+            "transient",
+            //"true", // value
+            //"try {", //special
+            "void", "volatile"
+            //"while (" // special
+    ]
+
+    // VALUE_KEYWORDS and SPECIAL_FUNCTIONS completed without added blank
+    final String[] VALUE_KEYWORDS = [
+            "true",
+            "false",
+            "this",
+            "super",
+            "null"]
+
+    final String[] SPECIAL_FUNCTIONS = [
+            "catch (",
+            "finally {",
+            "for (",
+            "if (",
+            "switch (",
+            "try {",
+            "while ("]
+
+    List<String> findMatchingKeywords(String prefix) {
+        List<String> matches = []
+        for (String varName in KEYWORDS) {
+            if (varName.startsWith(prefix)) {
+                matches << varName + " "
+            }
+        }
+        for (String varName in VALUE_KEYWORDS) {
+            if (varName.startsWith(prefix)) {
+                matches << varName
+            }
+        }
+        for (String varName in SPECIAL_FUNCTIONS) {
+            if (varName.startsWith(prefix)) {
                 matches << varName
             }
         }

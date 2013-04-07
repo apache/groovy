@@ -120,4 +120,16 @@ extends GroovyTestCase {
         assertEquals(null, complete(prompt, prompt.length()))
     }
 
+    void testKeyword() {
+        // tests against interaction with ReflectionCompleter
+        String prompt = "pub"
+        assertEquals([["public "], 0], complete(prompt, prompt.length()))
+    }
+
+    void testCommandAndKeyword() {
+        // tests against interaction with ReflectionCompleter
+        String prompt = "pu" // purge, public
+        assertEquals([["purge "], 0], complete(prompt, prompt.length()))
+    }
+
 }

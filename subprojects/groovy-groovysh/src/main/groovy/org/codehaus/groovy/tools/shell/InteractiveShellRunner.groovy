@@ -16,12 +16,13 @@
 
 package org.codehaus.groovy.tools.shell
 
+import jline.ArgumentCompletor
 import jline.ConsoleReader
 
 import jline.History
 import jline.Completor
 import jline.MultiCompletor
-
+import jline.SimpleCompletor
 import org.codehaus.groovy.tools.shell.util.Logger
 
 /**
@@ -39,7 +40,7 @@ class InteractiveShellRunner
     final Closure prompt
     
     final CommandsMultiCompletor completor
-    
+
     InteractiveShellRunner(final Groovysh shell, final Closure prompt) {
         super(shell)
         
@@ -47,10 +48,12 @@ class InteractiveShellRunner
         
         this.reader = new ConsoleReader(shell.io.inputStream, new PrintWriter(shell.io.outputStream, true))
 
-        reader.addCompletor(new ReflectionCompletor(shell))
+        // complete groovysh commands, display, import, ... as first word in line
         this.completor = new CommandsMultiCompletor()
-        
-        reader.addCompletor(completor)
+        reader.addCompletor(this.completor)
+
+        // reflectionCompletor completes properties if last char was dot, else variables and some keywords
+        reader.addCompletor(new ReflectionCompletor(shell),)
     }
     
     void run() {

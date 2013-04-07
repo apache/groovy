@@ -16,7 +16,10 @@
 
 package org.codehaus.groovy.tools.shell
 
+import groovy.mock.interceptor.MockFor
 import org.codehaus.groovy.antlr.parser.GroovyLexer
+import org.codehaus.groovy.tools.shell.commands.ImportCommand
+
 
 class GroovyshCompletorTest extends GroovyTestCase {
 
@@ -193,6 +196,71 @@ class ReflectionCompletorTest extends CompletorTestSupport {
         }
     }
 
+    void testKeywordModifier() {
+        groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            String buffer = "pub"
+            assertEquals(0, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals(['public '], candidates)
+        }
+    }
+
+    void testKeywordModifierSecond() {
+        CommandRegistry registry = new CommandRegistry()
+        groovyshMocker.demand.getRegistry(1) {registry}
+        groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.demand.getRegistry(1) {registry}
+        groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            String buffer = "public sta"
+            assertEquals(7, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals(['static '], candidates)
+            candidates = []
+            buffer = "public swi" // don't suggest switch keyword here
+            assertEquals(7, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals(["switch ("], candidates)
+        }
+    }
+
+    void testKeywordModifierThird() {
+        CommandRegistry registry = new CommandRegistry()
+        groovyshMocker.demand.getRegistry(1) {registry}
+        groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            String buffer = "public static inter"
+            assertEquals(14, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals(['interface '], candidates)
+        }
+    }
+
+    void testKeywordModifierFor() {
+        groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        CommandRegistry registry = new CommandRegistry()
+        groovyshMocker.demand.getRegistry(1) {registry}
+        groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            String buffer = "fo"
+            assertEquals(0, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals(['for ('], candidates)
+            candidates = []
+            buffer = "for (pub" // don't suggest public keyword here
+            assertEquals(5, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals(["public "], candidates)
+        }
+    }
+
     void testKnownVar() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [xyzabc: ""]]] }
         groovyshMocker.use {
@@ -320,6 +388,40 @@ class ReflectionCompletorTest extends CompletorTestSupport {
         }
     }
 
+    void testDontEvaluateMethod() {
+        MockFor registryMocker = new MockFor(CommandRegistry)
+        registryMocker.demand.commands(1) {[]}
+        registryMocker.use {
+            CommandRegistry registry = new CommandRegistry()
+            groovyshMocker.demand.getRegistry(1) {registry}
+            // mock doing the right thing
+            groovyshMocker.demand.getInterp(1) { [evaluate: { expr -> assert(expr == ["foo"]); "foo" }] }
+            groovyshMocker.use {
+                Groovysh groovyshMock = new Groovysh()
+                ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+                def candidates = []
+                String buffer = "deletehardDisk(); foo.subs"
+                assertEquals(22, completor.complete(buffer, buffer.length(), candidates))
+                assertEquals(["substring("], candidates)
+            }
+        }
+    }
+
+    void testDontEvaluateAfterCommand() {
+        CommandRegistry registry = new CommandRegistry()
+        groovyshMocker.demand.getRegistry(1) {registry}
+        // mock asserting nothing gets evaluated
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            // import command prevents reflection completion
+            registry << new ImportCommand(groovyshMock)
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            String buffer = "import foo"
+            assertEquals(-1, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals([], candidates)
+        }
+    }
 
     /**
      * Evaluating Gstrings with $ is dangerous, as this may invoke method
@@ -334,5 +436,5 @@ class ReflectionCompletorTest extends CompletorTestSupport {
             assertEquals(-1, completor.complete(buffer, buffer.length(), candidates))
             assertEquals([], candidates)
         }
-    }
+    }    
 }
