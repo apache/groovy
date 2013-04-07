@@ -45,6 +45,7 @@ class ReflectionCompletor implements Completor {
             if (identifierStart != -1) {
                 List<String> myCandidates = findMatchingVariables(identifierPrefix)
                 myCandidates.addAll(findMatchingKeywords(identifierPrefix))
+                myCandidates.addAll(findMatchingCustomClasses(identifierPrefix))
                 if (myCandidates.size() > 0) {
                     candidates.addAll(myCandidates)
                     return identifierStart
@@ -205,6 +206,26 @@ class ReflectionCompletor implements Completor {
                     }
                 }
                 matches << varName
+            }
+        }
+        return matches
+    }
+
+    /**
+     * Build a list of classes defined in the shell that
+     * match a given prefix.
+     * @param prefix the prefix to match
+     * @return the list of variables that match the prefix
+     */
+    List<String> findMatchingCustomClasses(String prefix) {
+        List<String> matches = []
+        Class[] classes = shell.interp.classLoader.loadedClasses
+        if (classes.size() > 0) {
+            List<String> classnames = classes.collect {Class it -> it.getName()}
+            for (String varName in classnames) {
+                if (varName.startsWith(prefix)) {
+                    matches << varName
+                }
             }
         }
         return matches

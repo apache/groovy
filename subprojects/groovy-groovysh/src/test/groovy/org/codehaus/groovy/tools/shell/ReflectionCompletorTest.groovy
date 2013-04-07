@@ -174,6 +174,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testUnknownVar() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -197,6 +198,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testKeywordModifier() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -211,8 +213,10 @@ class ReflectionCompletorTest extends CompletorTestSupport {
         CommandRegistry registry = new CommandRegistry()
         groovyshMocker.demand.getRegistry(1) { registry }
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.demand.getRegistry(1) { registry }
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -231,6 +235,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
         CommandRegistry registry = new CommandRegistry()
         groovyshMocker.demand.getRegistry(1) { registry }
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -244,8 +249,10 @@ class ReflectionCompletorTest extends CompletorTestSupport {
     void testKeywordModifierFor() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
         CommandRegistry registry = new CommandRegistry()
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.demand.getRegistry(1) { registry }
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -262,6 +269,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testKnownVar() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [xyzabc: ""]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -273,6 +281,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testKnownVarMultiple() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [bad: "", xyzabc: "", xyzfff: "", nope: ""]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -296,6 +305,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testKnownVarBeforeDot() {
         groovyshMocker.demand.getInterp(1) { [evaluate: {expr -> assert(expr == "xyz"); "foo"}, context: [variables: [xyzabc: ""]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -320,6 +330,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
     
     void testKnownVarAfterDot() {
         groovyshMocker.demand.getInterp(1) { [evaluate: { expr -> assert (expr == ["xyz"]) }, context: [variables: [xyzabc: ""]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -331,6 +342,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testKnownMethod() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [javup: String.&toString]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -340,8 +352,35 @@ class ReflectionCompletorTest extends CompletorTestSupport {
         }
     }
 
+    void testKnownVarAndClass() {
+        groovyshMocker.demand.getInterp(1) { [context: [variables: [javup: ""]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: [String]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            // in the shell, only Classes in the default package occur,but well...
+            assertEquals(0, completor.complete("jav", 2, candidates))
+            assertEquals(["javup", "java.lang.String"], candidates)
+        }
+    }
+
+    void testKnownClass() {
+        groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: [String]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
+            def candidates = []
+            // in the shell, only Classes in the default package occur,but well...
+            assertEquals(0, completor.complete("jav", 2, candidates))
+            assertEquals(["java.lang.String"], candidates)
+        }
+    }
+
     void testKnownMethodWithArgs() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [javup: Math.&max]]] }
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: []]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
