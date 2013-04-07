@@ -46,10 +46,10 @@ super$1$getClass()   super$1$notify()         super$1$notifyAll()
 int compareTo(Object) {0}; int foo; static int bar; int foom(){1}; static int barm(){2}}""")
         groovysh.run("ReflectionCompletor.getPublicFieldsAndMethods(Foo, \"\")")
         String rawout = mockOut.toString()
-        List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({it -> it.trim()[0..-2]})
-        assertEquals([], findResult.findAll({it.startsWith("_")}))
-        assertEquals([], findResult.findAll({it.startsWith("super\$")}))
-        assertEquals([], findResult.findAll({it.startsWith("this\$")}))
+        List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({ it -> it.trim()[0..-2] })
+        assertEquals([], findResult.findAll({ it.startsWith("_") }))
+        assertEquals([], findResult.findAll({ it.startsWith("super\$") }))
+        assertEquals([], findResult.findAll({ it.startsWith("this\$") }))
         assertEquals(rawout, 99, findResult.size())
     }
 
@@ -76,10 +76,10 @@ super$1$getClass()   super$1$notify()         super$1$notifyAll()
 int compareTo(Object) {0}; int foo; static int bar; int foom(){1}; static int barm(){2}}""")
         groovysh.run("ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), \"\")")
         String rawout = mockOut.toString()
-        List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({it -> it.trim()[0..-2]})
-        assertEquals([], findResult.findAll({it.startsWith("_")}))
-        assertEquals([], findResult.findAll({it.startsWith("super\$")}))
-        assertEquals([], findResult.findAll({it.startsWith("this\$")}))
+        List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({ it -> it.trim()[0..-2] })
+        assertEquals([], findResult.findAll({ it.startsWith("_") }))
+        assertEquals([], findResult.findAll({ it.startsWith("super\$") }))
+        assertEquals([], findResult.findAll({ it.startsWith("this\$") }))
         assertEquals(rawout, 121, findResult.size())
     }
 }
@@ -183,7 +183,6 @@ class ReflectionCompletorTest extends CompletorTestSupport {
         }
     }
 
-
     void testPackageAccess() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
         groovyshMocker.use {
@@ -210,9 +209,9 @@ class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testKeywordModifierSecond() {
         CommandRegistry registry = new CommandRegistry()
-        groovyshMocker.demand.getRegistry(1) {registry}
+        groovyshMocker.demand.getRegistry(1) { registry }
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
-        groovyshMocker.demand.getRegistry(1) {registry}
+        groovyshMocker.demand.getRegistry(1) { registry }
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
@@ -230,7 +229,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testKeywordModifierThird() {
         CommandRegistry registry = new CommandRegistry()
-        groovyshMocker.demand.getRegistry(1) {registry}
+        groovyshMocker.demand.getRegistry(1) { registry }
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
@@ -245,7 +244,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
     void testKeywordModifierFor() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
         CommandRegistry registry = new CommandRegistry()
-        groovyshMocker.demand.getRegistry(1) {registry}
+        groovyshMocker.demand.getRegistry(1) { registry }
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
@@ -308,7 +307,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
     }
 
     void testKnownClassMember() {
-        groovyshMocker.demand.getInterp(1) { [evaluate: {Math}] }
+        groovyshMocker.demand.getInterp(1) { [evaluate: { Math }] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -320,7 +319,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
     }
     
     void testKnownVarAfterDot() {
-        groovyshMocker.demand.getInterp(1) { [evaluate: {expr -> assert(expr == ["xyz"])}, context: [variables: [xyzabc: ""]]] }
+        groovyshMocker.demand.getInterp(1) { [evaluate: { expr -> assert (expr == ["xyz"]) }, context: [variables: [xyzabc: ""]]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -390,12 +389,12 @@ class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testDontEvaluateMethod() {
         MockFor registryMocker = new MockFor(CommandRegistry)
-        registryMocker.demand.commands(1) {[]}
+        registryMocker.demand.commands(1) { [] }
         registryMocker.use {
             CommandRegistry registry = new CommandRegistry()
-            groovyshMocker.demand.getRegistry(1) {registry}
+            groovyshMocker.demand.getRegistry(1) { registry }
             // mock doing the right thing
-            groovyshMocker.demand.getInterp(1) { [evaluate: { expr -> assert(expr == ["foo"]); "foo" }] }
+            groovyshMocker.demand.getInterp(1) { [evaluate: { expr -> assert (expr == ["foo"]); "foo" }] }
             groovyshMocker.use {
                 Groovysh groovyshMock = new Groovysh()
                 ReflectionCompletor completor = new ReflectionCompletor(groovyshMock)
@@ -409,7 +408,7 @@ class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testDontEvaluateAfterCommand() {
         CommandRegistry registry = new CommandRegistry()
-        groovyshMocker.demand.getRegistry(1) {registry}
+        groovyshMocker.demand.getRegistry(1) { registry }
         // mock asserting nothing gets evaluated
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
