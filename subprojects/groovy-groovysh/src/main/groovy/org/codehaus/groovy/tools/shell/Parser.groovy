@@ -48,21 +48,21 @@ class Parser
     private final Parsing delegate
 
     Parser() {
-        def f = Preferences.parserFlavor
+        String flavor = Preferences.getParserFlavor()
 
-        log.debug("Using parser flavor: $f")
+        log.debug("Using parser flavor: $flavor")
         
-        switch (f) {
-            case 'relaxed':
+        switch (flavor) {
+            case Preferences.PARSER_RELAXED:
                 delegate = new RelaxedParser()
                 break
 
-            case 'rigid':
+            case Preferences.PARSER_RIGID:
                 delegate = new RigidParser()
                 break
 
             default:
-                log.error("Invalid parser flavor: $f; using default")
+                log.error("Invalid parser flavor: $flavor; using default: $Preferences.PARSER_RIGID")
                 delegate = new RigidParser()
                 break
         }
