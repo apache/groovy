@@ -16,6 +16,9 @@
 package org.codehaus.groovy.transform
 
 import static org.junit.Assert.*
+import groovy.transform.Memoized
+
+import org.codehaus.groovy.ast.FieldNode
 
 /**
  * Unit tests for {@link MemoizedASTTransformation}.
@@ -81,6 +84,14 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
         assertEquals(ins.methodWithException('Tom'), 'hello Tom')
         assertEquals(ins.methodCallCounter, 2)
     }
+    
+    void testConflictName() {
+        MemoizedTestClass ins = new MemoizedTestClass()
+        assertEquals(ins.conflictName(), 'No conflict')
+        assertEquals(ins.methodCallCounter, 1)
+        assertEquals(ins.conflictName(), 'No conflict')
+        assertEquals(ins.methodCallCounter, 1)
+    }
 
     // -- static methods -- //
 
@@ -121,7 +132,7 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
 }
 
 class MemoizedTestClass {
-
+    
     int methodCallCounter
 
     @Memoized
@@ -149,6 +160,14 @@ class MemoizedTestClass {
         }
         methodCallCounter++
         'hello ' + name
+    }
+    
+    String memoizedMethodClosure$conflictName = null // Field for check a name conflict
+    
+    @Memoized
+    String conflictName() {
+        methodCallCounter++
+        "No conflict"
     }
 
     // -- static methods -- //

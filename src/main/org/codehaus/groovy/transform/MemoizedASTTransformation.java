@@ -15,7 +15,7 @@
  */
 package org.codehaus.groovy.transform;
 
-import groovy.lang.Memoized;
+import groovy.transform.Memoized;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -62,14 +62,12 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
             closureExpression.setVariableScope(methodNode.getVariableScope());
 
             ClassNode ownerClassNode = methodNode.getDeclaringClass();
-            String uniqueName = buildUniqueNameByMethod(methodNode);
-            String ownerClassName = ownerClassNode.getNameWithoutPackage();
             int modifiers = FieldNode.ACC_PRIVATE | FieldNode.ACC_FINAL;
             if (methodNode.isStatic()) {
                 modifiers = modifiers | FieldNode.ACC_STATIC;
             }
 
-            String memoizedClosureFieldName = ownerClassName + "_memoizeMethodClosure$" + uniqueName;
+            String memoizedClosureFieldName = buildUniqueName(ownerClassNode, methodNode);
             MethodCallExpression memoizeClosureCallExpression = new MethodCallExpression(closureExpression,
                     MEMOIZE_METHOD_NAME, MethodCallExpression.NO_ARGUMENTS);
             FieldNode memoizedClosureField = new FieldNode(memoizedClosureFieldName, modifiers,
@@ -89,14 +87,18 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     /*
      * Build unique name.
      */
-    private String buildUniqueNameByMethod(MethodNode methodNode) {
-        StringBuilder nameBuilder = new StringBuilder(methodNode.getName());
+    private String buildUniqueName(ClassNode owner, MethodNode methodNode) {
+        StringBuilder nameBuilder = new StringBuilder("memoizedMethodClosure$").append(methodNode.getName());
         if (methodNode.getParameters() != null) {
             for (Parameter parameter : methodNode.getParameters()) {
                 nameBuilder.append(parameter.getType().getNameWithoutPackage());
             }
         }
-
+        while (owner.getField(nameBuilder.toString()) != null) {
+            nameBuilder.insert(0, "_");
+        }
+        
         return nameBuilder.toString();
     }
+
 }
