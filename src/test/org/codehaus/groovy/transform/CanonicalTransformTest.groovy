@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -510,6 +510,26 @@ class CanonicalTransformTest extends GroovyShellTestCase {
                 String symbol
             }
             assert Operator.PLUS.next() == Operator.MINUS
+        """
+    }
+
+    void testEqualsCopesWithSelfReference() {
+        assertScript """
+            @groovy.transform.Canonical class Tree {
+              Tree left, right
+              Object item
+            }
+
+            def t = new Tree()
+            t.left = t
+            t.item = 4
+            def s = new Tree()
+            s.left = s
+            s.item = 4
+            // not smart enough to handle mutual-recursion yet
+            //t.right = s
+            //s.right = t
+            assert s.equals(t)
         """
     }
 
