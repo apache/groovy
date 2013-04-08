@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.codehaus.groovy.transform.stc;
 
 import groovy.lang.GroovySystem;
@@ -519,6 +520,11 @@ public abstract class StaticTypeCheckingSupport {
     public static boolean checkCompatibleAssignmentTypes(ClassNode left, ClassNode right, Expression rightExpression) {
         ClassNode leftRedirect = left.redirect();
         ClassNode rightRedirect = right.redirect();
+        if (leftRedirect==rightRedirect) return true;
+
+        if (leftRedirect.isArray() && rightRedirect.isArray()) {
+            return checkCompatibleAssignmentTypes(leftRedirect.getComponentType(), rightRedirect.getComponentType(), rightExpression, allowConstructorCoercion);
+        }
 
         if (right==VOID_TYPE||right==void_WRAPPER_TYPE) {
             return left==VOID_TYPE||left==void_WRAPPER_TYPE;
