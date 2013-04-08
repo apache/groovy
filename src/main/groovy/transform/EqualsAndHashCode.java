@@ -177,6 +177,15 @@ import java.lang.annotation.Target;
  * assert  new Point1D(1, 1, 1).equals(new Point1D(1, 2, 1))
  * assert !new Point1D(1, 1, 1).equals(new Point1D(2, 1, 1))
  * </pre>
+ * Note: {@code @EqualsAndHashCode} is a tool to help reduce boilerplate
+ * in the common cases. It provides a useful implementation of {@code equals()}
+ * and {@code hashCode()} but not necessarily the most appropriate or
+ * efficient one for every use case. You should write custom versions if your
+ * scenario demands it. In particular, if you have self-referential (for hashCode()) or
+ * mutually-referential classes (for equals()) the implementations provided may not be suitable
+ * and may recurse infinitely. In such cases, you need to remove the infinite loop from
+ * your data structures or write your own custom methods. A future version of this
+ * transform may better handle some recursive scenarios.
  *
  * @see org.codehaus.groovy.util.HashCodeHelper
  * @author Paul King
