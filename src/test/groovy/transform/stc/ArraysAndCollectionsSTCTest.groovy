@@ -1,11 +1,11 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,7 +40,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testWrongComponentTypeInArray() {
         shouldFailWithMessages '''
             int[] intArray = ['a']
-        ''', 'Cannot assign value of type java.lang.String into array of type [I'
+        ''', 'Cannot assign value of type java.lang.String into array of type int[]'
     }
 
     void testAssignValueInArrayWithCorrectType() {
@@ -67,14 +67,14 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testBidimensionalArrayWithInitializer() {
         shouldFailWithMessages '''
             int[][] arr2 = new Object[1][]
-        ''', 'Cannot assign value of type [[Ljava.lang.Object; to variable of type [[I'
+        ''', 'Cannot assign value of type java.lang.Object[][] to variable of type int[][]'
     }
 
     void testBidimensionalArrayWithWrongSubArrayType() {
         shouldFailWithMessages '''
             int[][] arr2 = new int[1][]
             arr2[0] = ['1']
-        ''', 'Cannot assign value of type java.lang.String into array of type [I'
+        ''', 'Cannot assign value of type java.lang.String into array of type int[]'
     }
 
     void testForLoopWithArrayAndUntypedVariable() {
@@ -88,7 +88,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             String[] arr = ['1','2','3']
             for (int i in arr) { }
-        ''', 'Cannot loop with element of type int with collection of type [Ljava.lang.String;'
+        ''', 'Cannot loop with element of type int with collection of type java.lang.String[]'
     }
     void testJava5StyleForLoopWithArray() {
         assertScript '''
@@ -101,7 +101,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             String[] arr = ['1','2','3']
             for (int i : arr) { }
-        ''', 'Cannot loop with element of type int with collection of type [Ljava.lang.String;'
+        ''', 'Cannot loop with element of type int with collection of type java.lang.String[]'
     }
 
     void testForEachLoopOnString() {
