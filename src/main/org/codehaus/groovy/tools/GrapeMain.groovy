@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,10 @@ install = {arg, cmd ->
     // set the instance so we can re-set the logger
     Grape.getInstance()
     setupLogging()
+
+    cmd.getOptionValues('r')?.each { String url ->
+        Grape.addResolver(name:url, root:url)
+    }
 
     try {
         Grape.grab(autoDownload: true, group: arg[1], module: arg[2], version: ver, classifier: classifier, noExceptions: true)
@@ -136,7 +140,7 @@ resolve = {arg, cmd ->
     setupLogging(Message.MSG_ERR)
 
     if ((arg.size() % 3) != 0) {
-        println 'There need to be a multiple of three arguments: (group module version)+'
+        println 'There needs to be a multiple of three arguments: (group module version)+'
         return
     }
     if (args.size() < 3) {
@@ -226,6 +230,13 @@ options.addOption(
         .hasArg(true)
         .withArgName("name=value")
         .create('D')
+);
+options.addOption(
+    OptionBuilder.withLongOpt("resolver")
+        .withDescription("define a grab resolver (for install)")
+        .hasArg(true)
+        .withArgName("url")
+        .create('r')
 );
 options.addOption(
     OptionBuilder.hasArg(false)
