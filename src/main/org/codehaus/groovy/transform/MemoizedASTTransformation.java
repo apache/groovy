@@ -45,6 +45,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     private static final String CLOSURE_CALL_METHOD_NAME = "call";
     private static final Class<Memoized> MY_CLASS = Memoized.class;
     private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (nodes == null) {
@@ -56,7 +57,15 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         AnnotatedNode annotatedNode = (AnnotatedNode) nodes[1];
         if (MY_TYPE.equals(annotationNode.getClassNode()) && annotatedNode instanceof MethodNode) {
             MethodNode methodNode = (MethodNode) annotatedNode;
-
+            if (methodNode.isAbstract()) {
+                addError("Error: annotation " + MY_TYPE_NAME + " can not be used for abstract method.", methodNode);
+                return;
+            }
+            if (methodNode.isVoidMethod()) {
+                addError("Error: annotation " + MY_TYPE_NAME + " can not be used for method that return void.", methodNode);
+                return;
+            }
+            
             ClosureExpression closureExpression = new ClosureExpression(methodNode.getParameters(),
                     methodNode.getCode());
             closureExpression.setVariableScope(methodNode.getVariableScope());
