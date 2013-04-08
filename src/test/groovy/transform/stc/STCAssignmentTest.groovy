@@ -1,11 +1,11 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -739,13 +739,13 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             String[] src = ['a','b','c']
             (Set[]) src
-        ''', 'Inconvertible types: cannot cast [Ljava.lang.String; to [Ljava.util.Set;'
+        ''', 'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
     }
 
     void testIncompatibleToArray() {
         shouldFailWithMessages '''
             (Set[]) ['a','b','c'].toArray(new String[3])
-        ''', 'Inconvertible types: cannot cast [Ljava.lang.String; to [Ljava.util.Set;'
+        ''', 'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
     }
 
     // GROOVY-5535
