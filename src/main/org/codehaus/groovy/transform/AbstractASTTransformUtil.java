@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -203,6 +204,12 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
         return new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, otherExpr));
     }
 
+    public static BooleanExpression differentFieldExpr(FieldNode fNode, Expression other) {
+        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression otherExpr = new PropertyExpression(other, fNode.getName());
+        return differentExpr(fieldExpr, otherExpr);
+    }
+
     private static BooleanExpression notEqualsPropertyExpr(PropertyNode pNode, Expression other) {
         String getterName = "get" + Verifier.capitalize(pNode.getName());
         Expression selfGetter = new MethodCallExpression(new VariableExpression("this"), getterName, MethodCallExpression.NO_ARGUMENTS);
@@ -210,8 +217,19 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
         return new BooleanExpression(new BinaryExpression(selfGetter, COMPARE_NOT_EQUAL, otherGetter));
     }
 
+    public static BooleanExpression differentPropertyExpr(PropertyNode pNode, Expression other) {
+        String getterName = "get" + Verifier.capitalize(pNode.getName());
+        Expression selfGetter = new MethodCallExpression(new VariableExpression("this"), getterName, MethodCallExpression.NO_ARGUMENTS);
+        Expression otherGetter = new MethodCallExpression(other, getterName, MethodCallExpression.NO_ARGUMENTS);
+        return differentExpr(selfGetter, otherGetter);
+    }
+
     public static BooleanExpression identicalExpr(Expression self, Expression other) {
         return new BooleanExpression(new MethodCallExpression(self, "is", new ArgumentListExpression(other)));
+    }
+
+    public static BooleanExpression differentExpr(Expression self, Expression other) {
+        return new NotExpression(new BooleanExpression(new MethodCallExpression(self, "is", new ArgumentListExpression(other))));
     }
 
     private static BooleanExpression notEqualClasses(ClassNode cNode, Expression other) {
