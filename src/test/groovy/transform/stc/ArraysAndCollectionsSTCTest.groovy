@@ -67,7 +67,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testBidimensionalArrayWithInitializer() {
         shouldFailWithMessages '''
             int[][] arr2 = new Object[1][]
-        ''', 'Cannot assign value of type java.lang.Object[][] to variable of type int[][]'
+        ''', 'Cannot assign value of type [[Ljava.lang.Object; to variable of type [[I'
     }
 
     void testBidimensionalArrayWithWrongSubArrayType() {

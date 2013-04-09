@@ -19,8 +19,13 @@ package groovy.bugs
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 
 class Groovy6086Bug extends GroovyTestCase {
+
+    @Rule
+    public TemporaryFolder testFolder = new TemporaryFolder();
 
     // Note that this unit test reproduces the code that we can
     // see on the Grails build. However, it never managed to reproduce
@@ -29,15 +34,14 @@ class Groovy6086Bug extends GroovyTestCase {
 
         def config = new CompilerConfiguration()
         config.with {
-            targetDirectory = File.createTempDir()
-            jointCompilationOptions = [stubDir: File.createTempDir()]
+            targetDirectory = testFolder.newFolder()
+            jointCompilationOptions = [stubDir: testFolder.newFolder()]
         }
 
-        try {
-            def unit = new JavaAwareCompilationUnit(config, null, new GroovyClassLoader(getClass().classLoader))
+        def unit = new JavaAwareCompilationUnit(config, null, new GroovyClassLoader(getClass().classLoader))
 
-            unit.addSource('Boo.java', 'interface Boo {}')
-            unit.addSource('Wrapper.groovy', '''
+        unit.addSource('Boo.java', 'interface Boo {}')
+        unit.addSource('Wrapper.groovy', '''
             import groovy.transform.CompileStatic
 
             @CompileStatic
@@ -57,10 +61,6 @@ class Groovy6086Bug extends GroovyTestCase {
                 }
             }
         ''')
-            unit.compile(CompilePhase.INSTRUCTION_SELECTION.phaseNumber)
-        } finally {
-            config.targetDirectory.deleteDir()
-            config.jointCompilationOptions.stubDir.deleteDir()
-        }
+        unit.compile(CompilePhase.INSTRUCTION_SELECTION.phaseNumber)
     }
 }
