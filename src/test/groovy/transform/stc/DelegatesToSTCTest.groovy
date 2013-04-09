@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -394,4 +394,27 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6055
+    void testDelegatesToInStaticContext() {
+        assertScript '''
+            class Person {
+                String name
+                public static List<Person> findBy(@DelegatesTo(Person) Closure criteria) { [] }
+            }
+            List<Person> persons = Person.findBy { getName() == 'Cedric' }
+            persons = Person.findBy { namee == 'Cedric' }
+        '''
+    }
+    void testDelegatesToInStaticContext2() {
+        assertScript '''
+            class QueryBuilder {
+                List<?> where(Map params) {[]}
+            }
+            class Person {
+                String name
+                public static List<Person> findBy(@DelegatesTo(QueryBuilder) Closure criteria) { [] }
+            }
+            List<Person> persons = Person.findBy { where name:'Cédric' }
+        '''
+    }
 }
