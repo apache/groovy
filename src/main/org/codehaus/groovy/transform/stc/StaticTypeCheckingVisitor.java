@@ -1458,6 +1458,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
+        boolean oldStaticContext = typeCheckingContext.isInStaticContext;
+        typeCheckingContext.isInStaticContext = false;
+
         // collect every variable expression used in the loop body
         final Map<VariableExpression, ClassNode> varOrigType = new HashMap<VariableExpression, ClassNode>();
         Statement code = expression.getCode();
@@ -1509,6 +1512,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // restore original metadata
         restoreVariableExpressionMetadata(typesBeforeVisit);
+        typeCheckingContext.isInStaticContext = oldStaticContext;
     }
 
     protected DelegationMetadata getDelegationMetadata(final ClosureExpression expression) {
@@ -2104,7 +2108,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
 
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
-                            visitMethodCallArguments(argumentList, true, (MethodNode)call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+                            visitMethodCallArguments(argumentList, true, directMethodCallCandidate);
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments);
                             returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
                             callArgsVisited = true;
