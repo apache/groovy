@@ -402,7 +402,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
                 public static List<Person> findBy(@DelegatesTo(Person) Closure criteria) { [] }
             }
             List<Person> persons = Person.findBy { getName() == 'Cedric' }
-            persons = Person.findBy { namee == 'Cedric' }
+            persons = Person.findBy { name == 'Cedric' }
         '''
     }
     void testDelegatesToInStaticContext2() {
