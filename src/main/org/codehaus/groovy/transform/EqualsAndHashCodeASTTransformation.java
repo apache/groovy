@@ -126,21 +126,25 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            // _result = HashCodeHelper.updateHash(_result, getProperty())
+            // _result = HashCodeHelper.updateHash(_result, getProperty()) // plus self-reference checking
             String getterName = "get" + Verifier.capitalize(pNode.getName());
             Expression getter = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, MethodCallExpression.NO_ARGUMENTS);
             final Expression args = new TupleExpression(result, getter);
             final Expression current = new StaticMethodCallExpression(HASHUTIL_TYPE, "updateHash", args);
-            body.addStatement(assignStatement(result, current));
+            body.addStatement(new IfStatement(identicalExpr(getter, new VariableExpression("this")),
+                    EmptyStatement.INSTANCE,
+                    assignStatement(result, current)));
 
         }
         for (FieldNode fNode : fList) {
             if (shouldSkip(fNode.getName(), excludes, includes)) continue;
-            // _result = HashCodeHelper.updateHash(_result, field)
+            // _result = HashCodeHelper.updateHash(_result, field) // plus self-reference checking
             final Expression fieldExpr = new VariableExpression(fNode);
             final Expression args = new TupleExpression(result, fieldExpr);
             final Expression current = new StaticMethodCallExpression(HASHUTIL_TYPE, "updateHash", args);
-            body.addStatement(assignStatement(result, current));
+            body.addStatement(new IfStatement(identicalExpr(fieldExpr, new VariableExpression("this")),
+                    EmptyStatement.INSTANCE,
+                    assignStatement(result, current)));
         }
         if (callSuper) {
             // _result = HashCodeHelper.updateHash(_result, super.hashCode())

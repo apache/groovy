@@ -526,10 +526,33 @@ class CanonicalTransformTest extends GroovyShellTestCase {
             def s = new Tree()
             s.left = s
             s.item = 4
-            // not smart enough to handle mutual-recursion yet
-            //t.right = s
-            //s.right = t
             assert s.equals(t)
+            // not smart enough to handle mutual-recursion yet
+            // don't use this annotation in such a scenario
+            //
+            // t.right = s
+            // s.right = t
+            // assert s.equals(t) // <= StackOverflowError
+        """
+    }
+
+    void testHashCodeCopesWithSelfReference() {
+        assertScript """
+            @groovy.transform.Canonical class Tree {
+                Object item
+                Tree left, right
+            }
+
+            def t = new Tree(4)
+            t.left = t
+            t.right = t
+            assert t.hashCode() == 3941
+            // not smart enough to handle mutual-recursion yet
+            // don't use this annotation in such a scenario
+            //
+            // def s = new Tree(5, t)
+            // t.left = s
+            // println t.hashCode() // <= StackOverflowError
         """
     }
 
