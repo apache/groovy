@@ -109,6 +109,24 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
         assertEquals(ins.counter, 4)
     }
 
+    void testProtectedCacheSize() {
+        // Test the only method call
+        MemoizedTestClass2 ins = new MemoizedTestClass2()
+        assertTrue(ins.getValue2('prop1') == 'prop1_value')
+        assertEquals(ins.counter, 1)
+        assertTrue(ins.getValue2('prop2') == 'prop2_value')
+        assertEquals(ins.counter, 2)
+    }
+
+    void testProtectedCacheSizeMaxCacheSize() {
+        // Test the only method call
+        MemoizedTestClass2 ins = new MemoizedTestClass2()
+        assertTrue(ins.getValue3('prop1') == 'prop1_value')
+        assertEquals(ins.counter, 1)
+        assertTrue(ins.getValue3('prop2') == 'prop2_value')
+        assertEquals(ins.counter, 2)
+    }
+
     // -- static methods -- //
 
     void testStaticMethodWithoutParams() {
@@ -159,6 +177,12 @@ class MemoizedTestClass2 {
 
     @Memoized(protectedCacheSize = 2)
     String getValue2(String name) {
+        counter++
+        name + "_value"
+    }
+
+    @Memoized(protectedCacheSize = 2, maxCacheSize = 3)
+    String getValue3(String name) {
         counter++
         name + "_value"
     }
