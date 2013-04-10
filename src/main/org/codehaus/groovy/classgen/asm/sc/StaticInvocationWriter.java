@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
 import static org.objectweb.asm.Opcodes.*;
 
@@ -316,6 +317,21 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     @Override
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
+        Object implicitReceiver = origin.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+        if (implicitReceiver !=null && implicitThis) {
+            String[] propertyPath = ((String) implicitReceiver).split("\\.");
+            // GROOVY-6021
+            PropertyExpression pexp = new PropertyExpression(new VariableExpression("this"), propertyPath[0]);
+            pexp.setImplicitThis(true);
+            for (int i=1; i<propertyPath.length;i++) {
+                pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, CLOSURE_TYPE);
+                pexp = new PropertyExpression(pexp, propertyPath[i]);
+            }
+            pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, implicitReceiver);
+            origin.removeNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+            makeCall(origin, pexp, message, arguments, adapter, safe, spreadSafe, false);
+            return;
+        }
         // if call is spread safe, replace it with a for in loop
         if (spreadSafe && origin instanceof MethodCallExpression) {
             MethodVisitor mv = controller.getMethodVisitor();
