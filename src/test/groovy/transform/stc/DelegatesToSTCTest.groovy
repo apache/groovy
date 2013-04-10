@@ -417,4 +417,24 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
             List<Person> persons = Person.findBy { where name:'Cédric' }
         '''
     }
+
+    // GROOVY-6021
+    void testShouldEnsureLastIsRecognizedAndCompiledProperly() {
+        assertScript '''
+            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = Closure.DELEGATE_FIRST) Closure arg) {
+                arg.delegate = target
+                arg.setResolveStrategy(Closure.DELEGATE_FIRST)
+                arg()
+            }
+
+            def test() {
+                def obj = [1, 2]
+                with(obj) {
+                    print(last()) //error is here
+                }
+            }
+
+            test()
+        '''
+    }
 }
