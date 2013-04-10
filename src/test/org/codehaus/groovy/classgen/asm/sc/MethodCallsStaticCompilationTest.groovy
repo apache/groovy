@@ -47,16 +47,12 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
     }
 
     void testCallToPrivateInnerClassMethod() {
-        try {
         assertScript '''
                 class A {
                     static class B { private static void foo() {} }
                    public static void main(args) { B.foo() }
                 }
             '''
-        } finally {
-            println astTrees
-        }
     }
 
     void testCallToPrivateOuterClassMethod() {
@@ -155,7 +151,6 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
     }
 
     void testMethodCallWithDefaultParams() {
-        try {
             assertScript '''import groovy.transform.CompileStatic
 import groovy.transform.TypeCheckingMode//import org.codehaus.groovy.classgen.asm.sc.MethodCallsStaticCompilationTest.DefaultParamTestSupport as Support
 @CompileStatic(TypeCheckingMode.SKIP)
@@ -167,9 +162,6 @@ import groovy.transform.TypeCheckingMode//import org.codehaus.groovy.classgen.as
                 new Support(null, null, null, null)
 
             '''
-        } finally {
-            println astTrees
-        }
     }
 
     static class DefaultParamTestSupport {
