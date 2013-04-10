@@ -86,4 +86,14 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 @Target({ ElementType.METHOD })
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.MemoizedASTTransformation")
 public @interface Memoized {
+    
+    /**
+     * Number of cached return values to protect from garbage collection.
+     */
+    int protectedCacheSize() default 0;
+    
+    /**
+     * The maximum size the cache can grow to.
+     */
+    int maxCacheSize() default 0;
 }

@@ -27,6 +27,8 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -41,11 +43,12 @@ import org.codehaus.groovy.control.SourceUnit;
 @GroovyASTTransformation
 public class MemoizedASTTransformation extends AbstractASTTransformation {
 
-    private static final String MEMOIZE_METHOD_NAME = "memoize";
     private static final String CLOSURE_CALL_METHOD_NAME = "call";
     private static final Class<Memoized> MY_CLASS = Memoized.class;
     private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+    private static final String PROTECTED_CACHE_SIZE_NAME = "protectedCacheSize";
+    private static final String MAX_CACHE_SIZE_NAME = "maxCacheSize";
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (nodes == null) {
@@ -62,10 +65,11 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
                 return;
             }
             if (methodNode.isVoidMethod()) {
-                addError("Error: annotation " + MY_TYPE_NAME + " can not be used for method that return void.", methodNode);
+                addError("Error: annotation " + MY_TYPE_NAME + " can not be used for method that return void.",
+                        methodNode);
                 return;
             }
-            
+
             ClosureExpression closureExpression = new ClosureExpression(methodNode.getParameters(),
                     methodNode.getCode());
             closureExpression.setVariableScope(methodNode.getVariableScope());
@@ -76,9 +80,12 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
                 modifiers = modifiers | FieldNode.ACC_STATIC;
             }
 
+            int protectedCacheSize = getIntMemberValue(annotationNode, PROTECTED_CACHE_SIZE_NAME);
+            int maxCacheSize = getIntMemberValue(annotationNode, MAX_CACHE_SIZE_NAME);
+            MethodCallExpression memoizeClosureCallExpression = buildMemoizeClosureCallExpression(closureExpression,
+                    protectedCacheSize, maxCacheSize);
+
             String memoizedClosureFieldName = buildUniqueName(ownerClassNode, methodNode);
-            MethodCallExpression memoizeClosureCallExpression = new MethodCallExpression(closureExpression,
-                    MEMOIZE_METHOD_NAME, MethodCallExpression.NO_ARGUMENTS);
             FieldNode memoizedClosureField = new FieldNode(memoizedClosureFieldName, modifiers,
                     ClassHelper.DYNAMIC_TYPE, null, memoizeClosureCallExpression);
             ownerClassNode.addField(memoizedClosureField);
@@ -90,6 +97,39 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
             newCode.addStatement(new ReturnStatement(closureCallExpression));
             newCode.setVariableScope(methodNode.getVariableScope());
             methodNode.setCode(newCode);
+        }
+    }
+
+    private int getIntMemberValue(AnnotationNode node, String name) {
+        Object value = getMemberValue(node, name);
+        if (value != null && value instanceof Integer) {
+            return ((Integer) value).intValue();
+        }
+
+        return 0;
+    }
+
+    private static final String MEMOIZE_METHOD_NAME = "memoize";
+    private static final String MEMOIZE_AT_MOST_METHOD_NAME = "memoizeAtMost";
+    private static final String MEMOIZE_AT_LEAST_METHOD_NAME = "memoizeAtLeast";
+    private static final String MEMOIZE_BETWEEN_METHOD_NAME = "memoizeBetween";
+
+    private MethodCallExpression buildMemoizeClosureCallExpression(ClosureExpression expression,
+            int protectedCacheSize, int maxCacheSize) {
+
+        if (protectedCacheSize == 0 && maxCacheSize == 0) {
+            return new MethodCallExpression(expression, MEMOIZE_METHOD_NAME, MethodCallExpression.NO_ARGUMENTS);
+        } else if (protectedCacheSize == 0) {
+            return new MethodCallExpression(expression, MEMOIZE_AT_MOST_METHOD_NAME, new ArgumentListExpression(
+                    new ConstantExpression(maxCacheSize)));
+        } else if (maxCacheSize == 0) {
+            return new MethodCallExpression(expression, MEMOIZE_AT_LEAST_METHOD_NAME, new ArgumentListExpression(
+                    new ConstantExpression(protectedCacheSize)));
+        } else {
+            ArgumentListExpression args = new ArgumentListExpression(new Expression[] {
+                    new ConstantExpression(protectedCacheSize), new ConstantExpression(maxCacheSize) });
+
+            return new MethodCallExpression(expression, MEMOIZE_BETWEEN_METHOD_NAME, args);
         }
     }
 
@@ -106,7 +146,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         while (owner.getField(nameBuilder.toString()) != null) {
             nameBuilder.insert(0, "_");
         }
-        
+
         return nameBuilder.toString();
     }
 

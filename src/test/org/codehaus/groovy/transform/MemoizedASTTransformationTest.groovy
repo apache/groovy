@@ -18,8 +18,6 @@ package org.codehaus.groovy.transform
 import static org.junit.Assert.*
 import groovy.transform.Memoized
 
-import org.codehaus.groovy.ast.FieldNode
-
 /**
  * Unit tests for {@link MemoizedASTTransformation}.
  * 
@@ -62,7 +60,7 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
         assertEquals(ins.privateMethodWithParams('foo', 'bar'), 'foobar')
         assertEquals(ins.methodCallCounter, 2)
     }
-    
+
     void testMethodWithException() {
         MemoizedTestClass ins = new MemoizedTestClass()
         assertEquals(ins.methodWithException('Jimmy'), 'hello Jimmy')
@@ -71,7 +69,7 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
             ins.methodWithException(null)
             fail()
         } catch (IllegalArgumentException e) {
-        }    
+        }
         assertEquals(ins.methodCallCounter, 1)
         try {
             ins.methodWithException(null)
@@ -84,13 +82,31 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
         assertEquals(ins.methodWithException('Tom'), 'hello Tom')
         assertEquals(ins.methodCallCounter, 2)
     }
-    
+
     void testConflictName() {
         MemoizedTestClass ins = new MemoizedTestClass()
         assertEquals(ins.conflictName(), 'No conflict')
         assertEquals(ins.methodCallCounter, 1)
         assertEquals(ins.conflictName(), 'No conflict')
         assertEquals(ins.methodCallCounter, 1)
+    }
+
+    void testMaxCacheSize() {
+        MemoizedTestClass2 ins = new MemoizedTestClass2()
+        assertTrue(ins.getValue('prop1') == 'prop1_value')
+        assertEquals(ins.counter, 1)
+        assertTrue(ins.getValue('prop1') == 'prop1_value')
+        assertEquals(ins.counter, 1)
+        assertTrue(ins.getValue('prop2') == 'prop2_value')
+        assertEquals(ins.counter, 2)
+        assertTrue(ins.getValue('prop2') == 'prop2_value')
+        assertEquals(ins.counter, 2)
+        assertTrue(ins.getValue('prop3') == 'prop3_value')
+        assertEquals(ins.counter, 3)
+        assertTrue(ins.getValue('prop3') == 'prop3_value')
+        assertEquals(ins.counter, 3)
+        assertTrue(ins.getValue('prop1') == 'prop1_value')
+        assertEquals(ins.counter, 4)
     }
 
     // -- static methods -- //
@@ -131,8 +147,25 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
     }
 }
 
+class MemoizedTestClass2 {
+
+    int counter
+
+    @Memoized(maxCacheSize = 2)
+    String getValue(String name) {
+        counter++
+        name + "_value"
+    }
+
+    @Memoized(protectedCacheSize = 2)
+    String getValue2(String name) {
+        counter++
+        name + "_value"
+    }
+}
+
 class MemoizedTestClass {
-    
+
     int methodCallCounter
 
     @Memoized
@@ -161,9 +194,9 @@ class MemoizedTestClass {
         methodCallCounter++
         'hello ' + name
     }
-    
+
     String memoizedMethodClosure$conflictName = null // Field for check a name conflict
-    
+
     @Memoized
     String conflictName() {
         methodCallCounter++
