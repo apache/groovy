@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.NotYetImplemented
 import groovy.transform.stc.BugsSTCTest
 
 /**
@@ -269,6 +268,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
         def x = a?.x
         '''
     }
+
     void testNullSafeAssignmentWithLong() {
         assertScript '''
         class A {
@@ -281,6 +281,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
         def x = a?.x
         '''
     }
+
     void testNullSafeAssignmentWithChar() {
         assertScript '''
         class A {
@@ -294,6 +295,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
         assert x == 'a'
         '''
     }
+
     void testCallStaticallyImportedMethodWithNullSafeArgument() {
         assertScript '''import static java.lang.Math.abs
         class A {
@@ -463,8 +465,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
     }
 
     void testIncrementOperatorOnInt() {
-        try {
-            assertScript '''
+        assertScript '''
                 int incInt(int n) {
                     def result = n
                     ++result
@@ -472,14 +473,10 @@ class BugsStaticCompileTest extends BugsSTCTest {
                     return result
                 }
                 assert  incInt(5) == 7'''
-        } finally {
-            //println astTrees
-        }
     }
 
     void testIncrementOperatorOnShort() {
-        try {
-            assertScript '''
+        assertScript '''
                 short incInt(short n) {
                     def result = n
                     ++result
@@ -487,14 +484,10 @@ class BugsStaticCompileTest extends BugsSTCTest {
                     return result
                 }
                 assert  incInt((short)5) == 7'''
-        } finally {
-            //println astTrees
-        }
     }
 
     void testIncrementOperatorOnByte() {
-        try {
-            assertScript '''
+        assertScript '''
                 byte incInt(byte n) {
                     def result = n
                     ++result
@@ -502,14 +495,10 @@ class BugsStaticCompileTest extends BugsSTCTest {
                     return result
                 }
                 assert  incInt((byte)5) == 7'''
-        } finally {
-            //println astTrees
-        }
     }
 
     void testIncrementOperatorOnLong() {
-        try {
-            assertScript '''
+        assertScript '''
                 long incInt(long n) {
                     def result = n
                     ++result
@@ -517,14 +506,10 @@ class BugsStaticCompileTest extends BugsSTCTest {
                     return result
                 }
                 assert  incInt(5) == 7'''
-        } finally {
-            println astTrees
-        }
     }
 
     void testIncrementOperatorOnFloat() {
-        try {
-            assertScript '''
+        assertScript '''
                 float incInt(float n) {
                     def result = n
                     ++result
@@ -532,14 +517,10 @@ class BugsStaticCompileTest extends BugsSTCTest {
                     return result
                 }
                 assert  incInt(5) == 7'''
-        } finally {
-            println astTrees
-        }
     }
 
     void testIncrementOperatorOnDouble() {
-        try {
-            assertScript '''
+        assertScript '''
                 double incInt(double n) {
                     def result = n
                     ++result
@@ -547,14 +528,10 @@ class BugsStaticCompileTest extends BugsSTCTest {
                     return result
                 }
                 assert  incInt(5) == 7'''
-        } finally {
-            println astTrees
-        }
     }
 
     void testIncrementOperatorOnChar() {
-        try {
-            assertScript '''
+        assertScript '''
                 char incInt(char n) {
                     def result = n
                     ++result
@@ -562,9 +539,6 @@ class BugsStaticCompileTest extends BugsSTCTest {
                     return result
                 }
                 assert  incInt((char)'a') == (char)('c')'''
-        } finally {
-            println astTrees
-        }
     }
 
     void testIncrementField() {
@@ -595,17 +569,13 @@ class BugsStaticCompileTest extends BugsSTCTest {
 
     // GROOVY-5800
     void testInOperator() {
-        try {
-            assertScript '''
+        assertScript '''
             boolean m( Integer i ) {
               i in [ 1, 2, 3 ]
             }
             assert m(1) == true
             assert m(4) == false
             '''
-        } finally {
-            println astTrees
-        }
     }
 
     // GROOVY-5814
@@ -786,7 +756,6 @@ import groovy.transform.TypeCheckingMode
 
     // GROOVY-6061
     void testShouldCallPutAt() {
-        try {
         assertScript '''
             def swapUseStatic(List<Integer> a, int i, int j) {
                 int temp = a[i]
@@ -797,9 +766,6 @@ import groovy.transform.TypeCheckingMode
             swapUseStatic(list, 0, 1)
             assert list == [2,1]
         '''
-        } finally {
-            println astTrees
-        }
     }
 
 
