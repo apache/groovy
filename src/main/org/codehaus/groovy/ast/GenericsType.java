@@ -66,7 +66,7 @@ public class GenericsType extends ASTNode {
 
     private String toString(Set<String> visited) {
         if (placeholder) visited.add(name);
-        String ret = (type == null || placeholder || wildcard) ? name : genericsBounds(type, visited);
+        String ret = wildcard?"?":((type == null || placeholder) ? name : genericsBounds(type, visited));
         if (upperBounds != null) {
             ret += " extends ";
             for (int i = 0; i < upperBounds.length; i++) {
