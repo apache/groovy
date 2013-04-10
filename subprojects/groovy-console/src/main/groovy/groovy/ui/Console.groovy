@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,7 @@ import javax.swing.event.DocumentListener
  * @author Hamlet D'Arcy, AST browser
  * @author Roshan Dawrani
  * @author Paul King
+ * @author Andre Steingress
  */
 class Console implements CaretListener, HyperlinkListener, ComponentListener, FocusListener {
 
@@ -115,6 +116,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     // Safer thread interruption
     boolean threadInterrupt = prefs.getBoolean('threadInterrupt', false)
     Action threadInterruptAction
+
+    boolean saveOnRun = prefs.getBoolean('saveOnRun', false)
+    Action saveOnRunAction
 
     //to allow loading classes dynamically when using @Grab (GROOVY-4877, GROOVY-5871)
     boolean useScriptClassLoaderForScriptExecution = false
@@ -879,7 +883,16 @@ options:
     // actually run the script
 
     void runScript(EventObject evt = null) {
-        runScriptImpl(false)
+        if (saveOnRun)  {
+            if (fileSave(evt)) runScriptImpl(false)
+        } else {
+            runScriptImpl(false)
+        }
+    }
+
+    void saveOnRun(EventObject evt = null)  {
+        saveOnRun = evt.source.selected
+        prefs.putBoolean('saveOnRun', saveOnRun)
     }
 
     void runSelectedScript(EventObject evt = null) {
