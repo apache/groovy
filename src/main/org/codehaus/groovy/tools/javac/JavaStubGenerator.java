@@ -412,12 +412,19 @@ public class JavaStubGenerator {
 
     private Parameter[] selectAccessibleConstructorFromSuper(ConstructorNode node) {
         ClassNode type = node.getDeclaringClass();
-        ClassNode superType = type.getSuperClass();
+        ClassNode superType = type.getUnresolvedSuperClass();
 
         for (ConstructorNode c : superType.getDeclaredConstructors()) {
             // Only look at things we can actually call
             if (c.isPublic() || c.isProtected()) {
-                return c.getParameters();
+                Parameter[] parameters = c.getParameters();
+                // workaround for GROOVY-5859: remove generic type info
+                Parameter[] copy = new Parameter[parameters.length];
+                for (int i = 0; i < copy.length; i++) {
+                    Parameter orig = parameters[i];
+                    copy[i] = new Parameter(orig.getOriginType().getPlainNodeReference(), orig.getName());
+                }
+                return copy;
             }
         }
 
