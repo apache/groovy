@@ -1,11 +1,11 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.Memoized;
-
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -37,7 +36,7 @@ import org.codehaus.groovy.control.SourceUnit;
 
 /**
  * Handles generation of code for the {@link Memoized} annotation.
- * 
+ *
  * @author Andrey Bloschetsov
  */
 @GroovyASTTransformation
@@ -61,12 +60,11 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         if (MY_TYPE.equals(annotationNode.getClassNode()) && annotatedNode instanceof MethodNode) {
             MethodNode methodNode = (MethodNode) annotatedNode;
             if (methodNode.isAbstract()) {
-                addError("Error: annotation " + MY_TYPE_NAME + " can not be used for abstract method.", methodNode);
+                addError("Annotation " + MY_TYPE_NAME + " cannot be used for abstract methods.", methodNode);
                 return;
             }
             if (methodNode.isVoidMethod()) {
-                addError("Error: annotation " + MY_TYPE_NAME + " can not be used for method that return void.",
-                        methodNode);
+                addError("Annotation " + MY_TYPE_NAME + " cannot be used for void methods.", methodNode);
                 return;
             }
 
@@ -103,7 +101,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     private int getIntMemberValue(AnnotationNode node, String name) {
         Object value = getMemberValue(node, name);
         if (value != null && value instanceof Integer) {
-            return ((Integer) value).intValue();
+            return (Integer) value;
         }
 
         return 0;
@@ -115,22 +113,23 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     private static final String MEMOIZE_BETWEEN_METHOD_NAME = "memoizeBetween";
 
     private MethodCallExpression buildMemoizeClosureCallExpression(ClosureExpression expression,
-            int protectedCacheSize, int maxCacheSize) {
+                                                                   int protectedCacheSize, int maxCacheSize) {
 
         if (protectedCacheSize == 0 && maxCacheSize == 0) {
             return new MethodCallExpression(expression, MEMOIZE_METHOD_NAME, MethodCallExpression.NO_ARGUMENTS);
-        } else if (protectedCacheSize == 0) {
+        }
+        if (protectedCacheSize == 0) {
             return new MethodCallExpression(expression, MEMOIZE_AT_MOST_METHOD_NAME, new ArgumentListExpression(
                     new ConstantExpression(maxCacheSize)));
-        } else if (maxCacheSize == 0) {
+        }
+        if (maxCacheSize == 0) {
             return new MethodCallExpression(expression, MEMOIZE_AT_LEAST_METHOD_NAME, new ArgumentListExpression(
                     new ConstantExpression(protectedCacheSize)));
-        } else {
-            ArgumentListExpression args = new ArgumentListExpression(new Expression[] {
-                    new ConstantExpression(protectedCacheSize), new ConstantExpression(maxCacheSize) });
-
-            return new MethodCallExpression(expression, MEMOIZE_BETWEEN_METHOD_NAME, args);
         }
+        ArgumentListExpression args = new ArgumentListExpression(new Expression[]{
+                new ConstantExpression(protectedCacheSize), new ConstantExpression(maxCacheSize)});
+
+        return new MethodCallExpression(expression, MEMOIZE_BETWEEN_METHOD_NAME, args);
     }
 
     /*

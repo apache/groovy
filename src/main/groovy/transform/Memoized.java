@@ -1,11 +1,11 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 /**
  * Method annotation that creates a cache for the results of the execution of the annotated method. Whenever the method
- * is called, the mapping between the parameters and the return value is preserved in cache making subsequent calls with
+ * is called, the mapping between the parameters and the return value is preserved in a cache making subsequent calls with
  * the same arguments fast.
  * 
  * <p>
@@ -41,7 +41,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * }
  * </pre>
  * 
- * which becomes:
+ * which becomes (approximately):
  * 
  * <pre>
  * class MemoizedExample {
@@ -58,7 +58,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * </pre>
  * 
  * <p>
- * The execution a follow block code:
+ * Upon execution of this code:
  * 
  * <pre>
  * def instance = new MemoizedExample()
@@ -68,7 +68,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * println instance.sum(2, 3)
  * </pre>
  * 
- * outputs:
+ * The following will be output:
  * 
  * <pre>
  * 1 + 2 = 3
