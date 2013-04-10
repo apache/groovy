@@ -284,10 +284,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (vexp.getName().equals("this")) storeType(vexp, typeCheckingContext.getEnclosingClassNode());
             if (vexp.getName().equals("super")) storeType(vexp, typeCheckingContext.getEnclosingClassNode().getSuperClass());
             if (typeCheckingContext.getEnclosingClosure() != null) {
-                if (vexp.getName().equals("owner")
-                        || vexp.getName().equals("delegate")
-                        || vexp.getName().equals("thisObject")) {
+                if (vexp.getName().equals("owner") || vexp.getName().equals("thisObject")) {
                     storeType(vexp, typeCheckingContext.getEnclosingClassNode());
+                    return;
+                } else if ("delegate".equals(vexp.getName())) {
+                    DelegationMetadata md = getDelegationMetadata(typeCheckingContext.getEnclosingClosure().getClosureExpression());
+                    ClassNode type = typeCheckingContext.getEnclosingClassNode();
+                    if (md!=null) {
+                        type = md.getType();
+                    }
+                    storeType(vexp, type);
                     return;
                 }
             }
@@ -2111,6 +2117,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
                             callArgsVisited = true;
                         }
+                        if (directMethodCallCandidate==GET_DELEGATE && typeCheckingContext.getEnclosingClosure()!=null) {
+                            DelegationMetadata md = getDelegationMetadata(typeCheckingContext.getEnclosingClosure().getClosureExpression());
+                            returnType = typeCheckingContext.getEnclosingClassNode();
+                            if (md!=null) {
+                                returnType = md.getType();
+                            }
+                        }
                         storeType(call, returnType);
                         storeTargetMethod(call, directMethodCallCandidate);
                         String data = chosenReceiver!=null?chosenReceiver.getData():null;
@@ -2119,7 +2132,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             // so we store the information so that the static compiler may reuse it
                             call.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, data);
                         }
-
                         // if the object expression is a closure shared variable, we will have to perform a second pass
                         if (objectExpression instanceof VariableExpression) {
                             VariableExpression var = (VariableExpression) objectExpression;

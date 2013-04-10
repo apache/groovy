@@ -437,4 +437,46 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
             test()
         '''
     }
+
+    // GROOVY-6091
+    void testExplicitUseOfDelegateProperty() {
+        assertScript '''
+            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = Closure.DELEGATE_FIRST) Closure arg) {
+                arg.delegate = target
+                arg.setResolveStrategy(Closure.DELEGATE_FIRST)
+                arg()
+            }
+
+            def test() {
+                def obj = [1, 2]
+                with(obj) {
+                    print(delegate.last()) //error is here
+                }
+            }
+
+            test()
+
+        '''
+    }
+
+    // GROOVY-6091
+    void testExplicitUseOfDelegateMethod() {
+        assertScript '''
+            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = Closure.DELEGATE_FIRST) Closure arg) {
+                arg.delegate = target
+                arg.setResolveStrategy(Closure.DELEGATE_FIRST)
+                arg()
+            }
+
+            def test() {
+                def obj = [1, 2]
+                with(obj) {
+                    print(getDelegate().last()) //error is here
+                }
+            }
+
+            test()
+
+        '''
+    }
 }
