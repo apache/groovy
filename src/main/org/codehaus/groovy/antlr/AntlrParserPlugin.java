@@ -683,8 +683,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected void enumConstantDef(AST node) {
         enumConstantBeingDef = true;
         assertNodeType(ENUM_CONSTANT_DEF, node);
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST element = node.getFirstChild();
         if (isType(ANNOTATIONS, element)) {
+            processAnnotations(annotations, element);
             element = element.getNextSibling();
         }
         String identifier = identifier(element);
@@ -740,6 +742,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             }
         }
         EnumHelper.addEnumConstant(classNode, identifier, init, savedLine, savedColumn);
+        FieldNode enumField = EnumHelper.addEnumConstant(classNode, identifier, init);
+        enumField.addAnnotations(annotations);
+        configureAST(enumField, node);
         enumConstantBeingDef = false;
     }
 

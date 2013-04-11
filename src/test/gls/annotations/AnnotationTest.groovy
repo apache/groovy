@@ -633,4 +633,19 @@ class AnnotationTest extends CompilableTestSupport {
                     'b=6|c1=A|c2=B|c3=C|c4=D|d1=2.0|d2=2.1|d3=2.2|d4=2.3|f1=1.0|f2=1.1|f3=1.2|f4=1.3|i1=0|i2=1|s1=2|s2=3|s3=4|s4=5'
         '''
     }
+
+    // GROOVY-6093
+    void testAnnotationOnEnumConstant() {
+        assertScript '''
+            import javax.xml.bind.annotation.XmlEnum
+            import javax.xml.bind.annotation.XmlEnumValue
+
+            @XmlEnum
+            enum GroovyEnum {
+                @XmlEnumValue("good")
+                BAD
+            }
+            assert GroovyEnum.class.getField('BAD').isAnnotationPresent(XmlEnumValue)
+        '''
+    }
 }
