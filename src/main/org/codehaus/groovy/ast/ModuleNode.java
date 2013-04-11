@@ -114,24 +114,26 @@ public class ModuleNode extends ASTNode implements Opcodes {
         return imports.get(alias);
     }
 
-    public void addImport(String alias, ClassNode type) {
-        addImport(alias, type, new ArrayList<AnnotationNode>());
+    public ImportNode addImport(String alias, ClassNode type) {
+        return addImport(alias, type, new ArrayList<AnnotationNode>());
     }
 
-    public void addImport(String alias, ClassNode type, List<AnnotationNode> annotations) {
+    public ImportNode addImport(String alias, ClassNode type, List<AnnotationNode> annotations) {
         ImportNode importNode = new ImportNode(type, alias);
         imports.put(alias, importNode);
         importNode.addAnnotations(annotations);
+        return importNode;
     }
 
-    public void addStarImport(String packageName) {
-        addStarImport(packageName, new ArrayList<AnnotationNode>());
+    public ImportNode addStarImport(String packageName) {
+        return addStarImport(packageName, new ArrayList<AnnotationNode>());
     }
 
-    public void addStarImport(String packageName, List<AnnotationNode> annotations) {
+    public ImportNode addStarImport(String packageName, List<AnnotationNode> annotations) {
         ImportNode importNode = new ImportNode(packageName);
         importNode.addAnnotations(annotations);
         starImports.add(importNode);
+        return importNode;
     }
 
     public void addStatement(Statement node) {
@@ -409,24 +411,26 @@ public class ModuleNode extends ASTNode implements Opcodes {
         return staticStarImports;
     }
 
-    public void addStaticImport(ClassNode type, String fieldName, String alias) {
-        addStaticImport(type, fieldName, alias, new ArrayList<AnnotationNode>());
+    public ImportNode addStaticImport(ClassNode type, String fieldName, String alias) {
+        return addStaticImport(type, fieldName, alias, new ArrayList<AnnotationNode>());
     }
 
-    public void addStaticImport(ClassNode type, String fieldName, String alias, List<AnnotationNode> annotations) {
+    public ImportNode addStaticImport(ClassNode type, String fieldName, String alias, List<AnnotationNode> annotations) {
         ImportNode node = new ImportNode(type, fieldName, alias);
         node.addAnnotations(annotations);
         staticImports.put(alias, node);
+        return node;
     }
 
-    public void addStaticStarImport(String name, ClassNode type) {
-        addStaticStarImport(name, type, new ArrayList<AnnotationNode>());
+    public ImportNode addStaticStarImport(String name, ClassNode type) {
+        return addStaticStarImport(name, type, new ArrayList<AnnotationNode>());
     }
 
-    public void addStaticStarImport(String name, ClassNode type, List<AnnotationNode> annotations) {
+    public ImportNode addStaticStarImport(String name, ClassNode type, List<AnnotationNode> annotations) {
         ImportNode node = new ImportNode(type);
         node.addAnnotations(annotations);
         staticStarImports.put(name, node);
+        return node;
     }
     
     public String getMainClassName() {
