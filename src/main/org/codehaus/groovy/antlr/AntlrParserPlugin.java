@@ -328,6 +328,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected void importDef(AST importNode) {
         try {
+            // GROOVY-6094
+            output.putNodeMetaData(ImportNode.class, ImportNode.class);
+
             boolean isStatic = importNode.getType() == STATIC_IMPORT;
             List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
 
@@ -390,11 +393,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         } finally {
             // we're using node metadata here in order to fix GROOVY-6094
             // without breaking external APIs
-            ImportNode node = (ImportNode) output.getNodeMetaData(ImportNode.class);
-            if (node!=null) {
-                configureAST(node, importNode);
-                output.removeNodeMetaData(ImportNode.class);
+            Object node = output.getNodeMetaData(ImportNode.class);
+            if (node!=null && node!=ImportNode.class) {
+                configureAST((ImportNode)node, importNode);
             }
+            output.removeNodeMetaData(ImportNode.class);
         }
     }
 

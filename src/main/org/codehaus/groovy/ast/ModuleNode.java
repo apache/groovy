@@ -122,7 +122,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ImportNode importNode = new ImportNode(type, alias);
         imports.put(alias, importNode);
         importNode.addAnnotations(annotations);
-        putNodeMetaData(ImportNode.class, importNode);
+        storeLastAddedImportNode(importNode);
     }
 
     public void addStarImport(String packageName) {
@@ -133,7 +133,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ImportNode importNode = new ImportNode(packageName);
         importNode.addAnnotations(annotations);
         starImports.add(importNode);
-        putNodeMetaData(ImportNode.class, importNode);
+        storeLastAddedImportNode(importNode);
     }
 
     public void addStatement(Statement node) {
@@ -419,7 +419,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ImportNode node = new ImportNode(type, fieldName, alias);
         node.addAnnotations(annotations);
         staticImports.put(alias, node);
-        putNodeMetaData(ImportNode.class, node);
+        storeLastAddedImportNode(node);
     }
 
     public void addStaticStarImport(String name, ClassNode type) {
@@ -430,9 +430,17 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ImportNode node = new ImportNode(type);
         node.addAnnotations(annotations);
         staticStarImports.put(name, node);
-        putNodeMetaData(ImportNode.class, node);
+        storeLastAddedImportNode(node);
     }
-    
+
+    // This method only exists as a workaround for GROOVY-6094
+    // In order to keep binary compatibility
+    private void storeLastAddedImportNode(final ImportNode node) {
+        if (getNodeMetaData(ImportNode.class)==ImportNode.class) {
+            putNodeMetaData(ImportNode.class, node);
+        }
+    }
+
     public String getMainClassName() {
         return mainClassName;
     }
