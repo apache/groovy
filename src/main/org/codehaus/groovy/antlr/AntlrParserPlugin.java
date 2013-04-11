@@ -329,6 +329,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected void importDef(AST importNode) {
         boolean isStatic = importNode.getType() == STATIC_IMPORT;
         List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
+        ImportNode astImportNode;
 
         AST node = importNode.getFirstChild();
         if (isType(ANNOTATIONS, node)) {
@@ -349,7 +350,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             // import is like  "import Foo"
             ClassNode type = ClassHelper.make(name);
             configureAST(type, importNode);
-            addImport(type, name, alias, annotations);
+            astImportNode = addImport(type, name, alias, annotations);
+            configureAST(astImportNode, importNode);
             return;
         }
 
@@ -362,10 +364,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 // packageName is actually a className in this case
                 ClassNode type = ClassHelper.make(packageName);
                 configureAST(type, importNode);
-                addStaticStarImport(type, packageName, annotations);
+                astImportNode = addStaticStarImport(type, packageName, annotations);
             } else {
                 // import is like "import foo.*"
-                addStarImport(packageName, annotations);
+                astImportNode = addStarImport(packageName, annotations);
             }
 
             if (alias != null) throw new GroovyBugError(
@@ -378,14 +380,15 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 // packageName is really class name in this case
                 ClassNode type = ClassHelper.make(packageName);
                 configureAST(type, importNode);
-                addStaticImport(type, name, alias, annotations);
+                astImportNode = addStaticImport(type, name, alias, annotations);
             } else {
                 // import is like "import foo.Bar"
                 ClassNode type = ClassHelper.make(packageName + "." + name);
                 configureAST(type, importNode);
-                addImport(type, name, alias, annotations);
+                astImportNode = addImport(type, name, alias, annotations);
             }
         }
+        configureAST(astImportNode, importNode);
     }
 
     private void processAnnotations(List<AnnotationNode> annotations, AST node) {

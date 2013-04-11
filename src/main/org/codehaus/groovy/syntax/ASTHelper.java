@@ -15,10 +15,7 @@
  */
 package org.codehaus.groovy.syntax;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.PackageNode;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
@@ -123,37 +120,37 @@ public class ASTHelper {
         return dot(base, "");
     }
 
-    protected void addImport(ClassNode type, String name, String aliasName) {
-        addImport(type, name, aliasName, new ArrayList<AnnotationNode>());
+    protected ImportNode addImport(ClassNode type, String name, String aliasName) {
+        return addImport(type, name, aliasName, new ArrayList<AnnotationNode>());
     }
 
-    protected void addImport(ClassNode type, String name, String aliasName, List<AnnotationNode> annotations) {
+    protected ImportNode addImport(ClassNode type, String name, String aliasName, List<AnnotationNode> annotations) {
         if (aliasName == null) aliasName=name;
-        output.addImport(aliasName, type, annotations);
+        return output.addImport(aliasName, type, annotations);
     }
 
-    protected void addStaticImport(ClassNode type, String name, String alias) {
-        addStaticImport(type, name, alias, new ArrayList<AnnotationNode>());
+    protected ImportNode addStaticImport(ClassNode type, String name, String alias) {
+        return addStaticImport(type, name, alias, new ArrayList<AnnotationNode>());
     }
 
-    protected void addStaticImport(ClassNode type, String name, String alias, List<AnnotationNode> annotations) {
+    protected ImportNode addStaticImport(ClassNode type, String name, String alias, List<AnnotationNode> annotations) {
         if (alias == null) alias = name;
-        output.addStaticImport(type, name, alias, annotations);
+        return output.addStaticImport(type, name, alias, annotations);
     }
 
-    protected void addStaticStarImport(ClassNode type, String importClass) {
-        addStaticStarImport(type, importClass, new ArrayList<AnnotationNode>());
+    protected ImportNode addStaticStarImport(ClassNode type, String importClass) {
+        return addStaticStarImport(type, importClass, new ArrayList<AnnotationNode>());
     }
 
-    protected void addStaticStarImport(ClassNode type, String importClass, List<AnnotationNode> annotations) {
-        output.addStaticStarImport(importClass, type, annotations);
+    protected ImportNode addStaticStarImport(ClassNode type, String importClass, List<AnnotationNode> annotations) {
+        return output.addStaticStarImport(importClass, type, annotations);
     }
 
-    protected void addStarImport(String importPackage) {
-        addStarImport(importPackage, new ArrayList<AnnotationNode>());
+    protected ImportNode addStarImport(String importPackage) {
+        return addStarImport(importPackage, new ArrayList<AnnotationNode>());
     }
 
-    protected void addStarImport(String importPackage, List<AnnotationNode> annotations) {
-        output.addStarImport( dot(importPackage), annotations );
+    protected ImportNode addStarImport(String importPackage, List<AnnotationNode> annotations) {
+        return output.addStarImport( dot(importPackage), annotations );
     }
 }
