@@ -327,64 +327,77 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected void importDef(AST importNode) {
-        boolean isStatic = importNode.getType() == STATIC_IMPORT;
-        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
+        try {
+            // GROOVY-6094
+            output.putNodeMetaData(ImportNode.class, ImportNode.class);
 
-        AST node = importNode.getFirstChild();
-        if (isType(ANNOTATIONS, node)) {
-            processAnnotations(annotations, node);
-            node = node.getNextSibling();
-        }
+            boolean isStatic = importNode.getType() == STATIC_IMPORT;
+            List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
 
-        String alias = null;
-        if (isType(LITERAL_as, node)) {
-            //import is like "import Foo as Bar"
-            node = node.getFirstChild();
-            AST aliasNode = node.getNextSibling();
-            alias = identifier(aliasNode);
-        }
-
-        if (node.getNumberOfChildren() == 0) {
-            String name = identifier(node);
-            // import is like  "import Foo"
-            ClassNode type = ClassHelper.make(name);
-            configureAST(type, importNode);
-            addImport(type, name, alias, annotations);
-            return;
-        }
-
-        AST packageNode = node.getFirstChild();
-        String packageName = qualifiedName(packageNode);
-        AST nameNode = packageNode.getNextSibling();
-        if (isType(STAR, nameNode)) {
-            if (isStatic) {
-                // import is like "import static foo.Bar.*"
-                // packageName is actually a className in this case
-                ClassNode type = ClassHelper.make(packageName);
-                configureAST(type, importNode);
-                addStaticStarImport(type, packageName, annotations);
-            } else {
-                // import is like "import foo.*"
-                addStarImport(packageName, annotations);
+            AST node = importNode.getFirstChild();
+            if (isType(ANNOTATIONS, node)) {
+                processAnnotations(annotations, node);
+                node = node.getNextSibling();
             }
 
-            if (alias != null) throw new GroovyBugError(
-                    "imports like 'import foo.* as Bar' are not " +
-                            "supported and should be caught by the grammar");
-        } else {
-            String name = identifier(nameNode);
-            if (isStatic) {
-                // import is like "import static foo.Bar.method"
-                // packageName is really class name in this case
-                ClassNode type = ClassHelper.make(packageName);
-                configureAST(type, importNode);
-                addStaticImport(type, name, alias, annotations);
-            } else {
-                // import is like "import foo.Bar"
-                ClassNode type = ClassHelper.make(packageName + "." + name);
+            String alias = null;
+            if (isType(LITERAL_as, node)) {
+                //import is like "import Foo as Bar"
+                node = node.getFirstChild();
+                AST aliasNode = node.getNextSibling();
+                alias = identifier(aliasNode);
+            }
+
+            if (node.getNumberOfChildren() == 0) {
+                String name = identifier(node);
+                // import is like  "import Foo"
+                ClassNode type = ClassHelper.make(name);
                 configureAST(type, importNode);
                 addImport(type, name, alias, annotations);
+                return;
             }
+
+            AST packageNode = node.getFirstChild();
+            String packageName = qualifiedName(packageNode);
+            AST nameNode = packageNode.getNextSibling();
+            if (isType(STAR, nameNode)) {
+                if (isStatic) {
+                    // import is like "import static foo.Bar.*"
+                    // packageName is actually a className in this case
+                    ClassNode type = ClassHelper.make(packageName);
+                    configureAST(type, importNode);
+                    addStaticStarImport(type, packageName, annotations);
+                } else {
+                    // import is like "import foo.*"
+                    addStarImport(packageName, annotations);
+                }
+
+                if (alias != null) throw new GroovyBugError(
+                        "imports like 'import foo.* as Bar' are not " +
+                                "supported and should be caught by the grammar");
+            } else {
+                String name = identifier(nameNode);
+                if (isStatic) {
+                    // import is like "import static foo.Bar.method"
+                    // packageName is really class name in this case
+                    ClassNode type = ClassHelper.make(packageName);
+                    configureAST(type, importNode);
+                    addStaticImport(type, name, alias, annotations);
+                } else {
+                    // import is like "import foo.Bar"
+                    ClassNode type = ClassHelper.make(packageName + "." + name);
+                    configureAST(type, importNode);
+                    addImport(type, name, alias, annotations);
+                }
+            }
+        } finally {
+            // we're using node metadata here in order to fix GROOVY-6094
+            // without breaking external APIs
+            Object node = output.getNodeMetaData(ImportNode.class);
+            if (node!=null && node!=ImportNode.class) {
+                configureAST((ImportNode)node, importNode);
+            }
+            output.removeNodeMetaData(ImportNode.class);
         }
     }
 
