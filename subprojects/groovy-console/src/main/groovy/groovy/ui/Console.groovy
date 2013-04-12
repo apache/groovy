@@ -883,7 +883,7 @@ options:
     // actually run the script
 
     void runScript(EventObject evt = null) {
-        if (saveOnRun)  {
+        if (saveOnRun && scriptFile != null)  {
             if (fileSave(evt)) runScriptImpl(false)
         } else {
             runScriptImpl(false)
