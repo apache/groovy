@@ -556,4 +556,40 @@ class CanonicalTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testMapStyleConstructorSupportWithObjectOrMapFirstProperty() {
+        // GROOVY-5243: special support for Map, Object, AbstractMap, HashMap but currently not LinkedHashMap
+        assertScript """
+            import groovy.transform.*
+
+            def obj1 = new Canonical1(foo: [:], bar: 'BAR')
+            def obj2 = new Canonical2(foo: [:], bar: 'BAR')
+            def obj3 = new Canonical3(foo: [:], bar: 'BAR')
+
+            check(obj1)
+            check(obj2)
+            check(obj3)
+
+            def check(obj) {
+              assert obj.foo == [:]
+              assert obj.bar == 'BAR'
+            }
+
+            @Canonical
+            class Canonical1 {
+                def foo
+                String bar
+            }
+            @Canonical
+            class Canonical2 {
+                Map foo
+                String bar
+            }
+            @Canonical
+            class Canonical3 {
+                HashMap foo
+                String bar
+            }
+        """
+    }
+
 }

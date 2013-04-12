@@ -80,13 +80,13 @@ import java.lang.annotation.Target;
  * </ul>
  * <p>
  * If you want similar functionality to what this annotation provides but also require immutability, see the
- * {@code @Immutable} annotation.
+ * {@code @}{@link Immutable} annotation.
  * <p>
  * Limitations:
  * <ul>
- * <li>
- * If you explicitly add your own constructors, then the transformation will not add any other constructor to the class.
- * </li>
+ * <li>If you explicitly add your own constructors, then the transformation will not add any other constructor to the class</li>
+ * <li>Groovy's normal map-style naming conventions will not be available if the first property
+ * has type {@code LinkedHashMap} or if there is a single Map, AbstractMap or HashMap property</li>
  * </ul>
  *
  * @author Paulo Poiati
