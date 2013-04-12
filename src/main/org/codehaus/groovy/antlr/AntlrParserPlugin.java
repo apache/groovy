@@ -741,8 +741,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 }
             }
         }
-        EnumHelper.addEnumConstant(classNode, identifier, init, savedLine, savedColumn);
-        FieldNode enumField = EnumHelper.addEnumConstant(classNode, identifier, init);
+        FieldNode enumField = EnumHelper.addEnumConstant(classNode, identifier, init, savedLine, savedColumn);
         enumField.addAnnotations(annotations);
         configureAST(enumField, node);
         enumConstantBeingDef = false;
