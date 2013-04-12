@@ -51,7 +51,11 @@ import java.lang.annotation.Target;
  * by the fields of the class (if {@code includeFields} is set). Within each grouping the order
  * is as attributes appear within the respective class.
  * <p>
- * Limitations: currently not designed to support inner classes.
+ * Limitations:
+ * <ul>
+ * <li>Groovy's normal map-style naming conventions will not be available if the first property (or field)
+ * has type {@code LinkedHashMap} or if there is a single Map, AbstractMap or HashMap property (or field)</li>
+ * </ul>
  *
  * @author Paul King
  * @since 1.8.0
