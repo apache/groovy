@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,13 +69,13 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             DeclarationExpression de = (DeclarationExpression) parent;
             ClassNode cNode = de.getDeclaringClass();
             if (!cNode.isScript()) {
-                addError("Error: annotation " + MY_TYPE_NAME + " can only be used within a Script.", parent);
+                addError("Annotation " + MY_TYPE_NAME + " can only be used within a Script.", parent);
                 return;
             }
             candidate = de;
             // GROOVY-4548: temp fix to stop CCE until proper support is added
             if (de.isMultipleAssignmentDeclaration()) {
-                addError("Error: annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", parent);
+                addError("Annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", parent);
                 return;
             }
             VariableExpression ve = de.getVariableExpression();
@@ -115,7 +115,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
                     // return EmptyExpression.INSTANCE;
                     return new ConstantExpression(null);
                 }
-                addError("Error: annotation " + MY_TYPE_NAME + " can only be used within a Script body.", expr);
+                addError("Annotation " + MY_TYPE_NAME + " can only be used within a Script body.", expr);
                 return expr;
             }
         } else if (insideScriptBody && expr instanceof VariableExpression && currentClosure != null) {
