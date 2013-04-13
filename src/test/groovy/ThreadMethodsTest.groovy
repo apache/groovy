@@ -18,12 +18,12 @@ package groovy
 class ThreadMethodsTest extends GroovyTestCase {
     void testThreadNaming() {
         def t = Thread.start("MyNamedThread") {
-            sleep 100 // give ourselves time to find the thread
+            sleep 200 // give ourselves time to find the thread
         }
         def found = false
         3.times {
             if (!found) {
-                sleep 25 // a little bit of time for t to start
+                sleep 50 // a little bit of time for t to start
                 found = Thread.allStackTraces.keySet().any { thread -> thread.name == 'MyNamedThread' }
             }
         }
