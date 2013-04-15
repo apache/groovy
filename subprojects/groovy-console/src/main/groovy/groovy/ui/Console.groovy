@@ -197,8 +197,8 @@ options:
             return
         }
 
-        // allow the full stack traces to bubble up to the root logger
-        java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = true
+        // full stack trace should not be logged to the output window - GROOVY-4663
+        java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = false
 
         //when starting via main set the look and feel to system
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
@@ -226,6 +226,7 @@ options:
         try {
             System.setProperty("groovy.full.stacktrace", System.getProperty("groovy.full.stacktrace",
                     Boolean.toString(prefs.getBoolean('fullStackTraces', false))))
+
         } catch (SecurityException se) {
             fullStackTracesAction.enabled = false;
         }
