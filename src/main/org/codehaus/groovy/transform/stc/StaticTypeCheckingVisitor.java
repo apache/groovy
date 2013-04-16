@@ -503,7 +503,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (types == null) {
                             types = new LinkedList<ClassNode>();
                             ClassNode type = (ClassNode) var.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-                            if (type != null) types.add(type);
+                            types.add(type);
                             typeCheckingContext.ifElseForWhileAssignmentTracker.put(var, types);
                         }
                         types.add(resultType);
@@ -2281,6 +2281,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // pop if-then-else temporary type info
             typeCheckingContext.popTemporaryTypeInfo();
 
+            // GROOVY-6099: restore assignement info as before the if branch
+            Set<Map.Entry<VariableExpression, List<ClassNode>>> entries = typeCheckingContext.ifElseForWhileAssignmentTracker.entrySet();
+            for (Map.Entry<VariableExpression, List<ClassNode>> entry : entries) {
+                VariableExpression var = entry.getKey();
+                List<ClassNode> items = entry.getValue();
+                ClassNode originValue = items.get(0);
+                storeType(var, originValue);
+            }
+
             Statement elseBlock = ifElse.getElseBlock();
             if (elseBlock instanceof EmptyStatement) {
                 // dispatching to EmptyStatement will not call back visitor,
@@ -2299,7 +2308,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!typeCheckingContext.ifElseForWhileAssignmentTracker.isEmpty()) {
             for (Map.Entry<VariableExpression, List<ClassNode>> entry : typeCheckingContext.ifElseForWhileAssignmentTracker.entrySet()) {
                 VariableExpression key = entry.getKey();
-                ClassNode cn = lowestUpperBound(entry.getValue());
+                List<ClassNode> allValues = entry.getValue();
+                // GROOVY-6099: First element of the list may be null, if no assignment was made before the branch
+                List<ClassNode> nonNullValues = new ArrayList<ClassNode>(allValues.size());
+                for (ClassNode value : allValues) {
+                    if (value!=null) nonNullValues.add(value);
+                }
+                ClassNode cn = lowestUpperBound(nonNullValues);
                 storeType(key, cn);
                 assignments.put(key, cn);
             }
