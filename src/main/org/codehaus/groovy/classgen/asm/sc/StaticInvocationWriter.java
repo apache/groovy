@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
 import static org.objectweb.asm.Opcodes.*;
 
@@ -416,17 +417,15 @@ public class StaticInvocationWriter extends InvocationWriter {
             newMCE.setImplicitThis(origMCE.isImplicitThis());
             newMCE.setSourcePosition(origMCE);
             newMCE.visit(controller.getAcg());
+            ClassNode returnType = operandStack.getTopOperand();
+            if (ClassHelper.isPrimitiveType(returnType) && !ClassHelper.VOID_TYPE.equals(returnType)) {
+                operandStack.box();
+            }
             Label endof = compileStack.createLocalLabel("endof_" + counter);
             mv.visitJumpInsn(GOTO, endof);
             mv.visitLabel(ifnull);
             // else { null }
-            ClassNode returnType = methodTarget.getReturnType();
-            if (ClassHelper.isPrimitiveType(returnType)
-                    && !ClassHelper.VOID_TYPE.equals(returnType)) {
-                pushZero(mv, returnType);
-            } else {
-                mv.visitInsn(ACONST_NULL);
-            }
+            mv.visitInsn(ACONST_NULL);
             mv.visitLabel(endof);
         } else {
             if ((adapter == AsmClassGenerator.getGroovyObjectField
