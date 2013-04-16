@@ -54,24 +54,24 @@ public class CompareToNullExpression extends BinaryExpression implements Opcodes
         if (visitor instanceof AsmClassGenerator) {
             AsmClassGenerator acg = (AsmClassGenerator) visitor;
             WriterController controller = acg.getController();
-            ClassNode objectType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
             MethodVisitor mv = controller.getMethodVisitor();
-            if (ClassHelper.isPrimitiveType(objectType)) {
-                // we're in a primitive == null comparison, which *always* return false
+            objectExpression.visit(acg);
+            ClassNode top = controller.getOperandStack().getTopOperand();
+            if (ClassHelper.isPrimitiveType(top)) {
+                controller.getOperandStack().pop();
                 mv.visitInsn(ICONST_0);
                 controller.getOperandStack().push(ClassHelper.boolean_TYPE);
-            } else {
-                objectExpression.visit(acg);
-                Label zero = new Label();
-                mv.visitJumpInsn(equalsNull?IFNONNULL:IFNULL, zero);
-                mv.visitInsn(ICONST_1);
-                Label end = new Label();
-                mv.visitJumpInsn(GOTO, end);
-                mv.visitLabel(zero);
-                mv.visitInsn(ICONST_0);
-                mv.visitLabel(end);
-                controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
+                return;
             }
+            Label zero = new Label();
+            mv.visitJumpInsn(equalsNull ? IFNONNULL : IFNULL, zero);
+            mv.visitInsn(ICONST_1);
+            Label end = new Label();
+            mv.visitJumpInsn(GOTO, end);
+            mv.visitLabel(zero);
+            mv.visitInsn(ICONST_0);
+            mv.visitLabel(end);
+            controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
         } else {
             super.visit(visitor);
         }

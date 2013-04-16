@@ -768,6 +768,40 @@ import groovy.transform.TypeCheckingMode
         '''
     }
 
+    // GROOVY-6101
+    void testShouldNotGenerateInvalidClassWithNullSafeInvocationOnMethodReturningPrimitiveType() {
+        assertScript '''
+        class Piece {
+            int x() { 333 }
+        }
 
+        void foo() {
+            Piece[] pieces = [new Piece(), null] as Piece[]
+            int sum = 0
+            for (int i=0;i<pieces.length;i++) {
+                if (pieces[i]?.x()) {
+                    sum += pieces[i].x()
+                }
+            }
+            assert sum == 333
+        }
+        foo()
+        '''
+    }
+
+    // GROOVY-6101 fix side effect
+    void testMakeSureOptimizationKeepsSideEffect() {
+        assertScript '''
+            class Foo {
+                boolean hasSideEffect = false
+                int x() { hasSideEffect=true; 333 }
+            }
+            Foo foo = new Foo()
+            if (foo.x()==null) {
+                println 'ok'
+            }
+            assert foo.hasSideEffect
+         '''
+    }
 }
 

@@ -103,31 +103,33 @@ public class BooleanExpressionTransformer {
                     controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
                     return;
                 }
-                if (type.equals(ClassHelper.int_TYPE) || type.equals(ClassHelper.byte_TYPE)
-                        || type.equals(ClassHelper.short_TYPE) || type.equals(ClassHelper.char_TYPE)) {
-                    // int on stack
+                ClassNode top = type;
+                if (ClassHelper.isPrimitiveType(top)) {
                     expression.visit(visitor);
-                    return;
-                } else if (type.equals(ClassHelper.long_TYPE)) {
-                    expression.visit(visitor);
-                    MethodVisitor mv = controller.getMethodVisitor();
-                    mv.visitInsn(L2I);
-                    controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
-                    return;
-                } else if (type.equals(ClassHelper.float_TYPE)) {
-                    expression.visit(visitor);
-                    MethodVisitor mv = controller.getMethodVisitor();
-                    mv.visitInsn(F2I);
-                    controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
-                    return;
-                } else if (type.equals(ClassHelper.double_TYPE)) {
-                    expression.visit(visitor);
-                    MethodVisitor mv = controller.getMethodVisitor();
-                    mv.visitInsn(D2I);
-                    controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
-                    return;
+                    // in case of null safe invocation, it is possible that what was supposed to be a primitive type
+                    // becomes the "null" constant, so we need to recheck
+                    top = controller.getOperandStack().getTopOperand();
+                    if (ClassHelper.isPrimitiveType(top)) {
+                        if (top.equals(ClassHelper.int_TYPE) || top.equals(ClassHelper.byte_TYPE)
+                                || top.equals(ClassHelper.short_TYPE) || top.equals(ClassHelper.char_TYPE)) {
+                            // int on stack
+                        } else if (top.equals(ClassHelper.long_TYPE)) {
+                            MethodVisitor mv = controller.getMethodVisitor();
+                            mv.visitInsn(L2I);
+                            controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
+                        } else if (top.equals(ClassHelper.float_TYPE)) {
+                            MethodVisitor mv = controller.getMethodVisitor();
+                            mv.visitInsn(F2I);
+                            controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
+                        } else if (top.equals(ClassHelper.double_TYPE)) {
+                            MethodVisitor mv = controller.getMethodVisitor();
+                            mv.visitInsn(D2I);
+                            controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
+                        }
+                        return;
+                    }
                 }
-                List<MethodNode> asBoolean = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), type, "asBoolean", ClassNode.EMPTY_ARRAY);
+                List<MethodNode> asBoolean = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), top, "asBoolean", ClassNode.EMPTY_ARRAY);
                 if (asBoolean.size() == 1) {
                     MethodNode node = asBoolean.get(0);
                     if (node instanceof ExtensionMethodNode) {
@@ -140,10 +142,10 @@ public class BooleanExpressionTransformer {
                             // For (2), we check that we are in one of those cases
                             // (a) a final class
                             // (b) a private inner class without subclass
-                            if (Modifier.isFinal(type.getModifiers())
-                                    || (type instanceof InnerClassNode
-                                    && Modifier.isPrivate(type.getModifiers())
-                                    && !isExtended(type, type.getOuterClass().getInnerClasses()))
+                            if (Modifier.isFinal(top.getModifiers())
+                                    || (top instanceof InnerClassNode
+                                    && Modifier.isPrivate(top.getModifiers())
+                                    && !isExtended(top, top.getOuterClass().getInnerClasses()))
                                     ) {
                                 CompareToNullExpression expr = new CompareToNullExpression(
                                         expression, false
