@@ -21,6 +21,7 @@ import groovy.ui.view.BasicMenuBar
 import groovy.ui.view.MacOSXMenuBar
 import org.junit.rules.TemporaryFolder
 
+import javax.swing.SwingUtilities
 import java.awt.Color
 
 class SwingBuilderConsoleTest extends GroovySwingTestCase {
@@ -382,6 +383,41 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             console.runScript(new EventObject([:]))
 
             assert scriptFile.text == console.inputEditor.textEditor.text
+        }
+    }
+
+    void testDoNotShowOriginalStackTrace() {
+        testInEDT {
+            SwingUtilities.metaClass.static.invokeLater = { Runnable runnable ->
+                runnable.run()
+            }
+            Thread.metaClass.static.start = { Runnable runnable ->
+                runnable.run()
+            }
+
+            try {
+                def binding = new Binding()
+                binding.setVariable("controller", new Console())
+
+                final consoleActions = new ConsoleActions()
+                final console = new Console()
+
+                def swing = new SwingBuilder()
+                swing.controller = console
+
+                swing.build(consoleActions)
+                console.run()
+
+                console.inputArea.text = 'throw new Exception()'
+                console.runScript(new EventObject([:]))
+
+                def doc = console.outputArea.document
+                assert doc.getText(0, doc.getLength()).contains('''java.lang.Exception
+\tat ConsoleScript0.run(ConsoleScript0:1)''')
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(Thread.class)
+                GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities.class)
+            }
         }
     }
 }

@@ -107,9 +107,9 @@ public class StackTraceUtils {
                     newTrace.add(stackTraceElement);
                 }
             }
+
             // We don't want to lose anything, so log it
             STACK_LOG.log(Level.WARNING, "Sanitizing stacktrace:", t);
-
 
             StackTraceElement[] clean = new StackTraceElement[newTrace.size()];
             newTrace.toArray(clean);
