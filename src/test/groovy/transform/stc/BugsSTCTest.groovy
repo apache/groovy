@@ -415,4 +415,20 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    // GROOVY-6104
+    void testShouldResolveConstantFromInterfaceImplementedInSuperClass() {
+        assertScript '''
+            interface Foo {
+                public static int MY_CONST = 85
+            }
+            class FooImpl implements Foo {}
+            class Bar extends FooImpl {
+                void bar() {
+                    assert MY_CONST == 85
+                }
+            }
+            new Bar().bar()
+        '''
+    }
 }
