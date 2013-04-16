@@ -1375,4 +1375,29 @@ public abstract class StaticTypeCheckingSupport {
             throw new GroovyBugError(e);
         }
     }
+
+    /**
+     * Collects all interfaces of a class node, including those defined by the
+     * super class.
+     * @param node a class for which we want to retrieve all interfaces
+     * @return a set of interfaces implemented by this class node
+     */
+    public static Set<ClassNode> collectAllInterfaces(ClassNode node) {
+        HashSet<ClassNode> result = new HashSet<ClassNode>();
+        collectAllInterfaces(node, result);
+        return result;
+    }
+
+    /**
+     * Collects all interfaces of a class node, including those defined by the
+     * super class.
+     * @param node a class for which we want to retrieve all interfaces
+     * @param out the set where to collect interfaces
+     */
+    private static void collectAllInterfaces(final ClassNode node, final Set<ClassNode> out) {
+        if (node==null) return;
+        Set<ClassNode> allInterfaces = node.getAllInterfaces();
+        out.addAll(allInterfaces);
+        collectAllInterfaces(node.getSuperClass(), out);
+    }
 }
