@@ -636,10 +636,9 @@ class AnnotationTest extends CompilableTestSupport {
 
     // GROOVY-6093
     void testAnnotationOnEnumConstant() {
-        assertScript '''
-            import javax.xml.bind.annotation.XmlEnum
-            import javax.xml.bind.annotation.XmlEnumValue
-
+        assertScript '''import gls.annotations.XmlEnum
+            import gls.annotations.XmlEnumValue
+            
             @XmlEnum
             enum GroovyEnum {
                 @XmlEnumValue("good")
