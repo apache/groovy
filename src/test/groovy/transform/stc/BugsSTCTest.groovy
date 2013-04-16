@@ -382,4 +382,37 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             foo(null)
         '''
     }
+
+    // GROOVY-6099
+    void testFlowTypingErrorWithIfElse() {
+        assertScript '''
+            def o = new Object()
+            boolean b = true
+            if (b) {
+                o = 1
+            } else {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
+                })
+                def o2 = o
+                println (o2.toString())
+            }
+        '''
+    }
+    void testFlowTypingErrorWithIfElseAndNoInitialInferredType() {
+        assertScript '''
+            def o
+            boolean b = true
+            if (b) {
+                o = 1
+            } else {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
+                })
+                def o2 = o
+                o2 = 'foo'
+                println (o2.toString())
+            }
+        '''
+    }
 }
