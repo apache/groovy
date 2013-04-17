@@ -197,7 +197,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             'ICONST_1',
             'IADD',
             'ISTORE',
-            'GOTO L14'
+            'GOTO'
         ])
     }
 

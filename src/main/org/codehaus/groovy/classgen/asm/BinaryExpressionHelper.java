@@ -399,10 +399,12 @@ public class BinaryExpressionHelper {
 
     protected void evaluateCompareExpression(MethodCaller compareMethod, BinaryExpression expression) {
         Expression leftExp = expression.getLeftExpression();
-        ClassNode leftType = leftExp.getType();
+        TypeChooser typeChooser = controller.getTypeChooser();
+        ClassNode cn = controller.getClassNode();
+        ClassNode leftType = typeChooser.resolveType(leftExp,cn);
         Expression rightExp = expression.getRightExpression();
-        ClassNode rightType = rightExp.getType();
-        
+        ClassNode rightType = typeChooser.resolveType(rightExp,cn);
+
         boolean done = false;
         if (    ClassHelper.isPrimitiveType(leftType) &&
                 ClassHelper.isPrimitiveType(rightType)) 

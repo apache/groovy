@@ -803,5 +803,16 @@ import groovy.transform.TypeCheckingMode
             assert foo.hasSideEffect
          '''
     }
+
+    void testShouldNotThrowNPEBecauseLHSIsNull() {
+        assertScript '''
+            class A {
+                int foo() { 123 }
+            }
+            A a = null
+            def bar = a?.foo() == 123 // will evaluate to false
+            assert bar == false
+        '''
+    }
 }
 
