@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -38,6 +39,7 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -322,7 +324,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         if (implicitReceiver !=null && implicitThis) {
             String[] propertyPath = ((String) implicitReceiver).split("\\.");
             // GROOVY-6021
-            PropertyExpression pexp = new PropertyExpression(new VariableExpression("this"), propertyPath[0]);
+            PropertyExpression pexp = new PropertyExpression(new VariableExpression("this", CLOSURE_TYPE), propertyPath[0]);
             pexp.setImplicitThis(true);
             for (int i=1; i<propertyPath.length;i++) {
                 pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, CLOSURE_TYPE);
