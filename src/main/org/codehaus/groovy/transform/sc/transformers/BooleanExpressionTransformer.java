@@ -21,6 +21,7 @@ import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Modifier;
@@ -97,9 +98,19 @@ public class BooleanExpressionTransformer {
                 }
                 if (type.equals(ClassHelper.Boolean_TYPE)) {
                     expression.visit(visitor);
-                    // unbox
                     MethodVisitor mv = controller.getMethodVisitor();
+                    Label unbox = new Label();
+                    Label exit = new Label();
+                    // check for null
+                    mv.visitInsn(DUP);
+                    mv.visitJumpInsn(IFNONNULL, unbox);
+                    mv.visitInsn(POP);
+                    mv.visitInsn(ICONST_0);
+                    mv.visitJumpInsn(GOTO, exit);
+                    mv.visitLabel(unbox);
+                    // unbox
                     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z");
+                    mv.visitLabel(exit);
                     controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
                     return;
                 }
