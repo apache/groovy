@@ -2458,7 +2458,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (accessedVariable != null && accessedVariable != exp && accessedVariable instanceof VariableExpression) {
                 storeType((Expression) accessedVariable, cn);
             }
-            if (var.isClosureSharedVariable()) {
+            if (var.isClosureSharedVariable() && cn!=null) {
                 List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(var);
                 if (assignedTypes == null) {
                     assignedTypes = new LinkedList<ClassNode>();
