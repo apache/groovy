@@ -814,5 +814,70 @@ import groovy.transform.TypeCheckingMode
             assert bar == false
         '''
     }
+
+    // GROOVY-5921
+    void testShouldHandleLongArray() {
+        assertScript '''
+            class Groovy5921 {
+              long[] data = [1L]
+
+              void doSomething() {
+                data[ 0 ] |= 0x7ffffffl
+              }
+            }
+
+            def b = new Groovy5921()
+            b.doSomething()
+
+        '''
+    }
+
+    void testShouldHandleLongArrayWithUnboxing() {
+        assertScript '''
+            class Groovy5921 {
+              long[] data = [1L]
+
+              void doSomething() {
+                data[ 0 ] |= Long.valueOf(0x7ffffffl)
+              }
+            }
+
+            def b = new Groovy5921()
+            b.doSomething()
+
+        '''
+    }
+
+    void testShouldHandleBoxedLongArray() {
+        assertScript '''
+            class Groovy5921 {
+              Long[] data = [1L]
+
+              void doSomething() {
+                data[ 0 ] |= Long.valueOf(0x7ffffffl)
+              }
+            }
+
+            def b = new Groovy5921()
+            b.doSomething()
+
+        '''
+    }
+
+    void testShouldHandleBoxedLongArrayWithBoxing() {
+        assertScript '''
+            class Groovy5921 {
+              Long[] data = [1L]
+
+              void doSomething() {
+                data[ 0 ] |= 0x7ffffffl
+              }
+            }
+
+            def b = new Groovy5921()
+            b.doSomething()
+
+        '''
+    }
 }
 
