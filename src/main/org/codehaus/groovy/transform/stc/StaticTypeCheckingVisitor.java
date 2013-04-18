@@ -320,6 +320,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     checkOrMarkPrivateAccess(node.getField(dynName));
                     return;
                 }
+                // should check "isXXX" methods
+                MethodNode getterMethod = node.getGetterMethod("is" + MetaClassHelper.capitalize(dynName));
+                if (getterMethod!=null) {
+                    storeType(vexp, getterMethod.getReturnType());
+                    return;
+                }
                 Set<ClassNode> allInterfaces = collectAllInterfaces(node);
                 for (ClassNode intf : allInterfaces) {
                     FieldNode field = intf.getField(dynName);

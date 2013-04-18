@@ -431,4 +431,12 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             new Bar().bar()
         '''
     }
+
+    // GROOVY-6098
+    void testUnresolvedPropertyReferencingIsBooleanMethod() {
+        assertScript '''
+            boolean isFoo() { true }
+            assert foo
+        '''
+    }
 }
