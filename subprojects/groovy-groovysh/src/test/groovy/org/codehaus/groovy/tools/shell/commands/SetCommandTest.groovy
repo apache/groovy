@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.Groovysh
+import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.Preferences
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
@@ -41,6 +42,7 @@ class SetCommandTest
         assertEquals(2, completors.size())
         assertEquals(0, completors[0].complete("", 0, candidates))
         assertTrue(Groovysh.AUTOINDENT_PREFERENCE_KEY in candidates);
+        assertTrue(PackageHelper.IMPORT_COMPLETION_PREFERENCE_KEY in candidates);
         assertTrue(Preferences.EDITOR_KEY in candidates);
         assertTrue(Preferences.PARSER_FLAVOR_KEY in candidates);
         assertTrue(Preferences.SANITIZE_STACK_TRACE_KEY in candidates);

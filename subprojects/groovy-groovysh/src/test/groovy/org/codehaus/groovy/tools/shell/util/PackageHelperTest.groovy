@@ -52,6 +52,11 @@ class PackageHelperTest
         assertEquals(null, helper.getContents("invalid:name"))
     }
 
+    void testLoadAndGetPackagesUnknown() {
+        PackageHelper helper = new PackageHelper()
+        assertEquals(null, helper.getContents("java.util.regex.tools"))
+    }
+
     void testNonSystemPackage() {
         ClassLoader loader = new URLClassLoader([new URL("file:" + System.getProperty("user.dir") + "/lib/antlr-2.7.7.jar")] as URL[])
         Map<String, CachedPackage> rootPackages = PackageHelper.initializePackages(loader)

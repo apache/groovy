@@ -19,7 +19,7 @@ package org.codehaus.groovy.tools.shell.commands
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
-
+import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 import org.codehaus.groovy.tools.shell.util.Preferences
 
@@ -50,6 +50,7 @@ class SetCommand
             set << Preferences.SANITIZE_STACK_TRACE_KEY
             set << Preferences.SHOW_LAST_RESULT_KEY
             set << Groovysh.AUTOINDENT_PREFERENCE_KEY
+            set << PackageHelper.IMPORT_COMPLETION_PREFERENCE_KEY
 
             return set.toList()
         }

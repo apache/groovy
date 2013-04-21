@@ -2,6 +2,8 @@ package org.codehaus.groovy.tools.shell.util
 
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
+import java.util.prefs.PreferenceChangeEvent
+import java.util.prefs.PreferenceChangeListener
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -9,8 +11,9 @@ import java.util.regex.Pattern
  * Helper class that crawls all items of the classpath for packages.
  * Retrieves from those sources the list of subpackages and classes on demand.
  */
-class PackageHelper {
+class PackageHelper implements PreferenceChangeListener {
 
+    public final static String IMPORT_COMPLETION_PREFERENCE_KEY = "disable-import-completion"
     // Pattern for regular Classnames
     public final static Pattern NAME_PATTERN = java.util.regex.Pattern.compile("^[A-Z][^.\$_]+\$")
 
@@ -22,7 +25,21 @@ class PackageHelper {
 
     PackageHelper(ClassLoader groovyClassLoader) {
         this.groovyClassLoader = groovyClassLoader
-        rootPackages = initializePackages(groovyClassLoader)
+        if (! Boolean.valueOf(Preferences.get(IMPORT_COMPLETION_PREFERENCE_KEY))) {
+            rootPackages = initializePackages(groovyClassLoader)
+        }
+        Preferences.addChangeListener(this)
+    }
+
+    @Override
+    void preferenceChange(PreferenceChangeEvent evt) {
+        if (evt.getKey() == IMPORT_COMPLETION_PREFERENCE_KEY) {
+            if (Boolean.valueOf(evt.getNewValue())) {
+                rootPackages = null
+            } else if (rootPackages == null) {
+                rootPackages = initializePackages(groovyClassLoader)
+            }
+        }
     }
 
     static Map<String, CachedPackage> initializePackages(ClassLoader groovyClassLoader) throws IOException {

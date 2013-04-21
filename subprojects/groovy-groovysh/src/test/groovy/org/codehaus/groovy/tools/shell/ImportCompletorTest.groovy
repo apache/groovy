@@ -21,17 +21,22 @@ import jline.Completor
 import org.codehaus.groovy.tools.shell.commands.ImportCommand
 import org.codehaus.groovy.tools.shell.commands.ImportCompletor
 import org.codehaus.groovy.tools.shell.util.PackageHelper
+import org.codehaus.groovy.tools.shell.util.Preferences
 
 class ImportCompletorUnitTest
 extends GroovyTestCase {
 
     MockFor helperMocker
+    MockFor preferencesMocker
 
     void setUp() {
         super.setUp()
         helperMocker = new MockFor(PackageHelper)
         helperMocker.demand.initializePackages(0..1) {}
         helperMocker.demand.getClass(0..1) {PackageHelper}
+        preferencesMocker = new MockFor(Preferences)
+        preferencesMocker.demand.get(1) { "true" }
+        preferencesMocker.demand.addChangeListener(1) {}
     }
 
     void testPattern() {
@@ -69,32 +74,33 @@ extends GroovyTestCase {
     }
 
     void testCompleteEmpty() {
+
         helperMocker.demand.getContents(1) { str -> assert(str == '' ); ["java", "groovy"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, false);
             def candidates = []
             String buffer = ""
             assertEquals(0, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["groovy.", "java."], candidates.sort())
-        }
+        }}
     }
 
     void testCompleteStaticEmpty() {
         helperMocker.demand.getContents(1) { str -> assert(str == '' ); ["java", "groovy"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, true);
             def candidates = []
             String buffer = ""
             assertEquals(0, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["groovy.", "java."], candidates.sort())
-        }
+        }}
     }
 
     void testCompleteJ() {
         helperMocker.demand.getContents(1) { str -> assert(str == '' ); ["java", "javax"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, false);
             def candidates = []
@@ -102,11 +108,11 @@ extends GroovyTestCase {
             assertEquals(0, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["java.", "javax."], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteStaticJ() {
         helperMocker.demand.getContents(1) { str -> assert(str == '' ); ["java", "javax"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, true);
             def candidates = []
@@ -114,11 +120,11 @@ extends GroovyTestCase {
             assertEquals(0, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["java.", "javax."], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteCo() {
         helperMocker.demand.getContents(1) { str -> assert(str == '' ); ["com", "org"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, false);
             def candidates = []
@@ -126,11 +132,11 @@ extends GroovyTestCase {
             assertEquals(0, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["com."], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteJavaDot() {
         helperMocker.demand.getContents(1) { ["util", "math"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, false);
             def candidates = []
@@ -138,11 +144,11 @@ extends GroovyTestCase {
             assertEquals(5, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["* ", "math.", "util."], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteStaticJavaDot() {
         helperMocker.demand.getContents(1) { ["util", "math"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, true);
             def candidates = []
@@ -150,11 +156,11 @@ extends GroovyTestCase {
             assertEquals(5, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["math.", "util."], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteJavaDotU() {
         helperMocker.demand.getContents(1) { ["util", "math"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, false);
             def candidates = []
@@ -162,11 +168,11 @@ extends GroovyTestCase {
             assertEquals(5, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["util."], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteJavaDotUtil() {
         helperMocker.demand.getContents(1) { ["util"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, false);
             def candidates = []
@@ -174,11 +180,11 @@ extends GroovyTestCase {
             assertEquals(5, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["util."], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteJavaDotUtilDot() {
         helperMocker.demand.getContents(1) { ["zip", "jar"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, false);
             def candidates = []
@@ -186,11 +192,11 @@ extends GroovyTestCase {
             assertEquals(10, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["* ", "jar.", "zip."], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteJavaDotUtilDotZip() {
         helperMocker.demand.getContents(1) { ["zip"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, false);
             def candidates = []
@@ -198,11 +204,11 @@ extends GroovyTestCase {
             assertEquals(10, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["zip."], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteJavaDotUtilDotZipDot() {
         helperMocker.demand.getContents(1) { ["Test1", "Test2"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, false);
             def candidates = []
@@ -210,11 +216,11 @@ extends GroovyTestCase {
             assertEquals(14, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["* ", "Test1 ", "Test2 "], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteStaticJavaDotUtilDotZipDot() {
         helperMocker.demand.getContents(1) { ["Test1", "Test2"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, true);
             def candidates = []
@@ -222,11 +228,11 @@ extends GroovyTestCase {
             assertEquals(14, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["Test1.", "Test2."], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteJavaDotUtilDotZipDotT() {
         helperMocker.demand.getContents(1) { ["Test", "NotThis"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, false);
             def candidates = []
@@ -234,11 +240,11 @@ extends GroovyTestCase {
             assertEquals(14, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["Test "], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteStaticJavaDotUtilDotZipDotT() {
         helperMocker.demand.getContents(1) { ["Test", "NotThis"] }
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             ImportCompletor compl = new ImportCompletor(packageHelper2, null, true);
             def candidates = []
@@ -246,10 +252,10 @@ extends GroovyTestCase {
             assertEquals(14, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["Test "], candidates.sort())
         }
-    }
+    }}
 
     void testCompleteStaticJavaDotUtilDotZipDotTestDot() {
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             def mockInterp = [evaluate: {expr -> assert(expr == ['java.util.zip.Test']); Math}]
             ImportCompletor compl = new ImportCompletor(packageHelper2, mockInterp, true);
@@ -261,10 +267,10 @@ extends GroovyTestCase {
             assertTrue(candidates.toString(), 'abs ' in candidates)
             assertTrue('previousitem' in candidates)
         }
-    }
+    }}
 
     void testCompleteStaticJavaDotUtilDotZipDotTestDotMa() {
-        helperMocker.use {
+        helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
             def mockInterp = [evaluate: {expr -> assert(expr == ['java.util.zip.Test']); Math}]
             ImportCompletor compl = new ImportCompletor(packageHelper2, mockInterp, true);
@@ -273,7 +279,7 @@ extends GroovyTestCase {
             assertEquals(19, compl.complete(buffer, buffer.length(), candidates))
             assertEquals(["max "], candidates.sort())
         }
-    }
+    }}
 }
 
 class ImportCompletorTest

@@ -175,6 +175,12 @@ class ImportCompletor implements jline.Completor {
         if (current ==~ /^[a-z0-9.]*(\.[A-Z][^.]*)?$/) {
             Set<String> candidates = packageHelper.getContents(baseString)
             if (candidates == null || candidates.size() == 0) {
+                // At least give standard package completion, else static keyword is highly annoying
+                Collection<String> standards = org.codehaus.groovy.control.ResolveVisitor.DEFAULT_IMPORTS.findAll {String it -> it.startsWith(current)}
+                if (standards) {
+                    result.addAll(standards)
+                    return 0
+                }
                 return -1
             }
 
