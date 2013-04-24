@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     private static final String GRABRESOLVER_SHORT_NAME = shortName(GRABRESOLVER_DOT_NAME);
 
     private static final ClassNode THREAD_CLASSNODE = ClassHelper.make(Thread.class);
+
     private static final List<String> GRABEXCLUDE_REQUIRED = Arrays.asList("group", "module");
     private static final List<String> GRABRESOLVER_REQUIRED = Arrays.asList("name", "root");
     private static final List<String> GRAB_REQUIRED = Arrays.asList("group", "module", "version");
@@ -87,6 +88,8 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     private static final Collection<String> GRAB_ALL = DefaultGroovyMethods.plus(GRAB_REQUIRED, GRAB_OPTIONAL);
     private static final Pattern IVY_PATTERN = Pattern.compile("([a-zA-Z0-9-/._+=]+)#([a-zA-Z0-9-/._+=]+)(;([a-zA-Z0-9-/.\\(\\)\\[\\]\\{\\}_+=,:@][a-zA-Z0-9-/.\\(\\)\\]\\{\\}_+=,:@]*))?(\\[([a-zA-Z0-9-/._+=,]*)\\])?");
     private static final Pattern ATTRIBUTES_PATTERN = Pattern.compile("(.*;|^)([a-zA-Z0-9]+)=([a-zA-Z0-9.*\\[\\]\\-\\(\\),]*)$");
+
+    private static final String AUTO_DOWNLOAD_SETTING = Grape.AUTO_DOWNLOAD_SETTING;
 
     private static String dotName(String className) {
         return className.substring(className.lastIndexOf("."));
@@ -120,6 +123,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     SourceUnit sourceUnit;
     ClassLoader loader;
     boolean initContextClassLoader;
+    Boolean autoDownload;
 
     public SourceUnit getSourceUnit() {
         return sourceUnit;
@@ -252,6 +256,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 for (AnnotationNode node : grabConfigAnnotations) {
                     checkForClassLoader(node);
                     checkForInitContextClassLoader(node);
+                    checkForAutoDownload(node);
                 }
                 addInitContextClassLoaderIfNeeded(classNode);
             }
@@ -297,6 +302,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     callGrabAsStaticInitIfNeeded(classNode, grapeClassNode, node, grabExcludeMaps);
                 }
             }
+
             if (!grabResolverInitializers.isEmpty()) {
                 classNode.addStaticInitializerStatements(grabResolverInitializers, true);
             }
@@ -306,6 +312,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             Map<String, Object> basicArgs = new HashMap<String, Object>();
             basicArgs.put("classLoader", loader != null ? loader : sourceUnit.getClassLoader());
             if (!grabExcludeMaps.isEmpty()) basicArgs.put("excludes", grabExcludeMaps);
+            if (autoDownload != null) basicArgs.put(AUTO_DOWNLOAD_SETTING, autoDownload);
 
             try {
                 Grape.grab(basicArgs, grabMaps.toArray(new Map[grabMaps.size()]));
@@ -338,6 +345,10 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             for (String s : GRAB_OPTIONAL) {
                 if (node.getMember(s) != null)
                     me.addMapEntryExpression(new ConstantExpression(s),node.getMember(s));
+            }
+
+            if (autoDownload != null)  {
+                me.addMapEntryExpression(new ConstantExpression(AUTO_DOWNLOAD_SETTING), new ConstantExpression(autoDownload));
             }
 
             ArgumentListExpression grabArgs;
@@ -412,6 +423,14 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         Object initContextClassLoaderObject = ((ConstantExpression)val).getValue();
         if (!(initContextClassLoaderObject instanceof Boolean)) return;
         initContextClassLoader = (Boolean) initContextClassLoaderObject;
+    }
+
+    private void checkForAutoDownload(AnnotationNode node) {
+        Object val = node.getMember(AUTO_DOWNLOAD_SETTING);
+        if (val == null || !(val instanceof ConstantExpression)) return;
+        Object autoDownloadValue = ((ConstantExpression)val).getValue();
+        if (!(autoDownloadValue instanceof Boolean)) return;
+        autoDownload = (Boolean) autoDownloadValue;
     }
 
     private void checkForConvenienceForm(AnnotationNode node, boolean exclude) {
