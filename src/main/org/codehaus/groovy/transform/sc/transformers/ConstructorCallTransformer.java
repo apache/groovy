@@ -17,10 +17,12 @@ package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.classgen.*;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -37,7 +39,9 @@ public class ConstructorCallTransformer {
     Expression transformConstructorCall(final ConstructorCallExpression expr) {
         ConstructorNode node = (ConstructorNode) expr.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (node == null) return expr;
-        if (node.getParameters().length == 1 && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node.getParameters()[0].getType(), ClassHelper.MAP_TYPE)) {
+        if (node.getParameters().length == 1
+                && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node.getParameters()[0].getType(), ClassHelper.MAP_TYPE)
+                && node.getCode() == StaticTypeCheckingVisitor.GENERATED_EMPTY_STATEMENT) {
             Expression arguments = expr.getArguments();
             if (arguments instanceof TupleExpression) {
                 TupleExpression tupleExpression = (TupleExpression) arguments;
