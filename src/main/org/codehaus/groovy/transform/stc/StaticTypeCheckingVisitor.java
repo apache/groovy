@@ -53,6 +53,9 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
  * @author Jochen Theodorou
  */
 public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
+
+    private final static boolean DEBUG_GENERATED_CODE = Boolean.valueOf(System.getProperty("groovy.stc.debug", "false"));
+
     protected static final Object ERROR_COLLECTOR = ErrorCollector.class;
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
     protected static final List<MethodNode> EMPTY_METHODNODE_LIST = Collections.emptyList();
@@ -67,6 +70,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final MethodNode GET_THISOBJECT = CLOSURE_TYPE.getGetterMethod("getThisObject");
     protected static final ClassNode DELEGATES_TO = ClassHelper.make(DelegatesTo.class);
     protected static final ClassNode DELEGATES_TO_TARGET = ClassHelper.make(DelegatesTo.Target.class);
+    protected static final ClassNode LINKEDHASHMAP_CLASSNODE = make(LinkedHashMap.class);
+
+
+
+    public static final Statement GENERATED_EMPTY_STATEMENT = new EmptyStatement();
 
     public static final MethodNode CLOSURE_CALL_NO_ARG;
     public static final MethodNode CLOSURE_CALL_ONE_ARG;
@@ -1406,7 +1414,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         ClassNode[] args = getArgumentTypes(argumentList);
         MethodNode node = null;
-        if (args.length == 1 && implementsInterfaceOrIsSubclassOf(args[0], MAP_TYPE) && findMethod(receiver, "<init>", ClassNode.EMPTY_ARRAY).size() == 1) {
+        if (args.length == 1
+                && implementsInterfaceOrIsSubclassOf(args[0], MAP_TYPE)
+                && findMethod(receiver, "<init>", ClassNode.EMPTY_ARRAY).size() == 1
+                && findMethod(receiver, "<init>", args).isEmpty()) {
             // bean-style constructor
             node = typeCheckMapConstructor(call, receiver, arguments);
             if (node != null) {
@@ -1435,7 +1446,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (expression instanceof MapExpression) {
                     MapExpression argList = (MapExpression) expression;
                     checkGroovyConstructorMap(call, receiver, argList);
-                    node = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(MAP_TYPE, "map")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                    node = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(MAP_TYPE, "map")}, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                     node.setDeclaringClass(receiver);
                 }
             }
@@ -2767,7 +2778,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             method.getModifiers(),
                             newParams,
                             method.getExceptions(),
-                            EmptyStatement.INSTANCE
+                            GENERATED_EMPTY_STATEMENT
                     );
 
                 } else {
@@ -2777,7 +2788,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             method.getReturnType(),
                             newParams,
                             method.getExceptions(),
-                            EmptyStatement.INSTANCE
+                            GENERATED_EMPTY_STATEMENT
                     );
                 }
                 stubbed.setDeclaringClass(receiver);
@@ -2794,7 +2805,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if ("<init>".equals(name)) {
             methods = addGeneratedMethods(receiver,new ArrayList<MethodNode>(receiver.getDeclaredConstructors()));
             if (methods.isEmpty()) {
-                MethodNode node = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                MethodNode node = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                 node.setDeclaringClass(receiver);
                 return Collections.singletonList(node);
             }
@@ -2829,7 +2840,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         curNode = curNode.getSuperClass();
                     }
                     if (property != null) {
-                        MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                        MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                         if (property.isStatic()) {
                             node.setModifiers(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC);
                         }
@@ -2854,7 +2865,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (implementsInterfaceOrIsSubclassOf(args[0], type)) {
                             MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, VOID_TYPE, new Parameter[]{
                                     new Parameter(type, "arg")
-                            }, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                            }, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                             if (property.isStatic()) {
                                 node.setModifiers(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC);
                             }
@@ -3099,7 +3110,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected ClassNode inferMapExpressionType(final MapExpression map) {
-        ClassNode mapType = map.getType();
+        ClassNode mapType = LINKEDHASHMAP_CLASSNODE.getPlainNodeReference();
         List<MapEntryExpression> entryExpressions = map.getMapEntryExpressions();
         if (entryExpressions.isEmpty()) return mapType;
         GenericsType[] genericsTypes = mapType.getGenericsTypes();
@@ -3555,7 +3566,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     protected void addError(final String msg, final ASTNode expr) {
         Long err = ((long) expr.getLineNumber()) << 16 + expr.getColumnNumber();
-        if (!typeCheckingContext.reportedErrors.contains(err)) {
+        if ((DEBUG_GENERATED_CODE && expr.getLineNumber()<0) || !typeCheckingContext.reportedErrors.contains(err)) {
             typeCheckingContext.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
                     new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()),
                     typeCheckingContext.source)
@@ -3568,6 +3579,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (expr.getColumnNumber() > 0 && expr.getLineNumber() > 0) {
             addError(StaticTypesTransformation.STATIC_ERROR_PREFIX + msg, expr);
         } else {
+            if (DEBUG_GENERATED_CODE) {
+                addError(StaticTypesTransformation.STATIC_ERROR_PREFIX + "Error in generated code ["+expr.getText()+"] - "+ msg, expr);
+            }
             // ignore errors which are related to unknown source locations
             // because they are likely related to generated code
         }

@@ -439,4 +439,33 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             assert foo
         '''
     }
+
+    // GROOVY-6119
+    void testShouldCallConstructorWithMap() {
+        assertScript '''
+            class Foo {
+                String message
+                Foo(Map map) {
+                    message = map.msg
+                }
+            }
+            def foo = new Foo(msg: 'bar')
+            assert foo.message == 'bar'
+        '''
+    }
+
+    // GROOVY-6119
+    void testShouldCallConstructorWithHashMap() {
+        assertScript '''
+            class Foo {
+                String message
+                Foo(HashMap map) {
+                    message = map.msg
+                }
+            }
+            def foo = new Foo(msg: 'bar')
+            assert foo.message == 'bar'
+        '''
+    }
+
 }

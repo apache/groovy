@@ -579,7 +579,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains('_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , this.getColor())')
 
         // assert clones
-        assert result.contains('return when.clone()')
+        assert result.contains('((org.codehaus.groovy.runtime.ReflectionMethodInvoker.invoke(when, \'clone\', new java.lang.Object[][])) as java.util.Date)')
     }
 
     public void testAnonymousInnerClass() {
