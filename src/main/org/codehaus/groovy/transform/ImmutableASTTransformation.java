@@ -406,6 +406,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             statement = createConstructorStatementCollection(fNode);
         } else if (fieldType.isResolved()) {
             addError(createErrorMessage(cNode.getName(), fNode.getName(), fieldType.getName(), "compiling"), fNode);
+            statement = EmptyStatement.INSTANCE;
         } else {
             statement = createConstructorStatementGuarded(cNode, fNode);
         }
