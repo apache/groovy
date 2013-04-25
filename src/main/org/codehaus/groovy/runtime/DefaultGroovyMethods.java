@@ -3619,6 +3619,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts all array members into groups determined by the supplied mapping closure.
+     * The closure should return the key that this item should be grouped by. The returned
+     * LinkedHashMap will have an entry for each distinct key returned from the closure,
+     * with each value being a list of items for that group.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * Integer[] items = [1,2,3,4,5,6]
+     * assert [0:[2,4,6], 1:[1,3,5]] == items.groupBy { it % 2 }
+     * </pre>
+     *
+     * @param self    an array to group
+     * @param closure a closure mapping entries on keys
+     * @return a new Map grouped by keys
+     * @see #groupBy(Iterable, Closure)
+     * @since 2.2.0
+     */
+    public static <K, T> Map<K, List<T>> groupBy(T[] self, Closure<K> closure) {
+        return groupBy((Iterable<T>)Arrays.asList(self), closure);
+    }
+
+    /**
      * @deprecated Use the Iterable version of groupBy instead
      * @see #groupBy(Iterable, Object...)
      * @since 1.8.1
@@ -3633,7 +3655,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * mapping closures. Each closure should return the key that this item
      * should be grouped by. The returned LinkedHashMap will have an entry for each
      * distinct 'key path' returned from the closures, with each value being a list
-     * of items for that 'group path'. <p>
+     * of items for that 'group path'.
      *
      * Example usage:
      * <pre class="groovyTestCase">def result = [1,2,3,4,5,6].groupBy({ it % 2 }, { it < 4 })
@@ -3679,11 +3701,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts all array members into (sub)groups determined by the supplied
+     * mapping closures as per the Iterable variant of this method.
+     *
+     * @param self     an array to group
+     * @param closures an array of closures, each mapping entries on keys
+     * @return a new Map grouped by keys on each criterion
+     * @see #groupBy(Iterable, Object...)
+     * @see Closure#IDENTITY
+     * @since 2.2.0
+     */
+    public static Map groupBy(Object[] self, Object... closures) {
+        return groupBy((Iterable)Arrays.asList(self), closures);
+    }
+
+    /**
      * Sorts all collection members into (sub)groups determined by the supplied
      * mapping closures. Each closure should return the key that this item
      * should be grouped by. The returned LinkedHashMap will have an entry for each
      * distinct 'key path' returned from the closures, with each value being a list
-     * of items for that 'group path'. <p>
+     * of items for that 'group path'.
      *
      * Example usage:
      * <pre class="groovyTestCase">def result = [1,2,3,4,5,6].groupBy([{ it % 2 }, { it < 4 }])
@@ -3717,7 +3754,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * mapping closures. Each closure should return the key that this item
      * should be grouped by. The returned LinkedHashMap will have an entry for each
      * distinct 'key path' returned from the closures, with each value being a list
-     * of items for that 'group path'. <p>
+     * of items for that 'group path'.
      *
      * Example usage:
      * <pre class="groovyTestCase">
@@ -3748,6 +3785,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Map groupBy(Iterable self, List<Closure> closures) {
         return groupBy(self, closures.toArray());
+    }
+
+    /**
+     * Sorts all array members into (sub)groups determined by the supplied
+     * mapping closures as per the list variant of this method.
+     *
+     * @param self     an array to group
+     * @param closures a list of closures, each mapping entries on keys
+     * @return a new Map grouped by keys on each criterion
+     * @see Closure#IDENTITY
+     * @see #groupBy(Iterable, List)
+     * @since 2.2.0
+     */
+    public static Map groupBy(Object[] self, List<Closure> closures) {
+        return groupBy((Iterable)Arrays.asList(self), closures);
     }
 
     /**
@@ -3892,7 +3944,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * should return the key that each item should be grouped under. The
      * resulting map will have an entry for each 'group path' returned by all
      * closures, with values being the map members from the original map that
-     * belong to each such 'group path'. <p>
+     * belong to each such 'group path'.
      *
      * If the <code>self</code> map is one of TreeMap, Hashtable, or Properties,
      * the returned Map will preserve that type, otherwise a LinkedHashMap will
@@ -3935,7 +3987,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * should return the key that each item should be grouped under. The
      * resulting map will have an entry for each 'group path' returned by all
      * closures, with values being the map members from the original map that
-     * belong to each such 'group path'. <p>
+     * belong to each such 'group path'.
      *
      * If the <code>self</code> map is one of TreeMap, Hashtable, or Properties,
      * the returned Map will preserve that type, otherwise a LinkedHashMap will
