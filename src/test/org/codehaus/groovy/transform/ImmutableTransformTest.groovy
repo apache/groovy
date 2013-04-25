@@ -557,4 +557,17 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             assert items.list2.class.name.contains('Unmodifiable')
         '''
     }
+
+    // GROOVY-5449
+    void testShouldNotThrowNPE() {
+        def msg = shouldFail(RuntimeException) {
+            evaluate '''
+            @groovy.transform.Immutable
+            class Person {
+                def name
+            }
+            '''
+        }
+        assert msg.contains('@Immutable processor doesn\'t know how to handle field \'name\' of type \'java.lang.Object or def\'')
+    }
 }
