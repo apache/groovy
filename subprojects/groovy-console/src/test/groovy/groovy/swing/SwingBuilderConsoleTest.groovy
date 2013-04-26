@@ -19,6 +19,7 @@ import groovy.ui.Console
 import groovy.ui.ConsoleActions
 import groovy.ui.view.BasicMenuBar
 import groovy.ui.view.MacOSXMenuBar
+import java.util.prefs.Preferences
 import org.junit.rules.TemporaryFolder
 
 import javax.swing.SwingUtilities
@@ -395,6 +396,12 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 runnable.run()
             }
 
+            // create a temporary preferences object instead of using the local Console preferences
+            def testPreferences = Preferences.userRoot().node('/swingBuilder/console/tests/testDoNotShowOriginalStackTrace')
+            Preferences.metaClass.static.userNodeForPackage = { Class c ->
+                testPreferences
+            }
+
             try {
                 def binding = new Binding()
                 binding.setVariable("controller", new Console())
@@ -415,8 +422,10 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 assert doc.getText(0, doc.getLength()).contains('''java.lang.Exception
 \tat ConsoleScript0.run(ConsoleScript0:1)''')
             } finally {
+                if (testPreferences) testPreferences.removeNode()
                 GroovySystem.metaClassRegistry.removeMetaClass(Thread.class)
                 GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities.class)
+                GroovySystem.metaClassRegistry.removeMetaClass(Preferences.class)
             }
         }
     }
