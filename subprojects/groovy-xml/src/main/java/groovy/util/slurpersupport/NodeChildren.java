@@ -64,7 +64,7 @@ class NodeChildren extends GPathResult {
 
     public Iterator childNodes() {
         return new Iterator() {
-            private final Iterator iter = parent.childNodes();
+            private final Iterator iter = nodeIterator();
             private Iterator childIter = nextChildIter();
 
             public boolean hasNext() {
@@ -92,17 +92,9 @@ class NodeChildren extends GPathResult {
 
             private Iterator nextChildIter() {
                 while (iter.hasNext()) {
-                    final Node node = (Node) iter.next();
-                    if (name.equals(node.name()) || name.equals("*")) {
-                        final Iterator result = node.childNodes();
-                        if (result.hasNext()) {
-                            if ("*".equals(namespacePrefix) ||
-                                    ("".equals(namespacePrefix) && "".equals(node.namespaceURI())) ||
-                                    node.namespaceURI().equals(namespaceMap.get(namespacePrefix))) {
-                                return result;
-                            }
-                        }
-                    }
+                    final Node node = (Node)iter.next();
+                    final Iterator result = node.childNodes();
+                    if (result.hasNext()) return result;
                 }
                 return null;
             }
