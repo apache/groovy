@@ -40,32 +40,6 @@ public class FilteredNodeChildren extends NodeChildren {
         this.closure = closure;
     }
 
-    public Iterator iterator() {
-        return new Iterator() {
-            final Iterator iter = FilteredNodeChildren.this.parent.iterator();
-            Object next = null;
-
-            public boolean hasNext() {
-                while (this.iter.hasNext()) {
-                    final Object childNode = this.iter.next();
-                    if (closureYieldsTrueForNode(childNode)) {
-                        this.next = childNode;
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            public Object next() {
-                return this.next;
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-    }
-
     public Iterator nodeIterator() {
         return new NodeIterator(this.parent.nodeIterator()) {
             protected Object getNextNode(final Iterator iter) {
