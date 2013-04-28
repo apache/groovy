@@ -99,14 +99,21 @@ class ReflectionCompletor implements Completor {
      * @param prefix the prefix that must be matched
      * @return the list of public methods and fields that begin with the prefix
      */
-    Collection<String> getPublicFieldsAndMethods(Object instance, String prefix) {
+    static Collection<String> getPublicFieldsAndMethods(Object instance, String prefix) {
         List<String> rv = []
-        instance.class.fields.each { Field fit ->
+        Class clazz = instance.class
+        if (clazz == null) {
+            clazz = instance.getClass()
+        }
+        if (clazz == null) {
+            return rv;
+        }
+        clazz.fields.each { Field fit ->
             if (fit.name.startsWith(prefix)) {
                 rv << fit.name
             }
         }
-        instance.class.methods.each { Method mit ->
+        clazz.methods.each { Method mit ->
             if (mit.name.startsWith(prefix)) {
                 rv << mit.name + (mit.parameterTypes.length == 0 ? "()" : "(")
             }

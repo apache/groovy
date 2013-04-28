@@ -16,8 +16,77 @@
 
 package org.codehaus.groovy.tools.shell
 
-class ReflectionCompletorTest
-extends CompletorTestSupport {
+import org.codehaus.groovy.antlr.parser.GroovyLexer
+
+class ReflectionCompletorUnitTest extends GroovyTestCase {
+
+    void testGetFieldsAndMethodsArray() {
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "")
+        assertEquals(result.toString(), 91, result.size())
+        result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "size")
+        assertEquals(["size()"], result)
+    }
+
+    void testGetFieldsAndMethodsMap() {
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "")
+        assertEquals(96, result.size())
+        result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "size")
+        assertEquals(["size()"], result)
+    }
+
+    void testGetFieldsAndMethodsString() {
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods("foo", "")
+        assertEquals(159, result.size())
+        result = ReflectionCompletor.getPublicFieldsAndMethods("foo", "tok")
+        assertEquals(["tokenize(", "tokenize()"], result)
+        result = ReflectionCompletor.getPublicFieldsAndMethods(String, "tok")
+        assertEquals(["tokenize(", "tokenize()"], result)
+    }
+
+    void testGetFieldsAndMethodsPrimitive() {
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(3, "")
+        assertEquals(113, result.size())
+        result = ReflectionCompletor.getPublicFieldsAndMethods(3, "una")
+        assertEquals(["unaryMinus()"], result)
+        result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "una")
+        assertEquals(["unaryMinus()"], result)
+        result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "MA")
+        // bug
+        assertEquals([], result)
+        result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "getI")
+        // bug
+        assertEquals(["getInterfaces()"], result)
+    }
+
+    void testGetFieldsAndMethodsInterface() {
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(Set, "")
+        assertEquals(157, result.size())
+        result = ReflectionCompletor.getPublicFieldsAndMethods(Set, "toA")
+        assertEquals([], result)
+    }
+
+    void testGetInterfaceFields() {
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "")
+        assertEquals(110, result.size())
+        result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "LITERAL_as")
+        // bug
+        assertEquals([], result)
+        GroovyLexer lexer = new GroovyLexer(new ByteArrayInputStream("".getBytes()))
+        result = ReflectionCompletor.getPublicFieldsAndMethods(lexer, "LITERAL_as")
+        assertEquals(["LITERAL_as", "LITERAL_assert"], result)
+    }
+
+    void testGetFieldsAndMethodsClass() {
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "")
+        assertEquals(157, result.size())
+        result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "fo")
+        assertEquals(["forName("], result)
+        result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "toA")
+        assertEquals([], result)
+    }
+}
+
+class ReflectionCompletorTest extends CompletorTestSupport {
 
     void testEmpty() {
         groovyshMocker.use {
