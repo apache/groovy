@@ -1171,7 +1171,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static boolean isUsingGenericsOrIsArrayUsingGenerics(ClassNode cn) {
-        return cn.isUsingGenerics() || cn.isArray() && cn.getComponentType().isUsingGenerics();
+        return (cn.isUsingGenerics() && cn.getGenericsTypes()!=null) || cn.isArray() && cn.getComponentType().isUsingGenerics();
     }
 
     /**
