@@ -267,6 +267,27 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6124
+    void testInferrenceOfIntRange() {
+        assertScript '''
+            String[] args = ['a','b','c','d']
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == make(IntRange)
+            })
+            def range = 1..-1
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def irt = node.getNodeMetaData(INFERRED_TYPE)
+                assert irt == LIST_TYPE
+                assert irt.isUsingGenerics()
+                assert irt.genericsTypes[0].type == STRING_TYPE
+            })
+            def arr = args[range]
+            assert arr == ['b','c','d']
+        '''
+    }
+
     public static class MiscSTCTestSupport {
         static def foo() { '123' }
     }

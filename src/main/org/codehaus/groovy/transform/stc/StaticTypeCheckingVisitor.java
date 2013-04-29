@@ -2547,6 +2547,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             );
             newExpr.setSourcePosition(expr);
             MethodNode method = findMethodOrFail(newExpr, left.getPlainNodeReference(), "getAt", right.getPlainNodeReference());
+            if (method!=null && implementsInterfaceOrIsSubclassOf(right, RANGE_TYPE)) {
+                return inferReturnTypeGenerics(left, method, expr.getRightExpression());
+            }
             return method!=null?inferComponentType(left, right):null;
         } else if (op == FIND_REGEX) {
             // this case always succeeds the result is a Matcher
