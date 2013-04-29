@@ -112,6 +112,8 @@ class GpathSyntaxTestSupport {
         // let's find what Wallace likes in 1 query
         def answer = root.character.find { it['@id'] == '1' }.likes[0].text()
         assert answer == "cheese"
+        assert root.character.findAll{ it.'@id'.toInteger() < 3 }*.likes*.text() == ['cheese', 'sleep']
+        assert root.character.findAll{ it.'@id'.toInteger() < 3 }.likes*.text() == ['cheese', 'sleep']
     }
 
     static void checkNestedSizeExpressions(Closure getRoot) {
