@@ -170,11 +170,11 @@ class GpathSyntaxTestSupport {
         def groupLikesByFirstLetter
         def likes = root.character.likes.collect{ it }
         if (isSlurper(root)) {
-            groupLikesByFirstLetter = likes.groupBy{ like ->
-                root.character.find{ it.likes[0].text() == like.text() }.@name.toString()[0]
-            }
-            // TODO: Broken? Why doesn't below work?
-            //groupLikesByFirstLetter = likes.groupBy{ it.parent().@name.toString()[0] }
+            //groupLikesByFirstLetter = likes.groupBy{ like ->
+            //    root.character.find{ it.likes[0].text() == like.text() }.@name.toString()[0]
+            //}
+            // TODO: Broken? Why doesn't below work? FIX with GROOVY-6125
+            groupLikesByFirstLetter = likes.groupBy{ it.parent().@name.toString()[0] }
         } else {
             groupLikesByFirstLetter = likes.groupBy{ it.parent().'@name'[0] }
         }
@@ -275,10 +275,14 @@ class GpathSyntaxTestSupport {
         assert gromit.likes[0].parent() == gromit
         assert gromit.likes[0].'..' == gromit
         assert gromit.likes[0].parent().parent() == root
+        assert root.character.likes.find({it.text() == 'sleep'}).parent() == gromit
         assert gromit.parent() == root
         if (isSlurper(root)) {
             // additional slurper shorthand
             assert gromit.likes.parent() == gromit
+            // New pop() method to backtrack on GPath
+            assert gromit.'..'.pop() == gromit
+            assert gromit.likes.findAll({it.text() == 'sleep'}) == gromit
         }
         if (isSlurper(root)) {
             assert root.parent() == root
