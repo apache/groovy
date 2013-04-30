@@ -879,5 +879,20 @@ import groovy.transform.TypeCheckingMode
 
         '''
     }
+
+    // GROOVY-6113
+    void testCallObjectVargsMethodWithPrimitiveIntConstant() {
+        try {
+            assertScript '''
+                int sum(Object... elems) {
+                     (Integer)elems.toList().sum()
+                }
+                int x = sum(Closure.DELEGATE_FIRST)
+                assert x == Closure.DELEGATE_FIRST
+            '''
+        } finally {
+            println astTrees
+        }
+    }
 }
 

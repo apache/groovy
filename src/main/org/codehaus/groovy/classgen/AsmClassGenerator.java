@@ -1596,7 +1596,8 @@ public class AsmClassGenerator extends ClassGenerator {
             if (elementExpression == null) {
                 ConstantExpression.NULL.visit(this);
             } else {
-                if (!elementType.equals(elementExpression.getType())) {
+                ClassNode type = controller.getTypeChooser().resolveType(elementExpression, controller.getClassNode());
+                if (!elementType.equals(type)) {
                     visitCastExpression(new CastExpression(elementType, elementExpression, true));
                 } else {
                     elementExpression.visit(this);
