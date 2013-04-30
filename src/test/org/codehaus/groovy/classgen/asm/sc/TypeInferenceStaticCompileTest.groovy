@@ -41,5 +41,14 @@ class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest {
                 new String(b)
             '''
     }
+
+    @Override
+    void testShouldNotThrowIncompatibleArgToFunVerifyError() {
+        try {
+            super.testShouldNotThrowIncompatibleArgToFunVerifyError()
+        } finally {
+            println astTrees
+        }
+    }
 }
 

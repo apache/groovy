@@ -555,5 +555,19 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             findFile()
         '''
     }
+
+    void testShouldNotThrowIncompatibleArgToFunVerifyError() {
+        assertScript '''
+            Object convertValueToType(Object value, Class targetType) {
+                if (value instanceof CharSequence) {
+                    value = value.toString()
+                }
+                if (value instanceof String) {
+                    String strValue = value.trim()
+                }
+            }
+            convertValueToType('foo', String)
+        '''
+    }
 }
 

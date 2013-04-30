@@ -366,17 +366,6 @@ public class BinaryExpressionHelper {
             TypeChooser typeChooser = controller.getTypeChooser();
             ClassNode targetType = typeChooser.resolveType(leftExpression, controller.getClassNode());
             operandStack.doGroovyCast(targetType);
-            // with flow typing, a variable may change of type
-            // and we can make sure to avoid unnecessary calls to castToType
-            // by specifying the current type
-            if (leftExpression instanceof VariableExpression) {
-                VariableExpression var = (VariableExpression) leftExpression;
-                String varName = var.getName();
-                if (!"this".equals(varName) && !"super".equals(varName)) {
-                    BytecodeVariable variable = controller.getCompileStack().getVariable(varName, false);
-                    if (variable!=null) variable.setType(targetType);
-                }
-            }
             leftExpression.visit(acg);
             operandStack.remove(operandStack.getStackLength()-mark);
         }
