@@ -1125,6 +1125,15 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6129
+    void testShouldNotThrowNPE() {
+        assertScript '''
+            def map = new HashMap<>()
+            map.put(1, 'foo')
+            map.put('bar', new Date())
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
