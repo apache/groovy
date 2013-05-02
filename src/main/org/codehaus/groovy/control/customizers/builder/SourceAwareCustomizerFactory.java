@@ -55,7 +55,7 @@ import java.util.Map;
  *     }
  *
  *     // apply CompileStatic AST annotation on files whose name is 'foo' or 'bar'
- *     builder.source(basenames: { it in ['foo', 'bar'] }) {
+ *     builder.source(basenameValidator: { it in ['foo', 'bar'] }) {
  *         ast(CompileStatic)
  *     }
  *
