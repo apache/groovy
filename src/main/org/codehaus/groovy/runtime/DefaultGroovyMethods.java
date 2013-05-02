@@ -3473,6 +3473,85 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Adds GroovyCollections#combinations(Collection, Closure) as a method on collections.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [[2, 3],[4, 5, 6]].combinations {x,y -> x*y } == [8, 12, 10, 15, 12, 18]</pre>
+     *
+     * @param self a Collection of lists
+     * @param function a closure to be called on each combination
+     * @return a List of the results of applying the closure to each combinations found
+     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
+     * @since 2.2.0
+     */
+    public static List combinations(Collection self, Closure<?> function) {
+        return collect(GroovyCollections.combinations(self), function);
+    }
+
+    /**
+     * Applies a function on each combination of the input lists.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">[[2, 3],[4, 5, 6]].eachCombination { println "Found $it" }</pre>
+     *
+     * @param self a Collection of lists
+     * @param function a closure to be called on each combination
+     * @return a List of the results of applying the closure to each combinations found
+     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
+     * @since 2.2.0
+     */
+    public static void eachCombination(Collection self, Closure<?> function) {
+        each(GroovyCollections.combinations(self), function);
+    }
+
+    /**
+     * Adds GroovyCollections#combinations(Iterable) as a method on collections.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [['a', 'b'],[1, 2, 3]].combinations() == [['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</pre>
+     *
+     * @param self a Collection of lists
+     * @return a List of the combinations found
+     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
+     * @since 1.5.0
+     */
+    public static List combinations(Iterable self) {
+        return GroovyCollections.combinations(toList(self));
+    }
+
+    /**
+     * Adds GroovyCollections#combinations(Iterable, Closure) as a method on collections.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [[2, 3],[4, 5, 6]].combinations {x,y -> x*y } == [8, 12, 10, 15, 12, 18]</pre>
+     *
+     * @param self a Collection of lists
+     * @param function a closure to be called on each combination
+     * @return a List of the results of applying the closure to each combinations found
+     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
+     * @since 2.2.0
+     */
+    public static List combinations(Iterable self, Closure<?> function) {
+        return collect(GroovyCollections.combinations(toList(self)), function);
+    }
+
+    /**
+     * Applies a function on each combination of the input lists.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">[[2, 3],[4, 5, 6]].eachCombination { println "Found $it" }</pre>
+     *
+     * @param self a Collection of lists
+     * @param function a closure to be called on each combination
+     * @return a List of the results of applying the closure to each combinations found
+     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
+     * @since 2.2.0
+     */
+    public static void eachCombination(Iterable self, Closure<?> function) {
+        each(GroovyCollections.combinations(toList(self)), function);
+    }
+
+    /**
      * Finds all non-null subsequences of a list.
      * <p>
      * Example usage:
@@ -3506,6 +3585,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         return ans;
     }
+
+    /**
+     * Finds all permutations of a collection, applies a function to each permutation and collects the result
+     * into a list.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">Set result = [1, 2, 3].permutations { it.collect { v -> 2*v }}
+     * assert result == [[6, 4, 2], [6, 2, 4], [2, 6, 4], [4, 6, 2], [4, 2, 6], [2, 4, 6]] as Set</pre>
+     *
+     * @param self the Collection of items
+     * @param function the function to apply on each permutation
+     * @return the list of results of the application of the function on each permutation
+     * @since 2.2.0
+     */
+    public static <T,V> List<V> permutations(List<T> self, Closure<V> function) {
+        return collect(permutations(self),function);
+    }
+
 
     /**
      * Iterates over all permutations of a collection, running a closure for each iteration.
