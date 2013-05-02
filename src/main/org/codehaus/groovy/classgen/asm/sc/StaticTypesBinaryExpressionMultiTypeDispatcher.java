@@ -412,6 +412,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                     "putAt",
                     ae
             );
+            mce.setSourcePosition(parent);
             visitor.visitMethodCallExpression(mce);
             mce.visit(controller.getAcg());
             // return value of assignment
