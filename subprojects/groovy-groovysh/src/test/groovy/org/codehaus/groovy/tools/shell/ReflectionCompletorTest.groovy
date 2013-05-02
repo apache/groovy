@@ -43,14 +43,20 @@ super$1$getClass()   super$1$notify()         super$1$notifyAll()
         Groovysh groovysh = new Groovysh(testio)
         groovysh.run("import org.codehaus.groovy.tools.shell.ReflectionCompletor")
         groovysh.run("""class Foo extends HashSet implements Comparable {
-int compareTo(Object) {0}; int foo; static int bar; int foom(){1}; static int barm(){2}}""")
+int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""")
         groovysh.run("ReflectionCompletor.getPublicFieldsAndMethods(Foo, \"\")")
         String rawout = mockOut.toString()
         List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({ it -> it.trim()[0..-2] })
         assertEquals([], findResult.findAll({ it.startsWith("_") }))
         assertEquals([], findResult.findAll({ it.startsWith("super\$") }))
         assertEquals([], findResult.findAll({ it.startsWith("this\$") }))
-        assertEquals(rawout, 99, findResult.size())
+        assertTrue(findResult.toString(), 'bar' in findResult)
+        assertFalse(findResult.toString(), 'foo' in findResult)
+        assertFalse(findResult.toString(), 'priv' in findResult)
+        assertFalse(findResult.toString(), 'priv2' in findResult)
+        assertTrue(findResult.toString(), 'barm()' in findResult)
+        assertFalse(findResult.toString(), 'foom()' in findResult)
+
     }
 
     void testLiveInstance() {
@@ -73,29 +79,37 @@ super$1$getClass()   super$1$notify()         super$1$notifyAll()
         Groovysh groovysh = new Groovysh(testio)
         groovysh.run("import org.codehaus.groovy.tools.shell.ReflectionCompletor")
         groovysh.run("""class Foo extends HashSet implements Comparable {
-int compareTo(Object) {0}; int foo; static int bar; int foom(){1}; static int barm(){2}}""")
+int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""")
         groovysh.run("ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), \"\")")
         String rawout = mockOut.toString()
         List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({ it -> it.trim()[0..-2] })
         assertEquals([], findResult.findAll({ it.startsWith("_") }))
         assertEquals([], findResult.findAll({ it.startsWith("super\$") }))
         assertEquals([], findResult.findAll({ it.startsWith("this\$") }))
-        assertEquals(rawout, 121, findResult.size())
+        assertTrue(findResult.toString(), 'foo' in findResult)
+        assertTrue(findResult.toString(), 'bar' in findResult)
+        assertFalse(findResult.toString(), 'priv' in findResult)
+        assertFalse(findResult.toString(), 'priv2' in findResult)
+        assertTrue(findResult.toString(), 'foom()' in findResult)
+        assertTrue(findResult.toString(), 'barm()' in findResult)
     }
 }
 
 class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsArray() {
-        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "")
-        assertEquals(result.toString(), 91, result.size())
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(([] as String[]), "")
+        assertTrue('size()' in result)
+        assertTrue('any()' in result)
         result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "size")
         assertEquals(["size()"], result)
     }
 
     void testGetFieldsAndMethodsMap() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "")
-        assertEquals(96, result.size())
+        assertTrue('clear()' in result)
+        assertTrue('containsKey(' in result)
+        assertTrue('clear()' in result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "size")
         // e.g. don't show non-public inherited size field
         assertEquals(["size()"], result)
@@ -103,7 +117,12 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsString() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods("foo", "")
-        assertEquals(159, result.size())
+        assertTrue('charAt(' in result)
+        assertTrue('normalize()' in result)
+        assertTrue('format(' in result)
+        int foo = 3
+        result = ReflectionCompletor.getPublicFieldsAndMethods("$foo", "")
+        assertTrue('build(' in result)
         result = ReflectionCompletor.getPublicFieldsAndMethods("foo", "tok")
         assertEquals(["tokenize(", "tokenize()"], result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(String, "tok")
@@ -112,7 +131,11 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsPrimitive() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(3, "")
-        assertEquals(113, result.size())
+        assertTrue("byteValue()" in result)
+        assertTrue(result.toString(), "MAX_VALUE" in result)
+        assertTrue("abs()" in result)
+        assertTrue(result.toString(), "notify()" in result)
+        assertTrue("bitCount(" in result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(3, "una")
         assertEquals(["unaryMinus()"], result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "una")
@@ -123,16 +146,36 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
         assertEquals(["getInteger("], result)
     }
 
-    void testGetFieldsAndMethodsInterface() {
-        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(Set, "")
-        assertEquals(96, result.size())
+    interface ForTestInterface extends Comparable {
+        static final int forTestField = 1;
+        void forTestMethod();
+    }
+
+    void testGetFieldsAndMethodsAnonymousClass() {
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(new ForTestInterface(){
+            @Override
+            void forTestMethod() {}
+
+            @Override
+            int compareTo(Object o) {return 0}
+        }, "")
+        assertTrue('forTestField' in result)
+        assertTrue('forTestMethod()' in result)
+        assertTrue('compareTo(' in result)
+        GroovyLexer
         result = ReflectionCompletor.getPublicFieldsAndMethods(Set, "toA")
         assertEquals([], result)
     }
 
-    void testGetInterfaceFields() {
+    void testGetAbstractClassFields() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "")
-        assertEquals(277, result.size())
+        assertTrue(result.toString(), 'ABSTRACT' in result)
+        assertTrue(result.toString(), 'isCase(' in result)
+        assertTrue(result.toString(), 'tracing' in result)
+        result = ReflectionCompletor.getPublicFieldsAndMethods(new GroovyLexer(new ByteArrayInputStream()), "")
+        assertTrue(result.toString(), 'ABSTRACT' in result)
+        assertTrue(result.toString(), 'isCase(' in result)
+        assertTrue(result.toString(), 'tracing' in result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "LITERAL_as")
         assertEquals(["LITERAL_as", "LITERAL_assert"], result)
         GroovyLexer lexer = new GroovyLexer(new ByteArrayInputStream("".getBytes()))
@@ -141,8 +184,8 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
     }
 
     void testGetFieldsAndMethodsClass() {
-        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet.getClass(), "")
-        assertEquals(52, result.size())
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(Arrays, "")
+        assertTrue(result.toString(), 'sort(' in result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "pro")
         assertEquals([], result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "toA")
@@ -153,9 +196,13 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsCustomClass() {
         Interpreter interp = new Interpreter(Thread.currentThread().contextClassLoader, new Binding())
-        Object instance = interp.evaluate(["class Foo extends HashSet implements Comparable {int compareTo(Object) {0}}"])
-        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(instance.getClass(), "")
-        assertEquals(49, result.size)
+        Object instance = interp.evaluate(["class Foo extends HashSet implements Comparable {int compareTo(Object) {0}}; Foo"])
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(instance, "")
+        assertFalse('compareTo(' in result)
+        instance = interp.evaluate(["class Foo extends HashSet implements Comparable {int compareTo(Object) {0}}; new Foo()"])
+        result = ReflectionCompletor.getPublicFieldsAndMethods(instance, "")
+        assertTrue(result.toString(), 'compareTo(' in result)
+
         result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "si")
         assertEquals(["size()"], result)
     }
