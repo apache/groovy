@@ -3485,7 +3485,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.2.0
      */
     public static List combinations(Collection self, Closure<?> function) {
-        return collect(GroovyCollections.combinations(self), function);
+        return combinations((Iterable)self, function);
     }
 
     /**
@@ -3501,22 +3501,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.2.0
      */
     public static void eachCombination(Collection self, Closure<?> function) {
-        each(GroovyCollections.combinations(self), function);
-    }
-
-    /**
-     * Adds GroovyCollections#combinations(Iterable) as a method on collections.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">assert [['a', 'b'],[1, 2, 3]].combinations() == [['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</pre>
-     *
-     * @param self a Collection of lists
-     * @return a List of the combinations found
-     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
-     * @since 1.5.0
-     */
-    public static List combinations(Iterable self) {
-        return GroovyCollections.combinations(toList(self));
+        eachCombination((Iterable)self, function);
     }
 
     /**
@@ -3532,7 +3517,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.2.0
      */
     public static List combinations(Iterable self, Closure<?> function) {
-        return collect(GroovyCollections.combinations(toList(self)), function);
+        return collect(GroovyCollections.combinations(self), function);
     }
 
     /**
@@ -3548,7 +3533,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.2.0
      */
     public static void eachCombination(Iterable self, Closure<?> function) {
-        each(GroovyCollections.combinations(toList(self)), function);
+        each(GroovyCollections.combinations(self), function);
     }
 
     /**
