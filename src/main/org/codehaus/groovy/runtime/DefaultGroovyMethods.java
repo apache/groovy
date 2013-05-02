@@ -3505,6 +3505,53 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Adds GroovyCollections#combinations(Iterable) as a method on collections.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [['a', 'b'],[1, 2, 3]].combinations() == [['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</pre>
+     *
+     * @param self a Collection of lists
+     * @return a List of the combinations found
+     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
+     * @since 1.5.0
+     */
+    public static List combinations(Iterable self) {
+        return GroovyCollections.combinations(toList(self));
+    }
+
+    /**
+     * Adds GroovyCollections#combinations(Iterable, Closure) as a method on collections.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [[2, 3],[4, 5, 6]].combinations {x,y -> x*y } == [8, 12, 10, 15, 12, 18]</pre>
+     *
+     * @param self a Collection of lists
+     * @param function a closure to be called on each combination
+     * @return a List of the results of applying the closure to each combinations found
+     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
+     * @since 2.2.0
+     */
+    public static List combinations(Iterable self, Closure<?> function) {
+        return collect(GroovyCollections.combinations(toList(self)), function);
+    }
+
+    /**
+     * Applies a function on each combination of the input lists.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">[[2, 3],[4, 5, 6]].eachCombination { println "Found $it" }</pre>
+     *
+     * @param self a Collection of lists
+     * @param function a closure to be called on each combination
+     * @return a List of the results of applying the closure to each combinations found
+     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
+     * @since 2.2.0
+     */
+    public static void eachCombination(Iterable self, Closure<?> function) {
+        each(GroovyCollections.combinations(toList(self)), function);
+    }
+
+    /**
      * Finds all non-null subsequences of a list.
      * <p>
      * Example usage:
