@@ -487,6 +487,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 List<MethodNode> nodes = findMethod(lType.redirect(), "putAt", arguments);
                 if (nodes.size() == 1) {
                     typeCheckMethodsWithGenerics(lType, arguments, nodes.get(0), expression);
+                } else if (nodes.isEmpty()) {
+                    addNoMatchingMethodError(lType, "putAt", arguments, enclosingBinaryExpression);
                 }
             }
             boolean isEmptyDeclaration = expression instanceof DeclarationExpression && rightExpression instanceof EmptyExpression;

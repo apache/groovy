@@ -490,5 +490,18 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         }
         ''', 'into array of type'
     }
+
+    // GROOVY-6131
+    void testArraySetShouldGenerateBytecode() {
+        shouldFailWithMessages '''
+            void addToCollection(Collection coll, int index, val) {
+                coll[index] = val
+            }
+            def list = ['a']
+            addToCollection(list, 0, 'b')
+            assert list == ['b']
+        ''', 'Cannot find matching method java.util.Collection#putAt(int, java.lang.Object)'
+    }
+
 }
 
