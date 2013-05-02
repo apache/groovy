@@ -171,6 +171,25 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
         assertEquals([], result)
     }
 
+    enum ForTestEnum {
+        val1, val2;
+        public static final ForTestEnum val3;
+        int enumMethod() {return 0}
+        static int staticMethod() {return 1}
+    }
+
+    void testEnum() {
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(ForTestEnum, "")
+        assertTrue(result.toString(), 'val1' in result)
+        assertFalse(result.toString(), 'enumMethod()' in result)
+        assertTrue(result.toString(), 'staticMethod()' in result)
+        result = ReflectionCompletor.getPublicFieldsAndMethods(ForTestEnum.val1, "")
+        // User will probably not want this
+        assertFalse(result.toString(), 'val1' in result)
+        assertTrue(result.toString(), 'enumMethod()' in result)
+        assertTrue(result.toString(), 'staticMethod()' in result)
+    }
+
     void testGetAbstractClassFields() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "")
         assertTrue(result.toString(), 'ABSTRACT' in result)

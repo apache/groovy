@@ -168,7 +168,9 @@ class ReflectionCompletor implements Completor {
             if (acceptName(fit.name, prefix)) {
                 int modifiers = fit.getModifiers()
                 if (Modifier.isPublic(modifiers) && (!staticOnly || Modifier.isStatic(modifiers))) {
-                    rv << fit.name
+                    if (!clazz.isEnum() || !(!staticOnly && Modifier.isPublic(modifiers) && Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers) && fit.getType() == clazz)) {
+                        rv << fit.name
+                    }
                 }
             }
         }
