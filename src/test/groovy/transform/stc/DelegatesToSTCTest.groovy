@@ -479,4 +479,131 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
 
         '''
     }
+
+    void testDelegatesToGenericTypeArgument() {
+        assertScript '''
+            public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=0) Closure arg) {
+                arg.delegate = target.join('')
+                arg()
+            }
+            def test() {
+                def result
+                map(['f','o','o']) {
+                    result = toUpperCase()
+                }
+
+                result
+            }
+            assert 'FOO'==test()
+        '''
+    }
+
+    void testDelegatesToGenericTypeArgumentAndActualArgumentNotUsingGenerics() {
+        assertScript '''import groovy.transform.InheritConstructors
+            @InheritConstructors
+            class MyList extends LinkedList<String> {}
+
+            public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=0) Closure arg) {
+                arg.delegate = target.join('')
+                arg()
+            }
+            def test() {
+                def result
+                def mylist = new MyList(['f','o','o'])
+                map(mylist) {
+                    result = toUpperCase()
+                }
+
+                result
+            }
+            assert 'FOO'==test()
+        '''
+    }
+
+    void testDelegatesToGenericTypeArgumentWithMissingGenerics() {
+        shouldFailWithMessages '''
+            public Object map(@DelegatesTo.Target List target, @DelegatesTo(genericTypeIndex=0) Closure arg) {
+                arg.delegate = target.join('')
+                arg()
+            }
+            def test() {
+                def result
+                map(['f','o','o']) {
+                    result = toUpperCase()
+                }
+
+                result
+            }
+            assert 'FOO'==test()
+        ''', 'Cannot use @DelegatesTo(genericTypeIndex=0) with a type that doesn\'t use generics', 'Cannot find matching method'
+    }
+
+    void testDelegatesToGenericTypeArgumentOutOfBounds() {
+        shouldFailWithMessages '''
+            public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=1) Closure arg) {
+                arg.delegate = target.join('')
+                arg()
+            }
+            def test() {
+                def result
+                map(['f','o','o']) {
+                    result = toUpperCase()
+                }
+
+                result
+            }
+            assert 'FOO'==test()
+        ''', 'Index of generic type @DelegatesTo(genericTypeIndex=1) greater than those of the selected type', 'Cannot find matching method'
+    }
+
+    void testDelegatesToGenericTypeArgumentWithNegativeIndex() {
+        shouldFailWithMessages '''
+            public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=-1) Closure arg) {
+                arg.delegate = target.join('')
+                arg()
+            }
+            def test() {
+                def result
+                map(['f','o','o']) {
+                    result = toUpperCase()
+                }
+
+                result
+            }
+            assert 'FOO'==test()
+        ''', 'Index of generic type @DelegatesTo(genericTypeIndex=-1) lower than those of the selected type', 'Cannot find matching method'
+    }
+
+    void testDelegatesToGenericTypeArgumentUsingMap() {
+        assertScript '''
+            public <K,V> void transform(@DelegatesTo.Target Map<K, V> map, @DelegatesTo(genericTypeIndex = 1) Closure<?> closure) {
+                map.keySet().each {
+                    closure.delegate = map[it]
+                    map[it] = closure()
+                }
+            }
+            def map = [1: 'a', 2: 'b', 3: 'c']
+            transform(map) {
+                toUpperCase()
+            }
+            assert map == [1: 'A', 2: 'B', 3: 'C']
+        '''
+    }
+
+    void testDelegatesToGenericTypeArgumentUsingMapAndWrongIndex() {
+        shouldFailWithMessages '''
+            public <K,V> void transform(@DelegatesTo.Target Map<K, V> map, @DelegatesTo(genericTypeIndex = 0) Closure<?> closure) {
+                map.keySet().each {
+                    closure.delegate = map[it]
+                    map[it] = closure()
+                }
+            }
+            def map = [1: 'a', 2: 'b', 3: 'c']
+            transform(map) {
+                toUpperCase()
+            }
+            assert map == [1: 'A', 2: 'B', 3: 'C']
+        ''', 'Cannot find matching method'
+    }
+
 }

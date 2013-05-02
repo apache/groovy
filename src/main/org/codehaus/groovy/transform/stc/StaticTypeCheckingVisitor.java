@@ -1824,11 +1824,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             // in theory, there can only be one annotation of that type
                             Expression value = annotation.getMember("value");
                             Expression strategy = annotation.getMember("strategy");
+                            Expression genericTypeIndex = annotation.getMember("genericTypeIndex");
                             Integer stInt = Closure.OWNER_FIRST;
                             if (strategy!=null) {
                                 stInt = (Integer) evaluateExpression(new CastExpression(ClassHelper.Integer_TYPE,strategy));
                             }
                             if (value instanceof ClassExpression && !value.getType().equals(DELEGATES_TO_TARGET)) {
+                                if (genericTypeIndex!=null) {
+                                    addStaticTypeError("Cannot use @DelegatesTo(genericTypeIndex="+genericTypeIndex.getText()
+                                            +") without @DelegatesTo.Target because generic argument types are not available at runtime", value);
+                                }
                                 // temporarily store the delegation strategy and the delegate type
                                 expression.putNodeMetaData(StaticTypesMarker.DELEGATION_METADATA, new DelegationMetadata(value.getType(), stInt, typeCheckingContext.delegationMetadata));
                             } else {
@@ -1845,7 +1850,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                         if (id.equals(parameterName)) {
                                             if (j < expressionsSize) {
                                                 Expression actualArgument = expressions.get(j);
-                                                expression.putNodeMetaData(StaticTypesMarker.DELEGATION_METADATA, new DelegationMetadata(getType(actualArgument), stInt, typeCheckingContext.delegationMetadata));
+                                                ClassNode actualType = getType(actualArgument);
+                                                if (genericTypeIndex!=null && genericTypeIndex instanceof ConstantExpression) {
+                                                    int gti = Integer.valueOf(genericTypeIndex.getText());
+                                                    ClassNode paramType = methodParam.getType(); // type annotated with @DelegatesTo.Target
+                                                    GenericsType[] genericsTypes = paramType.getGenericsTypes();
+                                                    if (genericsTypes==null) {
+                                                        addStaticTypeError("Cannot use @DelegatesTo(genericTypeIndex="+genericTypeIndex.getText()
+                                                            + ") with a type that doesn't use generics", methodParam);
+                                                    } else if (gti<0 || gti>=genericsTypes.length) {
+                                                        addStaticTypeError("Index of generic type @DelegatesTo(genericTypeIndex="+genericTypeIndex.getText()
+                                                                + ") "+(gti<0?"lower":"greater")+" than those of the selected type", methodParam);
+                                                    } else {
+                                                        ClassNode pType = GenericsUtils.parameterizeType(actualType, paramType);
+                                                        GenericsType[] pTypeGenerics = pType.getGenericsTypes();
+                                                        if (pTypeGenerics!=null && pTypeGenerics.length>gti) {
+                                                            actualType = pTypeGenerics[gti].getType();
+                                                        } else {
+                                                            addStaticTypeError("Unable to map actual type ["+actualType.toString(false)+"] onto "+paramType.toString(false), methodParam);
+                                                        }
+                                                    }
+                                                }
+                                                expression.putNodeMetaData(StaticTypesMarker.DELEGATION_METADATA, new DelegationMetadata(actualType, stInt, typeCheckingContext.delegationMetadata));
+                                                break;
                                             }
                                         }
                                     }
