@@ -90,9 +90,13 @@ public class GroovyScriptEngine implements ResourceConnector {
     private final ClassLoader parentLoader;
     private final GroovyClassLoader groovyLoader;
     private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();
-    private CompilerConfiguration config = new CompilerConfiguration(CompilerConfiguration.DEFAULT) {
-        {{ setSourceEncoding("UTF-8"); }}
-    };
+    private CompilerConfiguration config;
+
+    {
+        config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+        config.setSourceEncoding("UTF-8");
+    }
+
 
     //TODO: more finals?
 
