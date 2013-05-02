@@ -99,10 +99,14 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsArray() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(([] as String[]), "")
+        assertTrue('length' in result)
+        assertTrue('clone()' in result)
         assertTrue('size()' in result)
         assertTrue('any()' in result)
         result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "size")
         assertEquals(["size()"], result)
+        result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "le")
+        assertEquals(["length"], result)
     }
 
     void testGetFieldsAndMethodsMap() {
@@ -202,9 +206,6 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
         instance = interp.evaluate(["class Foo extends HashSet implements Comparable {int compareTo(Object) {0}}; new Foo()"])
         result = ReflectionCompletor.getPublicFieldsAndMethods(instance, "")
         assertTrue(result.toString(), 'compareTo(' in result)
-
-        result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "si")
-        assertEquals(["size()"], result)
     }
 
 }

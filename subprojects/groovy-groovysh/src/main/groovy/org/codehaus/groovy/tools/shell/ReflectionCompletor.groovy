@@ -151,6 +151,14 @@ class ReflectionCompletor implements Completor {
             addClassFieldsAndMethods(loopclazz, isClass, prefix, rv)
             loopclazz = loopclazz.superclass
         }
+        if (clazz.isArray() && !isClass) {
+            // Arrays are special, these public members cannot be found via Reflection
+            for (String member in ['length', 'clone()']) {
+                if (member.startsWith(prefix)) {
+                    rv.add(member)
+                }
+            }
+        }
         return rv.sort()
     }
 
