@@ -20,7 +20,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
 public class DelegatingScriptTest extends GroovyTestCase {
     public void testDelegatingScript() throws Exception {
         def cc = new CompilerConfiguration();
-        cc.scriptBase = DelegatingScript.class;
+        cc.scriptBaseClass = DelegatingScript.class.name;
         def sh = new GroovyShell(new Binding(), cc);
         def script = (DelegatingScript)sh.parse("""
             println DelegatingScript.class
