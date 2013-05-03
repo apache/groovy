@@ -16,12 +16,13 @@
 
 package org.codehaus.groovy.tools.shell
 
+import antlr.TokenStreamException
 import jline.Terminal
 import jline.History
-
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 import org.codehaus.groovy.runtime.StackTraceUtils
+import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
 import org.codehaus.groovy.tools.shell.util.Preferences
 import org.fusesource.jansi.AnsiRenderer
 import org.fusesource.jansi.Ansi
@@ -51,7 +52,10 @@ class Groovysh extends Shell {
 
     final Interpreter interp
     
-    final List imports = []
+    final List<String> imports = []
+
+    public static final String AUTOINDENT_PREFERENCE_KEY = "autoindent"
+    int indentSize = 2
     
     InteractiveShellRunner runner
     
@@ -74,15 +78,15 @@ class Groovysh extends Shell {
         registrar.call(this)
     }
 
-    private static Closure createDefaultRegistrar() {
-        return { shell ->
+    private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
+        return {Shell shell ->
             def r = new XmlCommandRegistrar(shell, classLoader)
             r.register(getClass().getResource('commands.xml'))
         }
     }
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
-        this(classLoader, binding, io, createDefaultRegistrar())
+        this(classLoader, binding, io, createDefaultRegistrar(classLoader))
     }
 
     Groovysh(final Binding binding, final IO io) {
@@ -129,8 +133,7 @@ class Groovysh extends Shell {
         }
         
         // Otherwise treat the line as Groovy
-        def current = []
-        current += buffers.current()
+        List<String> current = new ArrayList<String>(buffers.current())
 
         // Append the line to the current buffer
         current << line
@@ -147,7 +150,7 @@ class Groovysh extends Shell {
                 }
 
                 // Evaluate the current buffer w/imports and dummy statement
-                def buff = imports + [ 'true' ] + current
+                List buff = imports + [ 'true' ] + current
 
                 lastResult = result = interp.evaluate(buff)
                 buffers.clearSelected()
@@ -176,7 +179,7 @@ class Groovysh extends Shell {
     /**
      * Display the given buffer.
      */
-    private void displayBuffer(final List buffer) {
+    void displayBuffer(final List buffer) {
         assert buffer
 
         buffer.eachWithIndex { line, index ->
@@ -201,17 +204,49 @@ class Groovysh extends Shell {
         The code will always assume you want the line number in the prompt.  To implement differently overhead the render
         prompt variable.
      */
-    private String buildPrompt(){
-       def lineNum = formatLineNumber(buffers.current().size())
-       def formattedPrompt = "@|bold groovy:|@${lineNum}@|bold >|@ "
+    private String buildPrompt() {
+        def lineNum = formatLineNumber(buffers.current().size())
 
-       def GROOVYSHELL_PROPERTY =  System.getProperty("groovysh.prompt")
-       def GROOVYSHELL_ENV      =  System.getenv("GROOVYSH_PROMPT")
+        def GROOVYSHELL_PROPERTY = System.getProperty("groovysh.prompt")
+        if (GROOVYSHELL_PROPERTY) {
+            return  "@|bold ${GROOVYSHELL_PROPERTY}:|@${lineNum}@|bold >|@ "
+        }
+        def GROOVYSHELL_ENV = System.getenv("GROOVYSH_PROMPT")
+        if (GROOVYSHELL_ENV) {
+            return  "@|bold ${GROOVYSHELL_ENV}:|@${lineNum}@|bold >|@ "
+        }
+        return "@|bold groovy:|@${lineNum}@|bold >|@ "
 
-       if (GROOVYSHELL_PROPERTY)  return  "@|bold ${GROOVYSHELL_PROPERTY}:|@${lineNum}@|bold >|@ "
-       if (GROOVYSHELL_ENV)       return  "@|bold ${GROOVYSHELL_ENV}:|@${lineNum}@|bold >|@ "
+    }
 
-       return formattedPrompt
+    /**
+     * Calculate probably desired indentation based on parenthesis balance and last char,
+     * as well as what the user used last as indentation.
+     * @return a string to indent the next line in the buffer
+     */
+    String getIndentPrefix() {
+        List<String> buffer = this.buffers.current()
+        if (buffer.size() < 1) {
+            return ""
+        }
+        StringBuilder src = new StringBuilder()
+        for (String line: buffer) {
+            src.append(line + '\n')
+        }
+
+        // not sure whether the same Lexer instance could be reused.
+        def lexer = CurlyCountingGroovyLexer.createGroovyLexer(src.toString());
+
+        // read all tokens
+        try {
+            while (lexer.nextToken().getType() != CurlyCountingGroovyLexer.EOF) {}
+        } catch (TokenStreamException e) {
+            // pass
+        }
+        int parenIndent = (lexer.getParenLevel()) * indentSize
+
+        // dedent after closing brackets
+        return " " * Math.max(parenIndent, 0)
     }
 
     public String renderPrompt() {
@@ -244,7 +279,7 @@ class Groovysh extends Shell {
         def file = new File(userStateDirectory, filename)
         
         if (file.exists()) {
-            def command = registry['load']
+            Command command = registry['load'] as Command
 
             if (command) {
                 log.debug("Loading user-script: $file")
@@ -307,10 +342,22 @@ class Groovysh extends Shell {
 
     final Closure defaultResultHook = { result ->
         boolean showLastResult = !io.quiet && (io.verbose || Preferences.showLastResult)
-
         if (showLastResult) {
             // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-            io.out.println("@|bold ===>|@ ${String.valueOf(result)}")
+            if (result != null && result.class && result.class.isArray()) {
+                Class typeClass = result.class.getComponentType()
+                StringBuilder output = new StringBuilder()
+                if (result.length > 0) {
+                    output.append(String.valueOf(Arrays.toString(result)))
+                } else {
+                    output.append("[]")
+                }
+                output.append(" ($typeClass)")
+
+                io.out.println("@|bold ===>|@ $output")
+            } else {
+                io.out.println("@|bold ===>|@ ${String.valueOf(result)}")
+            }
         }
     }
 
@@ -356,7 +403,17 @@ class Groovysh extends Shell {
 
             def buff = new StringBuffer()
 
+            boolean doBreak = false;
+
             for (e in trace) {
+                // Stop the trace once we find the root of the evaluated script
+                if (e.className == Interpreter.SCRIPT_FILENAME && e.methodName == 'run') {
+                    if (io.verbosity != IO.Verbosity.DEBUG && io.verbosity != IO.Verbosity.VERBOSE) {
+                        break
+                    }
+                    doBreak = true
+                }
+
                 buff << "        @|bold at|@ ${e.className}.${e.methodName} (@|bold "
 
                 buff << (e.nativeMethod ? 'Native Method' :
@@ -368,9 +425,7 @@ class Groovysh extends Shell {
                 io.err.println(buff)
 
                 buff.setLength(0) // Reset the buffer
-
-                // Stop the trace once we find the root of the evaluated script
-                if (e.className == Interpreter.SCRIPT_FILENAME && e.methodName == 'run') {
+                if (doBreak) {
                     io.err.println('        @|bold ...|@')
                     break
                 }
@@ -383,6 +438,12 @@ class Groovysh extends Shell {
     private void displayError(final Throwable cause) {
         if (errorHook == null) {
             throw new IllegalStateException("Error hook is not set")
+        }
+        if (cause instanceof MissingPropertyException) {
+            if (cause.type && cause.type.canonicalName == Interpreter.SCRIPT_FILENAME) {
+                io.err.println("@|bold,red Unknown property|@: " + cause.property)
+                return
+            }
         }
 
         errorHook.call(cause)

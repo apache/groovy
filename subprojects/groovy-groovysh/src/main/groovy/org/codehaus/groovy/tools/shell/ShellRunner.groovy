@@ -42,7 +42,7 @@ abstract class ShellRunner
     }
     
     ShellRunner(final Shell shell) {
-        assert shell
+        assert(shell != null)
         
         this.shell = shell
     }
@@ -63,7 +63,12 @@ abstract class ShellRunner
                 log.debug("Work failed: $t", t)
                 
                 if (errorHandler) {
-                    errorHandler.call(t)
+                    try {
+                        errorHandler.call(t)
+                    } catch (Throwable t2) {
+                        errorHandler(new IllegalArgumentException("Error when handling error: " + t.message))
+                        errorHandler.call(t2)
+                    }
                 }
             }
         }
@@ -85,7 +90,7 @@ abstract class ShellRunner
         
         // Ignore empty lines
         if (line.trim().size() > 0) {
-            def result = shell << line
+            shell << line
         }
         
         return true

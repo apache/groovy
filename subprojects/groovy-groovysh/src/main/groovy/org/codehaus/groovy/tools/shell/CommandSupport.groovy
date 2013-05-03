@@ -49,7 +49,7 @@ abstract class CommandSupport
     final String shortcut
     
     /** The owning shell. */
-    protected final Shell shell
+    protected final Groovysh shell
 
     /** The I/O container for the command to spit stuff out. */
     protected final IO io
@@ -63,8 +63,8 @@ abstract class CommandSupport
     /** Flag to indicate if the command should be hidden or not. */
     boolean hidden = false
     
-    protected CommandSupport(final Shell shell, final String name, final String shortcut) {
-        assert shell
+    protected CommandSupport(final Groovysh shell, final String name, final String shortcut) {
+        assert shell != null
         assert name
         assert shortcut
         
@@ -94,7 +94,7 @@ abstract class CommandSupport
     /**
      * Override to provide custom completion semantics for the command.
      */
-    protected List createCompletors() {
+    protected List<Completor> createCompletors() {
         return null
     }
 
@@ -105,13 +105,14 @@ abstract class CommandSupport
         if (hidden) {
             return null
         }
-        
-        def list = [ new SimpleCompletor(name, shortcut) ]
 
-        def completors = createCompletors()
+        List<Completor> list = new ArrayList<Completor>()
+        list << new SimpleCompletor(name, shortcut)
+
+        List<Completor> completors = createCompletors()
         
         if (completors) {
-            completors.each {
+            completors.each {Completor it ->
                 if (it) {
                     list << it
                 }
@@ -159,11 +160,11 @@ abstract class CommandSupport
         return shell.buffers
     }
 
-    protected List getBuffer() {
+    protected List<String> getBuffer() {
         return shell.buffers.current()
     }
 
-    protected List getImports() {
+    protected List<String> getImports() {
         return shell.imports
     }
     

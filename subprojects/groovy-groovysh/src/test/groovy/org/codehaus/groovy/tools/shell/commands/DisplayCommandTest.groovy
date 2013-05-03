@@ -32,10 +32,6 @@ class DisplayCommandTest
     }
 
     void testDisplayWithArgs() {
-        try {
-            shell << 'display foo'
-            fail()
-        }
-        catch (CommandException expected) {}
+        shell << 'display foo'
     }
 }

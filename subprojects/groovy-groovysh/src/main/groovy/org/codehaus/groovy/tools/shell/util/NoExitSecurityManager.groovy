@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.shell.util;
 
 import java.security.Permission;
+import org.codehaus.groovy.tools.shell.util.Logger;
 
 /**
  * Custom security manager to {@link System#exit} (and related) from being used.
@@ -29,8 +30,6 @@ public class NoExitSecurityManager
     private final SecurityManager parent;
 
     public NoExitSecurityManager(final SecurityManager parent) {
-        assert parent != null;
-
         this.parent = parent;
     }
 

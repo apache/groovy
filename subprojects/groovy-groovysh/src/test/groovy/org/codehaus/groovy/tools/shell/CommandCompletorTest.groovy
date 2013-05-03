@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell.commands
+package org.codehaus.groovy.tools.shell
 
-import org.codehaus.groovy.tools.shell.CommandException
+class CommandCompletorTest
+extends CompletorTestSupport {
 
-/**
- * Tests for the {@link SaveCommand} class.
- *
- * @version $Id$
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- */
-class SaveCommandTest
-    extends CommandTestSupport
-{
-    void testSave() {
-        shell << 'save'
+    void testEmpty() {
+        CommandsMultiCompletor completor = new CommandsMultiCompletor()
+        assertEquals(-1, completor.complete("", 0, []))
+    }
 
+    void testImport() {
+        CommandsMultiCompletor completor = new CommandsMultiCompletor()
+        def candidates = []
+        assertEquals(-1, completor.complete("imp ", "imp ".length(), candidates))
+        assertEquals([], candidates)
     }
 }

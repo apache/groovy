@@ -22,7 +22,7 @@ import jline.NullCompletor
 import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Shell
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 import org.codehaus.groovy.tools.shell.util.ClassNameCompletor
 
@@ -35,7 +35,7 @@ import org.codehaus.groovy.tools.shell.util.ClassNameCompletor
 class ImportCommand
     extends CommandSupport
 {
-    ImportCommand(final Shell shell) {
+    ImportCommand(final Groovysh shell) {
         super(shell, 'import', '\\i')
     }
     

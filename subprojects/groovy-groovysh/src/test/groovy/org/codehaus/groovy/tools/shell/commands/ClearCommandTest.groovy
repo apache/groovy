@@ -32,10 +32,6 @@ class ClearCommandTest
     }
 
     void testClearWithArgs() {
-        try {
-            shell << 'clear foo'
-            fail()
-        }
-        catch (CommandException expected) {}
+        shell << 'clear foo'
     }
 }

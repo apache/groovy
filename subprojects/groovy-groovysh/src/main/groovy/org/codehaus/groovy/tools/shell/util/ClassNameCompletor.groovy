@@ -28,7 +28,7 @@ class ClassNameCompletor
     private final GroovyClassLoader classLoader
 
     ClassNameCompletor(final GroovyClassLoader classLoader) {
-        assert classLoader
+        assert classLoader != null
 
         this.classLoader = classLoader
         

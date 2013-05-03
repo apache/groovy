@@ -16,13 +16,16 @@
 
 package org.codehaus.groovy.tools.shell
 
+import jline.ArgumentCompletor
 import jline.ConsoleReader
 
 import jline.History
 import jline.Completor
 import jline.MultiCompletor
-
+import jline.SimpleCompletor
 import org.codehaus.groovy.tools.shell.util.Logger
+import org.codehaus.groovy.tools.shell.util.Preferences
+import org.codehaus.groovy.tools.shell.util.WrappedInputStream
 
 /**
  * Support for running a {@link Shell} interactively using the JLine library.
@@ -34,23 +37,26 @@ class InteractiveShellRunner
     extends ShellRunner
     implements Runnable
 {
-    final ConsoleReader reader
+    ConsoleReader reader
     
     final Closure prompt
     
     final CommandsMultiCompletor completor
-    
-    InteractiveShellRunner(final Shell shell, final Closure prompt) {
+    WrappedInputStream wrappedInputStream
+
+    InteractiveShellRunner(final Groovysh shell, final Closure prompt) {
         super(shell)
         
         this.prompt = prompt
-        
-        this.reader = new ConsoleReader(shell.io.inputStream, new PrintWriter(shell.io.outputStream, true))
+        this.wrappedInputStream = new WrappedInputStream(shell.io.inputStream)
+        this.reader = new ConsoleReader(wrappedInputStream, new PrintWriter(shell.io.outputStream, true))
 
-        reader.addCompletor(new ReflectionCompletor(shell))
+        // complete groovysh commands, display, import, ... as first word in line
         this.completor = new CommandsMultiCompletor()
-        
-        reader.addCompletor(completor)
+        reader.addCompletor(this.completor)
+
+        // reflectionCompletor completes properties if last char was dot, else variables and some keywords
+        reader.addCompletor(new ReflectionCompletor(shell),)
     }
     
     void run() {
@@ -86,12 +92,23 @@ class InteractiveShellRunner
     
     protected String readLine() {
         try {
-            return reader.readLine(prompt.call())
-        }
-        catch (StringIndexOutOfBoundsException e) {
+            if (Boolean.valueOf(Preferences.get(Groovysh.AUTOINDENT_PREFERENCE_KEY))) {
+                // prevent auto-indent when pasting code blocks
+                if (shell.io.inputStream.available() == 0) {
+                    wrappedInputStream.insert(((Groovysh) shell).getIndentPrefix())
+                }
+            }
+            return reader.readLine(prompt.call() as String)
+        } catch (StringIndexOutOfBoundsException e) {
             log.debug("HACK: Try and work around GROOVY-2152 for now", e)
-
+            reader.printNewline()
             return "";
+        } catch (Throwable t) {
+            if (shell.io.verbosity == IO.Verbosity.DEBUG) {
+                throw t
+            }
+            reader.printNewline()
+            return ""
         }
     }
 

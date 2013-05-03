@@ -34,11 +34,6 @@ class HelpCommandTest
     }
     
     void testCommandHelpInvalidCommand() {
-        try {
-            shell << 'help no-such-command'
-        }
-        catch (Exception e) {
-            // expected
-        }
+        shell << 'help no-such-command'
     }
 }

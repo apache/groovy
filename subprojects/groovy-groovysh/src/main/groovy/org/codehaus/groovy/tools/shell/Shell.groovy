@@ -17,6 +17,9 @@
 package org.codehaus.groovy.tools.shell
 
 import org.codehaus.groovy.tools.shell.util.Logger
+import org.fusesource.jansi.Ansi
+
+import static org.fusesource.jansi.Ansi.ansi
 
 /**
  * A simple shell for invoking commands from a command-line.
@@ -33,7 +36,7 @@ class Shell
     final IO io
 
     Shell(final IO io) {
-        assert io
+        assert(io != null)
         
         this.io = io
     }
@@ -64,13 +67,11 @@ class Shell
         //       then ask the registry for the command for a given line?
         //
         
-        def args = parseLine(line)
+        List<String> args = parseLine(line)
         
         assert args.size() > 0
-        
-        def name = args[0]
-        
-        def command = registry[name]
+
+        Command command = registry.find(args[0])
         
         return command
     }
@@ -97,9 +98,11 @@ class Shell
             }
             
             log.debug("Executing command($command.name): $command; w/args: $args")
-            
-            result = command.execute(args)
-                
+            try {
+                result = command.execute(args)
+            } catch (CommandException e) {
+                io.err.println(ansi().a(Ansi.Attribute.INTENSITY_BOLD).fg(Ansi.Color.RED).a(e.getMessage()).reset());
+            }
             log.debug("Result: ${String.valueOf(result)}")
         }
         
@@ -107,15 +110,15 @@ class Shell
     }
     
     Command register(final Command command) {
-        return registry << command
+        return (registry << command) as Command
     }
     
     def leftShift(final String line) {
         return execute(line)
     }
-    
-    
-    def leftShift(final Command command) {
+
+
+    Command leftShift(final Command command) {
         return register(command)
     }
 }

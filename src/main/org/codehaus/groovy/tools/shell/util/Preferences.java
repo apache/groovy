@@ -34,19 +34,29 @@ public class Preferences
 
     public static IO.Verbosity verbosity;
 
+    public static final String VERBOSITY_KEY = "verbosity";
+    public static final String SHOW_LAST_RESULT_KEY = "show-last-result";
+    public static final String SANITIZE_STACK_TRACE_KEY = "sanitize-stack-trace";
+    public static final String EDITOR_KEY = "editor";
+    public static final String PARSER_FLAVOR_KEY = "parser-flavor";
+
+    public static final String PARSER_RIGID = "rigid";
+    public static final String PARSER_RELAXED = "relaxed";
+
+
     static {
-        String tmp = STORE.get("verbosity", IO.Verbosity.INFO.name);
+        String tmp = STORE.get(VERBOSITY_KEY, IO.Verbosity.INFO.name);
         try {
             verbosity = IO.Verbosity.forName(tmp);
         }
         catch (IllegalArgumentException e) {
             verbosity = IO.Verbosity.INFO;
-            STORE.remove("verbosity");
+            STORE.remove(VERBOSITY_KEY);
         }
 
         addChangeListener(new PreferenceChangeListener() {
             public void preferenceChange(final PreferenceChangeEvent event) {
-                if (event.getKey().equals("verbosity")) {
+                if (event.getKey().equals(VERBOSITY_KEY)) {
                     String name = event.getNewValue();
 
                     if (name == null) {
@@ -65,19 +75,19 @@ public class Preferences
     }
 
     public static boolean getShowLastResult() {
-        return STORE.getBoolean("show-last-result", true);
+        return STORE.getBoolean(SHOW_LAST_RESULT_KEY, true);
     }
 
     public static boolean getSanitizeStackTrace() {
-        return STORE.getBoolean("sanitize-stack-trace", true);
+        return STORE.getBoolean(SANITIZE_STACK_TRACE_KEY, true);
     }
 
     public static String getEditor() {
-        return STORE.get("editor", System.getenv("EDITOR"));
+        return STORE.get(EDITOR_KEY, System.getenv("EDITOR"));
     }
 
     public static String getParserFlavor() {
-        return STORE.get("parser-flavor", "rigid");
+        return STORE.get(PARSER_FLAVOR_KEY, PARSER_RIGID);
     }
 
     //
