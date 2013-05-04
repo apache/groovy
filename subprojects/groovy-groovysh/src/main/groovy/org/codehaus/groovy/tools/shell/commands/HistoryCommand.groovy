@@ -114,7 +114,7 @@ class HistoryCommand
                 line = histList.get(id)
             }
         }
-        catch (Exception e) {
+        catch (NumberFormatException e) {
             fail("Invalid history identifier: $ids", e)
         }
 

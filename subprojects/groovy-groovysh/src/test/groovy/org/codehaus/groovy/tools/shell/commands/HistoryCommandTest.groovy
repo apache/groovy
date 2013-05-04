@@ -16,7 +16,10 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import jline.History
 import org.codehaus.groovy.tools.shell.CommandException
+import org.codehaus.groovy.tools.shell.CompletorTestSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 
 /**
  * Tests for the {@link HistoryCommand} class.
@@ -24,8 +27,7 @@ import org.codehaus.groovy.tools.shell.CommandException
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class HistoryCommandTest
-    extends CommandTestSupport
+class HistoryCommandTest extends CommandTestSupport
 {
     void testHistory() {
         shell << 'history nocommandhere'
@@ -34,4 +36,93 @@ class HistoryCommandTest
     void testHistoryNoArg() {
         shell << 'history'
     }
+}
+
+class HistoryCommandIntegrationTest extends CompletorTestSupport
+{
+    void setUp() {
+        super.setUp()
+    }
+
+    void testShowEmpty() {
+        History history = new History()
+        groovyshMocker.demand.getHistory(1) {history}
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            HistoryCommand command = new HistoryCommand(groovyshMock)
+            command.do_show();
+            assertEquals('', mockOut.toString())
+        }
+    }
+
+    void testShowLines() {
+        History history = new History()
+        history.addToHistory("test1")
+        history.addToHistory("test2")
+        assertEquals(2, history.size())
+        groovyshMocker.demand.getHistory(1) {history}
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            HistoryCommand command = new HistoryCommand(groovyshMock)
+            command.do_show();
+            assertTrue(mockOut.toString(), 'test1' in mockOut.toString().split())
+            assertTrue(mockOut.toString(), 'test2' in mockOut.toString().split())
+        }
+    }
+
+    void testClear() {
+        History history = new History()
+        history.addToHistory("test1")
+        history.addToHistory("test2")
+        groovyshMocker.demand.getHistory(1) {history}
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            HistoryCommand command = new HistoryCommand(groovyshMock)
+            command.do_clear();
+            assertEquals(0, history.size())
+        }
+    }
+
+    void testRecall() {
+        History history = new History()
+        history.addToHistory("test1")
+        history.addToHistory("test2")
+        groovyshMocker.demand.getHistoryFull(1) {false}
+        groovyshMocker.demand.getHistory(1) {history}
+        groovyshMocker.demand.execute(1) {String it -> assert(it == 'test1'); 34}
+        // second call
+        groovyshMocker.demand.getHistoryFull(1) {false}
+        groovyshMocker.demand.getHistory(1) {history}
+        groovyshMocker.demand.execute(1) {String it -> assert(it == 'test2'); 56}
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            HistoryCommand command = new HistoryCommand(groovyshMock)
+            def result = command.do_recall(['0']);
+            assertEquals(34, result)
+            result = command.do_recall(['1']);
+            assertEquals(56, result)
+        }
+    }
+
+    void testRecallHistoryFull() {
+        History history = new History()
+        history.addToHistory("test1")
+        history.addToHistory("test2")
+        groovyshMocker.demand.getHistoryFull(1) {true}
+        groovyshMocker.demand.getEvictedLine(1) {'test3'}
+        groovyshMocker.demand.execute(1) {String it -> assert(it == 'test3'); 45}
+        // second call
+        groovyshMocker.demand.getHistoryFull(1) {true}
+        groovyshMocker.demand.getHistory(1) {history}
+        groovyshMocker.demand.execute(1) {String it -> assert(it == 'test1'); 56}
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            HistoryCommand command = new HistoryCommand(groovyshMock)
+            def result = command.do_recall(['0']);
+            assertEquals(45, result)
+            result = command.do_recall(['1']);
+            assertEquals(56, result)
+        }
+    }
+
 }
