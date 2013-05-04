@@ -2,12 +2,14 @@ package org.codehaus.groovy.tools.shell.completion
 
 import antlr.TokenStreamException
 import jline.Completor
+import jline.FileNameCompletor
 import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.antlr.SourceBuffer
 import org.codehaus.groovy.antlr.UnicodeEscapingReader
 import org.codehaus.groovy.antlr.parser.GroovyLexer
 import org.codehaus.groovy.tools.shell.CommandRegistry
 import org.codehaus.groovy.tools.shell.Groovysh
+import org.codehaus.groovy.tools.shell.util.Logger
 
 import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
 
@@ -23,6 +25,8 @@ class GroovySyntaxCompletor implements Completor {
     protected String[] classes;
     private List<IdentifierCompletor> identifierCompletors
     private ReflectionCompletor reflectionCompletor
+    private FileNameCompletor filenameCompletor
+    protected final static Logger log = Logger.create(GroovySyntaxCompletor.class)
 
     static final enum CompletionCase {
         NO_COMPLETION,
@@ -31,10 +35,14 @@ class GroovySyntaxCompletor implements Completor {
         NO_DOT_PREFIX
     }
 
-    GroovySyntaxCompletor(Groovysh shell, ReflectionCompletor reflectionCompletor, List<IdentifierCompletor> identifierCompletors) {
+    GroovySyntaxCompletor(Groovysh shell,
+                          ReflectionCompletor reflectionCompletor,
+                          List<IdentifierCompletor> identifierCompletors,
+                          FileNameCompletor filenameCompletor) {
         this.shell = shell
         this.identifierCompletors = identifierCompletors
         this.reflectionCompletor = reflectionCompletor
+        this.filenameCompletor = filenameCompletor
     }
 
     int complete(final String bufferLine, final int cursor, List candidates) {
@@ -47,7 +55,16 @@ class GroovySyntaxCompletor implements Completor {
         // complete given the context of the whole buffer, not just last line
         // Build a single string for the lexer
         List<GroovySourceToken> tokens = []
-        if (! tokenizeBuffer(bufferLine.substring(0, cursor), shell.buffers.current(), tokens)) {
+        try {
+            if (! tokenizeBuffer(bufferLine.substring(0, cursor), shell.buffers.current(), tokens)) {
+                return -1
+            }
+        } catch (InStringException ise) {
+            int completionStart = ise.column + 1
+            int fileResult = + filenameCompletor.complete(bufferLine.substring(completionStart), cursor - completionStart, candidates)
+            if (fileResult >= 0) {
+                return completionStart + fileResult
+            }
             return -1
         }
 
@@ -168,6 +185,13 @@ class GroovySyntaxCompletor implements Completor {
         return lexer
     }
 
+    static class InStringException extends Exception {
+        int column
+        InStringException(int column) {
+            this.column  = column
+        }
+    }
+
     /**
      * Adds to result the identified tokens for the bufferLines
      * @param bufferLine
@@ -191,6 +215,7 @@ class GroovySyntaxCompletor implements Completor {
         }
         // Build a list of tokens using a GroovyLexer
         GroovySourceToken nextToken = null
+        boolean isGString = false
         while (true) {
             try {
                 nextToken = groovyLexer.nextToken() as GroovySourceToken
@@ -201,8 +226,18 @@ class GroovySyntaxCompletor implements Completor {
                     }
                     break
                 }
+                if (nextToken.getType() == STRING_CTOR_START) {
+                    isGString = true
+                }
                 result << nextToken
             } catch (TokenStreamException e) {
+                // Exception with following hyphen either means we're in String or at end of GString.
+                if (! isGString
+                        && nextToken
+                        && bufferLine.charAt(nextToken.column).toString() in ['"', "'"]
+                        && previousLines.size() + 1 == nextToken.getLine()) {
+                    throw new InStringException(nextToken.column)
+                }
                 return false
             } catch (java.lang.NullPointerException e) {
                 // this can happen when e.g. a string as not closed
