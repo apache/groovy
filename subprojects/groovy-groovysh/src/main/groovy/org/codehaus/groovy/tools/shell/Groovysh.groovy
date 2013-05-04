@@ -17,16 +17,16 @@
 package org.codehaus.groovy.tools.shell
 
 import antlr.TokenStreamException
-import jline.Terminal
 import jline.History
-import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
+import jline.Terminal
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
+import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.fusesource.jansi.AnsiRenderer
+import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 import org.fusesource.jansi.Ansi
 import org.fusesource.jansi.AnsiConsole
+import org.fusesource.jansi.AnsiRenderer
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
