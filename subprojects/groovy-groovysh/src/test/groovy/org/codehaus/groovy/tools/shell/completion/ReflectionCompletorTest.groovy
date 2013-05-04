@@ -155,11 +155,10 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
         result = ReflectionCompletor.getPublicFieldsAndMethods(instance, "")
         assertTrue(result.toString(), 'compareTo(' in result)
     }
-
 }
 
-class InvokerParsingTest extends GroovyTestCase {
 
+class InvokerParsingTest extends GroovyTestCase {
 
     void testTokenListToEvalString() {
         assertEquals('', ReflectionCompletor.tokenListToEvalString(tokenList("")))
@@ -189,6 +188,8 @@ class InvokerParsingTest extends GroovyTestCase {
         assertEquals('[foo[][2]].bar', tokensString(ReflectionCompletor.getInvokerTokens(tokenList('[[foo[][2]].bar'))))
         assertEquals('foo', tokensString(ReflectionCompletor.getInvokerTokens(tokenList('${foo'))))
         assertEquals('foo', tokensString(ReflectionCompletor.getInvokerTokens(tokenList('"$foo'))))
+        assertEquals('foo', tokensString(ReflectionCompletor.getInvokerTokens(tokenList('[1,foo'))))
+        assertEquals('foo', tokensString(ReflectionCompletor.getInvokerTokens(tokenList('[1: foo'))))
         // Collections
         assertEquals('[1+2]', tokensString(ReflectionCompletor.getInvokerTokens(tokenList('[1+2]'))))
         assertEquals('[1..2]', tokensString(ReflectionCompletor.getInvokerTokens(tokenList('[1..2]'))))
