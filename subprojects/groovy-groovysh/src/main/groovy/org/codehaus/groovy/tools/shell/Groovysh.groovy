@@ -344,8 +344,9 @@ class Groovysh extends Shell {
         boolean showLastResult = !io.quiet && (io.verbose || Preferences.showLastResult)
         if (showLastResult) {
             // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-            if (result != null && result.class && result.class.isArray()) {
-                Class typeClass = result.class.getComponentType()
+
+            if (result != null && result.getClass() && result.getClass().isArray()) {
+                Class typeClass = result.getClass().getComponentType()
                 StringBuilder output = new StringBuilder()
                 if (result.length > 0) {
                     output.append(String.valueOf(Arrays.toString(result)))
@@ -382,7 +383,7 @@ class Groovysh extends Shell {
     final Closure defaultErrorHook = { Throwable cause ->
         assert cause != null
 
-        io.err.println("@|bold,red ERROR|@ ${cause.class.name}:")
+        io.err.println("@|bold,red ERROR|@ ${cause.getClass().name}:")
         io.err.println("@|bold,red ${cause.message}|@")
 
         maybeRecordError(cause)

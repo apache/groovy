@@ -55,6 +55,13 @@ class GroovyshTest extends GroovyTestCase {
         }
     }
 
+    void testMissingPropertyExpr() {
+        Groovysh groovysh = new Groovysh(testio)
+        // this is a special case, e.g. happens for Gradle DefaultExtraPropertiesExtension
+        // assert no fail
+        groovysh.execute("x = new Object() {public Object getProperty(String name) {throw new MissingPropertyException('From test', name, null)}}")
+    }
+
     void testDisplayBuffer() {
         Groovysh groovysh = new Groovysh(testio)
         groovysh.displayBuffer(["foo", "bar"])
