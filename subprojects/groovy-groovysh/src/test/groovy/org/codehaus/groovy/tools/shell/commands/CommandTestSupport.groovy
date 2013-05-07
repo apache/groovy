@@ -44,4 +44,11 @@ abstract class CommandTestSupport
             lastResult = result
         }
     }
+
+    public static void testGui(Closure test) {
+        if (HeadlessTestSupport.headless) {
+            return
+        }
+        test()
+    }
 }

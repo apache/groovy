@@ -19,19 +19,22 @@ package org.codehaus.groovy.tools.shell.commands
 /**
  * Tests for the {@link DocCommand} class.
  *
- * @version $Id$
+ * @since 2.2.0
  * @author <a href="mailto:me@masatonagai.com">Masato Nagai</a>
  */
 class DocCommandTest
     extends CommandTestSupport
 {
-
     void testGAPI() {
-        shell << "doc groovy.lang.GroovySystem"
+        testGui {
+            shell << "doc groovy.lang.GroovySystem"
+        }
     }
 
     void testGDKAndJDK() {
-        shell << "doc java.util.List"
+        testGui {
+            shell << "doc java.util.List"
+        }
     }
 
 }
