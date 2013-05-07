@@ -25,6 +25,8 @@ import java.net.URI;
  */
 public class Grape {
 
+    public static final String AUTO_DOWNLOAD_SETTING = "autoDownload";
+
     private static boolean enableGrapes = Boolean.valueOf(System.getProperty("groovy.grape.enable", "true"));
     private static boolean enableAutoDownload = Boolean.valueOf(System.getProperty("groovy.grape.autoDownload", "true"));
     protected static GrapeEngine instance;
@@ -63,7 +65,7 @@ public class Grape {
      * will be checked for new versions and downloaded (with dependencies)
      * if found.
      * <p>
-     * By default it is set to false.
+     * By default it is set to true.
      */
     public static boolean getEnableAutoDownload() {
         return enableAutoDownload;
@@ -83,7 +85,7 @@ public class Grape {
      * If it is set to true, then any jars not already downloaded will
      * automatically be downloaded.  Also, any versions expressed as a range
      * will be checked for new versions and downloaded (with dependencies)
-     * if found. By default it is set to false.
+     * if found. By default it is set to true.
      */
     public static void setEnableAutoDownload(boolean enableAutoDownload) {
         Grape.enableAutoDownload = enableAutoDownload;
@@ -119,8 +121,8 @@ public class Grape {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
             if (instance != null) {
-                if (!dependency.containsKey("autoDownload")) {
-                    dependency.put("autoDownload" , enableAutoDownload);
+                if (!dependency.containsKey(AUTO_DOWNLOAD_SETTING)) {
+                    dependency.put(AUTO_DOWNLOAD_SETTING, enableAutoDownload);
                 }
                 instance.grab(dependency);
             }
@@ -131,8 +133,8 @@ public class Grape {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
             if (instance != null) {
-                if (!args.containsKey("autoDownload")) {
-                    args.put("autoDownload" , enableAutoDownload);
+                if (!args.containsKey(AUTO_DOWNLOAD_SETTING)) {
+                    args.put(AUTO_DOWNLOAD_SETTING, enableAutoDownload);
                 }
                 instance.grab(args, dependencies);
             }
@@ -163,8 +165,8 @@ public class Grape {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
             if (instance != null) {
-                if (!args.containsKey("autoDownload")) {
-                    args.put("autoDownload" , enableAutoDownload);
+                if (!args.containsKey(AUTO_DOWNLOAD_SETTING)) {
+                    args.put(AUTO_DOWNLOAD_SETTING, enableAutoDownload);
                 }
                 uris = instance.resolve(args, depsInfo, dependencies);
             }

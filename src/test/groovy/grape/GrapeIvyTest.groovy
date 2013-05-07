@@ -325,4 +325,36 @@ class GrapeIvyTest extends CompilableTestSupport {
             } catch(MissingPropertyException mpe) { }
         '''
     }
+
+    void testAutoDownloadGrapeConfig() {
+
+        assertScript '''
+            @Grab('commons-digester:commons-digester:2.1;transitive=false')
+            import org.apache.commons.digester.Digester
+
+            assert Digester.name.size() == 36
+        '''
+
+        assert Grape.getInstance().ivyInstance.settings.defaultResolver.name == 'downloadGrapes'
+
+        assertScript '''
+            @Grab('commons-digester:commons-digester:2.1;transitive=false')
+            @GrabConfig(autoDownload=false)
+            import org.apache.commons.digester.Digester
+
+            assert Digester.name.size() == 36
+        '''
+
+        assert Grape.getInstance().ivyInstance.settings.defaultResolver.name == 'cachedGrapes'
+
+        assertScript '''
+            @Grab('commons-digester:commons-digester:2.1;transitive=false')
+            @GrabConfig(autoDownload=true)
+            import org.apache.commons.digester.Digester
+
+            assert Digester.name.size() == 36
+        '''
+
+        assert Grape.getInstance().ivyInstance.settings.defaultResolver.name == 'downloadGrapes'
+    }
 }

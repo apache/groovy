@@ -91,4 +91,9 @@ public @interface GrabConfig {
      * from an IDE) versus when called from within a container, e.g. a web container or a JEE container.
      */
     boolean initContextClassLoader() default false;
+
+    /**
+     * Set to false if you want to disable automatic downloading of locally missing jars.
+     */
+    boolean autoDownload() default true;
 }
