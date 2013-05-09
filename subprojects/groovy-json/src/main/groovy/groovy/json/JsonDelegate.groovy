@@ -32,7 +32,17 @@ class JsonDelegate {
      */
     def invokeMethod(String name, Object args) {
         if (args) {
-            content[name] = args.size() == 1 ? args[0] : args.toList()
+            if (args.size () == 1) {
+                content[name] = args[0]
+            } else if (args.size () == 2 && args[0] instanceof Collection && args[1] instanceof Closure) {
+                def list = []
+                for (o in args[0]) {
+                    list << cloneDelegateAndGetContent (args[1].curry (o))
+                }
+                content[name] = list
+            } else {
+                content[name] = args.toList ()
+            }
         }
     }
 
