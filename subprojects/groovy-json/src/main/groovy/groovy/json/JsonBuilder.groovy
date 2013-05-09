@@ -149,11 +149,7 @@ class JsonBuilder implements Writable {
      * @return a list of values
      */
     def call(Collection coll, Closure c) {
-        def list = []
-        for (o in coll) {
-            list << JsonDelegate.cloneDelegateAndGetContent(c.curry(o))
-        }
-        this.content = list
+        this.content = coll.collect {JsonDelegate.cloneDelegateAndGetContent(c.curry(it))}
         return content
     }
 
@@ -253,12 +249,7 @@ class JsonBuilder implements Writable {
                 this.content = [(name): [*:args[0], *:JsonDelegate.cloneDelegateAndGetContent(args[1])]]
                 return content
             } else if (args[0] instanceof Collection && args[1] instanceof Closure) {
-                def list = []
-                for (o in args[0]) {
-                    Closure c = ((Closure)args[1]).curry (o)
-                    list << JsonDelegate.cloneDelegateAndGetContent(c)
-                }
-                this.content = [(name): list]
+                this.content = [(name): args[0].collect {JsonDelegate.cloneDelegateAndGetContent(((Closure)args[1]).curry(it))}]
                 return content
             }
         }

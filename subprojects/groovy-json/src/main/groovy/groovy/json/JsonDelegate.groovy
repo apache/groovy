@@ -35,11 +35,7 @@ class JsonDelegate {
             if (args.size () == 1) {
                 content[name] = args[0]
             } else if (args.size () == 2 && args[0] instanceof Collection && args[1] instanceof Closure) {
-                def list = []
-                for (o in args[0]) {
-                    list << cloneDelegateAndGetContent (args[1].curry (o))
-                }
-                content[name] = list
+                content[name] = args[0].collect {cloneDelegateAndGetContent (((Closure)args[1]).curry (it))}
             } else {
                 content[name] = args.toList ()
             }
