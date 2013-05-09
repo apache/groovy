@@ -248,18 +248,20 @@ class JsonBuilder implements Writable {
                 this.content = [(name): args[0]]
                 return content
             }
-        } else if (args?.size() == 2 && args[0] instanceof Map && args[1] instanceof Closure) {
-            this.content = [(name): [*:args[0], *:JsonDelegate.cloneDelegateAndGetContent(args[1])]]
-            return content
-        } else if (args?.size() == 2 && args[0] instanceof Collection && args[1] instanceof Closure) {
-            def list = []
-            for (o in args[0]) {
-                Closure c = ((Closure)args[1]).curry (o)
-                list << JsonDelegate.cloneDelegateAndGetContent(c)
+        } else if (args?.size() == 2) {
+            if (args[0] instanceof Map && args[1] instanceof Closure) {
+                this.content = [(name): [*:args[0], *:JsonDelegate.cloneDelegateAndGetContent(args[1])]]
+                return content
+            } else if (args[0] instanceof Collection && args[1] instanceof Closure) {
+                def list = []
+                for (o in args[0]) {
+                    Closure c = ((Closure)args[1]).curry (o)
+                    list << JsonDelegate.cloneDelegateAndGetContent(c)
+                }
+                this.content = [(name): list]
+                return content
             }
-            this.content = [(name): list]
-            return content
-    }
+        }
         throw new JsonException("Expected no arguments, a single map, a single closure, or a map and closure as arguments.")
     }
 
