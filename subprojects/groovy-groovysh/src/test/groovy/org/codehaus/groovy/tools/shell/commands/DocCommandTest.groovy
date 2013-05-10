@@ -16,25 +16,139 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.tools.shell.Groovysh
+
 /**
  * Tests for the {@link DocCommand} class.
  *
- * @since 2.2.0
  * @author <a href="mailto:me@masatonagai.com">Masato Nagai</a>
+ * @author Andre Steingress
  */
-class DocCommandTest
-    extends CommandTestSupport
+class DocCommandTest extends CommandTestSupport
 {
-    void testGAPI() {
-        testGui {
-            shell << "doc groovy.lang.GroovySystem"
-        }
+    void testInitializeAWTDesktopPlatformSupportFlag() {
+        def desktopClass = Class.forName('java.awt.Desktop')
+        boolean hasSupport =
+                desktopClass.desktopSupported &&
+                desktopClass.desktop.isSupported(desktopClass.declaredClasses.find { it.simpleName == "Action" }.BROWSE)
+
+        assert DocCommand.hasAWTDesktopPlatformSupport == hasSupport
     }
 
-    void testGDKAndJDK() {
-        testGui {
-            shell << "doc java.util.List"
+    void testUrlsForJavaClass() {
+        def urlsToLookup = []
+        def command = new DocCommand(new Groovysh()) {
+            boolean sendHEADRequest(URL url) {
+                urlsToLookup << url
+                true
+            }
         }
+
+        def urls = command.urlsFor('java.util.List')
+
+        assert urls ==
+                [new URL('http://docs.oracle.com/javase/1.7.0_21/docs/api/java/util/List.html'),
+                 new URL('http://groovy.codehaus.org/groovy-jdk/java/util/List.html')]
+
+        assert urls == urlsToLookup
     }
 
+    void testUrlsForGroovyClass() {
+        def urlsToLookup = []
+        def command = new DocCommand(new Groovysh()) {
+            boolean sendHEADRequest(URL url) {
+                urlsToLookup << url
+                true
+            }
+        }
+
+        def urls = command.urlsFor('groovy.Dummy')
+
+        assert urls ==
+                [new URL('http://groovy.codehaus.org/gapi/groovy/Dummy.html')]
+
+        assert urls == urlsToLookup
+    }
+
+    void testUrlsForWithUnknownClass() {
+        def urlsToLookup = []
+        def command = new DocCommand(new Groovysh()) {
+            boolean sendHEADRequest(URL url) {
+                urlsToLookup << url
+                true
+            }
+        }
+
+        def urls = command.urlsFor('com.dummy.List')
+
+        assert urls.isEmpty()
+    }
+
+    void testFallbackToDesktopIfBrowserEnvIsMissing() {
+        def browseWithAWT = false
+        def command = new DocCommand(new Groovysh()) {
+            protected String getBrowserEnvironmentVariable() {
+                '' // there is not env variable for the browser
+            }
+
+            protected void browseWithAWT(List urls) {
+                browseWithAWT = true
+            }
+
+            protected void browseWithNativeBrowser(String browser, List urls) {
+                browseWithAWT = false
+            }
+        }
+        DocCommand.hasAWTDesktopPlatformSupport = true
+        DocCommand.desktop = [:]
+
+        command.browse([new URL('http://docs.oracle.com/javase/1.7.0_21/docs/api/java/util/List.html')])
+
+        assert browseWithAWT
+    }
+
+    void testOpenBrowserIfBrowserEnvIsAvailable() {
+        def browseWithNativeBrowser = false
+        def command = new DocCommand(new Groovysh()) {
+            protected String getBrowserEnvironmentVariable() {
+                '/usr/local/bin/firefox'
+            }
+
+            protected void browseWithAWT(List urls) {
+                browseWithNativeBrowser = false
+            }
+
+            protected void browseWithNativeBrowser(String browser, List urls) {
+                browseWithNativeBrowser = true
+            }
+        }
+
+        command.browse([new URL('http://docs.oracle.com/javase/1.7.0_21/docs/api/java/util/List.html')])
+
+        assert browseWithNativeBrowser
+    }
+
+    void testNormalizeClassName() {
+        def command = new DocCommand(new Groovysh())
+
+        assert 'java.util.List' == command.normalizeClassName('"java.util.List"')
+        assert 'java.util.List' == command.normalizeClassName("'java.util.List'")
+        assert 'java.util.List' == command.normalizeClassName("java.util.List")
+    }
+
+    void testGetBrowserEnvironmentVariable() {
+        def command = new DocCommand(new Groovysh())
+
+        System.metaClass.static.getenv = { String variableName ->
+            (variableName == DocCommand.ENV_BROWSER) ? 'firefox' : ''
+        }
+
+        assert command.browserEnvironmentVariable == 'firefox'
+
+        System.metaClass.static.getenv = { String variableName ->
+            (variableName == DocCommand.ENV_BROWSER_GROOVYSH) ? 'chrome' : ''
+        }
+
+        assert command.browserEnvironmentVariable == 'chrome'
+    }
 }

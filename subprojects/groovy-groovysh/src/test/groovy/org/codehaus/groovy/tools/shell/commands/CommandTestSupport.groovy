@@ -45,10 +45,9 @@ abstract class CommandTestSupport
         }
     }
 
-    public static void testGui(Closure test) {
-        if (HeadlessTestSupport.headless) {
-            return
+    void testGui(Closure test) {
+        if (!HeadlessTestSupport.headless) {
+            test()
         }
-        test()
     }
 }
