@@ -47,8 +47,8 @@ class DocCommandTest extends CommandTestSupport
         def urls = command.urlsFor('java.util.List')
 
         assert urls ==
-                [new URL('http://docs.oracle.com/javase/1.7.0_21/docs/api/java/util/List.html'),
-                 new URL('http://groovy.codehaus.org/groovy-jdk/java/util/List.html')]
+                [new URL("http://docs.oracle.com/javase/${System.getProperty('java.version')}/docs/api/java/util/List.html"),
+                 new URL("http://groovy.codehaus.org/groovy-jdk/java/util/List.html")]
 
         assert urls == urlsToLookup
     }

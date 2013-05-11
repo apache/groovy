@@ -96,7 +96,9 @@ class DocCommand extends CommandSupport {
         } else if (hasAWTDesktopPlatformSupport) {
             browseWithAWT(urls)
         } else {
-            fail """Browser could not be opened caused by missing platform support for 'java.awt.Desktop'. Please set a $ENV_BROWSER_GROOVYSH or $ENV_BROWSER environment variable referring to the browser binary to solve this issue."""
+            fail "Browser could not be opened caused by missing platform support for 'java.awt.Desktop'. Please set " +
+                 "a $ENV_BROWSER_GROOVYSH or $ENV_BROWSER environment variable referring to the browser binary to " +
+                 "solve this issue."
         }
     }
 
@@ -108,7 +110,8 @@ class DocCommand extends CommandSupport {
         try {
             urls.each { url -> desktop.browse(url.toURI()) }
         } catch (Exception e) {
-            fail """Browser could not be opened, an unexpected error occured (${e}). You can add a $ENV_BROWSER_GROOVYSH or $ENV_BROWSER environment variable to explicitly specify a browser binary."""
+            fail "Browser could not be opened, an unexpected error occured (${e}). You can add a " +
+                 "$ENV_BROWSER_GROOVYSH or $ENV_BROWSER environment variable to explicitly specify a browser binary."
         }
     }
 
@@ -119,7 +122,8 @@ class DocCommand extends CommandSupport {
         } catch (Exception e) {
             // we could be here caused by a IOException, SecurityException or NP Exception
 
-            fail """Browser could not be opened (${e}). Please check the $ENV_BROWSER_GROOVYSH or $ENV_BROWSER environment variable."""
+            fail "Browser could not be opened (${e}). Please check the $ENV_BROWSER_GROOVYSH or $ENV_BROWSER " +
+                 "environment variable."
         }
     }
 
