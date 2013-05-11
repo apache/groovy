@@ -16,14 +16,14 @@
 
 package org.codehaus.groovy.tools.shell
 
-import jline.Completor
-import jline.NullCompletor
-import jline.ArgumentCompletor
-import jline.History
-
-import org.codehaus.groovy.tools.shell.util.MessageSource
+import jline.console.completer.ArgumentCompleter
+import jline.console.completer.Completer
+import jline.console.completer.NullCompleter
+import jline.console.completer.StringsCompleter
+import jline.console.history.FileHistory
+import jline.console.history.MemoryHistory
 import org.codehaus.groovy.tools.shell.util.Logger
-import org.codehaus.groovy.tools.shell.util.SimpleCompletor
+import org.codehaus.groovy.tools.shell.util.MessageSource
 
 /**
  * Support for {@link Command} instances.
@@ -94,38 +94,38 @@ abstract class CommandSupport
     /**
      * Override to provide custom completion semantics for the command.
      */
-    protected List<Completor> createCompletors() {
+    protected List<Completer> createCompleters() {
         return null
     }
 
     /**
-     * Setup the completor for the command.
+     * Setup the Completer for the command.
      */
-    Completor getCompletor() {
+    Completer getCompleter() {
         if (hidden) {
             return null
         }
 
-        List<Completor> list = new ArrayList<Completor>()
-        list << new SimpleCompletor(name, shortcut)
+        List<Completer> list = new ArrayList<Completer>()
+        list << new StringsCompleter(name, shortcut)
 
-        List<Completor> completors = createCompletors()
+        List<Completer> completers = createCompleters()
         
-        if (completors) {
-            completors.each {Completor it ->
+        if (completers) {
+            completers.each {Completer it ->
                 if (it) {
                     list << it
                 }
                 else {
-                    list << new NullCompletor()
+                    list << new NullCompleter()
                 }
             }
         }
         else {
-            list << new NullCompletor()
+            list << new NullCompleter()
         }
 
-        return new ArgumentCompletor(list)
+        return new ArgumentCompleter(list)
     }
     
     //
@@ -176,7 +176,7 @@ abstract class CommandSupport
         return binding.variables
     }
     
-    protected History getHistory() {
+    protected FileHistory getHistory() {
         return shell.history
     }
     

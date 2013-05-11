@@ -38,7 +38,7 @@ class SetCommandTest
 
         List<String> candidates = []
         SetCommand command = new SetCommand(shell)
-        ArrayList<SimpleCompletor> completors = command.createCompletors()
+        ArrayList<SimpleCompletor> completors = command.createCompleters()
         assertEquals(2, completors.size())
         assertEquals(0, completors[0].complete("", 0, candidates))
         assertTrue(Groovysh.AUTOINDENT_PREFERENCE_KEY in candidates);

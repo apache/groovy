@@ -17,7 +17,7 @@
 package org.codehaus.groovy.tools.shell.completion
 
 import groovy.mock.interceptor.MockFor
-import jline.FileNameCompletor
+import jline.console.completer.FileNameCompleter
 import org.codehaus.groovy.tools.shell.CommandRegistry
 import org.codehaus.groovy.tools.shell.CompletorTestSupport
 import org.codehaus.groovy.tools.shell.Groovysh
@@ -211,7 +211,7 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
     void testInStringFilename() {
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
         ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
-        MockFor filenameCompletorMocker = new MockFor(FileNameCompletor)
+        MockFor filenameCompletorMocker = new MockFor(FileNameCompleter)
         String linestart = "foo('" // ends with single hyphen
         String pathstart = "/usr/foobar"
         String buffer = linestart + pathstart
@@ -221,7 +221,7 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
             candidates << "foobar"; 5}
         // mock asserting GString is not evaluated
         groovyshMocker.use { filenameCompletorMocker.use {
-            FileNameCompletor mockFileComp = new FileNameCompletor()
+            FileNameCompleter mockFileComp = new FileNameCompleter()
             Groovysh groovyshMock = new Groovysh()
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], mockFileComp)
             def candidates = []

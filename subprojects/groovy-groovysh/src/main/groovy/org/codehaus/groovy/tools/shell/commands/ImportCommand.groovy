@@ -16,9 +16,10 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.ArgumentCompletor
-import jline.Completor
-import jline.MultiCompletor
+import jline.console.completer.AggregateCompleter
+import jline.console.completer.ArgumentCompleter
+import jline.console.completer.Completer
+import jline.console.completer.StringsCompleter
 import org.codehaus.groovy.control.CompilationFailedException
 
 import org.codehaus.groovy.tools.shell.CommandSupport
@@ -44,23 +45,23 @@ class ImportCommand
     }
 
     @Override
-    Completor getCompletor() {
-        // need a different completor setup due to static import
-        Completor impCompletor = new SimpleCompletor(name, shortcut)
-        Completor asCompletor = new SimpleCompletor('as')
+    Completer getCompleter() {
+        // need a different completer setup due to static import
+        Completer impCompleter = new StringsCompleter(name, shortcut)
+        Completer asCompleter = new StringsCompleter('as')
         PackageHelper packageHelper = shell.packageHelper
         Interpreter interp = shell.interp
-        return new MultiCompletor([
-                new ArgumentCompletor([
-                        impCompletor,
-                        new ImportCompletor(packageHelper, interp, false),
-                        asCompletor,
+        return new AggregateCompleter([
+                new ArgumentCompleter([
+                        impCompleter,
+                        new ImportCompleter(packageHelper, interp, false),
+                        asCompleter,
                         null]),
-                new ArgumentCompletor([
-                        impCompletor,
-                        new SimpleCompletor('static'),
-                        new ImportCompletor(packageHelper, interp, true),
-                        asCompletor,
+                new ArgumentCompleter([
+                        impCompleter,
+                        new StringsCompleter('static'),
+                        new ImportCompleter(packageHelper, interp, true),
+                        asCompleter,
                         null])])
 
     }
@@ -102,18 +103,18 @@ class ImportCommand
     }
 }
 
-class ImportCompletor implements jline.Completor {
+class ImportCompleter implements Completer {
 
     PackageHelper packageHelper
     Groovysh shell
-    protected final Logger log = Logger.create(ImportCompletor.class)
+    protected final Logger log = Logger.create(ImportCompleter.class)
     public final static String PACKNAME_PATTERN = "^([a-z0-9]+(\\.[a-z0-9]*)*(\\.[A-Z][^.\$_]*)?)?\$"
     public final static String PACKNAMECLASS_PATTERN = "^([a-z0-9]+(\\.[a-z0-9]*)*(\\.[A-Z][^.\$_]*(\\.[^.]*)?)?)?\$"
     boolean staticImport
     def interpreter
 
 
-    public ImportCompletor(PackageHelper packageHelper, interp, boolean staticImport) {
+    public ImportCompleter(PackageHelper packageHelper, interp, boolean staticImport) {
         this.packageHelper = packageHelper
         this.staticImport = staticImport
         this.interpreter = interp

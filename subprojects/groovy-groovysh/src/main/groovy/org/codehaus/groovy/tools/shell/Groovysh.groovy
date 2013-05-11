@@ -17,8 +17,9 @@
 package org.codehaus.groovy.tools.shell
 
 import antlr.TokenStreamException
-import jline.History
 import jline.Terminal
+import jline.TerminalFactory
+import jline.console.history.FileHistory
 import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
@@ -59,8 +60,8 @@ class Groovysh extends Shell {
     int indentSize = 2
     
     InteractiveShellRunner runner
-    
-    History history
+
+    FileHistory history
 
     boolean historyFull  // used as a workaround for GROOVY-2177
     String evictedLine  // remembers the command which will get evicted if history is full
@@ -68,7 +69,7 @@ class Groovysh extends Shell {
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar) {
         super(io)
-        
+
         assert classLoader
         assert binding
         assert registrar
@@ -470,17 +471,18 @@ class Groovysh extends Shell {
     }
 
     int run(final String commandLine) {
-        def term = Terminal.terminal
+        Terminal term = TerminalFactory.create()
 
         if (log.debug) {
             log.debug("Terminal ($term)")
             log.debug("    Supported:  $term.supported")
-            log.debug("    ECHO:       $term.echo (enabled: $term.echoEnabled)")
-            log.debug("    H x W:      $term.terminalHeight x $term.terminalWidth")
-            log.debug("    ANSI:       ${term.isANSISupported()}")
+            log.debug("    ECHO:       (enabled: $term.echoEnabled)")
+            log.debug("    H x W:      ${term.getHeight()} x ${term.getWidth()}")
+            log.debug("    ANSI:       ${term.isAnsiSupported()}")
 
             if (term instanceof jline.WindowsTerminal) {
-                log.debug("    Direct:     ${term.directConsole}")
+                jline.WindowsTerminal winterm = (jline.WindowsTerminal) term
+                log.debug("    Direct:     ${winterm.directConsole}")
             }
         }
 
@@ -494,16 +496,16 @@ class Groovysh extends Shell {
             if (commandLine != null && commandLine.trim().size() > 0) {
                 // Run the given commands
                 execute(commandLine)
-            }
-            else {
+            } else {
                 loadUserScript('groovysh.rc')
 
                 // Setup the interactive runner
                 runner = new InteractiveShellRunner(this, this.&renderPrompt as Closure)
 
                 // Setup the history
-                runner.history = history = new History()
-                runner.historyFile = new File(userStateDirectory, 'groovysh.history')
+                File histFile = new File(userStateDirectory, 'groovysh.history')
+                history = new FileHistory(histFile)
+                runner.setHistory(history)
 
                 // Setup the error handler
                 runner.errorHandler = this.&displayError
@@ -514,7 +516,7 @@ class Groovysh extends Shell {
 
                 // Display the welcome banner
                 if (!io.quiet) {
-                    def width = term.terminalWidth
+                    int width = term.getWidth()
 
                     // If we can't tell, or have something bogus then use a reasonable default
                     if (width < 1) {

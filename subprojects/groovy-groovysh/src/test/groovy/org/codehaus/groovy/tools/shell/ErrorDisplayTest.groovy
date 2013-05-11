@@ -16,7 +16,8 @@
 
 package org.codehaus.groovy.tools.shell
 
-import jline.ConsoleReader
+import jline.console.ConsoleReader
+
 
 /**
  * @author kruset

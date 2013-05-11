@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.History
+import jline.console.history.FileHistory
 import org.codehaus.groovy.tools.shell.CommandException
 import org.codehaus.groovy.tools.shell.CompletorTestSupport
 import org.codehaus.groovy.tools.shell.Groovysh
@@ -40,12 +40,25 @@ class HistoryCommandTest extends CommandTestSupport
 
 class HistoryCommandIntegrationTest extends CompletorTestSupport
 {
+    File filemock
+
     void setUp() {
         super.setUp()
+        filemock = new File("aaaa") {
+            @Override
+            boolean delete() {
+                return true
+            }
+
+            @Override
+            boolean isFile() {
+                return true
+            }
+        }
     }
 
     void testShowEmpty() {
-        History history = new History()
+        FileHistory history = new FileHistory(filemock)
         groovyshMocker.demand.getHistory(1) {history}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
@@ -56,9 +69,9 @@ class HistoryCommandIntegrationTest extends CompletorTestSupport
     }
 
     void testShowLines() {
-        History history = new History()
-        history.addToHistory("test1")
-        history.addToHistory("test2")
+        FileHistory history = new FileHistory(filemock)
+        history.add("test1")
+        history.add("test2")
         assertEquals(2, history.size())
         groovyshMocker.demand.getHistory(1) {history}
         groovyshMocker.use {
@@ -71,9 +84,9 @@ class HistoryCommandIntegrationTest extends CompletorTestSupport
     }
 
     void testClear() {
-        History history = new History()
-        history.addToHistory("test1")
-        history.addToHistory("test2")
+        FileHistory history = new FileHistory(filemock)
+        history.add("test1")
+        history.add("test2")
         groovyshMocker.demand.getHistory(1) {history}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
@@ -84,9 +97,9 @@ class HistoryCommandIntegrationTest extends CompletorTestSupport
     }
 
     void testRecall() {
-        History history = new History()
-        history.addToHistory("test1")
-        history.addToHistory("test2")
+        FileHistory history = new FileHistory(filemock)
+        history.add("test1")
+        history.add("test2")
         groovyshMocker.demand.getHistoryFull(1) {false}
         groovyshMocker.demand.getHistory(1) {history}
         groovyshMocker.demand.execute(1) {String it -> assert(it == 'test1'); 34}
@@ -105,9 +118,9 @@ class HistoryCommandIntegrationTest extends CompletorTestSupport
     }
 
     void testRecallHistoryFull() {
-        History history = new History()
-        history.addToHistory("test1")
-        history.addToHistory("test2")
+        FileHistory history = new FileHistory(filemock)
+        history.add("test1")
+        history.add("test2")
         groovyshMocker.demand.getHistoryFull(1) {true}
         groovyshMocker.demand.getEvictedLine(1) {'test3'}
         groovyshMocker.demand.execute(1) {String it -> assert(it == 'test3'); 45}

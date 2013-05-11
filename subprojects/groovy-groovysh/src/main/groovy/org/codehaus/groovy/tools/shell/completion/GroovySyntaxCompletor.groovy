@@ -1,8 +1,8 @@
 package org.codehaus.groovy.tools.shell.completion
 
 import antlr.TokenStreamException
-import jline.Completor
-import jline.FileNameCompletor
+import jline.console.completer.Completer
+import jline.console.completer.FileNameCompleter
 import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.antlr.SourceBuffer
 import org.codehaus.groovy.antlr.UnicodeEscapingReader
@@ -19,13 +19,13 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
  *
  * @author <a href="mailto:probabilitytrees@gmail.com">Marty Saxton</a>
  */
-class GroovySyntaxCompletor implements Completor {
+class GroovySyntaxCompletor implements Completer {
 
     private Groovysh shell;
     protected String[] classes;
     private List<IdentifierCompletor> identifierCompletors
     private ReflectionCompletor reflectionCompletor
-    private FileNameCompletor filenameCompletor
+    private FileNameCompleter filenameCompletor
     protected final static Logger log = Logger.create(GroovySyntaxCompletor.class)
 
     static final enum CompletionCase {
@@ -38,7 +38,7 @@ class GroovySyntaxCompletor implements Completor {
     GroovySyntaxCompletor(Groovysh shell,
                           ReflectionCompletor reflectionCompletor,
                           List<IdentifierCompletor> identifierCompletors,
-                          FileNameCompletor filenameCompletor) {
+                          FileNameCompleter filenameCompletor) {
         this.shell = shell
         this.identifierCompletors = identifierCompletors
         this.reflectionCompletor = reflectionCompletor

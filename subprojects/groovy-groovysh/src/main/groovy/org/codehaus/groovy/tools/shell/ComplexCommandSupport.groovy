@@ -43,7 +43,7 @@ abstract class ComplexCommandSupport
         assert(defaultFunction  == null || defaultFunction in functions)
     }
 
-    protected List createCompletors() {
+    protected List createCompleters() {
         def c = new SimpleCompletor()
         
         getFunctions().each { String it -> c.add(it) }
