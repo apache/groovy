@@ -277,14 +277,14 @@ class GpathSyntaxTestSupport {
         assert gromit.likes[0].parent() == gromit
         assert gromit.likes[0].'..' == gromit
         assert gromit.likes[0].parent().parent() == root
-        assert root.character.likes.find({it.text() == 'sleep'}).parent() == gromit
+        assert root.character.likes.find{ it.text() == 'sleep' }.parent() == gromit
         assert gromit.parent() == root
         if (isSlurper(root)) {
             // additional slurper shorthand
             assert gromit.likes.parent() == gromit
-            // New pop() method to backtrack on GPath
+            assert gromit.likes.findAll{ it.text() == 'sleep' } == gromit
+            // pop() method to backtrack on GPath
             assert gromit.'..'.pop() == gromit
-            assert gromit.likes.findAll({it.text() == 'sleep'}) == gromit
         }
         if (isSlurper(root)) {
             assert root.parent() == root
