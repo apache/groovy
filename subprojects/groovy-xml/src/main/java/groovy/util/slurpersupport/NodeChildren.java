@@ -110,7 +110,7 @@ public class NodeChildren extends GPathResult {
             }
 
             public Object next() {
-                return new NodeChild((Node) iter.next(), parent, namespaceTagHints);
+                return new NodeChild((Node) iter.next(), pop(), namespaceTagHints);
             }
 
             public void remove() {

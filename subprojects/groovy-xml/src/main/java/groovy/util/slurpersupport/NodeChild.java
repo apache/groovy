@@ -54,6 +54,13 @@ public class NodeChild extends GPathResult {
     public NodeChild(final Node node, final GPathResult parent, final Map<String, String> namespaceTagHints) {
         this(node, parent, "*", namespaceTagHints);
     }
+    
+    public GPathResult parent() {
+        if (node.parent() != null)
+            return new NodeChild(node.parent(), this, namespaceTagHints);
+        else
+            return this;
+    }
 
     public int size() {
         return 1;

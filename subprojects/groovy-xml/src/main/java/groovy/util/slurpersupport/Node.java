@@ -41,6 +41,7 @@ public class Node implements Writable {
     private final String namespaceURI;
     private final List children = new LinkedList();
     private final Stack replacementNodeStack = new Stack();
+    private final Node parent;
 
     /**
      * @param parent the parent node
@@ -54,6 +55,7 @@ public class Node implements Writable {
         this.attributes = attributes;
         this.attributeNamespaces = attributeNamespaces;
         this.namespaceURI = namespaceURI;
+        this.parent = parent;
     }
 
     /**
@@ -62,6 +64,14 @@ public class Node implements Writable {
      */
     public String name() {
         return this.name;
+    }
+
+    /**
+     * Returns the parent of this Node.
+     * @return the parent of this Node
+     */
+    public Node parent() {
+        return this.parent;
     }
 
     /**

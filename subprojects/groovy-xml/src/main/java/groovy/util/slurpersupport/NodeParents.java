@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,38 +18,31 @@ package groovy.util.slurpersupport;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-
-import groovy.lang.Closure;
-
 /**
- * Lazy evaluated representation of child nodes filtered by a Closure.
- *
- * @author John Wilson
- */
-public class FilteredNodeChildren extends NodeChildren {
-    private final Closure closure;
-
+* Lazy evaluated representation of parent nodes without duplicates
+*
+* @author Jochen Eddel+
+*/
+public class NodeParents extends NodeChildren {
+    
     /**
      * @param parent the GPathResult prior to the application of the expression creating this GPathResult
-     * @param closure the Closure to use to filter the nodes
      * @param namespaceTagHints the known tag to namespace mappings
      */
-    public FilteredNodeChildren(final GPathResult parent, final Closure closure, final Map<String, String> namespaceTagHints) {
-        super(parent, parent.name, namespaceTagHints);
-        this.closure = closure;
-    }
-
-    public GPathResult pop() {
-        return this.parent.parent;
+    public NodeParents(final GPathResult parent, final Map<String, String> namespaceTagHints) {
+        super(parent, parent.parent.name, namespaceTagHints);
     }
 
     public Iterator nodeIterator() {
         return new NodeIterator(this.parent.nodeIterator()) {
+            
+            private Node prev = null;
+            
             protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {
-                    final Object node = iter.next();
-                    if (closureYieldsTrueForNode(new NodeChild((Node) node, FilteredNodeChildren.this.parent, FilteredNodeChildren.this.namespaceTagHints))) {
+                    final Node node = ((Node)iter.next()).parent();
+                    if (node != null && node != prev) {
+                        prev = node;
                         return node;
                     }
                 }
@@ -57,8 +50,5 @@ public class FilteredNodeChildren extends NodeChildren {
             }
         };
     }
-
-    private boolean closureYieldsTrueForNode(Object childNode) {
-        return DefaultTypeTransformation.castToBoolean(FilteredNodeChildren.this.closure.call(new Object[]{childNode}));
-    }
+    
 }

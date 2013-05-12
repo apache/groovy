@@ -222,11 +222,24 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
 
     /**
      * Returns the parent of this GPathResult. If this GPathResult has no parent the GPathResult itself is returned.
+     * This is no navigation in the XML tree. It is backtracking on the GPath expression chain.
+     * It is the bevavior of parent() prior to 2.2.0.
+     * Backtracking on '..' actually goes down one level in the tree again.
+     * find() and findAll() are popped along with the level they have been applied to.
      *
      * @return the parent or <code>this</code>
      */
-    public GPathResult parent() {
+    public GPathResult pop() {
         return this.parent;
+    }
+
+    /**
+     * Returns as GPathResult with the parent nodes of the current GPathResult
+     *
+     * @return the parents GPathResult or <code>this</code> for the root
+     */
+    public GPathResult parent() {
+        return new NodeParents(this, this.namespaceTagHints);
     }
 
     /**
@@ -572,7 +585,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      * @return the body of this GPathResult, converted to a <code>Closure</code>
      */
     public Closure getBody() {
-        return new Closure(this.parent(),this) {
+        return new Closure(this.parent,this) {
             public void doCall(Object[] args) {
                 final GroovyObject delegate = (GroovyObject)getDelegate();
                 final GPathResult thisObject = (GPathResult)getThisObject();
