@@ -35,6 +35,16 @@ class DocCommandTest extends CommandTestSupport
         assert DocCommand.hasAWTDesktopPlatformSupport == hasSupport
     }
 
+    void testUrlsForJavaOnlyClass() {
+        def urlsToLookup = []
+        def command = new DocCommand(new Groovysh())
+
+        def urls = command.urlsFor('org.ietf.jgss.GSSContext')
+
+        assert urls ==
+            [new URL("http://docs.oracle.com/javase/${System.getProperty('java.version')}/docs/api/org/ietf/jgss/GSSContext.html")]
+    }
+
     void testUrlsForJavaClass() {
         def urlsToLookup = []
         def command = new DocCommand(new Groovysh()) {
@@ -72,12 +82,7 @@ class DocCommandTest extends CommandTestSupport
 
     void testUrlsForWithUnknownClass() {
         def urlsToLookup = []
-        def command = new DocCommand(new Groovysh()) {
-            boolean sendHEADRequest(URL url) {
-                urlsToLookup << url
-                true
-            }
-        }
+        def command = new DocCommand(new Groovysh())
 
         def urls = command.urlsFor('com.dummy.List')
 
