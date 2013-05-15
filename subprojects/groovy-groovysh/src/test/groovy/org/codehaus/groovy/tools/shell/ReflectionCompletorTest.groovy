@@ -57,12 +57,12 @@ super$1$getClass()   super$1$notify()         super$1$notifyAll()
                 mockOut,
                 mockErr)
         Groovysh groovysh = new Groovysh(testio)
-        int result = groovysh.run("import " + ReflectionCompletor.getCanonicalName())
+        int result = groovysh.execute("import " + ReflectionCompletor.getCanonicalName())
         assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
-        result = groovysh.run("""class Foo extends HashSet implements Comparable {
+        result = groovysh.execute("""class Foo extends HashSet implements Comparable {
 int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""")
         assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
-        result = groovysh.run("ReflectionCompletor.getPublicFieldsAndMethods(Foo, \"\")")
+        result = groovysh.execute("ReflectionCompletor.getPublicFieldsAndMethods(Foo, \"\")")
         assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
         String rawout = mockOut.toString()
         assertTrue("stdout=" + rawout + "\nstderr=" + mockErr.toString(), rawout.contains('['))
@@ -97,12 +97,12 @@ super$1$getClass()   super$1$notify()         super$1$notifyAll()
                 mockOut,
                 mockErr)
         Groovysh groovysh = new Groovysh(testio)
-        int result = groovysh.run("import " + ReflectionCompletor.getCanonicalName())
+        int result = groovysh.execute("import " + ReflectionCompletor.getCanonicalName())
         assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
-        result = groovysh.run("""class Foo extends HashSet implements Comparable {
+        result = groovysh.execute("""class Foo extends HashSet implements Comparable {
 int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""")
         assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
-        result = groovysh.run("ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), \"\")")
+        result = groovysh.execute("ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), \"\")")
         assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
         String rawout = mockOut.toString()
         assertTrue("stdout=" + rawout + "\nstderr=" + mockErr.toString(), rawout.contains('['))
