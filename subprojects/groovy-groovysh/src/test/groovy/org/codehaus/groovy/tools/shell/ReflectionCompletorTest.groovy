@@ -47,36 +47,20 @@ groovy:000> Foo.
 __$stMC              __$swapInit()            __timeStamp
 super$1$getClass()   super$1$notify()         super$1$notifyAll()
 */
-        IO testio
-        ByteArrayOutputStream mockOut
-        ByteArrayOutputStream mockErr
-        mockOut = new ByteArrayOutputStream();
-        mockErr = new ByteArrayOutputStream();
-        testio = new IO(
-                new ByteArrayInputStream(),
-                mockOut,
-                mockErr)
+        IO testio = new IO()
         Groovysh groovysh = new Groovysh(testio)
-        Object result = groovysh.execute("import " + ReflectionCompletor.getCanonicalName())
-        assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, ["import " + ReflectionCompletor.getCanonicalName()], result)
-        result = groovysh.execute("""class Foo extends HashSet implements Comparable {
-int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""")
-        assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, true, result)
-        result = groovysh.execute("ReflectionCompletor.getPublicFieldsAndMethods(Foo, \"\")")
+        Object result = groovysh.interp.evaluate(["import " + ReflectionCompletor.getCanonicalName(), """class Foo extends HashSet implements Comparable {
+int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""", "ReflectionCompletor.getPublicFieldsAndMethods(Foo, \"\")"])
         assertNotNull(result)
-        assertTrue("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, result.size() > 0)
-        String rawout = mockOut.toString()
-        assertTrue("stdout=" + rawout + "\nstderr=" + mockErr.toString(), rawout.contains('['))
-        List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({ it -> it.trim()[0..-2] })
-        assertEquals([], findResult.findAll({ it.startsWith("_") }))
-        assertEquals([], findResult.findAll({ it.startsWith("super\$") }))
-        assertEquals([], findResult.findAll({ it.startsWith("this\$") }))
-        assertTrue(findResult.toString(), 'bar' in findResult)
-        assertFalse(findResult.toString(), 'foo' in findResult)
-        assertFalse(findResult.toString(), 'priv' in findResult)
-        assertFalse(findResult.toString(), 'priv2' in findResult)
-        assertTrue(findResult.toString(), 'barm()' in findResult)
-        assertFalse(findResult.toString(), 'foom()' in findResult)
+        assertTrue(result.size() > 0)
+        assertEquals([], result.findAll({it.startsWith("_")}))
+        assertEquals([], result.findAll({it.startsWith("super\$")}))
+        assertEquals([], result.findAll({it.startsWith("this\$")}))
+        assertFalse(result.toString(), 'foo' in result)
+        assertFalse(result.toString(), 'priv' in result)
+        assertFalse(result.toString(), 'priv2' in result)
+        assertTrue(result.toString(), 'barm()' in result)
+        assertFalse(result.toString(), 'foom()' in result)
 
     }
 
@@ -88,36 +72,21 @@ groovy:000> Foo.
 __$stMC              __$swapInit()            __timeStamp
 super$1$getClass()   super$1$notify()         super$1$notifyAll()
 */
-        IO testio
-        ByteArrayOutputStream mockOut
-        ByteArrayOutputStream mockErr
-        mockOut = new ByteArrayOutputStream();
-        mockErr = new ByteArrayOutputStream();
-        testio = new IO(
-                new ByteArrayInputStream(),
-                mockOut,
-                mockErr)
+        IO testio = new IO()
         Groovysh groovysh = new Groovysh(testio)
-        Object result = groovysh.execute("import " + ReflectionCompletor.getCanonicalName())
-        assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, ["import " + ReflectionCompletor.getCanonicalName()], result)
-        result = groovysh.execute("""class Foo extends HashSet implements Comparable {
-int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""")
-        assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, true, result)
-        result = groovysh.execute("ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), \"\")")
+        Object result = groovysh.interp.evaluate(["import " + ReflectionCompletor.getCanonicalName(), """class Foo extends HashSet implements Comparable {
+int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""",
+                "ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), \"\")"])
         assertNotNull(result)
-        assertTrue("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, result.size() > 0)
-        String rawout = mockOut.toString()
-        assertTrue("stdout=" + rawout + "\nstderr=" + mockErr.toString(), rawout.contains('['))
-        List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({ it -> it.trim()[0..-2] })
-        assertEquals([], findResult.findAll({ it.startsWith("_") }))
-        assertEquals([], findResult.findAll({ it.startsWith("super\$") }))
-        assertEquals([], findResult.findAll({ it.startsWith("this\$") }))
-        assertTrue(findResult.toString(), 'foo' in findResult)
-        assertTrue(findResult.toString(), 'bar' in findResult)
-        assertFalse(findResult.toString(), 'priv' in findResult)
-        assertFalse(findResult.toString(), 'priv2' in findResult)
-        assertTrue(findResult.toString(), 'foom()' in findResult)
-        assertTrue(findResult.toString(), 'barm()' in findResult)
+        assertTrue(result.size() > 0)
+        assertEquals([], result.findAll({it.startsWith("_")}))
+        assertEquals([], result.findAll({it.startsWith("super\$")}))
+        assertEquals([], result.findAll({it.startsWith("this\$")}))
+        assertTrue(result.toString(), 'bar' in result)
+        assertFalse(result.toString(), 'priv' in result)
+        assertFalse(result.toString(), 'priv2' in result)
+        assertTrue(result.toString(), 'foom()' in result)
+        assertTrue(result.toString(), 'barm()' in result)
     }
 }
 
