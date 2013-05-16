@@ -23,6 +23,22 @@ import org.codehaus.groovy.tools.shell.commands.ImportCommand
 
 class GroovyshCompletorTest extends GroovyTestCase {
 
+    void testIOMock() {
+        IO testio
+        ByteArrayOutputStream mockOut
+        ByteArrayOutputStream mockErr
+        mockOut = new ByteArrayOutputStream();
+        mockErr = new ByteArrayOutputStream();
+        testio = new IO(
+                new ByteArrayInputStream(),
+                mockOut,
+                mockErr)
+        testio.out.println("mockResult")
+        assertTrue("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString(), mockOut.toString().contains('mockResult'))
+        testio.err.println("mockErrResult")
+        assertTrue("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString(), mockErr.toString().contains('mockErrResult'))
+    }
+
     void testLiveClass() {
         /* This test setup looks weird, but it is the only I found that can reproduce this behavior:
 groovy:000> class Foo extends HashSet implements Comparable {int compareTo(Object) {0}}
@@ -41,12 +57,15 @@ super$1$getClass()   super$1$notify()         super$1$notifyAll()
                 mockOut,
                 mockErr)
         Groovysh groovysh = new Groovysh(testio)
-        groovysh.run("import org.codehaus.groovy.tools.shell.ReflectionCompletor")
-        groovysh.run("""class Foo extends HashSet implements Comparable {
+        int result = groovysh.execute("import " + ReflectionCompletor.getCanonicalName())
+        assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
+        result = groovysh.execute("""class Foo extends HashSet implements Comparable {
 int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""")
-        groovysh.run("ReflectionCompletor.getPublicFieldsAndMethods(Foo, \"\")")
+        assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
+        result = groovysh.execute("ReflectionCompletor.getPublicFieldsAndMethods(Foo, \"\")")
+        assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
         String rawout = mockOut.toString()
-        System.err.println "GroovyshCompletorTest.testLiveClass:\nstdout=" + rawout + "\nstderr=" + mockErr.toString()
+        assertTrue("stdout=" + rawout + "\nstderr=" + mockErr.toString(), rawout.contains('['))
         List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({ it -> it.trim()[0..-2] })
         assertEquals([], findResult.findAll({ it.startsWith("_") }))
         assertEquals([], findResult.findAll({ it.startsWith("super\$") }))
@@ -78,12 +97,15 @@ super$1$getClass()   super$1$notify()         super$1$notifyAll()
                 mockOut,
                 mockErr)
         Groovysh groovysh = new Groovysh(testio)
-        groovysh.run("import org.codehaus.groovy.tools.shell.ReflectionCompletor")
-        groovysh.run("""class Foo extends HashSet implements Comparable {
+        int result = groovysh.execute("import " + ReflectionCompletor.getCanonicalName())
+        assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
+        result = groovysh.execute("""class Foo extends HashSet implements Comparable {
 int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""")
-        groovysh.run("ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), \"\")")
+        assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
+        result = groovysh.execute("ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), \"\")")
+        assertEquals("stdout=" + mockOut.toString() + "\nstderr=" + mockErr.toString() + " : " + result, 0, result)
         String rawout = mockOut.toString()
-        System.err.println "GroovyshCompletorTest.testLiveInstance:\nstdout=" + rawout + "\nstderr=" + mockErr.toString()
+        assertTrue("stdout=" + rawout + "\nstderr=" + mockErr.toString(), rawout.contains('['))
         List<String> findResult = rawout.split('\\[')[-1].split()[0..-2].collect({ it -> it.trim()[0..-2] })
         assertEquals([], findResult.findAll({ it.startsWith("_") }))
         assertEquals([], findResult.findAll({ it.startsWith("super\$") }))
