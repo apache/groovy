@@ -28,17 +28,25 @@ import java.awt.Color
 class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
     TemporaryFolder temporaryFolder
+    Preferences testPreferences
 
     @Override
     protected void setUp() throws Exception {
         super.setUp()
         temporaryFolder = new TemporaryFolder()
         temporaryFolder.create()
+
+        // create a temporary preferences object instead of using the local Console preferences
+        testPreferences = Preferences.userRoot().node('/swingBuilder/console/tests')
+        Preferences.metaClass.static.userNodeForPackage = { Class c ->
+            testPreferences
+        }
     }
 
     @Override
     protected void tearDown() throws Exception {
         temporaryFolder.delete()
+
         super.tearDown()
     }
 
@@ -396,11 +404,8 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 runnable.run()
             }
 
-            // create a temporary preferences object instead of using the local Console preferences
-            def testPreferences = Preferences.userRoot().node('/swingBuilder/console/tests/testDoNotShowOriginalStackTrace')
-            Preferences.metaClass.static.userNodeForPackage = { Class c ->
-                testPreferences
-            }
+            // in case the static final var has been already initialized
+            Console.prefs = testPreferences
 
             try {
                 def binding = new Binding()
@@ -421,7 +426,6 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 def doc = console.outputArea.document
                 assert doc.getText(0, doc.getLength()) =~ /java.lang.Exception\s*at ConsoleScript0.run\(ConsoleScript0:1\)/
             } finally {
-                if (testPreferences) testPreferences.removeNode()
                 GroovySystem.metaClassRegistry.removeMetaClass(Thread.class)
                 GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities.class)
                 GroovySystem.metaClassRegistry.removeMetaClass(Preferences.class)
