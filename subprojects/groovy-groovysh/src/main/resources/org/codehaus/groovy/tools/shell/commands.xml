@@ -51,5 +51,7 @@
     <command>org.codehaus.groovy.tools.shell.commands.ShadowCommand</command>
     
     <command>org.codehaus.groovy.tools.shell.commands.RegisterCommand</command>
+
+    <command>org.codehaus.groovy.tools.shell.commands.DocCommand</command>
 </commands>
 

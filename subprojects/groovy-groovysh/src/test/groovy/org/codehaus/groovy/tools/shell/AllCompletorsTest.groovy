@@ -85,7 +85,7 @@ extends GroovyTestCase {
 
     void testEmpty() {
         def result = complete("", 0)
-        assertEquals(38, result[0].size())
+        assertEquals(40, result[0].size())
         assertEquals(0, result[1])
     }
 
