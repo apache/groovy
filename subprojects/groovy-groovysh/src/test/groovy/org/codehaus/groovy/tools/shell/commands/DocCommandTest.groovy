@@ -27,10 +27,17 @@ import org.codehaus.groovy.tools.shell.Groovysh
 class DocCommandTest extends CommandTestSupport
 {
     void testInitializeAWTDesktopPlatformSupportFlag() {
-        def desktopClass = Class.forName('java.awt.Desktop')
-        boolean hasSupport =
+        boolean hasSupport
+        try {
+            def desktopClass = Class.forName('java.awt.Desktop')
+            hasSupport =
                 desktopClass.desktopSupported &&
-                desktopClass.desktop.isSupported(desktopClass.declaredClasses.find { it.simpleName == "Action" }.BROWSE)
+                        desktopClass.desktop.isSupported(desktopClass.declaredClasses.find { it.simpleName == "Action" }.BROWSE)
+        }
+        catch(ClassNotFoundException e) {
+            //We are using jdk 1.5 were 'java.awt.Desktop' does not exist
+            hasSupport = false
+        }
 
         assert DocCommand.hasAWTDesktopPlatformSupport == hasSupport
     }
