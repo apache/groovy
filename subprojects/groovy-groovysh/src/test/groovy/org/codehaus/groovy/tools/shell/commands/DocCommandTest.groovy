@@ -35,7 +35,7 @@ class DocCommandTest extends CommandTestSupport
                         desktopClass.desktop.isSupported(desktopClass.declaredClasses.find { it.simpleName == "Action" }.BROWSE)
         }
         catch(ClassNotFoundException e) {
-            //We are using jdk 1.5 were 'java.awt.Desktop' does not exist
+            //We are using jdk 1.5 where 'java.awt.Desktop' does not exist
             hasSupport = false
         }
 
