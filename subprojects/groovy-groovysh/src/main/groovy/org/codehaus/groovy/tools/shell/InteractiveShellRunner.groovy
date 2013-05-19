@@ -17,7 +17,7 @@
 package org.codehaus.groovy.tools.shell
 
 import jline.ConsoleReader
-
+import jline.FileNameCompletor
 import jline.History
 import jline.Completor
 import jline.MultiCompletor
@@ -64,7 +64,8 @@ class InteractiveShellRunner
                 [new KeywordSyntaxCompletor(),
                         new VariableSyntaxCompletor(shell),
                         new CustomClassSyntaxCompletor(shell),
-                        new ImportsSyntaxCompletor(shell)]))
+                        new ImportsSyntaxCompletor(shell)],
+                new FileNameCompletor()))
     }
     
     void run() {
