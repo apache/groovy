@@ -6,6 +6,7 @@ import java.util.prefs.PreferenceChangeEvent
 import java.util.prefs.PreferenceChangeListener
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import java.util.zip.ZipException
 
 /**
  * Helper class that crawls all items of the classpath for packages.
@@ -122,13 +123,21 @@ class PackageHelper implements PreferenceChangeListener {
     static Collection<String> getPackageNames(URL url) {
         //log.debug(url)
         File urlfile = new File(url.getFile())
-        if (! urlfile.isFile()) {
+        if (urlfile.isDirectory()) {
             Set<String> packnames = new HashSet<String>()
             collectPackageNamesFromFolderRecursive(urlfile, "", packnames)
             return packnames
         } else {
-            JarFile jf = new JarFile(url.getFile())
-            return getPackageNamesFromJar(jf)
+            try {
+                JarFile jf = new JarFile(url.getFile())
+                return getPackageNamesFromJar(jf)
+            } catch(ZipException ze) {
+                if (log.debugEnabled) {
+                    ze.printStackTrace();
+                }
+                log.debug("Error opening zipfile : '${url.getFile()}',  ${ze.toString()}");
+            }
+            return null;
         }
     }
 
