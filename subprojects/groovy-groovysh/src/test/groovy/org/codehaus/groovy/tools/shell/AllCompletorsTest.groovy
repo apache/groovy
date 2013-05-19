@@ -85,7 +85,12 @@ extends GroovyTestCase {
 
     void testEmpty() {
         def result = complete("", 0)
-        assertEquals(40, result[0].size())
+        assertTrue('help' in result[0])
+        assertTrue('exit' in result[0])
+        assertTrue('import' in result[0])
+        assertTrue('show' in result[0])
+        assertTrue('set' in result[0])
+        assertTrue('inspect' in result[0])
         assertEquals(0, result[1])
     }
 
@@ -111,7 +116,9 @@ extends GroovyTestCase {
     void testImportJava() {
         // tests interaction with ReflectionCompleter
         String prompt = "import j"
-        assertEquals([["java. "], prompt.length() - 1], complete(prompt, prompt.length()))
+        def result = complete(prompt, prompt.length())
+        assertEquals(prompt.length() - 1, result[1])
+        assertTrue("java." in result[0])
     }
 
     void testShowVariablesJava() {

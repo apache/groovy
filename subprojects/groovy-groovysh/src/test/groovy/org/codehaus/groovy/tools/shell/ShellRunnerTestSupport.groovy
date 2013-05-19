@@ -53,7 +53,8 @@ extends GroovyTestCase {
 
         shellMocker = new MockFor(Groovysh.class)
         shellMocker.demand.createDefaultRegistrar(1) { {Shell shell -> null} }
-        shellMocker.demand.getClass(1) { Groovysh }
+        // when run with compileStatic
+        shellMocker.demand.getClass(0..1) {Groovysh.class}
         shellMocker.demand.getIo(2) { testio }
         shellMocker.demand.getRegistry(1) {[]}
         shellMocker.demand.getHistory(2) {[size: 0, maxsize: 1]}

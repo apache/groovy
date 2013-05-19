@@ -144,20 +144,17 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         // evaluation of all is dangerous, but the reflectionCompletor has to deal with this
         reflectionCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens.collect{it.getText()} == ["deletehardDisk", "(", ")", ";", "foo", ".", "subs"]); candidates << "substring("; 22}
-        MockFor registryMocker = new MockFor(CommandRegistry)
-        registryMocker.demand.commands(1) { [] }
+
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
         ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
-        registryMocker.use {
-            // mock doing the right thing
-            groovyshMocker.use {
-                Groovysh groovyshMock = new Groovysh()
-                GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor])
-                def candidates = []
-                String buffer = "deletehardDisk(); foo.subs"
-                assertEquals(22, completor.complete(buffer, buffer.length(), candidates))
-                assertEquals(["substring("], candidates)
-            }
+        // mock doing the right thing
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor])
+            def candidates = []
+            String buffer = "deletehardDisk(); foo.subs"
+            assertEquals(22, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals(["substring("], candidates)
         }
     }
 
@@ -181,7 +178,6 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
 
     void testDontEvaluateAfterCommand() {
         CommandRegistry registry = new CommandRegistry()
-        groovyshMocker.demand.getRegistry(1) { registry }
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
         ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         // mock asserting nothing gets evaluated

@@ -23,6 +23,7 @@ import jline.Completor
 import jline.MultiCompletor
 import org.codehaus.groovy.tools.shell.completion.CustomClassSyntaxCompletor
 import org.codehaus.groovy.tools.shell.completion.GroovySyntaxCompletor
+import org.codehaus.groovy.tools.shell.completion.ImportsSyntaxCompletor
 import org.codehaus.groovy.tools.shell.completion.KeywordSyntaxCompletor
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 import org.codehaus.groovy.tools.shell.completion.VariableSyntaxCompletor
@@ -58,12 +59,12 @@ class InteractiveShellRunner
         this.completor = new CommandsMultiCompletor()
         reader.addCompletor(this.completor)
 
-        // reflectionCompletor completes properties if last char was dot, else variables and some keywords
         reader.addCompletor(new GroovySyntaxCompletor(shell,
                 new ReflectionCompletor(shell),
                 [new KeywordSyntaxCompletor(),
                         new VariableSyntaxCompletor(shell),
-                        new CustomClassSyntaxCompletor(shell)]))
+                        new CustomClassSyntaxCompletor(shell),
+                        new ImportsSyntaxCompletor(shell)]))
     }
     
     void run() {
