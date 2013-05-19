@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.tools.shell;
 
-import jline.Completor;
+import jline.console.completer.Completer;
 import java.util.List;
 
 /**
@@ -31,7 +31,7 @@ public interface Command
 
     public String getShortcut();
 
-    public Completor getCompletor();
+    public Completer getCompleter();
 
     public String getDescription();
 

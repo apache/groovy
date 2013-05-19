@@ -16,11 +16,10 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.History
+import jline.console.history.FileHistory
+import jline.console.history.History
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Shell
-
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
@@ -63,10 +62,12 @@ class HistoryCommand
     }
 
     def do_show = {
-        history.historyList.eachWithIndex { item, i ->
-            i = i.toString().padLeft(3, ' ')
-
-            io.out.println(" @|bold $i|@  $item")
+        Iterator<History.Entry> histIt = history.iterator()
+        while (histIt.hasNext()) {
+            History.Entry next = histIt.next();
+            if (next) {
+                io.out.println(" @|bold ${next.index().toString().padLeft(3, ' ')}|@  ${next.value()}")
+            }
         }
     }
 
@@ -79,13 +80,17 @@ class HistoryCommand
     }
 
     def do_flush = {
-        history.flushBuffer()
+        history.flush()
 
         if (io.verbose) {
             io.out.println('History flushed')
         }
     }
 
+    /**
+     * history show shows a list of indexes and past commands. recall serves to rerun one of those by their index.
+     * There is is moving window of indexes, so the first valid index will usually be greater than zero.
+     */
     def do_recall = {args ->
         String line
 
@@ -107,19 +112,38 @@ class HistoryCommand
                 // so we need to shift by one
                 id--
             };
-            if (id < 0) {
-                line = shell.evictedLine
-            } else {
-                List histList = history.getHistoryList()
-                line = histList.get(id)
+
+            Iterator<History.Entry> listEntryIt = history.iterator()
+            if (listEntryIt.hasNext()) {
+                History.Entry next = listEntryIt.next()
+                if (id < next.index() -1) {
+                    // not using id on purpose, as might be decremented
+                    fail("Unknown index:" + ids)
+                } else if (id == next.index() -1) {
+                    line = shell.evictedLine
+                } else if (next.index() == id) {
+                    line = next.value()
+                } else {
+                    while (listEntryIt.hasNext()) {
+                        next = listEntryIt.next()
+                        if (next.index() == id) {
+                            line = next.value()
+                            break
+                        }
+                    }
+                }
             }
-        }
-        catch (Exception e) {
+
+
+        } catch (NumberFormatException e) {
             fail("Invalid history identifier: $ids", e)
         }
 
         log.debug("Recalling history item #$ids: $line")
 
-        return shell.execute(line)
+        if (line) {
+            return shell.execute(line)
+        }
     }
+
 }

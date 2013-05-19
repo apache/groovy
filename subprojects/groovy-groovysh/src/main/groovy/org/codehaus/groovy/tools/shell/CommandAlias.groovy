@@ -16,7 +16,8 @@
 
 package org.codehaus.groovy.tools.shell
 
-import jline.Completor
+import jline.console.completer.Completer
+
 
 /**
  * Provides simple command aliasing.
@@ -45,7 +46,7 @@ class CommandAlias
         return command
     }
     
-    protected List<Completor> createCompletors() {
+    protected List<Completer> createCompletors() {
         try {
             // TODO: Use interface with createCompletors()
             return target.createCompletors()

@@ -16,40 +16,39 @@
 
 package org.codehaus.groovy.tools.shell
 
-import jline.CompletionHandler
-import jline.Completor
-import jline.ConsoleReader
-import jline.History
+import jline.console.completer.Completer
+import jline.console.history.FileHistory
+
 
 /**
- * Test the combination of multiple completors via JLine ConsoleReader
+ * Test the combination of multiple completers via JLine ConsoleReader
  */
-class AllCompletorsTest
+class AllCompletersTest
 extends GroovyTestCase {
 
     IO testio
     BufferedOutputStream mockOut
     BufferedOutputStream mockErr
-    List<Completor> completors
+    List<Completer> completers
 
     /**
      * code copied from Jline console Handler,
-     * need this logic to ensure completors are combined in the right way
-     * The Jline contract is that completors are tried in sequence, and as
+     * need this logic to ensure completers are combined in the right way
+     * The Jline contract is that completers are tried in sequence, and as
      * soon as one returns something else than -1, his canidates are used and following
-     * completors ignored.
+     * completers ignored.
      *
      */
     private List complete(String buffer, cursor) throws IOException {
         // debug ("tab for (" + buf + ")");
-        if (completors.size() == 0) {
+        if (completers.size() == 0) {
             return null;
         }
         List candidates = new LinkedList();
         String bufstr = buffer;
         int position = -1;
-        for (Iterator i = completors.iterator(); i.hasNext();) {
-            Completor comp = (Completor) i.next();
+        for (Iterator i = completers.iterator(); i.hasNext();) {
+            Completer comp = (Completer) i.next();
             if ((position = comp.complete(bufstr, cursor, candidates)) != -1) {
                 break;
             }
@@ -76,11 +75,23 @@ extends GroovyTestCase {
 
 
         Groovysh groovysh = new Groovysh(testio)
-        groovysh.history = new History()
+
+        def filemock = new File("aaaa") {
+            @Override
+            boolean delete() {
+                return true
+            }
+
+            @Override
+            boolean isFile() {
+                return true
+            }
+        }
+        groovysh.history = new FileHistory(filemock)
         InteractiveShellRunner shellRun = new InteractiveShellRunner(groovysh, { ">"})
-        // setup completors in run()
+        // setup completers in run()
         shellRun.run()
-        completors = shellRun.reader.getCompletors()
+        completers = shellRun.reader.getCompleters()
     }
 
     void testEmpty() {

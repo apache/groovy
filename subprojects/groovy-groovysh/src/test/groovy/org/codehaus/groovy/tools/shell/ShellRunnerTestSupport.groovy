@@ -18,7 +18,7 @@ package org.codehaus.groovy.tools.shell
 
 import groovy.mock.interceptor.MockFor
 import groovy.mock.interceptor.StubFor
-import jline.ConsoleReader
+import jline.console.ConsoleReader
 
 /**
  * Support for testing {@link Command} instances.
@@ -73,9 +73,9 @@ extends GroovyTestCase {
 
         readerStubber = new StubFor(ConsoleReader)
         // adding 2 completors
-        readerStubber.demand.addCompletor() {}
+        readerStubber.demand.addCompleter() {}
         readerStubber.demand.printNewline() {}
-        readerStubber.demand.addCompletor() {}
+        readerStubber.demand.addCompleter() {}
         shellMocker.demand.getIo(0..1) { testio }
     }
 

@@ -141,10 +141,10 @@ dependencies {
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compilerCompile("jline:jline:1.0") {
+    compilerCompile("jline:jline:2.10") {
         exclude(group: 'junit', module: 'junit')
     }
-    compilerCompile "org.fusesource.jansi:jansi:1.6"
+    compilerCompile "org.fusesource.jansi:jansi:1.10"
     compilerCompile("org.apache.ivy:ivy:2.3.0") {
         transitive = false
     }
@@ -164,10 +164,10 @@ dependencies {
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compile("jline:jline:1.0") {
+    compile("jline:jline:2.10") {
         exclude(group: 'junit', module: 'junit')
     }
-    compile "org.fusesource.jansi:jansi:1.6"
+    compile "org.fusesource.jansi:jansi:1.10"
     compile("org.apache.ivy:ivy:2.3.0") {
         transitive = false
     }
