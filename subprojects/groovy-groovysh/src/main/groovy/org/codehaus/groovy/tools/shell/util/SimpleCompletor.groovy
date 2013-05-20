@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell.util;
+package org.codehaus.groovy.tools.shell.util
 
-import java.util.List;
-import java.util.Iterator;
-import java.util.SortedSet;
-
-import groovy.lang.Closure;
+import jline.console.completer.Completer
 
 /**
  * Support for simple completors.
@@ -28,11 +24,18 @@ import groovy.lang.Closure;
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-public class SimpleCompletor
-    extends jline.SimpleCompletor
-{
+public class SimpleCompletor implements Completer {
+
+    SortedSet candidates;
+
+    /**
+    * A delimiter to use to qualify completions.
+    */
+    String delimiter;
+
+
     public SimpleCompletor(final String[] candidates) {
-        super(candidates);
+        setCandidateStrings(candidates);
     }
     
     public SimpleCompletor() {
@@ -73,7 +76,7 @@ public class SimpleCompletor
 
     public Object leftShift(final String s) {
         add(s);
-        
+
         return null;
     }
 
@@ -112,5 +115,23 @@ public class SimpleCompletor
 
         // the index of the completion is always from the beginning of the buffer.
         return (clist.size() == 0) ? (-1) : 0;
+    }
+
+    public void setCandidates(final SortedSet candidates) {
+        this.candidates = candidates
+    }
+
+    public SortedSet getCandidates() {
+        return Collections.unmodifiableSortedSet(this.candidates)
+    }
+
+    public void setCandidateStrings(final String[] strings) {
+        setCandidates(new TreeSet(Arrays.asList(strings)))
+    }
+
+    public void addCandidateString(final String string) {
+        if (string != null) {
+            candidates.add(string);
+        }
     }
 }

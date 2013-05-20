@@ -36,7 +36,7 @@ class SetCommand
         super(shell, 'set', '\\=')
     }
 
-    protected List createCompletors() {
+    protected List createCompleters() {
         def loader = {
             Set<String> set = [] as Set<String>
 

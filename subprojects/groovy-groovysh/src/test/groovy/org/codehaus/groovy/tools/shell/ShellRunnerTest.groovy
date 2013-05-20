@@ -17,7 +17,7 @@
 package org.codehaus.groovy.tools.shell
 
 import groovy.mock.interceptor.MockFor
-import jline.ConsoleReader
+import jline.console.ConsoleReader
 import org.codehaus.groovy.tools.shell.util.Preferences
 
 class ShellRunnerTest extends GroovyTestCase {
@@ -39,7 +39,7 @@ class ShellRunnerTest extends GroovyTestCase {
         groovysh.buffers.select(1)
 
         MockFor readerMocker = new MockFor(ConsoleReader)
-        readerMocker.demand.addCompletor(2) {}
+        readerMocker.demand.addCompleter(2) {}
         readerMocker.demand.readLine(1) {'Foo {'}
         MockFor preferencesMocker = new MockFor(Preferences)
         preferencesMocker.demand.get(1) {"false"}
@@ -52,7 +52,7 @@ class ShellRunnerTest extends GroovyTestCase {
 
     void testReadLineIndentNone() {
         MockFor readerMocker = new MockFor(ConsoleReader)
-        readerMocker.demand.addCompletor(2) {}
+        readerMocker.demand.addCompleter(2) {}
         readerMocker.demand.readLine(1) {'Foo {'}
         MockFor preferencesMocker = new MockFor(Preferences)
         preferencesMocker.demand.get(1) {"true"}
@@ -68,7 +68,7 @@ class ShellRunnerTest extends GroovyTestCase {
         groovysh.buffers.select(1)
 
         MockFor readerMocker = new MockFor(ConsoleReader)
-        readerMocker.demand.addCompletor(2) {}
+        readerMocker.demand.addCompleter(2) {}
         readerMocker.demand.readLine(1) {'Foo {'}
         MockFor preferencesMocker = new MockFor(Preferences)
         preferencesMocker.demand.get(1) {"true"}
@@ -83,7 +83,7 @@ class ShellRunnerTest extends GroovyTestCase {
         groovysh.buffers.buffers.add(["Foo { {"])
         groovysh.buffers.select(1)
         MockFor readerMocker = new MockFor(ConsoleReader)
-        readerMocker.demand.addCompletor(2) {}
+        readerMocker.demand.addCompleter(2) {}
         readerMocker.demand.readLine(1) {'Foo { {'}
         MockFor preferencesMocker = new MockFor(Preferences)
         preferencesMocker.demand.get(1) {"true"}
@@ -109,7 +109,7 @@ class ShellRunnerTest2 extends GroovyTestCase {
         groovysh.buffers.select(1)
 
         MockFor readerMocker = new MockFor(ConsoleReader)
-        readerMocker.demand.addCompletor(2) {}
+        readerMocker.demand.addCompleter(2) {}
         readerMocker.demand.readLine(1) {'Foo { {'}
         MockFor preferencesMocker = new MockFor(Preferences)
         preferencesMocker.demand.get(1) {"true"}

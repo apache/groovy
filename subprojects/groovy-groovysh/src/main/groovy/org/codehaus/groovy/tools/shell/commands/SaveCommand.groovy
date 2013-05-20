@@ -16,11 +16,9 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.FileNameCompletor
-
+import jline.console.completer.FileNameCompleter
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'save' command.
@@ -37,7 +35,7 @@ class SaveCommand
 
     protected List createCompletors() {
         return [
-            new FileNameCompletor(),
+            new FileNameCompleter(),
             null
         ]
     }

@@ -32,8 +32,8 @@ abstract class CompletorTestSupport extends GroovyTestCase {
 
     BufferManager bufferManager = new BufferManager()
     IO testio
-    BufferedOutputStream mockOut
-    BufferedOutputStream mockErr
+    ByteArrayOutputStream mockOut
+    ByteArrayOutputStream mockErr
     MockFor groovyshMocker
     MockFor packageHelperMocker
     PackageHelper mockPackageHelper
@@ -44,11 +44,9 @@ abstract class CompletorTestSupport extends GroovyTestCase {
 
     void setUp() {
         super.setUp()
-        mockOut = new BufferedOutputStream(
-                new ByteArrayOutputStream());
+        mockOut = new ByteArrayOutputStream();
 
-        mockErr = new BufferedOutputStream(
-                new ByteArrayOutputStream());
+        mockErr = new ByteArrayOutputStream();
 
         testio = new IO(
                 new ByteArrayInputStream(),

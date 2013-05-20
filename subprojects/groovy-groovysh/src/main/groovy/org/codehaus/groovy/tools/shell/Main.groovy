@@ -102,6 +102,9 @@ class Main
 
         def code
 
+        // Boot up the shell... :-)
+        final Groovysh shell = new Groovysh(io)
+
         // Add a hook to display some status when shutting down...
         addShutdownHook {
             //
@@ -116,10 +119,11 @@ class Main
                 println('WARNING: Abnormal JVM shutdown detected')
             }
 
+            if (shell.history) {
+                shell.history.flush()
+            }
         }
 
-        // Boot up the shell... :-)
-        Groovysh shell = new Groovysh(io)
 
         SecurityManager psm = System.getSecurityManager()
         System.setSecurityManager(new NoExitSecurityManager())

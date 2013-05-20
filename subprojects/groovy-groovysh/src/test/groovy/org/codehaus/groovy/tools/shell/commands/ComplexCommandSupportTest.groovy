@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.Completor
+import jline.console.completer.Completer
 import org.codehaus.groovy.tools.shell.CommandException
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 
@@ -67,7 +67,7 @@ class ComplexCommandSupportTest
 
     void testCreateCompletors() {
         ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar", "baz"]) {}
-        List<Completor> completors = com.createCompletors()
+        List<Completer> completors = com.createCompleters()
         assertEquals(2, completors.size())
         assertEquals(null, completors[-1])
 
@@ -76,7 +76,7 @@ class ComplexCommandSupportTest
     void testCompletor() {
         ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar", "baz"]) {}
         def candidates = []
-        Completor completor = com.getCompletor()
+        Completer completor = com.getCompleter()
         assertEquals(5, completor.complete("fcom ba", "fcom ba".length(), candidates))
         assertEquals(["bar", "baz"], candidates)
         assertEquals(-1, completor.complete("fcom bar ba", "fcom bar ba".length(), candidates))

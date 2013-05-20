@@ -20,12 +20,12 @@ class CommandCompletorTest
 extends CompletorTestSupport {
 
     void testEmpty() {
-        CommandsMultiCompletor completor = new CommandsMultiCompletor()
+        CommandsMultiCompleter completor = new CommandsMultiCompleter()
         assertEquals(-1, completor.complete("", 0, []))
     }
 
     void testImport() {
-        CommandsMultiCompletor completor = new CommandsMultiCompletor()
+        CommandsMultiCompleter completor = new CommandsMultiCompleter()
         def candidates = []
         assertEquals(-1, completor.complete("imp ", "imp ".length(), candidates))
         assertEquals([], candidates)
