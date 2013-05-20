@@ -36,6 +36,7 @@ class GroovyshTest extends GroovyTestCase {
     void testCompleteExpr() {
         Groovysh groovysh = new Groovysh(testio)
         groovysh.execute("x = 3")
+        assertTrue(mockOut.toString(), mockOut.toString().length() > 0);
         assertEquals(" 3\n", mockOut.toString().normalize()[-3..-1])
     }
 

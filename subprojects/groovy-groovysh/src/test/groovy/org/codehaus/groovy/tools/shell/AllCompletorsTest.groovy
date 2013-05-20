@@ -128,8 +128,9 @@ extends GroovyTestCase {
         // tests interaction with ReflectionCompleter
         String prompt = "import j"
         def result = complete(prompt, prompt.length())
+        assertNotNull(result)
         assertEquals(prompt.length() - 1, result[1])
-        assertTrue("java." in result[0])
+        assertTrue(result.toString() ,"java." in result[0])
     }
 
     void testShowVariablesJava() {
