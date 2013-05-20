@@ -61,7 +61,8 @@ class PackageHelperTest
     }
 
     void testNonSystemPackage() {
-        ClassLoader loader = new URLClassLoader([new URL("file:" + System.getProperty("user.dir") + "/lib/antlr-2.7.7.jar")] as URL[])
+        String antlrpath = "file://" + System.getProperty("user.dir") + "/lib/antlr-2.7.7.jar"
+        ClassLoader loader = new URLClassLoader([new URL(antlrpath)] as URL[])
         Map<String, CachedPackage> rootPackages = PackageHelper.initializePackages(loader)
         assertNotNull(rootPackages)
         assertTrue(rootPackages.toString(), rootPackages.containsKey("antlr"))
