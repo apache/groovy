@@ -227,7 +227,7 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
             manifest.writeTo(manifestPath)
         }
         project.ant {
-            jar(destfile: archivePath, update:true, filesonly:true, manifest: manifestPath) {
+            jar(destfile: archivePath, update:true, manifest: manifestPath) {
                 zipfileset(
                         src: jar.archivePath,
                         includes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
