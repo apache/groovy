@@ -132,7 +132,7 @@ class Groovysh extends Shell {
             
             // For commands, only set the last result when its non-null/true
             if (result) {
-                lastResult = result
+                setLastResult(result)
             }
             
             return result
@@ -158,7 +158,7 @@ class Groovysh extends Shell {
                 // Evaluate the current buffer w/imports and dummy statement
                 List buff = imports + [ 'true' ] + current
 
-                lastResult = result = interp.evaluate(buff)
+                setLastResult(result = interp.evaluate(buff))
                 buffers.clearSelected()
                 break
 
