@@ -32,6 +32,8 @@ test {
         }
     }
     testLogging {
+        showStackTraces = true
+        showExceptions = true
         exceptionFormat = 'full'
     }
 }
