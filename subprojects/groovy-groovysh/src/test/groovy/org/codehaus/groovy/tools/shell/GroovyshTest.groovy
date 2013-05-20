@@ -31,6 +31,7 @@ class GroovyshTest extends GroovyTestCase {
         mockOut = new ByteArrayOutputStream();
         mockErr = new ByteArrayOutputStream();
         testio = new IO(new ByteArrayInputStream(), mockOut, mockErr)
+        testio.setVerbosity(IO.Verbosity.INFO)
     }
 
     void testCompleteExpr() {
