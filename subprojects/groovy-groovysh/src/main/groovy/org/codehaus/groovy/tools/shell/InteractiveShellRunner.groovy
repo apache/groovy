@@ -121,10 +121,12 @@ class InteractiveShellRunner
     private void adjustHistory() {
         // we save the evicted line in casesomeone wants to use it with history recall
         if (shell instanceof Groovysh) {
-            shell.historyFull = (shell.history.size() >= shell.history.getMaxSize())
+            def history = shell.history
+            shell.historyFull = (history != null) && (history.size() >= history.getMaxSize())
             if (shell.historyFull) {
-                if (shell.history.first()) {
-                    shell.evictedLine = shell.history.first().value()
+                def first = history.first()
+                if (first) {
+                    shell.evictedLine = first.value()
                 }
             }
         }
