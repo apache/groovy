@@ -138,14 +138,16 @@ class PackageHelper implements PreferenceChangeListener {
             collectPackageNamesFromFolderRecursive(urlfile, "", packnames)
             return packnames
         } else {
-            try {
-                JarFile jf = new JarFile(urlfile)
-                return getPackageNamesFromJar(jf)
-            } catch(ZipException ze) {
-                if (log.debugEnabled) {
-                    ze.printStackTrace();
+            if(urlfile.path.endsWith('.jar')) {
+                try {
+                    JarFile jf = new JarFile(urlfile)
+                    return getPackageNamesFromJar(jf)
+                } catch(ZipException ze) {
+                    if (log.debugEnabled) {
+                        ze.printStackTrace();
+                    }
+                    log.debug("Error opening zipfile : '${url.getFile()}',  ${ze.toString()}");
                 }
-                log.debug("Error opening zipfile : '${url.getFile()}',  ${ze.toString()}");
             }
             return null;
         }
