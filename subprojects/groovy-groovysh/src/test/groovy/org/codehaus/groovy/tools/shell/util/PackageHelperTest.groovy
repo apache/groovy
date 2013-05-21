@@ -60,7 +60,7 @@ class PackageHelperTest
         assertEquals(null, helper.getContents("java.util.regex.tools"))
     }
 
-    void testNonSystemPackage() {
+    void manual_testNonSystemPackage() {
         String antlrpath = "file://" + System.getProperty("user.dir") + "/lib/antlr-2.7.7.jar"
         ClassLoader loader = new URLClassLoader([new URL(antlrpath)] as URL[])
         Map<String, CachedPackage> rootPackages = PackageHelper.initializePackages(loader)
