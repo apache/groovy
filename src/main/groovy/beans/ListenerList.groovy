@@ -15,6 +15,7 @@
  */
 package groovy.beans
 
+import java.lang.annotation.Documented
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
@@ -108,7 +109,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * @author Alexander Klein
  * @author Hamlet D'Arcy
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
 @GroovyASTTransformationClass('groovy.beans.ListenerListASTTransformation')

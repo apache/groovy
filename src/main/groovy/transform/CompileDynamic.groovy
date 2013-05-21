@@ -16,6 +16,8 @@
 
 package groovy.transform
 
+import java.lang.annotation.Documented
+
 /**
  * An annotation which is just a shortcut for @CompileStatic(TypeCheckingMode.SKIP).
  * This can be used for example if you statically compile a full class but you want to skip
@@ -24,6 +26,7 @@ package groovy.transform
  * @author Cedric Champeau
  * @since 2.1.0
  */
+@Documented
 @AnnotationCollector(processor = "org.codehaus.groovy.transform.CompileDynamicProcessor")
 public @interface CompileDynamic {
 }
