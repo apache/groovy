@@ -122,6 +122,7 @@ class HistoryCommandIntegrationTest extends CompletorTestSupport
         history.add("test1")
         history.add("test2")
         groovyshMocker.demand.getHistoryFull(1) {true}
+        groovyshMocker.demand.getHistory(1) {history}
         groovyshMocker.demand.getEvictedLine(1) {'test3'}
         groovyshMocker.demand.execute(1) {String it -> assert(it == 'test3'); 45}
         // second call

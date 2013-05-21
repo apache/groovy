@@ -339,7 +339,8 @@ extends CompletorTestSupport {
             Completer completer = iCom.getCompleter()
             def candidates = []
             // argument completer completes after "import "
-            assertEquals(12, completer.complete("import java.", "import java.".length(), candidates))
+            String buffer = "import java."
+            assertEquals(12, completer.complete(buffer, buffer.length(), candidates))
             // the blank is just the current broken output
             assertEquals(["test.", "java.", "* "], candidates)
         }
