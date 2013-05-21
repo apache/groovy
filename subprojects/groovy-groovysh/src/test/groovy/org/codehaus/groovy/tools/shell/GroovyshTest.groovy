@@ -31,11 +31,13 @@ class GroovyshTest extends GroovyTestCase {
         mockOut = new ByteArrayOutputStream();
         mockErr = new ByteArrayOutputStream();
         testio = new IO(new ByteArrayInputStream(), mockOut, mockErr)
+        testio.setVerbosity(IO.Verbosity.INFO)
     }
 
     void testCompleteExpr() {
         Groovysh groovysh = new Groovysh(testio)
         groovysh.execute("x = 3")
+        assertTrue(mockOut.toString(), mockOut.toString().length() > 0);
         assertEquals(" 3\n", mockOut.toString().normalize()[-3..-1])
     }
 

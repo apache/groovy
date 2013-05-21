@@ -6,6 +6,7 @@ import java.util.prefs.PreferenceChangeEvent
 import java.util.prefs.PreferenceChangeListener
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import java.util.zip.ZipException
 
 /**
  * Helper class that crawls all items of the classpath for packages.
@@ -59,14 +60,20 @@ class PackageHelper implements PreferenceChangeListener {
         // System classes
         Class[] systemClasses = [String.class, javax.swing.JFrame.class, GroovyObject.class] as Class[]
         systemClasses.each { Class systemClass ->
-            URL classURL = systemClass.getResource("/${systemClass.name.replace('.', File.separator)}.class")
+            String classfileName = systemClass.name.replace('.', File.separator) + ".class"
+            URL classURL = systemClass.getResource(classfileName)
+            if (classURL == null) {
+                // this seems to work on Windows better than the earlier approach
+                classURL = Thread.currentThread().getContextClassLoader().getResource(classfileName);
+            }
             if (classURL != null) {
                 URLConnection uc = classURL.openConnection()
                 if (uc instanceof JarURLConnection) {
                     urls.add(((JarURLConnection) uc).getJarFileURL())
                 } else {
                     String filepath = classURL.toExternalForm()
-                    urls.add(new URL(filepath[0 .. -1 -systemClass.name.length() - CLASS_SUFFIX.length() - 1]))
+                    String rootFolder = filepath.substring(0, filepath.length() - classfileName.length() - 1)
+                    urls.add(new URL(rootFolder))
                 }
             }
         }
@@ -84,6 +91,9 @@ class PackageHelper implements PreferenceChangeListener {
         StringTokenizer tokenizer
         packageNames.each { String packname ->
             tokenizer = new StringTokenizer(packname, '.')
+            if (!tokenizer.hasMoreTokens()) {
+                return
+            }
             String rootname = tokenizer.nextToken()
             CachedPackage cp
             CachedPackage childp
@@ -121,14 +131,23 @@ class PackageHelper implements PreferenceChangeListener {
      */
     static Collection<String> getPackageNames(URL url) {
         //log.debug(url)
-        File urlfile = new File(url.getFile())
-        if (! urlfile.isFile()) {
+        String path = URLDecoder.decode(url.getFile(), "UTF-8")
+        File urlfile = new File(path)
+        if (urlfile.isDirectory()) {
             Set<String> packnames = new HashSet<String>()
             collectPackageNamesFromFolderRecursive(urlfile, "", packnames)
             return packnames
         } else {
-            JarFile jf = new JarFile(url.getFile())
-            return getPackageNamesFromJar(jf)
+            try {
+                JarFile jf = new JarFile(urlfile)
+                return getPackageNamesFromJar(jf)
+            } catch(ZipException ze) {
+                if (log.debugEnabled) {
+                    ze.printStackTrace();
+                }
+                log.debug("Error opening zipfile : '${url.getFile()}',  ${ze.toString()}");
+            }
+            return null;
         }
     }
 
@@ -153,8 +172,10 @@ class PackageHelper implements PreferenceChangeListener {
                 collectPackageNamesFromFolderRecursive(files[i], prefix + optionalDot + files[i].getName(), packnames);
             } else if (! packageAdded) {
                 if (files[i].getName().endsWith(CLASS_SUFFIX)) {
-                    packnames.add(prefix);
                     packageAdded = true
+                    if (prefix) {
+                        packnames.add(prefix);
+                    }
                 }
             }
         }
@@ -201,7 +222,7 @@ class PackageHelper implements PreferenceChangeListener {
      * @return
      */
     Set<String> getContents(String packagename) {
-        if (rootPackages == null) {
+        if (! rootPackages) {
             return null
         }
         if (! packagename) {

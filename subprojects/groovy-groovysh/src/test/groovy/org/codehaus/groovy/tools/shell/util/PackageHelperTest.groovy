@@ -27,38 +27,42 @@ class PackageHelperTest
 {
 
     void testLoadAndGetPackagesEmpty() {
-        PackageHelper helper = new PackageHelper()
+        PackageHelper helper = new PackageHelper(null)
         Set<String> rootPackages = helper.getContents("")
+        assertNotNull(rootPackages)
         assertTrue(rootPackages.toString(), rootPackages.contains("java"))
         assertTrue(rootPackages.toString(), rootPackages.contains("javax"))
         assertTrue(rootPackages.toString(), rootPackages.contains("groovy"))
     }
 
     void testLoadAndGetPackagesJava() {
-        PackageHelper helper = new PackageHelper()
+        PackageHelper helper = new PackageHelper(null)
         Set<String> names = helper.getContents("java")
+        assertNotNull(names)
         assertTrue(names.toString(), names.contains('io'))
     }
 
     void testLoadAndGetPackagesJavaUtil() {
-        PackageHelper helper = new PackageHelper()
+        PackageHelper helper = new PackageHelper(null)
         Set<String> names = helper.getContents("java.util")
+        assertNotNull(names)
         assertTrue(names.toString(), names.contains('zip'))
         assertTrue(names.toString(), names.contains('Set'))
     }
 
     void testLoadAndGetPackagesInvalid() {
-        PackageHelper helper = new PackageHelper()
+        PackageHelper helper = new PackageHelper(null)
         assertEquals(null, helper.getContents("invalid:name"))
     }
 
     void testLoadAndGetPackagesUnknown() {
-        PackageHelper helper = new PackageHelper()
+        PackageHelper helper = new PackageHelper(null)
         assertEquals(null, helper.getContents("java.util.regex.tools"))
     }
 
     void testNonSystemPackage() {
-        ClassLoader loader = new URLClassLoader([new URL("file:" + System.getProperty("user.dir") + "/lib/antlr-2.7.7.jar")] as URL[])
+        String antlrpath = "file://" + System.getProperty("user.dir") + "/lib/antlr-2.7.7.jar"
+        ClassLoader loader = new URLClassLoader([new URL(antlrpath)] as URL[])
         Map<String, CachedPackage> rootPackages = PackageHelper.initializePackages(loader)
         assertNotNull(rootPackages)
         assertTrue(rootPackages.toString(), rootPackages.containsKey("antlr"))
