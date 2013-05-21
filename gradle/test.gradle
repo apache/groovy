@@ -31,11 +31,6 @@ test {
             fileset(dir: '.', includes: '*.class')
         }
     }
-    testLogging {
-        showStackTraces = true
-        showExceptions = true
-        exceptionFormat = 'full'
-    }
 }
 
 boolean isRunningOnCI() {
@@ -48,6 +43,9 @@ allprojects {
     test {
         forkEvery = isRunningOnCI()?50:200
         maxParallelForks = isRunningOnCI()?1:Runtime.runtime.availableProcessors()
+        testLogging {
+            exceptionFormat = 'full'
+        }
     }
 }
 tasks.addRule("Pattern: testSingle<Name> will test **/<Name>.class") {String taskName ->
