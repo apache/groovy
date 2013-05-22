@@ -147,6 +147,8 @@ class PackageHelper implements PreferenceChangeListener {
                         ze.printStackTrace();
                     }
                     log.debug("Error opening zipfile : '${url.getFile()}',  ${ze.toString()}");
+                } catch (FileNotFoundException fnfe) {
+                    log.debug("Error opening file : '${url.getFile()}',  ${fnfe.toString()}");
                 }
             }
             return null;
