@@ -302,6 +302,7 @@ class PackageHelper implements PreferenceChangeListener {
                         }
                     }
                 }
+                continue
             }
 
             if (!file.toString().endsWith (".jar")) {
