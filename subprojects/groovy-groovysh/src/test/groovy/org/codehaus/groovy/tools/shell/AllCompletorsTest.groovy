@@ -47,8 +47,7 @@ extends GroovyTestCase {
         List candidates = new LinkedList();
         String bufstr = buffer;
         int position = -1;
-        for (Iterator i = completers.iterator(); i.hasNext();) {
-            Completer comp = (Completer) i.next();
+        for (Completer comp : completers) {
             if ((position = comp.complete(bufstr, cursor, candidates)) != -1) {
                 break;
             }
