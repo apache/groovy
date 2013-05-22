@@ -21,7 +21,7 @@ import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.util.Logger
 
 /**
- * Completor completing variable and method names from known variables in the shell
+ * Completor completing imported classnames
  */
 public class ImportsSyntaxCompletor implements IdentifierCompletor {
 
