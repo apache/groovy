@@ -280,7 +280,7 @@ class PackageHelper implements PreferenceChangeListener {
         String pathname = packagename.replace('.', '/')
         for (Iterator it = urls.iterator(); it.hasNext();) {
             URL url = (URL) it.next();
-            File file = new File(url.getFile());
+            File file = new File(URLDecoder.decode(url.getFile(), "UTF-8"));
             if (file == null) {
                 continue
             }
