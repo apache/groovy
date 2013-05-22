@@ -539,22 +539,24 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testObjectSleep() {
         long start = System.currentTimeMillis()
-        sleep 200
+        long sleeptime = 200
+        sleep sleeptime
         long slept = System.currentTimeMillis() - start
         long epsilon = 24
-        assert (slept > 100 - epsilon) && (slept < 100 + epsilon):   \
-               "should have slept for 100ms (+/- " + epsilon + "ms) but was ${slept}ms"
+        assert (slept > sleeptime - epsilon) && (slept < sleeptime + epsilon):   \
+               "should have slept for $sleeptime ms (+/- epsilon ms) but was $slept ms"
     }
 
     void testObjectSleepInterrupted() {
         def interruptor = new groovy.TestInterruptor(Thread.currentThread())
         new Thread(interruptor).start()
         long start = System.currentTimeMillis()
+        long sleeptime = 200
         sleep 200
         long slept = System.currentTimeMillis() - start
         long epsilon = 30
-        assert (slept > 100 - epsilon) && (slept < 100 + epsilon):   \
-               "should have slept for 100ms (+/- " + epsilon + "ms) but was ${slept}ms"
+        assert (slept > sleeptime - epsilon) && (slept < sleeptime + epsilon):   \
+               "should have slept for $sleeptime ms (+/- $epsilon ms) but was slept ms"
     }
 
     void testObjectSleepWithOnInterruptHandler() {
