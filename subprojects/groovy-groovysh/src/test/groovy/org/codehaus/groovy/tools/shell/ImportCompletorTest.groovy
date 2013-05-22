@@ -295,7 +295,8 @@ extends CompletorTestSupport {
             Completer completer = iCom.getCompleter()
             def candidates = []
             assertEquals(0, completer.complete("", 0, candidates))
-            assertEquals(["\\i", "import", "\\i", "import"], candidates)
+            // order changed by sort
+            assertEquals(["\\i", "\\i", "import", "import"], candidates.sort())
         }
     }
 
@@ -309,7 +310,8 @@ extends CompletorTestSupport {
             Completer completer = iCom.getCompleter()
             def candidates = []
             assertEquals(7, completer.complete("import ", "import ".length(), candidates))
-            assertEquals(["test.", "java.", "static "], candidates)
+            // order changed by sort, needed to make tests run on different JDks
+            assertEquals(["java.", "static ", "test."], candidates.sort())
         }
     }
 
@@ -324,7 +326,6 @@ extends CompletorTestSupport {
             def candidates = []
             // argument completer completes after "import "
             assertEquals(7, completer.complete("import j", "import j".length(), candidates))
-            // the blank is just the current broken output
             assertEquals(["java."], candidates)
         }
     }
@@ -341,8 +342,8 @@ extends CompletorTestSupport {
             // argument completer completes after "import "
             String buffer = "import java."
             assertEquals(12, completer.complete(buffer, buffer.length(), candidates))
-            // the blank is just the current broken output
-            assertEquals(["test.", "java.", "* "], candidates)
+            // order changed by sort, needed to run tests on different JDKs
+            assertEquals(["* ", "java.", "test."], candidates.sort())
         }
     }
 
@@ -358,7 +359,8 @@ extends CompletorTestSupport {
             // argument completer completes after "import "
             String buffer = "import java.lang."
             assertEquals(17, completer.complete(buffer, buffer.length(), candidates))
-            assertEquals(["test.", "java.", "* "], candidates)
+            // order changed by sort, needed to make tests run on different JDks
+            assertEquals(["* ", "java.", "test."], candidates.sort())
         }
     }
 
