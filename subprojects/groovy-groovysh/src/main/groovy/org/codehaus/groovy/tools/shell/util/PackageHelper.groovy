@@ -60,7 +60,8 @@ class PackageHelper implements PreferenceChangeListener {
         // System classes
         Class[] systemClasses = [String.class, javax.swing.JFrame.class, GroovyObject.class] as Class[]
         systemClasses.each { Class systemClass ->
-            String classfileName = systemClass.name.replace('.', File.separator) + ".class"
+            // normal slash even in Windows
+            String classfileName = systemClass.name.replace('.', '/') + ".class"
             URL classURL = systemClass.getResource(classfileName)
             if (classURL == null) {
                 // this seems to work on Windows better than the earlier approach
@@ -199,7 +200,8 @@ class PackageHelper implements PreferenceChangeListener {
                 // only use class files
                 continue;
             }
-            String fullname = name.replace(File.separator, '.').substring(0, name.length() - CLASS_SUFFIX.length())
+            // normal slashes also on Windows
+            String fullname = name.replace('/', '.').substring(0, name.length() - CLASS_SUFFIX.length())
             // Discard classes in the default package
             if (fullname.lastIndexOf('.') > -1) {
                 packnames.add(fullname.substring(0, fullname.lastIndexOf('.')))
@@ -274,7 +276,8 @@ class PackageHelper implements PreferenceChangeListener {
      */
     static Set<String> getClassnames(Set<URL> urls, String packagename) {
         List<String> classes = new LinkedList<String>()
-        String pathname = packagename.replace('.', File.separator)
+        // normal slash even in Windows
+        String pathname = packagename.replace('.', '/')
         for (Iterator it = urls.iterator(); it.hasNext();) {
             URL url = (URL) it.next();
             File file = new File(url.getFile());
@@ -322,7 +325,8 @@ class PackageHelper implements PreferenceChangeListener {
                 {
                     continue
                 }
-                int lastslash = name.lastIndexOf(File.separator)
+                // normal slash inside jars even on windows
+                int lastslash = name.lastIndexOf('/')
                 if (lastslash  == -1 || name.substring(0, lastslash) != pathname) {
                     continue
                 }
