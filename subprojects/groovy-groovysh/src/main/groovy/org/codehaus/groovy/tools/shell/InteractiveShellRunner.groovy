@@ -48,6 +48,9 @@ class InteractiveShellRunner
         this.prompt = prompt
         this.wrappedInputStream = new WrappedInputStream(shell.io.inputStream)
         this.reader = new ConsoleReader(wrappedInputStream, shell.io.outputStream)
+        // expand events ia an advanced feature of JLine that clashes with Groovy syntax (e.g. invoke "2!=3")
+        this.reader.expandEvents = false
+
 
         // complete groovysh commands, display, import, ... as first word in line
         this.completer = new CommandsMultiCompleter()
