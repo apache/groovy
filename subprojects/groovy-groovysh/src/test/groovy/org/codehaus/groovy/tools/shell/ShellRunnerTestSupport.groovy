@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import jline.console.ConsoleReader
 /**
  * Support for testing {@link Command} instances.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
+ * @author tkruse
  */
 abstract class ShellRunnerTestSupport
 extends GroovyTestCase {
@@ -72,7 +72,8 @@ extends GroovyTestCase {
 //        shellMocker.demand.getIo(2..10) {testio}
 
         readerStubber = new StubFor(ConsoleReader)
-        // adding 2 completors
+        readerStubber.demand.setExpandEvents() {}
+        // adding 2 completers
         readerStubber.demand.addCompleter() {}
         readerStubber.demand.printNewline() {}
         readerStubber.demand.addCompleter() {}

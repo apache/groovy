@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,7 @@ class ShellRunnerTest extends GroovyTestCase {
         groovysh.buffers.buffers.add(["Foo {"])
         groovysh.buffers.select(1)
 
-        MockFor readerMocker = new MockFor(ConsoleReader)
-        readerMocker.demand.addCompleter(2) {}
+        MockFor readerMocker = primedMockForConsoleReader()
         readerMocker.demand.readLine(1) {'Foo {'}
         MockFor preferencesMocker = new MockFor(Preferences)
         preferencesMocker.demand.get(1) {"false"}
@@ -51,8 +50,7 @@ class ShellRunnerTest extends GroovyTestCase {
     }
 
     void testReadLineIndentNone() {
-        MockFor readerMocker = new MockFor(ConsoleReader)
-        readerMocker.demand.addCompleter(2) {}
+        MockFor readerMocker = primedMockForConsoleReader()
         readerMocker.demand.readLine(1) {'Foo {'}
         MockFor preferencesMocker = new MockFor(Preferences)
         preferencesMocker.demand.get(1) {"true"}
@@ -67,8 +65,7 @@ class ShellRunnerTest extends GroovyTestCase {
         groovysh.buffers.buffers.add(["Foo {"])
         groovysh.buffers.select(1)
 
-        MockFor readerMocker = new MockFor(ConsoleReader)
-        readerMocker.demand.addCompleter(2) {}
+        MockFor readerMocker = primedMockForConsoleReader()
         readerMocker.demand.readLine(1) {'Foo {'}
         MockFor preferencesMocker = new MockFor(Preferences)
         preferencesMocker.demand.get(1) {"true"}
@@ -82,8 +79,7 @@ class ShellRunnerTest extends GroovyTestCase {
     void testReadLineIndentTwo() {
         groovysh.buffers.buffers.add(["Foo { {"])
         groovysh.buffers.select(1)
-        MockFor readerMocker = new MockFor(ConsoleReader)
-        readerMocker.demand.addCompleter(2) {}
+        MockFor readerMocker = primedMockForConsoleReader()
         readerMocker.demand.readLine(1) {'Foo { {'}
         MockFor preferencesMocker = new MockFor(Preferences)
         preferencesMocker.demand.get(1) {"true"}
@@ -92,6 +88,13 @@ class ShellRunnerTest extends GroovyTestCase {
             runner.readLine()
             assertEquals(groovysh.indentSize * 2, runner.wrappedInputStream.inserted.available())
         }}
+    }
+
+    private MockFor primedMockForConsoleReader() {
+        def readerMocker = new MockFor(ConsoleReader)
+        readerMocker.demand.setExpandEvents() {}
+        readerMocker.demand.addCompleter(2) {}
+        readerMocker
     }
 }
 
@@ -109,6 +112,7 @@ class ShellRunnerTest2 extends GroovyTestCase {
         groovysh.buffers.select(1)
 
         MockFor readerMocker = new MockFor(ConsoleReader)
+        readerMocker.demand.setExpandEvents() {}
         readerMocker.demand.addCompleter(2) {}
         readerMocker.demand.readLine(1) {'Foo { {'}
         MockFor preferencesMocker = new MockFor(Preferences)
