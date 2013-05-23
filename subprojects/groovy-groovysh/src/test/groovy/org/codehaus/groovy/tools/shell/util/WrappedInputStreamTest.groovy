@@ -16,12 +16,9 @@
 
 package org.codehaus.groovy.tools.shell.util
 
-import groovy.mock.interceptor.MockFor
-
 /**
  * Unit tests for the {@link MessageSource} class.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class WrappedInputStreamTest

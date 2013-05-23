@@ -23,7 +23,6 @@ import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 /**
  * Tests for the {@link ClearCommand} class.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ComplexCommandSupportTest
@@ -163,6 +162,4 @@ class ComplexCommandSupportTest
             // pass
         }
     }
-
-
 }

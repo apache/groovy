@@ -16,14 +16,12 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandException
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * Tests for the {@link RegisterCommand} class.
  *
- * @version $Id$
  * @author <a href="mailto:chris@wensel.net">Chris K Wensel</a>
  */
 class RegisterCommandTest

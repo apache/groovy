@@ -21,7 +21,6 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * Support for expression tests.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 abstract class ExprTestSupport

@@ -19,7 +19,6 @@ package org.codehaus.groovy.tools.shell.expr
 /**
  * Tests for <tt>time = { it() }</tt> expressions.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class TimeItTest

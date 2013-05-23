@@ -218,6 +218,4 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
             assertEquals(['prefill'], candidates)
         }
     }
-
-
 }

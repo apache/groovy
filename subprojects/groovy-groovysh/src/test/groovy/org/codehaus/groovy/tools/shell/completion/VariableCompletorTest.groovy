@@ -6,7 +6,6 @@ import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokenList
 
 class VariableCompletorTest extends CompletorTestSupport {
 
-
     void testKnownVar() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [xyzabc: ""]]] }
         groovyshMocker.use {

@@ -38,9 +38,5 @@ class KeywordCompletorTest extends GroovyTestCase {
         String buffer = "fo"
         assertEquals(true, completor.complete(tokenList(buffer), candidates))
         assertEquals(['for ('], candidates)
-//        candidates = []
-//        buffer = "for (pub" // don't suggest public keyword here
-//        assertEquals(true, completor.complete(tokenList(buffer), candidates))
-//        assertEquals(["public "], candidates)
     }
 }

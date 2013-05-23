@@ -22,11 +22,7 @@ import org.codehaus.groovy.tools.shell.completion.IdentifierCompletor
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 
 /**
- * Created with IntelliJ IDEA.
- * User: kruset
- * Date: 4/6/13
- * Time: 11:26 AM
- * To change this template use File | Settings | File Templates.
+ * @author kruset
  */
 abstract class CompletorTestSupport extends GroovyTestCase {
 
@@ -72,8 +68,5 @@ abstract class CompletorTestSupport extends GroovyTestCase {
         }
         groovyshMocker.demand.getRegistry(0..1) { registry }
         groovyshMocker.demand.getBuffers(0..2) {bufferManager}
-
-
-
     }
 }

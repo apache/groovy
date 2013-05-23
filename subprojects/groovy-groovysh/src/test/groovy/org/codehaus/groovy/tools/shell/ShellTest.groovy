@@ -16,10 +16,6 @@
 
 package org.codehaus.groovy.tools.shell
 
-import groovy.mock.interceptor.MockFor
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.tools.shell.commands.ImportCommand
-
 class ShellTest extends GroovyTestCase {
 
     IO testio

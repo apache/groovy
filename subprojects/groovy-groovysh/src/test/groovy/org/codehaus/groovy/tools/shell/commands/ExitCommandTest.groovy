@@ -21,7 +21,6 @@ import org.codehaus.groovy.tools.shell.ExitNotification
 /**
  * Tests for the {@link ExitCommand} class.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ExitCommandTest
@@ -36,18 +35,4 @@ class ExitCommandTest
             // expected
         }
     }
-    
-    /*
-    FIXME: Errors don't currently throw anything, just io.error.println()'s...
-    
-    void testWithArgs() {
-        try {
-            shell << 'exit foo'
-            fail()
-        }
-        catch (Exception e) {
-            // expected
-        }
-    }
-    */
 }

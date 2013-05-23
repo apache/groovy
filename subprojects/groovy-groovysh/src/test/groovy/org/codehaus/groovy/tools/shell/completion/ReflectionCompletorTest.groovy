@@ -16,9 +16,7 @@
 
 package org.codehaus.groovy.tools.shell
 
-import groovy.mock.interceptor.MockFor
 import org.codehaus.groovy.antlr.parser.GroovyLexer
-import org.codehaus.groovy.tools.shell.commands.ImportCommand
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 
 import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokenList

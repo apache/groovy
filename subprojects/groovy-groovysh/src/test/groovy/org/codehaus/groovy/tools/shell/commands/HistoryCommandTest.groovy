@@ -17,14 +17,12 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import jline.console.history.FileHistory
-import org.codehaus.groovy.tools.shell.CommandException
 import org.codehaus.groovy.tools.shell.CompletorTestSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 
 /**
  * Tests for the {@link HistoryCommand} class.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class HistoryCommandTest extends CommandTestSupport

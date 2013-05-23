@@ -10,8 +10,6 @@ class TokenUtilTest extends GroovyTestCase {
 
     /**
      * return token list without EOF
-     * @param src
-     * @return
      */
     static List<GroovySourceToken> tokenList(String src) {
         CurlyCountingGroovyLexer lexer = CurlyCountingGroovyLexer.createGroovyLexer(src)

@@ -67,10 +67,6 @@ extends GroovyTestCase {
             shellMocker.demand.getIo(0..1) { testio }
         }
 
-//        shellMocker.demand.getClass(1) {Groovysh}
-//        // don't care how often this is called
-//        shellMocker.demand.getIo(2..10) {testio}
-
         readerStubber = new StubFor(ConsoleReader)
         readerStubber.demand.setExpandEvents() {}
         // adding 2 completers
