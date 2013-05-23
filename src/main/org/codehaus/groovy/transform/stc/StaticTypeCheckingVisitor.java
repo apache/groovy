@@ -2824,11 +2824,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (methods.isEmpty() && (args == null || args.length == 0)) {
                 // check if it's a property
-                String pname = null;
-                if (name.startsWith("get")) {
-                    pname = java.beans.Introspector.decapitalize(name.substring(3));
-                } else if (name.startsWith("is")) {
-                    pname = java.beans.Introspector.decapitalize(name.substring(2));
+                String pname = extractPropertyNameFromMethodName("get", name);
+                if (pname==null) {
+                    pname = extractPropertyNameFromMethodName("is", name);
                 }
                 if (pname != null) {
                     // we don't use property exists there because findMethod is called on super clases recursively
@@ -2851,8 +2849,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             } else if (methods.isEmpty() && args != null && args.length == 1) {
                 // maybe we are looking for a setter ?
-                if (name.startsWith("set")) {
-                    String pname = java.beans.Introspector.decapitalize(name.substring(3));
+                String pname = extractPropertyNameFromMethodName("set", name);
+                if (name!=null) {
                     ClassNode curNode = receiver;
                     PropertyNode property = null;
                     while (property == null && curNode != null) {
@@ -2913,6 +2911,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return EMPTY_METHODNODE_LIST;
+    }
+
+    /**
+     * Given a method name and a prefix, returns the name of the property that should be looked up,
+     * following the java beans rules. For example, "getName" would return "name", while
+     * "getFullName" would return "fullName".
+     * If the prefix is not found, returns null.
+     * @param prefix the method name prefix ("get", "is", "set", ...)
+     * @param methodName the method name
+     * @return a property name if the prefix is found and the method matches the java beans rules, null otherwise
+     */
+    public static String extractPropertyNameFromMethodName(String prefix, String methodName) {
+        if (prefix==null || methodName==null) return null;
+        if (methodName.startsWith(prefix) && prefix.length()<methodName.length()) {
+            String result = methodName.substring(prefix.length());
+            char firstChar = result.charAt(0);
+            if (Character.isUpperCase(firstChar) || !Character.isLetter(firstChar)) {
+                return java.beans.Introspector.decapitalize(result);
+            }
+        }
+        return null;
     }
 
     protected void collectAllInterfaceMethodsByName(final ClassNode receiver, final String name, final List<MethodNode> methods) {
