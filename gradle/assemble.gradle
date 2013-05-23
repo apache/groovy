@@ -196,7 +196,6 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
         project.ant {
             taskdef name: "jarjar", classname: "com.tonicsystems.jarjar.JarJarTask", classpath: configurations.tools.asPath
             jarjar(jarfile: archivePath, manifest: "$metaInfDir/MANIFEST.MF") {
-                zipfileset(dir: "$ext.metaInfDir", prefix: 'META-INF')
                 zipfileset(
                         src: jar.archivePath,
                         excludes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
