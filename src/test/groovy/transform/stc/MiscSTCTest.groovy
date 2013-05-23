@@ -15,6 +15,8 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
+
 /**
  * Unit tests for static type checking : miscellaneous tests.
  *
@@ -286,6 +288,29 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             def arr = args[range]
             assert arr == ['b','c','d']
         '''
+    }
+
+    // GROOVY-6165
+    void testPropertyNameFromMethodName() {
+        // too bad we're not using Spock!
+
+        def tests = [
+                ['get','getName', 'name'],
+                ['get','getFullName', 'fullName'],
+                ['get','getname', null],
+                ['is', 'isFlag', 'flag'],
+                ['is', 'isflag', null],
+                ['is', 'is', null],
+                ['is', 'i', null],
+                ['get', 'getXYZ', 'XYZ'],
+                ['get', 'get_foo', '_foo'],
+                [null, 'foo', null],
+                ['foo', null, null],
+                [null,null,null]
+        ]
+        tests.each { prefix, methodName, expectation ->
+            assert StaticTypeCheckingVisitor.extractPropertyNameFromMethodName(prefix, methodName) == expectation
+        }
     }
 
     public static class MiscSTCTestSupport {

@@ -606,4 +606,31 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method'
     }
 
+    // GROOVY-6165
+    void testDelegatesToGenericArgumentTypeAndTypo() {
+        shouldFailWithMessages '''import groovy.transform.*
+
+        @TupleConstructor
+        class Person { String name }
+
+        public <T> List<T> names(
+            @DelegatesTo.Target List<T> list,
+            @DelegatesTo(genericTypeIndex = 0) Closure modify) {
+                list.collect {
+                    modify.delegate = it
+                    modify()
+                }
+        }
+
+        def test(List<Person> persons) {
+            def names = names(persons) {
+                getname().toUpperCase()
+            }
+            assert names == ['GUILLAUME', 'CEDRIC']
+        }
+
+        test([new Person('Guillaume'), new Person('Cedric')])
+        ''', 'Cannot find matching method'
+    }
+
 }
