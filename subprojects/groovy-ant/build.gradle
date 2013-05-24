@@ -1,12 +1,12 @@
 dependencies {
     compile project(':')
     groovy project(':')
-    compile "org.apache.ant:ant:1.9.0"
-    runtime("org.apache.ant:ant-junit:1.9.0") {
+    compile "org.apache.ant:ant:1.9.1"
+    runtime("org.apache.ant:ant-junit:1.9.1") {
         exclude(group: 'junit', module: 'junit')
     }
-    runtime "org.apache.ant:ant-launcher:1.9.0"
-    runtime "org.apache.ant:ant-antlr:1.9.0"
+    runtime "org.apache.ant:ant-launcher:1.9.1"
+    runtime "org.apache.ant:ant-antlr:1.9.1"
     // for groovydoc ant command
     compile project(':groovy-groovydoc')
     testCompile project(':groovy-test')

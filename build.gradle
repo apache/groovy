@@ -135,7 +135,7 @@ dependencies {
     compilerCompile "org.ow2.asm:asm-util:4.0"
 
     compilerCompile "commons-cli:commons-cli:1.2"
-    compilerCompile "org.apache.ant:ant:1.9.0"
+    compilerCompile "org.apache.ant:ant:1.9.1"
     compilerCompile("com.thoughtworks.xstream:xstream:1.4.2") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
@@ -212,7 +212,7 @@ dependencies {
 
 // TODO use antlr plugin
 //    antlr "antlr:antlr:2.7.7"
-    antlr "org.apache.ant:ant-antlr:1.9.0"
+    antlr "org.apache.ant:ant-antlr:1.9.1"
 
     // TODO remove once M12N refactoring finished
     testCompile project(':groovy-ant')

@@ -5,7 +5,7 @@ dependencies {
     compile project(':groovy-templates')
     testCompile project(':groovy-test')
     testCompile project(':groovy-ant')
-    testCompile "org.apache.ant:ant-testutil:1.9.0"
+    testCompile "org.apache.ant:ant-testutil:1.9.1"
 }
 
 compileJava {
