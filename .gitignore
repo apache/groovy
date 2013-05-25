@@ -8,5 +8,5 @@ out
 *.iws
 .idea
 .*.swp
-
 *.class
+/bin
