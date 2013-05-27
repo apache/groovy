@@ -52,7 +52,7 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class ClosureWriter {
 
-    protected interface UseExistingReference {}
+    protected static interface UseExistingReference {}
 
     private final HashMap<Expression,ClassNode> closureClassMap;
     private final WriterController controller;
