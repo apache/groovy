@@ -922,5 +922,19 @@ import groovy.transform.TypeCheckingMode
             new ServletExample()
         '''
     }
+
+    // GROOVY-6137
+    void testIsCaseShouldBeNullSafe() {
+        assertScript '''
+        def isCaseNullCS(a, b) {
+            a in b
+        }
+        assert isCaseNullCS(1, null) == false
+        assert isCaseNullCS(null, 1) == false
+        assert isCaseNullCS(1,1) == true
+        assert isCaseNullCS(1,2) == false
+        assert isCaseNullCS(2,1) == false
+        '''
+    }
 }
 
