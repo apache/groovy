@@ -894,5 +894,33 @@ import groovy.transform.TypeCheckingMode
             println astTrees
         }
     }
+
+    // GROOVY-6095
+    void testServletError() {
+        def shell = new GroovyShell()
+        shell.evaluate '''
+            @Grab('javax.servlet:javax.servlet-api:3.0.1')
+            import groovy.transform.CompileStatic
+
+            import javax.servlet.ServletContext
+            import javax.servlet.ServletRegistration
+
+            /**
+
+             * author: Richard Vowles - http://gplus.to/RichardVowles
+             */
+            @CompileStatic
+            class ServletExample {
+
+              public void myMethod(ServletContext ctx) {
+                ctx.getServletRegistrations().each { String name, ServletRegistration sr ->
+                  println name
+                }
+
+              }
+            }
+            new ServletExample()
+        '''
+    }
 }
 
