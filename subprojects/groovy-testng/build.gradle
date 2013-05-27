@@ -1,6 +1,6 @@
 dependencies {
     groovy project(':')
-    runtime('org.testng:testng:6.8') {
+    runtime('org.testng:testng:6.8.5') {
         // some excludes because testng's pom is broken
         exclude(group: 'org.hamcrest', module: 'hamcrest-core')
         exclude(group: 'org.beanshell', module: 'bsh')
