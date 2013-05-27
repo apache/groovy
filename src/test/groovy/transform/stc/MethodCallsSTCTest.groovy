@@ -908,6 +908,23 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6147
+    void testVargsCallWithOverloadedMethod() {
+        assertScript '''
+            int select(Object a, String s) { 1 }
+            int select(Object a, String s, Object[] args) { 2 }
+            def o = new Date()
+            def s = 'String'
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def method = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert method.name == 'select'
+                assert method.parameters.length==2
+            })
+            def result = select(o,s)
+            assert result == 1
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }

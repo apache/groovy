@@ -1008,26 +1008,28 @@ public abstract class StaticTypeCheckingSupport {
                 }
             } else if (isVargs(params)) {
                 boolean firstParamMatches = true;
+                int dist = -1;
                 // check first parameters
                 if (args.length > 0) {
                     Parameter[] firstParams = new Parameter[params.length - 1];
                     System.arraycopy(params, 0, firstParams, 0, firstParams.length);
-                    firstParamMatches = allParametersAndArgumentsMatch(firstParams, args) >= 0;
+                    dist = allParametersAndArgumentsMatch(firstParams, args);
+                    firstParamMatches =  dist >= 0;
                 }
                 if (firstParamMatches) {
                     // there are three case for vargs
                     // (1) varg part is left out
                     if (params.length == args.length + 1) {
-                        if (bestDist > 1) {
+                        if (bestDist > 1+dist) {
                             bestChoices.clear();
                             bestChoices.add(m);
-                            bestDist = 1;
+                            bestDist = 1+dist; // 1+dist to discriminate foo(Object,String) vs foo(Object,String, Object...)
                         }
                     } else {
                         // (2) last argument is put in the vargs array
                         //      that case is handled above already
                         // (3) there is more than one argument for the vargs array
-                        int dist = excessArgumentsMatchesVargsParameter(params, args);
+                        dist += excessArgumentsMatchesVargsParameter(params, args);
                         if (dist >= 0 && !actualReceiver.equals(declaringClass)) dist+=getDistance(actualReceiver, declaringClass);
                         // varargs methods must not be preferred to methods without varargs
                         // for example :
