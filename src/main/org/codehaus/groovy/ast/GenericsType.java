@@ -408,7 +408,8 @@ public class GenericsType extends ASTNode {
                                                     }
                                                 }
                                                 match = match &&
-                                                        implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType());
+                                                        (implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType())
+                                                         || classNodeType.isCompatibleWith(gt.getType())); // workaround for GROOVY-6095
                                                 if (!match) break;
                                             }
                                         }
