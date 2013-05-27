@@ -136,7 +136,7 @@ dependencies {
 
     compilerCompile "commons-cli:commons-cli:1.2"
     compilerCompile "org.apache.ant:ant:1.9.1"
-    compilerCompile("com.thoughtworks.xstream:xstream:1.4.2") {
+    compilerCompile("com.thoughtworks.xstream:xstream:1.4.4") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
@@ -159,7 +159,7 @@ dependencies {
     groovy "org.ow2.asm:asm-util:4.0"
 
     compile "commons-cli:commons-cli:1.2"
-    compile("com.thoughtworks.xstream:xstream:1.4.2") {
+    compile("com.thoughtworks.xstream:xstream:1.4.4") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
