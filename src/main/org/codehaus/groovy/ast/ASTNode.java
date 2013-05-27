@@ -46,7 +46,7 @@ public class ASTNode {
     private int columnNumber = -1;
     private int lastLineNumber = -1;
     private int lastColumnNumber = -1;
-    private ListHashMap metaDataMap = new ListHashMap();
+    private ListHashMap metaDataMap = null;
 
     public void visit(GroovyCodeVisitor visitor) {
         throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
@@ -110,6 +110,9 @@ public class ASTNode {
      * @return the node meta data value for this key
      */
     public <T> T getNodeMetaData(Object key) {
+        if (metaDataMap == null) {
+            return (T) null;
+        }
         return (T) metaDataMap.get(key);
     }
     
@@ -118,6 +121,12 @@ public class ASTNode {
      * @param other - the other node
      */
     public void copyNodeMetaData(ASTNode other) {
+        if (other.metaDataMap == null) {
+            return;
+        }
+        if (metaDataMap == null) {
+            metaDataMap = new ListHashMap();
+        }
         metaDataMap.putAll(other.metaDataMap);
     }
     
@@ -131,6 +140,9 @@ public class ASTNode {
      */
     public void setNodeMetaData(Object key, Object value) {
         if (key==null) throw new GroovyBugError("Tried to set meta data with null key on "+this+".");
+        if (metaDataMap == null) {
+            metaDataMap = new ListHashMap();
+        }
         Object old = metaDataMap.put(key,value);
         if (old!=null) throw new GroovyBugError("Tried to overwrite existing meta data "+this+".");
     }
@@ -145,6 +157,9 @@ public class ASTNode {
      */
     public Object putNodeMetaData(Object key, Object value) {
         if (key == null) throw new GroovyBugError("Tried to set meta data with null key on " + this + ".");
+        if (metaDataMap == null) {
+            metaDataMap = new ListHashMap();
+        }
         return metaDataMap.put(key, value);
     }
 
@@ -156,6 +171,10 @@ public class ASTNode {
      */
     public void removeNodeMetaData(Object key) {
         if (key==null) throw new GroovyBugError("Tried to remove meta data with null key "+this+".");
+        // GRECLIPSE: start
+        if (metaDataMap == null) {
+            return;
+        }
         metaDataMap.remove(key);
     }
 }
