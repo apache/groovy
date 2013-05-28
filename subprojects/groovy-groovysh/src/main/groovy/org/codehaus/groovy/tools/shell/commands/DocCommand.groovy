@@ -16,8 +16,14 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import jline.console.completer.AggregateCompleter
+import jline.console.completer.ArgumentCompleter
+import jline.console.completer.Completer
+import jline.console.completer.StringsCompleter
+
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
+import org.codehaus.groovy.tools.shell.commands.ImportCompleter
 
 /**
  * The 'doc' command.
@@ -59,6 +65,14 @@ class DocCommand extends CommandSupport {
 
     DocCommand(final Shell shell) {
         super(shell, 'doc', '\\D')
+    }
+
+    @Override
+    Completer getCompleter() {
+        return new AggregateCompleter([
+            new ArgumentCompleter([
+                new StringsCompleter(name, shortcut),
+                new ImportCompleter(shell.packageHelper, shell.interp, false)])])
     }
 
     Object execute(final List args) {
@@ -167,5 +181,6 @@ class DocCommand extends CommandSupport {
             fail "Sending a HEAD request to $url failed (${e}). Please check your network settings."
         }
     }
+
 }
 

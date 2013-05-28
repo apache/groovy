@@ -101,6 +101,7 @@ extends GroovyTestCase {
         assertTrue('show' in result[0])
         assertTrue('set' in result[0])
         assertTrue('inspect' in result[0])
+        assertTrue('doc' in result[0])
         assertEquals(0, result[1])
     }
 
@@ -148,6 +149,14 @@ extends GroovyTestCase {
         // tests against interaction with ReflectionCompleter
         String prompt = "pu" // purge, public
         assertEquals([["purge "], 0], complete(prompt, prompt.length()))
+    }
+
+    void testDoc() {
+        String prompt = "doc j"
+        def result = complete(prompt, prompt.length())
+        assert result
+        assert prompt.length() - 1 == result[1]
+        assertTrue(result.toString() ,"java." in result[0])
     }
 
 }
