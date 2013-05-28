@@ -20,9 +20,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -309,7 +307,24 @@ public class OperandStack {
         int size = stack.size();
         try {
             if (size==0) {
-                throw new ArrayIndexOutOfBoundsException("size==0");
+                StringBuilder sb = new StringBuilder();
+                sb.append("Internal compiler error while compiling ").append(controller.getSourceUnit().getName()).append("\n");
+                MethodNode methodNode = controller.getMethodNode();
+                if (methodNode!=null) {
+                    sb.append("Method: ");
+                    sb.append(methodNode);
+                    sb.append("\n");
+                }
+                ConstructorNode constructorNode = controller.getConstructorNode();
+                if (constructorNode!=null) {
+                    sb.append("Constructor: ");
+                    sb.append(methodNode);
+                    sb.append("\n");
+                }
+                sb.append("Line ").append(controller.getLineNumber()).append(",");
+                sb.append(" expecting ").append(coerce ? "coercion" : "casting").append(" to ").append(targetType.toString(false));
+                sb.append(" but operand stack is empty");
+                throw new ArrayIndexOutOfBoundsException(sb.toString());
             }
         } catch (ArrayIndexOutOfBoundsException ai) {
             throw ai;
