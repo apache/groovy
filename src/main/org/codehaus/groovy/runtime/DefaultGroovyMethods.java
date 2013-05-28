@@ -5226,6 +5226,74 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return answer;
     }
 
+
+    /**
+     * Select a List of items from an eager or lazy List using a Collection to
+     * identify the indices to be selected.
+     * <pre class="groovyTestCase">def list = [].withDefault { 42 }
+     * assert list[1,0,2] == [42, 42, 42]</pre>
+     *
+     * @param self    a ListWithDefault
+     * @param indices a Collection of indices
+     *
+     * @return a new eager or lazy list of the values at the given indices
+     */
+    public static <T> List<T> getAt(ListWithDefault<T> self, Collection indices) {
+        List<T> answer = ListWithDefault.newInstance(new ArrayList<T>(indices.size()), self.isLazyDefaultValues(), self.getInitClosure());
+        for (Object value : indices) {
+            if (value instanceof Range || value instanceof Collection) {
+                answer.addAll((List<T>) InvokerHelper.invokeMethod(self, "getAt", value));
+            } else {
+                int idx = normaliseIndex(DefaultTypeTransformation.intUnbox(value), self.size());
+                answer.add(self.getAt(idx));
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Support the range subscript operator for an eager or lazy List.
+     * <pre class="groovyTestCase">def list = [].withDefault { 42 }
+     * assert list[1..2] == [null, 42]</pre>
+     *
+     * @param self  a ListWithDefault
+     * @param range a Range indicating the items to get
+     * @return a new eager or lazy sublist based on range borders
+     *
+     * @see java.util.List#subList(int,int)
+     */
+    public static <T> List<T> getAt(ListWithDefault<T> self, Range range) {
+        RangeInfo info = subListBorders(self.size(), range);
+
+        // if a positive index is accessed not initialized so far
+        // initialization up to that index takes place
+        if (self.size() < info.to) {
+            self.get(info.to - 1);
+        }
+
+        List<T> answer = self.subList(info.from, info.to);  // sublist is always exclusive, but Ranges are not
+        if (info.reverse) {
+            answer =  ListWithDefault.newInstance(reverse(answer), self.isLazyDefaultValues(), self.getInitClosure());
+        }
+
+        return answer;
+    }
+
+    /**
+     * Support the range subscript operator for an eager or lazy List.
+     * <pre class="groovyTestCase">def list = [true, 1, 3.4]
+     * assert list[0..<0] == []</pre>
+     *
+     * @param self  a ListWithDefault
+     * @param range a Range indicating the items to get
+     * @return a sublist based on range borders or a new list if range is reversed
+     *
+     * @see java.util.List#subList(int,int)
+     */
+    public static <T> List<T> getAt(ListWithDefault<T> self, EmptyRange range) {
+        return ListWithDefault.newInstance(self.getDelegate(), self.isLazyDefaultValues(), self.getInitClosure());
+    }
+
     /**
      * Support the range subscript operator for a List.
      * <pre class="groovyTestCase">def list = [true, 1, 3.4]

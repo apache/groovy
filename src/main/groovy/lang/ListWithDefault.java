@@ -15,6 +15,7 @@
  */
 package groovy.lang;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -40,13 +41,25 @@ public final class ListWithDefault<T> implements List<T> {
         this.initClosure = initClosure;
     }
 
+    public List<T> getDelegate() {
+        return delegate != null ? new ArrayList<T>(delegate) : null;
+    }
+
+    public boolean isLazyDefaultValues() {
+        return lazyDefaultValues;
+    }
+
+    public Closure getInitClosure() {
+        return initClosure != null ? (Closure) initClosure.clone() : null;
+    }
+
     public static <T> List<T> newInstance(List<T> items, boolean lazyDefaultValues, Closure initClosure) {
         if (items == null)
             throw new IllegalArgumentException("Parameter \"items\" must not be null");
         if (initClosure == null)
             throw new IllegalArgumentException("Parameter \"initClosure\" must not be null");
 
-        return new ListWithDefault<T>(items, lazyDefaultValues, initClosure);
+        return new ListWithDefault<T>(new ArrayList<T>(items), lazyDefaultValues, (Closure) initClosure.clone());
     }
 
     public int size() {
@@ -140,16 +153,18 @@ public final class ListWithDefault<T> implements List<T> {
 
         final int size = size();
         int normalisedIndex = normaliseIndex(index, size);
+        if (normalisedIndex < 0) {
+            throw new ArrayIndexOutOfBoundsException("Negative array index [" + normalisedIndex + "] too large for array size " + size);
+        }
 
         // either index >= size or the normalised index is negative
-        if (normalisedIndex >= size || normalisedIndex < 0) {
-            final boolean prepend = (normalisedIndex < 0);
+        if (normalisedIndex >= size) {
             // find out the number of gaps to fill with null/the default value
-            final int gapCount = (prepend ? ((normalisedIndex + 1) * -1) : normalisedIndex - size);
+            final int gapCount = normalisedIndex - size;
 
             // fill all gaps
             for (int i = 0; i < gapCount; i++) {
-                final int idx = prepend ? 0 : size();
+                final int idx = size();
 
                 // if we lazily create default values, use 'null' as placeholder
                 if (lazyDefaultValues)
@@ -159,7 +174,7 @@ public final class ListWithDefault<T> implements List<T> {
             }
 
             // add the first/last element being always the default value
-            final int idx = prepend ? 0 : normalisedIndex;
+            final int idx = normalisedIndex;
             delegate.add(idx, getDefaultValue(idx));
 
             // normalise index again to get positive index
