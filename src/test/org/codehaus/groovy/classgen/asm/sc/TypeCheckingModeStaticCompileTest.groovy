@@ -51,5 +51,29 @@ class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest {
         linesOfCode = bytecodeAsString.substring(st, ed)
         assert !linesOfCode.contains('INVOKEVIRTUAL')
     }
+
+    void testSkipAndAnonymousInnerClass() {
+        new GroovyShell().evaluate '''import groovy.transform.CompileStatic
+            public interface HibernateCallback<T> {
+                T doInHibernate()
+            }
+
+            @CompileStatic
+            class Enclosing {
+                @CompileStatic(groovy.transform.TypeCheckingMode.SKIP)
+                def shouldBeSkipped(Closure callable) {
+                    new HibernateCallback() {
+                        @Override
+                        def doInHibernate() {
+                            callable(1+new Date()) // should pass because we're in a skipped section
+                        }}
+                }
+            }
+
+            new Enclosing().shouldBeSkipped {
+                println 'This is ok'
+            }
+        '''
+    }
 }
 

@@ -106,4 +106,27 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testSkipAndAnonymousInnerClass() {
+        new GroovyShell().evaluate '''import groovy.transform.TypeChecked
+            public interface HibernateCallback<T> {
+                T doInHibernate()
+            }
+
+            @TypeChecked
+            class Enclosing {
+                @TypeChecked(groovy.transform.TypeCheckingMode.SKIP)
+                def shouldBeSkipped(Closure callable) {
+                    new HibernateCallback() {
+                        @Override
+                        def doInHibernate() {
+                            callable(1+new Date()) // should pass because we're in a skipped section
+                        }}
+                }
+            }
+
+            new Enclosing().shouldBeSkipped {
+                println 'This is ok'
+            }
+        '''
+    }
 }
