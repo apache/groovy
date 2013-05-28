@@ -16,7 +16,6 @@
 
 package org.codehaus.groovy.transform;
 
-import groovy.lang.Script;
 import groovy.transform.BaseScript;
 
 import java.util.Arrays;
@@ -27,8 +26,6 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -38,7 +35,7 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
- * Handles transformation for the @Field annotation.
+ * Handles transformation for the @BuilsScript annotation.
  *
  * @author Paul King
  * @author Cedric Champeau
@@ -49,15 +46,8 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
 
     private static final Class<BaseScript> MY_CLASS = BaseScript.class;
     private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
-    private static final ClassNode SCRIPT_TYPE = ClassHelper.make(Script.class);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode ASTTRANSFORMCLASS_TYPE = ClassHelper.make(GroovyASTTransformationClass.class);
     private SourceUnit sourceUnit;
-    private DeclarationExpression candidate;
-    private boolean insideScriptBody;
-    private String variableName;
-    private FieldNode fieldNode;
-    private ClosureExpression currentClosure;
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         sourceUnit = source;
@@ -77,7 +67,6 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
                 return;
             }
             
-            candidate = de;
             // GROOVY-4548: temp fix to stop CCE until proper support is added
             if (de.isMultipleAssignmentDeclaration()) {
                 addError("Annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", parent);
