@@ -237,7 +237,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param node
      * @return true if the inner class node should be skipped
      */
-    private boolean isSkippedInnerClass(AnnotatedNode node) {
+    protected boolean isSkippedInnerClass(AnnotatedNode node) {
         if (!(node instanceof InnerClassNode)) return false;
         MethodNode enclosingMethod = ((InnerClassNode) node).getEnclosingMethod();
         return enclosingMethod != null && isSkipMode(enclosingMethod);
