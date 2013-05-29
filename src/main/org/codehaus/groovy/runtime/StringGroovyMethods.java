@@ -147,7 +147,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> T asType(GString self, Class<T> c) {
         if (c == File.class) {
             return (T) new File(self.toString());
-        } else if (Number.class.isAssignableFrom(c)) {
+        } else if (Number.class.isAssignableFrom(c) || c.isPrimitive()) {
             return asType(self.toString(), c);
         }
         return DefaultGroovyMethods.asType((Object) self, c);
