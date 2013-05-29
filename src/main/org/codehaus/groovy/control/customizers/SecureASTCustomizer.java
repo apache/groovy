@@ -941,7 +941,14 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
         public void visitPropertyExpression(final PropertyExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getObjectExpression().visit(this);
+            Expression receiver = expression.getObjectExpression();
+            final String typeName = receiver.getType().getName();
+            if (receiversWhiteList != null && !receiversWhiteList.contains(typeName)) {
+                throw new SecurityException("Property access not allowed on [" + typeName + "]");
+            } else if (receiversBlackList != null && receiversBlackList.contains(typeName)) {
+                throw new SecurityException("Property access not allowed on [" + typeName + "]");
+            }
+            receiver.visit(this);
             final Expression property = expression.getProperty();
             checkConstantTypeIfNotMethodNameOrProperty(property);
         }
@@ -958,7 +965,14 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
         public void visitAttributeExpression(final AttributeExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getObjectExpression().visit(this);
+            Expression receiver = expression.getObjectExpression();
+            final String typeName = receiver.getType().getName();
+            if (receiversWhiteList != null && !receiversWhiteList.contains(typeName)) {
+                throw new SecurityException("Attribute access not allowed on [" + typeName + "]");
+            } else if (receiversBlackList != null && receiversBlackList.contains(typeName)) {
+                throw new SecurityException("Attribute access not allowed on [" + typeName + "]");
+            }
+            receiver.visit(this);
             final Expression property = expression.getProperty();
             checkConstantTypeIfNotMethodNameOrProperty(property);
         }
@@ -990,6 +1004,13 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
         public void visitVariableExpression(final VariableExpression expression) {
             assertExpressionAuthorized(expression);
+            final String type = expression.getType().getName();
+            if (constantTypesWhiteList != null && !constantTypesWhiteList.contains(type)) {
+                throw new SecurityException("Usage of variables of type [" + type + "] is not allowed");
+            }
+            if (constantTypesBlackList != null && constantTypesBlackList.contains(type)) {
+                throw new SecurityException("Usage of variables of type [" + type + "] is not allowed");
+            }
         }
 
         public void visitDeclarationExpression(final DeclarationExpression expression) {
