@@ -454,3 +454,8 @@ classes {
         logger.lifecycle "InvokeDynamic support ${useIndy()?'on':'off'}"
     }
 }
+
+// If a local configuration file for tweaking the build is present, apply it
+if (file('user.gradle').exists()) {
+    apply from: 'user.gradle'
+}

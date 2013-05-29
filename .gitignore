@@ -10,3 +10,5 @@ out
 .*.swp
 *.class
 /bin
+user.gradle
+
