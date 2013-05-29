@@ -468,4 +468,24 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6162
+    void testShouldConsiderThisInStaticContext() {
+        assertScript '''
+            class Foo {
+                static def staticMethod() {
+                    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                        def ift = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                        assert ift == CLASS_Type
+                        assert ift.isUsingGenerics()
+                        assert ift.genericsTypes[0].type.name == 'Foo'
+                    })
+                    def foo = this
+
+                    this.classLoader
+                }
+            }
+            assert Foo.staticMethod() instanceof ClassLoader
+        '''
+    }
+
 }

@@ -31,4 +31,19 @@ class Groovy4418Bug extends CompilableTestSupport {
             assert new Subclass().method() == 'foo'
         '''
     }
+
+    // additional test for GROOVY-6183
+    void testStaticAttributeAccess() {
+        assertScript '''
+        class A {
+            static protected int x
+            public static void reset() { this.@x = 2 }
+        }
+        assert A.x == 0
+        assert A.@x == 0
+        A.reset()
+        assert A.x == 2
+        assert A.@x == 2
+        '''
+    }
 }

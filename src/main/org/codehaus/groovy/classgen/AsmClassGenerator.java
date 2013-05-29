@@ -977,6 +977,21 @@ public class AsmClassGenerator extends ClassGenerator {
                                 outer = outer.getSuperClass();
                             }
                         }
+                        if (field==null
+                                && expression instanceof AttributeExpression
+                                && isThisExpression(objectExpression)
+                                && controller.isStaticContext()) {
+                            // GROOVY-6183
+                            ClassNode current = classNode.getSuperClass();
+                            while (field==null && current!=null) {
+                                field = current.getDeclaredField(name);
+                                current = current.getSuperClass();
+                            }
+                            if (field!=null && (field.isProtected() || field.isPublic())) {
+                                visitFieldExpression(new FieldExpression(field));
+                                return;
+                            }
+                        }
                 	}
                 }
                 if (field != null && !privateSuperField) {//GROOVY-4497: don't visit super field if it is private
@@ -1063,6 +1078,8 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitAttributeExpression(AttributeExpression expression) {
         Expression objectExpression = expression.getObjectExpression();
         MethodCallerMultiAdapter adapter;
+        OperandStack operandStack = controller.getOperandStack();
+        int mark = operandStack.getStackLength()-1;
         if (controller.getCompileStack().isLHS()) {
             adapter = setField;
             if (isGroovyObject(objectExpression)) adapter = setGroovyObjectField;
@@ -1076,7 +1093,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!controller.getCompileStack().isLHS()) {
             controller.getAssertionWriter().record(expression.getProperty());
         } else {
-            controller.getOperandStack().remove(2);
+            operandStack.remove(operandStack.getStackLength() - mark);
         }
     }
 
