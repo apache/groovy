@@ -289,7 +289,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         super.visitVariableExpression(vexp);
         if (vexp != VariableExpression.THIS_EXPRESSION &&
                 vexp != VariableExpression.SUPER_EXPRESSION) {
-            if (vexp.getName().equals("this")) storeType(vexp, typeCheckingContext.getEnclosingClassNode());
+            if (vexp.getName().equals("this")) {
+                ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
+                if (typeCheckingContext.isInStaticContext) {
+                    ClassNode clazzType = CLASS_Type.getPlainNodeReference();
+                    clazzType.setGenericsTypes(new GenericsType[] {new GenericsType(enclosingClassNode)});
+                    storeType(vexp, clazzType);
+                } else {
+                    storeType(vexp, enclosingClassNode);
+                }
+            }
             if (vexp.getName().equals("super")) storeType(vexp, typeCheckingContext.getEnclosingClassNode().getSuperClass());
             if (typeCheckingContext.getEnclosingClosure() != null) {
                 if (vexp.getName().equals("owner") || vexp.getName().equals("thisObject")) {
