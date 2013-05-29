@@ -81,5 +81,41 @@ class AsTest extends GroovyTestCase {
         assert subject.class == Double
         assert subject == 0.1
     }
+
+    void testGStringAsByte() {
+        subject = "${42}" as byte
+        assert subject.class == Byte // "as" wraps types
+        assert subject == 42
+    }
     
+    void testGStringAsShort() {
+        subject = "${42}" as short
+        assert subject.class == Short // "as" wraps types
+        assert subject == 42
+    }
+
+    void testGStringAsInt() {
+        subject = "${42}" as int
+        assert subject.class == Integer // "as" wraps types
+        assert subject == 42
+    }
+
+    void testGStringAsLong() {
+        subject = "${42}" as long
+        assert subject.class == Long // "as" wraps types
+        assert subject == 42
+    }
+
+    void testGStringAsFloat() {
+        subject = "${42.666}" as float
+        assert subject.class == Float // "as" wraps types
+        assert subject == 42.666f
+    }
+
+    void testGStringAsDouble() {
+        subject = "${42.666}" as double
+        assert subject.class == Double // "as" wraps types
+        assert subject == 42.666d
+    }
+
 }
