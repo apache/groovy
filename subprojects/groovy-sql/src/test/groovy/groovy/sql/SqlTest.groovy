@@ -142,6 +142,13 @@ class SqlTest extends GroovyTestCase {
         assert data.size == 2 && !(data - ['firstname', 'lastname'])
     }
 
+    void testCallMethodFromObjectOnGroovyResultSet() {
+        sql.eachRow('select * from PERSON') {
+            println it.toString()
+            println it.hashCode()
+        }
+    }
+
     private createSql() {
         DataSource ds = DB_DATASOURCE.newInstance(
                 (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),

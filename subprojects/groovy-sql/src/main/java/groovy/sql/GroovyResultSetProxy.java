@@ -15,6 +15,7 @@
  */
 package groovy.sql;
 
+import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
@@ -97,9 +98,16 @@ public final class GroovyResultSetProxy implements InvocationHandler {
         return mc;
     }
 
+    /**
+     * This class is introduced as a workaround for GROOVY-6187, which failed
+     * because if you use a metaclass from an interface, methods defined on
+     * Object cannot be called.
+     */
+    private abstract static class DummyResultSet implements GroovyResultSet {}
+
     private MetaClass getMetaClass() {
         if (metaClass == null) {
-            metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(GroovyResultSet.class);
+            metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(DummyResultSet.class);
         }
         return metaClass;
     }
