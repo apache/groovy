@@ -554,11 +554,13 @@ class ListTest extends GroovyTestCase {
     void testLazyListAndEmptyRangeAccess() {
         def l1 = [].withDefault { 42 }
         assert l1[0..<0] instanceof ListWithDefault
+        assert l1[0..<0] == []
     }
 
     void testEagerListAndEmptyRangeAccess() {
         def l1 = [].withEagerDefault { 42 }
         assert l1[0..<0] instanceof ListWithDefault
+        assert l1[0..<0] == []
     }
 
     void testLazyListAndReversedRangeAccess() {
