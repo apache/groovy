@@ -5291,7 +5291,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.List#subList(int,int)
      */
     public static <T> List<T> getAt(ListWithDefault<T> self, EmptyRange range) {
-        return ListWithDefault.newInstance(self.getDelegate(), self.isLazyDefaultValues(), self.getInitClosure());
+        return ListWithDefault.newInstance(new ArrayList<T>(), self.isLazyDefaultValues(), self.getInitClosure());
     }
 
     /**
