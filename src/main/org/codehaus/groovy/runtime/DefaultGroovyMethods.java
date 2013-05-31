@@ -5281,7 +5281,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the range subscript operator for an eager or lazy List.
-     * <pre class="groovyTestCase">def list = [true, 1, 3.4]
+     * <pre class="groovyTestCase">def list = [true, 1, 3.4].withDefault{ 42 }
      * assert list[0..<0] == []</pre>
      *
      * @param self  a ListWithDefault
