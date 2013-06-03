@@ -140,8 +140,10 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 ensureNotPublic(cName, fNode);
             }
             createConstructors(cNode, knownImmutableClasses, knownImmutables);
-            createHashCode(cNode, true, false, false, null, null);
-            createEquals(cNode, false, false, false, null, null);
+            if (!hasAnnotation(cNode, EqualsAndHashCodeASTTransformation.MY_TYPE)) {
+                createHashCode(cNode, true, false, false, null, null);
+                createEquals(cNode, false, false, false, null, null);
+            }
             if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
                 createToString(cNode, false, false, null, null, false, true);
             }
