@@ -35,7 +35,7 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
- * Handles transformation for the @BuilsScript annotation.
+ * Handles transformation for the @BaseScript annotation.
  *
  * @author Paul King
  * @author Cedric Champeau
