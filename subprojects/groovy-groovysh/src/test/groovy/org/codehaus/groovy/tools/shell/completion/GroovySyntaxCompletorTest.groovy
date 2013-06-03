@@ -219,13 +219,34 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
             assert(bufferline == pathstart);
             assert(cursor == pathstart.length());
             candidates << "foobar"; 5}
-        // mock asserting GString is not evaluated
         groovyshMocker.use { filenameCompletorMocker.use {
             FileNameCompleter mockFileComp = new FileNameCompleter()
             Groovysh groovyshMock = new Groovysh()
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], mockFileComp)
             def candidates = []
             assertEquals("foo('/usr/".length(), completor.complete(buffer, buffer.length(), candidates))
+            assertEquals(["foobar"], candidates)
+        }}
+    }
+
+    void testInStringFilenameBlanks() {
+        // test with blanks (non-tokens) before the first hyphen
+        IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
+        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
+        MockFor filenameCompletorMocker = new MockFor(FileNameCompleter)
+        String linestart = "x = '" // ends with single hyphen
+        String pathstart = "/usr/foobar"
+        String buffer = linestart + pathstart
+        filenameCompletorMocker.demand.complete(1) {bufferline, cursor, candidates ->
+            assert(bufferline == pathstart);
+            assert(cursor == pathstart.length());
+            candidates << "foobar"; 5}
+        groovyshMocker.use { filenameCompletorMocker.use {
+            FileNameCompleter mockFileComp = new FileNameCompleter()
+            Groovysh groovyshMock = new Groovysh()
+            GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], mockFileComp)
+            def candidates = []
+            assertEquals("x = '/usr/".length(), completor.complete(buffer, buffer.length(), candidates))
             assertEquals(["foobar"], candidates)
         }}
     }

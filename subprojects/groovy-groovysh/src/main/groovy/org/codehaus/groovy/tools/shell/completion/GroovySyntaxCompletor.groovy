@@ -230,7 +230,8 @@ class GroovySyntaxCompletor implements Completer {
             groovyLexer = createGroovyLexer(bufferLine)
         }
         // Build a list of tokens using a GroovyLexer
-        GroovySourceToken nextToken = null
+        GroovySourceToken nextToken
+        GroovySourceToken lastToken
         boolean isGString = false
         while (true) {
             try {
@@ -246,13 +247,20 @@ class GroovySyntaxCompletor implements Completer {
                     isGString = true
                 }
                 result << nextToken
+                lastToken = nextToken
             } catch (TokenStreamException e) {
-                // Exception with following hyphen either means we're in String or at end of GString.
-                if (! isGString
-                        && nextToken
-                        && bufferLine.charAt(nextToken.column).toString() in ['"', "'"]
-                        && previousLines.size() + 1 == nextToken.getLine()) {
-                    throw new InStringException(nextToken.column)
+                // getting the next token failed, possibly due to unclosed hyphens, need to investigate rest of the line to confirm
+                if (! isGString && lastToken != null) {
+                    String restline = bufferLine.substring(lastToken.columnLast - 1)
+                    int leadingBlanks = restline.find('^[ ]*').length()
+                    if (restline) {
+                        char firstChar = restline.charAt(leadingBlanks)
+                        // Exception with following hyphen either means we're in String or at end of GString.
+                        if (firstChar.toString() in ['"', "'"]
+                                && previousLines.size() + 1 == lastToken.getLine()) {
+                            throw new InStringException(lastToken.columnLast + leadingBlanks - 1)
+                        }
+                    }
                 }
                 return false
             } catch (java.lang.NullPointerException e) {
