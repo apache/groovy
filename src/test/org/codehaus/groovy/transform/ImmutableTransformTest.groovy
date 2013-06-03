@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -569,5 +569,21 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             '''
         }
         assert msg.contains('@Immutable processor doesn\'t know how to handle field \'name\' of type \'java.lang.Object or def\'')
+    }
+
+    // GROOVY-6192
+    void testWithEqualsAndHashCodeASTOverride() {
+        assertScript '''
+            import groovy.transform.*
+
+            @Immutable
+            @EqualsAndHashCode(includes = ['id'])
+            class B {
+                String id
+                String name
+            }
+
+            assert new B('1', 'foo').equals(new B('1', 'foo2'))
+        '''
     }
 }
