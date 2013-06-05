@@ -110,7 +110,7 @@ class ExecuteTest extends GroovyTestCase {
         println "Executing command in dir '..': $cmd"
         StringBuffer sbout = new StringBuffer()
         StringBuffer sberr = new StringBuffer()
-        def process = cmd.execute(null, new File('..'))
+        def process = cmd.execute((String[])null, new File('..'))
         process.waitForProcessOutput sbout, sberr
         def value = process.exitValue()
         int count = sbout.toString().readLines().size()
