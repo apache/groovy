@@ -18,7 +18,6 @@ package org.codehaus.groovy.tools.shell.completion
 
 import antlr.TokenStreamException
 import jline.console.completer.Completer
-import jline.console.completer.FileNameCompleter
 import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.antlr.SourceBuffer
 import org.codehaus.groovy.antlr.UnicodeEscapingReader
@@ -54,7 +53,7 @@ class GroovySyntaxCompletor implements Completer {
     GroovySyntaxCompletor(Groovysh shell,
                           ReflectionCompletor reflectionCompletor,
                           List<IdentifierCompletor> identifierCompletors,
-                          FileNameCompleter filenameCompletor) {
+                          Completer filenameCompletor) {
         this.shell = shell
         this.identifierCompletors = identifierCompletors
         this.reflectionCompletor = reflectionCompletor

@@ -18,7 +18,7 @@ package org.codehaus.groovy.tools.shell
 
 import jline.console.ConsoleReader
 import jline.console.completer.AggregateCompleter
-import jline.console.completer.FileNameCompleter
+
 import jline.console.history.FileHistory
 import org.codehaus.groovy.tools.shell.completion.*
 import org.codehaus.groovy.tools.shell.util.Logger
@@ -62,7 +62,7 @@ class InteractiveShellRunner
                         new VariableSyntaxCompletor(shell),
                         new CustomClassSyntaxCompletor(shell),
                         new ImportsSyntaxCompletor(shell)],
-                new FileNameCompleter()))
+                new FileNameCompleter(false)))
     }
     
     void run() {
