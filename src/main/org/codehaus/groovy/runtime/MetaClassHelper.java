@@ -276,7 +276,8 @@ public class MetaClassHelper {
         if (parameter.getTheClass() == argument) return 0;
 
         if (parameter.isInterface()) {
-            return getMaximumInterfaceDistance(argument, parameter.getTheClass()) << INTERFACE_SHIFT;
+            int dist = getMaximumInterfaceDistance(argument, parameter.getTheClass()) << INTERFACE_SHIFT;
+            if (dist!=-1) return dist;
         }
 
         long objectDistance = 0;
@@ -311,7 +312,7 @@ public class MetaClassHelper {
             if (clazz.isPrimitive()) {
                 objectDistance += 2;
             } else {
-                while (clazz != Object.class) {
+                while (clazz != Object.class && clazz != null) {
                     clazz = clazz.getSuperclass();
                     objectDistance += 2;
                 }
