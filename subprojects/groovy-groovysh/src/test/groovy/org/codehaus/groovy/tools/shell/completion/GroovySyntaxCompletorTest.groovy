@@ -17,7 +17,6 @@
 package org.codehaus.groovy.tools.shell.completion
 
 import groovy.mock.interceptor.MockFor
-import jline.console.completer.FileNameCompleter
 import org.codehaus.groovy.tools.shell.CommandRegistry
 import org.codehaus.groovy.tools.shell.CompletorTestSupport
 import org.codehaus.groovy.tools.shell.Groovysh
