@@ -27,12 +27,13 @@ import groovy.util.ProxyGenerator;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 
 public class CachedSAMClass extends CachedClass {
 
     private final Method method;
-    
+
     public CachedSAMClass(Class klazz, ClassInfo classInfo) {
         super(klazz, classInfo);
         method = getSAMMethod(klazz);
@@ -41,8 +42,9 @@ public class CachedSAMClass extends CachedClass {
 
     @Override
     public boolean isAssignableFrom(Class argument) {
-        return Closure.class.isAssignableFrom(argument) ||
-                super.isAssignableFrom(argument);
+        return argument == null ||
+                Closure.class.isAssignableFrom(argument) ||
+                ReflectionCache.isAssignableFrom(getTheClass(), argument);
     }
 
     @Override
