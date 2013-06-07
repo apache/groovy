@@ -1836,7 +1836,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             Expression genericTypeIndex = annotation.getMember("genericTypeIndex");
                             Integer stInt = Closure.OWNER_FIRST;
                             if (strategy!=null) {
-                                stInt = (Integer) evaluateExpression(new CastExpression(ClassHelper.Integer_TYPE,strategy));
+                                stInt = (Integer) evaluateExpression(new CastExpression(ClassHelper.Integer_TYPE,strategy), typeCheckingContext.source.getConfiguration());
                             }
                             if (value instanceof ClassExpression && !value.getType().equals(DELEGATES_TO_TARGET)) {
                                 if (genericTypeIndex!=null) {
