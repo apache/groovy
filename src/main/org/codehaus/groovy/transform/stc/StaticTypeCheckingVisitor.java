@@ -1834,7 +1834,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             Expression strategy = annotation.getMember("strategy");
                             Integer stInt = Closure.OWNER_FIRST;
                             if (strategy!=null) {
-                                stInt = (Integer) evaluateExpression(new CastExpression(ClassHelper.Integer_TYPE,strategy));
+                                stInt = (Integer) evaluateExpression(new CastExpression(ClassHelper.Integer_TYPE,strategy), typeCheckingContext.source.getConfiguration());
                             }
                             if (value instanceof ClassExpression && !value.getType().equals(DELEGATES_TO_TARGET)) {
                                 // temporarily store the delegation strategy and the delegate type
