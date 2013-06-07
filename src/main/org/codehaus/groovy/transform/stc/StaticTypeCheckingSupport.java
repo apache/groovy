@@ -1017,6 +1017,8 @@ public abstract class StaticTypeCheckingSupport {
                     System.arraycopy(params, 0, firstParams, 0, firstParams.length);
                     dist = allParametersAndArgumentsMatch(firstParams, args);
                     firstParamMatches =  dist >= 0;
+                } else {
+                    dist = 0;
                 }
                 if (firstParamMatches) {
                     // there are three case for vargs
