@@ -925,6 +925,15 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6195
+    void testShouldNotThrowAmbiguousVargs() {
+        assertScript '''
+            def list = ['a', 'b', 'c']
+            Object[] arr = list.toArray()
+            println arr
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
