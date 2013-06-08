@@ -332,7 +332,6 @@ ext.distSpec = copySpec {
             fileMode = 0755
             exclude "groovy.icns"
         }
-        //from("src/bin/groovy.icns")
         from("src/tools/org/codehaus/groovy/tools/groovy.ico")
     }
     into("embeddable") {
