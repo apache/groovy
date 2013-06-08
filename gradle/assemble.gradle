@@ -311,6 +311,7 @@ ext.distSpec = copySpec {
                         it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223') && !it.name.matches(/groovy-\d.*/)
                     }.flatten() as Set
         })
+        from("src/bin/groovy.icns")
     }
     into("indy") {
         from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-indy.jar") }
@@ -330,7 +331,7 @@ ext.distSpec = copySpec {
             fileMode = 0755
             exclude "groovy.icns"
         }
-        from("src/bin/groovy.icns")
+        //from("src/bin/groovy.icns")
         from("src/tools/org/codehaus/groovy/tools/groovy.ico")
     }
     into("embeddable") {
