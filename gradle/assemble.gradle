@@ -331,7 +331,7 @@ ext.distSpec = copySpec {
             exclude "groovy.icns"
         }
         from("src/bin/groovy.icns")
-        from("src/tools/org/codehaus/groovy/tools/groovy.ico")
+        from("subprojects/groovy-docgenerator/src/main/resources/org/codehaus/groovy/tools/groovy.ico")
     }
     into("embeddable") {
         from jarAll.archivePath
