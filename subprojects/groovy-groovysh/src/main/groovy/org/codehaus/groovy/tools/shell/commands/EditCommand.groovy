@@ -56,12 +56,13 @@ class EditCommand
             // Write the current buffer to a tmp file
             file.write(buffer.join(NEWLINE))
             
-            // Try to launch the editor
+            /* 
+             * Try to launch the editor.
+             *
+             * GROOVY-6201: Inherit I/O from current process 
+             */
             log.debug("Executing: $editorCommand $file")
             ProcessBuilder pb = new ProcessBuilder("$editorCommand", "$file")
-
-            // GROOVY-6201 Inherit I/O from current process, 
-            // fix for terminal-based editors
             pb.redirectErrorStream(true);
             pb.redirectInput(ProcessBuilder.Redirect.INHERIT)
             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
