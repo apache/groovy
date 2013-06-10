@@ -59,6 +59,9 @@ class EditCommand
             // Try to launch the editor
             log.debug("Executing: $editorCommand $file")
             ProcessBuilder pb = new ProcessBuilder("$editorCommand", "$file")
+
+            // GROOVY-6201 Inherit I/O from current process, 
+            // fix for terminal-based editors
             pb.redirectErrorStream(true);
             pb.redirectInput(ProcessBuilder.Redirect.INHERIT)
             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
