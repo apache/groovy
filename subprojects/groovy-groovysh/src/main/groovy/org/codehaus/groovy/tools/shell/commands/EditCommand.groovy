@@ -57,10 +57,13 @@ class EditCommand
             file.write(buffer.join(NEWLINE))
             
             // Try to launch the editor
-            def cmd = "$editorCommand $file"
-            log.debug("Executing: $cmd")
-            def p = cmd.execute()
-            
+            log.debug("Executing: $editorCommand $file")
+            ProcessBuilder pb = new ProcessBuilder("$editorCommand", "$file")
+            pb.redirectErrorStream(true);
+            pb.redirectInput(ProcessBuilder.Redirect.INHERIT)
+            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
+            def p = pb.start()
+			
             // Wait for it to finish
             log.debug("Waiting for process: $p")
             p.waitFor()
