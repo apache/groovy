@@ -25,19 +25,19 @@ class EditCommandTest
     extends CommandTestSupport
 {
     void testProcessBuilderInit() {
-	    def mockEdit = new EditCommand(shell)
-	    ProcessBuilder pb = mockEdit.getEditorProcessBuilder("/usr/bin/vim", 
-	            "/var/folders/tu/tuATI/-Tmp-/groovysh-buffer1761911.groovy")
-	
-	    assertTrue(pb.redirectErrorStream()) 
-	
-	    // GROOVY-6201: Editor should inherit I/O from the current process.
-		//    Fixed only for java >= 1.7 using new ProcessBuilder api
-	    def javaVer = Double.valueOf(System.getProperty("java.specification.version"));
+        def mockEdit = new EditCommand(shell)
+        ProcessBuilder pb = mockEdit.getEditorProcessBuilder("/usr/bin/vim", 
+                "/var/folders/tu/tuATI/-Tmp-/groovysh-buffer1761911.groovy")
+
+        assertTrue(pb.redirectErrorStream()) 
+
+        // GROOVY-6201: Editor should inherit I/O from the current process.
+        //    Fixed only for java >= 1.7 using new ProcessBuilder api
+        def javaVer = Double.valueOf(System.getProperty("java.specification.version"));
         if (javaVer >= 1.7) {
             assertEquals(pb.redirectInput(), ProcessBuilder.Redirect.INHERIT)
             assertEquals(pb.redirectOutput(), ProcessBuilder.Redirect.INHERIT)
-		}
+        }
     }
 
 
