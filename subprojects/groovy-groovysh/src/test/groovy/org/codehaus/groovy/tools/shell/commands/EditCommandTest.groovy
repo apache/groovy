@@ -31,6 +31,8 @@ class EditCommandTest
 	
 	    assertTrue(pb.redirectErrorStream()) 
 	
+	    // GROOVY-6201: Editor should inherit I/O from the current process.
+		//    Fixed only for java >= 1.7 using new ProcessBuilder api
 	    javaVer = Double.valueOf(System.getProperty("java.specification.version"));
         if (javaVer >= 1.7) {
             assertEquals(pb.redirectInput(), ProcessBuilder.Redirect.INHERIT)

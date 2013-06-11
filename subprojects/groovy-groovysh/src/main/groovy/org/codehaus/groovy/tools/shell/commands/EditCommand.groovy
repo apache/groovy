@@ -40,7 +40,7 @@ class EditCommand
 		pb = new ProcessBuilder(editorCommand, tempFilename)
 		
 		// GROOVY-6201: Editor should inherit I/O from the current process.
-		//    Only supported if java >= 1.7
+		//    Fixed only for java >= 1.7 using new ProcessBuilder api
         pb.redirectErrorStream(true);
 	    javaVer = Double.valueOf(System.getProperty("java.specification.version"));
         if (javaVer >= 1.7) {
