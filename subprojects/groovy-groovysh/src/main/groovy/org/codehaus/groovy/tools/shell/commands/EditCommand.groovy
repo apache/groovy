@@ -37,12 +37,12 @@ class EditCommand
     }
 
     ProcessBuilder getEditorProcessBuilder(String editorcommand, String tempFilename) {
-		pb = new ProcessBuilder(editorCommand, tempFilename)
+		def pb = new ProcessBuilder(editorCommand, tempFilename)
 		
 		// GROOVY-6201: Editor should inherit I/O from the current process.
 		//    Fixed only for java >= 1.7 using new ProcessBuilder api
         pb.redirectErrorStream(true);
-	    javaVer = Double.valueOf(System.getProperty("java.specification.version"));
+	    def javaVer = Double.valueOf(System.getProperty("java.specification.version"));
         if (javaVer >= 1.7) {
         	pb.redirectInput(ProcessBuilder.Redirect.INHERIT)
         	pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
