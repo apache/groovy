@@ -171,7 +171,6 @@ public class ASTNode {
      */
     public void removeNodeMetaData(Object key) {
         if (key==null) throw new GroovyBugError("Tried to remove meta data with null key "+this+".");
-        // GRECLIPSE: start
         if (metaDataMap == null) {
             return;
         }
