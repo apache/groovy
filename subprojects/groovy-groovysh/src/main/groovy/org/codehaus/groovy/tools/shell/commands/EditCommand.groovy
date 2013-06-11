@@ -30,10 +30,27 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 class EditCommand
     extends CommandSupport
 {
+    ProcessBuilder pb;
+
     EditCommand(final Groovysh shell) {
         super(shell, 'edit', '\\e')
     }
-    
+
+    ProcessBuilder getEditorProcessBuilder(String editorcommand, String tempFilename) {
+		pb = new ProcessBuilder(editorCommand, tempFilename)
+		
+		// GROOVY-6201: Editor should inherit I/O from the current process.
+		//    Only supported if java >= 1.7
+        pb.redirectErrorStream(true);
+	    javaVer = Double.valueOf(System.getProperty("java.specification.version"));
+        if (javaVer >= 1.7) {
+        	pb.redirectInput(ProcessBuilder.Redirect.INHERIT)
+        	pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
+		}
+		
+		return pb
+    }
+
     private String getEditorCommand() {
         def editor = Preferences.editor;
 
@@ -56,16 +73,9 @@ class EditCommand
             // Write the current buffer to a tmp file
             file.write(buffer.join(NEWLINE))
             
-            /* 
-             * Try to launch the editor.
-             *
-             * GROOVY-6201: Inherit I/O from current process 
-             */
+            //Try to launch the editor.
             log.debug("Executing: $editorCommand $file")
-            ProcessBuilder pb = new ProcessBuilder("$editorCommand", "$file")
-            pb.redirectErrorStream(true);
-            pb.redirectInput(ProcessBuilder.Redirect.INHERIT)
-            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
+            def pb = getEditorProcessBuilder("$editorCommand", "$file")
             def p = pb.start()
 			
             // Wait for it to finish
