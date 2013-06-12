@@ -182,21 +182,21 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
         classifier = 'indy'
     }
     doLast {
-        def manifestPath = "$metaInfDir/MANIFEST.MF"
+        def manifestPath = "$ext.metaInfDir/MANIFEST.MF"
         manifest.writeTo(manifestPath)
         copy {
             from(mergeModuleDescriptors())
-            into "$buildDir/tmp/groovy-all-metainf/services"
+            into "$ext.metaInfDir/services"
         }
         copy {
-            into "$buildDir/tmp/groovy-all-metainf"
+            into "$ext.metaInfDir"
             with licenseSpec
         }
         logger.info "Packaging with jarjar"
         project.ant {
             taskdef name: "jarjar", classname: "com.tonicsystems.jarjar.JarJarTask", classpath: configurations.tools.asPath
-            jarjar(jarfile: archivePath, manifest: "$metaInfDir/MANIFEST.MF") {
-                zipfileset(dir: "$ext.metaInfDir", prefix: 'META-INF')
+            jarjar(jarfile: archivePath, manifest: "$ext.metaInfDir/MANIFEST.MF") {
+                zipfileset(dir: "$ext.metaInfDir", prefix: 'META-INF', excludes:'META-INF')
                 zipfileset(
                         src: jar.archivePath,
                         excludes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
