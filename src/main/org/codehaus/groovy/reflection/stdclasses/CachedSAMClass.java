@@ -47,21 +47,25 @@ public class CachedSAMClass extends CachedClass {
                 ReflectionCache.isAssignableFrom(getTheClass(), argument);
     }
 
+    public static Object coerceToSAM(Closure argument, Method method, Class clazz, boolean isInterface) {
+        if (isInterface) {
+            return Proxy.newProxyInstance(
+                    clazz.getClassLoader(),
+                    new Class[]{clazz},
+                    new ConvertedClosure((Closure) argument));
+        } else {
+            Map<String, Object> m = new HashMap();
+            m.put(method.getName(), argument);
+            return ProxyGenerator.INSTANCE.
+                    instantiateAggregateFromBaseClass(m, clazz);
+        }
+    }
+    
     @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Closure) {
             Class clazz = getTheClass();
-            if (isInterface()) {
-                return Proxy.newProxyInstance(
-                        clazz.getClassLoader(),
-                        new Class[]{clazz},
-                        new ConvertedClosure((Closure) argument));
-            } else {
-                Map<String, Object> m = new HashMap();
-                m.put(method.getName(), argument);
-                return ProxyGenerator.INSTANCE.
-                            instantiateAggregateFromBaseClass(m, clazz);
-            }
+            return coerceToSAM((Closure) argument, method, clazz, clazz.isInterface()); 
         } else {
             return argument;
         }
