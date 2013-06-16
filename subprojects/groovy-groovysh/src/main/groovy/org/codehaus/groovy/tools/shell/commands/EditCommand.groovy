@@ -30,14 +30,12 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 class EditCommand
     extends CommandSupport
 {
-    ProcessBuilder pb;
-
     EditCommand(final Groovysh shell) {
         super(shell, 'edit', '\\e')
     }
 
-    ProcessBuilder getEditorProcessBuilder(String editorcommand, String tempFilename) {
-        def pb = new ProcessBuilder(editorCommand, tempFilename)
+    ProcessBuilder getEditorProcessBuilder(String editCommand, String tempFilename) {
+        def pb = new ProcessBuilder(editCommand, tempFilename)
 
         // GROOVY-6201: Editor should inherit I/O from the current process.
         //    Fixed only for java >= 1.7 using new ProcessBuilder api
