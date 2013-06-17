@@ -338,5 +338,71 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert x.s.foo() == 2
         """
     }
+
+    void testMultipleSAMSignature() {
+        assertScript '''
+            interface SAM { def foo() }
+            def method(SAM a, SAM b) {
+                a.foo()
+                b.foo()
+            }
+            method({println 'a'}, {println 'b'})
+        '''
+    }
+
+    void testMultipleSAMSignature2() {
+        assertScript '''
+            interface SAM { def foo() }
+            def method(Object o, SAM a, SAM b) {
+                a.foo()
+                b.foo()
+            }
+            method(new Object(), {println 'a'}, {println 'b'})
+        '''
+    }
+
+    void testMultipleSAMMethodWithClosure() {
+        assertScript '''
+            interface SAM { def foo() }
+            def method(SAM a, SAM b) {
+                a.foo()
+                b.foo()
+            }
+            def method(Closure a, SAM b) {
+                b.foo()
+            }
+            def called = false
+            method({println 'a'}, {println 'b'})
+            assert !called
+        '''
+    }
+
+    void testMultipleSAMMethodWithClosureInverted() {
+        assertScript '''
+            interface SAM { def foo() }
+            def method(SAM a, SAM b) {
+                a.foo()
+                b.foo()
+            }
+            def method(SAM a, Closure b) {
+                a.foo()
+            }
+            def called = false
+            method({println 'a'}, {println 'b'})
+            assert !called
+        '''
+    }
+
+    void testAmbiguousSAMOverload() {
+        shouldFailWithMessages '''
+            interface Sammy { def sammy() }
+            interface Sam { def sam() }
+            def method(Sam sam) { sam.sam() }
+            def method(Sammy sammy) { sammy.sammy() }
+            method {
+                println 'foo'
+            }
+        ''', 'Reference to method is ambiguous. Cannot choose between'
+    }
 }
 
