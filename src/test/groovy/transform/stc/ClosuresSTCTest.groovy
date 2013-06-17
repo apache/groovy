@@ -372,7 +372,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 b.foo()
             }
             def called = false
-            method({println 'a'}, {println 'b'})
+            method({called = true;println 'a'}, {println 'b'})
             assert !called
         '''
     }
@@ -388,7 +388,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 a.foo()
             }
             def called = false
-            method({println 'a'}, {println 'b'})
+            method({println 'a'}, {called=true;println 'b'})
             assert !called
         '''
     }
