@@ -32,10 +32,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Handles generation of code for the @Trait annotation. A class annotated with @Trait will generate, instead: <ul>
@@ -376,7 +373,14 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             // we should implement the field helper interface too
             cNode.addInterface(fieldHelperClassNode);
             // implementation of methods
-            for (MethodNode methodNode : fieldHelperClassNode.getAllDeclaredMethods()) {
+            List<MethodNode> declaredMethods = fieldHelperClassNode.getAllDeclaredMethods();
+            Collections.sort(declaredMethods, new Comparator<MethodNode>() {
+                public int compare(final MethodNode o1, final MethodNode o2) {
+                    if (o1.getName().endsWith("$get")) return -1;
+                    return 1;
+                }
+            });
+            for (MethodNode methodNode : declaredMethods) {
                 String fieldName = methodNode.getName();
                 if (fieldName.endsWith("$get") || fieldName.endsWith("$set")) {
                 int suffixIdx = fieldName.lastIndexOf("$");
