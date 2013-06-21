@@ -723,13 +723,13 @@ public class JavaStubGenerator {
     }
 
     private void printAnnotation(PrintWriter out, AnnotationNode annotation) {
-        out.print("@" + annotation.getClassNode().getName() + "(");
+        out.print("@" + annotation.getClassNode().getName().replace('$', '.') + "(");
         boolean first = true;
         Map<String, Expression> members = annotation.getMembers();
         for (String key : members.keySet()) {
             if (first) first = false;
             else out.print(", ");
-            out.print(key + "=" + getAnnotationValue(members.get(key)));
+            out.print(key + "=" + getAnnotationValue(members.get(key)).replace('$', '.'));
         }
         out.print(") ");
     }
