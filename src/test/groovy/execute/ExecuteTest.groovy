@@ -71,9 +71,13 @@ class ExecuteTest extends GroovyTestCase {
     }
 
     void testExecuteCommandLineProcessAndUseWaitForOrKill() {
-        def cp = System.getProperty('java.class.path')
-        def java = System.getProperty('java.home') + """/bin/java -cp $cp groovy.ui.GroovyMain -e "sleep(2000); println('Done'); System.exit(0)" """
-        println "Executing this command for two cases:\n$java"
+        String[] java = [System.getProperty('java.home') + "/bin/java",
+                "-classpath",
+                System.getProperty('java.class.path'),
+                "groovy.ui.GroovyMain",
+                "-e",
+                "sleep(2000); println('Done'); System.exit(0)"]
+        println "Executing this command for two cases:\n${java.join(' ')}"
         StringBuffer sbout = new StringBuffer()
         StringBuffer sberr = new StringBuffer()
         def process = java.execute()
@@ -120,9 +124,13 @@ class ExecuteTest extends GroovyTestCase {
     }
 
     void testExecuteCommandLineWithEnvironmentProperties() {
-        def cp = System.getProperty('java.class.path')
-        def java = System.getProperty('java.home') + """/bin/java -classpath $cp groovy.ui.GroovyMain -e "println(System.getenv('foo'))" """
-        println "Executing this command:\n$java"
+        String[] java = [System.getProperty('java.home') + "/bin/java",
+                "-classpath",
+                System.getProperty('java.class.path'),
+                "groovy.ui.GroovyMain",
+                "-e",
+                "println(System.getenv('foo'))"]
+        println "Executing this command:\n${java.join(' ')}"
         def props = ["foo=bar"]
         println "With these props: $props"
         StringBuffer sbout = new StringBuffer()
