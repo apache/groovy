@@ -801,6 +801,14 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
+    /**
+     * Use {@link FactoryBuilderSupport#dispatchNodeCall(Object, Object)} instead.
+     */
+    @Deprecated
+    protected Object dispathNodeCall(Object name, Object args) {
+        return dispathNodeCall(name, args);
+    }
+
     protected Object dispatchNodeCall(Object name, Object args) {
         Object node;
         Closure closure = null;
