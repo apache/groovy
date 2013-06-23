@@ -806,7 +806,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     @Deprecated
     protected Object dispathNodeCall(Object name, Object args) {
-        return dispathNodeCall(name, args);
+        return dispatchNodeCall(name, args);
     }
 
     protected Object dispatchNodeCall(Object name, Object args) {
