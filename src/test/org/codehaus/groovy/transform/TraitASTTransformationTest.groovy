@@ -23,9 +23,8 @@ import java.lang.invoke.MethodHandles
 
 class TraitASTTransformationTest extends GroovyTestCase {
     void testTraitWithNoMethod() {
-        assertScript '''import groovy.transform.Trait
-        @Trait
-        class MyTrait {}
+        assertScript '''
+        trait MyTrait {}
 
         class Foo implements MyTrait {}
         def foo = new Foo()
@@ -34,9 +33,8 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testTraitWithOneMethod() {
-        assertScript '''import groovy.transform.Trait
-        @Trait
-        class MyTrait {
+        assertScript '''
+        trait MyTrait {
             int a() { 1 }
 
         }
@@ -50,9 +48,8 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testTraitWithTwoMethods() {
-        assertScript '''import groovy.transform.Trait
-        @Trait
-        class MyTrait {
+        assertScript '''
+        trait MyTrait {
             int a() { 1 }
             int b() { a() }
         }
@@ -67,9 +64,8 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testTraitWithTwoMethodsAndOneOverride() {
-        assertScript '''import groovy.transform.Trait
-        @Trait
-        class MyTrait {
+        assertScript '''
+        trait MyTrait {
             int a() { 1 }
             int b() { a() }
         }
@@ -87,9 +83,8 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testTraitWithTwoMethodsAndOneAbstract() {
-        assertScript '''import groovy.transform.Trait
-        @Trait
-        abstract class MyTrait {
+        assertScript '''
+        trait MyTrait {
             abstract int a()
             int b() { a() }
         }
@@ -108,9 +103,8 @@ class TraitASTTransformationTest extends GroovyTestCase {
 
     void testTraitWithTwoMethodsAndOneAbstractNotImplemented() {
         shouldFail {
-            assertScript '''import groovy.transform.Trait
-            @Trait
-            abstract class MyTrait {
+            assertScript '''
+            abstract trait MyTrait {
                 abstract int a()
                 int b() { a() }
             }
@@ -124,7 +118,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
 
     void testWithPrecompiledTraitWithOneMethod() {
         assertScript '''
-            class Foo implements org.codehaus.groovy.transform.TraitASTTransformationTest.TestTrait {}
+            class Foo implements org.codehaus.groovy.transform.TestTrait {}
             def foo = new Foo()
             assert foo.a() == 123
         '''
@@ -132,9 +126,8 @@ class TraitASTTransformationTest extends GroovyTestCase {
 
     void testTraitWithConstructor() {
         shouldFail {
-            assertScript '''import groovy.transform.Trait
-            @Trait
-            abstract class MyTrait {
+            assertScript '''
+            abstract trait MyTrait {
                 MyTrait() {
                     println 'woo'
                 }
@@ -148,9 +141,8 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testTraitWithField() {
-        assertScript '''import groovy.transform.Trait
-        @Trait
-        class MyTrait {
+        assertScript '''
+        trait MyTrait {
             private String message = 'Hello'
             String getBlah() {
                 message
@@ -164,9 +156,8 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testTraitWithField2() {
-        assertScript '''import groovy.transform.Trait
-
-        class Foo implements org.codehaus.groovy.transform.TraitASTTransformationTest.TestTrait2 {
+        assertScript '''
+        class Foo implements org.codehaus.groovy.transform.TestTrait2 {
             def cat() { "cat" }
         }
         def foo = new Foo()
@@ -223,8 +214,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
     void testClosureExpressionInTrait() {
         assertScript '''import groovy.transform.*
 
-        @Trait
-        class GreetingObject {
+        trait GreetingObject {
             String greeting = 'Welcome!'
             Closure greeter() {
                 return { -> greeting }
@@ -240,8 +230,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
 
-    @Trait
-    static class TestTrait2 {
+    trait TestTrait2 {
         private String message = 'Hello'
         String getMessage() { this.message }
         String blah() { message }
@@ -250,8 +239,8 @@ class TraitASTTransformationTest extends GroovyTestCase {
         }
     }
 
-    @Trait
-    static class TestTrait {
+
+    trait TestTrait {
         int a() { 123 }
     }
 }

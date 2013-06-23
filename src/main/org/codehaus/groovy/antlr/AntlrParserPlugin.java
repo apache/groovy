@@ -281,6 +281,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     importDef(node);
                     break;
 
+                case TRAIT_DEF:
                 case CLASS_DEF:
                     classDef(node);
                     break;
@@ -548,6 +549,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected void innerClassDef(AST classDef) {
         List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
+
+        if (isType(TRAIT_DEF, classDef)) {
+            annotations.add(new AnnotationNode(ClassHelper.make("groovy.transform.Trait")));
+        }
+
         AST node = classDef.getFirstChild();
         int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
@@ -646,6 +652,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     enumConstantDef(node);
                     break;
 
+                case TRAIT_DEF:
                 case CLASS_DEF:
                     innerClassDef(node);
                     break;
