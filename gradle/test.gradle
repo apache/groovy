@@ -47,6 +47,14 @@ allprojects {
             exceptionFormat = 'full'
         }
     }
+
+    sourceSets {
+        test {
+            groovy {
+                srcDirs += "src/spec/test"
+            }
+        }
+    }
 }
 tasks.addRule("Pattern: testSingle<Name> will test **/<Name>.class") {String taskName ->
     if (taskName.startsWith("testSingle")) {

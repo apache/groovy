@@ -1,0 +1,24 @@
+= Syntax
+:toc:
+:icons:
+:linkcss!:
+
+This chapter covers the syntax of the Groovy programming language.
+
+== Defining a variable
+
+You can define and assign a variable as follows:
+
+[source,groovy]
+---------------
+include::../test/SyntaxTest.groovy[tags=variable_definition, indent=0]
+---------------
+
+Variable `a` is optionally typed, as denoted by the `def` keyword.
+
+Then, you can assert the value of the variable with:
+
+[source,groovy]
+---------------
+include::../test/SyntaxTest.groovy[tags=assert_var_exists, indent=0]
+---------------

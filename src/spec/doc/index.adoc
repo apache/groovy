@@ -1,0 +1,10 @@
+= Groovy Language Specification
+:toc:
+:icons:
+:linkcss!:
+
+:leveloffset: 1
+
+include::syntax.adoc[]
+
+

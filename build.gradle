@@ -1,6 +1,17 @@
 apply from: 'gradle/filter.gradle'
 apply from: "gradle/indy.gradle"
 
+buildscript {
+    repositories {
+        mavenRepo name: 'Bintray Asciidoctor repo', url: 'http://dl.bintray.com/content/aalmiray/asciidoctor'
+        mavenRepo name: 'Bintray JCenter', url: 'http://jcenter.bintray.com'
+    }
+
+    dependencies {
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.4.1'
+    }
+}
+
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
@@ -22,6 +33,16 @@ allprojects {
     apply plugin: 'codenarc'
     apply from: "${rootProject.projectDir}/gradle/groovydoc.gradle"
     apply from: "${rootProject.projectDir}/gradle/indy.gradle"
+
+    apply plugin: 'asciidoctor'
+
+    asciidoctor {
+        sourceDir = project.file('src/spec/doc')
+    }
+
+    // skip the asciidoctor task if there's no directory with asciidoc files
+    asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
+
 
     // don't fail build on CodeNarc tasks
     tasks.withType(CodeNarc) {

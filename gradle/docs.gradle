@@ -1,4 +1,4 @@
-task doc(dependsOn: ['javadocAll', 'groovydocAll', 'docGDK']) {
+task doc(dependsOn: ['asciidocAll', 'javadocAll', 'groovydocAll', 'docGDK']) {
     ext.footer = "Copyright &amp;copy; 2003-2013 The Codehaus. All rights reserved."
     ext.title = "Groovy ${groovyVersion}"
 }
@@ -41,6 +41,7 @@ def groovydocSpec = {
 allprojects {
     javadoc javadocSpec
     groovydoc groovydocSpec
+    task asciidocAll(dependsOn: 'asciidoctor')
 }
 
 // Root project has an extra 'all' javadoc task
