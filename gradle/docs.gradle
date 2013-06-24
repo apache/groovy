@@ -41,7 +41,14 @@ def groovydocSpec = {
 allprojects {
     javadoc javadocSpec
     groovydoc groovydocSpec
-    task asciidocAll(dependsOn: 'asciidoctor')
+    if (isJava15()) {
+        // do nothing on JDK 5 as gradle fails to create a proxy for the AsciidoctorTask
+        task asciidocAll << {
+            println "You must run on JDK 6 and above to be able to generate the Asciidoc documentation"
+        }
+    } else {
+        task asciidocAll(dependsOn: 'asciidoctor')
+    }
 }
 
 // Root project has an extra 'all' javadoc task
