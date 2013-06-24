@@ -28,10 +28,6 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Type;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.util.*;
 
 /**
@@ -44,12 +40,7 @@ import java.util.*;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class TraitASTTransformation extends AbstractASTTransformation {
 
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.METHOD})
-    private static @interface AbstractMethod {
-    }
 
-    static final ClassNode ABSTRACT_METHOD = ClassHelper.make(AbstractMethod.class);
     static final Class MY_CLASS = Trait.class;
     static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
@@ -82,7 +73,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         ClassNode helper = new InnerClassNode(
                 cNode,
                 helperClassName(cNode),
-                ACC_PUBLIC | ACC_STATIC | ACC_FINAL,
+                ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_SYNTHETIC,
                 ClassHelper.OBJECT_TYPE,
                 ClassNode.EMPTY_ARRAY,
                 null
@@ -119,7 +110,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             );
         }
         for (FieldNode field : fields) {
-            processField(helper, field, initializer, fieldHelper);
+            processField(field, initializer, fieldHelper);
         }
         for (FieldNode field : fields) {
             cNode.removeField(field.getName());
@@ -139,14 +130,8 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         return traitNode.getName() + FIELD_HELPER;
     }
 
-    private void processField(final ClassNode helper, final FieldNode field, final MethodNode initializer, final ClassNode fieldHelper) {
-        helper.addField(new FieldNode(
-                field.getName(),
-                field.getModifiers(),
-                field.getOriginType(),
-                helper,
-                null
-        ));
+    private void processField(final FieldNode field, final MethodNode initializer, final ClassNode fieldHelper) {
+        if (field.isSynthetic()) return;
         Expression initialExpression = field.getInitialExpression();
         if (initialExpression != null) {
             VariableExpression thisObject = new VariableExpression(initializer.getParameters()[0]);
@@ -199,11 +184,12 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 methodNode.getExceptions(),
                 processBody(new VariableExpression(newParams[0]), methodNode.getCode())
         );
-        if (methodNode.getCode() == null) {
-            mNode.addAnnotation(new AnnotationNode(ABSTRACT_METHOD));
-        } else {
-            methodNode.setCode(null);
+
+        if (methodNode.isAbstract()) {
+            mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         }
+        methodNode.setCode(null);
+
         methodNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         return mNode;
     }
@@ -284,7 +270,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             List<AnnotationNode> traitAnn = trait.getAnnotations(MY_TYPE);
             if (traitAnn != null && !traitAnn.isEmpty() && !cNode.getNameWithoutPackage().endsWith(TRAIT_HELPER)) {
                 Iterator<InnerClassNode> innerClasses = trait.redirect().getInnerClasses();
-                if (innerClasses!=null && innerClasses.hasNext()) {
+                if (innerClasses != null && innerClasses.hasNext()) {
                     // trait defined in same source unit
                     ClassNode helperClassNode = null;
                     ClassNode fieldHelperClassNode = null;
@@ -329,8 +315,8 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             Parameter[] argumentTypes = methodNode.getParameters();
             ClassNode[] exceptions = methodNode.getExceptions();
             ClassNode returnType = methodNode.getReturnType();
-            List<AnnotationNode> annotations = methodNode.getAnnotations(ABSTRACT_METHOD);
-            if (annotations.isEmpty() && argumentTypes.length > 0 && ((access & ACC_STATIC) == ACC_STATIC) && !name.contains("$")) {
+            boolean isAbstract = methodNode.isAbstract();
+            if (!isAbstract && argumentTypes.length > 0 && ((access & ACC_STATIC) == ACC_STATIC) && !name.contains("$")) {
                 ArgumentListExpression argList = new ArgumentListExpression();
                 argList.addExpression(new VariableExpression("this"));
                 Parameter[] params = new Parameter[argumentTypes.length - 1];
@@ -340,7 +326,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                     argList.addExpression(new VariableExpression(params[i]));
                 }
                 MethodNode existingMethod = cNode.getDeclaredMethod(name, params);
-                if (existingMethod!=null) {
+                if (existingMethod != null) {
                     // override exists in the weaved class
                     continue;
                 }
@@ -383,36 +369,36 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             for (MethodNode methodNode : declaredMethods) {
                 String fieldName = methodNode.getName();
                 if (fieldName.endsWith("$get") || fieldName.endsWith("$set")) {
-                int suffixIdx = fieldName.lastIndexOf("$");
-                fieldName = fieldName.substring(0, suffixIdx);
-                String operation = methodNode.getName().substring(suffixIdx + 1);
-                boolean getter = "get".equals(operation);
-                if (getter) {
-                    // add field
-                    cNode.addField(fieldName, ACC_PRIVATE, methodNode.getReturnType(), null);
-                }
-                Parameter[] newParams = getter ? Parameter.EMPTY_ARRAY :
-                        new Parameter[]{new Parameter(methodNode.getParameters()[0].getOriginType(), "val")};
-                Expression fieldExpr = new VariableExpression(cNode.getField(fieldName));
-                Statement body =
-                        getter ? new ReturnStatement(fieldExpr) :
-                                new ExpressionStatement(
-                                        new BinaryExpression(
-                                                fieldExpr,
-                                                Token.newSymbol(Types.EQUAL, 0, 0),
-                                                new VariableExpression(newParams[0])
-                                        )
-                                );
-                MethodNode impl = new MethodNode(
-                        methodNode.getName(),
-                        ACC_PUBLIC,
-                        methodNode.getReturnType(),
-                        newParams,
-                        ClassNode.EMPTY_ARRAY,
-                        body
-                );
-                //impl.addAnnotation(new AnnotationNode(ClassHelper.make(CompileStatic.class)));
-                cNode.addMethod(impl);
+                    int suffixIdx = fieldName.lastIndexOf("$");
+                    fieldName = fieldName.substring(0, suffixIdx);
+                    String operation = methodNode.getName().substring(suffixIdx + 1);
+                    boolean getter = "get".equals(operation);
+                    if (getter) {
+                        // add field
+                        cNode.addField(fieldName, ACC_PRIVATE, methodNode.getReturnType(), null);
+                    }
+                    Parameter[] newParams = getter ? Parameter.EMPTY_ARRAY :
+                            new Parameter[]{new Parameter(methodNode.getParameters()[0].getOriginType(), "val")};
+                    Expression fieldExpr = new VariableExpression(cNode.getField(fieldName));
+                    Statement body =
+                            getter ? new ReturnStatement(fieldExpr) :
+                                    new ExpressionStatement(
+                                            new BinaryExpression(
+                                                    fieldExpr,
+                                                    Token.newSymbol(Types.EQUAL, 0, 0),
+                                                    new VariableExpression(newParams[0])
+                                            )
+                                    );
+                    MethodNode impl = new MethodNode(
+                            methodNode.getName(),
+                            ACC_PUBLIC,
+                            methodNode.getReturnType(),
+                            newParams,
+                            ClassNode.EMPTY_ARRAY,
+                            body
+                    );
+                    //impl.addAnnotation(new AnnotationNode(ClassHelper.make(CompileStatic.class)));
+                    cNode.addMethod(impl);
                 }
             }
         }
