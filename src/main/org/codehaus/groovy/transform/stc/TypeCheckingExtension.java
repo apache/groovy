@@ -19,6 +19,7 @@ package org.codehaus.groovy.transform.stc;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 
 import java.util.Collections;
 import java.util.List;
@@ -224,6 +225,19 @@ public class TypeCheckingExtension {
      * @param target the method which has been chosen by the type checker
      */
     public void onMethodSelection(Expression expression, MethodNode target) {
+    }
+
+    /**
+     * Allows the extension to catch incompatible return types. This event is called whenever the type
+     * checker finds that an inferred return type is incompatible with the declared return type of
+     * a method.
+     *
+     * @param returnStatement the statement that triggered the error
+     * @param inferredReturnType the inferred return type for this statement
+     * @return false if the extension doesn't handle the error, true otherwise
+     */
+    public boolean handleIncompatibleReturnType(ReturnStatement returnStatement, ClassNode inferredReturnType) {
+        return false;
     }
 
     // ------------------------------------------------------------------------------------------

@@ -1383,7 +1383,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && !type.equals(VOID_TYPE)
                     && !checkCompatibleAssignmentTypes(enclosingMethod.getReturnType(), type, null, false)
                     && !(isNullConstant(expression))) {
-                addStaticTypeError("Cannot return value of type " + type.toString(false) + " on method returning type " + enclosingMethod.getReturnType().toString(false), expression);
+                if (!extension.handleIncompatibleReturnType(statement, type)) {
+                    addStaticTypeError("Cannot return value of type " + type.toString(false) + " on method returning type " + enclosingMethod.getReturnType().toString(false), expression);
+                }
             } else if (!enclosingMethod.isVoidMethod()) {
                 ClassNode previousType = getInferredReturnType(enclosingMethod);
                 ClassNode inferred = previousType == null ? type : lowestUpperBound(type, previousType);

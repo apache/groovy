@@ -21,6 +21,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -65,6 +66,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
                 put("afterVisitClass", "afterVisitClass");
                 put("beforeVisitClass", "beforeVisitClass");
                 put("incompatibleAssignment", "handleIncompatibleAssignment");
+                put("incompatibleReturnType", "handleIncompatibleReturnType");
                 put("setup","setup");
                 put("finish", "finish");
             }}
@@ -416,6 +418,18 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         if (list != null) {
             for (Closure closure : list) {
                 safeCall(closure, lhsType, rhsType, assignmentExpression);
+            }
+        }
+        return handled;
+    }
+
+    @Override
+    public boolean handleIncompatibleReturnType(final ReturnStatement returnStatement, ClassNode inferredReturnType) {
+        setHandled(false);
+        List<Closure> list = eventHandlers.get("handleIncompatibleReturnType");
+        if (list != null) {
+            for (Closure closure : list) {
+                safeCall(closure, returnStatement, inferredReturnType);
             }
         }
         return handled;

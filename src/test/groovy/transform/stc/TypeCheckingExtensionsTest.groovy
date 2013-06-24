@@ -466,6 +466,18 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
             assert foo(null) == 2
         '''
     }
+    void testIncompatibleReturnType() {
+        extension = null
+        shouldFailWithMessages '''
+            Date foo() { '1' }
+            true
+        ''', 'Cannot return value of type'
+        extension = 'groovy/transform/stc/IncompatibleReturnTypeTestExtension.groovy'
+        assertScript '''
+            Date foo() { '1' }
+            true
+        '''
+    }
 
     void testPrecompiledExtension() {
         extension = null
