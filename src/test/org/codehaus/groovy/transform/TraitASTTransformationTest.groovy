@@ -177,6 +177,49 @@ class TraitASTTransformationTest extends GroovyTestCase {
         '''
     }
 
+    void testTraitWithSetValue() {
+        assertScript '''
+            import groovy.transform.Trait
+
+            @Trait
+            class Named {
+                private String name
+                void setLabel(String val) { name = val }
+                void setLabel2(String val) { this.name = val }
+                void setLabel3(String val) { this.@name = val }
+                void getName() { name }
+            }
+
+            class Person implements Named {}
+            def p = new Person()
+            assert p.name == null
+            p.setLabel('label')
+            assert p.name == 'label'
+            p.setLabel2('label2')
+            assert p.name == 'label2'
+            p.setLabel3('label3')
+            assert p.name == 'label3'
+
+        '''
+    }
+
+    void testTraitWithProperty() {
+        assertScript '''import groovy.transform.Trait
+
+            @Trait
+            class Named {
+                String name
+            }
+
+            class Person implements Named {}
+
+            def p = new Person(name:'Stromae')
+
+            assert p.name == 'Stromae'
+
+        '''
+    }
+
     @Trait
     static class TestTrait2 {
         private String message = 'Hello'
