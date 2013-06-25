@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.transform.CompileStatic;
 import groovy.transform.Trait;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
@@ -47,6 +48,22 @@ public class TraitASTTransformation extends AbstractASTTransformation {
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     static final String TRAIT_HELPER = "$Trait$Helper";
     static final String FIELD_HELPER = "$Trait$FieldHelper";
+
+    private static final String DIRECT_SETTER_SUFFIX = "$set";
+    private static final String DIRECT_GETTER_SUFFIX = "$get";
+    private static final String STATIC_INIT_METHOD = "$init$";
+
+    /**
+     * This comparator is used to make sure that generated direct getters appear first in the list of method
+     * nodes.
+     */
+    private static final Comparator<MethodNode> GETTER_FIRST_COMPARATOR = new Comparator<MethodNode>() {
+        public int compare(final MethodNode o1, final MethodNode o2) {
+            if (o1.getName().endsWith(DIRECT_GETTER_SUFFIX)) return -1;
+            return 1;
+        }
+    };
+    private static final String THIS_OBJECT = "$this";
 
     private SourceUnit unit;
 
@@ -82,10 +99,10 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         cNode.setModifiers(ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT);
 
         MethodNode initializer = new MethodNode(
-                "$init$",
+                STATIC_INIT_METHOD,
                 ACC_STATIC | ACC_PUBLIC | ACC_SYNTHETIC,
                 ClassHelper.VOID_TYPE,
-                new Parameter[]{new Parameter(cNode, "$this")},
+                new Parameter[]{new Parameter(cNode, THIS_OBJECT)},
                 ClassNode.EMPTY_ARRAY,
                 new BlockStatement()
         );
@@ -264,17 +281,17 @@ public class TraitASTTransformation extends AbstractASTTransformation {
     }
 
     private String helperGetterName(final FieldNode field) {
-        return field.getName() + "$get";
+        return field.getName() + DIRECT_GETTER_SUFFIX;
     }
 
     private String helperSetterName(final FieldNode field) {
-        return field.getName() + "$set";
+        return field.getName() + DIRECT_SETTER_SUFFIX;
     }
 
     private MethodNode processMethod(final ClassNode traitClass, final MethodNode methodNode) {
         Parameter[] initialParams = methodNode.getParameters();
         Parameter[] newParams = new Parameter[initialParams.length + 1];
-        newParams[0] = new Parameter(traitClass, "$this");
+        newParams[0] = new Parameter(traitClass, THIS_OBJECT);
         System.arraycopy(initialParams, 0, newParams, 1, initialParams.length);
         MethodNode mNode = new MethodNode(
                 methodNode.getName(),
@@ -335,7 +352,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                     if (leftFieldName!=null) {
                         MethodCallExpression mce = new MethodCallExpression(
                                 weaved,
-                                leftFieldName+"$set",
+                                leftFieldName+ DIRECT_SETTER_SUFFIX,
                                 new ArgumentListExpression(super.transform(rightExpression))
                         );
                         mce.setSourcePosition(exp);
@@ -385,13 +402,27 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 if (((PropertyExpression) exp).isImplicitThis() || "this".equals(((PropertyExpression) exp).getObjectExpression().getText())) {
                     MethodCallExpression mce = new MethodCallExpression(
                             weaved,
-                            ((PropertyExpression) exp).getPropertyAsString() + "$get",
+                            ((PropertyExpression) exp).getPropertyAsString() + DIRECT_GETTER_SUFFIX,
                             ArgumentListExpression.EMPTY_ARGUMENTS
                     );
                     mce.setSourcePosition(exp);
                     return mce;
                 }
+            } else if (exp instanceof ClosureExpression) {
+                MethodCallExpression mce = new MethodCallExpression(
+                        exp,
+                        "rehydrate",
+                        new ArgumentListExpression(
+                                new VariableExpression(weaved),
+                                new VariableExpression(weaved),
+                                new VariableExpression(weaved)
+                        )
+                );
+                mce.setImplicitThis(false);
+                mce.setSourcePosition(exp);
+                return mce;
             }
+
             // todo: unary expressions (field++, field+=, ...)
             return super.transform(exp);
         }
@@ -485,7 +516,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         cNode.addObjectInitializerStatements(new ExpressionStatement(
                 new MethodCallExpression(
                         new ClassExpression(helperClassNode),
-                        "$init$",
+                        STATIC_INIT_METHOD,
                         new ArgumentListExpression(new VariableExpression("this")))
         ));
         if (fieldHelperClassNode != null) {
@@ -493,15 +524,10 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             cNode.addInterface(fieldHelperClassNode);
             // implementation of methods
             List<MethodNode> declaredMethods = fieldHelperClassNode.getAllDeclaredMethods();
-            Collections.sort(declaredMethods, new Comparator<MethodNode>() {
-                public int compare(final MethodNode o1, final MethodNode o2) {
-                    if (o1.getName().endsWith("$get")) return -1;
-                    return 1;
-                }
-            });
+            Collections.sort(declaredMethods, GETTER_FIRST_COMPARATOR);
             for (MethodNode methodNode : declaredMethods) {
                 String fieldName = methodNode.getName();
-                if (fieldName.endsWith("$get") || fieldName.endsWith("$set")) {
+                if (fieldName.endsWith(DIRECT_GETTER_SUFFIX) || fieldName.endsWith(DIRECT_SETTER_SUFFIX)) {
                     int suffixIdx = fieldName.lastIndexOf("$");
                     fieldName = fieldName.substring(0, suffixIdx);
                     String operation = methodNode.getName().substring(suffixIdx + 1);
@@ -530,7 +556,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                             ClassNode.EMPTY_ARRAY,
                             body
                     );
-                    //impl.addAnnotation(new AnnotationNode(ClassHelper.make(CompileStatic.class)));
+                    impl.addAnnotation(new AnnotationNode(ClassHelper.make(CompileStatic.class)));
                     cNode.addMethod(impl);
                 }
             }

@@ -220,6 +220,26 @@ class TraitASTTransformationTest extends GroovyTestCase {
         '''
     }
 
+    void testClosureExpressionInTrait() {
+        assertScript '''import groovy.transform.*
+
+        @Trait
+        class GreetingObject {
+            String greeting = 'Welcome!'
+            Closure greeter() {
+                return { -> greeting }
+            }
+        }
+        class Hello implements GreetingObject {}
+        def hello = new Hello()
+        def greeter = hello.greeter()
+        assert greeter.thisObject.is(hello)
+        assert greeter() == 'Welcome!'
+
+        '''
+    }
+
+
     @Trait
     static class TestTrait2 {
         private String message = 'Hello'
