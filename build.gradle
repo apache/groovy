@@ -36,7 +36,7 @@ allprojects {
 
     if (isJava15()) {
         // do nothing on JDK 5 as gradle fails to create a proxy for the AsciidoctorTask
-        println "You must run on JDK 6+ to be able to generate the Asciidoc documentation"
+        logger.warning 'You must run on JDK 6+ to be able to generate the Asciidoc documentation.'
     } else {
         apply plugin: 'asciidoctor'
 
@@ -152,81 +152,111 @@ configurations {
 }
 
 dependencies {
-    compilerCompile "antlr:antlr:2.7.7"
-    compilerCompile "org.ow2.asm:asm:4.0"
-    compilerCompile "org.ow2.asm:asm-analysis:4.0"
-    compilerCompile "org.ow2.asm:asm-commons:4.0"
-    compilerCompile "org.ow2.asm:asm-tree:4.0"
-    compilerCompile "org.ow2.asm:asm-util:4.0"
 
-    compilerCompile "commons-cli:commons-cli:1.2"
-    compilerCompile "org.apache.ant:ant:1.9.1"
-    compilerCompile("com.thoughtworks.xstream:xstream:1.4.4") {
+    def antVersion = '1.9.1'
+    def asmVersion = '4.1'
+    def antlrVersion = '2.7.7'
+    def bndVersion = '0.0.401'
+    def checkstyleVersion = '4.4'
+    def coberturaVersion = '1.9.4.1'
+    def commonsCliVersion = '1.2'
+    def commonsHttpClientVersion = '3.1'
+    def eclipseOsgiVersion = '3.5.0.v20090520'
+    def gparsVersion = '1.0.0'
+    def ivyVersion = '2.3.0'
+    def jansiVersion = '1.10'
+    def jarjarVersion = '1.3'
+    def jlineVersion = '2.10'
+    def jmockVersion = '1.2.0'
+    def logbackVersion = '0.9.21'
+    def log4jVersion = '1.2.16'
+    def luceneVersion = '4.3.1'
+    def openejbVersion = '1.0'
+    def qdoxVersion = '1.12.1'
+    def simianVersion = '2.2.4'
+    def slf4jVersion = '1.6.0'
+    def xmlunitVersion = '1.3'
+    def xstreamVersion = '1.4.4'
+
+    compilerCompile "antlr:antlr:$antlrVersion"
+    compilerCompile "org.ow2.asm:asm:$asmVersion"
+    compilerCompile "org.ow2.asm:asm-analysis:$asmVersion"
+    compilerCompile "org.ow2.asm:asm-commons:$asmVersion"
+    compilerCompile "org.ow2.asm:asm-tree:$asmVersion"
+    compilerCompile "org.ow2.asm:asm-util:$asmVersion"
+
+    compilerCompile "commons-cli:commons-cli:$commonsCliVersion"
+    compilerCompile "org.apache.ant:ant:$antVersion"
+    compilerCompile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compilerCompile("jline:jline:2.10") {
+    compilerCompile("jline:jline:$jlineVersion") {
         exclude(group: 'junit', module: 'junit')
     }
-    compilerCompile "org.fusesource.jansi:jansi:1.10"
-    compilerCompile("org.apache.ivy:ivy:2.3.0") {
+    compilerCompile "org.fusesource.jansi:jansi:$jansiVersion"
+    compilerCompile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
     }
     compilerCompile files("$buildDir/classes/compiler")
 
     groovy files("$buildDir/classes/compiler")
-    groovy "antlr:antlr:2.7.7"
-    groovy "org.ow2.asm:asm:4.0"
-    groovy "org.ow2.asm:asm-analysis:4.0"
-    groovy "org.ow2.asm:asm-commons:4.0"
-    groovy "org.ow2.asm:asm-tree:4.0"
-    groovy "org.ow2.asm:asm-util:4.0"
+    groovy "antlr:antlr:$antlrVersion"
+    groovy "org.ow2.asm:asm:$asmVersion"
+    groovy "org.ow2.asm:asm-analysis:$asmVersion"
+    groovy "org.ow2.asm:asm-commons:$asmVersion"
+    groovy "org.ow2.asm:asm-tree:$asmVersion"
+    groovy "org.ow2.asm:asm-util:$asmVersion"
 
-    compile "commons-cli:commons-cli:1.2"
-    compile("com.thoughtworks.xstream:xstream:1.4.4") {
+    compile "commons-cli:commons-cli:$commonsCliVersion"
+    compile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compile("jline:jline:2.10") {
+    compile("jline:jline:$jlineVersion") {
         exclude(group: 'junit', module: 'junit')
     }
-    compile "org.fusesource.jansi:jansi:1.10"
-    compile("org.apache.ivy:ivy:2.3.0") {
+    compile "org.fusesource.jansi:jansi:$jansiVersion"
+    compile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
     }
-    runtime "org.codehaus.gpars:gpars:1.0.0"
-    testCompile "jmock:jmock:1.2.0"
-    testCompile "jmock:jmock-cglib:1.2.0"
-    testCompile "xmlunit:xmlunit:1.3"
-    testCompile "ch.qos.logback:logback-classic:0.9.21"
-    testCompile "log4j:log4j:1.2.16"
-    testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
-    testCompile "com.thoughtworks.qdox:qdox:1.12.1"
+    runtime "org.codehaus.gpars:gpars:$gparsVersion"
+    testCompile "jmock:jmock:$jmockVersion"
+    testCompile "jmock:jmock-cglib:$jmockVersion"
+    testCompile "xmlunit:xmlunit:$xmlunitVersion"
+    testCompile "ch.qos.logback:logback-classic:$logbackVersion"
+    testCompile "log4j:log4j:$log4jVersion"
+    testCompile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+    testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
-    tools "com.googlecode.jarjar:jarjar:1.3"
-    tools("checkstyle:checkstyle:4.4") {
+    tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
+    tools("checkstyle:checkstyle:$checkstyleVersion") {
         exclude(module: 'junit')
     }
-    tools "redhill:simian:2.2.4"
-    tools("net.sourceforge.cobertura:cobertura:1.9.4.1") {
+    tools "redhill:simian:$simianVersion"
+    tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
         exclude(module: 'asm')
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
-    tools "org.ow2.asm:asm-all:4.0"
-    tools "com.thoughtworks.qdox:qdox:1.12.1"
-    tools "biz.aQute:bnd:0.0.401"
+    tools "org.ow2.asm:asm-all:$asmVersion"
+    tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    tools "biz.aQute:bnd:$bndVersion"
 
-    examplesCompile "lucene:lucene:1.4.3"
-    examplesCompile "org.eclipse:osgi:3.5.0.v20090520"
-    examplesRuntime("commons-httpclient:commons-httpclient:3.1") {
+    examplesCompile project(':groovy-test')
+    examplesCompile project(':groovy-swing')
+    examplesCompile "org.apache.lucene:lucene-core:$luceneVersion"
+    examplesCompile "org.apache.lucene:lucene-analyzers-common:$luceneVersion"
+    examplesCompile "org.apache.lucene:lucene-queryparser:$luceneVersion"
+    examplesCompile "org.eclipse:osgi:$eclipseOsgiVersion"
+    examplesRuntime("commons-httpclient:commons-httpclient:$commonsHttpClientVersion") {
         exclude(module: 'junit')
         exclude(module: 'commons-logging')
         exclude(module: 'commons-codec')
     }
-    examplesRuntime("openejb:openejb-loader:1.0") {
+    examplesRuntime("openejb:openejb-loader:$openejbVersion") {
         exclude(module: 'log4j')
         exclude(module: 'openejb-core')
         exclude(module: 'geronimo-jta_1.0.1B_spec')
@@ -237,7 +267,7 @@ dependencies {
 
 // TODO use antlr plugin
 //    antlr "antlr:antlr:2.7.7"
-    antlr "org.apache.ant:ant-antlr:1.9.1"
+    antlr "org.apache.ant:ant-antlr:$antVersion"
 
     // TODO remove once M12N refactoring finished
     testCompile project(':groovy-ant')
@@ -342,6 +372,12 @@ sourceSets {
         compileClasspath = configurations.examplesRuntime + sourceSets.main.output
         output.classesDir = "$buildDir/examples-classes" as File
     }
+}
+
+// make sure examples can be compiled, even if we don't run them
+// todo: reorganize examples so that we can run them too
+check {
+    dependsOn examplesClasses
 }
 
 // remove this from config once GRADLE-854 is fixed.
