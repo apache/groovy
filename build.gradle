@@ -36,7 +36,7 @@ allprojects {
 
     if (isJava15()) {
         // do nothing on JDK 5 as gradle fails to create a proxy for the AsciidoctorTask
-        logger.warning 'You must run on JDK 6+ to be able to generate the Asciidoc documentation.'
+        logger.warn 'You must run on JDK 6+ to be able to generate the Asciidoc documentation.'
     } else {
         apply plugin: 'asciidoctor'
 
