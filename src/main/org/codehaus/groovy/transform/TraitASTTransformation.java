@@ -120,9 +120,14 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         }
 
         // add fields
-        List<FieldNode> fields = new ArrayList<FieldNode>(cNode.getFields());
+        List<FieldNode> fields = new ArrayList<FieldNode>();
+        for (FieldNode field : cNode.getFields()) {
+            if (!"metaClass".equals(field.getName()) && (!field.isSynthetic() || field.getName().indexOf('$') < 0)) {
+                fields.add(field);
+            }
+        }
         ClassNode fieldHelper = null;
-        if (cNode.getFields() != null) {
+        if (!fields.isEmpty()) {
             fieldHelper = new InnerClassNode(
                     cNode,
                     fieldHelperClassName(cNode),
@@ -137,6 +142,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         // clear properties to avoid generation of methods
         cNode.getProperties().clear();
 
+        fields = new ArrayList<FieldNode>(cNode.getFields()); // reuse the full list of fields
         for (FieldNode field : fields) {
             cNode.removeField(field.getName());
         }
@@ -248,36 +254,36 @@ public class TraitASTTransformation extends AbstractASTTransformation {
     }
 
     private void processField(final FieldNode field, final MethodNode initializer, final ClassNode fieldHelper) {
-        if (field.isSynthetic() && field.getName().indexOf('$') >= 0) return;
         Expression initialExpression = field.getInitialExpression();
         if (initialExpression != null) {
             VariableExpression thisObject = new VariableExpression(initializer.getParameters()[0]);
             BlockStatement code = (BlockStatement) initializer.getCode();
-            code.addStatement(new ExpressionStatement(
-                    new BinaryExpression(new AttributeExpression(thisObject, new ConstantExpression(field.getName())),
-                            Token.newSymbol(Types.EQUAL, initialExpression.getLineNumber(), initialExpression.getColumnNumber()),
-                            initialExpression)
-            ));
-        }
-        if (fieldHelper != null) {
-            // define setter/getter helper methods
-            fieldHelper.addMethod(
+            MethodCallExpression mce = new MethodCallExpression(
+                    new CastExpression(fieldHelper, thisObject),
                     helperSetterName(field),
-                    ACC_PUBLIC | ACC_ABSTRACT,
-                    ClassHelper.VOID_TYPE,
-                    new Parameter[]{new Parameter(field.getOriginType(), "val")},
-                    ClassNode.EMPTY_ARRAY,
-                    null
+                    initialExpression
             );
-            fieldHelper.addMethod(
-                    helperGetterName(field),
-                    ACC_PUBLIC | ACC_ABSTRACT,
-                    field.getOriginType(),
-                    Parameter.EMPTY_ARRAY,
-                    ClassNode.EMPTY_ARRAY,
-                    null
-            );
+            mce.setImplicitThis(false);
+            mce.setSourcePosition(initialExpression);
+            code.addStatement(new ExpressionStatement(mce));
         }
+        // define setter/getter helper methods
+        fieldHelper.addMethod(
+                helperSetterName(field),
+                ACC_PUBLIC | ACC_ABSTRACT,
+                ClassHelper.VOID_TYPE,
+                new Parameter[]{new Parameter(field.getOriginType(), "val")},
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
+        fieldHelper.addMethod(
+                helperGetterName(field),
+                ACC_PUBLIC | ACC_ABSTRACT,
+                field.getOriginType(),
+                Parameter.EMPTY_ARRAY,
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
     }
 
     private String helperGetterName(final FieldNode field) {
