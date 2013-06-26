@@ -117,8 +117,9 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testWithPrecompiledTraitWithOneMethod() {
-        assertScript '''
-            class Foo implements org.codehaus.groovy.transform.TestTrait {}
+        assertScript '''import org.codehaus.groovy.transform.TraitASTTransformationTest.TestTrait as TestTrait
+
+            class Foo implements TestTrait {}
             def foo = new Foo()
             assert foo.a() == 123
         '''
@@ -156,8 +157,8 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testTraitWithField2() {
-        assertScript '''
-        class Foo implements org.codehaus.groovy.transform.TestTrait2 {
+        assertScript '''import org.codehaus.groovy.transform.TraitASTTransformationTest.TestTrait2 as TestTrait2
+        class Foo implements TestTrait2 {
             def cat() { "cat" }
         }
         def foo = new Foo()
@@ -172,8 +173,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
         assertScript '''
             import groovy.transform.Trait
 
-            @Trait
-            class Named {
+            trait Named {
                 private String name
                 void setLabel(String val) { name = val }
                 void setLabel2(String val) { this.name = val }
@@ -197,8 +197,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
     void testTraitWithProperty() {
         assertScript '''import groovy.transform.Trait
 
-            @Trait
-            class Named {
+            trait Named {
                 String name
             }
 
@@ -230,7 +229,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
 
-    trait TestTrait2 {
+    static trait TestTrait2 {
         private String message = 'Hello'
         String getMessage() { this.message }
         String blah() { message }
@@ -240,7 +239,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
 
-    trait TestTrait {
+    static trait TestTrait {
         int a() { 123 }
     }
 }
