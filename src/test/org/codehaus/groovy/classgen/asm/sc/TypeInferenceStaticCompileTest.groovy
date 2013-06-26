@@ -53,7 +53,6 @@ class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest {
 
     // GROOVY-
     void testGetAnnotationFail() {
-        try {
             assertScript '''import groovy.transform.*
     import java.lang.annotation.ElementType;
     import java.lang.annotation.Retention;
@@ -95,9 +94,6 @@ class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest {
 
             assert Ann2.isAssignableFrom (doit(new A(), "field").class)
             '''
-        } finally {
-            println astTrees
-        }
     }
 }
 

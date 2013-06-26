@@ -2345,13 +2345,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             typeCheckingContext.popTemporaryTypeInfo();
 
             // GROOVY-6099: restore assignement info as before the if branch
-            Set<Map.Entry<VariableExpression, List<ClassNode>>> entries = typeCheckingContext.ifElseForWhileAssignmentTracker.entrySet();
-            for (Map.Entry<VariableExpression, List<ClassNode>> entry : entries) {
-                VariableExpression var = entry.getKey();
-                List<ClassNode> items = entry.getValue();
-                ClassNode originValue = items.get(0);
-                storeType(var, originValue);
-            }
+            restoreTypeBeforeConditional();
 
             Statement elseBlock = ifElse.getElseBlock();
             if (elseBlock instanceof EmptyStatement) {
@@ -2363,6 +2357,32 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } finally {
             popAssignmentTracking(oldTracker);
+        }
+    }
+
+    @Override
+    public void visitSwitch(final SwitchStatement statement) {
+        Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+        try {
+            super.visitSwitch(statement);
+        } finally {
+            popAssignmentTracking(oldTracker);
+        }
+    }
+
+    @Override
+    public void visitCaseStatement(final CaseStatement statement) {
+        super.visitCaseStatement(statement);
+        restoreTypeBeforeConditional();
+    }
+
+    private void restoreTypeBeforeConditional() {
+        Set<Map.Entry<VariableExpression, List<ClassNode>>> entries = typeCheckingContext.ifElseForWhileAssignmentTracker.entrySet();
+        for (Map.Entry<VariableExpression, List<ClassNode>> entry : entries) {
+            VariableExpression var = entry.getKey();
+            List<ClassNode> items = entry.getValue();
+            ClassNode originValue = items.get(0);
+            storeType(var, originValue);
         }
     }
 
@@ -2512,7 +2532,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (oldDIT != null) {
                 exp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, cn==null?oldDIT : lowestUpperBound(oldDIT, cn));
             } else {
-                exp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, cn==null?oldValue : lowestUpperBound(oldValue, cn));
+                exp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, cn==null?null : lowestUpperBound(oldValue, cn));
             }
         }
         if (exp instanceof VariableExpression) {
