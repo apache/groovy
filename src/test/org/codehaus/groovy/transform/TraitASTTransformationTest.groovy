@@ -16,11 +16,6 @@
 
 package org.codehaus.groovy.transform
 
-import groovy.transform.CompileStatic
-import groovy.transform.Trait
-
-import java.lang.invoke.MethodHandles
-
 class TraitASTTransformationTest extends GroovyTestCase {
     void testTraitWithNoMethod() {
         assertScript '''
@@ -157,7 +152,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testTraitWithField2() {
-        assertScript '''import org.codehaus.groovy.transform.TraitASTTransformationTest.TestTrait2 as TestTrait2
+        assertScript '''import org.codehaus.groovy.transform.TestTrait2 as TestTrait2
         class Foo implements TestTrait2 {
             def cat() { "cat" }
         }
@@ -228,18 +223,16 @@ class TraitASTTransformationTest extends GroovyTestCase {
         '''
     }
 
-
-    static trait TestTrait2 {
-        private String message = 'Hello'
-        String getMessage() { this.message }
-        String blah() { message }
-        def meow() {
-            "Meow! I'm a ${cat()}"
-        }
-    }
-
-
     static trait TestTrait {
         int a() { 123 }
+    }
+}
+
+trait TestTrait2 {
+    private String message = 'Hello'
+    String getMessage() { this.message }
+    String blah() { message }
+    def meow() {
+        "Meow! I'm a ${cat()}"
     }
 }
