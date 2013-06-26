@@ -82,13 +82,21 @@ class EditCommand
 
             log.debug("Editor contents: ${file.text}")
             
-            // Load the new lines...
-            file.eachLine { String line ->
-                shell << line as String
-            }
+            replaceCurrentBuffer(file.readLines())
         }
         finally {
             file.delete()
         }
     }
+    
+    void replaceCurrentBuffer(List contents) {
+        // clear current buffer contents
+        shell.buffers.clearSelected()       
+        
+        // load editor contents into current buffer
+        for (line in contents) {
+            shell << line as String
+        }
+    }
+    
 }

@@ -41,4 +41,43 @@ class EditCommandTest
     }
 
 
+    void testEditorCompletingGroovyExpression() {
+        String partialExpression1 = 'x = {'
+        String partialExpression2 = '  println 2+2'
+        String partialExpression3 = '}'
+        
+        def mockEdit = new EditCommand(shell)
+        
+        // type an incomplete groovy expression
+        shell << partialExpression1
+        
+        // simulate a user launching an editor and completing the expression
+        List<String> mockEditorContents = [partialExpression1, partialExpression2, partialExpression3]
+        mockEdit.replaceCurrentBuffer(mockEditorContents)
+
+        // assert the buffer is empty because the expression was parsed and executed on editor close
+        assertEquals([], shell.buffers.current())
+    }
+    
+    
+    void testEditorReplacingPartialGroovyExpression() {
+        String partialExpression1 = 'x = {'
+        String partialExpression2 = '  println 2+2'
+        String partialExpression3 = '}'
+        
+        def mockEdit = new EditCommand(shell)
+        
+        // type an incomplete groovy expression
+        shell << partialExpression1
+        
+        // simulate a user launching an editor and adding to, but not completing, the expression
+        List<String> mockEditorContents = [partialExpression1, partialExpression2]
+        mockEdit.replaceCurrentBuffer(mockEditorContents)
+
+        // assert the buffer has been replaced with the editor's contents
+        assertEquals(mockEditorContents, shell.buffers.current())
+    }
+    
+    
+
 }
