@@ -276,5 +276,18 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             new Test().test()
         '''
     }
+
+    // GROOVY-6219
+    void testShouldFailBecauseClosureReturnTypeDoesnMatchMethodSignature() {
+        shouldFailWithMessages '''
+            void printMessage(Closure<String> messageProvider) {
+                println "Received message : ${messageProvider()}"
+            }
+
+            void testMessage() {
+                printMessage { int x, int y -> x+y }
+            }
+        ''', 'Cannot find matching method'
+    }
 }
 
