@@ -86,9 +86,6 @@ class ExtractIndexAndSql {
                     sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
                     currentChunk = new StringBuilder();
                     appendToEndOfString(sb);
-                    if (sb.charAt(sb.length() - 1) != QUOTE) {
-                        throw new IllegalStateException("Failed to process query. Unterminated ' character?");
-                    }
                     break;
                 case '-':
                     if (next() == '-') {
@@ -121,16 +118,21 @@ class ExtractIndexAndSql {
     private void appendToEndOfString(StringBuilder buffer) {
         buffer.append(QUOTE);
         ++index;
+        boolean foundClosingQuote = false;
         while (index < sql.length()) {
             char c = sql.charAt(index);
             buffer.append(c);
             if (c == QUOTE && next() != QUOTE) {
                 int previousQuotes = countPreviousRepeatingChars(QUOTE);
                 if (previousQuotes == 0 || previousQuotes % 2 == 0) {
+                    foundClosingQuote = true;
                     break;
                 }
             }
             ++index;
+        }
+        if (!foundClosingQuote) {
+            throw new IllegalStateException("Failed to process query. Unterminated ' character?");
         }
     }
 

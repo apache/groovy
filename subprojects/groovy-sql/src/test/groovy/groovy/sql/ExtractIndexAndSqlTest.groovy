@@ -108,6 +108,15 @@ where lastname=:foo
         }
     }
 
+    void testUnterminatedQuoteAtEndOfString() {
+        String query = "select * from FOOD where country type = :foo and country = '"
+        String expected = "select * from FOOD where country type = ? and country = '"
+
+        shouldFail(IllegalStateException) {
+            ExtractIndexAndSql.from(query).newSql
+        }
+    }
+
     void testWithStringSpanningMoreThanOneLine() {
         String query = """select 'this is a ''multiline'' with a '':named :param'' string
  and spans two lines'
