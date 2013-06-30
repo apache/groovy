@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,17 +29,16 @@ class EditCommandTest
         ProcessBuilder pb = mockEdit.getEditorProcessBuilder("/usr/bin/vim", 
                 "/var/folders/tu/tuATI/-Tmp-/groovysh-buffer1761911.groovy")
 
-        assertTrue(pb.redirectErrorStream()) 
+        assert pb.redirectErrorStream()
 
         // GROOVY-6201: Editor should inherit I/O from the current process.
         //    Fixed only for java >= 1.7 using new ProcessBuilder api
         def javaVer = Double.valueOf(System.getProperty("java.specification.version"));
         if (javaVer >= 1.7) {
-            assertEquals(pb.redirectInput(), ProcessBuilder.Redirect.INHERIT)
-            assertEquals(pb.redirectOutput(), ProcessBuilder.Redirect.INHERIT)
+            assert pb.redirectInput() == ProcessBuilder.Redirect.INHERIT
+            assert pb.redirectOutput() == ProcessBuilder.Redirect.INHERIT
         }
     }
-
 
     void testEditorCompletingGroovyExpression() {
         String partialExpression1 = 'x = {'
@@ -56,14 +55,12 @@ class EditCommandTest
         mockEdit.replaceCurrentBuffer(mockEditorContents)
 
         // assert the buffer is empty because the expression was parsed and executed on editor close
-        assertEquals([], shell.buffers.current())
+        assert shell.buffers.current() == []
     }
-    
-    
+
     void testEditorReplacingPartialGroovyExpression() {
         String partialExpression1 = 'x = {'
         String partialExpression2 = '  println 2+2'
-        String partialExpression3 = '}'
         
         def mockEdit = new EditCommand(shell)
         
@@ -75,9 +72,6 @@ class EditCommandTest
         mockEdit.replaceCurrentBuffer(mockEditorContents)
 
         // assert the buffer has been replaced with the editor's contents
-        assertEquals(mockEditorContents, shell.buffers.current())
+        assert shell.buffers.current() == mockEditorContents
     }
-    
-    
-
 }
