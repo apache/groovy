@@ -117,12 +117,17 @@ class ExtractIndexAndSql {
 
     private void appendToEndOfString(StringBuilder buffer) {
         buffer.append(QUOTE);
+        int startQuoteIndex = index;
         ++index;
         boolean foundClosingQuote = false;
         while (index < sql.length()) {
             char c = sql.charAt(index);
             buffer.append(c);
             if (c == QUOTE && next() != QUOTE) {
+                if (startQuoteIndex == (index - 1)) {   // empty quote ''
+                    foundClosingQuote = true;
+                    break;
+                }
                 int previousQuotes = countPreviousRepeatingChars(QUOTE);
                 if (previousQuotes == 0 || previousQuotes % 2 == 0) {
                     foundClosingQuote = true;
