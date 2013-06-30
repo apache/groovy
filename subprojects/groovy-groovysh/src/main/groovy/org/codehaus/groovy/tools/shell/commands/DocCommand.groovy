@@ -154,7 +154,7 @@ class DocCommand extends CommandSupport {
             // Don't specify package names not to depend on a version of Java SE.
             // Java SE includes none-java(x) packages such as org.w3m.*, org.omg.*. org.xml.* for now
             // and new packages might be added in a future.
-            def url = new URL("http://docs.oracle.com/javase/${System.getProperty("java.version")}/docs/api/$path")
+            def url = new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/$path")
             if (sendHEADRequest(url)) {
                 urls << url
                 url = new URL("http://groovy.codehaus.org/groovy-jdk/$path")
@@ -165,6 +165,10 @@ class DocCommand extends CommandSupport {
         }
 
         urls
+    }
+
+    private static simpleVersion() {
+        System.getProperty("java.version").tokenize('_')[0]
     }
 
     protected boolean sendHEADRequest(URL url) {

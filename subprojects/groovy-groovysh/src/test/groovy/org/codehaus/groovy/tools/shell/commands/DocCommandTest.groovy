@@ -49,7 +49,7 @@ class DocCommandTest extends CommandTestSupport
         def urls = command.urlsFor('org.ietf.jgss.GSSContext')
 
         assert urls ==
-            [new URL("http://docs.oracle.com/javase/${System.getProperty('java.version')}/docs/api/org/ietf/jgss/GSSContext.html")]
+            [new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/org/ietf/jgss/GSSContext.html")]
     }
 
     void testUrlsForJavaClass() {
@@ -64,7 +64,7 @@ class DocCommandTest extends CommandTestSupport
         def urls = command.urlsFor('java.util.List')
 
         assert urls ==
-                [new URL("http://docs.oracle.com/javase/${System.getProperty('java.version')}/docs/api/java/util/List.html"),
+                [new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html"),
                  new URL("http://groovy.codehaus.org/groovy-jdk/java/util/List.html")]
 
         assert urls == urlsToLookup
@@ -114,7 +114,7 @@ class DocCommandTest extends CommandTestSupport
         DocCommand.hasAWTDesktopPlatformSupport = true
         DocCommand.desktop = [:]
 
-        command.browse([new URL('http://docs.oracle.com/javase/1.7.0_21/docs/api/java/util/List.html')])
+        command.browse([new URL('http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html')])
 
         assert browseWithAWT
     }
@@ -135,7 +135,7 @@ class DocCommandTest extends CommandTestSupport
             }
         }
 
-        command.browse([new URL('http://docs.oracle.com/javase/1.7.0_21/docs/api/java/util/List.html')])
+        command.browse([new URL('http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html')])
 
         assert browseWithNativeBrowser
     }
@@ -162,5 +162,9 @@ class DocCommandTest extends CommandTestSupport
         }
 
         assert command.browserEnvironmentVariable == 'chrome'
+    }
+
+    private static simpleVersion() {
+        System.getProperty("java.version").tokenize('_')[0]
     }
 }
