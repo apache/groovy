@@ -25,6 +25,13 @@ class ExtractIndexAndSqlTest extends GroovyTestCase {
         assert ExtractIndexAndSql.hasNamedParameters('select * from PERSON where id=?')
     }
 
+    void testWithEmptyStringQuote() {
+        String query = """select * from FOOD where type=:foo and category='' and calories < ?2.kcal"""
+        String expected = """select * from FOOD where type=? and category='' and calories < ?"""
+
+        assert expected == ExtractIndexAndSql.from(query).newSql
+    }
+
     void testWithQuoteEmbeddedInInlineComments() {
         String query = """select *
 from FOOD
