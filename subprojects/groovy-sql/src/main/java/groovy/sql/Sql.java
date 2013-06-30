@@ -233,8 +233,6 @@ public class Sql {
 
     private static final List<Object> EMPTY_LIST = Collections.emptyList();
 
-    private static final Pattern NAMED_QUERY_PATTERN = Pattern.compile("(?<!:)(:)(\\w+)|\\?(\\d*)(?:\\.(\\w+))?");
-
     private DataSource dataSource;
 
     private Connection useConnection;
@@ -3904,17 +3902,28 @@ public class Sql {
 
     public SqlWithParams preCheckForNamedParams(String sql) {
         // look for quick exit
-        if (!enableNamedQueries || !NAMED_QUERY_PATTERN.matcher(sql).find()) {
+        if (!enableNamedQueries || !ExtractIndexAndSql.hasNamedParameters(sql)) {
             return null;
         }
 
-        ExtractIndexAndSql extractIndexAndSql = new ExtractIndexAndSql(sql).invoke();
-        String newSql = extractIndexAndSql.getNewSql();
+        String newSql;
+        List<Tuple> propList;
+        if (cacheNamedQueries && namedParamSqlCache.containsKey(sql)) {
+            newSql = namedParamSqlCache.get(sql);
+            propList = namedParamIndexPropCache.get(sql);
+        } else {
+            ExtractIndexAndSql extractIndexAndSql = ExtractIndexAndSql.from(sql);
+            newSql = extractIndexAndSql.getNewSql();
+            propList = extractIndexAndSql.getIndexPropList();
+            namedParamSqlCache.put(sql, newSql);
+            namedParamIndexPropCache.put(sql, propList);
+        }
+
         if (sql.equals(newSql)) {
             return null;
         }
 
-        List<Object> indexPropList = new ArrayList<Object>(extractIndexAndSql.getIndexPropList());
+        List<Object> indexPropList = new ArrayList<Object>(propList);
         return new SqlWithParams(newSql, indexPropList);
     }
 
@@ -4159,80 +4168,4 @@ public class Sql {
     protected void setInternalConnection(Connection conn) {
     }
 
-    private class ExtractIndexAndSql {
-        private String sql;
-        private List<Tuple> indexPropList;
-        private String newSql;
-
-        private ExtractIndexAndSql(String sql) {
-            this.sql = sql;
-        }
-
-        private List<Tuple> getIndexPropList() {
-            return indexPropList;
-        }
-
-        private String getNewSql() {
-            return newSql;
-        }
-
-        private ExtractIndexAndSql invoke() {
-            if (cacheNamedQueries && namedParamSqlCache.containsKey(sql)) {
-                newSql = namedParamSqlCache.get(sql);
-                indexPropList = namedParamIndexPropCache.get(sql);
-            } else {
-                indexPropList = new ArrayList<Tuple>();
-                StringBuilder sb = new StringBuilder();
-                StringBuilder currentChunk = new StringBuilder();
-                char[] chars = sql.toCharArray();
-                int i = 0;
-                boolean inString = false; //TODO: Cater for comments?
-                while (i < chars.length) {
-                    switch (chars[i]) {
-                        case '\'':
-                            inString = !inString;
-                            if (inString) {
-                                sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
-                                currentChunk = new StringBuilder();
-                                currentChunk.append(chars[i]);
-                            } else {
-                                currentChunk.append(chars[i]);
-                                sb.append(currentChunk);
-                                currentChunk = new StringBuilder();
-                            }
-                            break;
-                        default:
-                            currentChunk.append(chars[i]);
-                    }
-                    i++;
-                }
-                if (inString)
-                    throw new IllegalStateException("Failed to process query. Unterminated ' character?");
-                sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
-                newSql = sb.toString();
-                namedParamSqlCache.put(sql, newSql);
-                namedParamIndexPropCache.put(sql, indexPropList);
-            }
-            return this;
-        }
-
-        private String adaptForNamedParams(String sql, List<Tuple> indexPropList) {
-            StringBuilder newSql = new StringBuilder();
-            int txtIndex = 0;
-
-            Matcher matcher = NAMED_QUERY_PATTERN.matcher(sql);
-            while (matcher.find()) {
-                newSql.append(sql.substring(txtIndex, matcher.start())).append('?');
-                String indexStr = matcher.group(1);
-                if (indexStr == null) indexStr = matcher.group(3);
-                int index = (indexStr == null || indexStr.length() == 0 || ":".equals(indexStr)) ? 0 : new Integer(indexStr) - 1;
-                String prop = matcher.group(2);
-                if (prop == null) prop = matcher.group(4);
-                indexPropList.add(new Tuple(new Object[]{index, prop == null || prop.length() == 0 ? "<this>" : prop}));
-                txtIndex = matcher.end();
-            }
-            newSql.append(sql.substring(txtIndex)); // append ending SQL after last param.
-            return newSql.toString();
-        }
-    }
 }
