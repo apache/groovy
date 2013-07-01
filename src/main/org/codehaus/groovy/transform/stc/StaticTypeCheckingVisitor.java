@@ -1284,8 +1284,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     MethodNode node = findMethodOrFail(inner, exprType, name);
                     if (node != null) {
                         storeTargetMethod(expression, node);
+                        storeType(expression,  inferReturnTypeGenerics(exprType, node, ArgumentListExpression.EMPTY_ARGUMENTS));
+                        return;
                     }
                 }
+                storeType(expression, exprType);
                 return;
             }
             addUnsupportedPreOrPostfixExpressionError(expression);
@@ -1299,6 +1302,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         MethodNode node = findMethodOrFail(inner, exprType, name);
         if (node != null) {
             storeTargetMethod(expression, node);
+            storeType(expression,  inferReturnTypeGenerics(exprType, node, ArgumentListExpression.EMPTY_ARGUMENTS));
         }
     }
 
@@ -1316,7 +1320,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (node != null) {
                         storeTargetMethod(expression, node);
                     }
+                    storeType(expression,  inferReturnTypeGenerics(exprType, node, ArgumentListExpression.EMPTY_ARGUMENTS));
+                    return;
                 }
+                storeType(expression, exprType);
                 return;
             }
             addUnsupportedPreOrPostfixExpressionError(expression);
@@ -1330,6 +1337,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         MethodNode node = findMethodOrFail(inner, exprType, name);
         if (node != null) {
             storeTargetMethod(expression, node);
+            storeType(expression,  inferReturnTypeGenerics(exprType, node, ArgumentListExpression.EMPTY_ARGUMENTS));
         }
     }
 

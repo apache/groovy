@@ -302,5 +302,18 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             new Sample().test()
         '''
     }
+
+    // GROOVY-6223
+    void testShouldNotRequireExplicitTypeDefinition() {
+        assertScript '''
+        def i = 0
+        def j = 0
+
+        int x = i++
+        int y = ++j
+        assert x == 0
+        assert y == 1
+        '''
+    }
 }
 
