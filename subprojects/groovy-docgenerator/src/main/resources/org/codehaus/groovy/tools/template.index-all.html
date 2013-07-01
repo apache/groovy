@@ -64,13 +64,11 @@ function asd()
             -->
             
             <% indexMapEntry.value.each{ it -> %>
-            <DT> 
-            <% if (it.'method') { 
+            <DT><% if (it.'method') { 
             final String href1 = it.class.replaceAll('\\.','/') + '.html'
             final String href2 = href1 + 
             '#' + it.method.name + '(' + it.parametersSignature + ')'
-            %>
-            <a href="${href2}"><b>${it.method.name}(${it.parametersSignature})</b></a>  - 
+            %><a href="${href2}"><b>${it.method.name}(${it.parametersSignature})</b></a> - 
             Method in class ${it.packageName}.<a href="${href1}">${it.simpleClassName}</a>
             <% } %>
             </DT>
