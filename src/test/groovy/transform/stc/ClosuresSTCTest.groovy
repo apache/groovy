@@ -288,6 +288,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 printMessage { int x, int y -> x+y }
             }
         ''', 'Cannot find matching method'
+    }
     
     //GROOVY-6189
     void testSAMsInMethodSelection(){
