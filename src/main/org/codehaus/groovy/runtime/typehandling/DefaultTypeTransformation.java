@@ -15,14 +15,17 @@
  */
 package org.codehaus.groovy.runtime.typehandling;
 
+import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -325,6 +328,14 @@ public class DefaultTypeTransformation {
             args = new Object[1];
             args[0] = object;
         }
+        
+        if (object instanceof Closure) {
+            Method m = CachedSAMClass.getSAMMethod(type);
+            if (m!=null) {
+                return CachedSAMClass.coerceToSAM((Closure) object, m, type, type.isInterface());
+            }
+        }
+        
         Exception nested = null;
         if (args != null) {
             try {

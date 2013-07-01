@@ -15,15 +15,25 @@
  */
 package org.codehaus.groovy.vmplugin.v7;
 
+import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.GroovyObject;
+import groovy.util.ProxyGenerator;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.Map;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
+import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
@@ -34,7 +44,8 @@ public class TypeTransformers {
 	private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final MethodHandle 
         TO_STRING, TO_BYTE,   TO_INT,     TO_LONG,    TO_SHORT,
-        TO_FLOAT,  TO_DOUBLE, TO_BIG_INT, TO_BIG_DEC, AS_ARRAY;
+        TO_FLOAT,  TO_DOUBLE, TO_BIG_INT, TO_BIG_DEC, AS_ARRAY,
+        TO_REFLECTIVE_PROXY, TO_GENERATED_PROXY;
     static {
         try {
             TO_STRING   = LOOKUP.findVirtual(Object.class, "toString",      MethodType.methodType(String.class));
@@ -57,6 +68,28 @@ public class TypeTransformers {
 
             // generic array to array conversion
             AS_ARRAY = LOOKUP.findStatic(DefaultTypeTransformation.class, "asArray", MethodType.methodType(Object.class, Object.class, Class.class));
+
+            // reflective proxy generation, since we need a ConvertedClosure but have only a normal Closure, we need to create that wrapper object as well
+            MethodHandle newProxyInstance = LOOKUP.findStatic(Proxy.class, "newProxyInstance", 
+                    MethodType.methodType(Object.class, ClassLoader.class, Class[].class, InvocationHandler.class));
+            MethodHandle newConvertedClosure = LOOKUP.findConstructor(ConvertedClosure.class, MethodType.methodType(Void.TYPE, Closure.class, String.class));
+            // prepare target newProxyInstance for fold to drop additional arguments needed by newConvertedClosure
+            MethodType newOrder = newProxyInstance.type().dropParameterTypes(2, 3);
+            newOrder = newOrder.insertParameterTypes(0, InvocationHandler.class, Closure.class, String.class);
+            tmp = MethodHandles.permuteArguments(newProxyInstance, newOrder, 3, 4, 0);
+            // execute fold:
+            TO_REFLECTIVE_PROXY = MethodHandles.foldArguments(tmp, newConvertedClosure.asType(newConvertedClosure.type().changeReturnType(InvocationHandler.class)));
+
+            // generated proxy using a map to store the closure
+            MethodHandle map = LOOKUP.findStatic(Collections.class, "singletonMap", 
+                    MethodType.methodType(Map.class, Object.class, Object.class));
+            newProxyInstance = LOOKUP.findVirtual(ProxyGenerator.class, "instantiateAggregateFromBaseClass",
+                    MethodType.methodType(GroovyObject.class, Map.class, Class.class));
+            newOrder = newProxyInstance.type().dropParameterTypes(1, 2);
+            newOrder = newOrder.insertParameterTypes(0, Map.class, Object.class, Object.class);
+            tmp = MethodHandles.permuteArguments(newProxyInstance, newOrder, 3, 0, 4);
+            tmp = MethodHandles.foldArguments(tmp, map);
+            TO_GENERATED_PROXY = tmp;
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }
@@ -71,6 +104,8 @@ public class TypeTransformers {
         MethodHandle transformer=null;
     	if (arg instanceof GString) {
     		transformer = TO_STRING;
+        } else if (arg instanceof Closure) {
+            transformer = createSAMTransform(arg, parameter);
         } else if (Number.class.isAssignableFrom(parameter)) {
             transformer = selectNumberTransformer(parameter, arg);
         } else if (parameter.isArray()) {
@@ -78,6 +113,45 @@ public class TypeTransformers {
         }
         if (transformer==null) throw new GroovyBugError("Unknown transformation for argument "+arg+" at position "+pos+" with "+arg.getClass()+" for parameter of type "+parameter);
         return applyUnsharpFilter(handle, pos, transformer);
+    }
+
+    /**
+     * creates a method handle able to transform the given Closure into a SAM type
+     * if the given parameter is a SAM type 
+     */
+    private static MethodHandle createSAMTransform(Object arg, Class parameter) {
+        Method method = CachedSAMClass.getSAMMethod(parameter);
+        if (method == null) return null;
+        // TODO: have to think about how to optimize this!
+        if (parameter.isInterface()) {
+            // the following code will basically do this:
+            // return Proxy.newProxyInstance(
+            //        arg.getClass().getClassLoader(),
+            //        new Class[]{parameter},
+            //        new ConvertedClosure((Closure) arg));
+            // TO_REFLECTIVE_PROXY will do that for us, though
+            // input is the closure, the method name, the class loader and the 
+            // class[]. All of that but the closure must be provided here  
+            MethodHandle ret = TO_REFLECTIVE_PROXY;
+            ret = MethodHandles.insertArguments(ret, 1, 
+                        method.getName(),
+                        arg.getClass().getClassLoader(),
+                        new Class[]{parameter});
+            return ret;
+        } else {
+            // the following code will basically do this:
+            //Map<String, Object> m = Collections.singletonMap(method.getName(), arg);
+            //return ProxyGenerator.INSTANCE.
+            //            instantiateAggregateFromBaseClass(m, parameter);
+            // TO_GENERATED_PROXY is a handle (Object,Object,ProxyGenerator,Class)GroovyObject
+            // where the second object is the input closure, everything else
+            // needs to be provide and is in remaining order: method name, 
+            // ProxyGenerator.INSTANCE and parameter
+            MethodHandle ret = TO_GENERATED_PROXY;
+            ret = MethodHandles.insertArguments(ret, 2, ProxyGenerator.INSTANCE, parameter);
+            ret = MethodHandles.insertArguments(ret, 0, method.getName());
+            return ret;
+        }
     }
 
     /**

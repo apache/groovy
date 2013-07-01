@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Modifier;
 
 /**
  * This class is a Helper for ClassNode and classes handling ClassNodes.
@@ -374,5 +375,10 @@ public class ClassHelper {
 
     static class ClassHelperCache {
         static ManagedConcurrentMap<Class, SoftReference<ClassNode>> classCache = new ManagedConcurrentMap<Class, SoftReference<ClassNode>>(ReferenceBundle.getWeakBundle());
+    }
+    
+    public static boolean isSAMType(ClassNode type) {
+        if (!Modifier.isAbstract(type.getModifiers())) return false;
+        return type.getMethods().size()==1;
     }
 }

@@ -17,6 +17,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
+
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.reflection.ParameterTypes;
@@ -276,7 +277,10 @@ public class MetaClassHelper {
         if (parameter.getTheClass() == argument) return 0;
 
         if (parameter.isInterface()) {
-            return getMaximumInterfaceDistance(argument, parameter.getTheClass()) << INTERFACE_SHIFT;
+            int dist = getMaximumInterfaceDistance(argument, parameter.getTheClass()) << INTERFACE_SHIFT;
+            if (dist>-1 || !(argument!=null && Closure.class.isAssignableFrom(argument))) {
+                return dist;
+            } // else go to object case
         }
 
         long objectDistance = 0;
@@ -311,7 +315,7 @@ public class MetaClassHelper {
             if (clazz.isPrimitive()) {
                 objectDistance += 2;
             } else {
-                while (clazz != Object.class) {
+                while (clazz != Object.class && clazz != null) {
                     clazz = clazz.getSuperclass();
                     objectDistance += 2;
                 }

@@ -361,9 +361,14 @@ public abstract class StaticTypeCheckingSupport {
                 return gt.isCompatibleWith(type);
             }
             return true;
-        } else {
-            return false;
         }
+
+        //SAM check
+        if (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(toBeAssignedTo)) {
+            return true;
+        }
+
+        return false;
     }
 
     static boolean isVargs(Parameter[] params) {
@@ -629,6 +634,12 @@ public abstract class StaticTypeCheckingSupport {
         if (GROOVY_OBJECT_TYPE.equals(leftRedirect) && isBeingCompiled(right)) {
             return true;
         }
+
+        //SAM check
+        if (rightRedirect.isDerivedFrom(CLOSURE_TYPE) && isSAMType(leftRedirect)) {
+            return true;
+        }
+
         return false;
     }
 

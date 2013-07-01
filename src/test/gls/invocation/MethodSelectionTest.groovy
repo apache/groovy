@@ -15,7 +15,10 @@
  */
 package gls.invocation
 
+import java.io.Serializable;
+
 import gls.CompilableTestSupport
+import groovy.lang.GroovyCallable;
 
 public class MethodSelectionTest extends CompilableTestSupport {
 
@@ -351,6 +354,31 @@ public class MethodSelectionTest extends CompilableTestSupport {
           assert getStringArrayDirectly_Length() == getStringArrayIndirectlyWithType_Length()
           assert getStringArrayIndirectlyWithType_Length() == getStringArrayIndirectlyWithoutType_Length()
       """
+  }
+  
+  //GROOVY-6189
+  void testSAMs(){
+      // simple direct case
+      assertScript """
+          interface MySAM {
+              def someMethod()
+          }
+          def foo(MySAM sam) {sam.someMethod()}
+          assert foo {1} == 1
+      """
+
+      // overloads with classes implemented by Closure
+      ["java.util.concurrent.Callable", "Object", "Closure", "GroovyObjectSupport", "Cloneable", "Runnable", "GroovyCallable", "Serializable", "GroovyObject"].each {
+          className ->
+          assertScript """
+              interface MySAM {
+                  def someMethod()
+              }
+              def foo(MySAM sam) {sam.someMethod()}
+              def foo($className x) {2}
+              assert foo {1} == 2
+          """
+      }
   }
 }
 
