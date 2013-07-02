@@ -1,6 +1,13 @@
-task doc(dependsOn: ['asciidocAll', 'javadocAll', 'groovydocAll', 'docGDK']) {
+task doc(dependsOn: ['asciidocAll', 'assembleAsciidoc', 'javadocAll', 'groovydocAll', 'docGDK']) {
     ext.footer = "Copyright &amp;copy; 2003-2013 The Codehaus. All rights reserved."
     ext.title = "Groovy ${groovyVersion}"
+}
+
+task assembleAsciidoc(type: Copy, dependsOn: 'asciidocAll') {
+    subprojects {
+        from project.asciidoctor
+    }
+    into "$buildDir/asciidoc"
 }
 
 def javadocSpec = {

@@ -60,6 +60,9 @@ ext.docSpec = copySpec {
     into("html/gapi") {
         from groovydocAll.destinationDir
     }
+    into("html/documentation") {
+        from "$buildDir/asciidoc"
+    }
     into("html/groovy-jdk") {
         from docGDK.destinationDir
     }
