@@ -70,4 +70,9 @@ public class ExpressionAsVariableSlot extends BytecodeExpression {
         if (index == -1) throw new GroovyBugError("index requested before visit!");
         return index;
     }
+
+    @Override
+    public String getText() {
+        return exp.getText();
+    }
 }

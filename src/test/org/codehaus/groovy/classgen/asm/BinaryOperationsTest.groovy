@@ -95,4 +95,26 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
             "IXOR"
         ])
     }
+
+    void testPrimitiveOrAssign() {
+        ['byte','int','short','long'].each { type ->
+            assertScript """
+            $type[] b = new $type[1]
+            b[0] = 16
+            b[0] |= 2
+            assert b[0] == 18:"Failure for type $type"
+            """
+            }
+    }
+
+    void testPrimitiveAndAssign() {
+        ['byte','int','short','long'].each { type ->
+            assertScript """
+            $type[] b = new $type[1]
+            b[0] = 18
+            b[0] &= 2
+            assert b[0] == 2:"Failure for type $type"
+            """
+            }
+    }
 }
