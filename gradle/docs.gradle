@@ -4,10 +4,12 @@ task doc(dependsOn: ['asciidocAll', 'assembleAsciidoc', 'javadocAll', 'groovydoc
 }
 
 task assembleAsciidoc(type: Copy, dependsOn: 'asciidocAll') {
-    subprojects {
-        from project.asciidoctor
+    if (!isJava15()) {
+        subprojects {
+            from project.asciidoctor
+        }
+        into "$buildDir/asciidoc"
     }
-    into "$buildDir/asciidoc"
 }
 
 def javadocSpec = {
