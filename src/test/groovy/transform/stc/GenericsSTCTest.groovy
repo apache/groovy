@@ -1145,6 +1145,17 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
     
+    // GROOVY-6233
+    void testConstructorArgumentsAgainstGenerics() {
+        shouldFailWithMessages '''
+            class Foo<T>{  Foo(T a, T b){} }
+            def bar() {
+                Foo<Map> f = new Foo<Map>("a",1)
+            }
+            bar()
+        ''', '[Static type checking] - Cannot find matching method Foo#<init>(java.lang.String, int)'
+    }
+    
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
