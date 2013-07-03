@@ -1133,7 +1133,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             map.put('bar', new Date())
         '''
     }
-
+    
+    // GROOVY-6232
+    void testDiamond() {
+        assertScript '''
+            class Foo<T>{  Foo(T a, T b){} }
+            def bar() {
+                Foo<Object> f = new Foo<>("a",new Object())
+            }
+            bar()
+        '''
+    }
+    
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
