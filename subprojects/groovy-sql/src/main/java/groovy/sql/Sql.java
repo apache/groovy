@@ -3900,7 +3900,25 @@ public class Sql {
         return new SqlWithParams(preCheck.getSql(), getUpdatedParams(params, indexPropList));
     }
 
+    /**
+     * @deprecated Use {@link #buildSqlWithIndexedProps(String)} instead
+     */
+    @Deprecated
     public SqlWithParams preCheckForNamedParams(String sql) {
+        return buildSqlWithIndexedProps(sql);
+    }
+
+    /**
+     * Hook to allow derived classes to override behavior associated with the
+     * parsing and indexing of parameters from a given sql statement.
+     *
+     * @param sql the sql statement to process
+     * @return a {@link SqlWithParams} instance containing the parsed sql
+     *         and parameters containing the indexed location and property
+     *         name of parameters or {@code null} if no parsing of
+     *         the sql was performed.
+     */
+    protected SqlWithParams buildSqlWithIndexedProps(String sql) {
         // look for quick exit
         if (!enableNamedQueries || !ExtractIndexAndSql.hasNamedParameters(sql)) {
             return null;
