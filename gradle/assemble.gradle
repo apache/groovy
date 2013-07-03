@@ -1,8 +1,6 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
-if (!rootProject.useIndy()) {
-    apply plugin: 'osgi'
-}
+apply plugin: 'osgi'
 
 group = 'org.codehaus.groovy'
 archivesBaseName = 'groovy'
@@ -75,35 +73,34 @@ task copy(type: Copy) {
 
 def groovyOsgiManifest, subprojectOsgiManifest
 
-if (!rootProject.useIndy()) {
-    groovyOsgiManifest = {
-        // Exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
-        from(allManifest) {
-            eachEntry {details ->
-                if (details.key == 'Bnd-LastModified') {
-                    details.exclude()
-                }
+groovyOsgiManifest = {
+    // Exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
+    from(allManifest) {
+        eachEntry {details ->
+            if (details.key == 'Bnd-LastModified') {
+                details.exclude()
             }
         }
-        version = groovyBundleVersion
-        instruction '-nouses', 'true'
-        instruction 'Export-Package', "*;version=${version}"
-        classpath = sourceSets.main.runtimeClasspath
     }
-    subprojectOsgiManifest = {
-        // Exclude attributes not needed for subprojects.
-        from(allManifest) {
-            eachEntry {details ->
-                if (details.key in ['Bnd-LastModified', 'Extension-Name', 'Bundle-Name', 'Bundle-Description', 'Main-class']) {
-                    details.exclude()
-                }
+    version = groovyBundleVersion
+    instruction '-nouses', 'true'
+    instruction 'Export-Package', "*;version=${version}"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+subprojectOsgiManifest = {
+    // Exclude attributes not needed for subprojects.
+    from(allManifest) {
+        eachEntry {details ->
+            if (details.key in ['Bnd-LastModified', 'Extension-Name', 'Bundle-Name', 'Bundle-Description', 'Main-class']) {
+                details.exclude()
             }
         }
-        version = groovyBundleVersion
-        instruction '-nouses', 'true'
-        instruction 'Export-Package', "*;version=${version}"
-        classpath = sourceSets.main.runtimeClasspath
     }
+    version = groovyBundleVersion
+    instruction '-nouses', 'true'
+    instruction 'Export-Package', "*;version=${version}"
+    classpath = sourceSets.main.runtimeClasspath
 }
 
 jar {
@@ -114,14 +111,14 @@ jar {
             filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
         }
     }
-    if (!rootProject.useIndy()) {
-        manifest = osgiManifest {
-            symbolicName = 'groovy'
-            instruction 'Import-Package', "antlr", "org.objectweb.asm", "*;resolution:=optional"
-            classesDir = sourceSets.main.output.classesDir
-        }
-        manifest groovyOsgiManifest
+
+    manifest = osgiManifest {
+        symbolicName = 'groovy'
+        instruction 'Import-Package', "antlr", "org.objectweb.asm", "*;resolution:=optional"
+        classesDir = sourceSets.main.output.classesDir
     }
+    manifest groovyOsgiManifest
+
     exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
 }
 
@@ -133,7 +130,7 @@ subprojects {
                 filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
             }
         }
-        if (!rootProject.useIndy() && project.name != 'groovy-all-tests') {
+        if (project.name != 'groovy-all-tests') {
             manifest = osgiManifest {
                 symbolicName = project.name
                 classesDir = sourceSets.main.output.classesDir
@@ -189,17 +186,17 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
         manifest.writeTo(manifestPath)
         copy {
             from(mergeModuleDescriptors())
-            into "$ext.metaInfDir/services"
+            into "$owner.ext.metaInfDir/services"
         }
         copy {
-            into "$ext.metaInfDir"
+            into "$owner.ext.metaInfDir"
             with licenseSpec
         }
         logger.info "Packaging with jarjar"
         project.ant {
             taskdef name: "jarjar", classname: "com.tonicsystems.jarjar.JarJarTask", classpath: configurations.tools.asPath
-            jarjar(jarfile: archivePath, manifest: "$ext.metaInfDir/MANIFEST.MF") {
-                zipfileset(dir: "$ext.metaInfDir", prefix: 'META-INF', excludes:'META-INF')
+            jarjar(jarfile: archivePath, manifest: "$owner.ext.metaInfDir/MANIFEST.MF") {
+                zipfileset(dir: "$owner.ext.metaInfDir", prefix: 'META-INF', excludes:'META-INF')
                 zipfileset(
                         src: jar.archivePath,
                         excludes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
@@ -218,17 +215,17 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
                 rule pattern: "org.apache.commons.cli.**", result: "groovyjarjarcommonscli.@1"
             }
         }
-        if (!rootProject.useIndy()) {
-            // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
-            manifest = osgiManifest {
-                symbolicName = 'groovy-all'
-                instruction 'Import-Package', "*;resolution:=optional"
-                classesDir = archivePath
-            }
-            manifest groovyOsgiManifest
-            manifestPath = "${temporaryDir}/META-INF/MANIFEST.MF"
-            manifest.writeTo(manifestPath)
+
+        // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
+        manifest = osgiManifest {
+            symbolicName = 'groovy-all'
+            instruction 'Import-Package', "*;resolution:=optional"
+            classesDir = archivePath
         }
+        manifest groovyOsgiManifest
+        manifestPath = "${temporaryDir}/META-INF/MANIFEST.MF"
+        manifest.writeTo(manifestPath)
+
         project.ant {
             jar(destfile: archivePath, update:true, manifest: manifestPath) {
                 zipfileset(
