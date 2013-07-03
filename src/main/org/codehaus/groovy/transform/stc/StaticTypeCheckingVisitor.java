@@ -744,7 +744,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // if left type is not a list but right type is a list, then we're in the case of a groovy
             // constructor type : Dimension d = [100,200]
             // In that case, more checks can be performed
-            if (!implementsInterfaceOrIsSubclassOf(leftRedirect, LIST_TYPE) && rightExpression instanceof ListExpression) {
+            if (rightExpression instanceof ListExpression && !implementsInterfaceOrIsSubclassOf(LIST_TYPE, leftRedirect)) {
                 ArgumentListExpression argList = new ArgumentListExpression(((ListExpression) rightExpression).getExpressions());
                 ClassNode[] args = getArgumentTypes(argList);
                 checkGroovyStyleConstructor(leftRedirect, args);
