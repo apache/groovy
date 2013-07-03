@@ -210,10 +210,12 @@ public class GenericsType extends ASTNode {
          * @return true iff the classnode is compatible with this generics specification
          */
         public boolean matches(ClassNode classNode) {
+            GenericsType[] genericsTypes = classNode.getGenericsTypes();
+            // diamond always matches
+            if (genericsTypes!=null && genericsTypes.length==0) return true;
             if (classNode.isGenericsPlaceHolder()) {
                 // if the classnode we compare to is a generics placeholder (like <E>) then we
                 // only need to check that the names are equal
-                GenericsType[] genericsTypes = classNode.getGenericsTypes();
                 if (genericsTypes==null) return true;
                 if (isWildcard()) {
                     if (lowerBound!=null) return genericsTypes[0].getName().equals(lowerBound.getUnresolvedName());
