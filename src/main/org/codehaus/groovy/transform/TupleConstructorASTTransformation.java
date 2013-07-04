@@ -205,6 +205,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         parameters[0] = new Parameter(LHMAP_TYPE, "__namedArgs");
         BlockStatement code = new BlockStatement();
         VariableExpression namedArgs = new VariableExpression("__namedArgs");
+        namedArgs.setAccessedVariable(parameters[0]);
         code.addStatement(new IfStatement(equalsNullExpr(namedArgs),
                 illegalArgumentBlock(message),
                 processArgsBlock(cNode, namedArgs)));
@@ -213,7 +214,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         // add a no-arg constructor too
         if (!hasNoArg) {
             code = new BlockStatement();
-            code.addStatement(new ExpressionStatement(new ConstructorCallExpression(ClassNode.THIS, new StaticMethodCallExpression(COLLECTIONS_TYPE, "emptyMap", MethodCallExpression.NO_ARGUMENTS))));
+            code.addStatement(new ExpressionStatement(new ConstructorCallExpression(ClassNode.THIS, new ConstructorCallExpression(LHMAP_TYPE, ArgumentListExpression.EMPTY_ARGUMENTS))));
             init = new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
             cNode.addConstructor(init);
         }
