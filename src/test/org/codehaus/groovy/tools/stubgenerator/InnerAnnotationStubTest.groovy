@@ -52,7 +52,6 @@ class InnerAnnotationStubTest extends StringSourcesStubTestCase {
 
     void verifyStubs() {
         def stubSource = stubJavaSourceFor('JacksonAnnotationTest')
-        println stubSource
         assert stubSource.contains('@JsonSubTypes.Type')
     }
 }
