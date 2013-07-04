@@ -934,6 +934,15 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testOverloadedMethodWithVargs() {
+        assertScript '''import org.codehaus.groovy.classgen.asm.sc.support.Groovy6235SupportSub as Support
+            def b = new Support()
+            assert b.overload() == 1
+            assert b.overload('a') == 1
+            assert b.overload('a','b') == 2
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }

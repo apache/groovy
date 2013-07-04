@@ -1024,6 +1024,9 @@ public abstract class StaticTypeCheckingSupport {
                     // there are three case for vargs
                     // (1) varg part is left out
                     if (params.length == args.length + 1) {
+                        if (dist>=0) {
+                            dist += 256-params.length; // ensure exact matches are preferred over vargs
+                        }
                         if (bestDist > 1+dist) {
                             bestChoices.clear();
                             bestChoices.add(m);
