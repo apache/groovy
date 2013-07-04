@@ -26,6 +26,7 @@ class InnerAnnotationStubTest extends StringSourcesStubTestCase {
         [
                 'JacksonAnnotationTest.groovy': '''
                 @JsonSubTypes.Type
+                @AnnoWithEnum(AnnoWithEnum.Include.NON_NULL)
                 class JacksonAnnotationTest { }
 
             ''',
@@ -46,6 +47,20 @@ class InnerAnnotationStubTest extends StringSourcesStubTestCase {
                         public String name() default "";
                     }
                 }
+            ''',
+
+                'AnnoWithEnum.java': '''
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Retention;
+                import java.lang.annotation.RetentionPolicy;
+                import java.lang.annotation.Target;
+
+                @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
+                @Retention(RetentionPolicy.RUNTIME)
+                public @interface AnnoWithEnum {
+                    public Include value() default Include.ALWAYS;
+                    public enum Include {  ALWAYS,  NON_NULL,  NON_EMPTY; }
+                }
             '''
         ]
     }
@@ -53,5 +68,6 @@ class InnerAnnotationStubTest extends StringSourcesStubTestCase {
     void verifyStubs() {
         def stubSource = stubJavaSourceFor('JacksonAnnotationTest')
         assert stubSource.contains('@JsonSubTypes.Type')
+        assert stubSource.contains('@AnnoWithEnum(value=AnnoWithEnum.Include.NON_NULL)')
     }
 }
