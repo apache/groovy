@@ -456,6 +456,14 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
     /**
      * Sets the list of classes which deny method calls.
+     * 
+     * Please note that since Groovy is a dynamic language, and 
+     * this class performs a static type check, it will be reletively
+     * simple to bypass any blacklist unless the receivers blacklist contains, at
+     * a minimum, Object, Script, GroovyShell, and Eval. Additionally,
+     * it is necessary to also blacklist MethodPointerExpression in the
+     * expressions blacklist for the receivers blacklist to function
+     * as a security check.
      *
      * @param receiversBlackList the list of refused classes, as fully qualified names
      */
