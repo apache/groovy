@@ -88,6 +88,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
             ArgumentListExpression args = new ArgumentListExpression(methodNode.getParameters());
             MethodCallExpression closureCallExpression = new MethodCallExpression(new FieldExpression(
                     memoizedClosureField), CLOSURE_CALL_METHOD_NAME, args);
+            closureCallExpression.setImplicitThis(false);
             newCode.addStatement(new ReturnStatement(closureCallExpression));
             methodNode.setCode(newCode);
             VariableScopeVisitor visitor = new VariableScopeVisitor(source);
@@ -156,21 +157,23 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
                                 new ArgumentListExpression(argList))
                 )
         );
+        MethodCallExpression mce;
         if (protectedCacheSize == 0 && maxCacheSize == 0) {
-            return new MethodCallExpression(expression, MEMOIZE_METHOD_NAME, MethodCallExpression.NO_ARGUMENTS);
-        }
-        if (protectedCacheSize == 0) {
-            return new MethodCallExpression(expression, MEMOIZE_AT_MOST_METHOD_NAME, new ArgumentListExpression(
+            mce = new MethodCallExpression(expression, MEMOIZE_METHOD_NAME, MethodCallExpression.NO_ARGUMENTS);
+        } else if (protectedCacheSize == 0) {
+            mce = new MethodCallExpression(expression, MEMOIZE_AT_MOST_METHOD_NAME, new ArgumentListExpression(
                     new ConstantExpression(maxCacheSize)));
-        }
-        if (maxCacheSize == 0) {
-            return new MethodCallExpression(expression, MEMOIZE_AT_LEAST_METHOD_NAME, new ArgumentListExpression(
+        } else if (maxCacheSize == 0) {
+            mce = new MethodCallExpression(expression, MEMOIZE_AT_LEAST_METHOD_NAME, new ArgumentListExpression(
                     new ConstantExpression(protectedCacheSize)));
-        }
-        ArgumentListExpression args = new ArgumentListExpression(new Expression[]{
-                new ConstantExpression(protectedCacheSize), new ConstantExpression(maxCacheSize)});
+        } else {
+            ArgumentListExpression args = new ArgumentListExpression(new Expression[]{
+                    new ConstantExpression(protectedCacheSize), new ConstantExpression(maxCacheSize)});
 
-        return new MethodCallExpression(expression, MEMOIZE_BETWEEN_METHOD_NAME, args);
+            mce = new MethodCallExpression(expression, MEMOIZE_BETWEEN_METHOD_NAME, args);
+        }
+        mce.setImplicitThis(false);
+        return mce;
     }
 
     /*

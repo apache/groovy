@@ -266,7 +266,7 @@ class MemoizedTestClass {
     }
 }
 
-//@CompileStatic
+@CompileStatic
 class MemoizedTestClass3 {
     int methodCallCounter
 
