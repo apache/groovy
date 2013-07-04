@@ -44,5 +44,10 @@ class MiscStaticCompileTest extends MiscSTCTest {
             dir.deleteDir()
         '''
     }
+
+    @Override
+    void testCompareEnumToNull() {
+        super.testCompareEnumToNull()
+    }
 }
 

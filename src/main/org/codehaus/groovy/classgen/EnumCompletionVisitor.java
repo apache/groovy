@@ -107,16 +107,18 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
         newP[1] = new Parameter(ClassHelper.int_TYPE, intParameterName);
         System.arraycopy(oldP, 0, newP, 2, oldP.length);
         ctor.setParameters(newP);
+        VariableExpression stringVariable = new VariableExpression(newP[0]);
+        VariableExpression intVariable = new VariableExpression(newP[1]);
         if (chainedThisConstructorCall) {
             TupleExpression args = (TupleExpression) cce.getArguments();
             List<Expression> argsExprs = args.getExpressions();
-            argsExprs.add(0, new VariableExpression(stringParameterName));
-            argsExprs.add(1, new VariableExpression(intParameterName));
+            argsExprs.add(0, stringVariable);
+            argsExprs.add(1, intVariable);
         } else {
             // add a super call
             List<Expression> args = new ArrayList<Expression>();
-            args.add(new VariableExpression(stringParameterName));
-            args.add(new VariableExpression(intParameterName));
+            args.add(stringVariable);
+            args.add(intVariable);
             if (isAic) {
                 for (Parameter parameter : oldP) {
                     args.add(new VariableExpression(parameter.getName()));
