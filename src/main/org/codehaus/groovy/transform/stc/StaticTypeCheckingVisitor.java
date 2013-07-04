@@ -2303,7 +2303,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected boolean isClosureCall(final String name, final Expression objectExpression, final Expression arguments) {
-        if (objectExpression instanceof ClosureExpression) return true;
+        if (objectExpression instanceof ClosureExpression && ("call".equals(name)||"doCall".equals(name))) return true;
         if (objectExpression == VariableExpression.THIS_EXPRESSION) {
             FieldNode fieldNode = typeCheckingContext.getEnclosingClassNode().getDeclaredField(name);
             if (fieldNode != null) {
