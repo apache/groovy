@@ -933,6 +933,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 while (!queue.isEmpty()) {
                     ClassNode current = queue.removeFirst();
                     current = current.redirect();
+                    if (isAttributeExpression) {
+                        FieldNode field = current.getDeclaredField(propertyName);
+                        if (field!=null) {
+                            if (visitor != null) visitor.visitField(field);
+                            storeType(pexp, field.getOriginType());
+                            return true;
+                        }
+                    }
                     PropertyNode propertyNode = current.getProperty(propertyName);
                     if (propertyNode != null) {
                         if (visitor != null) visitor.visitProperty(propertyNode);

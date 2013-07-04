@@ -498,6 +498,21 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6230
+    void testAttributeWithGetterOfDifferentType() {
+        assertScript '''import java.awt.Dimension
+            def d = new Dimension(800,600)
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def rit = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert rit == int_TYPE
+            })
+            int width = d.@width
+            assert width == 800
+            assert (d.@width).getClass() == Integer
+        '''
+    }
+
     public static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
     }
