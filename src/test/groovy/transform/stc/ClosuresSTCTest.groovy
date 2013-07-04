@@ -417,5 +417,20 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             }
         ''', 'Reference to method is ambiguous. Cannot choose between'
     }
+
+    // GROOVY-6238
+    void testDirectMethodCallOnClosureExpression() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def dit = node.getNodeMetaData(INFERRED_TYPE)
+                def irt = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert irt == CLOSURE_TYPE
+                assert dit == CLOSURE_TYPE
+            })
+            def cl = { it }.curry(42)
+            def val = cl.call()
+            assert val == 42
+        '''
+    }
 }
 
