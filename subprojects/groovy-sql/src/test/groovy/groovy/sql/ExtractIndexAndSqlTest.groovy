@@ -170,7 +170,7 @@ and 3 = (12 / 4)
         String query = "select * from PERSON where name=:name and location=:location and building=:building"
         String expected = "select * from PERSON where name=? and location=? and building=?"
 
-        ExtractIndexAndSql extracter = new ExtractIndexAndSql(query).invoke()
+        ExtractIndexAndSql extracter = ExtractIndexAndSql.from(query)
 
         assert expected == extracter.newSql
 
@@ -204,6 +204,10 @@ and 3 = (12 / 4)
 
         assert 2 == extracter.indexPropList.get(2)[0]
         assert 'building' == extracter.indexPropList.get(2)[1]
+    }
+
+    void testCastingNotConfusedWithNamedParameters_5111() {
+        assert !ExtractIndexAndSql.hasNamedParameters("select * from TABLE where TEXTFIELD::integer = 3")
     }
 
 }
