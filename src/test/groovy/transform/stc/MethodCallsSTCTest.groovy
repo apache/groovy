@@ -753,7 +753,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
             new SpreadInCtor(*['A', 'B'])
         ''',
-                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
+                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+                'Cannot find matching method SpreadInCtor#<init>(java.util.List <E extends java.lang.Object>)'
     }
 
     void testSpreadArgsForbiddenInClosureCall() {
