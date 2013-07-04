@@ -16,30 +16,25 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.Memoized;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
+import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Handles generation of code for the {@link Memoized} annotation.
  *
  * @author Andrey Bloschetsov
  */
-@GroovyASTTransformation
+@GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class MemoizedASTTransformation extends AbstractASTTransformation {
 
     private static final String CLOSURE_CALL_METHOD_NAME = "call";
@@ -48,8 +43,10 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final String PROTECTED_CACHE_SIZE_NAME = "protectedCacheSize";
     private static final String MAX_CACHE_SIZE_NAME = "maxCacheSize";
+    private static final String CLOSURE_LABEL = "Closure";
+    private static final String METHOD_LABEL = "Priv";
 
-    public void visit(ASTNode[] nodes, SourceUnit source) {
+    public void visit(ASTNode[] nodes, final SourceUnit source) {
         if (nodes == null) {
             return;
         }
@@ -68,11 +65,10 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
                 return;
             }
 
-            ClosureExpression closureExpression = new ClosureExpression(methodNode.getParameters(),
-                    methodNode.getCode());
-            closureExpression.setVariableScope(methodNode.getVariableScope());
-
             ClassNode ownerClassNode = methodNode.getDeclaringClass();
+            MethodNode privateMethod = buildPrivateDelegatingMethod(methodNode, ownerClassNode);
+            ownerClassNode.addMethod(privateMethod);
+
             int modifiers = FieldNode.ACC_PRIVATE | FieldNode.ACC_FINAL;
             if (methodNode.isStatic()) {
                 modifiers = modifiers | FieldNode.ACC_STATIC;
@@ -80,12 +76,12 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
 
             int protectedCacheSize = getIntMemberValue(annotationNode, PROTECTED_CACHE_SIZE_NAME);
             int maxCacheSize = getIntMemberValue(annotationNode, MAX_CACHE_SIZE_NAME);
-            MethodCallExpression memoizeClosureCallExpression = buildMemoizeClosureCallExpression(closureExpression,
-                    protectedCacheSize, maxCacheSize);
+            MethodCallExpression memoizeClosureCallExpression =
+                    buildMemoizeClosureCallExpression(privateMethod, protectedCacheSize, maxCacheSize);
 
-            String memoizedClosureFieldName = buildUniqueName(ownerClassNode, methodNode);
+            String memoizedClosureFieldName = buildUniqueName(ownerClassNode, CLOSURE_LABEL, methodNode);
             FieldNode memoizedClosureField = new FieldNode(memoizedClosureFieldName, modifiers,
-                    ClassHelper.DYNAMIC_TYPE, null, memoizeClosureCallExpression);
+                    ClassHelper.CLOSURE_TYPE.getPlainNodeReference(), null, memoizeClosureCallExpression);
             ownerClassNode.addField(memoizedClosureField);
 
             BlockStatement newCode = new BlockStatement();
@@ -93,9 +89,39 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
             MethodCallExpression closureCallExpression = new MethodCallExpression(new FieldExpression(
                     memoizedClosureField), CLOSURE_CALL_METHOD_NAME, args);
             newCode.addStatement(new ReturnStatement(closureCallExpression));
-            newCode.setVariableScope(methodNode.getVariableScope());
             methodNode.setCode(newCode);
+            VariableScopeVisitor visitor = new VariableScopeVisitor(source);
+            visitor.visitClass(ownerClassNode);
         }
+    }
+
+    private static Parameter[] cloneParams(Parameter[] source) {
+        Parameter[] result = new Parameter[source.length];
+        for (int i = 0; i < source.length; i++) {
+            Parameter srcParam = source[i];
+            Parameter dstParam = new Parameter(srcParam.getOriginType(), srcParam.getName());
+            result[i] = dstParam;
+        }
+        return result;
+    }
+
+    private MethodNode buildPrivateDelegatingMethod(final MethodNode annotatedMethod, final ClassNode ownerClassNode) {
+        Statement code = annotatedMethod.getCode();
+        int access = ACC_PRIVATE;
+        if (annotatedMethod.isStatic()) {
+            access = ACC_PRIVATE | ACC_STATIC;
+        }
+        MethodNode privateMethod = new MethodNode(
+                buildUniqueName(ownerClassNode, METHOD_LABEL, annotatedMethod),
+                access,
+                annotatedMethod.getReturnType(),
+                cloneParams(annotatedMethod.getParameters()),
+                annotatedMethod.getExceptions(),
+                code
+        );
+        List<AnnotationNode> sourceAnnotations = annotatedMethod.getAnnotations();
+        privateMethod.addAnnotations(new ArrayList<AnnotationNode>(sourceAnnotations));
+        return privateMethod;
     }
 
     private int getIntMemberValue(AnnotationNode node, String name) {
@@ -112,9 +138,24 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     private static final String MEMOIZE_AT_LEAST_METHOD_NAME = "memoizeAtLeast";
     private static final String MEMOIZE_BETWEEN_METHOD_NAME = "memoizeBetween";
 
-    private MethodCallExpression buildMemoizeClosureCallExpression(ClosureExpression expression,
+    private MethodCallExpression buildMemoizeClosureCallExpression(MethodNode privateMethod,
                                                                    int protectedCacheSize, int maxCacheSize) {
+        Parameter[] srcParams = privateMethod.getParameters();
+        Parameter[] newParams = cloneParams(srcParams);
+        List<Expression> argList = new ArrayList<Expression>(newParams.length);
+        for (int i = 0; i < srcParams.length; i++) {
+            argList.add(new VariableExpression(newParams[i]));
+        }
 
+        ClosureExpression expression = new ClosureExpression(
+                newParams,
+                new ExpressionStatement(
+                        new MethodCallExpression(
+                                new VariableExpression("this"),
+                                privateMethod.getName(),
+                                new ArgumentListExpression(argList))
+                )
+        );
         if (protectedCacheSize == 0 && maxCacheSize == 0) {
             return new MethodCallExpression(expression, MEMOIZE_METHOD_NAME, MethodCallExpression.NO_ARGUMENTS);
         }
@@ -135,8 +176,8 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     /*
      * Build unique name.
      */
-    private String buildUniqueName(ClassNode owner, MethodNode methodNode) {
-        StringBuilder nameBuilder = new StringBuilder("memoizedMethodClosure$").append(methodNode.getName());
+    private static String buildUniqueName(ClassNode owner, String ident, MethodNode methodNode) {
+        StringBuilder nameBuilder = new StringBuilder("memoizedMethod" + ident + "$").append(methodNode.getName());
         if (methodNode.getParameters() != null) {
             for (Parameter parameter : methodNode.getParameters()) {
                 nameBuilder.append(parameter.getType().getNameWithoutPackage());

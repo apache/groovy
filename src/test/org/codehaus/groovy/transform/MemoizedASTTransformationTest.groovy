@@ -15,80 +15,92 @@
  */
 package org.codehaus.groovy.transform
 
-import static org.junit.Assert.*
+import groovy.transform.CompileStatic
 import groovy.transform.Memoized
+
+import static org.junit.Assert.*
 
 /**
  * Unit tests for {@link MemoizedASTTransformation}.
- * 
+ *
  * @author Andrey Bloschetsov
  */
 class MemoizedASTTransformationTest extends GroovyTestCase {
 
     void testMethodWithoutParams() {
-        MemoizedTestClass ins = new MemoizedTestClass()
-        assertEquals(ins.methodWithoutParams(), 123)
-        assertEquals(ins.methodCallCounter, 1)
-        assertEquals(ins.methodWithoutParams(), 123)
-        assertEquals(ins.methodCallCounter, 1)
-        assertEquals(ins.methodWithoutParams(), 123)
-        assertEquals(ins.methodCallCounter, 1)
+        [new MemoizedTestClass(), new MemoizedTestClass3()].each {
+            def ins = new MemoizedTestClass3()
+            assertEquals(ins.methodWithoutParams(), 123)
+            assertEquals(ins.methodCallCounter, 1)
+            assertEquals(ins.methodWithoutParams(), 123)
+            assertEquals(ins.methodCallCounter, 1)
+            assertEquals(ins.methodWithoutParams(), 123)
+            assertEquals(ins.methodCallCounter, 1)
+        }
     }
 
     void testMethodWithParams() {
-        MemoizedTestClass ins = new MemoizedTestClass()
-        assertEquals(ins.methodWithParams(1, 2), 3)
-        assertEquals(ins.methodCallCounter, 1)
-        assertEquals(ins.methodWithParams(1, 2), 3)
-        assertEquals(ins.methodCallCounter, 1)
-        assertEquals(ins.methodWithParams(5, 4), 9)
-        assertEquals(ins.methodCallCounter, 2)
-        assertEquals(ins.methodWithParams(1, 2), 3)
-        assertEquals(ins.methodCallCounter, 2)
-        assertEquals(ins.methodWithParams(5, 4), 9)
-        assertEquals(ins.methodCallCounter, 2)
+        [new MemoizedTestClass(), new MemoizedTestClass3()].each {
+            def ins = new MemoizedTestClass3()
+            assertEquals(ins.methodWithParams(1, 2), 3)
+            assertEquals(ins.methodCallCounter, 1)
+            assertEquals(ins.methodWithParams(1, 2), 3)
+            assertEquals(ins.methodCallCounter, 1)
+            assertEquals(ins.methodWithParams(5, 4), 9)
+            assertEquals(ins.methodCallCounter, 2)
+            assertEquals(ins.methodWithParams(1, 2), 3)
+            assertEquals(ins.methodCallCounter, 2)
+            assertEquals(ins.methodWithParams(5, 4), 9)
+            assertEquals(ins.methodCallCounter, 2)
+        }
     }
 
     void testPrivateMethodWithParams() {
-        MemoizedTestClass ins = new MemoizedTestClass()
-        assertEquals(ins.privateMethodWithParams('hello ', 'world'), 'hello world')
-        assertEquals(ins.methodCallCounter, 1)
-        assertEquals(ins.privateMethodWithParams('foo', 'bar'), 'foobar')
-        assertEquals(ins.methodCallCounter, 2)
-        assertEquals(ins.privateMethodWithParams('hello ', 'world'), 'hello world')
-        assertEquals(ins.methodCallCounter, 2)
-        assertEquals(ins.privateMethodWithParams('foo', 'bar'), 'foobar')
-        assertEquals(ins.methodCallCounter, 2)
+        [new MemoizedTestClass(), new MemoizedTestClass3()].each {
+            def ins = new MemoizedTestClass3()
+            assertEquals(ins.privateMethodWithParams('hello ', 'world'), 'hello world')
+            assertEquals(ins.methodCallCounter, 1)
+            assertEquals(ins.privateMethodWithParams('foo', 'bar'), 'foobar')
+            assertEquals(ins.methodCallCounter, 2)
+            assertEquals(ins.privateMethodWithParams('hello ', 'world'), 'hello world')
+            assertEquals(ins.methodCallCounter, 2)
+            assertEquals(ins.privateMethodWithParams('foo', 'bar'), 'foobar')
+            assertEquals(ins.methodCallCounter, 2)
+        }
     }
 
     void testMethodWithException() {
-        MemoizedTestClass ins = new MemoizedTestClass()
-        assertEquals(ins.methodWithException('Jimmy'), 'hello Jimmy')
-        assertEquals(ins.methodCallCounter, 1)
-        try {
-            ins.methodWithException(null)
-            fail()
-        } catch (IllegalArgumentException e) {
+        [new MemoizedTestClass(), new MemoizedTestClass3()].each {
+            def ins = new MemoizedTestClass3()
+            assertEquals(ins.methodWithException('Jimmy'), 'hello Jimmy')
+            assertEquals(ins.methodCallCounter, 1)
+            try {
+                ins.methodWithException(null)
+                fail()
+            } catch (IllegalArgumentException e) {
+            }
+            assertEquals(ins.methodCallCounter, 1)
+            try {
+                ins.methodWithException(null)
+                fail()
+            } catch (IllegalArgumentException e) {
+            }
+            assertEquals(ins.methodCallCounter, 1)
+            assertEquals(ins.methodWithException('Jimmy'), 'hello Jimmy')
+            assertEquals(ins.methodCallCounter, 1)
+            assertEquals(ins.methodWithException('Tom'), 'hello Tom')
+            assertEquals(ins.methodCallCounter, 2)
         }
-        assertEquals(ins.methodCallCounter, 1)
-        try {
-            ins.methodWithException(null)
-            fail()
-        } catch (IllegalArgumentException e) {
-        }
-        assertEquals(ins.methodCallCounter, 1)
-        assertEquals(ins.methodWithException('Jimmy'), 'hello Jimmy')
-        assertEquals(ins.methodCallCounter, 1)
-        assertEquals(ins.methodWithException('Tom'), 'hello Tom')
-        assertEquals(ins.methodCallCounter, 2)
     }
 
     void testConflictName() {
-        MemoizedTestClass ins = new MemoizedTestClass()
-        assertEquals(ins.conflictName(), 'No conflict')
-        assertEquals(ins.methodCallCounter, 1)
-        assertEquals(ins.conflictName(), 'No conflict')
-        assertEquals(ins.methodCallCounter, 1)
+        [new MemoizedTestClass(), new MemoizedTestClass3()].each {
+            def ins = new MemoizedTestClass3()
+            assertEquals(ins.conflictName(), 'No conflict')
+            assertEquals(ins.methodCallCounter, 1)
+            assertEquals(ins.conflictName(), 'No conflict')
+            assertEquals(ins.methodCallCounter, 1)
+        }
     }
 
     void testMaxCacheSize() {
@@ -190,6 +202,72 @@ class MemoizedTestClass2 {
 
 class MemoizedTestClass {
 
+    int methodCallCounter
+
+    @Memoized
+    int methodWithoutParams() {
+        methodCallCounter++
+        123
+    }
+
+    @Memoized
+    int methodWithParams(int n1, int n2) {
+        methodCallCounter++
+        n1 + n2
+    }
+
+    @Memoized
+    private String privateMethodWithParams(String s1, String s2) {
+        methodCallCounter++
+        s1 + s2
+    }
+
+    @Memoized
+    String methodWithException(String name) {
+        if (!name) {
+            throw new IllegalArgumentException()
+        }
+        methodCallCounter++
+        'hello ' + name
+    }
+
+    String memoizedMethodClosure$conflictName = null // Field for check a name conflict
+
+    @Memoized
+    String conflictName() {
+        methodCallCounter++
+        "No conflict"
+    }
+
+    // -- static methods -- //
+
+    static int staticMethodWithoutParamsCounter
+
+    @Memoized
+    static String staticMethodWithoutParams() {
+        staticMethodWithoutParamsCounter++
+        'foo'
+    }
+
+    static int staticMethodWithParamsCounter
+
+    @Memoized
+    static String staticMethodWithParams(int n, String str) {
+        staticMethodWithParamsCounter++
+        str * n
+    }
+
+    static int privateStaticMethodWithParamsCounter
+
+    @Memoized
+    private static long privateStaticMethodWithParams(long n, long m) {
+        privateStaticMethodWithParamsCounter++
+        n - m
+    }
+}
+
+//@CompileStatic
+class MemoizedTestClass3 {
     int methodCallCounter
 
     @Memoized

@@ -46,13 +46,17 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  * <pre>
  * class MemoizedExample {
  * 
- *     private final def memoizedSum = { int n1, int n2 ->
- *         println "$n1 + $n2 = ${n1 + n2}"
- *         n1 + n2
+ *     private final Closure memoizedSum = { int n1, int n2 ->
+ *         private$method$memoizedSum(n1,n2)
  *     }.memoize()
  * 
  *     int sum(int n1, int n2) {
  *         memoizedSum(n1, n2)
+ *     }
+ *
+ *     private private$method$mzmoizeSum(int n1, int n2) {
+ *         println "$n1 + $n2 = ${n1 + n2}"
+ *         n1 + n2
  *     }
  * }
  * </pre>
