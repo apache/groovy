@@ -15,6 +15,8 @@
  */
 package groovy.transform.stc
 
+import java.util.LinkedList;
+
 import groovy.transform.NotYetImplemented
 
 /**
@@ -1133,7 +1135,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             map.put('bar', new Date())
         '''
     }
-    
+
     // GROOVY-6232
     void testDiamond() {
         assertScript '''
@@ -1144,7 +1146,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             bar()
         '''
     }
-    
+
     // GROOVY-6233
     void testConstructorArgumentsAgainstGenerics() {
         shouldFailWithMessages '''
@@ -1154,6 +1156,21 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             bar()
         ''', '[Static type checking] - Cannot find matching method Foo#<init>(java.lang.String, int)'
+    }
+
+    // Groovy-6237
+    void testHiddenGenerics() {
+        assertScript '''
+            class MyList extends LinkedList<Object> {}
+            List<Object> o = new MyList()
+        '''
+
+        shouldFailWithMessages '''
+            class Blah {}
+            class MyList extends LinkedList<Object> {}
+            List<Blah> o = new MyList()
+        ''',
+        'Incompatible generic argument types. Cannot assign MyList to: java.util.List <Blah>'
     }
     
     static class MyList extends LinkedList<String> {}
