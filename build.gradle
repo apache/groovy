@@ -506,10 +506,6 @@ apply from: "gradle/idea.gradle"
 // Define a GroovyDoc task which depends on the generated groovydoc tool
 apply from: "gradle/groovydoc.gradle"
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '1.5'
-}
-
 classes {
     doFirst {
         logger.lifecycle "InvokeDynamic support ${useIndy()?'on':'off'}"
