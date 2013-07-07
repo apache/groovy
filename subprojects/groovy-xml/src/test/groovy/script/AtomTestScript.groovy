@@ -1,4 +1,4 @@
-package groovy.script
+package script
 
 import groovy.xml.MarkupBuilder;
 
