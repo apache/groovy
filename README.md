@@ -28,10 +28,12 @@ To build from IntelliJ IDEA
 
 Then open the generated project in IDEA.
 
-To build from Eclipse:
+To build from Eclipse (work in progress see [GROOVY-6226](https://jira.codehaus.org/browse/GROOVY-6226) for details)
 
-Sadly this is not possible at the moment (10/23/2013).
+    ./gradlew cleanEclipse eclipse
+    ./gradlew jarAll
 
+Then open the generated project and the generated subprojects in Eclipse.
 
 InvokeDynamic support
 ---

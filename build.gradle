@@ -503,6 +503,7 @@ apply from: "gradle/docs.gradle"
 apply from: "gradle/assemble.gradle"
 apply from: "gradle/upload.gradle"
 apply from: "gradle/idea.gradle"
+apply from: "gradle/eclipse.gradle"
 // Define a GroovyDoc task which depends on the generated groovydoc tool
 apply from: "gradle/groovydoc.gradle"
 

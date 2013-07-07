@@ -1,0 +1,34 @@
+allprojects {
+    apply plugin: 'eclipse'
+    
+    eclipse.classpath.file {
+        whenMerged { classpath ->
+            classpath.entries.removeAll{ entry -> entry.path == '/groovy-groovydoc' }
+            classpath.entries.removeAll{ entry -> entry.path =~ /groovy-ant/ }
+            classpath.entries.removeAll{ entry -> entry.path =~ /target/ }
+            classpath.entries.unique(true){ entry -> entry.path}
+        }
+        withXml {
+            def node = it.asNode()
+            node.appendNode('classpathentry', [kind: 'lib', path: "${rootProject.jar.archivePath}"])
+        }
+    }
+}
+
+eclipse.classpath.file {
+    whenMerged { classpath ->
+        classpath.entries.removeAll{ entry -> entry.path == '/groovy-test' }
+        classpath.entries.removeAll{ entry -> entry.path =~ /subprojects/ }
+        classpath.entries.removeAll{ entry -> entry.path =~ /examples/ }
+        classpath.entries.removeAll{ entry -> entry.path =~ /src\/main/ }
+    }
+    withXml {
+        def node = it.asNode()
+        node.appendNode('classpathentry', [kind: 'src', path: "/groovy/src/main"])
+        ['groovy-test', 'groovy-groovydoc', 'groovy-jmx', 'groovy-xml'].each{
+            node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/$it/src/main/groovy"])
+            node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/$it/src/main/java"])
+        }
+        node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/groovy-templates/src/main/java"]) 
+    }
+}
