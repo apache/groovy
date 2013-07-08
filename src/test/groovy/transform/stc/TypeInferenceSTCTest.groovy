@@ -623,5 +623,53 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 assert v3 == null
         '''
     }
+
+    void testNumberPrefixPlusPlusInference() {
+        [Byte:'Integer',
+         Character: 'Character',
+         Short: 'Integer',
+         Integer: 'Integer',
+         Long: 'Long',
+         Float: 'Double',
+         Double: 'Double',
+         BigDecimal: 'BigDecimal',
+         BigInteger: 'BigInteger'
+        ].each { orig, dest ->
+            assertScript """
+            $orig b = 65 as $orig
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def rit = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert rit == make($dest)
+            })
+            def pp = ++b
+            println '++${orig} -> ' + pp.class + ' ' + pp
+            assert pp.class == ${dest}
+            """
+        }
+    }
+
+    void testNumberPostfixPlusPlusInference() {
+        [Byte:'Byte',
+         Character: 'Character',
+         Short: 'Short',
+         Integer: 'Integer',
+         Long: 'Long',
+         Float: 'Float',
+         Double: 'Double',
+         BigDecimal: 'BigDecimal',
+         BigInteger: 'BigInteger'
+        ].each { orig, dest ->
+            assertScript """
+            $orig b = 65 as $orig
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def rit = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert rit == make($dest)
+            })
+            def pp = b++
+            println '${orig}++ -> ' + pp.class + ' ' + pp
+            assert pp.class == ${dest}
+            """
+        }
+    }
 }
 
