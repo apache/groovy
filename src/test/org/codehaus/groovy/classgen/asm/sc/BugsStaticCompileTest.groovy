@@ -964,5 +964,24 @@ def it = new Iterator(new Sequence())
 assert it.next() == 1G
 '''
     }
+
+    // GROOVY-6243
+    void testSwapUsingMultipleAssignment() {
+        assertScript '''
+        def swap(result,next) {
+            print "($result,$next) -> "
+            (result, next) =  [next, result]
+            println "($result,$next)"
+            [result, next]
+        }
+
+        assert swap(0,1) == [1,0]
+        assert swap('a','b') == ['b','a']
+        assert swap('a', 1) == [1, 'a']
+        def o1 = new Object()
+        def o2 = new Date()
+        assert swap(o1,o2) == [o2, o1]
+        '''
+    }
 }
 

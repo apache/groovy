@@ -26,6 +26,8 @@ import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -43,6 +45,8 @@ public class BinaryExpressionTransformer {
         CONSTANT_ONE.setType(ClassHelper.int_TYPE);
         CONSTANT_MINUS_ONE.setType(ClassHelper.int_TYPE);
     }
+
+    private int tmpVarCounter = 0;
 
     private final StaticCompilationTransformer staticCompilationTransformer;
 
@@ -162,15 +166,42 @@ public class BinaryExpressionTransformer {
             List<Expression> rightExpressions = ((ListExpression) rightExpression).getExpressions();
             Iterator<Expression> leftIt = leftExpressions.iterator();
             Iterator<Expression> rightIt = rightExpressions.iterator();
+            if (isDeclaration) {
             while (leftIt.hasNext()) {
                 Expression left = leftIt.next();
                 if (rightIt.hasNext()) {
                     Expression right = rightIt.next();
-                    BinaryExpression bexp = isDeclaration?
-                            new DeclarationExpression(left, bin.getOperation(), right):
-                            new BinaryExpression(left, bin.getOperation(), right);
+                    BinaryExpression bexp = new DeclarationExpression(left, bin.getOperation(), right);
                     bexp.setSourcePosition(right);
                     cle.addExpression(bexp);
+                }
+            }
+            } else {
+                // (next, result) = [ result, next+result ]
+                // -->
+                // def tmp1 = result
+                // def tmp2 = next+result
+                // next = tmp1
+                // result = tmp2
+                int size = rightExpressions.size();
+                List<Expression> tmpAssignments = new ArrayList<Expression>(size);
+                List<Expression> finalAssignments = new ArrayList<Expression>(size);
+                for (int i=0; i<Math.min(size, leftExpressions.size());i++ ) {
+                    Expression left = leftIt.next();
+                    Expression right = rightIt.next();
+                    VariableExpression tmpVar = new VariableExpression("$tmpVar$"+tmpVarCounter++);
+                    BinaryExpression bexp = new DeclarationExpression(tmpVar, bin.getOperation(), right);
+                    bexp.setSourcePosition(right);
+                    tmpAssignments.add(bexp);
+                    bexp = new BinaryExpression(left, bin.getOperation(), new VariableExpression(tmpVar));
+                    bexp.setSourcePosition(left);
+                    finalAssignments.add(bexp);
+                }
+                for (Expression tmpAssignment : tmpAssignments) {
+                    cle.addExpression(tmpAssignment);
+                }
+                for (Expression finalAssignment : finalAssignments) {
+                    cle.addExpression(finalAssignment);
                 }
             }
             return staticCompilationTransformer.transform(cle);
