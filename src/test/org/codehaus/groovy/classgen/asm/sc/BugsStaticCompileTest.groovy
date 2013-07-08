@@ -936,5 +936,33 @@ import groovy.transform.TypeCheckingMode
         assert isCaseNullCS(2,1) == false
         '''
     }
+
+    // GROOVY-6242
+    void testGetAtBigInt() {
+        assertScript '''
+class Sequence {
+    public Sequence() {}
+    static BigInteger getAt(final int index) { 1G }
+    static BigInteger getAt(final BigInteger index) { getAt(index as int) }
+}
+
+class Iterator implements java.util.Iterator {
+    private BigInteger currentIndex = 0G
+    private final Sequence sequence
+    Iterator(final Sequence s) { sequence = s }
+    boolean hasNext() { return true }
+    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+        def expr = node.code.statements[0].expression
+        def indexType = expr.rightExpression.getNodeMetaData(INFERRED_TYPE)
+        assert indexType == make(BigInteger)
+    })
+    BigInteger next() { sequence[currentIndex++] }
+    void remove() { throw new UnsupportedOperationException() }
+}
+
+def it = new Iterator(new Sequence())
+assert it.next() == 1G
+'''
+    }
 }
 
