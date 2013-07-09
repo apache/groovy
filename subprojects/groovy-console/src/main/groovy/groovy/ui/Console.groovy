@@ -720,7 +720,7 @@ options:
                     reportException(error.cause) 
                 } else if (error instanceof SimpleMessage) {
                     def doc = outputArea.styledDocument
-                    doc.insertString(doc.length, error.message, new SimpleAttributeSet())
+                    doc.insertString(doc.length, "${error.message}\n", new SimpleAttributeSet())
                 }
             }
         } else {
