@@ -19,6 +19,7 @@ import groovy.inspect.swingui.ObjectBrowser
 import groovy.inspect.swingui.AstBrowser
 import groovy.swing.SwingBuilder
 import groovy.ui.text.FindReplaceUtility
+import org.codehaus.groovy.control.messages.SimpleMessage
 
 import java.awt.Component
 import java.awt.EventQueue
@@ -726,6 +727,9 @@ options:
                     reportException(error)
                 } else if (error instanceof ExceptionMessage) {
                     reportException(error.cause) 
+                } else if (error instanceof SimpleMessage) {
+                    def doc = outputArea.styledDocument
+                    doc.insertString(doc.length, error.message, new SimpleAttributeSet())
                 }
             }
         } else {
