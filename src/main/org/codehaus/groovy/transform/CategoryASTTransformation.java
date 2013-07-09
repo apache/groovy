@@ -244,10 +244,15 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
 
     private static void addUnsupportedError(ASTNode node, SourceUnit unit) {
         unit.getErrorCollector().addErrorAndContinue(
-                new SimpleMessage("The @Category transformation does not support instance "+
-                        (node instanceof FieldNode?"fields":"properties")
-                        + " but found ["+getName(node)+"] at "
-                        + node.getLineNumber()+":"+node.getColumnNumber(), unit));
+                new SyntaxErrorMessage(
+                        new SyntaxException("The @Category transformation does not support instance "+
+                                (node instanceof FieldNode?"fields":"properties")
+                                + " but found ["+getName(node)+"]",
+                                node.getLineNumber(),
+                                node.getColumnNumber()
+
+                        ), unit
+                ));
     }
 
     private static String getName(ASTNode node) {
