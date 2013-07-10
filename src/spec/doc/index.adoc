@@ -1,10 +1,78 @@
-= Groovy Language Specification
+= Groovy Language Documentation
 :toc:
 :icons:
 :linkcss!:
+:numbered:
+:subprojroot: ../../../subprojects/groovy-
+:specfolder: /src/spec/doc/
 
-:leveloffset: 1
+== Groovy Language Specification
 
-include::syntax.adoc[]
+:leveloffset: 2
+include::core-syntax.adoc[]
+include::core-semantic.adoc[]
+include::core-operators.adoc[]
+include::core-program-structure.adoc[]
+include::core-object-orientation.adoc[]
+include::core-closures.adoc[]
+:leveloffset: 0
 
+== Tools
 
+=== groovyc, the Groovy compiler
+==== Ant task
+==== Maven integration
+===== GMaven and GMavenPlus
+===== The Groovy Eclipse Maven plugin
+==== Command-line compiler
+==== Joint compilation
+=== groovysh, the Groovy shell
+=== groovyConsole, the Groovy swing console
+=== groovydoc, the Groovy & Java documentation generator
+=== IDE integration
+
+== User Guides
+:leveloffset: 2
+include::core-getting-started.adoc[]
+:leveloffset: 0
+=== Differences with Java
+==== Multi-methods
+==== Array initializers
+==== Package scope visibility
+==== ARM blocks
+==== Inner class instantiation
+=== Groovy Development Kit
+==== Working with IO
+==== Working with collections
+==== Handy utilities
+===== ConfigSlurper
+===== Expando
+===== Observable list, map and set
+:leveloffset: 2
+include::core-metaprogramming.adoc[]
+:leveloffset: 0
+=== Testing guide
+=== Interacting with a SQL database
+:leveloffset: 2
+include::{subprojroot}json{specfolder}json-userguide.adoc[]
+:leveloffset: 0
+=== Processing XML
+=== Scripting Ant tasks
+=== Template engines
+=== Servlet support
+=== Integrating Groovy in a Java application
+==== Groovy integration mechanisms
+===== Eval
+===== GroovyShell
+===== GroovyClassLoader
+===== CompilationUnit
+===== Reloading
+==== Bean Scripting Framework
+==== JSR 223 javax.script API
+:leveloffset: 2
+include::core-domain-specific-languages.adoc[]
+:leveloffset: 0
+=== Working with JMX
+=== Creating Swing UIs
+=== Security
+=== Design patterns in Groovy

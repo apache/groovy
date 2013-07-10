@@ -1,0 +1,50 @@
+= Syntax
+:toc:
+:icons:
+:linkcss!:
+
+This chapter covers the syntax of the Groovy programming language.
+
+== Identifiers
+
+=== Normal identifiers
+=== Quoted identifiers
+
+== Comments
+
+=== Single line comment
+=== Multiline comment
+=== JavaDoc comment
+=== Shebang line
+
+== Keywords
+
+== Strings
+
+=== Single quoted string
+=== Double quoted string
+=== Triple single quoted string
+=== Triple double quoted string
+=== Slashy string
+=== Dollar slashy string
+
+== Numbers
+
+=== Integer literal
+=== Floating point literal
+=== Binary literal
+=== Octal literal
+=== Hexadecimal literal
+=== Underscore in literal
+=== Number type suffixes
+
+== Booleans
+
+== Arrays
+
+== Lists
+
+== Maps
+
+=== String keys
+=== Parenthesized keys

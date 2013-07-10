@@ -1,0 +1,47 @@
+= Object orientation
+:toc:
+:icons:
+:linkcss!:
+
+This chapter covers the object orientation of the Groovy programming language.
+
+== Types
+
+=== Primitive types
+
+=== Class
+==== Normal class
+==== Static class
+==== Inner class
+===== Anonymous inner class
+==== Abstract class
+
+=== Interface
+
+=== Annotation
+
+==== Closure annotation parameters
+==== Meta-annotations
+==== Annotation placement
+
+=== Constructors
+
+==== Named argument constructor
+
+=== Methods
+
+==== Method definition
+==== Named arguments
+==== Default arguments
+==== Varargs
+==== Method selection algorithm
+==== Exception declaration
+
+=== Fields and properties
+
+==== Fields
+==== Properties
+
+=== Inheritance
+
+=== Generics

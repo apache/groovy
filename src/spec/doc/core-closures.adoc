@@ -1,0 +1,32 @@
+= Closures
+:toc:
+:icons:
+:linkcss!:
+
+This chapter covers Groovy Closures.
+
+== Syntax
+
+== Parameters
+
+=== Normal parameters
+=== Implicit parameter
+=== Default parameter
+=== Varargs
+
+== Delegation strategy
+
+== Closures in GStrings
+
+== Functional programming
+
+=== Currying
+==== Left currying
+==== Right currying
+==== Index based currying
+
+=== Memoization
+
+=== Composition
+
+=== Trampoline

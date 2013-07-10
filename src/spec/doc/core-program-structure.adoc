@@ -1,0 +1,25 @@
+= Program structure
+:toc:
+:icons:
+:linkcss!:
+
+This chapter covers the program structure of the Groovy programming language.
+
+== Package name
+
+== Imports
+
+=== Default imports
+=== Simple import
+=== Star import
+=== Static import
+=== Static star import
+=== Import aliasing
+
+== Scripts versus classes
+
+== Initializers
+
+=== Static initializers
+=== Instance initializers
+

@@ -1,0 +1,36 @@
+= Domain-Specific Languages
+:toc:
+:icons:
+:linkcss!:
+
+== Command chains
+== Operator overloading
+== Script base classes
+== Adding properties to numbers
+== @DelegatesTo
+== Compilation customizers
+=== Import customizer
+=== AST customizer
+=== Secure AST customizer
+=== Source aware customizer
+=== Customizer builder
+=== Config script flag
+=== AST transformations
+== Custom type checking extensions
+== Builders
+=== Creating a builder
+==== BuilderSupport
+==== FactoryBuilderSupport
+=== Existing builders
+==== MarkupBuilder
+==== StreamingMarkupBuilder
+==== SaxBuilder
+==== StaxBuilder
+==== DomBuilder
+==== NodeBuilder
+==== JsonBuilder
+==== StreamingJsonBuilder
+==== SwingBuilder
+==== AntBuilder
+==== CliBuilder
+==== ObjectGraphBuilder

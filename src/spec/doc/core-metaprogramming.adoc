@@ -1,0 +1,96 @@
+= Metaprogramming
+:toc:
+:icons:
+:linkcss!:
+
+== Runtime metaprogramming
+
+=== GroovyObject interface
+==== invokeMethod
+==== get/setProperty
+==== get/setMetaClass
+
+=== get/setAttribute
+=== propertyMissing
+=== methodMissing
+=== GroovyInterceptable
+=== Categories
+
+=== Metaclasses
+==== Custom metaclasses
+===== Delegating metaclass
+===== Magic package
+==== Per instance metaclass
+==== ExpandoMetaClass
+===== Constructors
+===== Borrowing methods
+===== Dynamic method names
+===== GroovyObject methods
+===== Overriding static invokeMethod
+===== Properties
+===== Runtime discovery
+===== Static methods
+
+=== Extension modules
+==== Module descriptor
+==== Instance methods
+==== Static methods
+
+== Compile-time metaprogramming
+
+=== Developing AST transformations
+==== Compilation phases guide
+==== Local transformations
+==== Global transformations
+==== AST API guide
+==== Testing AST transformations
+
+=== Available AST transformations
+==== Binding
+===== @Bindable
+===== @Vetoable
+==== Beans related
+===== Constructors
+====== @TupleConstructor
+====== @InheritConstructors
+===== @Singleton
+===== @IndexedProperty
+===== @ToString
+===== @EqualsAndHashCode
+===== @Canonical
+===== @Immutable
+===== @PackageScope
+===== @Field
+===== @ListenerList
+==== Synchronization and locking
+===== @Sinchronized
+===== @WithReadLock
+===== @WithWriterLock
+==== Static typing and compilation
+===== @TypeChecked
+====== Custom type checking extensions
+===== @CompileStatic
+====== @CompileDynamic
+==== Logging
+===== @Log
+===== @Commons
+===== @Slf4j
+===== @Log4j
+==== @ASTTest
+==== Metaprogramming
+===== @Category
+===== @Mixin
+==== Execution control
+===== @ThreadInterrupt
+===== @TimedInterrupt
+===== @ConditionalInterrupt
+==== Other
+===== @Grab
+====== @GrabResolver
+====== @GrabExclude
+===== @Delegate
+===== @Lazy
+===== @Memoized
+===== @AutoClone
+===== @AutoExternalizable
+===== @Newify

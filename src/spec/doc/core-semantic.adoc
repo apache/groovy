@@ -1,0 +1,53 @@
+= Semantic
+:toc:
+:icons:
+:linkcss!:
+
+This chapter covers the semantic of the Groovy programming language.
+
+== Typing
+
+=== Optional typing
+=== Static type checking
+=== Static compilation
+
+== Statements
+
+=== Variable definition
+=== Variable assignment
+==== Multiple assignment
+=== Control structures
+==== Conditional structures
+===== if / else
+===== switch / case
+==== Looping structures
+===== Classic for loop
+===== for in loop
+===== while loop
+==== Exception handling
+==== try / catch / finally
+==== Multi-catch
+=== Power assertion
+=== Labeled statements
+
+== Expressions
+
+=== GPath expressions
+
+== Promotion and coercion
+
+=== Number promotion
+=== Closure to type coercion
+=== Map to type coercion
+=== String to enum coercion
+
+== Optionality
+
+=== Optional parentheses
+=== Optional semicolons
+=== Optional return keyword
+=== Optional public keyword
+
+== The Groovy Truth
+
+=== Customizing the truth with asBoolean() methods

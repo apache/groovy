@@ -1,8 +1,6 @@
-= JSON support user guide
+= Processing JSON
 :toc:
 :icons:
 :linkcss!:
-
-This chapter covers the usage of the JSON API provided by Groovy, for parsing, producing, and pretty printing JSON content.
 
 

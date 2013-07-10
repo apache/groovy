@@ -1,0 +1,47 @@
+= Operators
+:toc:
+:icons:
+:linkcss!:
+
+This chapter covers the operators of the Groovy programming language.
+
+== Arithmetic operators
+
+== Bitwise and logical operators
+
+== Conditional operators
+
+=== Not operator
+=== Ternary operator
+=== Elvis operator
+
+== Object operators
+
+=== Safe navigation operator
+=== Direct field access operator
+=== Method reference operator
+
+== Regular expression operators
+
+=== Pattern operator
+=== Find operator
+=== Match operator
+
+== Other operators
+
+=== Spread operator
+==== Spreading method arguments
+==== Spread list elements
+==== Spread map elements
+=== Range operator
+=== Spaceship operator
+=== Subscript operator
+=== Membership operator
+=== Identity operator
+=== Coercion operator
+=== Diamond operator
+=== Call operator
+
+== Operator precedence
+
+== Operator overloading
