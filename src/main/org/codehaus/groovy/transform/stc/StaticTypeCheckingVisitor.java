@@ -639,54 +639,54 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         potentialTypes.add(typeExpression.getType());
     }
 
-    protected void typeCheckAssignment(
-            final BinaryExpression assignmentExpression,
-            final Expression leftExpression,
-            final ClassNode leftExpressionType,
-            final Expression rightExpression,
-            final ClassNode inferredRightExpressionType) {
-        ClassNode leftRedirect;
-        if (isArrayAccessExpression(leftExpression) || leftExpression instanceof PropertyExpression
-                || (leftExpression instanceof VariableExpression
-                && ((VariableExpression) leftExpression).getAccessedVariable() instanceof DynamicVariable)) {
+    private ClassNode getRedirect(Expression expr, ClassNode type) {
+        if (isArrayAccessExpression(expr) || expr instanceof PropertyExpression
+                || (expr instanceof VariableExpression
+                && ((VariableExpression) expr).getAccessedVariable() instanceof DynamicVariable)) {
             // in case the left expression is in the form of an array access, we should use
             // the inferred type instead of the left expression type.
             // In case we have a variable expression which accessed variable is a dynamic variable, we are
             // in the "with" case where the type must be taken from the inferred type
-            leftRedirect = leftExpressionType;
+            return type;
+        } else if (expr instanceof VariableExpression && isPrimitiveType(((VariableExpression) expr).getOriginType())) {
+            return type;
         } else {
-            if (leftExpression instanceof VariableExpression && isPrimitiveType(((VariableExpression) leftExpression).getOriginType())) {
-                leftRedirect = leftExpressionType;
-            } else {
-                leftRedirect = leftExpression.getType().redirect();
+            return expr.getType().redirect();
+        }
+    }
+    
+    private boolean typeCheckMultipleAssignmentAndContinue(Expression leftExpression, Expression rightExpression) {
+        // multiple assignment check
+        if (!(leftExpression instanceof TupleExpression)) return true;
+
+        if (!(rightExpression instanceof ListExpression)) {
+            addStaticTypeError("Multiple assignments without list expressions on the right hand side are unsupported in static type checking mode", rightExpression);
+            return false;
+        }
+
+        TupleExpression tuple = (TupleExpression) leftExpression;
+        ListExpression list = (ListExpression) rightExpression;
+        List<Expression> listExpressions = list.getExpressions();
+        List<Expression> tupleExpressions = tuple.getExpressions();
+        if (listExpressions.size() < tupleExpressions.size()) {
+            addStaticTypeError("Incorrect number of values. Expected:" + tupleExpressions.size() + " Was:" + listExpressions.size(), list);
+            return false;
+        }
+        for (int i = 0, tupleExpressionsSize = tupleExpressions.size(); i < tupleExpressionsSize; i++) {
+            Expression tupleExpression = tupleExpressions.get(i);
+            Expression listExpression = listExpressions.get(i);
+            ClassNode elemType = getType(listExpression);
+            ClassNode tupleType = getType(tupleExpression);
+            if (!isAssignableTo(elemType, tupleType)) {
+                addStaticTypeError("Cannot assign value of type " + elemType.toString(false) + " to variable of type " + tupleType.toString(false), rightExpression);
+                return false; // avoids too many errors
             }
         }
-        if (leftExpression instanceof TupleExpression) {
-            // multiple assignment
-            if (!(rightExpression instanceof ListExpression)) {
-                addStaticTypeError("Multiple assignments without list expressions on the right hand side are unsupported in static type checking mode", rightExpression);
-                return;
-            }
-            TupleExpression tuple = (TupleExpression) leftExpression;
-            ListExpression list = (ListExpression) rightExpression;
-            List<Expression> listExpressions = list.getExpressions();
-            List<Expression> tupleExpressions = tuple.getExpressions();
-            if (listExpressions.size() < tupleExpressions.size()) {
-                addStaticTypeError("Incorrect number of values. Expected:" + tupleExpressions.size() + " Was:" + listExpressions.size(), list);
-                return;
-            }
-            for (int i = 0, tupleExpressionsSize = tupleExpressions.size(); i < tupleExpressionsSize; i++) {
-                Expression tupleExpression = tupleExpressions.get(i);
-                Expression listExpression = listExpressions.get(i);
-                ClassNode elemType = getType(listExpression);
-                ClassNode tupleType = getType(tupleExpression);
-                if (!isAssignableTo(elemType, tupleType)) {
-                    addStaticTypeError("Cannot assign value of type " + elemType.toString(false) + " to variable of type " + tupleType.toString(false), rightExpression);
-                    break; // avoids too many errors
-                }
-            }
-            return;
-        }
+
+        return true;
+    }
+
+    private ClassNode adjustTypeForSpreading(ClassNode inferredRightExpressionType, Expression leftExpression) {
         // imagine we have: list*.foo = 100
         // then the assignment must be checked against [100], not 100
         ClassNode wrappedRHS = inferredRightExpressionType;
@@ -696,11 +696,122 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     new GenericsType(getWrapper(inferredRightExpressionType))
             });
         }
-        boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, wrappedRHS, rightExpression);
-        // if leftRedirect is of READONLY_PROPERTY_RETURN type, then it means we are on a missing property
-        if (leftExpression.getNodeMetaData(StaticTypesMarker.READONLY_PROPERTY) != null && (leftExpression instanceof PropertyExpression)) {
-            addStaticTypeError("Cannot set read-only property: " + ((PropertyExpression) leftExpression).getPropertyAsString(), leftExpression);
+        return wrappedRHS;
+    }
+    
+    private void addReadOnlyPropertyError(Expression expr) {
+        // if expr is of READONLY_PROPERTY_RETURN type, then it means we are on a missing property
+        if (expr.getNodeMetaData(StaticTypesMarker.READONLY_PROPERTY) != null && (expr instanceof PropertyExpression)) {
+            addStaticTypeError("Cannot set read-only property: " + ((PropertyExpression) expr).getPropertyAsString(), expr);
         }
+    }
+    
+    private void addPrecisionErrors(ClassNode leftRedirect, ClassNode lhsType, ClassNode inferredrhsType, Expression rightExpression) {
+        if (isNumberType(leftRedirect) && isNumberType(inferredrhsType)) {
+            if (checkPossibleLooseOfPrecision(leftRedirect, inferredrhsType, rightExpression)) {
+                addStaticTypeError("Possible loose of precision from " + inferredrhsType + " to " + leftRedirect, rightExpression);
+                return;
+            }
+        }
+        // if left type is array, we should check the right component types
+        if (!lhsType.isArray()) return;
+        ClassNode leftComponentType = lhsType.getComponentType();
+        ClassNode rightRedirect = rightExpression.getType().redirect();
+        if (rightRedirect.isArray()) {
+            ClassNode rightComponentType = rightRedirect.getComponentType();
+            if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
+                addStaticTypeError("Cannot assign value of type " + rightComponentType.toString(false) + " into array of type " + lhsType.toString(false), rightExpression);
+            }
+        } else if (rightExpression instanceof ListExpression) {
+            for (Expression element : ((ListExpression) rightExpression).getExpressions()) {
+                ClassNode rightComponentType = element.getType().redirect();
+                if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)
+                        && !(isNullConstant(element) && !isPrimitiveType(leftComponentType))) {
+                    addStaticTypeError("Cannot assign value of type " + rightComponentType.toString(false) + " into array of type " + lhsType.toString(false), rightExpression);
+                }
+            }
+        }
+    }
+    
+    private void addListAssignmentConstructorErrors(
+            ClassNode leftRedirect, ClassNode leftExpressionType, 
+            ClassNode inferredRightExpressionType, Expression rightExpression, 
+            Expression assignmentExpression) 
+    {
+        // if left type is not a list but right type is a list, then we're in the case of a groovy
+        // constructor type : Dimension d = [100,200]
+        // In that case, more checks can be performed
+        if (rightExpression instanceof ListExpression && !implementsInterfaceOrIsSubclassOf(LIST_TYPE, leftRedirect)) {
+            ArgumentListExpression argList = new ArgumentListExpression(((ListExpression) rightExpression).getExpressions());
+            ClassNode[] args = getArgumentTypes(argList);
+            checkGroovyStyleConstructor(leftRedirect, args);
+        } else if (!implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)
+                && implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)
+                && !isWildcardLeftHandSide(leftExpressionType)) {
+                if (!extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
+                    addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression);
+                }
+        }
+    }
+    
+    private void addMapAssignmentConstructorErrors(ClassNode leftRedirect, Expression leftExpression, Expression rightExpression) {
+        // if left type is not a list but right type is a map, then we're in the case of a groovy
+        // constructor type : A a = [x:2, y:3]
+        // In this case, more checks can be performed
+        if (!implementsInterfaceOrIsSubclassOf(leftRedirect, MAP_TYPE) && rightExpression instanceof MapExpression) {
+            if (!(leftExpression instanceof VariableExpression) || !((VariableExpression) leftExpression).isDynamicTyped()) {
+                ArgumentListExpression argList = new ArgumentListExpression(rightExpression);
+                ClassNode[] args = getArgumentTypes(argList);
+                checkGroovyStyleConstructor(leftRedirect, args);
+                // perform additional type checking on arguments
+                MapExpression mapExpression = (MapExpression) rightExpression;
+                checkGroovyConstructorMap(leftExpression, leftRedirect, mapExpression);
+            }
+        }
+    }
+
+    private void checkTypeGenerics(ClassNode leftExpressionType, ClassNode wrappedRHS, Expression rightExpression) {
+        // last, check generic type information to ensure that inferred types are compatible
+        if (!leftExpressionType.isUsingGenerics()) return;
+        // List<Foo> l = new List() is an example for incomplete generics type info
+        // we assume arity related errors are already handled here.
+        if (hasRHSIncompleteGenericTypeInfo(wrappedRHS)) return;
+
+        GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
+        if (UNKNOWN_PARAMETER_TYPE.equals(wrappedRHS) || gt.isCompatibleWith(wrappedRHS) || isNullConstant(rightExpression)) return;
+
+        addStaticTypeError("Incompatible generic argument types. Cannot assign "
+                + wrappedRHS.toString(false)
+                + " to: " + leftExpressionType.toString(false), rightExpression);
+    }
+    
+    private boolean hasGStringStringError(ClassNode leftExpressionType, ClassNode wrappedRHS, Expression rightExpression) {
+        if (isParameterizedWithString(leftExpressionType) && isParameterizedWithGStringOrGStringString(wrappedRHS)) {
+            addStaticTypeError("You are trying to use a GString in place of a String in a type which explicitly declares accepting String. " +
+                    "Make sure to call toString() on all GString values.", rightExpression);
+            return true;
+        }
+        return false;
+    }
+    
+    protected void typeCheckAssignment(
+            final BinaryExpression assignmentExpression,
+            final Expression leftExpression,
+            final ClassNode leftExpressionType,
+            final Expression rightExpression,
+            final ClassNode inferredRightExpressionType) 
+    {
+
+        if (!typeCheckMultipleAssignmentAndContinue(leftExpression, rightExpression)) return;
+
+        ClassNode leftRedirect = getRedirect(leftExpression, leftExpressionType);
+        ClassNode wrappedRHS = adjustTypeForSpreading(inferredRightExpressionType, leftExpression);
+
+        // check types are compatible for assignment
+        boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, wrappedRHS, rightExpression);
+
+        addReadOnlyPropertyError(leftExpression);
+
         if (!compatible) {
             if (!extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
                 addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression.getRightExpression());
@@ -714,79 +825,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            boolean possibleLooseOfPrecision = false;
-            if (isNumberType(leftRedirect) && isNumberType(inferredRightExpressionType)) {
-                possibleLooseOfPrecision = checkPossibleLooseOfPrecision(leftRedirect, inferredRightExpressionType, rightExpression);
-                if (possibleLooseOfPrecision) {
-                    addStaticTypeError("Possible loose of precision from " + inferredRightExpressionType + " to " + leftRedirect, rightExpression);
-                }
-            }
-            // if left type is array, we should check the right component types
-            if (!possibleLooseOfPrecision && leftExpressionType.isArray()) {
-                ClassNode leftComponentType = leftExpressionType.getComponentType();
-                ClassNode rightRedirect = rightExpression.getType().redirect();
-                if (rightRedirect.isArray()) {
-                    ClassNode rightComponentType = rightRedirect.getComponentType();
-                    if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
-                        addStaticTypeError("Cannot assign value of type " + rightComponentType.toString(false) + " into array of type " + leftExpressionType.toString(false), assignmentExpression.getRightExpression());
-                    }
-                } else if (rightExpression instanceof ListExpression) {
-                    for (Expression element : ((ListExpression) rightExpression).getExpressions()) {
-                        ClassNode rightComponentType = element.getType().redirect();
-                        if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)
-                                && !(isNullConstant(element) && !isPrimitiveType(leftComponentType))) {
-                            addStaticTypeError("Cannot assign value of type " + rightComponentType.toString(false) + " into array of type " + leftExpressionType.toString(false), assignmentExpression.getRightExpression());
-                        }
-                    }
-                }
-            }
-
-            // if left type is not a list but right type is a list, then we're in the case of a groovy
-            // constructor type : Dimension d = [100,200]
-            // In that case, more checks can be performed
-            if (rightExpression instanceof ListExpression && !implementsInterfaceOrIsSubclassOf(LIST_TYPE, leftRedirect)) {
-                ArgumentListExpression argList = new ArgumentListExpression(((ListExpression) rightExpression).getExpressions());
-                ClassNode[] args = getArgumentTypes(argList);
-                checkGroovyStyleConstructor(leftRedirect, args);
-            } else if (!implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)
-                    && implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)
-                    && !isWildcardLeftHandSide(leftExpressionType)) {
-                    if (!extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
-                        addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression);
-                    }
-            }
-
-            // if left type is not a list but right type is a map, then we're in the case of a groovy
-            // constructor type : A a = [x:2, y:3]
-            // In this case, more checks can be performed
-            if (!implementsInterfaceOrIsSubclassOf(leftRedirect, MAP_TYPE) && rightExpression instanceof MapExpression) {
-                if (!(leftExpression instanceof VariableExpression) || !((VariableExpression) leftExpression).isDynamicTyped()) {
-                    ArgumentListExpression argList = new ArgumentListExpression(rightExpression);
-                    ClassNode[] args = getArgumentTypes(argList);
-                    checkGroovyStyleConstructor(leftRedirect, args);
-                    // perform additional type checking on arguments
-                    MapExpression mapExpression = (MapExpression) rightExpression;
-                    checkGroovyConstructorMap(leftExpression, leftRedirect, mapExpression);
-                }
-            }
-
-            // last, check generic type information to ensure that inferred types are compatible
-            if (leftExpressionType.isUsingGenerics() && !leftExpressionType.isEnum()) {
-                boolean incomplete = hasRHSIncompleteGenericTypeInfo(wrappedRHS);
-                if (!incomplete) {
-                    GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
-                    if (!UNKNOWN_PARAMETER_TYPE.equals(wrappedRHS) && !gt.isCompatibleWith(wrappedRHS) && !isNullConstant(rightExpression)) {
-                        if (isParameterizedWithString(leftExpressionType) && isParameterizedWithGStringOrGStringString(wrappedRHS)) {
-                            addStaticTypeError("You are trying to use a GString in place of a String in a type which explicitly declares accepting String. " +
-                                    "Make sure to call toString() on all GString values.", assignmentExpression.getRightExpression());
-                        } else {
-                            addStaticTypeError("Incompatible generic argument types. Cannot assign "
-                                    + wrappedRHS.toString(false)
-                                    + " to: " + leftExpressionType.toString(false), assignmentExpression.getRightExpression());
-                        }
-                    }
-                }
-            }
+            addPrecisionErrors(leftRedirect, leftExpressionType, inferredRightExpressionType, rightExpression);
+            addListAssignmentConstructorErrors(leftRedirect, leftExpressionType, inferredRightExpressionType, rightExpression, assignmentExpression);
+            addMapAssignmentConstructorErrors(leftRedirect, leftExpression, rightExpression);
+            if (hasGStringStringError(leftExpressionType, wrappedRHS, rightExpression)) return;
+            checkTypeGenerics(leftExpressionType, wrappedRHS, rightExpression);
         }
     }
 
