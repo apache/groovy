@@ -271,4 +271,43 @@ class StaticCompileMathTest extends AbstractBytecodeTestCase {
             assert foo()==1
         '''
     }
+
+    void testPrimitiveIntCompareNotEqualShouldUseFastPath() {
+        def source = '''
+        @groovy.transform.CompileStatic
+        boolean cmp(int i, int j) {
+            boolean b = i==j
+            return i!=j
+        }
+        assert cmp(1,1) == false
+        assert cmp(1,2) == true
+        '''
+        assertScript(source)
+        def bytecode = compile(method:'cmp', source)
+        assert bytecode.hasStrictSequence([
+                'ILOAD 1',
+                'ILOAD 2',
+                'IF_ICMPNE'
+        ])
+    }
+
+    void testPrimitiveLongCompareNotEqualShouldUseFastPath() {
+        def source = '''
+        @groovy.transform.CompileStatic
+        boolean cmp(long i, long j) {
+            boolean b = i==j
+            return i!=j
+        }
+        assert cmp(1,1) == false
+        assert cmp(1,2) == true
+        '''
+        assertScript(source)
+        def bytecode = compile(method:'cmp', source)
+        assert bytecode.hasStrictSequence([
+                'LLOAD 1',
+                'LLOAD 3',
+                'LCMP',
+                'IFNE'
+        ])
+    }
 }
