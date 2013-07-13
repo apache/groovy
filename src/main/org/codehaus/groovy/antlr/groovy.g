@@ -1291,14 +1291,20 @@ protected enumConstantFieldInternal![AST mods, AST tp, AST t, Token first]
         ((nls "throws") => tc:throwsClause)?
 
         ( s2:compoundStatement )?
-        {#enumConstantFieldInternal = #(create(METHOD_DEF,"METHOD_DEF",first,LT(1)),
-                                 mods,
-                                 tp,
-                                 #(create(TYPE,"TYPE",first,LT(1)),t),
-                                 IDENT,
-                                 param,
-                                 tc,
-                                 s2);}
+        {
+            #enumConstantFieldInternal = #(create(METHOD_DEF,"METHOD_DEF",first,LT(1)),
+                    mods,
+                    #(create(TYPE,"TYPE",first,LT(1)),t),
+                    IDENT,
+                    param,
+                    tc,
+                    s2);
+            if (tp != null) {
+                AST old = #enumConstantFieldInternal.getFirstChild();
+                #enumConstantFieldInternal.setFirstChild(#tp);
+                #tp.setNextSibling(old);
+            }
+        }
 
     |   v:variableDefinitions[#mods,#t]
         {#enumConstantFieldInternal = #v;}
