@@ -1,11 +1,12 @@
 dependencies {
+    def antVersion = '1.9.2'
     compile project(':')
     testCompile project(':').sourceSets.test.runtimeClasspath
     groovy project(':')
     compile project(':groovy-templates')
     testCompile project(':groovy-test')
     testCompile project(':groovy-ant')
-    testCompile "org.apache.ant:ant-testutil:1.9.1"
+    testCompile "org.apache.ant:ant-testutil:$antVersion"
 }
 
 compileJava {
