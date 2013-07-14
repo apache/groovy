@@ -237,7 +237,7 @@ class GrapeIvy implements GrapeEngine {
     }
 
     public grab(Map args, Map... dependencies) {
-        def loader
+        ClassLoader loader = null
         grabRecordsForCurrDependencies.clear()
         try {
             // identify the target classloader early, so we fail before checking repositories
@@ -245,17 +245,21 @@ class GrapeIvy implements GrapeEngine {
                 classLoader:args.remove('classLoader'),
                 refObject:args.remove('refObject'),
                 calleeDepth:args.calleeDepth?:DEFAULT_DEPTH,
-                )
+            )
 
             // check for non-fail null.
             // If we were in fail mode we would have already thrown an exception
             if (!loader) return
 
-            for (URI uri in resolve(loader, args, dependencies)) {
+            def uris = resolve(loader, args, dependencies)
+            for (URI uri in uris) {
+                loader.addURL(uri.toURL())
+            }
+            for (URI uri in uris) {
                 //TODO check artifact type, jar vs library, etc
                 File file = new File(uri)
-                processCategoryMethods(uri, loader, file)
-                processOtherServices(file, loader);
+                processCategoryMethods(loader, file)
+                processOtherServices(loader, file)
             }
         } catch (Exception e) {
             // clean-up the state first
@@ -272,9 +276,7 @@ class GrapeIvy implements GrapeEngine {
         return null
     }
 
-    private processCategoryMethods(URI uri, ClassLoader loader, File file) {
-        URL url = uri.toURL()
-        loader.addURL(url)
+    private processCategoryMethods(ClassLoader loader, File file) {
         // register extension methods if jar
         if (file.name.toLowerCase().endsWith(".jar")) {
             def mcRegistry = GroovySystem.metaClassRegistry
@@ -310,7 +312,7 @@ class GrapeIvy implements GrapeEngine {
         }
     }
 
-    void processOtherServices(File f, ClassLoader loader) {
+    void processOtherServices(ClassLoader loader, File f) {
         ZipFile zf = new ZipFile(f)
         ZipEntry serializedCategoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.SerializedCategoryMethods")
         if (serializedCategoryMethods != null) {
