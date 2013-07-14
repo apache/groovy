@@ -22,6 +22,7 @@ allprojects {
 
 eclipse.classpath.file {
     whenMerged { classpath ->
+        classpath.entries.each { entry -> if(entry.path == 'src/test'){entry.excludes = ['groovy/PropertyTest.groovy'] as List}}
         classpath.entries.removeAll{ entry -> entry.path == '/groovy-test' }
         classpath.entries.removeAll{ entry -> entry.path =~ /subprojects/ }
         classpath.entries.removeAll{ entry -> entry.path =~ /examples/ }
@@ -29,12 +30,12 @@ eclipse.classpath.file {
     }
     withXml {
         def node = it.asNode()
-        node.appendNode('classpathentry', [kind: 'src', path: "/groovy/src/main"])
+        node.appendNode('classpathentry', [kind: 'src', path: '/groovy/src/main'])
         ['groovy-test', 'groovy-groovydoc', 'groovy-jmx', 'groovy-xml', 'groovy-ant'].each{
             node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/$it/src/main/groovy"])
             node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/$it/src/main/java"])
         }
-        node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/groovy-templates/src/main/java"])
+        node.appendNode('classpathentry', [kind: 'src', path: '/groovy/subprojects/groovy-templates/src/main/java'])
         node.appendNode('classpathentry', [kind: 'lib', path: "${project.configurations.compilerCompile.find { it.name.startsWith("ant-") }}"])
     }
 }

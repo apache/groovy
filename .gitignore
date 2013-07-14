@@ -11,6 +11,9 @@ out
 *.class
 /bin
 user.gradle
+/.settings
+*.classpath
+*.project
 
 /subprojects/groovy-all-tests/bin
 /subprojects/groovy-all-tests/.project
