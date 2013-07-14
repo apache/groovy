@@ -23,7 +23,7 @@ package org.codehaus.groovy.tools.stubgenerator
 class PropertyUsageFromJavaTest extends StubTestCase {
 
     void verifyStubs() {
-        classes['somepackage.GroovyPogo'].with {
+        classes['stubgenerator.propertyUsageFromJava.somepackage.GroovyPogo'].with {
             assert methods['getAge'].signature == "public int getAge()"
             assert methods['getName'].signature == "public java.lang.String getName()"
             assert methods['setAge'].signature == "public void setAge(int value)"

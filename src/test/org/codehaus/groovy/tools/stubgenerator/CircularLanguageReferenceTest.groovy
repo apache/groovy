@@ -27,11 +27,11 @@ package org.codehaus.groovy.tools.stubgenerator
 class CircularLanguageReferenceTest extends StubTestCase {
 
     void verifyStubs() {
-        classes['Rectangle'].with {
+        classes['stubgenerator.circularLanguageReference.Rectangle'].with {
             assert methods['area'     ].signature == "public double area()"
             assert methods['Rectangle'].signature == "public Rectangle(double x, double y)"
             assert !annotations
-            assert interfaces.toSet() == ['groovy.lang.GroovyObject', 'Shape'] as Set
+            assert interfaces.toSet() == ['groovy.lang.GroovyObject', 'stubgenerator.circularLanguageReference.Shape'] as Set
             assert baseClass == 'java.lang.Object'
             assert imports == ['java.lang.*', 'java.io.*', 'java.net.*', 'java.util.*', 'groovy.lang.*', 'groovy.util.*']
         }

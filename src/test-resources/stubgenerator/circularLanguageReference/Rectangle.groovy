@@ -1,3 +1,5 @@
+package stubgenerator.circularLanguageReference;
+
 class Rectangle implements Shape {
     private double x, y
 
