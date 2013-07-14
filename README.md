@@ -23,15 +23,13 @@ To build everything and launch unit tests, use
 
 To build from IntelliJ IDEA
 
-    ./gradlew idea
-    ./gradlew jarAll
+    ./gradlew jarAll idea
 
 Then open the generated project in IDEA.
 
 To build from Eclipse (work in progress see [GROOVY-6226](https://jira.codehaus.org/browse/GROOVY-6226) for details)
 
-    ./gradlew cleanEclipse eclipse
-    ./gradlew jarAll
+    ./gradlew jarAll eclipse
 
 Then open the generated project and the generated subprojects in Eclipse.
 

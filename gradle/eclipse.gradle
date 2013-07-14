@@ -1,6 +1,11 @@
 allprojects {
     apply plugin: 'eclipse'
     
+    eclipse.jdt {
+        sourceCompatibility = 1.7
+        targetCompatibility = 1.7
+    }
+    
     eclipse.classpath.file {
         whenMerged { classpath ->
             classpath.entries.removeAll{ entry -> entry.path == '/groovy-groovydoc' }
@@ -12,7 +17,7 @@ allprojects {
             def node = it.asNode()
             node.appendNode('classpathentry', [kind: 'lib', path: "${rootProject.jar.archivePath}"])
         }
-    }
+    }   
 }
 
 eclipse.classpath.file {
@@ -25,10 +30,11 @@ eclipse.classpath.file {
     withXml {
         def node = it.asNode()
         node.appendNode('classpathentry', [kind: 'src', path: "/groovy/src/main"])
-        ['groovy-test', 'groovy-groovydoc', 'groovy-jmx', 'groovy-xml'].each{
+        ['groovy-test', 'groovy-groovydoc', 'groovy-jmx', 'groovy-xml', 'groovy-ant'].each{
             node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/$it/src/main/groovy"])
             node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/$it/src/main/java"])
         }
-        node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/groovy-templates/src/main/java"]) 
+        node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/groovy-templates/src/main/java"])
+        node.appendNode('classpathentry', [kind: 'lib', path: "${project.configurations.compilerCompile.find { it.name.startsWith("ant-") }}"])
     }
 }
