@@ -6,6 +6,10 @@
 :subprojroot: ../../../subprojects/groovy-
 :specfolder: /src/spec/doc/
 
+:leveloffset: 1
+include::core-introduction.adoc[]
+:leveloffset: 0
+
 == Groovy Language Specification
 
 :leveloffset: 2
