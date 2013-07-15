@@ -1,5 +1,5 @@
 //most of this is just a "hack" to break the circular dependencies between projects
-//which exist because Eclipse does not differntiate between build phases (e.g. compile, test, runtime)
+//which exist because Eclipse does not distinguish between build phases (e.g. compile, test, runtime)
 allprojects {
     apply plugin: 'eclipse'
     
