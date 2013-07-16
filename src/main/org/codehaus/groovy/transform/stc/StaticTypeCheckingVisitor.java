@@ -3495,11 +3495,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // we have to continue with either an interface or normal super class
             ClassNode nextNode = null;
-            ClassNode[] interfaces = current.getUnresolvedInterfaces();
-            for (int i=0; i<interfaces.length; i++) {
-                if (interfaces[i].isDerivedFrom(declaringClass)) {
-                    nextNode = interfaces[i];
-                    break;
+            if (declaringClass.isInterface()) {
+                ClassNode[] interfaces = current.getUnresolvedInterfaces();
+                for (int i=0; i<interfaces.length; i++) {
+                    if (implementsInterfaceOrIsSubclassOf(interfaces[i],declaringClass)) {
+                        nextNode = interfaces[i];
+                        break;
+                    }
                 }
             }
 
@@ -3507,11 +3509,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             current = nextNode;
             if (current==null) {
                 throw new GroovyBugError(
-                        "Declaring class for method call to " +
-                        declaringClass.getName() + "#" + method.getName() +
-                        method.getTypeDescriptor() + " was not matched with " +
-                        "found receiver "+ receiver.getName() + "." +
-                        "This should not have happened!");
+                        "Declaring class for method call to '" +
+                        method.getTypeDescriptor() + "' declared in " + declaringClass.getName() +
+                        " was not matched with found receiver "+ receiver.getName() + "." +
+                        " This should not have happened!");
             }
         }
         return resolvedPlaceholders;

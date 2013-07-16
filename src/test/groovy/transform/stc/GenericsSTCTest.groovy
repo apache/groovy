@@ -1172,7 +1172,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Next<Integer, Next<String, Done>> x = next(3, next("foo", new Done()))
         '''
     }
-    
+
+    void testMethodLevelGenericsFromInterface() {
+        assertScript '''
+            interface A {
+                public <T> T getBean(Class<T> c)
+            }
+            interface B extends A {}
+            interface C extends B {}
+
+            void foo(C c) {
+                String s = c?.getBean("".class)
+            }
+            foo(null)
+            true
+        '''
+    }
+        
     // Groovy-5610
     void testMethodWithDefaultArgument() {
         assertScript '''
