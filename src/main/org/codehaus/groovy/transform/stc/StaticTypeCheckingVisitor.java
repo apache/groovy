@@ -638,22 +638,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         potentialTypes.add(typeExpression.getType());
     }
-
-    private ClassNode getRedirect(Expression expr, ClassNode type) {
-        if (isArrayAccessExpression(expr) || expr instanceof PropertyExpression
-                || (expr instanceof VariableExpression
-                && ((VariableExpression) expr).getAccessedVariable() instanceof DynamicVariable)) {
-            // in case the left expression is in the form of an array access, we should use
-            // the inferred type instead of the left expression type.
-            // In case we have a variable expression which accessed variable is a dynamic variable, we are
-            // in the "with" case where the type must be taken from the inferred type
-            return type;
-        } else if (expr instanceof VariableExpression && isPrimitiveType(((VariableExpression) expr).getOriginType())) {
-            return type;
-        } else {
-            return expr.getType().redirect();
-        }
-    }
     
     private boolean typeCheckMultipleAssignmentAndContinue(Expression leftExpression, Expression rightExpression) {
         // multiple assignment check
@@ -806,7 +790,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (!typeCheckMultipleAssignmentAndContinue(leftExpression, rightExpression)) return;
 
-        ClassNode leftRedirect = getRedirect(leftExpression, leftExpressionType);
+        ClassNode leftRedirect = leftExpressionType.redirect();
         ClassNode wrappedRHS = adjustTypeForSpreading(inferredRightExpressionType, leftExpression);
 
         // check types are compatible for assignment
