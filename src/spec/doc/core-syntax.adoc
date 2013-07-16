@@ -4,11 +4,8 @@
 :linkcss!:
 
 This chapter covers the syntax of the Groovy programming language.
-
-== Identifiers
-
-=== Normal identifiers
-=== Quoted identifiers
+The grammar of the language derives from the Java grammar,
+but enhances it with specific constructs for Groovy, and allows certain simplifications.
 
 == Comments
 
@@ -18,6 +15,42 @@ This chapter covers the syntax of the Groovy programming language.
 === Shebang line
 
 == Keywords
+
+== Identifiers
+
+=== Normal identifiers
+
+Identifiers start with a letter, a dollar or an underscore.
+They cannot start with a number.
+
+A letter can be in the following ranges:
+
+* 'a' to 'z' (lowercase ascii letter)
+* 'A' to 'Z' (uppercase ascii letter)
+* '\u00C0' to '\u00D6'
+* '\u00D8' to '\u00F6'
+* '\u00F8' to '\u00FF'
+* '\u0100' to '\uFFFE'
+
+Then following characters can contain letters and numbers.
+
+Here are a few examples of valid identifiers (here, variable names):
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=valid_identifiers,indent=0]
+----
+
+But the following ones are invalid identifiers:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=invalid_identifiers,indent=0]
+----
+
+=== Quoted identifiers
+
+
 
 == Strings
 
