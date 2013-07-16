@@ -1157,6 +1157,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             bar()
         ''', '[Static type checking] - Cannot find matching method Foo#<init>(java.lang.String, int)'
     }
+    
+    // Groovy-5742
+    void testNestedGenerics() {
+        assertScript '''
+            import static Next.*
+
+            abstract class Base<A extends Base<A>> {}
+            class Done extends Base<Done> { }
+            class Next<H, T extends Base<T>> extends Base<Next<H, T>> {
+                H head; T tail
+                static Next<H, T> next(H h, T t) { new Next<H, T>(head:h, tail:t) }
+                String toString() { "Next($head, ${tail.toString()})" }
+            }
+
+            Next<Integer, Next<String, Done>> x = next(3, next("foo", new Done()))
+        '''
+    }
 
     // Groovy-6237
     void testHiddenGenerics() {
