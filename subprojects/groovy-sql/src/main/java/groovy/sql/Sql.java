@@ -3054,7 +3054,14 @@ public class Sql {
             handleError(connection, e);
             throw e;
         } finally {
-            if (connection != null) connection.setAutoCommit(savedAutoCommit);
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(savedAutoCommit);
+                }
+                catch (SQLException e) {
+                    LOG.finest("Caught exception resetting auto commit: " + e.getMessage() + " - continuing");
+                }
+            }
             cacheConnection = false;
             closeResources(connection, null);
             cacheConnection = savedCacheConnection;
