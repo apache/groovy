@@ -15,8 +15,6 @@
  */
 package groovy.transform.stc
 
-import java.util.LinkedList;
-
 import groovy.transform.NotYetImplemented
 
 /**
@@ -1173,6 +1171,30 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             Next<Integer, Next<String, Done>> x = next(3, next("foo", new Done()))
         '''
+    }
+    
+    // Groovy-5610
+    void testMethodWithDefaultArgument() {
+        assertScript '''
+            class A{}
+            class B extends A{}
+            def foo(List<? extends A> arg, String value='default'){1}
+
+            List<B> b = new ArrayList<>()
+            assert foo(b) == 1
+            List<A> a = new ArrayList<>()
+            assert foo(a) == 1
+        '''
+
+        shouldFailWithMessages '''
+            class A{}
+            class B extends A{}
+            def foo(List<? extends A> arg, String value='default'){1}
+
+            List<Object> l = new ArrayList<>()
+            assert foo(l) == 1
+        ''',
+        'Cannot find matching method'
     }
 
     // Groovy-6237
