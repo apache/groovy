@@ -1,4 +1,4 @@
-= Semantic
+= Semantics
 :toc:
 :icons:
 :linkcss!:
