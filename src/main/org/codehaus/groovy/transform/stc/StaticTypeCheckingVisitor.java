@@ -3506,7 +3506,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (nextNode==null) nextNode = current.getUnresolvedSuperClass();
             current = nextNode;
             if (current==null) {
-                throw new GroovyBugError("declaring class not matched, should not have happened!");
+                throw new GroovyBugError(
+                        "Declaring class for method call to " +
+                        declaringClass.getName() + "#" + method.getName() +
+                        method.getTypeDescriptor() + " was not matched with " +
+                        "found receiver "+ receiver.getName() + "." +
+                        "This should not have happened!");
             }
         }
         return resolvedPlaceholders;
