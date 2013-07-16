@@ -971,7 +971,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
         //---------------------------
 
-        List<Double> list2 = new MyList<>()
+        List<Double> list2 = new MyList()
         list2 << 0.0d
 
         //Groovyc: [Static type checking] - Cannot assign value of type java.lang.Object to variable of type java.lang.Double

@@ -778,7 +778,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (hasRHSIncompleteGenericTypeInfo(wrappedRHS)) return;
 
         GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
-        if (UNKNOWN_PARAMETER_TYPE.equals(wrappedRHS) || gt.isCompatibleWith(wrappedRHS) || isNullConstant(rightExpression)) return;
+        if (    UNKNOWN_PARAMETER_TYPE.equals(wrappedRHS) ||
+                gt.isCompatibleWith(wrappedRHS) || 
+                isNullConstant(rightExpression)) return;
 
         addStaticTypeError("Incompatible generic argument types. Cannot assign "
                 + wrappedRHS.toString(false)
@@ -3295,6 +3297,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return mapType;
     }
 
+    private static class ExtensionMethodDeclaringClass{}
+    
     /**
      * If a method call returns a parameterized type, then we can perform additional inference on the
      * return type, so that the type gets actual type parameters. For example, the method
@@ -3315,6 +3319,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode dc = emn.getDeclaringClass();
             ArgumentListExpression argList = new ArgumentListExpression();
             VariableExpression vexp = new VariableExpression("$foo", receiver);
+            vexp.setNodeMetaData(ExtensionMethodDeclaringClass.class, dc);
             argList.addExpression(vexp);
             if (arguments instanceof ArgumentListExpression) {
                 List<Expression> expressions = ((ArgumentListExpression) arguments).getExpressions();
@@ -3329,17 +3334,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!isUsingGenericsOrIsArrayUsingGenerics(returnType)) return returnType;
         GenericsType[] returnTypeGenerics = returnType.isArray() ? returnType.getComponentType().getGenericsTypes() : returnType.getGenericsTypes();
         if (returnTypeGenerics==null) return returnType;
-        Map<String, GenericsType> resolvedPlaceholders = new HashMap<String, GenericsType>();
-        if (method.isStatic() && CLASS_Type.equals(receiver) && receiver.isUsingGenerics() && receiver.getGenericsTypes().length>0) {
-            GenericsUtils.extractPlaceholders(receiver.getGenericsTypes()[0].getType(), resolvedPlaceholders);
-        } else {
-            ClassNode current = receiver;
-            while (current!=null) {
-                GenericsUtils.extractPlaceholders(current, resolvedPlaceholders);
-                current = current.getUnresolvedSuperClass();
-            }
-        }
-        GenericsUtils.extractPlaceholders(method.getReturnType(), resolvedPlaceholders);
+        Map<String, GenericsType> resolvedPlaceholders = resolvePlaceHolders(receiver, method, arguments);
         if (resolvedPlaceholders.isEmpty()) return returnType;
         // then resolve receivers from method arguments
         Parameter[] parameters = method.getParameters();
@@ -3447,6 +3442,90 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return returnType.getGenericsTypes()[0].getType();
         }
         return returnType;
+    }
+    private ClassNode getDeclaringClass(MethodNode method, Expression arguments) {
+        ClassNode declaringClass = method.getDeclaringClass();
+
+        // correcting declaring class for extension methods:
+        if (arguments instanceof ArgumentListExpression) {
+            ArgumentListExpression al = (ArgumentListExpression) arguments;
+            List<Expression> list = al.getExpressions();
+            if (list.size()==0) return declaringClass;
+            Expression exp = list.get(0);
+            ClassNode cn = exp.getNodeMetaData(ExtensionMethodDeclaringClass.class);
+            if (cn!=null) return cn;
+        }
+        return declaringClass;
+    }
+    
+    private Map<String, GenericsType> resolvePlaceHolders(ClassNode receiver, MethodNode method, Expression arguments) {
+        Map<String, GenericsType> resolvedPlaceholders;
+        if (method.isStatic() && CLASS_Type.equals(receiver) && receiver.isUsingGenerics() && receiver.getGenericsTypes().length>0) {
+            resolvedPlaceholders = new HashMap<String, GenericsType>();
+            GenericsUtils.extractPlaceholders(receiver.getGenericsTypes()[0].getType(), resolvedPlaceholders);
+        } else {
+            ClassNode declaringClass = getDeclaringClass(method, arguments);
+            resolvedPlaceholders = extractPlaceHolders(method, receiver, declaringClass);
+        }
+        return resolvedPlaceholders;
+    }
+
+    private static void addMethodLevelDeclaredGenerics(MethodNode method, Map<String, GenericsType> resolvedPlaceholders) {
+        ClassNode dummy = OBJECT_TYPE.getPlainNodeReference();
+        dummy.setGenericsTypes(method.getGenericsTypes());
+        GenericsUtils.extractPlaceholders(dummy, resolvedPlaceholders);
+    }
+    
+    private static Map<String, GenericsType> extractPlaceHolders(MethodNode method, ClassNode receiver, ClassNode declaringClass) {
+        if (declaringClass.equals(OBJECT_TYPE)) {
+            Map<String, GenericsType> resolvedPlaceholders = new HashMap<String, GenericsType>();
+            addMethodLevelDeclaredGenerics(method, resolvedPlaceholders);
+            return resolvedPlaceholders;
+        }
+
+        Map<String, GenericsType> resolvedPlaceholders = null;
+        ClassNode current = receiver;
+        while (true) {
+            //extract the place holders
+            Map<String, GenericsType> currentPlaceHolders = new HashMap<String, GenericsType>();
+            GenericsUtils.extractPlaceholders(current, currentPlaceHolders);
+
+            if (declaringClass.equals(current)) {
+                addMethodLevelDeclaredGenerics(method, currentPlaceHolders);
+            }
+
+            if (resolvedPlaceholders!=null) {
+                // merge maps 
+                Set<Map.Entry<String,GenericsType>> entries = currentPlaceHolders.entrySet();
+                for (Map.Entry<String,GenericsType> entry : entries) {
+                    GenericsType gt = entry.getValue();
+                    if (!gt.isPlaceholder()) continue;
+                    GenericsType referenced = resolvedPlaceholders.get(gt.getName());
+                    entry.setValue(referenced);
+                }
+            }
+            resolvedPlaceholders = currentPlaceHolders;
+
+            // we are done if we are now in the declaring class
+            if (current.equals(declaringClass)) break;
+
+            // we have to continue with either an interface or normal super class
+            ClassNode nextNode = null;
+            ClassNode[] interfaces = current.getUnresolvedInterfaces();
+            for (int i=0; i<interfaces.length; i++) {
+                if (interfaces[i].isDerivedFrom(declaringClass)) {
+                    nextNode = interfaces[i];
+                    break;
+                }
+            }
+
+            if (nextNode==null) nextNode = current.getUnresolvedSuperClass();
+            current = nextNode;
+            if (current==null) {
+                throw new GroovyBugError("declaring class not matched, should not have happened!");
+            }
+        }
+        return resolvedPlaceholders;
     }
 
     /**
