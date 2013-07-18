@@ -10,7 +10,27 @@ but enhances it with specific constructs for Groovy, and allows certain simplifi
 == Comments
 
 === Single line comment
+
+Single line comments start with +//+ and can be found at any position in the line.
+The characters following +//+, till the end of the line, are considered part of the comment.
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=single_line_comment,indent=0]
+----
+
 === Multiline comment
+
+A multiline comment starts with +/*+ and can be found at any position in the line.
+The characters following +/*+ will be considered part of the comment, including new line characters,
+up to the first +*/+ closing the comment.
+Multiline comments can thus be put at the end of a statement, or even inside a statement.
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=multiline_comment,indent=0]
+----
+
 === JavaDoc comment
 === Shebang line
 
