@@ -1,6 +1,6 @@
 = Syntax
 :toc:
-:icons:
+:icons: font
 :linkcss!:
 
 This chapter covers the syntax of the Groovy programming language.
@@ -13,6 +13,17 @@ but enhances it with specific constructs for Groovy, and allows certain simplifi
 === Multiline comment
 === JavaDoc comment
 === Shebang line
+
+Beside the single line comment, there is a special line comment, often called the _shebang_ line understood by UNIX systems
+which allows scripts to be run directly from the command-line, provided you have installed the Groovy distribution
+and the +groovy+ command is available on the +PATH+.
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=shebang_comment_line,indent=0]
+----
+
+NOTE: The +#+ character must be the first character of the file. Any indentation would yield a compilation error.
 
 == Keywords
 

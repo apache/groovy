@@ -65,4 +65,15 @@ class SyntaxTest extends CompilableTestSupport {
         foo.while
         '''
     }
+
+    void testShebangCommentLine() {
+        def script = '''\
+            // tag::shebang_comment_line[]
+            #!/usr/bin/env groovy
+            println "Hello from the shebang line"
+            // end::shebang_comment_line[]
+        '''
+
+        shouldCompile script.stripIndent().split('\n')[1..2].join('\n')
+    }
 }
