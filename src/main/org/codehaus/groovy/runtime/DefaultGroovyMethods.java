@@ -5213,16 +5213,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self  a List
      * @param range a Range indicating the items to get
-     * @return a sublist based on range borders or a new list if range is reversed
-     * @see java.util.List#subList(int,int)
+     * @return a new list instance based on range borders
+     *
      * @since 1.0
      */
     public static <T> List<T> getAt(List<T> self, Range range) {
         RangeInfo info = subListBorders(self.size(), range);
-        List<T> answer = self.subList(info.from, info.to);  // sublist is always exclusive, but Ranges are not
+
+        List<T> subList = self.subList(info.from, info.to);  // sublist is always exclusive, but Ranges are not
         if (info.reverse) {
-            answer = reverse(answer);
+            subList = reverse(subList);
         }
+
+        // trying to guess the concrete list type and create a new instance from it
+        List<T> answer = createSimilarList(self, subList.size());
+        answer.addAll(subList);
+
         return answer;
     }
 
@@ -5258,9 +5264,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self  a ListWithDefault
      * @param range a Range indicating the items to get
-     * @return a new eager or lazy sublist based on range borders
      *
-     * @see java.util.List#subList(int,int)
+     * @return a new eager or lazy list instance based on range borders
      */
     public static <T> List<T> getAt(ListWithDefault<T> self, Range range) {
         RangeInfo info = subListBorders(self.size(), range);
@@ -5274,6 +5279,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         List<T> answer = self.subList(info.from, info.to);  // sublist is always exclusive, but Ranges are not
         if (info.reverse) {
             answer =  ListWithDefault.newInstance(reverse(answer), self.isLazyDefaultValues(), self.getInitClosure());
+        } else {
+            // instead of using the SubList backed by the parent list, a new ArrayList instance is used
+            answer =  ListWithDefault.newInstance(new ArrayList<T>(answer), self.isLazyDefaultValues(), self.getInitClosure());
         }
 
         return answer;
@@ -5286,9 +5294,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self  a ListWithDefault
      * @param range a Range indicating the items to get
-     * @return a sublist based on range borders or a new list if range is reversed
      *
-     * @see java.util.List#subList(int,int)
+     * @return a new list instance based on range borders
+     *
      */
     public static <T> List<T> getAt(ListWithDefault<T> self, EmptyRange range) {
         return ListWithDefault.newInstance(new ArrayList<T>(), self.isLazyDefaultValues(), self.getInitClosure());
@@ -5301,12 +5309,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self  a List
      * @param range a Range indicating the items to get
-     * @return a sublist based on range borders or a new list if range is reversed
-     * @see java.util.List#subList(int,int)
+     * @return a new list instance based on range borders
+     *
      * @since 1.0
      */
     public static <T> List<T> getAt(List<T> self, EmptyRange range) {
-        return new ArrayList<T> ();
+        return createSimilarList(self, 0);
     }
 
     /**
