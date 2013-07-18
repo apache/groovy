@@ -1,9 +1,9 @@
-= groovyc, the Groovy compiler
+= Compiling Groovy
 :toc:
-:icons:
+:icons: font
 :linkcss!:
 
-== Command-line compiler
+== groovyc, the Groovy compiler
 
 `groovyc` is the Groovy compiler command line tool. It allows you to compile Groovy sources into bytecode. It plays
 the same role as `javac` in the Java world. The easiest way to compile a Groovy script or class is to run the following command:
@@ -38,7 +38,7 @@ argument. | groovyc -cp lib/dep.jar MyClass.groovy
 *Notes:*
 
 * `sourcepath` is not used anymore. Specifying this parameter will have no effect on compilation.
-* for a full description of joint compilation, see <<section-titles,Joint compilation>>
+* for a full description of joint compilation, see <<section-jointcompilation,the joint compilation section>>.
 
 == Ant task
 
@@ -201,13 +201,192 @@ the right thing to do just to leave this as is.
 To restate: the `javac` task gets the `srcdir`, `destdir` and `classpath` from
 the enclosing `groovyc` task.
 
-More details about joint compilation can be found in the <<section-titles,Joint compilation>> section.
+More details about joint compilation can be found in the <<section-jointcompilation,joint compilation>> section.
 
 == Maven integration
-== GMaven and GMavenPlus
-== The Groovy Eclipse Maven plugin
+There are several approaches to compiling Groovy code in your Maven
+projects. <<section-gmaven,GMaven>> is the
+most flexible and feature rich, but it has some difficulties with joint
+Java-Groovy projects and it is no longer under active development. The
+<<section-groovyeclipse,Groovy-Eclipse compiler plugin for Maven>> sidesteps the joint compilation issues. Read
+<<Groovy-EclipsecompilerpluginforMaven-WhyanotherGroovycompilerforMavenWhataboutGMaven, this>>
+for a deeper discussion of the benefits and disadvantages of the two
+approaches.
 
-== Joint compilation
+A third approach is to use Maven’s Ant plugin to compile a groovy
+project. Note that the Ant plugin is bound to the compile and
+test-compile phases of the build in the example below. It will be
+invoked during these phases and the contained tasks will be carried out
+which runs the Groovy compiler over the source and test directories. The
+resulting Java classes will coexist with and be treated like any
+standard Java classes compiled from Java source and will appear no
+different to the JRE, or the JUnit runtime.
+
+[source,xml]
+--------------------------------------------------------------------------------------------------------
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.mycomp.MyGroovy</groupId>
+    <artifactId>MyGroovy</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0-SNAPSHOT</version>
+    <name>Maven Example building a Groovy project</name>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>groovy</groupId>
+            <artifactId>groovy-all-1.0-jsr</artifactId>
+            <version>05</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <configuration>
+                            <tasks>
+                                <mkdir dir="${basedir}/src/main/groovy"/>
+                                <taskdef name="groovyc"
+                                    classname="org.codehaus.groovy.ant.Groovyc">
+                                    <classpath refid="maven.compile.classpath"/>
+                                </taskdef>
+                                <mkdir dir="${project.build.outputDirectory}"/>
+                                <groovyc destdir="${project.build.outputDirectory}"
+                                    srcdir="${basedir}/src/main/groovy/" listfiles="true">
+                                    <classpath refid="maven.compile.classpath"/>
+                                </groovyc>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <phase>test-compile</phase>
+                        <configuration>
+                            <tasks>
+                                <mkdir dir="${basedir}/src/test/groovy"/>
+                                <taskdef name="groovyc"
+                                    classname="org.codehaus.groovy.ant.Groovyc">
+                                    <classpath refid="maven.test.classpath"/>
+                                </taskdef>
+                                <mkdir dir="${project.build.testOutputDirectory}"/>
+                                <groovyc destdir="${project.build.testOutputDirectory}"
+                                    srcdir="${basedir}/src/test/groovy/" listfiles="true">
+                                    <classpath refid="maven.test.classpath"/>
+                                </groovyc>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+--------------------------------------------------------------------------------------------------------
+
+This assumes you have a Maven project setup with `groovy` subfolders
+as peers to the java src and test subfolders. You can use the `java`/`jar`
+archetype to set this up then rename the java folders to groovy or keep
+the java folders and just create groovy peer folders. There exists, also
+a groovy plugin which has not been tested or used in production. After
+defining the build section as in the above example, you can invoke the
+typical Maven build phases normally. For example, `mvn test` will
+execute the test phase, compiling Groovy source and Groovy test source
+and finally executing the unit tests. If you run `mvn jar` it will
+execute the jar phase bundling up all of your compiled production
+classes into a jar after all of the unit tests pass. For more detail on
+Maven build phases consult the Maven2 documentation.
+
+== GMaven and GMavenPlus
+[[section-gmaven]]
+=== GMaven
+GMaven is a separate project and documentation for http://docs.codehaus.org/display/GMAVEN[GMaven] can
+be found http://docs.codehaus.org/display/GMAVEN[here].
+
+*Example:*
+
+[source,xml]
+----
+<dependencies>
+    <dependency>
+        <groupId>org.codehaus.gmaven.runtime</groupId>
+        <artifactId>gmaven-runtime-default</artifactId>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.codehaus.gmaven</groupId>
+            <artifactId>gmaven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>generateStubs</goal>
+                        <goal>compile</goal>
+                        <goal>generateTestStubs</goal>
+                        <goal>testCompile</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+----
+
+*Important:*
+
+You should be aware that GMaven is *not supported anymore* and has problems with <<section-jointcompilation,joint compilation>>.
+Should you need joint compilation, we advise that you use the <<section-groovyeclipse,Groovy Eclipse maven plugin>>.
+
+[[section-gmavenplus]]
+=== GMavenPlus
+
+https://github.com/groovy/GMavenPlus[GMavenPlus] is a rewrite of <<section-gmaven,GMaven>> which is in active development. It does not support all the features
+of <<section-gmaven,GMaven>> but supports newer versions of Groovy, invokedynamic, as well as joint compilation, through stubs (which
+means it has the same potential issues as <<section-gmaven,GMaven>>). The main advantage over its predecessor is that
+it compiles with recent versions of the compiler and supports choosing what version of Groovy is used.
+
+[[section-gmaven2]]
+=== GMaven2
+
+See http://groovy.github.io/gmaven/[GMaven 2]
+
+Unlike the name seems to indicate, http://groovy.github.io/gmaven/[GMaven 2] is not aimed at replacing
+<<section-gmaven,GMaven>>. In fact, it's a rewrite of the scripting features of the GMaven plugin. Interestingly,
+it supports the missing features of <<section-gmavenplus,GMavenPlus>>, that is to say:
+
+* Script execution
+* Command-line shell access
+* GUI console access
+
+So it may be used as a complement to <<section-groovyeclipse,the Groovy Eclipse plugin>> or <<section-gmavenplus,GMavenPlus>>.
+
+[[section-groovyeclipse]]
+
+:leveloffset: 3
+
+include::tools/tools-groovyeclipse.adoc[]
+
+:leveloffset: 1
+
+[[section-jointcompilation]]
+=== Joint compilation
 
 Joint compilation means that the Groovy compilation will parse the
 Groovy source files, create stubs for all of them, invoke the Java
@@ -224,3 +403,12 @@ Java source files with the Groovy compiler, the Java source files will be compil
 if they were Groovy sources. In some situations, this might work since most of the Java
 syntax is compatible with Groovy, but semantics would be different.
 
+:leveloffset: 2
+
+= Groovysh, the Groovy shell
+
+= Groovy console, a graphical user interface
+
+= Groovydoc, documenting Groovy code
+
+= Integration with IDEs
