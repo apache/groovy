@@ -21,13 +21,48 @@ class SyntaxTest extends CompilableTestSupport {
         '''
     }
 
-    void testVariableDefinition() {
-        // tag::variable_definition[]
-        def a = 1
-        // end::variable_definition[]
+    void testAllKeywordsAreValidIdentifiersFollowingADot() {
+        shouldCompile '''
+        def foo = [:]
 
-        // tag::assert_var_exists[]
-        assert a == 1
-        // end::assert_var_exists[]
+        // tag::keywords_valid_id_after_dot[]
+        foo.as
+        foo.assert
+        foo.break
+        foo.case
+        foo.catch
+        // end::keywords_valid_id_after_dot[]
+        foo.class
+        foo.const
+        foo.continue
+        foo.def
+        foo.default
+        foo.do
+        foo.else
+        foo.enum
+        foo.extends
+        foo.false
+        foo.finally
+        foo.for
+        foo.goto
+        foo.if
+        foo.implements
+        foo.import
+        foo.in
+        foo.instanceof
+        foo.interface
+        foo.new
+        foo.null
+        foo.package
+        foo.return
+        foo.super
+        foo.switch
+        foo.this
+        foo.throw
+        foo.throws
+        foo.true
+        foo.try
+        foo.while
+        '''
     }
 }

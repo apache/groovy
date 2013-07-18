@@ -16,6 +16,58 @@ but enhances it with specific constructs for Groovy, and allows certain simplifi
 
 == Keywords
 
+The following list represents all the keywords of the Groovy language:
+
+[cols="1,1,1,1"]
+.Keywords
+|===
+|as
+|assert
+|break
+|case
+
+|catch
+|class
+|const
+|continue
+
+|def
+|default
+|do
+|else
+
+|enum
+|extends
+|false
+|finally
+
+|for
+|goto
+|if
+|implements
+
+|import
+|in
+|instanceof
+|interface
+
+|new
+|null
+|package
+|return
+
+|super
+|switch
+|this
+|throw
+
+|throws
+|true
+|try
+|while
+
+|===
+
 == Identifiers
 
 === Normal identifiers
@@ -46,6 +98,13 @@ But the following ones are invalid identifiers:
 [source,groovy]
 ----
 include::../test/SyntaxTest.groovy[tags=invalid_identifiers,indent=0]
+----
+
+All keywords are also valid identifiers when following a dot:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=keywords_valid_id_after_dot,indent=0]
 ----
 
 === Quoted identifiers
