@@ -21,7 +21,7 @@ include::../test/SyntaxTest.groovy[tags=single_line_comment,indent=0]
 
 === Multiline comment
 
-A multiline comment starts with +/*+ and can be found at any position in the line.
+A multiline comment starts with +/\*+ and can be found at any position in the line.
 The characters following +/*+ will be considered part of the comment, including new line characters,
 up to the first +*/+ closing the comment.
 Multiline comments can thus be put at the end of a statement, or even inside a statement.
