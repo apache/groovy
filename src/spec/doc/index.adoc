@@ -21,17 +21,13 @@ include::core-closures.adoc[]
 
 == Tools
 
-=== groovyc, the Groovy compiler
-==== Ant task
-==== Maven integration
-===== GMaven and GMavenPlus
-===== The Groovy Eclipse Maven plugin
-==== Command-line compiler
-==== Joint compilation
-=== groovysh, the Groovy shell
-=== groovyConsole, the Groovy swing console
-=== groovydoc, the Groovy & Java documentation generator
-=== IDE integration
+:leveloffset: 2
+include::tools/tools-groovyc.adoc[]
+include::tools/tools-groovysh.adoc[]
+include::tools/tools-groovyconsole.adoc[]
+include::tools/tools-groovydoc.adoc[]
+include::tools/tools-ide.adoc[]
+:leveloffset: 0
 
 == User Guides
 :leveloffset: 2
