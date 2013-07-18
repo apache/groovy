@@ -1,6 +1,6 @@
 = Semantics
 :toc:
-:icons:
+:icons: font
 :linkcss!:
 
 This chapter covers the semantic of the Groovy programming language.

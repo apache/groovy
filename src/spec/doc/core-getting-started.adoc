@@ -1,6 +1,6 @@
 = Getting started
 :toc:
-:icons:
+:icons: font
 :linkcss!:
 
 == Download Groovy

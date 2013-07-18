@@ -1,6 +1,6 @@
 = Domain-Specific Languages
 :toc:
-:icons:
+:icons: font
 :linkcss!:
 
 == Command chains

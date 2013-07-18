@@ -1,6 +1,6 @@
 = Introduction
 :toc:
-:icons:
+:icons: font
 :linkcss!:
 
 Groovy...

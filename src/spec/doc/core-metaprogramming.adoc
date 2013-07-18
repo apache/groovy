@@ -1,6 +1,6 @@
 = Metaprogramming
 :toc:
-:icons:
+:icons: font
 :linkcss!:
 
 == Runtime metaprogramming

@@ -1,6 +1,6 @@
 = Groovy Language Documentation
 :toc:
-:icons:
+:icons: font
 :linkcss!:
 :numbered:
 :subprojroot: ../../../subprojects/groovy-

@@ -1,6 +1,6 @@
 = Operators
 :toc:
-:icons:
+:icons: font
 :linkcss!:
 
 This chapter covers the operators of the Groovy programming language.

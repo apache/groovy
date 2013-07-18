@@ -1,6 +1,6 @@
 = Object orientation
 :toc:
-:icons:
+:icons: font
 :linkcss!:
 
 This chapter covers the object orientation of the Groovy programming language.
