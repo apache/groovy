@@ -75,3 +75,7 @@ include::core-domain-specific-languages.adoc[]
 === Creating Swing UIs
 === Security
 === Design patterns in Groovy
+== Acknowledgements
+:leveloffset: 2
+include::license-contributors.adoc[]
+:leveloffset: 0
