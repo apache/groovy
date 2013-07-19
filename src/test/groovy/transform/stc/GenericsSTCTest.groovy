@@ -15,6 +15,8 @@
  */
 package groovy.transform.stc
 
+import java.util.List;
+
 import groovy.transform.NotYetImplemented
 
 /**
@@ -1211,6 +1213,31 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert foo(l) == 1
         ''',
         'Cannot find matching method'
+    }
+    
+    // Groovy-5891
+    void testMethodLevelGenericsForMethodCall() {
+        assertScript '''
+            public <T extends List<Integer>> T foo(Class<T> type, def x) {
+                return type.cast(x)
+            }
+            def l = [1,2,3]
+            assert foo(l.class, l) == l
+        '''
+        assertScript '''
+            public <T extends Runnable> T foo(Class<T> type, def x) {
+                return type.cast(x)
+            }
+            def cl = {1}
+            assert foo(cl.class, cl) == cl
+         '''
+         assertScript '''
+            public <T extends Runnable> T foo(Class<T> type, def x) {
+                return type.cast(x) as T
+            }
+            def cl = {1}
+            assert foo(cl.class, cl) == cl
+         '''
     }
 
     // Groovy-6237

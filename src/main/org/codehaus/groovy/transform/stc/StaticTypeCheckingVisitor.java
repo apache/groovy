@@ -3277,8 +3277,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return inferReturnTypeGenerics(dc, dgmMethod, argList);
         }
         if (!isUsingGenericsOrIsArrayUsingGenerics(returnType)) return returnType;
-        GenericsType[] returnTypeGenerics = returnType.isArray() ? returnType.getComponentType().getGenericsTypes() : returnType.getGenericsTypes();
-        if (returnTypeGenerics==null) return returnType;
+        if (getGenericsWithoutArray(returnType)==null) return returnType;
+        
         Map<String, GenericsType> resolvedPlaceholders = resolvePlaceHolders(receiver, method, arguments);
         if (resolvedPlaceholders.isEmpty()) return returnType;
         // then resolve receivers from method arguments
@@ -3334,6 +3334,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
+        Map<String, GenericsType> placeholdersFromContext = getGenericsParameterMapOfThis(typeCheckingContext.getEnclosingMethod());
+        applyContextGenerics(resolvedPlaceholders,placeholdersFromContext);
+        returnType = applyGenerics(returnType, resolvedPlaceholders);
+
         // GROOVY-5748
         if (returnType.isGenericsPlaceHolder()) {
             GenericsType resolved = resolvedPlaceholders.get(returnType.getUnresolvedName());
@@ -3342,6 +3346,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
+        GenericsType[] returnTypeGenerics = getGenericsWithoutArray(returnType);
+        if (returnTypeGenerics==null) return returnType;
         GenericsType[] copy = new GenericsType[returnTypeGenerics.length];
         for (int i = 0; i < copy.length; i++) {
             GenericsType returnTypeGeneric = returnTypeGenerics[i];
@@ -3388,7 +3394,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         return returnType;
     }
-    private ClassNode getDeclaringClass(MethodNode method, Expression arguments) {
+
+    private GenericsType[] getGenericsWithoutArray(ClassNode type) {
+        if (type.isArray()) return getGenericsWithoutArray(type.getComponentType());
+        return type.getGenericsTypes();
+    }
+
+    private static ClassNode getDeclaringClass(MethodNode method, Expression arguments) {
         ClassNode declaringClass = method.getDeclaringClass();
 
         // correcting declaring class for extension methods:
@@ -3875,6 +3887,63 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             params[i] = parameters[i].getType();
         }
         return params;
+    }
+
+    private ClassNode applyGenerics(ClassNode type, Map<String, GenericsType> resolvedPlaceholders) {
+        if (type.isGenericsPlaceHolder()) {
+            String name = type.getUnresolvedName();
+            GenericsType gt = resolvedPlaceholders.get(name);
+            if (gt.isPlaceholder()) {
+                //TODO: have to handle more cases here
+                if (gt.getUpperBounds()!=null) return gt.getUpperBounds()[0];
+                return type;
+            } 
+        }
+        return type;
+    }
+
+    private void applyContextGenerics(Map<String, GenericsType> resolvedPlaceholders, Map<String, GenericsType> placeholdersFromContext) {
+        if (placeholdersFromContext==null) return;
+        for (Map.Entry<String, GenericsType> entry : resolvedPlaceholders.entrySet()) {
+            GenericsType gt = entry.getValue();
+            if (gt.isPlaceholder()) {
+                String name = gt.getName();
+                GenericsType outer = placeholdersFromContext.get(name);
+                if (outer==null) continue;
+                entry.setValue(outer);
+            }
+        }
+    }
+
+    private static Map<String, GenericsType> getGenericsParameterMapOfThis(ClassNode cn) {
+        if (cn==null) return null;
+        Map<String, GenericsType> map = null;
+        if (cn.getEnclosingMethod()!=null) {
+            map = getGenericsParameterMapOfThis(cn.getEnclosingMethod());
+        } else if (cn.getOuterClass()!=null) {
+            map = getGenericsParameterMapOfThis(cn.getOuterClass());
+        }
+        map = mergeGenerics(map, cn.getGenericsTypes());
+        return map;
+    }
+
+    private static Map<String, GenericsType> getGenericsParameterMapOfThis(MethodNode mn) {
+        if (mn==null) return null;
+        Map<String, GenericsType> map = getGenericsParameterMapOfThis(mn.getDeclaringClass());
+        map = mergeGenerics(map, mn.getGenericsTypes());
+        return map;
+    }
+
+    private static Map<String, GenericsType> mergeGenerics(Map<String, GenericsType> current, GenericsType[] newGenerics) {
+        if (newGenerics == null || newGenerics.length == 0) return null;
+        if (current==null) current = new HashMap<String, GenericsType>();
+        for (int i = 0; i < newGenerics.length; i++) {
+            GenericsType gt = newGenerics[i];
+            if (!gt.isPlaceholder()) continue;
+            String name = gt.getName();
+            if (!current.containsKey(name)) current.put(name, newGenerics[i]);
+        }
+        return current;
     }
 
     /**
