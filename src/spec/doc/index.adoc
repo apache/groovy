@@ -1,5 +1,6 @@
 = Groovy Language Documentation
 :toc:
+:toclevels: 10
 :icons: font
 :linkcss!:
 :numbered:
