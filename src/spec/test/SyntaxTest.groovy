@@ -93,4 +93,28 @@ class SyntaxTest extends CompilableTestSupport {
         println 1 /* one */ + 2 /* two */
         // end::multiline_comment[]
     }
+
+    void testGroovyDocComment() {
+        shouldCompile '''
+            // tag::groovydoc_comment[]
+            /**
+             * A Class description
+             */
+            class Person {
+                /** the name of the person */
+                String name
+
+                /**
+                 * Creates a greeting method for a certain person.
+                 *
+                 * @param otherPerson the person to greet
+                 * @return ag reeting message
+                 */
+                String greet(String otherPerson) {
+                   "Hello ${otherPerson}"
+                }
+            }
+            // end::groovydoc_comment[]
+        '''
+    }
 }

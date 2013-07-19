@@ -31,7 +31,27 @@ Multiline comments can thus be put at the end of a statement, or even inside a s
 include::../test/SyntaxTest.groovy[tags=multiline_comment,indent=0]
 ----
 
-=== JavaDoc comment
+=== GroovyDoc comment
+
+Similarly to multiline comments, GroovyDoc comments are multiline, but start with +/\**+ and end with +\*/+.
+Lines following the first GroovyDoc comment line can optionally start with a star +\*+.
+Those comments are associated with:
+
+* type definitions (classes, interfaces, enums, annotations),
+* fields and properties definitions
+* methods definitions
+
+Although the compiler will not complain about JavaDoc comments not being associated with the above language elements,
+you should prepend those constructs with the comment right before it.
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=groovydoc_comment,indent=0]
+----
+
+GroovyDoc follows the same conventions as Java's own JavaDoc.
+So you'll be able to use the same tags as with JavaDoc.
+
 === Shebang line
 
 Beside the single line comment, there is a special line comment, often called the _shebang_ line understood by UNIX systems
