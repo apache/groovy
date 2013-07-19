@@ -1002,8 +1002,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         FieldNode field = current.getDeclaredField(propertyName);
                         if (field != null) {
                             if (visitor != null) visitor.visitField(field);
-                            storeInferredTypeForPropertyExpression(pexp, field.getOriginType());
-                            storeType(pexp, field.getOriginType());
+                            ClassNode type = field.getOriginType();
+                            if (getGenericsWithoutArray(type)!=null) {
+                                Map<String, GenericsType> resolvedPlaceholders = resolvePlaceHoldersFromDeclartion(objectExpressionType, current, null, field.isStatic());
+                                type = resolveGenericsWithContext(resolvedPlaceholders, type);
+                            }
+
+                            storeInferredTypeForPropertyExpression(pexp, type);
+                            storeType(pexp, type);
                             checkOrMarkPrivateAccess(field);
                             return true;
                         }
@@ -3278,8 +3284,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         if (!isUsingGenericsOrIsArrayUsingGenerics(returnType)) return returnType;
         if (getGenericsWithoutArray(returnType)==null) return returnType;
-        
-        Map<String, GenericsType> resolvedPlaceholders = resolvePlaceHolders(receiver, method, arguments);
+
+        Map<String, GenericsType> resolvedPlaceholders = resolvePlaceHoldersFromDeclartion(receiver, getDeclaringClass(method, arguments), method, method.isStatic());
         if (resolvedPlaceholders.isEmpty()) return returnType;
         // then resolve receivers from method arguments
         Parameter[] parameters = method.getParameters();
@@ -3334,20 +3340,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
+        return resolveGenericsWithContext(resolvedPlaceholders, returnType);
+    }
+    
+    private ClassNode resolveGenericsWithContext(Map<String, GenericsType> resolvedPlaceholders, ClassNode currentType) {
         Map<String, GenericsType> placeholdersFromContext = getGenericsParameterMapOfThis(typeCheckingContext.getEnclosingMethod());
         applyContextGenerics(resolvedPlaceholders,placeholdersFromContext);
-        returnType = applyGenerics(returnType, resolvedPlaceholders);
+        currentType = applyGenerics(currentType, resolvedPlaceholders);
 
         // GROOVY-5748
-        if (returnType.isGenericsPlaceHolder()) {
-            GenericsType resolved = resolvedPlaceholders.get(returnType.getUnresolvedName());
+        if (currentType.isGenericsPlaceHolder()) {
+            GenericsType resolved = resolvedPlaceholders.get(currentType.getUnresolvedName());
             if (resolved!=null && !resolved.isPlaceholder() && !resolved.isWildcard()) {
                 return resolved.getType();
             }
         }
 
-        GenericsType[] returnTypeGenerics = getGenericsWithoutArray(returnType);
-        if (returnTypeGenerics==null) return returnType;
+        GenericsType[] returnTypeGenerics = getGenericsWithoutArray(currentType);
+        if (returnTypeGenerics==null) return currentType;
         GenericsType[] copy = new GenericsType[returnTypeGenerics.length];
         for (int i = 0; i < copy.length; i++) {
             GenericsType returnTypeGeneric = returnTypeGenerics[i];
@@ -3360,7 +3370,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         GenericsType firstGenericsType = copy[0];
-        if (returnType.equals(OBJECT_TYPE)) {
+        if (currentType.equals(OBJECT_TYPE)) {
             if (firstGenericsType.getType().isGenericsPlaceHolder()) return OBJECT_TYPE;
 
             if (firstGenericsType.isWildcard()) {
@@ -3377,22 +3387,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             return firstGenericsType.getType();
         }
-        if (returnType.isArray()) {
-            returnType = returnType.getComponentType().getPlainNodeReference();
-            returnType.setGenericsTypes(copy);
-            if (OBJECT_TYPE.equals(returnType)) {
+        if (currentType.isArray()) {
+            currentType = currentType.getComponentType().getPlainNodeReference();
+            currentType.setGenericsTypes(copy);
+            if (OBJECT_TYPE.equals(currentType)) {
                 // replace Object<Component> with Component
-                returnType = firstGenericsType.getType();
+                currentType = firstGenericsType.getType();
             }
-            returnType = returnType.makeArray();
+            currentType = currentType.makeArray();
         } else {
-            returnType = returnType.getPlainNodeReference();
-            returnType.setGenericsTypes(copy);
+            currentType = currentType.getPlainNodeReference();
+            currentType.setGenericsTypes(copy);
         }
-        if (returnType.equals(Annotation_TYPE) && returnType.getGenericsTypes() != null && !returnType.getGenericsTypes()[0].isPlaceholder()) {
-            return returnType.getGenericsTypes()[0].getType();
+        if (currentType.equals(Annotation_TYPE) && currentType.getGenericsTypes() != null && !currentType.getGenericsTypes()[0].isPlaceholder()) {
+            return currentType.getGenericsTypes()[0].getType();
         }
-        return returnType;
+        return currentType;
     }
 
     private GenericsType[] getGenericsWithoutArray(ClassNode type) {
@@ -3415,14 +3425,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return declaringClass;
     }
     
-    private Map<String, GenericsType> resolvePlaceHolders(ClassNode receiver, MethodNode method, Expression arguments) {
+    private Map<String, GenericsType> resolvePlaceHoldersFromDeclartion(ClassNode receiver, ClassNode declaration, MethodNode method, boolean isStaticTarget) {
         Map<String, GenericsType> resolvedPlaceholders;
-        if (method.isStatic() && CLASS_Type.equals(receiver) && receiver.isUsingGenerics() && receiver.getGenericsTypes().length>0) {
+        if (isStaticTarget && CLASS_Type.equals(receiver) && receiver.isUsingGenerics() && receiver.getGenericsTypes().length>0) {
             resolvedPlaceholders = new HashMap<String, GenericsType>();
             GenericsUtils.extractPlaceholders(receiver.getGenericsTypes()[0].getType(), resolvedPlaceholders);
         } else {
-            ClassNode declaringClass = getDeclaringClass(method, arguments);
-            resolvedPlaceholders = extractPlaceHolders(method, receiver, declaringClass);
+            resolvedPlaceholders = extractPlaceHolders(method, receiver, declaration);
         }
         return resolvedPlaceholders;
     }
@@ -3436,7 +3445,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static Map<String, GenericsType> extractPlaceHolders(MethodNode method, ClassNode receiver, ClassNode declaringClass) {
         if (declaringClass.equals(OBJECT_TYPE)) {
             Map<String, GenericsType> resolvedPlaceholders = new HashMap<String, GenericsType>();
-            addMethodLevelDeclaredGenerics(method, resolvedPlaceholders);
+            if (method!=null) addMethodLevelDeclaredGenerics(method, resolvedPlaceholders);
             return resolvedPlaceholders;
         }
 
@@ -3447,7 +3456,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Map<String, GenericsType> currentPlaceHolders = new HashMap<String, GenericsType>();
             GenericsUtils.extractPlaceholders(current, currentPlaceHolders);
 
-            if (declaringClass.equals(current)) {
+            if (method!=null && declaringClass.equals(current)) {
                 addMethodLevelDeclaredGenerics(method, currentPlaceHolders);
             }
 
@@ -3481,9 +3490,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (nextNode==null) nextNode = current.getUnresolvedSuperClass();
             current = nextNode;
             if (current==null) {
+                String descriptor = "<>";
+                if (method!=null) descriptor = method.getTypeDescriptor();
                 throw new GroovyBugError(
                         "Declaring class for method call to '" +
-                        method.getTypeDescriptor() + "' declared in " + declaringClass.getName() +
+                        descriptor + "' declared in " + declaringClass.getName() +
                         " was not matched with found receiver "+ receiver.getName() + "." +
                         " This should not have happened!");
             }

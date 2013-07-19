@@ -1257,8 +1257,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         "Cannot find matching method"
     }
     
-    // Groovy-6237
     void testHiddenGenerics() {
+        // Groovy-6237
         assertScript '''
             class MyList extends LinkedList<Object> {}
             List<Object> o = new MyList()
@@ -1270,6 +1270,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Blah> o = new MyList()
         ''',
         'Incompatible generic argument types. Cannot assign MyList to: java.util.List <Blah>'
+        
+        // Groovy-5873
+        assertScript """
+            abstract class Parent<T> {
+                public T value
+            }
+            class Impl extends Parent<Integer> {}
+            Impl impl = new Impl()
+            Integer i = impl.value
+        """
     }
     
     static class MyList extends LinkedList<String> {}
