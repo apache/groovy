@@ -42,6 +42,9 @@ allprojects {
 
         asciidoctor {
             sourceDir = project.file('src/spec/doc')
+            options = [
+                    attributes: ['source-highlighter':'prettify']
+            ]
         }
 
         // skip the asciidoctor task if there's no directory with asciidoc files
