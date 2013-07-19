@@ -15,8 +15,6 @@
  */
 package groovy.transform.stc
 
-import java.util.List;
-
 import groovy.transform.NotYetImplemented
 
 /**
@@ -1240,6 +1238,25 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
          '''
     }
 
+    // Groovy-5839
+    void testMethodShadowGenerics() {
+        shouldFailWithMessages '''
+            public class GoodCodeRed<T> {
+                Collection<GoodCodeRed<T>> attached = []
+                public <T> void attach(GoodCodeRed<T> toAttach) {
+                    attached.add(toAttach)
+                }
+                static void foo() {
+                    def g1 = new GoodCodeRed<Long>()
+                    def g2 = new GoodCodeRed<Integer>()
+                    g1.attach(g2);
+                }
+            }
+            GoodCodeRed.foo()
+        ''',
+        "Cannot find matching method"
+    }
+    
     // Groovy-6237
     void testHiddenGenerics() {
         assertScript '''
