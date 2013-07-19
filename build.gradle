@@ -3,12 +3,14 @@ apply from: "gradle/indy.gradle"
 
 buildscript {
     repositories {
+        mavenCentral()
         mavenRepo name: 'Bintray Asciidoctor repo', url: 'http://dl.bintray.com/content/aalmiray/asciidoctor'
         mavenRepo name: 'Bintray JCenter', url: 'http://jcenter.bintray.com'
     }
 
     dependencies {
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.4.1'
+        classpath "net.saliman:gradle-cobertura-plugin:1.1.2"
     }
 }
 
@@ -517,3 +519,12 @@ classes {
 if (file('user.gradle').exists()) {
     apply from: 'user.gradle'
 }
+
+allprojects {
+    apply plugin: 'cobertura'
+    cobertura {
+        coverageFormats = [ 'xml','html' ]
+        coverageReportDir = file("$buildDir/reports/cobertura")
+    }
+}
+
