@@ -117,7 +117,7 @@ import java.lang.annotation.Target;
  * </li>
  * <li>
  * Groovy's normal map-style naming conventions will not be available if the first property
- * has type {@code LinkedHashMap} or if there is a single Map, AbstractMap or HashMap property
+ * has type {@code LinkedHashMap} or if there is a single Map, AbstractMap or HashMap property.
  * </li>
  * </ul>
  *
