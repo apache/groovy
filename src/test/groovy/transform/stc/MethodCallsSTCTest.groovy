@@ -943,6 +943,29 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             assert b.overload('a','b') == 2
         '''
     }
+    
+    // GROOVY-5883 and GROOVY-6270
+    void testClosureUpperBound() {
+        assertScript '''
+            class Test<T> {
+                def map(Closure<T> mapper) { 1 }
+                def m1(Closure<Boolean> predicate) {
+                    map { T it -> return predicate(it) ? it : null }
+                }
+                def m2(Closure<Boolean> predicate) {
+                    map { T it -> return predicate(it) ? it : (T) null }
+                }
+                def m3(Closure<Boolean> predicate) {
+                    Closure<T> c = { T it -> return predicate(it) ? it : null }
+                    map(c)
+                }
+            }
+            def t = new Test<String>()
+            assert t.m1{true} == 1
+            assert t.m2{true} == 1
+            assert t.m3{true} == 1
+        '''
+    }
 
     static class MyMethodCallTestClass {
 
