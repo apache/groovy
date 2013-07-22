@@ -1213,8 +1213,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method'
     }
     
-    // Groovy-5891
     void testMethodLevelGenericsForMethodCall() {
+        // Groovy-5891
         assertScript '''
             public <T extends List<Integer>> T foo(Class<T> type, def x) {
                 return type.cast(x)
@@ -1235,6 +1235,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             def cl = {1}
             assert foo(cl.class, cl) == cl
+         '''
+         //GROOVY-5885
+         assertScript '''
+            class Test {
+                public <X extends Test> X castToMe(Class<X> type, Object o) {
+                    return type.cast(o);
+                }
+            }
+            def t = new Test()
+            assert t.castToMe(Test, t)  == t
          '''
     }
 
