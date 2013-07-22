@@ -18,6 +18,8 @@ package org.codehaus.groovy.transform.sc.transformers;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
@@ -50,7 +52,6 @@ public class BooleanExpressionTransformer {
             transformed.setSourcePosition(booleanExpression);
             transformed.copyNodeMetaData(booleanExpression);
             return transformed;
-
         }
         return transformer.superTransform(booleanExpression);
     }
@@ -91,14 +92,16 @@ public class BooleanExpressionTransformer {
             if (visitor instanceof AsmClassGenerator) {
                 AsmClassGenerator acg = (AsmClassGenerator) visitor;
                 WriterController controller = acg.getController();
+                OperandStack os = controller.getOperandStack();
+
                 if (type.equals(ClassHelper.boolean_TYPE)) {
                     expression.visit(visitor);
-                    controller.getOperandStack().doGroovyCast(ClassHelper.boolean_TYPE);
+                    os.doGroovyCast(ClassHelper.boolean_TYPE);
                     return;
                 }
                 if (type.equals(ClassHelper.Boolean_TYPE)) {
-                    expression.visit(visitor);
                     MethodVisitor mv = controller.getMethodVisitor();
+                    expression.visit(visitor);
                     Label unbox = new Label();
                     Label exit = new Label();
                     // check for null
@@ -109,9 +112,11 @@ public class BooleanExpressionTransformer {
                     mv.visitJumpInsn(GOTO, exit);
                     mv.visitLabel(unbox);
                     // unbox
+                    // GROOVY-6270
+                    if (!os.getTopOperand().equals(type)) BytecodeHelper.doCast(mv, type);
                     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z");
                     mv.visitLabel(exit);
-                    controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
+                    os.replace(ClassHelper.boolean_TYPE);
                     return;
                 }
                 ClassNode top = type;
