@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-20013 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -187,11 +187,11 @@ final class RigidParser
     }
     
     private boolean ignoreSyntaxErrorForLineEnding(String line) {
-        boolean ignore = false
-        ['{', '[', '(', ',', '.', '-', '+', '/', '*', '%', '&', '|', '?', '<', '>', '=', ':', "'''", '"""', '\\'].each {
-            if(line.endsWith(it)) ignore = true
+        def lineEndings = ['{', '[', '(', ',', '.', '-', '+', '/', '*', '%', '&', '|', '?', '<', '>', '=', ':', "'''", '"""', '\\']
+        for(String lineEnding in lineEndings) {
+            if(line.endsWith(lineEnding)) return true
         }
-        return ignore
+        return false
     }
 }
 
