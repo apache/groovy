@@ -9,6 +9,52 @@ In this download area, you will be able to download the distribution (binary and
 
 For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use link:http://gvmtool.net[GVM] (the Groovy enVironment Manager) to download and configure any **Groovy** version of your choice. Basic (TODO)[instructions] can be found below.
 
+=== Groovy 2.1
+
+==== Groovy 2.1.6
+
+==== Groovy 2.1.5
+
+=== Groovy 2.2
+
+==== Groovy 2.2.0-beta-1
+
+=== Groovy 2.0
+
+==== Groovy 2.0.8
+
+=== Groovy 1.8 (Maintenance Release)
+
+==== Groovy 1.8.9
+
+=== Snapshots
+
+=== Older Releases
+
+==== Groovy 1.7.11
+
+==== Groovy 1.6.9
+
+==== Groovy 1.5.8
+
+=== Legacy Groovy 1.0
+
+== Maven Repositories
+
+=== Groovy 2.0.X  and newer
+
+=== Groovy 1.6.X - 1.8.X
+
+=== Groovy 1.1.X - 1.5.X
+
+=== Groovy 1.0
+
+=== Snapshot Releases
+
+== GVM (the Groovy enVironment Manager)
+
+== Other ways to get Groovy
+
 == Install Groovy
 
 These instructions describe how to install a binary distribution of **Groovy**.
