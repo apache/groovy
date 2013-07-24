@@ -3,7 +3,7 @@
 :icons: font
 :linkcss!:
 
-== Download Groovy
+== Download
 
 In this download area, you will be able to download the distribution (binary and source), the Windows installer (for some of the versions) and the documentation for **Groovy**.
 
@@ -39,6 +39,7 @@ For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use link:h
 
 === Legacy Groovy 1.0
 
+
 == Maven Repositories
 
 === Groovy 2.0.X  and newer
@@ -51,11 +52,35 @@ For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use link:h
 
 === Snapshot Releases
 
+
 == GVM (the Groovy enVironment Manager)
+
 
 == Other ways to get Groovy
 
-== Install Groovy
+=== Installation on Mac OS X
+
+==== MacPorts
+
+Set up link:http://www.macports.org[MacPorts] and type in the Terminal:
+
+[source,shell]
+----
+sudo port install groovy
+----
+
+==== Homebrew
+
+=== Installation on Windows
+
+=== Other Distributions
+
+=== Source Code
+
+== IDE plugin
+
+
+== Install Binary
 
 These instructions describe how to install a binary distribution of **Groovy**.
 
@@ -83,13 +108,4 @@ To run a specific Groovy script type:
 [source,shell]
 ----
 groovy SomeScript.groovy
-----
-
-**Alternative Installation on Mac OS X**
-
-Set up link:http://www.macports.org[MacPorts] and type in the Terminal:
-
-[source,shell]
-----
-sudo port install groovy
 ----
