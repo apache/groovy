@@ -39,7 +39,17 @@ If you plan on using invokedynamic support, link:TODO-InvokeDynamic+support[read
 
 === Groovy 2.2
 
+Groovy 2.2 is our future main release.
+
 ==== Groovy 2.2.0-beta-1
+
+- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-2.2.0-beta-1.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-2.2.0-beta-1.zip[Source Release]
+- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-2.2.0-beta-1.zip[**JavaDoc and zipped online documentation**]
+- **Combined binary / source / documentation bundle**: http://dist.groovy.codehaus.org/distributions/groovy-sdk-2.2.0-beta-1.zip[**Distribution bundle**]
+
+You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19074[JIRA release notes].
+
+If you plan on using invokedynamic support, link:TODO-InvokeDynamic+support[read those notes].
 
 === Groovy 2.0
 
