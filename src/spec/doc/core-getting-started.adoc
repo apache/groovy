@@ -7,13 +7,35 @@
 
 In this download area, you will be able to download the distribution (binary and source), the Windows installer (for some of the versions) and the documentation for **Groovy**.
 
-For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use link:http://gvmtool.net[GVM] (the Groovy enVironment Manager) to download and configure any **Groovy** version of your choice. Basic (TODO)[instructions] can be found below.
+For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http://gvmtool.net[GVM] (the Groovy enVironment Manager) to download and configure any **Groovy** version of your choice. Basic link:#gvm-the-groovy-environment-manager[instructions] can be found below.
 
 === Groovy 2.1
 
+Groovy 2 is the latest official major link:TODO[version of Groovy].
+
+Learn more about Groovy 2.1 in the link:TODO[release notes].
+
 ==== Groovy 2.1.6
 
+- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-2.1.6.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-2.1.6.zip[Source Release]
+- **Download Windows-Installer**: http://dist.codehaus.org/groovy/distributions/installers/windows/nsis/groovy-2.1.6-installer.exe[**Binary Release**] http://dist.codehaus.org/groovy/distributions/installers/windows/nsis/installed_versions_2.1.6.txt[**(Module Versions)**]
+- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-2.1.6.zip[**JavaDoc and zipped online documentation**]
+- **Combined binary / source / documentation bundle**: http://dist.groovy.codehaus.org/distributions/groovy-sdk-2.1.6.zip[**Distribution bundle**]
+
+You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19335[JIRA release notes].
+
+If you plan on using invokedynamic support, link:TODO-InvokeDynamic+support[read those notes].
+
 ==== Groovy 2.1.5
+
+- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-2.1.5.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-2.1.5.zip[Source Release]
+- **Download Windows-Installer**: http://dist.codehaus.org/groovy/distributions/installers/windows/nsis/groovy-2.1.5-installer.exe[**Binary Release**] http://dist.codehaus.org/groovy/distributions/installers/windows/nsis/installed_versions_2.1.5.txt[**(Module Versions)**]
+- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-2.1.5.zip[**JavaDoc and zipped online documentation**]
+- **Combined binary / source / documentation bundle**: http://dist.groovy.codehaus.org/distributions/groovy-sdk-2.1.5.zip[**Distribution bundle**]
+
+You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19320[JIRA release notes].
+
+If you plan on using invokedynamic support, link:TODO-InvokeDynamic+support[read those notes].
 
 === Groovy 2.2
 
@@ -62,7 +84,7 @@ For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use link:h
 
 ==== MacPorts
 
-Set up link:http://www.macports.org[MacPorts] and type in the Terminal:
+Set up http://www.macports.org[MacPorts] and type in the Terminal:
 
 [source,shell]
 ----
