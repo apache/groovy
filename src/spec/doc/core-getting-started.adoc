@@ -77,7 +77,7 @@ sudo port install groovy
 
 === Source Code
 
-== IDE plugin
+=== IDE plugin
 
 
 == Install Binary
