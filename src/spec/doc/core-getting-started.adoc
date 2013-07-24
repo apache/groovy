@@ -5,6 +5,10 @@
 
 == Download Groovy
 
+In this download area, you will be able to download the distribution (binary and source), the Windows installer (for some of the versions) and the documentation for **Groovy**.
+
+For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use link:http://gvmtool.net[GVM] (the Groovy enVironment Manager) to download and configure any **Groovy** version of your choice. Basic (TODO)[instructions] can be found below.
+
 == Install Groovy
 
 These instructions describe how to install a binary distribution of **Groovy**.
