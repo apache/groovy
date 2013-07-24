@@ -1327,17 +1327,13 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         // name ?: 'Anonymous'
         def result = new AstBuilder().buildFromSpec {
             elvisOperator {
-                booleanExpression {
-                    variable 'name'
-                }
+                variable 'name'
                 constant 'Anonymous'
             }
         }
 
         def expected = new ElvisOperatorExpression(
-                new BooleanExpression(
-                        new VariableExpression('name')
-                ),
+                new VariableExpression('name'),
                 new ConstantExpression('Anonymous')
         )
 
