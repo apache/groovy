@@ -11,7 +11,7 @@ For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http:/
 
 === Groovy 2.1
 
-Groovy 2 is the latest official major link:TODO-Version+Scheme[version of Groovy].
+Groovy 2 is the latest official major link:version-scheme.html[version of Groovy].
 
 Learn more about Groovy 2.1 in the link:TODO[release notes].
 
@@ -53,7 +53,7 @@ If you plan on using invokedynamic support, link:TODO-InvokeDynamic+support[read
 
 === Groovy 2.0
 
-Groovy 2.0 is the link:TODO-Version+Scheme[minor version] before Groovy 2.1.
+Groovy 2.0 is the link:version-scheme.html[minor version] before Groovy 2.1.
 
 Learn more about Groovy 2.0 in the link:TODO[release notes].
 
