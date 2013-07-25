@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -321,15 +321,13 @@ public class DOMCategory {
         return replaceNode(self.item(0), c);
     }
 
-    // TODO return replaced node rather than last appended?
     public static Node replaceNode(Node self, Closure c) {
         if (self.getParentNode() instanceof Document) {
             throw new UnsupportedOperationException("Replacing the root node is not supported");
         }
-        Node result = appendNodes(self, c);
+        appendNodes(self, c);
         self.getParentNode().removeChild(self);
-        return result;
-//        return self;
+        return self;
     }
 
     public static void plus(Element self, Closure c) {
@@ -339,17 +337,15 @@ public class DOMCategory {
         appendNodes(self, c);
     }
 
-    private static Node appendNodes(Node self, Closure c) {
+    private static void appendNodes(Node self, Closure c) {
         Node parent = self.getParentNode();
         Node beforeNode = self.getNextSibling();
         DOMBuilder b = new DOMBuilder(self.getOwnerDocument());
         Element newNodes = (Element) b.invokeMethod("rootNode", c);
         Iterator<Node> iter = XmlGroovyMethods.iterator(children(newNodes));
-        Node lastAppended = null;
         while (iter.hasNext()) {
-            lastAppended = parent.insertBefore(iter.next(), beforeNode);
+            parent.insertBefore(iter.next(), beforeNode);
         }
-        return lastAppended;
     }
 
     public static void plus(NodeList self, Closure c) {

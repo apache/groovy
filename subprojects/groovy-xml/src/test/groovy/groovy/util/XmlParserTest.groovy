@@ -279,6 +279,28 @@ p() {
 '''
     }
 
+    void testReplaceNode() {
+        def xml = '<root><old/></root>'
+        def parser = new XmlParser()
+        def root = parser.parseText(xml)
+        def old = root.old[0]
+        def replacement = '<new><child/></new>'
+        def replacementNode = parser.parseText(replacement)
+        def removed = old.replaceNode(replacementNode)
+        assert removed.name() == 'old'
+
+        def writer = new StringWriter()
+        new XmlNodePrinter(new PrintWriter(writer)).print(root)
+        def result = writer.toString()
+        assert result == '''\
+<root>
+  <new>
+    <child/>
+  </new>
+</root>
+'''
+    }
+
     void testXmlParserExtensionPoints() {
         def html = new CustomXmlParser().parseText(bookXml)
         assert html.getClass() == CustomNode

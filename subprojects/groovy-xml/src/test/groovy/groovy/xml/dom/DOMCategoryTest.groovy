@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ import groovy.xml.DOMBuilder
 import groovy.xml.GpathSyntaxTestSupport
 import groovy.xml.MixedMarkupTestSupport
 import groovy.xml.TraversalTestSupport
+import groovy.xml.XmlUtil
+
 import static javax.xml.xpath.XPathConstants.*
 
 class DOMCategoryTest extends GroovyTestCase {
@@ -169,6 +171,28 @@ class DOMCategoryTest extends GroovyTestCase {
             assert a.breadthFirst()*.name().join('->') == 'a->b->b->#text->#text'
             assert a.depthFirst()*.name().join('->') == 'a->b->b'
         }
+    }
+
+    void testReplaceNode() {
+        def readerOld = new StringReader('<root><old/></root>')
+        def oldDoc = DOMBuilder.parse(readerOld)
+        def oldRoot = oldDoc.documentElement
+        def readerNew = new StringReader('<new><child/></new>')
+        def newRoot = DOMBuilder.parse(readerNew).documentElement
+        def imported = oldDoc.importNode(newRoot, true)
+        use(DOMCategory) {
+            def old = oldRoot[0]
+            def removed = oldRoot.replaceChild(imported, old)
+        assert removed.name() == 'old'
+        }
+
+        assert XmlUtil.serialize(oldRoot).normalize() == '''\
+<?xml version="1.0" encoding="UTF-8"?><root>
+  <new>
+    <child/>
+  </new>
+</root>
+'''
     }
 }
 

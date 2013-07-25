@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,23 +207,46 @@ public class Node implements Serializable, Cloneable {
         return new Node(this, name, attributes, value);
     }
 
-    // TODO return replaced node rather than last appended?
-    // * @return the original now replaced node
     /**
      * Replaces the current node with nodes defined using builder-style notation via a Closure.
      *
      * @param c A Closure defining the new nodes using builder-style notation.
-     * @return the last appended node
+     * @return the original now replaced node
      */
     public Node replaceNode(Closure c) {
         if (parent() == null) {
             throw new UnsupportedOperationException("Replacing the root node is not supported");
         }
-        Node result = appendNodes(c);
+        appendNodes(c);
         getParentList(parent()).remove(this);
-//        this.setParent(null);
-//        return this;
-        return result;
+        this.setParent(null);
+        return this;
+    }
+
+    /**
+     * Replaces the current node with the supplied node.
+     *
+     * @param n the new Node
+     * @return the original now replaced node
+     */
+    public Node replaceNode(Node n) {
+        if (parent() == null) {
+            throw new UnsupportedOperationException("Replacing the root node is not supported");
+        }
+        List tail = getTail();
+        parent().appendNode(n.name(), n.attributes(), n.value());
+        parent().children().addAll(tail);
+        getParentList(parent()).remove(this);
+        this.setParent(null);
+        return this;
+    }
+
+    private List getTail() {
+        List list = parent().children();
+        int afterIndex = list.indexOf(this);
+        List tail = new ArrayList(list.subList(afterIndex + 1, list.size()));
+        list.subList(afterIndex + 1, list.size()).clear();
+        return tail;
     }
 
     /**
@@ -238,17 +261,12 @@ public class Node implements Serializable, Cloneable {
         appendNodes(c);
     }
 
-    private Node appendNodes(Closure c) {
-        List list = parent().children();
-        int afterIndex = list.indexOf(this);
-        List leftOvers = new ArrayList(list.subList(afterIndex + 1, list.size()));
-        list.subList(afterIndex + 1, list.size()).clear();
-        Node lastAppended = null;
+    private void appendNodes(Closure c) {
+        List tail = getTail();
         for (Node child : buildChildrenFromClosure(c)) {
-            lastAppended = parent().appendNode(child.name(), child.attributes(), child.value());
+            parent().appendNode(child.name(), child.attributes(), child.value());
         }
-        parent().children().addAll(leftOvers);
-        return lastAppended;
+        parent().children().addAll(tail);
     }
 
     private List<Node> buildChildrenFromClosure(Closure c) {
