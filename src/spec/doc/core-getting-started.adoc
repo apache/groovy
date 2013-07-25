@@ -24,7 +24,7 @@ Learn more about Groovy 2.1 in the link:TODO[release notes].
 
 You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19335[JIRA release notes].
 
-If you plan on using invokedynamic support, link:TODO-InvokeDynamic+support[read those notes].
+If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
 
 ==== Groovy 2.1.5
 
@@ -35,7 +35,7 @@ If you plan on using invokedynamic support, link:TODO-InvokeDynamic+support[read
 
 You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19320[JIRA release notes].
 
-If you plan on using invokedynamic support, link:TODO-InvokeDynamic+support[read those notes].
+If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
 
 === Groovy 2.2
 
@@ -49,7 +49,7 @@ Groovy 2.2 is our future main release.
 
 You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19074[JIRA release notes].
 
-If you plan on using invokedynamic support, link:TODO-InvokeDynamic+support[read those notes].
+If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
 
 === Groovy 2.0
 
@@ -65,7 +65,7 @@ Learn more about Groovy 2.0 in the link:TODO[release notes].
 
 You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19099[JIRA release notes].
 
-If you plan on using invokedynamic support, link:TODO-InvokeDynamic+support[read those notes].
+If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
 
 === Groovy 1.8 (Maintenance Release)
 
@@ -121,6 +121,10 @@ If you still need to use the old Groovy 1.0, here are the links you may be inter
 - **Download tar/gz**: http://dist.codehaus.org/groovy/distributions/groovy-1.0.tar.gz[**Binary Release**] | http://dist.codehaus.org/groovy/distributions/groovy-1.0-src.tar.gz[Source Release]
 - **Download Javadoc**: http://dist.groovy.codehaus.org/distributions/groovy-docs-1.1-BETA-1.zip[**Javadoc zip**]
 
+http://dist.groovy.codehaus.org/distributions/groovy-docs-1.1-BETA-1.zip[Once you've downloaded the distribution, please read the] link:#install-binary[installation instructions].
+
+Other versions can be found in the http://dist.groovy.codehaus.org/distributions/[distributions archive].
+
 == Maven Repositories
 
 If you wish to embed Groovy in your application, you may just prefer to point to your favourite maven repositories or the http://repository.codehaus.org/org/codehaus/groovy[codehaus maven repository]. You should consult the individual pom files for the exact details but here is a summary of the main supported artifactIds and groupIds:
@@ -152,7 +156,7 @@ If you wish to embed Groovy in your application, you may just prefer to point to
 |The core plus all the modules. Also includes jar versions of Antlr, ASM, Commons-CLI and Retrotranslator runtime. Allows you or your other dependencies (e.g. Hibernate) to use other versions of these jars. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
 |===
 
-To use the link:TODO-InvokeDynamic+support[InvokeDynamic] version of the jars just append \':indy' for Gradle or <classifier>indy</classifier> for Maven.
+To use the link:invokedynamic-support.html[InvokeDynamic] version of the jars just append \':indy' for Gradle or <classifier>indy</classifier> for Maven.
 
 === Groovy 1.6.X - 1.8.X
 
