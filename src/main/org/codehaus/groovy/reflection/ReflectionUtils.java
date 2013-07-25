@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.reflection;
 
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,18 +42,7 @@ public class ReflectionUtils {
         IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v7");
     }
 
-    private static final Method MAGIC_METHOD;
-
-    static {
-        Method meth;
-        try {
-            Class srr = Class.forName("sun.reflect.Reflection");
-            meth = srr.getMethod("getCallerClass", Integer.TYPE);
-        } catch (Throwable t) {
-            meth = null;
-        }
-        MAGIC_METHOD = meth;
-    }
+    private static final ClassContextHelper HELPER = new ClassContextHelper();
 
     /**
      * Determine whether or not the getCallingClass methods will return
@@ -66,7 +54,7 @@ public class ReflectionUtils {
      *         it will only return null.
      */
     public static boolean isCallingClassReflectionAvailable() {
-        return MAGIC_METHOD != null;
+        return true;
     }
 
     /**
@@ -103,9 +91,8 @@ public class ReflectionUtils {
      *         enough stackframes to satisfy matchLevel
      */
     public static Class getCallingClass(int matchLevel, Collection<String> extraIgnoredPackages) {
-        if (MAGIC_METHOD == null) {
-            return null;
-        }
+        Class[] classContext = HELPER.getClassContext();
+
         int depth = 0;
         try {
             Class c;
@@ -114,7 +101,7 @@ public class ReflectionUtils {
             Class sc;
             do {
                 do {
-                    c = (Class) MAGIC_METHOD.invoke(null, depth++);
+                    c = classContext[depth++];
                     if (c != null) {
                         sc = c.getSuperclass();
                     } else {
@@ -122,7 +109,7 @@ public class ReflectionUtils {
                     }
                 } while (classShouldBeIgnored(c, extraIgnoredPackages)
                         || superClassShouldBeIgnored(sc));
-            } while (c != null && matchLevel-- > 0);
+            } while (c != null && matchLevel-- > 0 && depth<classContext.length);
             return c;
         } catch (Throwable t) {
             return null;
@@ -139,5 +126,12 @@ public class ReflectionUtils {
                     || (c.getPackage() != null
                         && (IGNORED_PACKAGES.contains(c.getPackage().getName())
                           || extraIgnoredPackages.contains(c.getPackage().getName())))));
+    }
+
+    private static class ClassContextHelper extends SecurityManager {
+        @Override
+        public Class[] getClassContext() {
+            return super.getClassContext();
+        }
     }
 }
