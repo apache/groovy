@@ -164,7 +164,7 @@ dependencies {
     def commonsCliVersion = '1.2'
     def commonsHttpClientVersion = '3.1'
     def eclipseOsgiVersion = '3.5.0.v20090520'
-    def gparsVersion = '1.0.0'
+    def gparsVersion = '1.1.0'
     def ivyVersion = '2.3.0'
     def jansiVersion = '1.10'
     def jarjarVersion = '1.3'
