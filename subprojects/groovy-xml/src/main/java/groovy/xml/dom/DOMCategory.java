@@ -226,7 +226,7 @@ public class DOMCategory {
     }
 
     public static String text(Node node) {
-        if (node.getNodeType() == Node.TEXT_NODE) {
+        if (node.getNodeType() == Node.TEXT_NODE || node.getNodeType() == Node.CDATA_SECTION_NODE) {
             return node.getNodeValue();
         }
         if (node.hasChildNodes()) {
