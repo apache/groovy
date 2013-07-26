@@ -207,4 +207,20 @@ class FieldTransformTest extends CompilableTestSupport {
 
         """
     }
+
+    void testGroovyTransformsShouldTransferToFields() {
+        // GROOVY-6112
+        assertScript '''
+            import groovy.transform.Field
+
+            @Lazy @Field foo = 'foo'
+            @Field @Lazy bar = 'bar'
+            @Field baz = 'baz'
+
+            assert this.@$foo == null
+            assert this.@$bar == null
+            assert this.@baz == 'baz'
+            assert foo + bar + baz == 'foobarbaz'
+        '''
+    }
 }

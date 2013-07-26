@@ -10,10 +10,11 @@
  */
 
 dependencies {
-    compile project(':')
-    groovy project(':')
-//    testCompile project(':').sourceSets.test.runtimeClasspath
-
+    compile rootProject
+    groovy rootProject
     // add every other module as a dependency
     testCompile(rootProject.subprojects - project)
 }
+
+install.enabled = false
+uploadArchives.enabled = false

@@ -16,6 +16,9 @@
 
 package org.codehaus.groovy.tools.shell
 
+import jline.console.completer.Completer
+
+
 /**
  * Provides simple command aliasing.
  *
@@ -27,7 +30,7 @@ class CommandAlias
 {
     final String targetName
     
-    CommandAlias(final Shell shell, final String name, final String shortcut, final String target) {
+    CommandAlias(final Groovysh shell, final String name, final String shortcut, final String target) {
         super(shell, name, shortcut)
         
         assert target
@@ -36,15 +39,20 @@ class CommandAlias
     }
     
     Command getTarget() {
-        def command = registry[targetName]
+        Command command = registry.find(targetName)
         
         assert command != null
         
         return command
     }
     
-    protected List createCompletors() {
-        return target.createCompletors()
+    protected List<Completer> createCompletors() {
+        try {
+            // TODO: Use interface with createCompletors()
+            return target.createCompletors()
+        } catch (MissingMethodException) {
+            log.warn("Aliased Command without createCompletors Method")
+        }
     }
     
     String getDescription() {

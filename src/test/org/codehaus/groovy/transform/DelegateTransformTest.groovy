@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import gls.CompilableTestSupport
  * @author Alex Tkachman
  * @author Guillaume Laforge
  * @author Paul King
+ * @author Andre Steingress
  */
 class DelegateTransformTest extends CompilableTestSupport {
 
@@ -230,6 +231,235 @@ class DelegateTransformTest extends CompilableTestSupport {
             }
             new ListWrapper()
         '''
+    }
+
+    // GROOVY-5732
+    void testInterfacesFromSuperClasses() {
+        assertScript '''
+            interface I5732 {
+                void aMethod()
+            }
+
+            abstract class AbstractBaseClass implements I5732 { }
+
+            abstract class DelegatedClass extends AbstractBaseClass {
+                void aMethod() {}
+            }
+
+            class Delegator {
+                @Delegate private DelegatedClass delegate
+            }
+
+            assert I5732.isAssignableFrom(Delegator)
+        '''
+    }
+
+    // GROOVY-5729
+    void testDeprecationWithInterfaces() {
+        assertScript '''
+            interface I5729 {
+                @Deprecated
+                void aMethod()
+            }
+
+            class Delegator1 {
+                @Delegate private I5729 delegate
+            }
+            assert I5729.isAssignableFrom(Delegator1)
+            assert Delegator1.methods*.name.contains('aMethod')
+
+            class Delegator2 {
+                @Delegate(interfaces=false) private I5729 delegate
+            }
+            assert !I5729.isAssignableFrom(Delegator2)
+            assert !Delegator2.methods*.name.contains('aMethod')
+
+            class Delegator3 {
+                @Delegate(interfaces=false, deprecated=true) private I5729 delegate
+            }
+            assert !I5729.isAssignableFrom(Delegator3)
+            assert Delegator3.methods*.name.contains('aMethod')
+        '''
+    }
+
+    // GROOVY-5446
+    void testDelegateWithParameterAnnotations() {
+        assertScript """
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.PARAMETER])
+            public @interface SomeAnnotation {
+            }
+
+            class A {
+                def method(@SomeAnnotation def param) { "Test" }
+            }
+
+            class A_Delegate {
+                @Delegate(parameterAnnotations = true)
+                A a = new A()
+            }
+
+            def originalMethod = A.getMethod('method', [Object.class] as Class[])
+            def originalAnno = originalMethod.parameterAnnotations[0][0]
+
+            def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
+            def delegateAnno = delegateMethod.parameterAnnotations[0][0]
+
+            assert delegateAnno == originalAnno
+        """
+    }
+
+    void testDelegateWithMethodAnnotations() {
+        assertScript """
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.METHOD])
+            public @interface SomeAnnotation {
+                int value()
+            }
+
+            class A {
+                @SomeAnnotation(42)
+                def method( def param) { "Test" }
+            }
+
+            class A_Delegate {
+                @Delegate(methodAnnotations = true)
+                A a = new A()
+            }
+
+            def originalMethod = A.getMethod('method', [Object.class] as Class[])
+            def originalAnno = originalMethod.declaredAnnotations[0]
+
+            def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
+            def delegateAnno = delegateMethod.declaredAnnotations[0]
+
+            assert delegateAnno == originalAnno
+
+            assert delegateAnno.value() == 42
+            assert delegateAnno.value() == originalAnno.value()
+        """
+    }
+
+    void testParameterAnnotationsShouldNotBeCarriedOverByDefault() {
+        assertScript """
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.PARAMETER])
+            public @interface SomeAnnotation {
+            }
+
+            class A {
+                def method(@SomeAnnotation def param) { "Test" }
+            }
+
+            class A_Delegate {
+                @Delegate
+                A a = new A()
+            }
+
+            def originalMethod = A.getMethod('method', [Object.class] as Class[])
+            def originalAnno = originalMethod.parameterAnnotations[0][0]
+
+            def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
+            assert delegateMethod.parameterAnnotations[0].length == 0
+        """
+    }
+
+    // this test reflects that we currently don't support carrying over
+    // Closure Annotations rather than a desired design goal
+    // TODO: support Closure Annotations and then remove/change this test
+    void testAnnotationWithClosureMemberIsNotSupported() {
+        def message = shouldFail {
+            assertScript """
+                import java.lang.annotation.*
+
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target([ElementType.METHOD])
+                public @interface SomeAnnotation {
+                    Class value()
+                }
+
+                class A {
+                    @SomeAnnotation({ param != null })
+                    def method(def param) { "Test" }
+                }
+
+                class A_Delegate {
+                    @Delegate(methodAnnotations = true)
+                    A a = new A()
+                }
+            """
+        }
+
+        assert message.contains('@Delegate does not support keeping Closure annotation members.')
+    }
+
+    // this test reflects that we currently don't support carrying over
+    // Closure Annotations rather than a desired design goal
+    // TODO: support Closure Annotations and then remove/change this test
+    void testAnnotationWithClosureClassDescendantIsNotSupported() {
+        def message = shouldFail {
+            assertScript """
+                import java.lang.annotation.*
+
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target([ElementType.METHOD])
+                public @interface SomeAnnotation {
+                    Class value()
+                }
+
+                class A {
+                    @SomeAnnotation(org.codehaus.groovy.runtime.GeneratedClosure.class)
+                    def method(def param) { "Test" }
+                }
+
+                class A_Delegate {
+                    @Delegate(methodAnnotations = true)
+                    A a = new A()
+                }
+            """
+        }
+        assert message.contains('@Delegate does not support keeping Closure annotation members.')
+    }
+
+    // GROOVY-5445
+    void testDelegateToSuperProperties() {
+        assertScript """
+            class Foo {
+                @Delegate Bar delegate = new Bar()
+                def foo() {
+                    bar = "bar"
+                    baz = "baz"
+                }
+            }
+
+            class Bar extends Baz { String bar }
+            class Baz { String baz }
+
+            def f = new Foo()
+            f.foo()
+            assert f.bar + f.baz == 'barbaz'
+        """
+    }
+
+    // GROOVY-5211
+    void testAvoidFieldNameClashWithParameterName() {
+        assertScript """
+            class A {
+                def foo(a) { a * 2 }
+            }
+
+            class B {
+                @Delegate A a = new A()
+            }
+
+            assert new B().foo(10) == 20
+        """
     }
 }
 

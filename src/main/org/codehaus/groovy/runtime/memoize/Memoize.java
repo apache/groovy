@@ -153,7 +153,7 @@ public abstract class Memoize {
                 if (result == null) {
                     result = MEMOIZE_NULL;
                 }
-                cache.put(key, new SoftReference(result));
+                cache.put(key, new SoftReference(result, queue));
             }
             lruProtectionStorage.touch(key, result);
             return result == MEMOIZE_NULL ? null : (V) result;

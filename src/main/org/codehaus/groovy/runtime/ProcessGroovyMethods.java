@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * This class defines new groovy methods which appear on normal JDK
  * classes related to process management.
- * <p/>
+ * <p>
  * Static methods are used with the first parameter being the destination class,
  * i.e. <code>public static String reverse(String self)</code>
  * provides a <code>reverse()</code> method for <code>String</code>.
@@ -61,6 +61,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Read the text of the output stream of the Process.
+     * Closes all the streams associated with the process after retrieving the text.
      *
      * @param self a Process instance
      * @return the text of the output
@@ -68,7 +69,9 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String getText(Process self) throws IOException {
-        return IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
+        String text = IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
+        closeStreams(self);
+        return text;
     }
 
     /**
@@ -135,6 +138,18 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         Thread thread = new Thread(runnable);
         thread.start();
         runnable.waitForOrKill(numberOfMillis);
+    }
+
+    /**
+     * Closes all the streams associated with the process (ignoring any IOExceptions).
+     *
+     * @param self a Process
+     * @since 2.1
+     */
+    public static void closeStreams(Process self) {
+        try { self.getErrorStream().close(); } catch (IOException ignore) {}
+        try { self.getInputStream().close(); } catch (IOException ignore) {}
+        try { self.getOutputStream().close(); } catch (IOException ignore) {}
     }
 
     /**
@@ -209,7 +224,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * The processed stream data is appended to the supplied Appendable.
      * For this, two Threads are started, but join()ed, so we wait.
      * As implied by the waitFor... name, we also wait until we finish
-     * as well. Finally, the output and error streams are closed.
+     * as well. Finally, the input, output and error streams are closed.
      *
      * @param self a Process
      * @param output an Appendable to capture the process stdout
@@ -222,8 +237,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         try { tout.join(); } catch (InterruptedException ignore) {}
         try { terr.join(); } catch (InterruptedException ignore) {}
         try { self.waitFor(); } catch (InterruptedException ignore) {}
-        try { self.getErrorStream().close(); } catch (IOException ignore) {}
-        try { self.getInputStream().close(); } catch (IOException ignore) {}
+        closeStreams(self);
     }
 
     /**
@@ -232,7 +246,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * The processed stream data is appended to the supplied OutputStream.
      * For this, two Threads are started, but join()ed, so we wait.
      * As implied by the waitFor... name, we also wait until we finish
-     * as well. Finally, the output and error streams are closed.
+     * as well. Finally, the input, output and error streams are closed.
      *
      * @param self a Process
      * @param output an OutputStream to capture the process stdout
@@ -245,8 +259,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         try { tout.join(); } catch (InterruptedException ignore) {}
         try { terr.join(); } catch (InterruptedException ignore) {}
         try { self.waitFor(); } catch (InterruptedException ignore) {}
-        try { self.getErrorStream().close(); } catch (IOException ignore) {}
-        try { self.getInputStream().close(); } catch (IOException ignore) {}
+        closeStreams(self);
     }
 
     /**
@@ -502,7 +515,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Executes the command specified by <code>self</code> as a command-line process.
      * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).
      *
      * @param self a command line String
      * @return the Process which has just started for this command line representation
@@ -517,7 +530,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * Executes the command specified by <code>self</code> with environment defined by <code>envp</code>
      * and under the working directory <code>dir</code>.
      * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).
      *
      * @param self a command line String to be executed.
      * @param envp an array of Strings, each element of which
@@ -540,7 +553,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * Executes the command specified by <code>self</code> with environment defined
      * by <code>envp</code> and under the working directory <code>dir</code>.
      * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).
      *
      * @param self a command line String to be executed.
      * @param envp a List of Objects (converted to Strings using toString), each member of which
@@ -563,7 +576,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * Executes the command specified by the given <code>String</code> array.
      * The first item in the array is the command; the others are the parameters.
      * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).
      *
      * @param commandArray an array of <code>String</code> containing the command name and
      *                     parameters as separate items in the array.
@@ -580,7 +593,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
      * The first item in the array is the command; the others are the parameters.
      * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).
      *
      * @param commandArray an array of <code>String</code> containing the command name and
      *                     parameters as separate items in the array.
@@ -605,7 +618,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
      * The first item in the array is the command; the others are the parameters.
      * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).
      *
      * @param commandArray an array of <code>String</code> containing the command name and
      *                     parameters as separate items in the array.
@@ -630,7 +643,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * for each item in the list to convert into a resulting String.
      * The first item in the list is the command the others are the parameters.
      * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).
      *
      * @param commands a list containing the command name and
      *                    parameters as separate items in the list.
@@ -648,7 +661,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * The first item in the list is the command; the others are the parameters. The toString()
      * method is called on items in the list to convert them to Strings.
      * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).
      *
      * @param commands a List containing the command name and
      *                     parameters as separate items in the list.
@@ -674,7 +687,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * The first item in the list is the command; the others are the parameters. The toString()
      * method is called on items in the list to convert them to Strings.
      * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).
      *
      * @param commands a List containing the command name and
      *                     parameters as separate items in the list.

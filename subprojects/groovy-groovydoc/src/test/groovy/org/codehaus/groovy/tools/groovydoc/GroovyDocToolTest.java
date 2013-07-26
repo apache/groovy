@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2012 the original author or authors.
+ * Copyright 2007-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,27 +18,31 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import groovy.util.GroovyTestCase;
 import groovy.util.HeadlessTestSupport;
-import org.codehaus.groovy.groovydoc.GroovyClassDoc;
-import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
-import org.codehaus.groovy.groovydoc.GroovyRootDoc;
+import org.codehaus.groovy.groovydoc.*;
+import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Jeremy Rayner
+ * @author Andre Steingress
  */
 public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
-    private static final String TEMPLATES_DIR = "main/java/org/codehaus/groovy/tools/groovydoc/gstringTemplates";
+    private static final String TEMPLATES_DIR = "main/resources/org/codehaus/groovy/tools/groovydoc/gstringTemplates";
 
     GroovyDocTool xmlTool;
     GroovyDocTool xmlToolForTests;
     GroovyDocTool plainTool;
+    GroovyDocTool htmlTool;
 
     public void setUp() {
-        plainTool = new GroovyDocTool(new String[]{"src/test"});
+        plainTool = new GroovyDocTool(new String[]{"src/test/groovy"});
 
         // TODO messy coupling of subprojects for legacy reasons, refactor and remove
         xmlTool = new GroovyDocTool(
@@ -65,6 +69,22 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new ArrayList<LinkArgument>(),
                 new Properties()
         );
+
+        ArrayList<LinkArgument> links = new ArrayList<LinkArgument>();
+        LinkArgument link = new LinkArgument();
+        link.setHref("http://docs.oracle.com/javase/7/docs/api/");
+        link.setPackages("java.,org.xml.,javax.,org.xml.");
+        links.add(link);
+
+        htmlTool = new GroovyDocTool(
+                new FileSystemResourceManager("src/main/resources"), // template storage
+                new String[] {"src/test/groovy", "../../src/test"}, // source file dirs
+                GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
+                links,
+                new Properties()
+        );
     }
 
     public void testPlainGroovyDocTool() throws Exception {
@@ -86,6 +106,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 GroovyMethodDoc method = clazz.methods()[j];
                 if ("testPlainGroovyDocTool".equals(method.name())) {
                     seenThisMethod = true;
+                    break;
                 }
             }
             assertTrue(seenThisMethod);
@@ -333,5 +354,182 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
         String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");
         assertTrue(text.indexOf("<parameter type=\"org.codehaus.groovy.groovydoc.GroovyPackageDoc\"") > 0);
+    }
+
+    public void testFileEncodingFallbackToCharset() throws Exception {
+        String expectedCharset = "ISO-88591";
+
+        Properties props = new Properties();
+        props.setProperty("charset", expectedCharset);
+
+        GroovyDocTool tool = new GroovyDocTool(
+                new FileSystemResourceManager("src"),
+                new String[0],
+                new String[0],
+                new String[0],
+                new String[0],
+                new ArrayList<LinkArgument>(),
+                props);
+
+        assertEquals("'fileEncoding' falls back to 'charset' if not provided", expectedCharset, tool.properties.getProperty("fileEncoding"));
+    }
+
+    public void testCharsetFallbackToFileEncoding() throws Exception {
+        String expectedCharset = "ISO-88591";
+
+        Properties props = new Properties();
+        props.setProperty("fileEncoding", expectedCharset);
+
+        GroovyDocTool tool = new GroovyDocTool(
+                new FileSystemResourceManager("src"),
+                new String[0],
+                new String[0],
+                new String[0],
+                new String[0],
+                new ArrayList<LinkArgument>(),
+                props);
+
+        assertEquals("'charset' falls back to 'fileEncoding' if not provided", expectedCharset, tool.properties.getProperty("charset"));
+
+    }
+
+    public void testFileEncodingCharsetFallbackToDefaultCharset() throws Exception {
+        String expectedCharset = Charset.defaultCharset().name();
+
+        GroovyDocTool tool = new GroovyDocTool(
+                new FileSystemResourceManager("src"),
+                new String[0],
+                new String[0],
+                new String[0],
+                new String[0],
+                new ArrayList<LinkArgument>(),
+                new Properties());
+
+        assertEquals("'charset' falls back to the default charset", expectedCharset, tool.properties.getProperty("charset"));
+        assertEquals("'fileEncoding' falls back to the default charset", expectedCharset, tool.properties.getProperty("fileEncoding"));
+    }
+
+    // GROOVY-5940
+    public void testWrongPackageNameInClassHierarchyWithPlainTool() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+
+        String fullPathBaseA = "org/codehaus/groovy/tools/groovydoc/testfiles/a/Base";
+        srcList.add(fullPathBaseA + ".groovy");
+
+        String fullPathBaseB = "org/codehaus/groovy/tools/groovydoc/testfiles/b/Base";
+        srcList.add(fullPathBaseB + ".groovy");
+
+        String fullPathBaseC = "org/codehaus/groovy/tools/groovydoc/testfiles/c/Base";
+
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/a/DescendantA.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/b/DescendantB.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/a/DescendantC.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/a/DescendantD.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/c/DescendantE.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/c/DescendantF.groovy");
+
+        plainTool.add(srcList);
+
+        GroovyRootDoc root = plainTool.getRootDoc();
+
+        // loop through classes in tree
+        GroovyClassDoc classDocDescendantA = getGroovyClassDocByName(root, "DescendantA");
+        assertTrue(fullPathBaseA.equals(root.classNamed(classDocDescendantA, "Base").getFullPathName()));
+
+        GroovyClassDoc classDocDescendantB = getGroovyClassDocByName(root, "DescendantB");
+        assertTrue(fullPathBaseB.equals(root.classNamed(classDocDescendantB, "Base").getFullPathName()));
+
+        GroovyClassDoc classDocDescendantC = getGroovyClassDocByName(root, "DescendantC");
+        assertTrue(fullPathBaseA.equals(root.classNamed(classDocDescendantC, "Base").getFullPathName()));
+
+        GroovyClassDoc classDocDescendantD = getGroovyClassDocByName(root, "DescendantD");
+        assertTrue(fullPathBaseA.equals(root.classNamed(classDocDescendantD, "Base").getFullPathName()));
+
+        GroovyClassDoc classDocDescendantE = getGroovyClassDocByName(root, "DescendantE");
+        assertTrue(fullPathBaseC.equals(root.classNamed(classDocDescendantE, "Base").getFullPathName()));
+
+        GroovyClassDoc classDocDescendantF = getGroovyClassDocByName(root, "DescendantF");
+        assertTrue(fullPathBaseC.equals(root.classNamed(classDocDescendantF, "Base").getFullPathName()));
+    }
+
+    // GROOVY-5939
+    public void testArrayPropertyLinkWithSelfReference() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/ArrayPropertyLink.groovy");
+        htmlTool.add(srcList);
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        String arrayPropertyLinkDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/ArrayPropertyLink.html");
+
+        Pattern p = Pattern.compile("<a(.+?)ArrayPropertyLink.html'>(.+?)</a>\\[\\]");
+        Matcher m = p.matcher(arrayPropertyLinkDoc);
+
+        assertTrue(m.find());
+        assertEquals("There has to be at least a single reference to the ArrayPropertyLink[]", "ArrayPropertyLink", m.group(2));
+    }
+
+    public void testArrayPropertyLinkWithExternalReference() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/PropertyLink.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/ArrayPropertyLink.groovy");
+        htmlTool.add(srcList);
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        String propertyLinkDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/PropertyLink.html");
+
+        Pattern p = Pattern.compile("<a(.+?)ArrayPropertyLink.html'>(.+?)</a>\\[\\]");
+        Matcher m = p.matcher(propertyLinkDoc);
+
+        assertTrue(m.find());
+        assertEquals("There has to be at least a single reference to the ArrayPropertyLink[]", "ArrayPropertyLink", m.group(2));
+    }
+
+    public void testInnerEnumReference() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/InnerEnum.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/InnerClassProperty.groovy");
+        htmlTool.add(srcList);
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        String derivDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/InnerClassProperty.html");
+
+        Pattern p = Pattern.compile("<a(.+?)testfiles/InnerEnum.Enum.html'>(.+?)</a>");
+        Matcher m = p.matcher(derivDoc);
+
+        assertTrue(m.find());
+        assertEquals("There has to be a reference to class Enum", "Enum", m.group(2));
+    }
+
+    public void testClassAliasing() throws Exception {
+
+        List<String> srcList = new ArrayList<String>();
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Alias.groovy");
+        htmlTool.add(srcList);
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        String derivDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/Alias.html");
+
+        Pattern p = Pattern.compile("<a(.+?)java/util/ArrayList.html' title='ArrayList'>(.+?)</a>");
+        Matcher m = p.matcher(derivDoc);
+
+        assertTrue(m.find());
+        assertEquals("There has to be a reference to class ArrayList", "ArrayList", m.group(2));
+    }
+
+    private GroovyClassDoc getGroovyClassDocByName(GroovyRootDoc root, String name) {
+        GroovyClassDoc[] classes = root.classes();
+
+        for (GroovyClassDoc clazz : classes) {
+            if (clazz.getFullPathName().endsWith(name)) {
+                return clazz;
+            }
+        }
+
+        return null;
     }
 }

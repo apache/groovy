@@ -407,4 +407,44 @@ class SecureASTCustomizerTest extends GroovyTestCase {
         assert hasSecurityException {shell.evaluate('System.println(1)')}
         assert hasSecurityException {shell.evaluate('def x() { System.println(1) }')}
     }
+
+    // GROOVY-6153
+    void testDeterministicWhitelistBehaviour() {
+        def shell = new GroovyShell(configuration)
+        def classWhiteList = ["java.lang.Object", "test"]
+        customizer.with {
+            setIndirectImportCheckEnabled(true);
+            setImportsWhitelist(classWhiteList);
+            setReceiversWhiteList(classWhiteList);
+            setPackageAllowed(true);
+            setClosuresAllowed(true);
+            setMethodDefinitionAllowed(true);
+        }
+
+        assert hasSecurityException {
+            shell.evaluate '''
+                java.lang.System.out.println("run ")
+            '''
+        }
+    }
+
+    // GROOVY-6153
+    void testDeterministicWhitelistBehaviour2() {
+        def shell = new GroovyShell(configuration)
+        def classWhiteList = ["java.lang.Object", "test"]
+        customizer.with {
+            setIndirectImportCheckEnabled(true);
+            setConstantTypesWhiteList(classWhiteList);
+            setReceiversWhiteList(classWhiteList);
+            setPackageAllowed(true);
+            setClosuresAllowed(true);
+            setMethodDefinitionAllowed(true);
+        }
+
+        assert hasSecurityException {
+            shell.evaluate '''
+                java.lang.Long x = 666L
+            '''
+        }
+    }
 }

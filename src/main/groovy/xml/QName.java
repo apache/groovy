@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,11 @@
  */
 package groovy.xml;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /**
  * <code>QName</code> class represents the value of a qualified name
- * as specified in <a href=" http://www.w3.org/TR/xmlschema-2/#QName ">XML
+ * as specified in <a href="http://www.w3.org/TR/xmlschema-2/#QName">XML
  * Schema Part2: Datatypes specification</a>.
  * <p>
  * The value of a QName contains a <b>namespaceURI</b>, a <b>localPart</b> and a <b>prefix</b>.
@@ -33,7 +31,7 @@ import java.io.Serializable;
 public class QName implements Serializable {
 
     /** comment/shared empty string */
-    private static final String EMPTY_STRING = "".intern();
+    private static final String EMPTY_STRING = "";
 
     /** Field namespaceURI */
     private String namespaceURI;
@@ -73,17 +71,17 @@ public class QName implements Serializable {
     public QName(String namespaceURI, String localPart, String prefix) {
         this.namespaceURI = (namespaceURI == null)
                 ? EMPTY_STRING
-                : namespaceURI.trim().intern();
+                : namespaceURI;
         if (localPart == null) {
             throw new IllegalArgumentException("invalid QName local part");
         } else {
-            this.localPart = localPart.trim().intern();
+            this.localPart = localPart;
         }
 
         if (prefix == null) {
             throw new IllegalArgumentException("invalid QName prefix");
         } else {
-            this.prefix = prefix.trim().intern();
+            this.prefix = prefix;
         }
     }
 
@@ -120,7 +118,6 @@ public class QName implements Serializable {
      * @return  a string representation of the QName
      */
     public String getQualifiedName() {
-
         return ((prefix.equals(EMPTY_STRING))
                 ? localPart
                 : prefix + ':' + localPart);
@@ -132,7 +129,6 @@ public class QName implements Serializable {
      * @return  a string representation of the QName
      */
     public String toString() {
-
         return ((namespaceURI.equals(EMPTY_STRING))
                 ? localPart
                 : '{' + namespaceURI + '}' + localPart);
@@ -154,12 +150,12 @@ public class QName implements Serializable {
      * and the first half is compared against the prefix || namespaceURI
      * and the second half is compared against the localPart
      *
-     * i.e. assert new QName("namespace","localPart").equals("namespace:localPart")
+     * i.e.&#160;assert new QName("namespace","localPart").equals("namespace:localPart")
      *
-     * Intended Usage: for gpath accessors, e.g. root.'urn:mynamespace:node'
+     * Intended Usage: for gpath accessors, e.g.&#160;root.'urn:mynamespace:node'
      *
      * Warning: this equivalence is not commutative,
-     * i.e. qname.equals(string) may be true/false  but string.equals(qname) is always false
+     * i.e.&#160;qname.equals(string) may be true/false  but string.equals(qname) is always false
      *
      * <p>
      * This method satisfies the general contract of the <code>Object.equals</code> method.
@@ -285,18 +281,5 @@ public class QName implements Serializable {
         result = namespaceURI.hashCode();
         result = 29 * result + localPart.hashCode();
         return result;
-    }
-
-    /**
-     * Ensure that deserialization properly interns the results.
-     * @param in the ObjectInputStream to be read
-     */
-    private void readObject(ObjectInputStream in) throws
-            IOException, ClassNotFoundException {
-        in.defaultReadObject();
-
-        namespaceURI = namespaceURI.intern();
-        localPart = localPart.intern();
-        prefix = prefix.intern();
     }
 } 

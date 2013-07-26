@@ -34,8 +34,8 @@ class XmlCommandRegistrar
     private final ClassLoader classLoader
     
     XmlCommandRegistrar(final Shell shell, final ClassLoader classLoader) {
-        assert shell
-        assert classLoader
+        assert shell != null
+        assert classLoader != null
         
         this.shell = shell
         this.classLoader = classLoader
@@ -48,15 +48,15 @@ class XmlCommandRegistrar
             log.debug("Registering commands from: $url")
         }
         
-        url.withReader { reader ->
-            def doc = new XmlParser().parse(reader)
-            
-            doc.command.each { element ->
+        url.withReader {Reader reader ->
+            groovy.util.Node doc = new groovy.util.XmlParser().parse(reader)
+
+            doc.children().each {groovy.util.Node element ->
                 String classname = element.text()
                 
                 Class type = classLoader.loadClass(classname)
                 
-                Command command = type.newInstance(shell)
+                Command command = type.newInstance(shell) as Command
                 
                 if (log.debugEnabled) {
                     log.debug("Created command '${command.name}': $command")

@@ -31,6 +31,7 @@ public class AggregateBinding implements BindingUpdatable {
     protected Set<BindingUpdatable> bindings = new LinkedHashSet<BindingUpdatable>();
 
     public void addBinding(BindingUpdatable binding) {
+        if (binding == null || bindings.contains(binding)) return;
         if (bound) binding.bind(); // bind is idempotent, so no state checking
         bindings.add(binding);
     }

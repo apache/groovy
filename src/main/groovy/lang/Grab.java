@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.lang.annotation.ElementType;
 
 /**
  * Used to grab the referenced artifact and its dependencies and make it available on the Classpath.
- * <p/>
+ * <p>
  * Some examples:
  * <pre>
  * {@code @Grab}(group='commons-lang', module='commons-lang', version='2.4')
@@ -97,7 +97,7 @@ public @interface Grab {
     /**
      * The configuration if in use (normally only used by internal ivy repositories).
      * One or more comma separated values with or without square brackets,
-     * e.g.&nbsp;for hibernate you might have "default,proxool,oscache" or "[default,dbcp,swarmcache]".
+     * e.g.&#160;for hibernate you might have "default,proxool,oscache" or "[default,dbcp,swarmcache]".
      * This last hibernate example assumes you have set up such configurations in your local Ivy repo
      * and have changed your grape config (using grapeConfig.xml) or the {@code @GrabConfig} annotation
      * to point to that repo.
@@ -118,21 +118,20 @@ public @interface Grab {
 
     /**
      * Allows a more compact convenience form in one of two formats with optional appended attributes.
-     * <p/>
-     * You can choose either format but not mix-n-match:<br/>
-     * {@code group:module:version:classifier@ext} (where only group and module are required)<br/>
+     * <p>
+     * You can choose either format but not mix-n-match:<br>
+     * {@code group:module:version:classifier@ext} (where only group and module are required)<br>
      * {@code group#module;version[confs]} (where only group and module are required and confs,
-     * if used, is one or more comma separated configuration names)<br/>
+     * if used, is one or more comma separated configuration names)<br>
      * In addition, you can add any valid Ivy attributes at the end of your string value using
-     * semi-colon separated name = value pairs, e.g.:<br/>
-     * {@code @Grab('junit:junit:*;transitive=false')}<br/>
-     * {@code @Grab('group=junit;module=junit;version=4.8.2;classifier=javadoc')
-}<br/>
+     * semi-colon separated name = value pairs, e.g.:<br>
+     * {@code @Grab('junit:junit:*;transitive=false')}<br>
+     * {@code @Grab('group=junit;module=junit;version=4.8.2;classifier=javadoc')}<br>
      */
     String value() default "";
 
     /**
-     * By default, when a {@code @Grab} annotation is used, the {@code grab()} call is added
+     * By default, when a {@code @Grab} annotation is used, a {@code Grape.grab()} call is added
      * to the static initializers of the class the annotatable node appears in.
      * If you wish to disable this, add {@code initClass=false} to the annotation.
      */

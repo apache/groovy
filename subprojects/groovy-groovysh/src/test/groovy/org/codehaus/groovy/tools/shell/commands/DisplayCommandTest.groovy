@@ -16,12 +16,9 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandException
-
 /**
  * Tests for the {@link DisplayCommand} class.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class DisplayCommandTest
@@ -32,10 +29,6 @@ class DisplayCommandTest
     }
 
     void testDisplayWithArgs() {
-        try {
-            shell << 'display foo'
-            fail()
-        }
-        catch (CommandException expected) {}
+        shell << 'display foo'
     }
 }

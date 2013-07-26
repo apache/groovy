@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import groovy.lang.Closure;
 import java.util.Map;
 
 /**
- * @author Andres Almiray <aalmiray@users.sourceforge.com>
+ * @author <a href="mailto:aalmiray@users.sourceforge.com">Andres Almiray</a>
  * @author Danno Ferrin
  */
 public interface Factory {
@@ -32,6 +32,7 @@ public interface Factory {
 
     /**
      * Does this factory "Own" it's child closure.
+     *
      * @return true  if the factory should have onContentClosure() called,
      *         false if the builder should handle it
      */
@@ -45,7 +46,6 @@ public interface Factory {
     void onFactoryRegistration(FactoryBuilderSupport builder, String registeredName, String registeredGroupName);
 
     /**
-     *
      * @param builder the FactoryBuilder
      * @param name the name of the node being built
      * @param value the 'value' argument in the build node
@@ -58,7 +58,6 @@ public interface Factory {
             throws InstantiationException, IllegalAccessException;
 
     /**
-     *
      * @param builder the FactoryBuilder
      * @param node the node (returned from newINstance) to consider the attributes for
      * @param attributes the attributes, a mutable set
@@ -76,7 +75,6 @@ public interface Factory {
     boolean onNodeChildren( FactoryBuilderSupport builder, Object node, Closure childContent);
 
     /**
-     *
      * @param builder the FactoryBuilder
      * @param parent the parent node (null if 'root')
      * @param node the node just completed

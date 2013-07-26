@@ -27,20 +27,32 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 abstract class ComplexCommandSupport
     extends CommandSupport
 {
-    protected List/*<String>*/ functions
+    protected List<String> functions
     
     protected String defaultFunction
     
-    ComplexCommandSupport(final Shell shell, final String name, final String shortcut) {
-        super(shell, name, shortcut)
+    ComplexCommandSupport(final Groovysh shell, final String name, final String shortcut, List<String> comFunctions) {
+        this(shell, name, shortcut, comFunctions, null)
     }
-    
-    protected List createCompletors() {
+
+    ComplexCommandSupport(final Groovysh shell, final String name, final String shortcut, List<String> comFunctions,
+                          String defaultFunction) {
+        super(shell, name, shortcut)
+        this.functions = comFunctions
+        this.defaultFunction = defaultFunction
+        assert(defaultFunction  == null || defaultFunction in functions)
+    }
+
+    protected List createCompleters() {
         def c = new SimpleCompletor()
         
-        functions.each { c.add(it) }
+        getFunctions().each { String it -> c.add(it) }
         
         return [ c, null ]
+    }
+
+    List<String> getFunctions() {
+        return functions
     }
     
     Object execute(List args) {
@@ -49,38 +61,28 @@ abstract class ComplexCommandSupport
         if (args.size() == 0) {
             if (defaultFunction) {
                 args = [ defaultFunction ]
-            }
-            else {
-                fail("Command '$name' requires at least one argument")
+            } else {
+                fail("Command '$name' requires at least one argument of ${getFunctions()}")
             }
         }
         
-        return executeFunction(args)
+        return executeFunction(args[0], args.tail())
     }
     
-    protected executeFunction(List args) {
+    protected executeFunction(String fname, List args) {
         assert args != null
-        
-        assert functions
-        
-        def fname = args[0]
-        
-        if (args.size() > 1) {
-            args = args[1..-1]
-        }
-        else {
-            args = []
-        }
-        
-        if (fname in functions) {
+
+        List<String> myFunctions = getFunctions()
+        assert myFunctions
+
+        if (fname in myFunctions) {
             def func = loadFunction(fname)
             
             log.debug("Invoking function '$fname' w/args: $args")
             
             return func.call(args)
-        }
-        else {
-            fail("Unknown function name: $fname")
+        } else {
+            fail("Unknown function name: '$fname'. Valid arguments: $myFunctions")
         }
     }
     
@@ -89,18 +91,13 @@ abstract class ComplexCommandSupport
         
         try {
             return this."do_${name}"
-        }
-        catch (MissingPropertyException e) {
-            fail("Failed to load delgate function: $e")
+        } catch (MissingFieldException e) {
+            fail("Failed to load delegate function: $e")
         }
     }
     
     def do_all = {
-        functions.each { fname ->
-            if (fname != 'all') {
-                executeFunction([ fname ])
-            }
-        }
+        getFunctions().findAll {it != 'all'}.collect {executeFunction(it, [])}
     }
 }
 

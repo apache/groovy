@@ -16,14 +16,12 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandException
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * Tests for the {@link RegisterCommand} class.
  *
- * @version $Id$
  * @author <a href="mailto:chris@wensel.net">Chris K Wensel</a>
  */
 class RegisterCommandTest
@@ -39,21 +37,13 @@ class RegisterCommandTest
     }
 
     void testRegisterDupesFail() {
-        try {
-            shell << 'register org.codehaus.groovy.tools.shell.commands.EchoCommand'
-            shell << 'register org.codehaus.groovy.tools.shell.commands.EchoCommand'
-            fail()
-        }
-        catch (CommandException expected) {}
+        shell << 'register org.codehaus.groovy.tools.shell.commands.EchoCommand'
+        shell << 'register org.codehaus.groovy.tools.shell.commands.EchoCommand'
     }
 
     void testRegisterFail() {
-        try {
             shell << 'register'
-            fail()
         }
-        catch (CommandException expected) {}
-    }
 }
 
 class EchoCommand

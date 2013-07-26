@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,16 +34,13 @@ import java.util.ListIterator;
  * will trigger an event (if the value indeed changed), otherwise it won't. The Closure may receive
  * 1 or 2 parameters, the single one being the value, the other one both the key and value, for
  * example:
- * <p/>
  * <pre>
  * // skip all properties whose value is a closure
  * def map = new ObservableList( {!(it instanceof Closure)} )
- * &lt;p/&gt;
+ *
  * // skip all properties whose name matches a regex
  * def map = new ObservableList( { name, value -&gt; !(name =&tilde; /[A-Z+]/) } )
  * </pre>
- * <p/>
- * <p>
  * The current implementation will trigger specialized events in the following scenarios, you need
  * not register a different listener as those events extend from PropertyChangeEvent
  * <ul>
@@ -56,15 +53,12 @@ import java.util.ListIterator;
  * <li>ObservableList.MultiElementRemovedEvent - triggered by calling
  * list.removeAll()/list.retainAll()</li>
  * </ul>
- * </p>
- * <p/>
  * <p>
  * <strong>Bound properties</strong>
  * <ul>
  * <li><tt>content</tt> - read-only.</li>
  * <li><tt>size</tt> - read-only.</li>
  * </ul>
- * </p>
  *
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */

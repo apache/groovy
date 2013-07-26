@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,15 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.lang.reflect.Method;
@@ -51,7 +54,7 @@ public class LogASTTransformation implements ASTTransformation {
         AnnotatedNode targetClass = (AnnotatedNode) nodes[1];
         AnnotationNode logAnnotation = (AnnotationNode) nodes[0];
 
-        final LoggingStrategy loggingStrategy = createLoggingStrategy(logAnnotation);
+        final LoggingStrategy loggingStrategy = createLoggingStrategy(logAnnotation, source.getClassLoader());
         if (loggingStrategy == null) return;
 
         final String logFieldName = lookupLogFieldName(logAnnotation);
@@ -144,14 +147,13 @@ public class LogASTTransformation implements ASTTransformation {
     }
 
     public void addError(String msg, ASTNode expr, SourceUnit source) {
-        int line = expr.getLineNumber();
-        int col = expr.getColumnNumber();
         source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), source)
+                new SyntaxErrorMessage(new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
+                        expr.getLastLineNumber(), expr.getLastColumnNumber()), source)
         );
     }
 
-    private LoggingStrategy createLoggingStrategy(AnnotationNode logAnnotation) {
+    private LoggingStrategy createLoggingStrategy(AnnotationNode logAnnotation, GroovyClassLoader loader) {
 
         String annotationName = logAnnotation.getClassNode().getName();
 
@@ -182,7 +184,11 @@ public class LogASTTransformation implements ASTTransformation {
 
         try {
             Class<? extends LoggingStrategy> strategyClass = (Class<? extends LoggingStrategy>) defaultValue;
-            return strategyClass.newInstance();
+            if (AbstractLoggingStrategy.class.isAssignableFrom(strategyClass)) {
+                return DefaultGroovyMethods.newInstance(strategyClass, new Object[]{loader});
+            } else {
+                return strategyClass.newInstance();
+            }
         } catch (Exception e) {
             return null;
         }
@@ -208,5 +214,26 @@ public class LogASTTransformation implements ASTTransformation {
         boolean isLoggingMethod(String methodName);
 
         Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression);
+    }
+
+    public static abstract class AbstractLoggingStrategy implements LoggingStrategy {
+        protected final GroovyClassLoader loader;
+
+        protected AbstractLoggingStrategy(final GroovyClassLoader loader) {
+            this.loader = loader;
+        }
+
+        protected AbstractLoggingStrategy() {
+            this(null);
+        }
+
+        protected ClassNode classNode(String name) {
+            ClassLoader cl = loader==null?this.getClass().getClassLoader():loader;
+            try {
+                return ClassHelper.make(Class.forName(name, false, cl));
+            } catch (ClassNotFoundException e) {
+                throw new GroovyRuntimeException(e);
+            }
+        }
     }
 }

@@ -17,6 +17,7 @@
 package groovy.inspect.swingui
 
 import groovy.swing.SwingBuilder
+
 import java.awt.Cursor
 import java.awt.Font
 import java.awt.event.KeyEvent
@@ -32,6 +33,9 @@ import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
 import org.codehaus.groovy.control.Phases
+
+import java.util.regex.Pattern
+
 import static java.awt.GridBagConstraints.*
 import org.codehaus.groovy.ast.ClassNode
 import groovy.lang.GroovyClassLoader.ClassCollector
@@ -54,7 +58,7 @@ import org.objectweb.asm.util.TraceClassVisitor
 public class AstBrowser {
 
     private inputArea, rootElement, decompiledSource, jTree, propertyTable, splitterPane, mainSplitter, bytecodeView
-    boolean showScriptFreeForm, showScriptClass, showTreeView
+    boolean showScriptFreeForm, showScriptClass, showClosureClasses, showTreeView
     GeneratedBytecodeAwareGroovyClassLoader classLoader
     def prefs = new AstBrowserUiPreferences()
 
@@ -64,7 +68,8 @@ public class AstBrowser {
         this.classLoader = new GeneratedBytecodeAwareGroovyClassLoader(classLoader)
     }
 
-    def swing, frame
+    SwingBuilder swing
+    def frame
 
     public static void main(args) {
 
@@ -92,6 +97,7 @@ public class AstBrowser {
 
         showScriptFreeForm = prefs.showScriptFreeForm
         showScriptClass = prefs.showScriptClass
+        showClosureClasses = prefs.showClosureClasses
         showTreeView = prefs.showTreeView
 
         frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name" : ''),
@@ -99,7 +105,7 @@ public class AstBrowser {
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
-                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, phasePicker.selectedItem, showTreeView) }) {
+                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, showClosureClasses, phasePicker.selectedItem, showTreeView) }) {
 
             menuBar {
                 menu(text: 'Show Script', mnemonic: 'S') {
@@ -110,6 +116,10 @@ public class AstBrowser {
                     checkBoxMenuItem(selected: showScriptClass) {
                         action(name: 'Class Form', closure: this.&showScriptClass,
                                 mnemonic: 'C')
+                    }
+                    checkBoxMenuItem(selected: showClosureClasses) {
+                        action(name: 'Generated Closure Classes', closure: this.&showClosureClasses,
+                                mnemonic: 'G')
                     }
                     checkBoxMenuItem(selected: showTreeView) {
                         action(name: 'Tree View', closure: this.&showTreeView,
@@ -137,6 +147,9 @@ public class AstBrowser {
                 phasePicker = comboBox(items: CompilePhaseAdapter.values(),
                         selectedItem: prefs.selectedPhase,
                         actionPerformed: {
+                            // reset text to the default as the phase change removes the focus from the class node
+                            bytecodeView.textEditor.text = '// Please select a class node in the tree view.'
+
                             decompile(phasePicker.selectedItem.phaseId, script())
                             compile(jTree, script(), phasePicker.selectedItem.phaseId)
                         },
@@ -176,6 +189,8 @@ public class AstBrowser {
             }
         }
 
+        bytecodeView.textEditor.text = '// Please select a class node in the tree view.'
+
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
 
         jTree.cellRenderer.setLeafIcon(swing.imageIcon(groovy.ui.Console.NODE_ICON_PATH));
@@ -209,19 +224,43 @@ public class AstBrowser {
                     }
                 }
 
-                boolean classNode = node.properties.any { it[0]=='class' && it[1] in['class org.codehaus.groovy.ast.ClassNode', 'class org.codehaus.groovy.ast.InnerClassNode'] }
-                if (classNode) {
-                    def className = node.properties.find { it[0]=='name' }[1]
-                    def bytecode = classLoader.getBytecode(className)
-                    if (bytecode) {
-                        def writer = new StringWriter()
-                        def visitor = new TraceClassVisitor(new PrintWriter(writer));
-                        def reader = new ClassReader(bytecode)
-                        reader.accept(visitor, 0)
-                        bytecodeView.textEditor.text = writer.toString()
-                    } else {
-                        bytecodeView.textEditor.text = '// No bytecode available at this phase'
+                if (node.classNode || node.methodNode) {
+                    bytecodeView.textEditor.text = '// Loading bytecode ...'
+                    boolean showOnlyMethodCode = node.methodNode
+
+                    swing.doOutside {
+                        def className = showOnlyMethodCode ? node.getPropertyValue('declaringClass') : node.getPropertyValue('name')
+                        def bytecode = classLoader.getBytecode(className)
+                        if (bytecode) {
+                            def writer = new StringWriter()
+                            def visitor = new TraceClassVisitor(new PrintWriter(writer));
+                            def reader = new ClassReader(bytecode)
+                            reader.accept(visitor, 0)
+
+                            def source = writer.toString()
+                            swing.doLater {
+                                bytecodeView.textEditor.text = source
+
+                                if (showOnlyMethodCode)  {
+                                    def methodName = node.getPropertyValue('name')
+                                    def methodDescriptor = node.getPropertyValue('descriptor')
+
+                                    if (methodName && methodDescriptor)  {
+                                        def pattern = Pattern.compile("^.*\\n.*${Pattern.quote(methodName + methodDescriptor)}[\\s\\S]*?\\n[}|\\n]", Pattern.MULTILINE)
+                                        def matcher = pattern.matcher(source)
+                                        if (matcher.find())  {
+                                            bytecodeView.textEditor.text = source.substring(matcher.start(0), matcher.end(0))
+                                        }
+                                    }
+                                }
+
+                                bytecodeView.textEditor.caretPosition = 0
+                            }
+                        } else {
+                            swing.doLater { bytecodeView.textEditor.text = '// No bytecode available at this phase' }
+                        }
                     }
+
                 } else {
                     bytecodeView.textEditor.text = ''
                 }
@@ -289,6 +328,10 @@ public class AstBrowser {
         showScriptClass = evt.source.selected
     }
 
+    void showClosureClasses(EventObject evt)  {
+        showClosureClasses = evt.source.selected
+    }
+
     void showTreeView(EventObject evt = null) {
         showTreeView = !showTreeView
         splitterPane.visible = showTreeView
@@ -336,7 +379,7 @@ public class AstBrowser {
         swing.doOutside {
             try {
                 def nodeMaker = new SwingTreeNodeMaker()
-                def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker)
+                def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker)
                 classLoader.clearBytecodeTable()
                 def result = adapter.compile(script, compilePhase)
                 swing.doLater {
@@ -368,6 +411,7 @@ class AstBrowserUiPreferences {
     final boolean showScriptFreeForm
     final boolean showTreeView
     final boolean showScriptClass
+    final boolean showClosureClasses
     int decompiledSourceFontSize
     final CompilePhaseAdapter selectedPhase
 
@@ -385,6 +429,7 @@ class AstBrowserUiPreferences {
         horizontalDividerLocation = Math.max(prefs.getInt("horizontalSplitterLocation", 100), 100)
         showScriptFreeForm = prefs.getBoolean("showScriptFreeForm", false)
         showScriptClass = prefs.getBoolean("showScriptClass", true)
+        showClosureClasses = prefs.getBoolean("showClosureClasses", false)
         showTreeView = prefs.getBoolean("showTreeView", true)
         int phase = prefs.getInt('compilerPhase', Phases.SEMANTIC_ANALYSIS)
         selectedPhase = CompilePhaseAdapter.values().find {
@@ -392,7 +437,7 @@ class AstBrowserUiPreferences {
         }
     }
 
-    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, CompilePhaseAdapter phase, showTreeView) {
+    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, closureClassesPref, CompilePhaseAdapter phase, showTreeView) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         prefs.putInt("decompiledFontSize", decompiledSourceFontSize as int)
         prefs.putInt("frameX", frame.location.x as int)
@@ -403,6 +448,7 @@ class AstBrowserUiPreferences {
         prefs.putInt("horizontalSplitterLocation", hSplitter.dividerLocation)
         prefs.putBoolean("showScriptFreeForm", scriptFreeFormPref)
         prefs.putBoolean("showScriptClass", scriptClassPref)
+        prefs.putBoolean("showClosureClasses", closureClassesPref)
         prefs.putBoolean("showTreeView", showTreeView)
         prefs.putInt('compilerPhase', phase.phaseId)
     }
@@ -454,6 +500,19 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
     def TreeNodeWithProperties(userObject, List<List<String>> properties) {
         super(userObject)
         this.properties = properties
+    }
+
+    String getPropertyValue(String name)  {
+        def match = properties.find { n, v, t -> name == n }
+        return match != null ? match[1] : null
+    }
+
+    boolean isClassNode() {
+        getPropertyValue('class') in ['class org.codehaus.groovy.ast.ClassNode', 'class org.codehaus.groovy.ast.InnerClassNode']
+    }
+
+    boolean isMethodNode() {
+        getPropertyValue('class') in ['class org.codehaus.groovy.ast.MethodNode', 'class org.codehaus.groovy.ast.ConstructorNode']
     }
 }
 

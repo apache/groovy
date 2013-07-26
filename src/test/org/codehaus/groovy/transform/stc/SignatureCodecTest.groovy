@@ -11,12 +11,12 @@ import org.codehaus.groovy.ast.tools.WideningCategories
  * @author Cedric Champeau
  */
 class SignatureCodecTest extends GroovyTestCase {
-    StaticTypeCheckingVisitor.SignatureCodec codec
+    SignatureCodec codec
 
     @Override
     protected void setUp() {
         super.setUp()
-        codec = StaticTypeCheckingVisitor.SignatureCodecFactory.getCodec(1)
+        codec = StaticTypeCheckingVisitor.SignatureCodecFactory.getCodec(1,this.class.classLoader)
     }
 
     void testVariousSimpleClassNodes() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import groovy.lang.ReadOnlyPropertyException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
- * <p>This class defines a wrapper for accessing a specific column in <code>ResultSetMetaData</code>.
- * This allows iteration over columns using idiomatic Groovy, e.g.
+ * This class defines a wrapper for accessing a specific column in <code>ResultSetMetaData</code>.
+ * This allows iteration over columns using idiomatic Groovy, e.g.:
  * <pre>
  * meta.each {col ->
  *   println col.columnName
@@ -33,8 +33,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * </pre>
  * All <code>ResultSetMetaData</code> column methods taking a column index
  * are available on a column either as a no-arg getter or via a property.
- * </p>
- * <p>This wrapper is created by an iterator invoked for <code>ResultSetMetaData</code>.
+ * <p>
+ * This wrapper is created by an iterator invoked for <code>ResultSetMetaData</code>.
  *
  * @author John Hurst
  * @see org.codehaus.groovy.runtime.SqlGroovyMethods

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
  * here from the original GroovyResultSet class. The methods in this class are
  * used by the proxy GroovyResultSetProxy, which will try to invoke methods
  * on this class before invoking it on ResultSet.
- * <p/>
- * <p><b>This class is not intended to be used directly. Should be used through
- * GroovyResultSetProxy only!</b></p>
+ * <p>
+ * <b>This class is not intended to be used directly. Should be used through
+ * GroovyResultSetProxy only!</b>
  *
  * @author Jochen Theodorou
  * @see GroovyResultSet
@@ -224,7 +224,7 @@ public class GroovyResultSetExtension extends GroovyObjectSupport {
      * before the first row; the first call to the method
      * <code>next</code> makes the first row the current row; the
      * second call makes the second row the current row, and so on.
-     * <p/>
+     * <p>
      * <P>If an input stream is open for the current row, a call
      * to the method <code>next</code> will
      * implicitly close it. A <code>getResultSet()</code> object's

@@ -42,11 +42,13 @@ import org.apache.ivy.util.Message
 import org.codehaus.groovy.reflection.ReflectionUtils
 import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
+import java.util.zip.ZipException
 import javax.xml.parsers.DocumentBuilderFactory
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
 import java.util.jar.JarFile
 
 import org.codehaus.groovy.reflection.CachedClass
+import org.codehaus.groovy.reflection.ClassInfo
 
 /**
  * @author Danno Ferrin
@@ -278,18 +280,35 @@ class GrapeIvy implements GrapeEngine {
         if (file.name.toLowerCase().endsWith(".jar")) {
             def mcRegistry = GroovySystem.metaClassRegistry
             if (mcRegistry instanceof MetaClassRegistryImpl) {
-                // should always be the case
-                JarFile jar = new JarFile(file)
-                def entry = jar.getEntry(MetaClassRegistryImpl.MODULE_META_INF_FILE)
-                if (entry) {
-                    Properties props = new Properties()
-                    props.load(jar.getInputStream(entry))
-                    Map<CachedClass, List<MetaMethod>> metaMethods = new HashMap<CachedClass, List<MetaMethod>>()
-                    mcRegistry.registerExtensionModuleFromProperties(props, loader, metaMethods)
-                    // add old methods to the map
-                    metaMethods.each { CachedClass c, List<MetaMethod> methods ->
-                        c.addNewMopMethods(methods)
+                try {
+                    JarFile jar = new JarFile(file)
+                    def entry = jar.getEntry(MetaClassRegistryImpl.MODULE_META_INF_FILE)
+                    if (entry) {
+                        Properties props = new Properties()
+                        props.load(jar.getInputStream(entry))
+                        Map<CachedClass, List<MetaMethod>> metaMethods = new HashMap<CachedClass, List<MetaMethod>>()
+                        mcRegistry.registerExtensionModuleFromProperties(props, loader, metaMethods)
+                        // add old methods to the map
+                        metaMethods.each { CachedClass c, List<MetaMethod> methods ->
+                            // GROOVY-5543: if a module was loaded using grab, there are chances that subclasses
+                            // have their own ClassInfo, and we must change them as well!
+                            def classesToBeUpdated = ClassInfo.allClassInfo.findAll {
+                                boolean found = false
+                                CachedClass current = it.cachedClass
+                                while (!found && current != null) {
+                                    if (current == c || current.interfaces.contains(c)) {
+                                        found = true
+                                    }
+                                    current = current.cachedSuperClass
+                                }
+                                found
+                            }.collect { it.cachedClass }
+                            classesToBeUpdated*.addNewMopMethods(methods)
+                        }
                     }
+                }
+                catch(ZipException zipException) {
+                    throw new RuntimeException("Grape could not load jar '$file'", zipException)
                 }
             }
         }
@@ -335,10 +354,10 @@ class GrapeIvy implements GrapeEngine {
                     grabRecord.mrid, grabRecord.force, grabRecord.changing, grabRecord.transitive)
             def conf = grabRecord.conf ?: ['*']
             conf.each {dd.addDependencyConfiguration('default', it)}
-            if (grabRecord.classifier) {
+            if (grabRecord.classifier || grabRecord.ext) {
                 def dad = new DefaultDependencyArtifactDescriptor(dd,
-                        grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, [classifier:grabRecord.classifier])
-                conf.each { dad.addConfiguration(it)  }
+                      grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, grabRecord.classifier ? [classifier:grabRecord.classifier] : null)
+                conf.each { dad.addConfiguration(it) }
                 dd.addDependencyArtifact('default', dad)
             }
             md.addDependency(dd)

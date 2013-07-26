@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -408,26 +408,113 @@ class EnumTest extends CompilableTestSupport {
             assert foos[1].j == 2
         """
     }
-    
-    void testNamedArguments() {
-        // this test is a result of GROOVY-4219 and should be changed once
-        // GROOVY-4582 is implemented.
+
+    void testOverridingMethodsWithExplicitConstructor() {
+        // GROOVY-6065
+        assertScript """
+            enum Country {
+                Hungary(9_939_000), Italy(61_482_000), Poland(38_383_000) { String getCountryCode() { 'pl' } }
+                int population
+                Country(population) { this.population = population }
+                String getCountryCode() { name()[0..1].toLowerCase() }
+            }
+
+            assert Country.Hungary.countryCode == 'hu'
+            assert Country.Italy.countryCode == 'it'
+            assert Country.Poland.countryCode == 'pl'
+        """
+    }
+
+    void testAbstractMethodOverriding() {
+        // GROOVY-4641
+        assertScript """
+            enum Day {
+               SUNDAY {
+                  String getAction() { 'Relax' }
+               },
+               MONDAY {
+                   String getAction() { 'Work' }
+               }
+               abstract String getAction()
+            }
+            assert 'Relax' ==  Day.SUNDAY.action
+        """
         shouldNotCompile """
-            enum ImageSortField {
-                FILENAME(field: null, name: null),
-                TIME(field: null, name: null)
-                
-                def field
-                def name
-            
-                public String toString(){
-                    name
+            enum Day {
+               SUNDAY {
+                  String getAction() { 'Relax' }
+               },
+               MONDAY
+               abstract String getAction()
+            }
+            assert 'Relax' ==  Day.SUNDAY.action
+        """
+        shouldNotCompile """
+            enum Day {
+               SUNDAY {
+                  String getAction() { 'Relax' }
+               },
+               MONDAY {}
+               abstract String getAction()
+            }
+            assert 'Relax' ==  Day.SUNDAY.action
+        """
+    }
+
+    void testInnerClosureDefinitions() {
+        // GROOVY-5756
+        assertScript """
+            enum MyEnum {
+                INSTANCE {
+                    String foo() {
+                        def clos1 = { "foo1" }; clos1.call()
+                    }
+                }, CONTROL
+                String foo() {
+                    def clos2 = { "foo2" }; clos2.call()
                 }
             }
+            assert "foo2" == MyEnum.CONTROL.foo()
+            assert "foo1" == MyEnum.INSTANCE.foo()
+        """
+    }
+
+    void testLenientTypeDefinitions() {
+        // GROOVY-4794
+        assertScript """
+            enum E {
+              enConst {
+                @Lazy pi = 3.14
+                def twopi = 6.28
+                def foo(){ "" + pi + " " + twopi }
+                public bar(){ "" + twopi + " " + pi }
+              }
+            }
+            assert E.enConst.foo() == '3.14 6.28'
+            assert E.enConst.bar() == '6.28 3.14'
+        """
+    }
+
+    void testNamedArgs() {
+        // GROOVY-4485
+        assertScript """
+            enum ExportFormat {
+                EXCEL_OOXML(mime: "application/vnd.ms-excel", extension: "xlsx"),
+                EXCEL_BINARY(mime: "application/vnd.ms-excel", extension: "xls"),
+                EXCEL_HTML(mime: "application/vnd.ms-excel", extension: "xls"),
+                FOO() // dummy const for testing
+                String mime, extension = 'default'
+            }
+
+            assert ExportFormat.EXCEL_BINARY.extension == 'xls'
+            ExportFormat.values().each{
+                assert it == ExportFormat.FOO || it.mime == 'application/vnd.ms-excel'
+            }
+            assert ExportFormat.EXCEL_HTML.ordinal() == 2
+            assert ExportFormat.FOO.extension == 'default'
         """
     }
 }
-
 
 enum UsCoin {
     penny(1), nickel(5), dime(10), quarter(25)

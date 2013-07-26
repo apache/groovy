@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
     private static final Class MY_CLASS = Field.class;
     private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode ASTTRANSFORM_TYPE = ClassHelper.make(GroovyASTTransformationClass.class);
+    private static final ClassNode ASTTRANSFORMCLASS_TYPE = ClassHelper.make(GroovyASTTransformationClass.class);
     private SourceUnit sourceUnit;
     private DeclarationExpression candidate;
     private boolean insideScriptBody;
@@ -69,13 +69,13 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             DeclarationExpression de = (DeclarationExpression) parent;
             ClassNode cNode = de.getDeclaringClass();
             if (!cNode.isScript()) {
-                addError("Error: annotation " + MY_TYPE_NAME + " can only be used within a Script.", parent);
+                addError("Annotation " + MY_TYPE_NAME + " can only be used within a Script.", parent);
                 return;
             }
             candidate = de;
             // GROOVY-4548: temp fix to stop CCE until proper support is added
             if (de.isMultipleAssignmentDeclaration()) {
-                addError("Error: annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", parent);
+                addError("Annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", parent);
                 return;
             }
             VariableExpression ve = de.getVariableExpression();
@@ -86,10 +86,11 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             cNode.addField(fieldNode);
 
             // GROOVY-4833 : annotations that are not Groovy transforms should be transferred to the generated field
+            // GROOVY-6112 : also copy acceptable Groovy transforms
             final List<AnnotationNode> annotations = de.getAnnotations();
             for (AnnotationNode annotation : annotations) {
                 final ClassNode annotationClassNode = annotation.getClassNode();
-                if (annotationClassNode.getAnnotations(ASTTRANSFORM_TYPE).isEmpty()) {
+                if (notTransform(annotationClassNode) || acceptableTransform(annotation)) {
                     fieldNode.addAnnotation(annotation);
                 }
             }
@@ -101,6 +102,19 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
             scopeVisitor.visitClass(cNode);
         }
+    }
+
+    private boolean acceptableTransform(AnnotationNode annotation) {
+        // TODO also check for phase after sourceUnit.getPhase()? but will be ignored anyway?
+        // TODO we should only copy those annotations with FIELD_TARGET but haven't visited annotations
+        // and gathered target info at this phase, so we can't do this:
+        // return annotation.isTargetAllowed(AnnotationNode.FIELD_TARGET);
+        // instead just don't copy ourselves for now
+        return !annotation.getClassNode().equals(MY_TYPE);
+    }
+
+    private boolean notTransform(ClassNode annotationClassNode) {
+        return annotationClassNode.getAnnotations(ASTTRANSFORMCLASS_TYPE).isEmpty();
     }
 
     @Override
@@ -115,7 +129,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
                     // return EmptyExpression.INSTANCE;
                     return new ConstantExpression(null);
                 }
-                addError("Error: annotation " + MY_TYPE_NAME + " can only be used within a Script body.", expr);
+                addError("Annotation " + MY_TYPE_NAME + " can only be used within a Script body.", expr);
                 return expr;
             }
         } else if (insideScriptBody && expr instanceof VariableExpression && currentClosure != null) {

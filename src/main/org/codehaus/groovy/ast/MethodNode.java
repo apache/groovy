@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.reflect.Modifier;
 import java.util.List;
 
 /**
@@ -72,7 +71,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
      */
     public String getTypeDescriptor() {
         if (typeDescriptor == null) {
-            StringBuffer buf = new StringBuffer(name.length() + parameters.length * 10);
+            StringBuilder buf = new StringBuilder(name.length() + parameters.length * 10);
             buf.append(returnType.getName());
             buf.append(' ');
             buf.append(name);
@@ -82,12 +81,34 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
                     buf.append(", ");
                 }
                 Parameter param = parameters[i];
-                buf.append(param.getType().getName());
+                buf.append(formatTypeName(param.getType()));
             }
             buf.append(')');
             typeDescriptor = buf.toString();
         }
         return typeDescriptor;
+    }
+
+    /**
+     * Formats a type name in a readable version. For arrays, appends "[]" to the formatted
+     * type name of the component. For unit class nodes, uses the class node name.
+     * @param type the type to format
+     * @return a human readable version of the type name (java.lang.String[] for example)
+     */
+    private static String formatTypeName(ClassNode type) {
+        if (type.isArray()) {
+            ClassNode it = type;
+            int dim = 0;
+            while (it.isArray()) {
+                dim++;
+                it = it.getComponentType();
+            }
+            StringBuilder sb = new StringBuilder(it.getName().length()+2*dim);
+            sb.append(it.getName());
+            for (int i=0;i<dim;i++) { sb.append("[]"); }
+            return sb.toString();
+        }
+        return type.getName();
     }
 
     private void invalidateCachedData() {

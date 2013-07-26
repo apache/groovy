@@ -125,5 +125,68 @@ class DefaultParamTest extends CompilableTestSupport {
             assert meth(a:1) {} == "21"
         """
     }
+
+    void testClosureSharedVariableRefersToDefaultParameter() {
+        assertScript """
+                def f1( int x = 3, fn={ -> x } ) {
+                    return fn()
+                }
+
+                assert 3 == f1()
+                assert 42 == f1(42)
+            """
+
+        assertScript """
+               def f2( int x = 3, fn={ -> def c2 = { -> x }; c2.call() } ) {
+                   return fn()
+               }
+
+               assert 42 == f2(42)
+               assert 42 == f2(42)
+               assert 84 == f2(42) { 84 }
+            """
+
+        assertScript """
+               def f3(fn={ -> 42 }, fn2={ -> def c2 = { -> fn() }; c2.call() } ) {
+                   return fn2()
+               }
+
+               assert 42 == f3()
+               assert 84 == f3({ -> 84 })
+            """
+
+        assertScript """
+               def f4(def s = [1,2,3], fn = { -> s.size() }) {
+                   fn()
+               }
+
+               assert 3 == f4()
+            """
+
+        assertScript """
+           static <T extends Number> Integer f5(List<T> s = [1,2,3], fn = { -> (s*.intValue()).sum() }) {
+               fn()
+           }
+
+           assert 6 == f5()
+           assert 6 == f5([1.1, 2.1, 3.1])
+        """
+
+        assertScript """
+           def f6(def s = [1,2,3], fn = { -> s.size() }, fn2 = { fn() + s.size() }) {
+               fn2()
+           }
+
+           assert 6 == f6()
+        """
+
+        assertScript """
+            def f7( int x = 3, int y = 39, fn={ -> x + y } ) {
+                return fn()
+            }
+
+            assert 42 == f7()
+        """
+    }
 }
 

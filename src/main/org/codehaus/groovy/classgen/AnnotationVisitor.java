@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,12 +83,12 @@ public class AnnotationVisitor {
     }
     
     private boolean checkIfValidEnumConstsAreUsed(AnnotationNode node) {
-        boolean ok = true;
         Map<String, Expression> attributes = node.getMembers();
         for (Map.Entry<String, Expression> entry : attributes.entrySet()) {
-            ok &= validateEnumConstant(entry.getValue());
+            if (!validateEnumConstant(entry.getValue()))
+                return false;
         }
-        return ok;
+        return true;
     }
     
     private boolean validateEnumConstant(Expression exp) {
@@ -241,17 +241,16 @@ public class AnnotationVisitor {
     private ConstantExpression getConstantExpression(Expression exp, ClassNode attrType) {
         if (exp instanceof ConstantExpression) {
             return (ConstantExpression) exp;
-        } else {
-            String base = "expected '" + exp.getText() + "' to be an inline constant of type " + attrType.getName();
-            if (exp instanceof PropertyExpression) {
-                addError(base + " not a property expression", exp);
-            } else if (exp instanceof VariableExpression && ((VariableExpression)exp).getAccessedVariable() instanceof FieldNode) {
-                addError(base + " not a field expression", exp);
-            } else {
-                addError(base, exp);
-            }
-            return ConstantExpression.EMPTY_EXPRESSION;
         }
+        String base = "Expected '" + exp.getText() + "' to be an inline constant of type " + attrType.getName();
+        if (exp instanceof PropertyExpression) {
+            addError(base + " not a property expression", exp);
+        } else if (exp instanceof VariableExpression && ((VariableExpression)exp).getAccessedVariable() instanceof FieldNode) {
+            addError(base + " not a field expression", exp);
+        } else {
+            addError(base, exp);
+        }
+        return ConstantExpression.EMPTY_EXPRESSION;
     }
 
     /**
@@ -273,12 +272,16 @@ public class AnnotationVisitor {
     }
 
     protected void visitConstantExpression(String attrName, ConstantExpression constExpr, ClassNode attrType) {
-        ClassNode type = ClassHelper.getWrapper(constExpr.getType());
-        if (!type.isDerivedFrom(attrType)) {
-            addError("Attribute '" + attrName + "' should have type '" + attrType.getName() + "'; "
-                    + "but found type '" + constExpr.getType().getName() + "'",
-                    constExpr);
+        ClassNode constType = constExpr.getType();
+        ClassNode wrapperType = ClassHelper.getWrapper(constType);
+        if (!hasCompatibleType(attrType, wrapperType)) {
+            addError("Attribute '" + attrName + "' should have type '" + attrType.getName()
+                    + "'; but found type '" + constType.getName() + "'", constExpr);
         }
+    }
+
+    private boolean hasCompatibleType(ClassNode attrType, ClassNode wrapperType) {
+        return wrapperType.isDerivedFrom(ClassHelper.getWrapper(attrType));
     }
 
     protected void visitEnumExpression(String attrName, PropertyExpression propExpr, ClassNode attrType) {
@@ -295,10 +298,7 @@ public class AnnotationVisitor {
 
     protected void addError(String msg, ASTNode expr) {
         this.errorCollector.addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(
-                        msg + " in @" + this.reportClass.getName() + '\n',
-                        expr.getLineNumber(),
-                        expr.getColumnNumber()), this.source)
+                new SyntaxErrorMessage(new SyntaxException(msg + " in @" + this.reportClass.getName() + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()), this.source)
         );
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package groovy.util.logging;
 
-import org.codehaus.groovy.ast.ClassHelper;
+import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.*;
@@ -58,32 +58,20 @@ public @interface Log4j {
     String value() default "log";
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Log4jLoggingStrategy.class;
 
-    public static class Log4jLoggingStrategy implements LogASTTransformation.LoggingStrategy {
-        private static final ClassNode LOGGER_CLASSNODE;
-        private static final ClassNode PRIORITY_CLASSNODE;
+    public static class Log4jLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
+        private static final String LOGGER_NAME = "org.apache.log4j.Logger";
+        private static final String PRIORITY_NAME = "org.apache.log4j.Priority";
 
-        static {
-            ClassNode tmp1 = null;
-            ClassNode tmp2 = null;
-
-            try {
-                tmp1 = ClassHelper.make(Class.forName("org.apache.log4j.Logger"));
-                tmp2 = ClassHelper.make(Class.forName("org.apache.log4j.Priority"));
-            } catch (ClassNotFoundException e) {
-                tmp1 = ClassHelper.make("org.apache.log4j.Logger");
-                tmp2 = ClassHelper.make("org.apache.log4j.Priority");
-            } finally {
-                LOGGER_CLASSNODE = tmp1;
-                PRIORITY_CLASSNODE = tmp2;
-            }
+        protected Log4jLoggingStrategy(final GroovyClassLoader loader) {
+            super(loader);
         }
 
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
             return classNode.addField(logFieldName,
                     Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                    LOGGER_CLASSNODE,
+                    classNode(LOGGER_NAME),
                     new MethodCallExpression(
-                            new ClassExpression(LOGGER_CLASSNODE),
+                            new ClassExpression(classNode(LOGGER_NAME)),
                             "getLogger",
                             new ClassExpression(classNode)));
         }
@@ -96,7 +84,7 @@ public @interface Log4j {
             final MethodCallExpression condition;
             if (!"trace".equals(methodName)) {
                 AttributeExpression logLevelExpression = new AttributeExpression(
-                        new ClassExpression(PRIORITY_CLASSNODE),
+                        new ClassExpression(classNode(PRIORITY_NAME)),
                         new ConstantExpression(methodName.toUpperCase()));
                 ArgumentListExpression args = new ArgumentListExpression();
                 args.addExpression(logLevelExpression);

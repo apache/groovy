@@ -23,6 +23,7 @@ groovydoc {
             rootProject.compileJava.classpath,
             { project(':groovy-docgenerator').compileJava.destinationDir },
             { project(':groovy-groovydoc').compileJava.destinationDir },
+            { project(':groovy-groovydoc').sourceSets.main.runtimeClasspath },
             { project(':groovy-ant').compileJava.destinationDir },
             { project(':groovy-templates').compileJava.destinationDir },
     )

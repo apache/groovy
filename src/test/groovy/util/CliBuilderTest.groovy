@@ -1,5 +1,5 @@
 /*
- *  Copyright 2003-2010 the original author or authors.
+ *  Copyright 2003-2013 the original author or authors.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  *  compliance with the License.  You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 
 package groovy.util
 
+import org.codehaus.groovy.cli.GroovyPosixParser
 import org.apache.commons.cli.GnuParser
 import org.apache.commons.cli.Option
 import org.apache.commons.cli.OptionBuilder
@@ -21,32 +22,32 @@ import org.apache.commons.cli.PosixParser
 import org.apache.commons.cli.BasicParser
 
 /**
- *  Test class for the CliBuilder -- but then that is obvious from the name :-)
- *
- *  <p>There appear to be issues when using the <code>PosixParser</code> in 1.0 and 1.1 &ndash; when an
- *  option with a parameter is passed using a long form and a single letter parameter of some sort has been
- *  declared (the problem does not occur if no single letter option has been declared) then the value "--"
- *  is returned instead of the option parameter value.  This problem does not happen using the
- *  <code>GnuParser</code>.</p>
- *
- *  <p>There appears to be an issue with <code>GnuParser</code> in 1.0 and 1.1 &ndash; if only a long option
- *  is defined then the usual Groovy syntax for accessing the option fails to work.  It is fine if a short
- *  option of some sort is defined.  This must be a <code>CliBuilder</code>/<code>OptionAccessor</code>
- *  problem.  This problem does not happen with the <code>PosixParser</code>.</p>
- *
- *  <p>Commons CLI 1.0 appears not to be able to access arguments using a long name, if that option has a
- *  short name -- in this case access is only using a short name.  This means it is possible to work with
- *  long name option if and only if they have no short name.</p>
- *
- *  <p>Commons CLI 1.1 has fixed most of the problems in 1.0, but appears to have a broken getOptionValues
- *  -- it returns only the first value -- and so is worse than useless.</p>
- *
- *  <p>1.0 PosixBuilder removes unrecognized single letter options silently.  1.1 version may also do this.
- *  GnuParser behaves according to the <code>stopAtNonOption</code> parameter -- throw
- *  <code>UnrecognizedOptionException</code> when <code>false</code>, terminate parse leaving everything
- *  following unprocessed if <code>true</code>.</p>
- *
- *  <p>Commons CLI 1.2 is supposed to fix all the bugs!</p>
+ * Test class for the CliBuilder -- but then that is obvious from the name :-)
+ * <p>
+ * There appear to be issues when using the <code>PosixParser</code> in 1.0 and 1.1 &ndash; when an
+ * option with a parameter is passed using a long form and a single letter parameter of some sort has been
+ * declared (the problem does not occur if no single letter option has been declared) then the value "--"
+ * is returned instead of the option parameter value.  This problem does not happen using the
+ * <code>GnuParser</code>.
+ * <p>
+ * There appears to be an issue with <code>GnuParser</code> in 1.0 and 1.1 &ndash; if only a long option
+ * is defined then the usual Groovy syntax for accessing the option fails to work.  It is fine if a short
+ * option of some sort is defined.  This must be a <code>CliBuilder</code>/<code>OptionAccessor</code>
+ * problem.  This problem does not happen with the <code>PosixParser</code>.
+ * <p>
+ * Commons CLI 1.0 appears not to be able to access arguments using a long name, if that option has a
+ * short name -- in this case access is only using a short name.  This means it is possible to work with
+ * long name option if and only if they have no short name.
+ * <p>
+ * Commons CLI 1.1 has fixed most of the problems in 1.0, but appears to have a broken getOptionValues
+ * -- it returns only the first value -- and so is worse than useless.
+ * <p>
+ * 1.0 PosixBuilder removes unrecognized single letter options silently.  1.1 version may also do this.
+ * GnuParser behaves according to the <code>stopAtNonOption</code> parameter -- throw
+ * <code>UnrecognizedOptionException</code> when <code>false</code>, terminate parse leaving everything
+ * following unprocessed if <code>true</code>.
+ * <p>
+ * Commons CLI 1.2 is supposed to fix all the bugs!
  *
  * @author Dierk König
  * @author Russel Winder
@@ -120,6 +121,10 @@ class CliBuilderTest extends GroovyTestCase {
         runSample(new PosixParser(), ['-h', '-c', expectedParameter])
     }
 
+    void testSampleShort_DefaultParser() {
+        runSample(new GroovyPosixParser(), ['-h', '-c', expectedParameter])
+    }
+
     void testSampleLong_BasicParser() {
         runSample(new BasicParser(), ['--help', '--encoding', expectedParameter])
     }
@@ -130,6 +135,10 @@ class CliBuilderTest extends GroovyTestCase {
 
     void testSampleLong_PosixParser() {
         runSample(new PosixParser(), ['--help', '--encoding', expectedParameter])
+    }
+
+    void testSampleLong_DefaultParser() {
+        runSample(new GroovyPosixParser(), ['--help', '--encoding', expectedParameter])
     }
 
     private void multipleArgs(parser) {

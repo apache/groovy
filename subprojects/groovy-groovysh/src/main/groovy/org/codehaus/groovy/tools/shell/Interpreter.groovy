@@ -63,7 +63,7 @@ class Interpreter
 
             log.debug("Compiled script: $script")
 
-            if (type.declaredMethods.any { it.name == 'main' }) {
+            if (type.declaredMethods.any {Method it -> it.name == 'main' }) {
                 result = script.run()
             }
 

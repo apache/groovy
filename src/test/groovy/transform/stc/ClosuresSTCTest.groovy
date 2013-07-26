@@ -203,6 +203,78 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5639
+    void testShouldNotThrowClosureSharedVariableError() {
+        assertScript '''
+        Closure<Void> c = {
+            List<String> list = new ArrayList<String>()
+            String s = "foo"
+            10.times {
+                list.add(s)
+            }
+        }
+        '''
+    }
+    // a case in Grails
+    void testShouldNotThrowClosureSharedVariableError2() {
+        assertScript '''
+            class AntPathMatcher {
+                boolean match(String x, String y) { true }
+            }
+            private String relativePath() { '' }
+            def foo() {
+                AntPathMatcher pathMatcher = new AntPathMatcher()
+                def relPath = relativePath()
+                def cl = { String it ->
+                    pathMatcher.match(it, relPath)
+                }
+                cl('foo')
+            }
 
+            foo()
+        '''
+    }
+
+    // GROOVY-5693
+    void testClosureArgumentCheckWithFlowTyping() {
+        assertScript '''
+            Closure a = {
+                int i ->
+                println "First closure "+ i
+            }
+            Closure b = {
+                String s ->
+                println "Second closure "+ s
+            }
+            a(5)
+            Closure c = a
+            a=b
+            a("Testing!")
+            a = c
+            a(5)
+            a=a
+            a(5)
+            a = b
+            a('Testing!')
+        '''
+    }
+
+    // GROOVY-5705
+    void testNPEWhenCallingClosureFromAField() {
+        assertScript '''
+            import groovy.transform.*
+
+            class Test {
+                Closure c = { it }
+
+                @TypeChecked
+                void test() {
+                    c("123")
+                }
+            }
+
+            new Test().test()
+        '''
+    }
 }
 

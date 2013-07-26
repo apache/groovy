@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import groovy.lang.GroovyClassLoader;
 
 import java.security.CodeSource;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -33,12 +34,11 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * Represents the entire contents of a compilation step which consists of one or more
  * {@link ModuleNode} instances. There's one instance of this that's shared by all modules and
  * classes compiled during a single invocation of the compiler.
- * <p/>
+ * <p>
  * It's attached to MethodNodes and ClassNodes and is used to find fully qualified names of classes,
  * resolve imports, and that sort of thing.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan </a>
- * @version $Revision$
  */
 public class CompileUnit {
 
@@ -143,7 +143,7 @@ public class CompileUnit {
                 txt += "The sources " + nodeSource.getName() + " and " + storedSource.getName() + " are containing both a class of the name " + node.getName() + ".\n";
             }
             nodeSource.getErrorCollector().addErrorAndContinue(
-                    new SyntaxErrorMessage(new SyntaxException(txt, node.getLineNumber(), node.getColumnNumber()), nodeSource)
+                    new SyntaxErrorMessage(new SyntaxException(txt, node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()), nodeSource)
             );
         }
         classes.put(name, node);
@@ -183,5 +183,9 @@ public class CompileUnit {
     
     public void addGeneratedInnerClass(InnerClassNode icn) {
         generatedInnerClasses.put(icn.getName(), icn);
+    }
+
+    public Map<String, InnerClassNode> getGeneratedInnerClasses() {
+        return Collections.unmodifiableMap(generatedInnerClasses);
     }
 }

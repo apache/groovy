@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.transform
 
+import java.lang.reflect.Modifier
+
 /**
  * @author Alex Tkachman
  */
@@ -32,7 +34,7 @@ class SingletonTransformTest extends GroovyShellTestCase {
               X.instance.hello
         """)
 
-        assertEquals("Hello, World!", res)
+        assert "Hello, World!" == res
     }
 
     void testLazySingleton() {
@@ -49,7 +51,7 @@ class SingletonTransformTest extends GroovyShellTestCase {
               X.instance.hello
         """)
 
-        assertEquals("Hello, World!", res)
+        assert "Hello, World!" == res
     }
 
     void testSingletonInstantiationFails() {
@@ -67,7 +69,7 @@ class SingletonTransformTest extends GroovyShellTestCase {
         }
     }
 
-    void testSingletonOverideConstructorFails() {
+    void testSingletonOverrideConstructorFails() {
             def res = evaluate("""
                   @Singleton
                   class X {
@@ -81,6 +83,39 @@ class SingletonTransformTest extends GroovyShellTestCase {
                   X.instance.hello
             """)
 
-            assertEquals("Hello, World!", res)
+            assert "Hello, World!" == res
+    }
+    
+    void testSingletonCustomPropertyName() {
+        def propertyName = 'myProp'
+        def getterName = 'getMyProp'
+        def className = 'X'
+        def defaultPropertyName = 'instance'
+
+        def invoker = new GroovyClassLoader()
+        def clazz = invoker.parseClass("""
+            @Singleton(property ='$propertyName')
+            class $className { }
+        """)
+
+        int modifiers = clazz.getDeclaredField(propertyName).modifiers //should be public final static for non-lazy singleton
+        int flags = Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL
+        assert (modifiers & flags) == flags
+
+        def object = clazz.getMethod(getterName).invoke(null)
+        assert className == object.class.name
+
+        try {
+            clazz.newInstance() //should throw exception here
+            fail() //shouldn't get here
+        } catch (RuntimeException e) {//for tests run in Groovy (which can access privates)
+            assert e.message.contains(propertyName)
+        }
+        try {
+            clazz.getField(defaultPropertyName) //should throw exception here
+            fail() //shouldn't get here
+        } catch (NoSuchFieldException e) {
+            assert e.message.contains(defaultPropertyName)
+        }
     }
 }

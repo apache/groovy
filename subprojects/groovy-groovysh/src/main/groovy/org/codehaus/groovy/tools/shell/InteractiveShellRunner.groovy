@@ -16,13 +16,14 @@
 
 package org.codehaus.groovy.tools.shell
 
-import jline.ConsoleReader
+import jline.console.ConsoleReader
+import jline.console.completer.AggregateCompleter
 
-import jline.History
-import jline.Completor
-import jline.MultiCompletor
-
+import jline.console.history.FileHistory
+import org.codehaus.groovy.tools.shell.completion.*
 import org.codehaus.groovy.tools.shell.util.Logger
+import org.codehaus.groovy.tools.shell.util.Preferences
+import org.codehaus.groovy.tools.shell.util.WrappedInputStream
 
 /**
  * Support for running a {@link Shell} interactively using the JLine library.
@@ -34,44 +35,52 @@ class InteractiveShellRunner
     extends ShellRunner
     implements Runnable
 {
-    final ConsoleReader reader
+    ConsoleReader reader
     
     final Closure prompt
     
-    final CommandsMultiCompletor completor
-    
-    InteractiveShellRunner(final Shell shell, final Closure prompt) {
+    final CommandsMultiCompleter completer
+    WrappedInputStream wrappedInputStream
+
+    InteractiveShellRunner(final Groovysh shell, final Closure prompt) {
         super(shell)
         
         this.prompt = prompt
-        
-        this.reader = new ConsoleReader(shell.io.inputStream, new PrintWriter(shell.io.outputStream, true))
+        this.wrappedInputStream = new WrappedInputStream(shell.io.inputStream)
+        this.reader = new ConsoleReader(wrappedInputStream, shell.io.outputStream)
+        // expand events ia an advanced feature of JLine that clashes with Groovy syntax (e.g. invoke "2!=3")
+        this.reader.expandEvents = false
 
-        reader.addCompletor(new ReflectionCompletor(shell))
-        this.completor = new CommandsMultiCompletor()
-        
-        reader.addCompletor(completor)
+
+        // complete groovysh commands, display, import, ... as first word in line
+        this.completer = new CommandsMultiCompleter()
+        reader.addCompleter(this.completer)
+
+        reader.addCompleter(new GroovySyntaxCompletor(shell,
+                new ReflectionCompletor(shell),
+                [new KeywordSyntaxCompletor(),
+                        new VariableSyntaxCompletor(shell),
+                        new CustomClassSyntaxCompletor(shell),
+                        new ImportsSyntaxCompletor(shell)],
+                new FileNameCompleter(false)))
     }
     
     void run() {
         for (command in shell.registry) {
-            completor << command
+            completer << command
         }
 
         // Force things to become clean
-        completor.refresh()
+        completer.refresh()
 
         // And then actually run
         adjustHistory()
         super.run()
     }
     
-    void setHistory(final History history) {
+    void setHistory(final FileHistory history) {
         reader.history = history
-    }
-    
-    void setHistoryFile(final File file) {
-        def dir = file.parentFile
+        def dir = history.file.parentFile
         
         if (!dir.exists()) {
             dir.mkdirs()
@@ -79,19 +88,28 @@ class InteractiveShellRunner
             log.debug("Created base directory for history file: $dir")
         }
         
-        log.debug("Using history file: $file")
-        
-        reader.history.historyFile = file
+        log.debug("Using history file: $history.file")
     }
     
     protected String readLine() {
         try {
-            return reader.readLine(prompt.call())
-        }
-        catch (StringIndexOutOfBoundsException e) {
+            if (Boolean.valueOf(Preferences.get(Groovysh.AUTOINDENT_PREFERENCE_KEY))) {
+                // prevent auto-indent when pasting code blocks
+                if (shell.io.inputStream.available() == 0) {
+                    wrappedInputStream.insert(((Groovysh) shell).getIndentPrefix())
+                }
+            }
+            return reader.readLine(prompt.call() as String)
+        } catch (StringIndexOutOfBoundsException e) {
             log.debug("HACK: Try and work around GROOVY-2152 for now", e)
-
+            reader.println()
             return "";
+        } catch (Throwable t) {
+            if (shell.io.verbosity == IO.Verbosity.DEBUG) {
+                throw t
+            }
+            reader.println()
+            return ""
         }
     }
 
@@ -104,26 +122,33 @@ class InteractiveShellRunner
     }
 
     private void adjustHistory() {
+        // we save the evicted line in casesomeone wants to use it with history recall
         if (shell instanceof Groovysh) {
-            shell.historyFull = shell.history.size() >= shell.history.maxSize
-            if (shell.historyFull) shell.evictedLine = shell.history.historyList[0]
+            def history = shell.history
+            shell.historyFull = (history != null) && (history.size() >= history.getMaxSize())
+            if (shell.historyFull) {
+                def first = history.first()
+                if (first) {
+                    shell.evictedLine = first.value()
+                }
+            }
         }
     }
 
 }
 
 /**
- * Completor for interactive shells.
+ * Completer for interactive shells.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class CommandsMultiCompletor
-    extends MultiCompletor
+class CommandsMultiCompleter
+    extends AggregateCompleter
 {
     protected final Logger log = Logger.create(this.class)
     
-    List/*<Completor>*/ list = []
+    List/*<Completer>*/ list = []
     
     private boolean dirty = false
     
@@ -131,24 +156,25 @@ class CommandsMultiCompletor
         assert command
         
         //
-        // FIXME: Need to handle completor removal when things like aliases are rebound
+        // FIXME: Need to handle completer removal when things like aliases are rebound
         //
         
-        def c = command.completor
+        def c = command.completer
         
         if (c) {
             list << c
             
-            log.debug("Added completor[${list.size()}] for command: $command.name")
+            log.debug("Added completer[${list.size()}] for command: $command.name")
             
             dirty = true
         }
     }
 
     void refresh() {
-        log.debug("Refreshing the completor list")
+        log.debug("Refreshing the completer list")
 
-        completors = list as Completor[]
+        getCompleters().clear()
+        getCompleters().addAll(list)
         dirty = false
     }
 
@@ -157,7 +183,7 @@ class CommandsMultiCompletor
         
         //
         // FIXME: This is a bit of a hack, I'm too lazy to rewrite a more efficient
-        //        completor impl that is more dynamic than the jline.MultiCompletor version
+        //        completer impl that is more dynamic than the jline.MultiCompleter version
         //        so just re-use it and reset the list as needed
         //
 

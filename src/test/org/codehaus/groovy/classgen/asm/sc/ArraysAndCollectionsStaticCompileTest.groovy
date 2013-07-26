@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.CompileStatic
-import groovy.transform.stc.MiscSTCTest
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.transform.stc.ArraysAndCollectionsSTCTest
 
 /**
@@ -57,6 +53,34 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
             def al = new ArrayList<Double>()
             al.add(2.0d)
             assert al.get(0) + 1 == 3.0d
+        '''
+    }
+
+    // GROOVY-5654
+    void testShouldNotThrowForbiddenAccessWithMapProperty() {
+        assertScript '''
+            Map<String, Integer> m = ['abcd': 1234]
+            assert m['abcd'] == 1234
+            assert m.abcd == 1234
+        '''
+    }
+
+    // GROOVY-5988
+    void testMapArraySetPropertyAssignment() {
+        assertScript '''
+            Map<String, String> props(Object p) {
+                Map<String, Object> props = [:]
+
+                for(String property in p.properties.keySet()){
+                    props[property] = 'TEST'
+                    // I need to use calling put directy to make it work
+                    // props.put property, 'TEST'
+                }
+                props
+            }
+            def map = props('SOME RANDOM STRING')
+            assert map['class'] == 'TEST'
+            assert map['bytes'] == 'TEST'
         '''
     }
 }

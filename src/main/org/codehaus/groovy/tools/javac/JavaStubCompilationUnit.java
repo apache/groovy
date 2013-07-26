@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2007 the original author or authors.
+ * Copyright (C) 2006-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -53,7 +52,7 @@ public class JavaStubCompilationUnit extends CompilationUnit {
         if (destDir == null) {
             destDir = (File) options.get("stubDir");
         }
-        boolean useJava5 = config.getTargetBytecode().equals(CompilerConfiguration.POST_JDK5);
+        boolean useJava5 = CompilerConfiguration.isPostJDK5(configuration.getTargetBytecode());
         stubGenerator = new JavaStubGenerator(destDir, false, useJava5);
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
@@ -61,21 +60,20 @@ public class JavaStubCompilationUnit extends CompilationUnit {
             public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {
                 VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
                 scopeVisitor.visitClass(node);
-                new JavaAwareResolveVisitor(JavaStubCompilationUnit.this).startResolving(node,source);
+                new JavaAwareResolveVisitor(JavaStubCompilationUnit.this).startResolving(node, source);
             }
-        },Phases.CONVERSION);
+        }, Phases.CONVERSION);
         addPhaseOperation(new PrimaryClassNodeOperation() {
             @Override
             public void call(final SourceUnit source, final GeneratorContext context, final ClassNode node) throws CompilationFailedException {
                 try {
                     stubGenerator.generateClass(node);
                     stubCount++;
-                }
-                catch (FileNotFoundException e) {
+                } catch (FileNotFoundException e) {
                     source.addException(e);
                 }
             }
-        },Phases.CONVERSION);
+        }, Phases.CONVERSION);
     }
 
     public JavaStubCompilationUnit(final CompilerConfiguration config, final GroovyClassLoader gcl) {

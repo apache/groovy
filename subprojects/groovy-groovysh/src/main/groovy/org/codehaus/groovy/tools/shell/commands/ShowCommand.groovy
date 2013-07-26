@@ -19,6 +19,7 @@ package org.codehaus.groovy.tools.shell.commands
 import org.codehaus.groovy.runtime.MethodClosure
 
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.util.Preferences
 
@@ -31,10 +32,8 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 class ShowCommand
     extends ComplexCommandSupport
 {
-    ShowCommand(final Shell shell) {
-        super(shell, 'show', '\\S')
-        
-        this.functions = [ 'variables', 'classes', 'imports', 'preferences', 'all' ]
+    ShowCommand(final Groovysh shell) {
+        super(shell, 'show', '\\S', [ 'variables', 'classes', 'imports', 'preferences', 'all' ])
     }
     
     def do_variables = {
@@ -60,7 +59,7 @@ class ShowCommand
     }
     
     def do_classes = {
-        def classes = classLoader.loadedClasses
+        Class[] classes = classLoader.loadedClasses
         
         if (classes.size() == 0) {
             io.out.println("No classes have been loaded") // TODO: i18n
@@ -68,8 +67,8 @@ class ShowCommand
         else {
             io.out.println('Classes:') // TODO: i18n
             
-            classes.each {
-                io.out.println("  $it")
+            classes.each { Class classIt ->
+                io.out.println("  $classIt")
             }
         }
     }
@@ -81,14 +80,14 @@ class ShowCommand
         else {
             io.out.println("Custom imports:") // TODO: i18n
             
-            imports.each {
-                io.out.println("  $it")
+            imports.each {String importIt ->
+                io.out.println("  $importIt")
             }
         }
     }
 
     def do_preferences = {
-        def keys = Preferences.keys()
+        String[] keys = Preferences.keys()
 
         if (keys.size() == 0) {
             io.out.println('No preferences are set')
@@ -96,9 +95,10 @@ class ShowCommand
         }
         else {
             io.out.println('Preferences:')
-            keys.each {
-                def value = Preferences.get(it, null)
-                println("    $it=$value")
+
+            keys.each { String key ->
+                def value = Preferences.get(key, null)
+                println("    $key=$value")
             }
         }
         return

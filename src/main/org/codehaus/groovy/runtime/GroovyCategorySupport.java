@@ -23,6 +23,7 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,6 +72,7 @@ public class GroovyCategorySupport {
             atomicCategoryUsageCounter.incrementAndGet();
             categoriesInUse = atomicCategoryUsageCounter.get();
             DefaultMetaClassInfo.setCategoryUsed(true);
+            VMPluginFactory.getPlugin().invalidateCallSites();
             level++;
         }
 
@@ -93,6 +95,7 @@ public class GroovyCategorySupport {
             level--;
             atomicCategoryUsageCounter.getAndDecrement();
             categoriesInUse = atomicCategoryUsageCounter.get();
+            VMPluginFactory.getPlugin().invalidateCallSites();
             if (categoriesInUse==0) DefaultMetaClassInfo.setCategoryUsed(false);
             if (level == 0) {
                 THREAD_INFO.remove();
@@ -194,7 +197,7 @@ public class GroovyCategorySupport {
 
     private static final MyThreadLocal THREAD_INFO = new MyThreadLocal();
 
-    private static class CategoryMethod extends NewInstanceMetaMethod implements Comparable {
+    public static class CategoryMethod extends NewInstanceMetaMethod implements Comparable {
         private final Class metaClass;
 
         public CategoryMethod(CachedMethod metaMethod, Class metaClass) {

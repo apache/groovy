@@ -17,14 +17,13 @@ package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
-import org.codehaus.groovy.classgen.VariableScopeVisitor;
+import org.codehaus.groovy.classgen.*;
+import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.util.List;
@@ -40,7 +39,9 @@ public class ConstructorCallTransformer {
     Expression transformConstructorCall(final ConstructorCallExpression expr) {
         ConstructorNode node = (ConstructorNode) expr.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (node == null) return expr;
-        if (node.getParameters().length == 1 && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node.getParameters()[0].getType(), ClassHelper.MAP_TYPE)) {
+        if (node.getParameters().length == 1
+                && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node.getParameters()[0].getType(), ClassHelper.MAP_TYPE)
+                && node.getCode() == StaticTypeCheckingVisitor.GENERATED_EMPTY_STATEMENT) {
             Expression arguments = expr.getArguments();
             if (arguments instanceof TupleExpression) {
                 TupleExpression tupleExpression = (TupleExpression) arguments;
@@ -59,39 +60,13 @@ public class ConstructorCallTransformer {
                         // replace this call with a call to <init>() + appropriate setters
                         // for example, foo(x:1, y:2) is replaced with:
                         // { def tmp = new Foo(); tmp.x = 1; tmp.y = 2; return tmp }()
-
-                        VariableExpression vexp = new VariableExpression("obj" + System.currentTimeMillis(), declaringClass);
-                        ConstructorNode cn = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
-                        cn.setDeclaringClass(declaringClass);
-                        ConstructorCallExpression call = new ConstructorCallExpression(declaringClass, new ArgumentListExpression());
-                        call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, cn);
-                        DeclarationExpression declaration = new DeclarationExpression(
-                                vexp, Token.newSymbol("=", expr.getLineNumber(), expr.getColumnNumber()),
-                                call
+                        MapStyleConstructorCall result = new MapStyleConstructorCall(
+                                staticCompilationTransformer,
+                                declaringClass,
+                                map,
+                                expr
                         );
-                        BlockStatement stmt = new BlockStatement();
-                        stmt.addStatement(new ExpressionStatement(declaration));
-                        for (MapEntryExpression entryExpression : map.getMapEntryExpressions()) {
-                            int line = entryExpression.getLineNumber();
-                            int col = entryExpression.getColumnNumber();
-                            Expression keyExpression = staticCompilationTransformer.transform(entryExpression.getKeyExpression());
-                            Expression valueExpression = staticCompilationTransformer.transform(entryExpression.getValueExpression());
-                            BinaryExpression bexp = new BinaryExpression(
-                                    new PropertyExpression(vexp, keyExpression),
-                                    Token.newSymbol("=", line, col),
-                                    valueExpression
-                            );
-                            bexp.setSourcePosition(entryExpression);
-                            stmt.addStatement(new ExpressionStatement(bexp));
-                        }
-                        stmt.addStatement(new ReturnStatement(vexp));
-                        ClosureExpression cl = new ClosureExpression(Parameter.EMPTY_ARRAY, stmt);
-                        cl.setSourcePosition(call);
-                        MethodCallExpression result = new MethodCallExpression(cl, "call", ArgumentListExpression.EMPTY_ARGUMENTS);
-                        result.setMethodTarget(StaticTypeCheckingVisitor.CLOSURE_CALL_NO_ARG);
-                        VariableScopeVisitor visitor = new VariableScopeVisitor(staticCompilationTransformer.getSourceUnit());
-                        visitor.prepareVisit(staticCompilationTransformer.getClassNode());
-                        visitor.visitClosureExpression(cl);
+
                         return result;
                     }
                 }
@@ -100,4 +75,87 @@ public class ConstructorCallTransformer {
         }
         return staticCompilationTransformer.superTransform(expr);
     }
+
+    private static class MapStyleConstructorCall extends BytecodeExpression implements Opcodes {
+        private StaticCompilationTransformer staticCompilationTransformer;
+        private AsmClassGenerator acg;
+        private ClassNode declaringClass;
+        private MapExpression map;
+        private ConstructorCallExpression orginalCall;
+
+        public MapStyleConstructorCall(
+                final StaticCompilationTransformer transformer,
+                final ClassNode declaringClass,
+                final MapExpression map,
+                ConstructorCallExpression orginalCall) {
+            this.staticCompilationTransformer = transformer;
+            this.declaringClass = declaringClass;
+            this.map = map;
+            this.orginalCall = orginalCall;
+            this.setSourcePosition(orginalCall);
+            this.copyNodeMetaData(orginalCall);
+        }
+
+        @Override
+        public void visit(final GroovyCodeVisitor visitor) {
+            if (visitor instanceof AsmClassGenerator) {
+                acg = (AsmClassGenerator) visitor;
+            } else {
+                orginalCall.visit(visitor);
+            } 
+            super.visit(visitor);
+        }
+        @Override
+        public ClassNode getType() {
+            return declaringClass;
+        }
+
+        @Override
+        public void visit(final MethodVisitor mv) {
+            final WriterController controller = acg.getController();
+            final OperandStack operandStack = controller.getOperandStack();
+            final CompileStack compileStack = controller.getCompileStack();
+
+            // create a temporary variable to store the constructed object
+            final int tmpObj = compileStack.defineTemporaryVariable("tmpObj", declaringClass, false);
+            String classInternalName = BytecodeHelper.getClassInternalName(declaringClass);
+            mv.visitTypeInsn(NEW, classInternalName);
+            mv.visitInsn(DUP);
+            mv.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", "()V");
+            mv.visitVarInsn(ASTORE, tmpObj); // store it into tmp variable
+
+            // load every field
+            for (MapEntryExpression entryExpression : map.getMapEntryExpressions()) {
+                int line = entryExpression.getLineNumber();
+                int col = entryExpression.getColumnNumber();
+                Expression keyExpression = staticCompilationTransformer.transform(entryExpression.getKeyExpression());
+                Expression valueExpression = staticCompilationTransformer.transform(entryExpression.getValueExpression());
+                BinaryExpression bexp = new BinaryExpression(new PropertyExpression(new BytecodeExpression() {
+                            @Override
+                            public void visit(final MethodVisitor mv) {
+                                mv.visitVarInsn(ALOAD, tmpObj);
+                            }
+
+                            @Override
+                            public ClassNode getType() {
+                                return declaringClass;
+                            }
+                        }, keyExpression),
+                        Token.newSymbol("=", line, col),
+                        valueExpression
+                );
+                bexp.setSourcePosition(entryExpression);
+                bexp.visit(acg);
+                operandStack.pop(); // consume argument
+            }
+
+            // load object
+            mv.visitVarInsn(ALOAD, tmpObj);
+
+            // cleanup stack
+            compileStack.removeVar(tmpObj);
+
+        }
+    }
+
 }

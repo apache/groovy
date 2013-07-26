@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.ClassNodeSkip;
 import org.codehaus.groovy.classgen.asm.WriterController;
-import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
@@ -34,7 +33,6 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -51,6 +49,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     public static final String STATIC_METACLASS_BOOL = "__$stMC";
     public static final String SWAP_INIT = "__$swapInit";
+    public static final String INITIAL_EXPRESSION = "INITIAL_EXPRESSION";
 
     public static final String __TIMESTAMP = "__timeStamp";
     public static final String __TIMESTAMP__ = "__timeStamp__239_neverHappen";
@@ -169,8 +168,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addInitialization(node);
         checkReturnInObjectInitializer(node.getObjectInitializerStatements());
         node.getObjectInitializerStatements().clear();
-        addCovariantMethods(node);
         node.visitContents(this);
+        addCovariantMethods(node);
     }
 
     private FieldNode checkFieldDoesNotExist(ClassNode node, String fieldName) {
@@ -640,6 +639,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Parameter[] parameters = method.getParameters();
         ClassNode methodReturnType = method.getReturnType();
         for (MethodNode node : abstractMethods) {
+            if (!node.getDeclaringClass().equals(classNode)) continue;
             if (node.getName().equals(methodName)
                     && node.getParameters().length==parameters.length) {
                 if (parameters.length==1) {
@@ -675,17 +675,58 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         List methods = new ArrayList(node.getMethods());
         addDefaultParameters(methods, new DefaultArgsAction() {
             public void call(ArgumentListExpression arguments, Parameter[] newParams, MethodNode method) {
+                final BlockStatement code = new BlockStatement();
+
+                MethodNode newMethod = new MethodNode(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
+
+                // GROOVY-5681 and GROOVY-5632
+                for (Expression argument : arguments.getExpressions()) {
+                    if (argument instanceof CastExpression) {
+                        argument = ((CastExpression) argument).getExpression();
+                    }
+                    if (argument instanceof ConstructorCallExpression) {
+                        ClassNode type = argument.getType();
+                        if (type instanceof InnerClassNode && ((InnerClassNode) type).isAnonymous()) {
+                            type.setEnclosingMethod(newMethod);
+                        }
+                    }
+
+                    // check whether closure shared variables refer to params with default values (GROOVY-5632)
+                    if (argument instanceof ClosureExpression)  {
+                        final List<Parameter> newMethodNodeParameters = Arrays.asList(newParams);
+
+                        CodeVisitorSupport visitor = new CodeVisitorSupport() {
+                            @Override
+                            public void visitVariableExpression(VariableExpression expression) {
+                                Variable v = expression.getAccessedVariable();
+                                if (!(v instanceof Parameter)) return;
+
+                                Parameter param = (Parameter) v;
+                                if (param.hasInitialExpression() && code.getVariableScope().getDeclaredVariable(param.getName()) == null && !newMethodNodeParameters.contains(param))  {
+
+                                    VariableExpression localVariable = new VariableExpression(param.getName(), ClassHelper.makeReference());
+                                    DeclarationExpression declarationExpression = new DeclarationExpression(localVariable, Token.newSymbol(Types.EQUAL, -1, -1), new ConstructorCallExpression(ClassHelper.makeReference(), param.getInitialExpression()));
+
+                                    code.addStatement(new ExpressionStatement(declarationExpression));
+                                    code.getVariableScope().putDeclaredVariable(localVariable);
+                                }
+                            }
+                        };
+
+                        visitor.visitClosureExpression((ClosureExpression) argument);
+                    }
+                }
+
                 MethodCallExpression expression = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
                 expression.setMethodTarget(method);
                 expression.setImplicitThis(true);
-                Statement code = null;
+
                 if (method.isVoidMethod()) {
-                    code = new ExpressionStatement(expression);
+                    code.addStatement(new ExpressionStatement(expression));
                 } else {
-                    code = new ReturnStatement(expression);
+                    code.addStatement(new ReturnStatement(expression));
                 }
 
-                MethodNode newMethod = new MethodNode(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
                 List<AnnotationNode> annotations = method.getAnnotations();
                 if(annotations != null) {
                     newMethod.addAnnotations(annotations);
@@ -788,7 +829,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         for (Parameter parameter : parameters) {
-            // remove default expression
+            // remove default expression and store it as node metadata
+            parameter.putNodeMetaData(Verifier.INITIAL_EXPRESSION, parameter.getInitialExpression());
             parameter.setInitialExpression(null);
         }
     }
@@ -1268,11 +1310,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private boolean isAssignable(ClassNode node, ClassNode testNode) {
         if (testNode.isInterface()) {
-            if (node.isInterface()) {
-                if (node.isDerivedFrom(testNode)) return true;
-            } else {
-                if (node.implementsInterface(testNode)) return true;
-            }
+            if (node.equals(testNode) || node.implementsInterface(testNode)) return true;
         } else {
             if (node.isDerivedFrom(testNode)) return true;
         }

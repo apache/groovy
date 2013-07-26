@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,4 +25,7 @@ public class ParserException extends TokenException {
         super(message, cause, lineNumber, columnNumber);
     }
 
+    public ParserException(String message, Throwable cause, int lineNumber, int columnNumber, int endLineNumber, int endColumnNumber) {
+        super(message, cause, lineNumber, columnNumber, endLineNumber, endColumnNumber);
+    }
 }

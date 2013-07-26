@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,14 +40,14 @@ import java.beans.VetoableChangeSupport;
 /**
  * Handles generation of code for the {@code @Vetoable} annotation, and {@code @Bindable}
  * if also present.
- * <p/>
+ * <p>
  * Generally, it adds (if needed) a VetoableChangeSupport field and
  * the needed add/removeVetoableChangeListener methods to support the
  * listeners.
- * <p/>
+ * <p>
  * It also generates the setter and wires the setter through the
  * VetoableChangeSupport.
- * <p/>
+ * <p>
  * If a {@link Bindable} annotation is detected it also adds support similar
  * to what {@link BindableASTTransformation} would do.
  *
@@ -91,12 +91,10 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             addListenerToClass(source, node, (ClassNode) nodes[1]);
         } else {
             if ((((FieldNode)nodes[1]).getModifiers() & Opcodes.ACC_FINAL) != 0) {
-                source.getErrorCollector().addErrorAndContinue(
-                            new SyntaxErrorMessage(new SyntaxException(
-                                "@groovy.beans.Vetoable cannot annotate a final property.",
-                                node.getLineNumber(),
-                                node.getColumnNumber()),
-                                source));
+                source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
+                        new SyntaxException("@groovy.beans.Vetoable cannot annotate a final property.",
+                                node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
+                        source));
             }
 
             addListenerToProperty(source, node, (AnnotatedNode) nodes[1]);
@@ -109,30 +107,26 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         String fieldName = field.getName();
         for (PropertyNode propertyNode : declaringClass.getProperties()) {
             boolean bindable = BindableASTTransformation.hasBindableAnnotation(parent)
-                || BindableASTTransformation.hasBindableAnnotation(parent.getDeclaringClass());
+                    || BindableASTTransformation.hasBindableAnnotation(parent.getDeclaringClass());
 
             if (propertyNode.getName().equals(fieldName)) {
                 if (field.isStatic()) {
                     //noinspection ThrowableInstanceNeverThrown
-                    source.getErrorCollector().addErrorAndContinue(
-                                new SyntaxErrorMessage(new SyntaxException(
-                                    "@groovy.beans.Vetoable cannot annotate a static property.",
-                                    node.getLineNumber(),
-                                    node.getColumnNumber()),
-                                    source));
+                    source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
+                            new SyntaxException("@groovy.beans.Vetoable cannot annotate a static property.",
+                                    node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
+                            source));
                 } else {
-                    createListenerSetter(source, node, bindable, declaringClass,  propertyNode);
+                    createListenerSetter(source, node, bindable, declaringClass, propertyNode);
                 }
                 return;
             }
         }
         //noinspection ThrowableInstanceNeverThrown
-        source.getErrorCollector().addErrorAndContinue(
-                    new SyntaxErrorMessage(new SyntaxException(
-                        "@groovy.beans.Vetoable must be on a property, not a field.  Try removing the private, protected, or public modifier.",
-                        node.getLineNumber(),
-                        node.getColumnNumber()),
-                        source));
+        source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
+                new SyntaxException("@groovy.beans.Vetoable must be on a property, not a field.  Try removing the private, protected, or public modifier.",
+                        node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
+                source));
     }
 
 
@@ -256,8 +250,8 @@ public class VetoableASTTransformation extends BindableASTTransformation {
     /**
      * Creates a statement body similar to:
      * <code>field = value</code>.
-     * <p/>
-     * Used when the field is not also @Bindable
+     * <p>
+     * Used when the field is not also {@code @Bindable}.
      *
      * @param fieldExpression a field expression for setting the property value
      * @return the created statement
@@ -317,7 +311,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
 
     /**
      * Creates a setter method with the given body.
-     * <p/>
+     * <p>
      * This differs from normal setters in that we need to add a declared
      * exception java.beans.PropertyVetoException
      *
@@ -338,10 +332,10 @@ public class VetoableASTTransformation extends BindableASTTransformation {
 
     /**
      * Adds the necessary field and methods to support vetoable change support.
-     * <p/>
+     * <p>
      * Adds a new field:
      * <code>"protected final java.beans.VetoableChangeSupport this$vetoableChangeSupport = new java.beans.VetoableChangeSupport(this)"</code>
-     * <p/>
+     * <p>
      * Also adds support methods:
      * <code>public void addVetoableChangeListener(java.beans.VetoableChangeListener)</code>
      * <code>public void addVetoableChangeListener(String, java.beans.VetoableChangeListener)</code>

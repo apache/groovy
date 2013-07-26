@@ -24,8 +24,6 @@ import org.codehaus.groovy.runtime.MethodClosure
 
 import java.awt.*
 import javax.swing.*
-import java.util.concurrent.Executors
-import java.util.concurrent.ExecutorService
 import groovy.swing.factory.ActionFactory
 import groovy.swing.factory.MapFactory
 import groovy.swing.factory.BindFactory
@@ -91,8 +89,6 @@ import groovy.swing.factory.CollectionFactory
  * @version $Revision$
  */
 public class SwingBuilder extends FactoryBuilderSupport {
-    private static final ExecutorService DEFAULT_EXECUTOR_SERVICE = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
-
     // local fields
     private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
     private static boolean headless = false
@@ -384,7 +380,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
             c = c.curry([this])
         }
         if( SwingUtilities.isEventDispatchThread() )
-            DEFAULT_EXECUTOR_SERVICE.submit(c)
+            new Thread(c).start()
         else
             c.call()
         return this

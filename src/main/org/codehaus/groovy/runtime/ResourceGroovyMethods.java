@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import groovy.lang.Closure;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;
 import groovy.util.CharsetToolkit;
+
+import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.*;
@@ -45,7 +47,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.get;
  * Static methods are used with the first parameter being the destination class,
  * i.e. <code>public static T eachLine(InputStream self, Closure c)</code>
  * provides a <code>eachLine(Closure c)</code> method for <code>InputStream</code>.
- * <p/>
+ * <p>
  * NOTE: While this class contains many 'public' static methods, it is
  * primarily regarded as an internal class (its internal package name
  * suggests this also). We value backwards compatibility of these
@@ -94,6 +96,29 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static long size(File self) {
         return self.length();
+    }
+
+    /**
+     * Calculates directory size as total size of all its files, recursively.
+     *
+     * @param self a file object
+     * @return directory size (length)
+     * @since 2.1
+     *
+     * @throws IOException if File object specified does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
+     */
+    public static long directorySize(File self) throws IOException, IllegalArgumentException
+    {
+        final long[] size = {0L};
+
+        eachFileRecurse(self, FileType.FILES, new Closure<Void>(null) {
+            public void doCall(Object[] args) {
+                size[0] += ((File) args[0]).length();
+            }
+        });
+
+        return size[0];
     }
 
     /**
@@ -1260,11 +1285,12 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         final File[] files = self.listFiles();
         // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
         if (files == null) return;
-        final MetaClass metaClass = InvokerHelper.getMetaClass(nameFilter);
+        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
         for (final File currentFile : files) {
             if ((fileType != FileType.FILES && currentFile.isDirectory()) ||
-                    (fileType != FileType.DIRECTORIES && currentFile.isFile())) {
-                if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(nameFilter, "isCase", currentFile.getName())))
+                (fileType != FileType.DIRECTORIES && currentFile.isFile())) 
+            {
+                if (bmi.invoke(nameFilter, currentFile.getName()))
                     closure.call(currentFile);
             }
         }
@@ -1316,7 +1342,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * <li>false, when it is called for a file which isn't a directory</li>
      * <li>false, when directory couldn't be deleted</li>
      * </ul>
-     * </p>
+     *
      *
      * @param self a File
      * @return true if the file doesn't exist or deletion was successful

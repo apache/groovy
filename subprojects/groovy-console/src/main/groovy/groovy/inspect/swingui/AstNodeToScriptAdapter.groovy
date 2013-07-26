@@ -369,7 +369,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
             print ") {"
             printLineBreak()
         } else if (node.name == '<clinit>') {
-            print 'static { '
+            print '{ ' // will already have 'static' from modifiers
             printLineBreak()
         } else {
             visitType node.returnType
@@ -870,7 +870,11 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     @Override
     public void visitMapExpression(MapExpression expression) {
         print '['
-        visitExpressionsAndCommaSeparate(expression?.mapEntryExpressions)
+        if (expression?.mapEntryExpressions?.size() == 0) {
+            print ':'
+        } else {
+            visitExpressionsAndCommaSeparate(expression?.mapEntryExpressions)
+        }
         print ']'
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,15 @@ import groovy.io.GroovyPrintWriter;
 import groovy.lang.Closure;
 import groovy.lang.StringWriterIOException;
 import groovy.lang.Writable;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
+import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Formatter;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -36,7 +39,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.callClosureForLin
  * Static methods are used with the first parameter being the destination class,
  * i.e. <code>public static long size(File self)</code>
  * provides a <code>size()</code> method for <code>File</code>.
- * <p/>
+ * <p>
  * NOTE: While this class contains many 'public' static methods, it is
  * primarily regarded as an internal class (its internal package name
  * suggests this also). We value backwards compatibility of these
@@ -77,11 +80,11 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     private static final Logger LOG = Logger.getLogger(IOGroovyMethods.class.getName());
 
     /**
-     * Overloads the left shift operator to provide a mechanism to append
-     * values to a writer.
+     * Overloads the leftShift operator for Writer to allow an object to be written
+     * using Groovy's default representation for the object.
      *
      * @param self  a Writer
-     * @param value a value to append
+     * @param value an Object whose default representation will be written to the Writer
      * @return the writer on which this operation was invoked
      * @throws IOException if an I/O error occurs.
      * @since 1.0
@@ -89,6 +92,65 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Writer leftShift(Writer self, Object value) throws IOException {
         InvokerHelper.write(self, value);
         return self;
+    }
+
+    /**
+     * Overloads the leftShift operator for Appendable to allow an object to be appended
+     * using Groovy's default representation for the object.
+     *
+     * @param self  an Appendable
+     * @param value an Object whose default representation will be appended to the Appendable
+     * @return the Appendable on which this operation was invoked
+     * @throws IOException if an I/O error occurs.
+     * @since 2.1.0
+     */
+    public static Appendable leftShift(Appendable self, Object value) throws IOException {
+        InvokerHelper.append(self, value);
+        return self;
+    }
+
+    /**
+     * Invokes a Closure that uses a Formatter taking care of resource handling.
+     * A Formatter is created and passed to the Closure as its argument.
+     * After the Closure executes, the Formatter is flushed and closed releasing any
+     * associated resources.
+     *
+     * @param self    an Appendable
+     * @param closure a 1-arg Closure which will be called with a Formatter as its argument
+     * @return the Appendable on which this operation was invoked
+     * @since 2.1.0
+     */
+    public static Appendable withFormatter(Appendable self, Closure closure) {
+        Formatter formatter = new Formatter(self);
+        callWithFormatter(closure, formatter);
+        return self;
+    }
+
+    /**
+     * Invokes a Closure that uses a Formatter taking care of resource handling.
+     * A Formatter is created using the given Locale and passed to the Closure as its argument.
+     * After the Closure executes, the Formatter is flushed and closed releasing any
+     * associated resources.
+     *
+     * @param self    an Appendable
+     * @param locale  a Locale used when creating the Formatter
+     * @param closure a 1-arg Closure which will be called with a Formatter as its argument
+     * @return the Appendable on which this operation was invoked
+     * @since 2.1.0
+     */
+    public static Appendable withFormatter(Appendable self, Locale locale, Closure closure) {
+        Formatter formatter = new Formatter(self, locale);
+        callWithFormatter(closure, formatter);
+        return self;
+    }
+
+    private static void callWithFormatter(Closure closure, Formatter formatter) {
+        try {
+            closure.call(formatter);
+        } finally {
+            formatter.flush();
+            formatter.close();
+        }
     }
 
     /**
@@ -417,7 +479,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * the given regex separator. For each line, the given closure is called with
      * a single parameter being the list of strings computed by splitting the line
      * around matches of the given regular expression.  The Reader is closed afterwards.
-     * <p/>
+     * <p>
      * Here is an example:
      * <pre>
      * def s = 'The 3 quick\nbrown 4 fox'
@@ -447,7 +509,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * the given regex separator Pattern. For each line, the given closure is called with
      * a single parameter being the list of strings computed by splitting the line
      * around matches of the given regular expression.  The Reader is closed afterwards.
-     * <p/>
+     * <p>
      * Here is an example:
      * <pre>
      * def s = 'The 3 quick\nbrown 4 fox'
@@ -612,13 +674,13 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         // could be changed into do..while, but then
-        // we might create an additional StringBuffer
+        // we might create an additional StringBuilder
         // instance at the end of the stream
         int count = input.read(cbuf);
         if (count == EOF) // we are at the end of the input data
             return null;
 
-        StringBuffer line = new StringBuffer(expectedLineLength);
+        StringBuilder line = new StringBuilder(expectedLineLength);
         // now work on the buffer(s)
         int ls = lineSeparatorIndex(cbuf, count);
         while (ls == -1) {
@@ -663,7 +725,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
         int c = input.read();
         if (c == -1)
             return null;
-        StringBuffer line = new StringBuffer(expectedLineLength);
+        StringBuilder line = new StringBuilder(expectedLineLength);
 
         while (c != EOF && c != '\n' && c != '\r') {
             char ch = (char) c;
@@ -730,7 +792,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static List<String> readLines(Reader reader) throws IOException {
-        IteratorClosureAdapter closure = new IteratorClosureAdapter(reader);
+        IteratorClosureAdapter<String> closure = new IteratorClosureAdapter<String>(reader);
         eachLine(reader, closure);
         return closure.asList();
     }
@@ -1236,10 +1298,10 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void eachByte(InputStream is, int bufferLen, Closure closure) throws IOException {
         byte[] buffer = new byte[bufferLen];
-        int bytesRead = 0;
+        int bytesRead;
         try {
             while ((bytesRead = is.read(buffer, 0, bufferLen)) > 0) {
-                closure.call(new Object[]{buffer, bytesRead});
+                closure.call(buffer, bytesRead);
             }
 
             InputStream temp = is;
@@ -1340,8 +1402,9 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
         BufferedWriter bw = new BufferedWriter(writer);
         String line;
         try {
+            BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
             while ((line = br.readLine()) != null) {
-                if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
+                if (bcw.call(line)) {
                     bw.write(line);
                     bw.newLine();
                 }
@@ -1380,8 +1443,9 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
             public Writer writeTo(Writer out) throws IOException {
                 BufferedWriter bw = new BufferedWriter(out);
                 String line;
+                BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
                 while ((line = br.readLine()) != null) {
-                    if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
+                    if (bcw.call(line)) {
                         bw.write(line);
                         bw.newLine();
                     }

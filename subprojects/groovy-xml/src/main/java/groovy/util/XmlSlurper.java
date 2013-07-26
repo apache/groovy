@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import groovy.xml.QName;
 import org.xml.sax.Attributes;
 import org.xml.sax.DTDHandler;
 import org.xml.sax.EntityResolver;
@@ -49,8 +50,8 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * <p>Parse XML into a document tree that may be traversed similar to XPath
- * expressions.  For example:</p>
+ * Parse XML into a document tree that may be traversed similar to XPath
+ * expressions.  For example:
  * <pre>
  * def rootNode = new XmlSlurper().parseText(
  *    '&lt;root&gt;&lt;one a1="uno!"/&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;' )
@@ -60,9 +61,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * assert rootNode.two.text() == 'Some text!'
  * rootNode.children().each { assert it.name() in ['one','two'] }
  * </pre>
- * <p/>
- * <p>Note that in some cases, a 'selector' expression may not resolve to a
- * single node.  For example: </p>
+ * <p>
+ * Note that in some cases, a 'selector' expression may not resolve to a
+ * single node.  For example:
  * <pre>
  * def rootNode = new XmlSlurper().parseText(
  *    '''&lt;root&gt;
@@ -342,8 +343,9 @@ public class XmlSlurper extends DefaultHandler {
             if (atts.getURI(i).length() == 0) {
                 attributes.put(atts.getQName(i), atts.getValue(i));
             } else {
-                attributes.put(atts.getLocalName(i), atts.getValue(i));
-                attributeNamespaces.put(atts.getLocalName(i), atts.getURI(i));
+                String key = new QName(atts.getURI(i), atts.getLocalName(i)).toString();
+                attributes.put(key, atts.getValue(i));
+                attributeNamespaces.put(key, atts.getURI(i));
             }
         }
 
@@ -387,12 +389,6 @@ public class XmlSlurper extends DefaultHandler {
     public void endDocument() throws SAXException {
     }
 
-    // Implementation methods
-    //-------------------------------------------------------------------------
-
-    /**
-     *
-     */
     private void addCdata() {
         if (charBuffer.length() != 0) {
             //

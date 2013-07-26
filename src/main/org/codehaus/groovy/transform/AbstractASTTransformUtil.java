@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -59,32 +60,32 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
     public static Statement returnFalseIfWrongType(ClassNode cNode, Expression other) {
         return new IfStatement(
                 notEqualClasses(cNode, other),
-                new ReturnStatement(ConstantExpression.FALSE),
-                new EmptyStatement()
+                new ReturnStatement(new ConstantExpression(Boolean.FALSE)),
+                EmptyStatement.INSTANCE
         );
     }
 
     public static Statement returnFalseIfNotInstanceof(ClassNode cNode, Expression other) {
         return new IfStatement(
                 isInstanceof(cNode, other),
-                new EmptyStatement(),
-                new ReturnStatement(ConstantExpression.FALSE)
+                EmptyStatement.INSTANCE,
+                new ReturnStatement(new ConstantExpression(Boolean.FALSE))
         );
     }
 
     public static IfStatement returnFalseIfNull(Expression other) {
         return new IfStatement(
                 equalsNullExpr(other),
-                new ReturnStatement(ConstantExpression.FALSE),
-                new EmptyStatement()
+                new ReturnStatement(new ConstantExpression(Boolean.FALSE)),
+                EmptyStatement.INSTANCE
         );
     }
 
     public static IfStatement returnTrueIfIdentical(Expression self, Expression other) {
         return new IfStatement(
                 identicalExpr(self, other),
-                new ReturnStatement(ConstantExpression.TRUE),
-                new EmptyStatement()
+                new ReturnStatement(new ConstantExpression(Boolean.TRUE)),
+                EmptyStatement.INSTANCE
         );
     }
 
@@ -96,16 +97,16 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
     public static Statement returnFalseIfPropertyNotEqual(PropertyNode pNode, Expression other) {
         return new IfStatement(
                 notEqualsPropertyExpr(pNode, other),
-                new ReturnStatement(ConstantExpression.FALSE),
-                new EmptyStatement()
+                new ReturnStatement(new ConstantExpression(Boolean.FALSE)),
+                EmptyStatement.INSTANCE
         );
     }
 
     public static Statement returnFalseIfFieldNotEqual(FieldNode fNode, Expression other) {
         return new IfStatement(
                 notEqualsFieldExpr(fNode, other),
-                new ReturnStatement(ConstantExpression.FALSE),
-                new EmptyStatement()
+                new ReturnStatement(new ConstantExpression(Boolean.FALSE)),
+                EmptyStatement.INSTANCE
         );
     }
 
@@ -186,11 +187,11 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
     }
 
     public static BooleanExpression equalsNullExpr(Expression argExpr) {
-        return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_EQUAL, ConstantExpression.NULL));
+        return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_EQUAL, new ConstantExpression(null)));
     }
 
     public static BooleanExpression notNullExpr(Expression argExpr) {
-        return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_NOT_EQUAL, ConstantExpression.NULL));
+        return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_NOT_EQUAL, new ConstantExpression(null)));
     }
 
     public static BooleanExpression isZeroExpr(Expression expr) {
@@ -203,15 +204,32 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
         return new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, otherExpr));
     }
 
+    public static BooleanExpression differentFieldExpr(FieldNode fNode, Expression other) {
+        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression otherExpr = new PropertyExpression(other, fNode.getName());
+        return differentExpr(fieldExpr, otherExpr);
+    }
+
     private static BooleanExpression notEqualsPropertyExpr(PropertyNode pNode, Expression other) {
         String getterName = "get" + Verifier.capitalize(pNode.getName());
-        Expression selfGetter = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, MethodCallExpression.NO_ARGUMENTS);
+        Expression selfGetter = new MethodCallExpression(new VariableExpression("this"), getterName, MethodCallExpression.NO_ARGUMENTS);
         Expression otherGetter = new MethodCallExpression(other, getterName, MethodCallExpression.NO_ARGUMENTS);
         return new BooleanExpression(new BinaryExpression(selfGetter, COMPARE_NOT_EQUAL, otherGetter));
     }
 
-    private static BooleanExpression identicalExpr(Expression self, Expression other) {
+    public static BooleanExpression differentPropertyExpr(PropertyNode pNode, Expression other) {
+        String getterName = "get" + Verifier.capitalize(pNode.getName());
+        Expression selfGetter = new MethodCallExpression(new VariableExpression("this"), getterName, MethodCallExpression.NO_ARGUMENTS);
+        Expression otherGetter = new MethodCallExpression(other, getterName, MethodCallExpression.NO_ARGUMENTS);
+        return differentExpr(selfGetter, otherGetter);
+    }
+
+    public static BooleanExpression identicalExpr(Expression self, Expression other) {
         return new BooleanExpression(new MethodCallExpression(self, "is", new ArgumentListExpression(other)));
+    }
+
+    public static BooleanExpression differentExpr(Expression self, Expression other) {
+        return new NotExpression(new BooleanExpression(new MethodCallExpression(self, "is", new ArgumentListExpression(other))));
     }
 
     private static BooleanExpression notEqualClasses(ClassNode cNode, Expression other) {
@@ -228,7 +246,7 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
     }
 
     public static BooleanExpression isTrueExpr(Expression argExpr) {
-        return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_EQUAL, ConstantExpression.TRUE));
+        return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_EQUAL, new ConstantExpression(Boolean.TRUE)));
     }
 
     public static BooleanExpression isOneExpr(Expression expr) {
@@ -244,15 +262,15 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
 
     public static Statement createConstructorStatementDefault(FieldNode fNode) {
         final String name = fNode.getName();
-        final Expression fieldExpr = new PropertyExpression(VariableExpression.THIS_EXPRESSION, name);
+        final Expression fieldExpr = new PropertyExpression(new VariableExpression("this"), name);
         Expression initExpr = fNode.getInitialValueExpression();
-        if (initExpr == null) initExpr = ConstantExpression.NULL;
+        if (initExpr == null) initExpr = new ConstantExpression(null);
         Expression value = findArg(name);
         return new IfStatement(
                 equalsNullExpr(value),
                 new IfStatement(
                         equalsNullExpr(initExpr),
-                        new EmptyStatement(),
+                        EmptyStatement.INSTANCE,
                         assignStatement(fieldExpr, initExpr)),
                 assignStatement(fieldExpr, value));
     }

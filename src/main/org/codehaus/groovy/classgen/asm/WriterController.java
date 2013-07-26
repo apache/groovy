@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.InterfaceHelperClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -36,14 +37,21 @@ import org.objectweb.asm.Opcodes;
 
 public class WriterController {
 
-    private static Constructor indyWriter;
+    private static Constructor indyWriter, indyCallSiteWriter, indyBinHelper;
     static {
         try {
-            Class indyClass = WriterController.class.getClassLoader().loadClass("org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter");
+            ClassLoader cl = WriterController.class.getClassLoader();
+            Class indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter");
             indyWriter = indyClass.getConstructor(WriterController.class);
+            indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter");
+            indyCallSiteWriter = indyClass.getConstructor(WriterController.class);
+            indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.IndyBinHelper");
+            indyBinHelper = indyClass.getConstructor(WriterController.class);
         } catch (Exception e) {
             indyWriter = null;
-        }        
+            indyCallSiteWriter = null;
+            indyBinHelper = null;
+        }
     }
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
@@ -69,10 +77,12 @@ public class WriterController {
     private StatementWriter statementWriter;
     private boolean fastPath = false;
     private TypeChooser typeChooser;
-    private int bytecodeVersion = Opcodes.V1_5; 
+    private int bytecodeVersion = Opcodes.V1_5;
+    private int lineNumber = -1;
 
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
-        Map<String,Boolean> optOptions = cn.getCompileUnit().getConfig().getOptimizationOptions();
+        CompilerConfiguration config = cn.getCompileUnit().getConfig();
+        Map<String,Boolean> optOptions = config.getOptimizationOptions();
         boolean invokedynamic=false;
         if (optOptions.isEmpty()) {
             // IGNORE
@@ -82,25 +92,29 @@ public class WriterController {
         } else {
             if (Boolean.TRUE.equals(optOptions.get("indy"))) invokedynamic=true;
             if (Boolean.FALSE.equals(optOptions.get("int"))) optimizeForInt=false;
+            if (invokedynamic) optimizeForInt=false;
             // set other optimizations options to false here
         }
         this.classNode = cn;
         this.outermostClass = null;
         this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
-        this.callSiteWriter = new CallSiteWriter(this);
-        
+
+        bytecodeVersion = chooseBytecodeVersion(invokedynamic, config.getTargetBytecode());
+
         if (invokedynamic) {
-            bytecodeVersion = Opcodes.V1_7;
             try {
                 this.invocationWriter = (InvocationWriter) indyWriter.newInstance(this);
+                this.callSiteWriter = (CallSiteWriter) indyCallSiteWriter.newInstance(this);
+                this.binaryExpHelper = (BinaryExpressionHelper) indyBinHelper.newInstance(this);
             } catch (Exception e) {
                 throw new GroovyRuntimeException("Cannot use invokedynamic, indy module was excluded from this build.");
             }
         } else {
+            this.callSiteWriter = new CallSiteWriter(this);
             this.invocationWriter = new InvocationWriter(this);
+            this.binaryExpHelper = new BinaryExpressionHelper(this);
         }
         
-        this.binaryExpHelper = new BinaryExpressionHelper(this);
         this.unaryExpressionHelper = new UnaryExpressionHelper(this);
         if (optimizeForInt) {
             this.fastPathBinaryExpHelper = new BinaryExpressionMultiTypeDispatcher(this);
@@ -126,6 +140,27 @@ public class WriterController {
             this.statementWriter = new StatementWriter(this);
         }
         this.typeChooser = new StatementMetaTypeChooser();
+    }
+
+    private static int chooseBytecodeVersion(final boolean invokedynamic, final String targetBytecode) {
+        // todo: support JDK 1.8 when ASM5 is out
+        if (invokedynamic) {
+            return Opcodes.V1_7;
+        } else {
+            if (CompilerConfiguration.JDK4.equals(targetBytecode)) {
+                return Opcodes.V1_4;
+            }
+            if (CompilerConfiguration.JDK5.equals(targetBytecode)) {
+                return Opcodes.V1_5;
+            }
+            if (CompilerConfiguration.JDK6.equals(targetBytecode)) {
+                return Opcodes.V1_6;
+            }
+            if (CompilerConfiguration.JDK7.equals(targetBytecode)) {
+                return Opcodes.V1_7;
+            }
+        }
+        throw new GroovyBugError("Bytecode version ["+targetBytecode+"] is not supported by the compiler");
     }
 
     public AsmClassGenerator getAcg() {
@@ -331,10 +366,12 @@ public class WriterController {
 
     public void switchToFastPath() {
         fastPath = true;
+        resetLineNumber();
     }
 
     public void switchToSlowPath() {
         fastPath = false;
+        resetLineNumber();
     }
 
     public boolean isFastPath() {
@@ -344,4 +381,16 @@ public class WriterController {
     public int getBytecodeVersion() {
         return bytecodeVersion;
     }
+    
+    public int getLineNumber() {
+        return lineNumber;
+    }
+    
+    public void setLineNumber(int n) {
+    	lineNumber = n;
+    }
+
+	public void resetLineNumber() {
+		setLineNumber(-1);
+	}
 }

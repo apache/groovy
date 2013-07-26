@@ -40,6 +40,9 @@ rootProject.ext.useIndy = {
     // which is the case if the build is started with -Pindy=true or during install/dist tasks
     indy |= rootProject.hasProperty('indy') && (Boolean.valueOf(rootProject.indy))
 
+    // set the groovy runtime system property to ensure forked junit test will get the indy flag properly
+    if (indy) System.setProperty("groovy.target.indy","true")
+
     indy && rootProject.indyCapable()
 }
 

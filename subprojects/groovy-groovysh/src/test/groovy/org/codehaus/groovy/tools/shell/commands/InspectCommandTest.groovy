@@ -19,7 +19,6 @@ package org.codehaus.groovy.tools.shell.commands
 /**
  * Tests for the {@link InspectCommand} class.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class InspectCommandTest

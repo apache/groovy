@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,22 +26,19 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
 /**
  * Allows "interrupt-safe" executions of scripts by adding Thread.currentThread().isInterrupted()
  * checks on loops (for, while, do), the first statement of closures, and the first statement of methods.
- * <br/>
- * <br/>
+ * <p>
  * This is especially useful when executing foreign scripts that you do not have control over. Inject this
  * transformation into a script that you need to interrupt.
- * <br/>
- * <br/>
+ * <p>
  * Annotating anything in a script will cause for loops, while loops, methods, and closures to make an
  * isInterruptedCheck and throw a InterruptedException if the check yields true. The annotation by default
  * will apply to any classes defined in the script as well. Annotated a class will cause (by default) all classes
  * in the entire file ('Compilation Unit') to be enhanced. You can fine tune what is enhanced using the annotation
  * parameters. 
- * <br/>
- * <br/>
+ * <p>
  * Extensive usage examples can be found in the unit test for this class. A smaller example is presented here.
  * The following is sample usage of the annotation:
- * <br/>
+ *
  * <pre>
  * <code>@groovy.transform.ThreadInterrupt</code>
  * def scriptMethod() {
@@ -62,9 +59,9 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * scriptMethod()
  * new MyClass().myMethod()
  * </pre>
- * <br/>
+ *
  * Which results in the following code being generated. Notice the checks and exceptions:
- * <br/>
+ *
  * <pre>
  * public class script1290627909406 extends groovy.lang.Script {
  *
@@ -97,14 +94,12 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  *
  * this.scriptMethod()
  * new MyClass().myMethod()
- * <br/>
+ * </pre>
  *
  * @see groovy.transform.TimedInterrupt
  * @see groovy.transform.ConditionalInterrupt
- *
  * @author Cedric Champeau
  * @author Hamlet D'Arcy
- *
  * @since 1.8.0
  */
 @java.lang.annotation.Documented

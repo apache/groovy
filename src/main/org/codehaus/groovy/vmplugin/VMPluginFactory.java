@@ -25,7 +25,7 @@ public class VMPluginFactory {
 
     private static final String JDK5_CLASSNAME_CHECK = "java.lang.annotation.Annotation";
     private static final String JDK6_CLASSNAME_CHECK = "javax.script.ScriptEngine";
-    private static final String JDK7_CLASSNAME_CHECK = "java.nio.file.FileRef";
+    private static final String JDK7_CLASSNAME_CHECK = "java.util.Objects";
 
     private static final String JDK5_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v5.Java5";
     private static final String JDK6_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v6.Java6";

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,22 @@
  */
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -30,7 +43,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EnumVisitor extends ClassCodeVisitorSupport {
-
     // some constants for modifiers
     private static final int FS = Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
     private static final int PS = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
@@ -66,13 +78,24 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             values.setSynthetic(true);
 
             addMethods(enumClass, values);
+            checkForAbstractMethods(enumClass);
 
             // create MIN_VALUE and MAX_VALUE fields
             minValue = new FieldNode("MIN_VALUE", PUBLIC_FS, enumRef, enumClass, null);
             maxValue = new FieldNode("MAX_VALUE", PUBLIC_FS, enumRef, enumClass, null);
-
         }
         addInit(enumClass, minValue, maxValue, values, isAic);
+    }
+
+    private void checkForAbstractMethods(ClassNode enumClass) {
+        List<MethodNode> methods = enumClass.getMethods();
+        for (MethodNode m : methods) {
+            if (m.isAbstract()) {
+                // make the class abstract also see Effective Java p.152
+                enumClass.setModifiers(enumClass.getModifiers() | Opcodes.ACC_ABSTRACT);
+                break;
+            }
+        }
     }
 
     private void addMethods(ClassNode enumClass, FieldNode values) {
@@ -291,15 +314,17 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             ArgumentListExpression args = new ArgumentListExpression();
             args.addExpression(new ConstantExpression(field.getName()));
             args.addExpression(new ConstantExpression(value));
-            if (field.getInitialExpression() != null) {
+            if (field.getInitialExpression() == null) {
+                if ((enumClass.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
+                    addError(field, "The enum constant " + field.getName() + " must override abstract methods from " + enumBase.getName() + ".");
+                    continue;
+                }
+            } else {
                 ListExpression oldArgs = (ListExpression) field.getInitialExpression();
+                List<MapEntryExpression> savedMapEntries = new ArrayList<MapEntryExpression>();
                 for (Expression exp : oldArgs.getExpressions()) {
                     if (exp instanceof MapEntryExpression) {
-                        String msg = "The usage of a map entry expression to initialize an Enum is currently not supported, please use an explicit map instead.";
-                        sourceUnit.getErrorCollector().addErrorAndContinue(
-                                new SyntaxErrorMessage(
-                                        new SyntaxException(msg + '\n', exp.getLineNumber(), exp.getColumnNumber()), sourceUnit)
-                        );
+                        savedMapEntries.add((MapEntryExpression) exp);
                         continue;
                     }
 
@@ -312,6 +337,14 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                         }
                     }
                     if (inner != null) {
+                        List<MethodNode> baseMethods = enumBase.getMethods();
+                        for (MethodNode methodNode : baseMethods) {
+                            if (!methodNode.isAbstract()) continue;
+                            MethodNode enumConstMethod = inner.getMethod(methodNode.getName(), methodNode.getParameters());
+                            if (enumConstMethod == null || (enumConstMethod.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
+                                addError(field, "Can't have an abstract method in enum constant " + field.getName() + ". Implement method '" + methodNode.getTypeDescriptor() + "'.");
+                            }
+                        }
                         if (inner.getVariableScope() == null) {
                             enumBase = inner;
                             /*
@@ -324,6 +357,9 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                         }
                     }
                     args.addExpression(exp);
+                }
+                if (savedMapEntries.size() > 0) {
+                    args.getExpressions().add(2, new MapExpression(savedMapEntries));
                 }
             }
             field.setInitialValueExpression(null);
@@ -371,6 +407,13 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             enumClass.addField(values);
         }
         enumClass.addStaticInitializerStatements(block, true);
+    }
+
+    private void addError(AnnotatedNode exp, String msg) {
+        sourceUnit.getErrorCollector().addErrorAndContinue(
+                new SyntaxErrorMessage(
+                        new SyntaxException(msg + '\n', exp.getLineNumber(), exp.getColumnNumber(), exp.getLastLineNumber(), exp.getLastColumnNumber()), sourceUnit)
+        );
     }
 
     private boolean isAnonymousInnerClass(ClassNode enumClass) {

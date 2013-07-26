@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * any) at the same time.
  *
  * @author Scott Vlaminck (http://refactr.com)
- * @author Andres Almiray <aalmiray@users.sourceforge.com>
+ * @author <a href="mailto:aalmiray@users.sourceforge.com">Andres Almiray</a>
  */
 public class ObjectGraphBuilder extends FactoryBuilderSupport {
     public static final String NODE_CLASS = "_NODE_CLASS_";
@@ -482,11 +482,11 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Default impl that returns parentName &amp; childName accordingly.
+     * Default impl that returns parentName and childName accordingly.
      */
     public static class DefaultRelationNameResolver implements RelationNameResolver {
         /**
-         * Handles the common English regular plurals with the following rules.<br />
+         * Handles the common English regular plurals with the following rules.
          * <ul>
          * <li>If childName ends in {consonant}y, replace 'y' with "ies". For example, allergy to allergies.</li>
          * <li>Otherwise, append 's'. For example, monkey to monkeys; employee to employees.</li>

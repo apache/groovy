@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,8 +102,9 @@ public interface MetaClassRegistry {
      * be removed if the MetaClass was not replaced by another MetaClass in the meantime.
      * If a MetaClass is added while using this Iterator, then it will be part of the Iteration.
      * If a MetaClass replaces another constant meta class, then the Iteration might show two
-     * meta classes for the same class.<br/>
-     * This Iterator may not used in multiple threads.
+     * meta classes for the same class.
+     * <p>
+     * Note: This Iterator may not used with multiple threads.
      *
      * @return Iterator for the constant meta classes
      */

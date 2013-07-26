@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,17 @@
 package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.TupleConstructorASTTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
@@ -34,7 +39,6 @@ import java.util.List;
  */
 public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
     private final SourceUnit sourceUnit;
-
 
     public EnumCompletionVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
@@ -50,29 +54,41 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
     }
 
     private void completeEnum(ClassNode enumClass) {
-        addConstructor(enumClass);
-    }
-
-    private void addConstructor(ClassNode enumClass) {
-        // first look if there are declared constructors
-        List<ConstructorNode> ctors = new ArrayList<ConstructorNode>(enumClass.getDeclaredConstructors());
-        if (ctors.size() == 0) {
-            // add default constructor
-            ConstructorNode init = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[0], ClassNode.EMPTY_ARRAY, new BlockStatement());
-            enumClass.addConstructor(init);
-            ctors.add(init);
+        boolean isAic = isAnonymousInnerClass(enumClass);
+        if (enumClass.getDeclaredConstructors().size() == 0) {
+            addImplicitConstructors(enumClass, isAic);
         }
 
-        // for each constructor:
-        // if constructor does not define a call to super, then transform constructor
-        // to get String,int parameters at beginning and add call super(String,int)  
-
-        for (ConstructorNode ctor : ctors) {
-            transformConstructor(ctor);
+        for (ConstructorNode ctor : enumClass.getDeclaredConstructors()) {
+            transformConstructor(ctor, isAic);
         }
     }
 
-    private void transformConstructor(ConstructorNode ctor) {
+    /**
+     * Add map and no-arg constructor or mirror those of the superclass (i.e. base enum).
+     */
+    private void addImplicitConstructors(ClassNode enumClass, boolean aic) {
+        if (aic) {
+            ClassNode sn = enumClass.getSuperClass();
+            List<ConstructorNode> sctors = new ArrayList<ConstructorNode>(sn.getDeclaredConstructors());
+            if (sctors.size() == 0) {
+                addMapConstructors(enumClass, false);
+            } else {
+                for (ConstructorNode constructorNode : sctors) {
+                    ConstructorNode init = new ConstructorNode(Opcodes.ACC_PUBLIC, constructorNode.getParameters(), ClassNode.EMPTY_ARRAY, new BlockStatement());
+                    enumClass.addConstructor(init);
+                }
+            }
+        } else {
+            addMapConstructors(enumClass, false);
+        }
+    }
+
+    /**
+     * If constructor does not define a call to super, then transform constructor
+     * to get String,int parameters at beginning and add call super(String,int).
+     */
+    private void transformConstructor(ConstructorNode ctor, boolean isAic) {
         boolean chainedThisConstructorCall = false;
         ConstructorCallExpression cce = null;
         if (ctor.firstStatementIsSpecialConstructorCall()) {
@@ -97,20 +113,27 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
             argsExprs.add(0, new VariableExpression(stringParameterName));
             argsExprs.add(1, new VariableExpression(intParameterName));
         } else {
-            // and a super call
-            cce = new ConstructorCallExpression(
-                    ClassNode.SUPER,
-                    new ArgumentListExpression(
-                            new VariableExpression(stringParameterName),
-                            new VariableExpression(intParameterName)
-                    )
-            );
+            // add a super call
+            List<Expression> args = new ArrayList<Expression>();
+            args.add(new VariableExpression(stringParameterName));
+            args.add(new VariableExpression(intParameterName));
+            if (isAic) {
+                for (Parameter parameter : oldP) {
+                    args.add(new VariableExpression(parameter.getName()));
+                }
+            }
+            cce = new ConstructorCallExpression(ClassNode.SUPER, new ArgumentListExpression(args));
             BlockStatement code = new BlockStatement();
             code.addStatement(new ExpressionStatement(cce));
             Statement oldCode = ctor.getCode();
             if (oldCode != null) code.addStatement(oldCode);
             ctor.setCode(code);
         }
+    }
+
+    public static void addMapConstructors(ClassNode enumClass, boolean hasNoArg) {
+        TupleConstructorASTTransformation.addMapConstructors(enumClass, hasNoArg, "One of the enum constants for enum " + enumClass.getName() +
+                " was initialized with null. Please use a non-null value or define your own constructor.");
     }
 
     private String getUniqueVariableName(final String name, Statement code) {
@@ -126,4 +149,9 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
         return name;
     }
 
+    private boolean isAnonymousInnerClass(ClassNode enumClass) {
+        if (!(enumClass instanceof EnumConstantClassNode)) return false;
+        InnerClassNode ic = (InnerClassNode) enumClass;
+        return ic.getVariableScope() == null;
+    }
 }

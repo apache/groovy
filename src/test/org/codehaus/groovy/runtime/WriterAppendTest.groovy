@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package org.codehaus.groovy.runtime
 
 /**
- * Test Writer append and left shift methods in Groovy
+ * Test Writer append and leftShift DGM methods
  *
  * @author Joachim Baumann</a>
  * @version $Revision$
@@ -154,8 +154,6 @@ class WriterAppendTest extends GroovyTestCase {
         file.text = 'foobarbaz'
         assert hasContents(file, 'foobarbaz', defaultEncoding)
     }
-
-    ///////////////////////////////////////
 
     void testAppendStringDefaultEncoding() {
         def expected

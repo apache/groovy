@@ -519,5 +519,55 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             def z = o
         '''
     }
+
+    // GROOVY-5519
+    void testInferThrowable() {
+        assertScript '''
+            try {
+                throw new RuntimeException('ok')
+            } catch (e) {
+                handleError(e)
+            }
+            void handleError(Throwable e) {
+                assert e.message == 'ok'
+            }
+        '''
+    }
+
+    void testInferMapValueType() {
+        assertScript '''
+            Map<String, Integer> map = new HashMap<String,Integer>()
+            map['foo'] = 123
+            map['bar'] = 246
+            Integer foo = map['foo']
+            assert foo == 123
+            Integer bar = map.get('bar')
+            assert bar == 246
+        '''
+    }
+
+    // GROOVY-5522
+    void testTypeInferenceWithArrayAndFind() {
+        assertScript '''
+            File findFile() {
+                new File[0].find { File f -> f.hidden }
+            }
+            findFile()
+        '''
+    }
+
+    void testShouldNotThrowIncompatibleArgToFunVerifyError() {
+        assertScript '''
+            Object convertValueToType(Object value, Class targetType) {
+                if (value instanceof CharSequence) {
+                    value = value.toString()
+                }
+                if (value instanceof String) {
+                    String strValue = value.trim()
+                }
+            }
+            convertValueToType('foo', String)
+        '''
+    }
 }
 

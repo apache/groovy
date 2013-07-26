@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import java.util.List;
 
 /**
  * Transformation to capture ASTBuilder from code statements.
- * <p/>
+ * <p>
  * The AstBuilder "from code" approach is used with a single Closure
  * parameter. This transformation converts the ClosureExpression back
  * into source code and rewrites the AST so that the "from string"
@@ -186,10 +186,8 @@ public class AstBuilderTransformation implements ASTTransformation {
          * @param expr the expression that caused the error message.
          */
         private void addError(String msg, ASTNode expr) {
-            int line = expr.getLineNumber();
-            int col = expr.getColumnNumber();
             sourceUnit.getErrorCollector().addErrorAndContinue(
-                    new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), sourceUnit)
+                    new SyntaxErrorMessage(new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()), sourceUnit)
             );
         }
 

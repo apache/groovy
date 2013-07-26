@@ -15,6 +15,9 @@
  */
 package org.codehaus.groovy.util;
 
+import java.util.Collection;
+import java.util.LinkedList;
+
 public abstract class AbstractConcurrentMapBase {
     protected static final int MAXIMUM_CAPACITY = 1 << 30;
     static final int MAX_SEGMENTS = 1 << 16;
@@ -114,6 +117,38 @@ public abstract class AbstractConcurrentMapBase {
             }
         }
         return count;
+    }
+
+    public Collection values() {
+        Collection result = new LinkedList();
+        int count = 0;
+        for (int i = 0; i < segments.length; i++) {
+            segments[i].lock();
+            try {
+                for (int j = 0; j < segments[i].table.length; j++) {
+                    Object o = segments[i].table [j];
+                    if (o != null) {
+                        if (o instanceof Entry) {
+                            Entry e = (Entry) o;
+                            if (e.isValid())
+                              result.add(e);
+                        }
+                        else {
+                            Object arr [] = (Object[]) o;
+                            for (int k = 0; k < arr.length; k++) {
+                                Entry info = (Entry) arr[k];
+                                if (info != null && info.isValid())
+                                    result.add(info);
+                            }
+                        }
+                    }
+                }
+            }
+            finally {
+                segments[i].unlock();
+            }
+        }
+        return result;
     }
 
     public static class Segment extends LockableObject {

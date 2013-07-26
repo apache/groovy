@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,7 +148,7 @@ public class GroovyClassLoader extends URLClassLoader {
 
     /**
      * Loads the given class node returning the implementation Class.
-     * <p/>
+     * <p>
      * WARNING: this compilation is not synchronized
      *
      * @param classNode
@@ -217,7 +217,7 @@ public class GroovyClassLoader extends URLClassLoader {
         scriptNameCounter++;
         return "script" + scriptNameCounter + ".groovy";
     }
-
+    
     /**
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
@@ -252,17 +252,13 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
-        Class answer;
         synchronized (sourceCache) {
-            answer = sourceCache.get(codeSource.getName());
+            Class answer = sourceCache.get(codeSource.getName());
             if (answer != null) return answer;
-            if (shouldCacheSource) {
-                answer = doParseClass(codeSource);
-                sourceCache.put(codeSource.getName(), answer);
-            }
+            answer = doParseClass(codeSource);
+            if (shouldCacheSource) sourceCache.put(codeSource.getName(), answer);
+            return answer;
         }
-        if (!shouldCacheSource) answer = doParseClass(codeSource);
-        return answer;
     }
 
     private Class doParseClass(GroovyCodeSource codeSource) {
@@ -582,7 +578,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * recompilation, so the method should always return true here. Only classes that are
      * implementing GroovyObject are compilable and only if the timestamp in the class
      * is lower than Long.MAX_VALUE.
-     * <p/>
+     * <p>
      * NOTE: First the parent loaders will be asked and only if they don't return a
      * class the recompilation will happen. Recompilation also only happen if the source
      * file is newer.
@@ -729,24 +725,25 @@ public class GroovyClassLoader extends URLClassLoader {
             // found a source, compile it if newer
             if ((oldClass != null && isSourceNewer(source, oldClass)) || (oldClass == null)) {
                 synchronized (sourceCache) {
-                    sourceCache.remove(className);
+                    String name = source.toExternalForm();
+                    sourceCache.remove(name);
                     if (isFile(source)) {
                         try {
-                            return doParseClass(new GroovyCodeSource(new File(source.toURI()), config.getSourceEncoding()));
+                            return parseClass(new GroovyCodeSource(new File(source.toURI()), config.getSourceEncoding()));
                         } catch (URISyntaxException e) {
                           // do nothing and fall back to the other version
                         }
-                    }
-                    return parseClass(source.openStream(), makeFileName(className));
+                    } 
+                    return parseClass(source.openStream(), name);
                 }
             }
         }
         return oldClass;
     }
 
-    private String makeFileName(String className) {
-      className = className.replace('.','/');
-      return className+".groovy";
+    @Override
+    public Class<?> loadClass(String name) throws ClassNotFoundException {
+        return loadClass(name, false);
     }
 
     /**
@@ -778,7 +775,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * This method will take a file name and try to "decode" any URL encoded characters.  For example
      * if the file name contains any spaces this method call will take the resulting %20 encoded values
      * and convert them to spaces.
-     * <p/>
+     * <p>
      * This method was added specifically to fix defect:  Groovy-1787.  The defect involved a situation
      * where two scripts were sitting in a directory with spaces in its name.  The code would fail
      * when the class loader tried to resolve the file name and would choke on the URLEncoded space values.
@@ -809,7 +806,14 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private File fileReallyExists(URL ret, String fileWithoutPackage) {
-        File path = new File(decodeFileName(ret.getFile())).getParentFile();
+        File path;
+        try {
+            /* fix for GROOVY-5809 */ 
+            path = new File(ret.toURI());
+        } catch(URISyntaxException e) {
+            path = new File(decodeFileName(ret.getFile()));
+        }
+        path = path.getParentFile();
         if (path.exists() && path.isDirectory()) {
             File file = new File(path, fileWithoutPackage);
             if (file.exists()) {

@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.util.Preferences
 
@@ -29,7 +30,7 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 class EditCommand
     extends CommandSupport
 {
-    EditCommand(final Shell shell) {
+    EditCommand(final Groovysh shell) {
         super(shell, 'edit', '\\e')
     }
     
@@ -48,7 +49,7 @@ class EditCommand
     Object execute(final List args) {
         assertNoArguments(args)
         
-        def file = File.createTempFile('groovysh-buffer', '.groovy')
+        File file = File.createTempFile('groovysh-buffer', '.groovy')
         file.deleteOnExit()
         
         try {
@@ -67,8 +68,8 @@ class EditCommand
             log.debug("Editor contents: ${file.text}")
             
             // Load the new lines...
-            file.eachLine {
-                shell << it
+            file.eachLine { String line ->
+                shell << line as String
             }
         }
         finally {

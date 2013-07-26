@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
@@ -310,6 +311,16 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    public void visitIfElse(IfStatement ifElse) {
+        ifElse.getBooleanExpression().visit(this);
+        pushState();
+        ifElse.getIfBlock().visit(this);
+        popState();
+        pushState();
+        ifElse.getElseBlock().visit(this);
+        popState();
+    }
+    
     public void visitDeclarationExpression(DeclarationExpression expression) {
         // visit right side first to avoid the usage of a
         // variable before its declaration
@@ -445,11 +456,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     // ------------------------------
 
     public void visitClass(ClassNode node) {
-        // AIC are already done, doing them here again will lead
-        // to wrong scopes
+        // AIC are already done, doing them here again will lead to wrong scopes
         if (node instanceof InnerClassNode) {
             InnerClassNode in = (InnerClassNode) node;
-            if (in.isAnonymous()) return;
+            if (in.isAnonymous() && !in.isEnum()) return;
         }
 
         pushState();
@@ -508,6 +518,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 call.setObjectExpression(object);
                 ConstantExpression method = new ConstantExpression("call");
                 method.setSourcePosition(methodNameConstant); // important for GROOVY-4344
+                call.setImplicitThis(false);
                 call.setMethod(method);
             }
 

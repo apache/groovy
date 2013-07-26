@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ class XmlParserTest extends GroovyTestCase {
   </tr>
   <tr align="left">
     <td><dc:author>
-      <g:developer>Dierk König</g:developer>,
+      <g:developer>Dierk Kï¿½nig</g:developer>,
       <g:advocate>Andrew Glover</g:advocate>,
       <g:developer>Paul King</g:developer>,
       <g:projectmanager>Guillaume Laforge</g:projectmanager>,
@@ -130,7 +130,7 @@ p() {
         <td>
           <dc:author xmlns:dc="http://purl.org/dc/elements/1.1/">
             <g:developer xmlns:g="http://groovy.codehaus.org/roles">
-              Dierk König
+              Dierk Kï¿½nig
             </g:developer>
             ,
             <g:advocate xmlns:g="http://groovy.codehaus.org/roles">
@@ -283,5 +283,23 @@ p() {
         def html = new CustomXmlParser().parseText(bookXml)
         assert html.getClass() == CustomNode
         assert html.name() == new Integer(42)
+    }
+
+    void testCloning() {
+        def xml = '<root><foo bar="baz"><inner/></foo></root>'
+        def parser = new XmlParser()
+        def root = parser.parseText(xml)
+        def foo = root.foo[0]
+
+        def foo2 = foo.clone()
+        foo2.@bar = 'zab'
+        foo2.inner[0].value = 'text'
+        root.append(foo2)
+
+        def writer = new StringWriter()
+        def ip = new IndentPrinter(new PrintWriter(writer), '', false)
+        new XmlNodePrinter(ip).print(root)
+        def result = writer.toString()
+        assert result == '<root><foo bar="baz"><inner/></foo><foo bar="zab"><inner>text</inner></foo></root>'
     }
 }

@@ -29,7 +29,7 @@ class SynchronizedBytecodeBug extends GroovyTestCase {
 
         Thread.start{
             println "sleeping for a moment"
-            sleep 1000
+            sleep 100
             println "slept and synchronizing from thread"
             synchronized(foo) {
                 println "notifying"

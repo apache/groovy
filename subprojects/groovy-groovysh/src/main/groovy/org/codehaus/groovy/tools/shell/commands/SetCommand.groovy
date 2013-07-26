@@ -17,8 +17,9 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
-
+import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 import org.codehaus.groovy.tools.shell.util.Preferences
 
@@ -31,19 +32,27 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 class SetCommand
     extends CommandSupport
 {
-    SetCommand(final Shell shell) {
+    SetCommand(final Groovysh shell) {
         super(shell, 'set', '\\=')
     }
 
-    protected List createCompletors() {
+    protected List createCompleters() {
         def loader = {
-            def list = []
+            Set<String> set = [] as Set<String>
 
-            def keys = Preferences.keys()
+            String[] keys = Preferences.keys()
 
-            keys.each { list << it }
+            keys.each { String key -> set.add(key) }
 
-            return list
+            set << Preferences.VERBOSITY_KEY
+            set << Preferences.EDITOR_KEY
+            set << Preferences.PARSER_FLAVOR_KEY
+            set << Preferences.SANITIZE_STACK_TRACE_KEY
+            set << Preferences.SHOW_LAST_RESULT_KEY
+            set << Groovysh.AUTOINDENT_PREFERENCE_KEY
+            set << PackageHelper.IMPORT_COMPLETION_PREFERENCE_KEY
+
+            return set.toList()
         }
 
         return [
@@ -64,9 +73,9 @@ class SetCommand
             }
             else {
                 io.out.println('Preferences:')
-                keys.each {
-                    def value = Preferences.get(it, null)
-                    println("    $it=$value")
+                keys.each { String key ->
+                    def keyvalue = Preferences.get(key, null)
+                    println("    $key=$keyvalue")
                 }
             }
             return
@@ -76,7 +85,7 @@ class SetCommand
             fail("Command '$name' requires arguments: <name> [<value>]")
         }
         
-        def name = args[0]
+        String name = args[0]
         def value
         
         if (args.size() == 1) {

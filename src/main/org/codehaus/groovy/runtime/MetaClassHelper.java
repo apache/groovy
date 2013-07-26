@@ -262,6 +262,7 @@ public class MetaClassHelper {
         }
         // we do not add one for super classes, only for interfaces
         int superClassMax = getMaximumInterfaceDistance(c.getSuperclass(), interfaceClass);
+        if (superClassMax != -1) superClassMax++;
         return Math.max(max, superClassMax);
     }
 
@@ -604,13 +605,7 @@ public class MetaClassHelper {
         Class[] ans = new Class[s];
         for (int i = 0; i < s; i++) {
             Object o = args[i];
-            if (o == null) {
-                ans[i] = null;
-            } else if (o instanceof Wrapper) {
-                ans[i] = ((Wrapper) o).getType();
-            } else {
-                ans[i] = o.getClass();
-            }
+            ans[i] = getClassWithNullAndWrapper(o);
         }
         return ans;
     }
@@ -870,17 +865,20 @@ public class MetaClassHelper {
 
         for (int i = params.length - 1; i >= 0; i--) {
             Object arg = arguments[i];
-            if (arg == null) {
-                if (!weakNullCheck)
-                    return false;
-            } else {
-                if (params[i] != arg.getClass()
-                        && (!(arg instanceof Wrapper) || params[i] != ((Wrapper) arg).getType()))
-                    return false;
-            }
+            Class compareClass = getClassWithNullAndWrapper(arg);
+            if (params[i] != compareClass) return false;
         }
 
         return true;
+    }
+
+    private static Class getClassWithNullAndWrapper(Object arg) {
+        if (arg == null) return null;
+        if (arg instanceof Wrapper) {
+            Wrapper w = (Wrapper) arg;
+            return w.getType();
+        }
+        return arg.getClass();
     }
 
     public static boolean sameClasses(Class[] params, Object[] arguments) {
@@ -893,7 +891,7 @@ public class MetaClassHelper {
                 if (params[i] != null)
                     return false;
             } else {
-                if (params[i] != arg.getClass() && !(arg instanceof Wrapper && params[i] == ((Wrapper) arg).getType()))
+                if (params[i] != getClassWithNullAndWrapper(arg))
                     return false;
             }
         }
@@ -912,11 +910,7 @@ public class MetaClassHelper {
         if (params.length != 1)
             return false;
 
-        if (arg1 == null
-                || (params[0] != arg1.getClass()
-                && (!(arg1 instanceof Wrapper)
-                || params[0] != ((Wrapper) arg1).getType())))
-            return false;
+        if (params[0] != getClassWithNullAndWrapper(arg1)) return false;
 
         return true;
     }
@@ -925,17 +919,8 @@ public class MetaClassHelper {
         if (params.length != 2)
             return false;
 
-        if (arg1 == null
-                || (params[0] != arg1.getClass()
-                && (!(arg1 instanceof Wrapper)
-                || params[0] != ((Wrapper) arg1).getType())))
-            return false;
-
-        if (arg2 == null
-                || (params[1] != arg2.getClass()
-                && (!(arg2 instanceof Wrapper)
-                || params[1] != ((Wrapper) arg2).getType())))
-            return false;
+        if (params[0] != getClassWithNullAndWrapper(arg1)) return false;
+        if (params[1] != getClassWithNullAndWrapper(arg2)) return false;
 
         return true;
     }
@@ -944,23 +929,9 @@ public class MetaClassHelper {
         if (params.length != 3)
             return false;
 
-        if (arg1 == null
-                || (params[0] != arg1.getClass()
-                && (!(arg1 instanceof Wrapper)
-                || params[0] != ((Wrapper) arg1).getType())))
-            return false;
-
-        if (arg2 == null
-                || (params[1] != arg2.getClass()
-                && (!(arg2 instanceof Wrapper)
-                || params[1] != ((Wrapper) arg2).getType())))
-            return false;
-
-        if (arg3 == null
-                || (params[2] != arg3.getClass()
-                && (!(arg3 instanceof Wrapper)
-                || params[2] != ((Wrapper) arg3).getType())))
-            return false;
+        if (params[0] != getClassWithNullAndWrapper(arg1)) return false;
+        if (params[1] != getClassWithNullAndWrapper(arg2)) return false;
+        if (params[2] != getClassWithNullAndWrapper(arg3)) return false;
 
         return true;
     }
@@ -969,38 +940,16 @@ public class MetaClassHelper {
         if (params.length != 4)
             return false;
 
-        if (arg1 == null
-                || (params[0] != arg1.getClass()
-                && (!(arg1 instanceof Wrapper)
-                || params[0] != ((Wrapper) arg1).getType())))
-            return false;
-
-        if (arg2 == null
-                || (params[1] != arg2.getClass()
-                && (!(arg2 instanceof Wrapper)
-                || params[1] != ((Wrapper) arg2).getType())))
-            return false;
-
-        if (arg3 == null
-                || (params[2] != arg3.getClass()
-                && (!(arg3 instanceof Wrapper)
-                || params[2] != ((Wrapper) arg3).getType())))
-            return false;
-
-        if (arg4 == null
-                || (params[3] != arg4.getClass()
-                && (!(arg4 instanceof Wrapper)
-                || params[3] != ((Wrapper) arg4).getType())))
-            return false;
-
+        if (params[0] != getClassWithNullAndWrapper(arg1)) return false;
+        if (params[1] != getClassWithNullAndWrapper(arg2)) return false;
+        if (params[2] != getClassWithNullAndWrapper(arg3)) return false;
+        if (params[3] != getClassWithNullAndWrapper(arg4)) return false;
+        
         return true;
     }
 
     public static boolean sameClass(Class[] params, Object arg) {
-        return !(arg == null
-                || (params[0] != arg.getClass()
-                && (!(arg instanceof Wrapper)
-                || params[0] != ((Wrapper) arg).getType())));
+        return params[0] == getClassWithNullAndWrapper(arg);
 
     }
 

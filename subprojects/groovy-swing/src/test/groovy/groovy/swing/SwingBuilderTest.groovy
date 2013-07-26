@@ -466,6 +466,12 @@ class SwingBuilderTest extends GroovySwingTestCase {
             assert swing.list(listData: vector).model.size == 4
             assert swing.list(listData: "list").model.size == 4
             assert swing.list(listData: [a: 1, b: 2].collect { k, v -> v}).model.size == 2
+            def theList = swing.list(items: list)
+            list[1] = 'a'
+            assert theList.model.getElementAt(1) == 'a'
+            theList.model.add('z')
+            assert list.size() == 4
+            assert list[3] == 'z'
         }
     }
 

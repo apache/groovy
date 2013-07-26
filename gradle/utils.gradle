@@ -1,0 +1,91 @@
+import org.codehaus.groovy.classgen.AnnotationVisitor
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.FieldVisitor
+import org.objectweb.asm.Label
+import org.objectweb.asm.MethodVisitor
+
+import static org.objectweb.asm.Opcodes.*
+
+/*
+* Copyright 2003-2012 the original author or authors.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.ow2.asm:asm:4.0"
+    }
+}
+
+/**
+ * This tasks generates an utility class which allows sneaky throwing.
+ */
+task exceptionUtils {
+    ext.classFiles = [
+            "${compileCompilerJava.destinationDir}/org/codehaus/groovy/runtime/ExceptionUtils.class",
+            "${compileJava.destinationDir}/org/codehaus/groovy/runtime/ExceptionUtils.class"]
+    outputs.files classFiles
+
+    doLast {
+        ClassWriter cw = new ClassWriter(0);
+        FieldVisitor fv;
+        MethodVisitor mv;
+        AnnotationVisitor av0;
+
+        cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, "org/codehaus/groovy/runtime/ExceptionUtils", null, "java/lang/Object", null);
+
+        cw.visitSource("ExceptionUtils.java", null);
+
+        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+        mv.visitCode();
+        Label l0 = new Label();
+        mv.visitLabel(l0);
+        mv.visitLineNumber(18, l0);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
+        mv.visitInsn(RETURN);
+        Label l1 = new Label();
+        mv.visitLabel(l1);
+        mv.visitLocalVariable("this", "Lorg/codehaus/groovy/runtime/ExceptionUtils;", null, l0, l1, 0);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
+
+        mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "sneakyThrow", "(Ljava/lang/Throwable;)V", null, null);
+        mv.visitCode();
+        Label l2 = new Label();
+        mv.visitLabel(l2);
+        mv.visitLineNumber(20, l2);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitInsn(ATHROW);
+        Label l3 = new Label();
+        mv.visitLabel(l3);
+        mv.visitLocalVariable("e", "Ljava/lang/Throwable;", null, l2, l3, 0);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
+
+        cw.visitEnd();
+
+        logger.lifecycle("Generating ExceptionUtils")
+        classFiles.each { classFile ->
+            def output = file(classFile)
+            output.parentFile.mkdirs()
+            output.withOutputStream {
+                it << cw.toByteArray()
+            }
+        }
+    }
+}

@@ -1,8 +1,5 @@
-// TODO set these using subprojects?
-ext.checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
-
 dependencies {
-    groovy project(':')
-    compile project(':')
+    groovy rootProject
+    compile rootProject
     testCompile project(':groovy-test')
 }

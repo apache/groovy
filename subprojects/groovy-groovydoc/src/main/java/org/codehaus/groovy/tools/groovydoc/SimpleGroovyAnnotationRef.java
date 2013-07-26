@@ -36,6 +36,10 @@ public class SimpleGroovyAnnotationRef implements GroovyAnnotationRef {
         return type;
     }
 
+    public boolean isTypeAvailable() {
+        return !(type == null);
+    }
+
     public String name() {
         return name;
     }

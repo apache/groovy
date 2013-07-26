@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,13 @@ public class NodeChild extends GPathResult {
     public NodeChild(final Node node, final GPathResult parent, final Map<String, String> namespaceTagHints) {
         this(node, parent, "*", namespaceTagHints);
     }
+    
+    public GPathResult parent() {
+        if (node.parent() != null)
+            return new NodeChild(node.parent(), this, namespaceTagHints);
+        else
+            return this;
+    }
 
     public int size() {
         return 1;
@@ -63,10 +70,17 @@ public class NodeChild extends GPathResult {
         return this.node.text();
     }
 
+    /**
+     * Returns the URI of the namespace of this NodeChild.
+     * @return the namespace of this NodeChild
+     */
     public String namespaceURI() {
         return this.node.namespaceURI();
     }
 
+    /**
+     * Throws a <code>GroovyRuntimeException</code>, because this method is not implemented yet.
+     */
     public GPathResult parents() {
         // TODO Auto-generated method stub
         throw new GroovyRuntimeException("parents() not implemented yet");
@@ -124,6 +138,10 @@ public class NodeChild extends GPathResult {
         }
     }
 
+    /**
+     * Returns a map containing all attributes of the Node of this NodeChild.
+     * @return a map containing all attributes
+     */
     public Map attributes() {
         return this.node.attributes();
     }

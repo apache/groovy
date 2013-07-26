@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     private final List<GroovyFieldDoc> enumConstants;
     private final List<GroovyMethodDoc> methods;
     private final List<String> importedClassesAndPackages;
+    private final Map<String, String> aliases;
     private final List<String> interfaceNames;
     private final List<GroovyClassDoc> interfaceClasses;
     private final List<GroovyClassDoc> nested;
@@ -59,9 +60,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     private boolean isgroovy;
     private GroovyRootDoc savedRootDoc = null;
 
-    public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name, List<LinkArgument> links) {
+    public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, Map<String, String> aliases, String name, List<LinkArgument> links) {
         super(name);
         this.importedClassesAndPackages = importedClassesAndPackages;
+        this.aliases = aliases;
         this.links = links;
         constructors = new ArrayList<GroovyConstructorDoc>();
         fields = new ArrayList<GroovyFieldDoc>();
@@ -73,8 +75,12 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         nested = new ArrayList<GroovyClassDoc>();
     }
 
+    public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, Map<String, String> aliases, String name) {
+        this(importedClassesAndPackages, aliases, name, new ArrayList<LinkArgument>());
+    }
+
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name) {
-        this(importedClassesAndPackages, name, new ArrayList<LinkArgument>());
+        this(importedClassesAndPackages, new HashMap<String, String>(), name, new ArrayList<LinkArgument>());
     }
 
     /**
@@ -274,6 +280,13 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         }
     }
 
+    private void processAnnotationRefs(GroovyRootDoc rootDoc, GroovyAnnotationRef[] annotations) {
+        for (GroovyAnnotationRef annotation : annotations) {
+            SimpleGroovyAnnotationRef ref = (SimpleGroovyAnnotationRef) annotation;
+            ref.setType(resolveClass(rootDoc, ref.name()));
+        }
+    }
+
     void resolve(GroovyRootDoc rootDoc) {
         this.savedRootDoc = rootDoc;
         Map visibleClasses = rootDoc.getVisibleClasses(importedClassesAndPackages);
@@ -291,7 +304,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     GroovyClassDoc doc = resolveClass(rootDoc, paramTypeName);
                     if (doc != null) param.setType(doc);
                 }
+                processAnnotationRefs(rootDoc, param.annotations());
             }
+            processAnnotationRefs(rootDoc, constructor.annotations());
         }
 
         for (GroovyFieldDoc field : fields) {
@@ -304,6 +319,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                 GroovyClassDoc doc = resolveClass(rootDoc, typeName);
                 if (doc != null) mutableField.setType(doc);
             }
+            processAnnotationRefs(rootDoc, field.annotations());
         }
 
         // resolve method return types and parameter types
@@ -329,7 +345,24 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     GroovyClassDoc doc = resolveClass(rootDoc, paramTypeName);
                     if (doc != null) param.setType(doc);
                 }
+                processAnnotationRefs(rootDoc, param.annotations());
             }
+            processAnnotationRefs(rootDoc, method.annotations());
+        }
+
+        // resolve property types
+        for (GroovyFieldDoc property : properties)  {
+            if (property instanceof SimpleGroovyFieldDoc)  {
+                SimpleGroovyFieldDoc simpleGroovyFieldDoc = (SimpleGroovyFieldDoc) property;
+                if (simpleGroovyFieldDoc.type() instanceof SimpleGroovyType)  {
+                    SimpleGroovyType simpleGroovyType = (SimpleGroovyType) simpleGroovyFieldDoc.type();
+                    GroovyClassDoc propertyTypeClassDoc = resolveClass(rootDoc, simpleGroovyType.qualifiedTypeName());
+                    if (propertyTypeClassDoc != null)  {
+                        simpleGroovyFieldDoc.setType(propertyTypeClassDoc);
+                    }
+                }
+            }
+            processAnnotationRefs(rootDoc, property.annotations());
         }
 
         if (superClassName != null && superClass == null) {
@@ -340,10 +373,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             interfaceClasses.add(resolveClass(rootDoc, name));
         }
 
-        for (GroovyAnnotationRef annotation : annotations()) {
-            SimpleGroovyAnnotationRef ref = (SimpleGroovyAnnotationRef) annotation;
-            ref.setType(resolveClass(rootDoc, ref.name()));
-        }
+        processAnnotationRefs(rootDoc, annotations());
     }
 
     public String getDocUrl(String type) {
@@ -356,7 +386,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private static String resolveMethodArgs(GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc, String type) {
         if (!type.contains("(")) return type;
-        Matcher m = NAME_ARGS_REGEX.matcher(type);
+            Matcher m = NAME_ARGS_REGEX.matcher(type);
         if (m.matches()) {
             String name = m.group(1);
             String args = m.group(2);
@@ -419,7 +449,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         // last chance lookup for classes within the current codebase
         if (rootDoc != null) {
             String slashedName = target[0].replaceAll("\\.", "/");
-            GroovyClassDoc doc = rootDoc.classNamed(slashedName);
+            GroovyClassDoc doc = rootDoc.classNamed(classDoc, slashedName);
             if (doc != null) {
                 return buildUrl(relativePath, target, label == null ? name : label);
             }
@@ -467,7 +497,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                 if (nestedDoc.name().endsWith("." + name))
                     return nestedDoc;
             }
-            doc = rootDoc.classNamed(name);
+            doc = rootDoc.classNamed(this, name);
             if (doc != null) return doc;
         }
 
@@ -502,7 +532,21 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                         }
                     }
                 }
+
+                if (gcd instanceof SimpleGroovyClassDoc) {
+                    String innerClassName = name.substring(slashIndex + 1);
+                    SimpleGroovyClassDoc innerClass = new SimpleGroovyClassDoc(importedClassesAndPackages, aliases, innerClassName);
+                    innerClass.setFullPathName(gcd.getFullPathName() + "." + innerClassName);
+                    return innerClass;
+                }
             }
+        }
+
+        // check if the name is actually an aliased type name
+        if (hasAlias(name))  {
+            String fullyQualifiedTypeName = getFullyQualifiedTypeNameForAlias(name);
+            GroovyClassDoc gcd = resolveClass(rootDoc, fullyQualifiedTypeName);
+            if (gcd != null) return gcd;
         }
 
         // and we can't find it
@@ -576,6 +620,15 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             // ignore
         }
         return null;
+    }
+
+    private boolean hasAlias(String alias)  {
+        return aliases.containsKey(alias);
+    }
+
+    private String getFullyQualifiedTypeNameForAlias(String alias)  {
+        if (!hasAlias(alias)) return "";
+        return aliases.get(alias);
     }
 
     // methods from GroovyClassDoc

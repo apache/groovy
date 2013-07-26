@@ -136,7 +136,7 @@ class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
 
             @groovy.transform.CompileStatic
             int m(java.awt.Point a) {
-                return a.x
+                return a.@x
             }
             assert m(a) == 100
         ''')
@@ -144,6 +144,25 @@ class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
                 'ALOAD',
                 'GETFIELD java/awt/Point.x : I',
                 'IRETURN'
+        ])
+
+        clazz.newInstance().run()
+    }
+
+    void testReturnFieldFromNonGroovyObjectUsingGetter() {
+        compile(method:'m', '''
+            java.awt.Point a = [100,200]
+
+            @groovy.transform.CompileStatic
+            double usingGetter(java.awt.Point a) {
+                return a.x
+            }
+            assert usingGetter(a) == 100
+        ''')
+       assert sequence.hasStrictSequence([
+                'ALOAD',
+                'INVOKEVIRTUAL java/awt/Point.getX ()D',
+                'DRETURN'
         ])
 
         clazz.newInstance().run()

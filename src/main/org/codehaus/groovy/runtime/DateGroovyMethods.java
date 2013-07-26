@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,18 +111,19 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support mutating a Calendar with a Map.
-     * <p/>
+     * <p>
      * The map values are the normal values provided as the
      * second parameter to <code>java.util.Calendar#set(int, int)</code>.
      * The keys can either be the normal fields values provided as
      * the first parameter to that method or one of the following Strings:
      * <table border="1" cellpadding="4">
-     * <tr><td>year</td><td>Calendar.YEAR</td></tr>
-     * <tr><td>month</td><td>Calendar.MONTH</td></tr>
-     * <tr><td>date</td><td>Calendar.DATE</td></tr>
-     * <tr><td>hourOfDay</td><td>Calendar.HOUR_OF_DAY</td></tr>
-     * <tr><td>minute</td><td>Calendar.MINUTE</td></tr>
-     * <tr><td>second</td><td>Calendar.SECOND</td></tr>
+     *   <caption>Calendar index values</caption>
+     *   <tr><td>year</td><td>Calendar.YEAR</td></tr>
+     *   <tr><td>month</td><td>Calendar.MONTH</td></tr>
+     *   <tr><td>date</td><td>Calendar.DATE</td></tr>
+     *   <tr><td>hourOfDay</td><td>Calendar.HOUR_OF_DAY</td></tr>
+     *   <tr><td>minute</td><td>Calendar.MINUTE</td></tr>
+     *   <tr><td>second</td><td>Calendar.SECOND</td></tr>
      * </table>
      * Example usage:
      * <pre>
@@ -134,7 +135,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * m[DATE] = 25
      * cal.set(m)
      * println cal.time // Christmas 2010
-     * <p/>
+     *
      * cal.set(year:2011, month:DECEMBER, date:25)
      * println cal.time // Christmas 2010
      * </pre>
@@ -157,7 +158,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support creating a new Date having similar properties to
      * an existing Date (which remains unaltered) but with
      * some fields updated according to a Map of changes.
-     * <p/>
+     * <p>
      * Example usage:
      * <pre>
      * import static java.util.Calendar.YEAR
@@ -188,7 +189,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support mutating a Date with a Map.
-     * <p/>
+     * <p>
      * Example usage:
      * <pre>
      * import static java.util.Calendar.YEAR
@@ -215,7 +216,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support creating a new Date having similar properties to
      * an existing Date (which remains unaltered) but with
      * some fields updated according to a Map of changes.
-     * <p/>
+     * <p>
      * Example usage:
      * <pre>
      * import static java.util.Calendar.YEAR
@@ -403,9 +404,9 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Subtract another date from this one and return the number of days of the difference.
-     * <p/>
+     * <p>
      * Date self = Date then + (Date self - Date then)
-     * <p/>
+     * <p>
      * IOW, if self is before then the result is a negative value.
      *
      * @param self a Calendar
@@ -444,9 +445,9 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Subtract another Date from this one and return the number of days of the difference.
-     * <p/>
+     * <p>
      * Date self = Date then + (Date self - Date then)
-     * <p/>
+     * <p>
      * IOW, if self is before then the result is a negative value.
      *
      * @param self a Date
@@ -464,15 +465,15 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * <p>Create a String representation of this date according to the given
-     * format pattern.</p>
-     * <p/>
+     * format pattern.
+     * <p>
      * <p>For example, if the system timezone is GMT,
      * <code>new Date(0).format('MM/dd/yy')</code> would return the string
      * <code>"01/01/70"</code>. See documentation for {@link java.text.SimpleDateFormat}
-     * for format pattern use.</p>
-     * <p/>
+     * for format pattern use.
+     * <p>
      * <p>Note that a new DateFormat instance is created for every
-     * invocation of this method (for thread safety).</p>
+     * invocation of this method (for thread safety).
      *
      * @param self   a Date
      * @param format the format pattern to use according to {@link java.text.SimpleDateFormat}
@@ -486,8 +487,8 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * <p>Create a String representation of this date according to the given
-     * format pattern and timezone.</p>
-     * <p/>
+     * format pattern and timezone.
+     * <p>
      * <p>For example:
      * <code>
      * def d = new Date(0)
@@ -495,10 +496,10 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * println d.format('dd/MMM/yyyy', tz)
      * </code> would return the string
      * <code>"01/Jan/1970"</code>. See documentation for {@link java.text.SimpleDateFormat}
-     * for format pattern use.</p>
-     * <p/>
+     * for format pattern use.
+     * <p>
      * <p>Note that a new DateFormat instance is created for every
-     * invocation of this method (for thread safety).</p>
+     * invocation of this method (for thread safety).
      *
      * @param self   a Date
      * @param format the format pattern to use according to {@link java.text.SimpleDateFormat}
@@ -516,10 +517,10 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * <p>Return a string representation of the 'day' portion of this date
      * according to the locale-specific {@link java.text.DateFormat#SHORT} default format.
-     * For an "en_UK" system locale, this would be <code>dd/MM/yy</code>.</p>
-     * <p/>
+     * For an "en_UK" system locale, this would be <code>dd/MM/yy</code>.
+     * <p>
      * <p>Note that a new DateFormat instance is created for every
-     * invocation of this method (for thread safety).</p>
+     * invocation of this method (for thread safety).
      *
      * @param self a Date
      * @return a string representation of this date
@@ -534,10 +535,10 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * <p>Return a string representation of the time portion of this date
      * according to the locale-specific {@link java.text.DateFormat#MEDIUM} default format.
-     * For an "en_UK" system locale, this would be <code>HH:MM:ss</code>.</p>
-     * <p/>
+     * For an "en_UK" system locale, this would be <code>HH:MM:ss</code>.
+     * <p>
      * <p>Note that a new DateFormat instance is created for every
-     * invocation of this method (for thread safety).</p>
+     * invocation of this method (for thread safety).
      *
      * @param self a Date
      * @return a string representing the time portion of this date
@@ -554,10 +555,10 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * this Date instance, according to the locale-specific format used by
      * {@link java.text.DateFormat}.  This method uses the {@link java.text.DateFormat#SHORT}
      * preset for the day portion and {@link java.text.DateFormat#MEDIUM} for the time
-     * portion of the output string.</p>
-     * <p/>
+     * portion of the output string.
+     * <p>
      * <p>Note that a new DateFormat instance is created for every
-     * invocation of this method (for thread safety).</p>
+     * invocation of this method (for thread safety).
      *
      * @param self a Date
      * @return a string representation of this date and time
@@ -630,7 +631,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>Shortcut for {@link java.text.SimpleDateFormat} to output a String representation
      * of this calendar instance.  This method respects the Calendar's assigned
      * {@link java.util.TimeZone}, whereas calling <code>cal.time.format('HH:mm:ss')</code>
-     * would use the system timezone.</p>
+     * would use the system timezone.
      * <p>Note that Calendar equivalents of <code>date.getDateString()</code>
      * and variants do not exist because those methods are Locale-dependent.
      * Although a Calendar may be assigned a {@link java.util.Locale}, that information is
@@ -638,7 +639,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * provided by these methods.  Instead, the system Locale would always be
      * used.  The alternative is to simply call
      * {@link java.text.DateFormat#getDateInstance(int, java.util.Locale)} and pass the same Locale
-     * that was used for the Calendar.</p>
+     * that was used for the Calendar.
      *
      * @param self    this calendar
      * @param pattern format pattern

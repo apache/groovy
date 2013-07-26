@@ -601,6 +601,29 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
+    public void testBindNodeValue() {
+        testInEDT {
+            SwingBuilder swing = new SwingBuilder()
+
+            Map model = [
+                string: 'string',
+                bool  : true
+            ] as ObservableMap
+
+            shouldFail {
+                swing.actions {
+                    textField(id: 'error', text: bind(model.bool))
+                }
+            }
+
+            shouldFail {
+                swing.actions {
+                    textField(id: 'error', text: bind(model.string))
+                }
+            }
+        }
+    }
+
     public void testReversePropertyBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
@@ -753,7 +776,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
                         text: bind(
                                 validator: dateValidator,
                                 converter: dateConverter,
-                                target: model, targetProperty: 'birthday'
+                                target: model, targetProperty: 'date'
                         ))
                 tf2 = textField('01.01.1970', id: 'birthdayText', columns: 20)
                 binding = bind(
@@ -762,7 +785,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
                         validator: dateValidator,
                         converter: dateConverter,
                         target: model,
-                        targetProperty: 'birthday'
+                        targetProperty: 'date'
                 )
             }
         }
@@ -788,10 +811,10 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
                 slider(id: 's4', value: 8)
                 textArea(id: 't1', text: bind(target: s3, targetProperty: 'value',
                         id: 'binding3', value: '15',
-                        converter: {Integer.parseInt(it)}))
+                        converter: {Integer.parseInt(String.valueOf(it))}))
                 textArea(id: 't2', text: bind(source: s4, sourceProperty: 'value',
                         id: 'binding4', value: '16',
-                        converter: {Integer.parseInt(it)}))
+                        converter: {Integer.parseInt(String.valueOf(it))}))
             }
             // s1 is the source, so it's value should be reflected
             assert swing.s3.value == 15
@@ -1147,6 +1170,70 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
             assert abean.text == bbean.vetoField
             abean.text = "this should fail"
             assert abean.text != bbean.vetoField
+        }
+    }
+
+    public void testGroovy4627_source_binding() {
+        testInEDT {
+            SwingBuilder swing = new SwingBuilder()
+
+            BindableBean model = new BindableBean(text: '0')
+
+            swing.actions {
+                bindGroup(id: 'formElements')
+                textField(id: 'txt1', text: bind(source: model, sourceProperty: 'text', group: formElements))
+                textField(id: 'txt2', text: bind(source: model, sourceProperty: 'text', group: formElements))
+            }
+
+            assert model.text == '0'
+            assert swing.txt1.text == '0'
+            assert swing.txt2.text == '0'
+
+            swing.formElements.unbind()
+            model.text = '1'
+            assert swing.txt1.text == '0'
+            assert swing.txt2.text == '0'
+
+            swing.formElements.rebind()
+            swing.formElements.update()
+            assert swing.txt1.text == '1'
+            assert swing.txt2.text == '1'
+
+            model.text = '2'
+            assert swing.txt1.text == '1'
+            assert swing.txt2.text == '1'
+            swing.formElements.update()
+            assert swing.txt1.text == '2'
+            assert swing.txt2.text == '2'
+        }
+    }
+
+    public void testGroovy4627_target_binding() {
+        testInEDT {
+            SwingBuilder swing = new SwingBuilder()
+
+            BindableBean model = new BindableBean()
+
+            swing.actions {
+                bindGroup(id: 'formElements')
+                textField(id: 'txt1', text: bind(target: model, targetProperty: 'text', group: formElements, value: '0'))
+            }
+
+            assert model.text == '0'
+            assert swing.txt1.text == '0'
+
+            swing.formElements.unbind()
+            swing.txt1.text = '1'
+            assert model.text == '0'
+
+            swing.formElements.rebind()
+            swing.formElements.update()
+            assert model.text == '1'
+
+            swing.txt1.text = '2'
+            assert model.text == '1'
+            swing.formElements.update()
+            assert model.text == '2'
         }
     }
 }

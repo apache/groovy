@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,7 @@ import javax.swing.event.DocumentListener
  * @author Hamlet D'Arcy, AST browser
  * @author Roshan Dawrani
  * @author Paul King
+ * @author Andre Steingress
  */
 class Console implements CaretListener, HyperlinkListener, ComponentListener, FocusListener {
 
@@ -115,6 +116,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     // Safer thread interruption
     boolean threadInterrupt = prefs.getBoolean('threadInterrupt', false)
     Action threadInterruptAction
+
+    boolean saveOnRun = prefs.getBoolean('saveOnRun', false)
+    Action saveOnRunAction
+
+    //to allow loading classes dynamically when using @Grab (GROOVY-4877, GROOVY-5871)
+    boolean useScriptClassLoaderForScriptExecution = false
 
     // Maximum size of history
     int maxHistory = 10
@@ -176,9 +183,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     public static URL ICON_PATH = Console.class.classLoader.getResource('groovy/ui/ConsoleIcon.png') // used by ObjectBrowser and AST Viewer
     public static URL NODE_ICON_PATH = Console.class.classLoader.getResource('groovy/ui/icons/bullet_green.png') // used by AST Viewer
 
-    private static groovyFileFilter = new GroovyFileFilter()
-    private boolean scriptRunning = false
-    private boolean stackOverFlowError = false
+    static groovyFileFilter = new GroovyFileFilter()
+    boolean scriptRunning = false
+    boolean stackOverFlowError = false
     Action interruptAction
     
     static void main(args) {
@@ -190,13 +197,14 @@ options:
             return
         }
 
-        // allow the full stack traces to bubble up to the root logger
-        java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = true
+        // full stack trace should not be logged to the output window - GROOVY-4663
+        java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = false
 
         //when starting via main set the look and feel to system
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); 
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
 
         def console = new Console(Console.class.classLoader?.getRootLoader())
+        console.useScriptClassLoaderForScriptExecution = true
         console.run()
         if (args.length == 1) console.loadScriptFile(args[0] as File)
     }
@@ -218,6 +226,7 @@ options:
         try {
             System.setProperty("groovy.full.stacktrace", System.getProperty("groovy.full.stacktrace",
                     Boolean.toString(prefs.getBoolean('fullStackTraces', false))))
+
         } catch (SecurityException se) {
             fullStackTracesAction.enabled = false;
         }
@@ -308,11 +317,30 @@ options:
         swing.bind(source:swing.inputEditor.redoAction, sourceProperty:'enabled', target:swing.redoAction, targetProperty:'enabled')
 
         if (swing.consoleFrame instanceof java.awt.Window) {
+            nativeFullScreenForMac(swing.consoleFrame)
             swing.consoleFrame.pack()
             swing.consoleFrame.show()
         }
         installInterceptor()
         swing.doLater inputArea.&requestFocus
+    }
+
+    /**
+     * Make the console frames capable of native fullscreen
+     * for Mac OS X Lion and beyond.
+     *
+     * @param frame the application window
+     */
+    private void nativeFullScreenForMac(java.awt.Window frame) {
+        if (System.getProperty("os.name").contains("Mac OS X")) {
+            new GroovyShell(new Binding([frame: frame])).evaluate('''
+                    try {
+                        com.apple.eawt.FullScreenUtilities.setWindowCanFullScreen(frame, true)
+                    } catch (Throwable t) {
+                        // simply ignore as full screen capability is not available
+                    }
+                ''')
+        }
     }
 
 
@@ -589,7 +617,7 @@ options:
     void fileNewWindow(EventObject evt = null) {
         Console consoleController = new Console(
             new Binding(
-                new HashMap(shell.context.variables)))
+                new HashMap(shell.getContext().variables)))
         consoleController.systemOutInterceptor = systemOutInterceptor
         consoleController.systemErrorInterceptor = systemErrorInterceptor
         SwingBuilder swing = new SwingBuilder()
@@ -599,6 +627,7 @@ options:
         swing.build(ConsoleActions)
         swing.build(ConsoleView)
         installInterceptor()
+        nativeFullScreenForMac(swing.consoleFrame)
         swing.consoleFrame.pack()
         swing.consoleFrame.show()
         swing.doLater swing.inputArea.&requestFocus
@@ -735,7 +764,7 @@ options:
             statusLabel.text = 'Execution complete.'
             appendOutputNl("Result: ", promptStyle)
             def obj = (visualizeScriptResults
-                ? OutputTransforms.transformResult(result, shell.context._outputTransforms)
+                ? OutputTransforms.transformResult(result, shell.getContext()._outputTransforms)
                 : result.toString())
 
             // multi-methods are magical!
@@ -805,7 +834,7 @@ options:
     }
 
     void inspectVariables(EventObject evt = null) {
-        ObjectBrowser.inspect(shell.context.variables)
+        ObjectBrowser.inspect(shell.getContext().variables)
     }
 
     void inspectAst(EventObject evt = null) {
@@ -855,7 +884,16 @@ options:
     // actually run the script
 
     void runScript(EventObject evt = null) {
-        runScriptImpl(false)
+        if (saveOnRun && scriptFile != null)  {
+            if (fileSave(evt)) runScriptImpl(false)
+        } else {
+            runScriptImpl(false)
+        }
+    }
+
+    void saveOnRun(EventObject evt = null)  {
+        saveOnRun = evt.source.selected
+        prefs.putBoolean('saveOnRun', saveOnRun)
     }
 
     void runSelectedScript(EventObject evt = null) {
@@ -928,7 +966,20 @@ options:
                 if(beforeExecution) {
                     beforeExecution()
                 }
-                def result = shell.run(record.getTextToRun(selected), name, [])
+                def result
+                if(useScriptClassLoaderForScriptExecution) {
+                    ClassLoader savedThreadContextClassLoader = Thread.currentThread().contextClassLoader
+                    try {
+                        Thread.currentThread().contextClassLoader = shell.classLoader
+                        result = shell.run(record.getTextToRun(selected), name, [])
+                    }
+                    finally {
+                        Thread.currentThread().contextClassLoader = savedThreadContextClassLoader
+                    }
+                }
+                else {
+                    result = shell.run(record.getTextToRun(selected), name, [])
+                }
                 if(afterExecution) {
                     afterExecution()
                 }
@@ -1038,7 +1089,7 @@ options:
     // Adds a variable to the binding
     // Useful for adding variables before opening the console
     void setVariable(String name, Object value) {
-        shell.context.setVariable(name, value)
+        shell.getContext().setVariable(name, value)
     }
 
     void showAbout(EventObject evt = null) {

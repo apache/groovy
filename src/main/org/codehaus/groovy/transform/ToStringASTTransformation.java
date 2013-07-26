@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.assignStatement;
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.declStatement;
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.getInstanceNonPropertyFields;
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.getInstanceProperties;
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.hasDeclaredMethod;
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.notNullExpr;
+import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
 /**
  * Handles generation of code for the @ToString annotation.
@@ -72,6 +67,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             ClassNode cNode = (ClassNode) parent;
             checkNotInterface(cNode, MY_TYPE_NAME);
             boolean includeSuper = memberHasValue(anno, "includeSuper", true);
+            boolean cacheToString = memberHasValue(anno, "cache", true);
             if (includeSuper && cNode.getSuperClass().getName().equals("java.lang.Object")) {
                 addError("Error during " + MY_TYPE_NAME + " processing: includeSuper=true but '" + cNode.getName() + "' has no super class.", anno);
             }
@@ -80,6 +76,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             List<String> excludes = getMemberList(anno, "excludes");
             List<String> includes = getMemberList(anno, "includes");
             boolean ignoreNulls = memberHasValue(anno, "ignoreNulls", true);
+            boolean includePackage = !memberHasValue(anno, "includePackage", false);
 
             if (hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
                 AnnotationNode canonical = cNode.getAnnotations(CanonicalASTTransformation.MY_TYPE).get(0);
@@ -89,7 +86,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
                 addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
             }
-            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls);
+            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString);
         }
     }
 
@@ -98,12 +95,39 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     }
 
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls) {
+        createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, true);
+    }
+    
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage) {
+        createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, false);
+    }
+
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingToString = hasDeclaredMethod(cNode, "toString", 0);
         if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
 
         final BlockStatement body = new BlockStatement();
+        Expression tempToString;
+        if (cache) {
+            final FieldNode cacheField = cNode.addField("$to$string", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.STRING_TYPE, null);
+            final Expression savedToString = new VariableExpression(cacheField);
+            body.addStatement(new IfStatement(
+                    equalsNullExpr(savedToString),
+                    assignStatement(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, body)),
+                    EmptyStatement.INSTANCE
+            ));
+            tempToString = savedToString;
+        } else {
+            tempToString = calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, body);
+        }
+        body.addStatement(new ReturnStatement(tempToString));
 
+        cNode.addMethod(new MethodNode(hasExistingToString ? "_toString" : "toString", hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
+                ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+    }
+
+    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, BlockStatement body) {
         // def _result = new StringBuilder()
         final Expression result = new VariableExpression("_result");
         final Expression init = new ConstructorCallExpression(STRINGBUILDER_TYPE, MethodCallExpression.NO_ARGUMENTS);
@@ -114,7 +138,8 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         body.addStatement(declStatement(first, ConstantExpression.TRUE));
 
         // <class_name>(
-        body.addStatement(append(result, new ConstantExpression(cNode.getName() + "(")));
+        String className = (includePackage) ? cNode.getName() : cNode.getNameWithoutPackage();
+        body.addStatement(append(result, new ConstantExpression(className + "(")));
 
         // append properties
         List<PropertyNode> pList = getInstanceProperties(cNode);
@@ -145,9 +170,9 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
         // wrap up
         body.addStatement(append(result, new ConstantExpression(")")));
-        body.addStatement(new ReturnStatement(new MethodCallExpression(result, "toString", MethodCallExpression.NO_ARGUMENTS)));
-        cNode.addMethod(new MethodNode(hasExistingToString ? "_toString" : "toString", hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
-                ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+        MethodCallExpression toString = new MethodCallExpression(result, "toString", MethodCallExpression.NO_ARGUMENTS);
+        toString.setImplicitThis(false);
+        return toString;
     }
 
     private static void appendValue(BlockStatement body, Expression result, VariableExpression first, Expression value, String name, boolean includeNames, boolean ignoreNulls) {
@@ -155,7 +180,9 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         final Statement appendValue = ignoreNulls ? new IfStatement(notNullExpr(value), thenBlock, EmptyStatement.INSTANCE) : thenBlock;
         appendCommaIfNotFirst(thenBlock, result, first);
         appendPrefix(thenBlock, result, name, includeNames);
-        thenBlock.addStatement(append(result, new StaticMethodCallExpression(INVOKER_TYPE, "toString", value)));
+        thenBlock.addStatement(new IfStatement(identicalExpr(value, VariableExpression.THIS_EXPRESSION),
+                append(result, new ConstantExpression("(this)")),
+                append(result, new StaticMethodCallExpression(INVOKER_TYPE, "toString", value))));
         body.addStatement(appendValue);
     }
 
@@ -177,7 +204,9 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     }
 
     private static ExpressionStatement append(Expression result, Expression expr) {
-        return new ExpressionStatement(new MethodCallExpression(result, "append", expr));
+        MethodCallExpression append = new MethodCallExpression(result, "append", expr);
+        append.setImplicitThis(false);
+        return new ExpressionStatement(append);
     }
 
     private static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {

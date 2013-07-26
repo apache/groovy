@@ -1,5 +1,4 @@
 import org.apache.tools.ant.filters.ReplaceTokens
-import java.text.SimpleDateFormat
 
 if (!rootProject.useIndy()) {
     apply plugin: 'osgi'
@@ -25,7 +24,6 @@ ext.allManifest = manifest {
             "Bundle-ClassPath": '.',
             "Bundle-RequiredExecutionEnvironment": 'J2SE-1.5',
             "Eclipse-BuddyPolicy": 'dependent',
-            "Eclipse-LazyStart": 'true',
             "DynamicImport-Package": '*',
             "Main-class": 'groovy.ui.GroovyMain')
 }
@@ -42,19 +40,58 @@ ext.licenseSpec = copySpec {
     }
 }
 
+ext.srcSpec = copySpec {
+    from(projectDir) {
+        exclude 'target', 'subprojects/*/target', 'buildSrc/target', buildDir.path, 'classes/**', 'cruise/**',
+            '.clover/*', 'local.build.properties', 'cobertura.ser', 'junitvmwatcher*.properties',
+            'out', '**/*.iml', '**/*.ipr', '**/*.iws', // used by Intellij IDEA
+            '.settings', // used by Eclipse
+            '.gradle', 'buildSrc/.gradle' // used by Gradle
+    }
+}
+
+ext.docSpec = copySpec {
+    into("pdf") {
+        from 'src/wiki-snapshot.pdf'
+    }
+    into("html/api") {
+        from javadocAll.destinationDir
+    }
+    into("html/gapi") {
+        from groovydocAll.destinationDir
+    }
+    into("html/groovy-jdk") {
+        from docGDK.destinationDir
+    }
+}
+
 task copy(type: Copy) {
     into "$buildDir/meta"
     with licenseSpec
 }
 
-def commonOsgiManifest
+def groovyOsgiManifest, subprojectOsgiManifest
 
 if (!rootProject.useIndy()) {
-    commonOsgiManifest = {
-        // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
+    groovyOsgiManifest = {
+        // Exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
         from(allManifest) {
             eachEntry {details ->
                 if (details.key == 'Bnd-LastModified') {
+                    details.exclude()
+                }
+            }
+        }
+        version = groovyBundleVersion
+        instruction '-nouses', 'true'
+        instruction 'Export-Package', "*;version=${version}"
+        classpath = sourceSets.main.runtimeClasspath
+    }
+    subprojectOsgiManifest = {
+        // Exclude attributes not needed for subprojects.
+        from(allManifest) {
+            eachEntry {details ->
+                if (details.key in ['Bnd-LastModified', 'Extension-Name', 'Bundle-Name', 'Bundle-Description', 'Main-class']) {
                     details.exclude()
                 }
             }
@@ -80,13 +117,28 @@ jar {
             instruction 'Import-Package', "antlr", "org.objectweb.asm", "*;resolution:=optional"
             classesDir = sourceSets.main.output.classesDir
         }
-        manifest commonOsgiManifest
+        manifest groovyOsgiManifest
     }
-    exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties', 'main'
+    exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
 }
 
-def modules() {
-    subprojects.findAll { it.name =~ /groovy-(?!all-tests)/ }
+subprojects {
+    jar {
+        metaInf {
+            from "${rootProject.projectDir}/LICENSE.txt"
+            from("${rootProject.projectDir}/src/main/META-INF/groovy-release-info.properties") {
+                filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
+            }
+        }
+        if (!rootProject.useIndy() && project.name != 'groovy-all-tests') {
+            manifest = osgiManifest {
+                symbolicName = project.name
+                classesDir = sourceSets.main.output.classesDir
+            }
+            manifest subprojectOsgiManifest
+        }
+        exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
+    }
 }
 
 def moduleJars() {
@@ -100,7 +152,7 @@ def mergeModuleDescriptors() {
     def extensionClasses = []
     def staticExtensionClasses = []
 
-    subprojects.collect {
+    modules().collect {
         new File("${it.buildDir}/classes/main/META-INF/services/org.codehaus.groovy.runtime.ExtensionModule")
     }.findAll { it.exists() }.each {
         def props = new Properties()
@@ -130,7 +182,8 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
         classifier = 'indy'
     }
     doLast {
-        manifest.writeTo("$metaInfDir/MANIFEST.MF")
+        def manifestPath = "$metaInfDir/MANIFEST.MF"
+        manifest.writeTo(manifestPath)
         copy {
             from(mergeModuleDescriptors())
             into "$buildDir/tmp/groovy-all-metainf/services"
@@ -143,10 +196,9 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
         project.ant {
             taskdef name: "jarjar", classname: "com.tonicsystems.jarjar.JarJarTask", classpath: configurations.tools.asPath
             jarjar(jarfile: archivePath, manifest: "$metaInfDir/MANIFEST.MF") {
-                zipfileset(dir: "$ext.metaInfDir", prefix: 'META-INF')
                 zipfileset(
                         src: jar.archivePath,
-                        excludes: 'groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
+                        excludes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
                 moduleJars().each {
                     zipfileset(src: it, excludes: '**/org.codehaus.groovy.runtime.ExtensionModule')
                 }
@@ -162,22 +214,24 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
                 rule pattern: "org.apache.commons.cli.**", result: "groovyjarjarcommonscli.@1"
             }
         }
+        if (!rootProject.useIndy()) {
+            // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
+            manifest = osgiManifest {
+                symbolicName = 'groovy-all'
+                instruction 'Import-Package', "*;resolution:=optional"
+                classesDir = archivePath
+            }
+            manifest groovyOsgiManifest
+            manifestPath = "${temporaryDir}/META-INF/MANIFEST.MF"
+            manifest.writeTo(manifestPath)
+        }
         project.ant {
-            jar(destfile: archivePath, update:true, filesonly:true) {
+            jar(destfile: archivePath, update:true, manifest: manifestPath) {
                 zipfileset(
                         src: jar.archivePath,
-                        includes: 'groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
+                        includes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
             }
         }
-    }
-    if (!rootProject.useIndy()) {
-        // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
-        manifest = osgiManifest {
-            symbolicName = 'groovy-all'
-            instruction 'Import-Package', "*;resolution:=optional"
-            classesDir = jar.archivePath
-        }
-        manifest commonOsgiManifest
     }
 }
 
@@ -211,14 +265,13 @@ task jarAllAll(dependsOn: [jarAll, jarAllWithIndy]) {
 
 }
 
-task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar }) {
+task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar + rootProject.sourceJar }) {
     with sourceJar.rootSpec
     modules()*.sourceJar.each {
         with it.rootSpec
     }
     appendix = 'all'
     classifier = rootProject.useIndy()?'indy-sources':'sources'
-    //with sourceJar.rootSpec
 }
 
 allprojects {
@@ -254,8 +307,8 @@ ext.distSpec = copySpec {
         from({
             configurations.runtime.findAll { it.name.endsWith 'jar' } +
                     modules()*.jar.archivePath +
-                    subprojects.configurations.runtime*.findAll {
-                        it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223')
+                    modules().configurations.runtime*.findAll {
+                        it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223') && !it.name.matches(/groovy-\d.*/)
                     }.flatten() as Set
         })
     }
@@ -275,10 +328,10 @@ ext.distSpec = copySpec {
         from("src/bin") {
             filter(ReplaceTokens, tokens: [GROOVYJAR:jar.archiveName])
             fileMode = 0755
-            ext.exclude = "groovy.icns"
+            exclude "groovy.icns"
         }
         from("src/bin/groovy.icns")
-        from("src/tools/org/codehaus/groovy/tools/groovy.ico")
+        from("subprojects/groovy-docgenerator/src/main/resources/org/codehaus/groovy/tools/groovy.ico")
     }
     into("embeddable") {
         from jarAll.archivePath
@@ -297,18 +350,7 @@ task distBin(type: Zip, dependsOn: [jar, jarAllAll]) {
 task distDoc(type: Zip, dependsOn: doc) {
     appendix = 'docs'
     into("groovy-$version")
-    into("pdf") {
-        from 'src/wiki-snapshot.pdf'
-    }
-    into("html/api") {
-        from javadoc.destinationDir
-    }
-    into("html/gapi") {
-        from groovydoc.destinationDir
-    }
-    into("html/groovy-jdk") {
-        from docGDK.destinationDir
-    }
+    with docSpec
 }
 
 task syncDoc(type: Copy, dependsOn: doc) {
@@ -322,16 +364,10 @@ task syncDoc(type: Copy, dependsOn: doc) {
     // groovy-jdk already at the good place
 }
 
-task distSrc(type: Zip, dependsOn: [javadoc, groovydoc, docGDK]) {
+task distSrc(type: Zip) {
     appendix = 'src'
     into("groovy-$version")
-    from(projectDir) {
-        exclude 'target', 'subprojects/*/target', buildDir.path, 'classes/**', 'cruise/**', '.clover/*', 'local.build.properties',
-                'cobertura.ser', 'junitvmwatcher*.properties',
-                'out', '**/*.iml', '**/*.ipr', '**/*.iws', // used by Intellij IDEA
-                '.settings', // used by Eclipse
-                '.gradle' // used by Gradle
-    }
+    with srcSpec
 }
 
 def installDir = {
@@ -349,6 +385,16 @@ task installGroovy(type: Sync, dependsOn: distBin) {
     into installDir
 }
 
-task dist(dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
-    description = 'Generates the binary, sources and documentation distributions'
+task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
+    description = 'Generates the binary, sources, documentation and full distributions'
+    appendix 'sdk'
+    into("groovy-$version")
+    with distSpec
+    with licenseSpec
+    into('doc'){
+        with docSpec
+    }
+    into('src'){
+        with srcSpec
+    }
 }

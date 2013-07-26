@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,19 +24,19 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation is used in conjunction with {@link WithWriteLock} to support read and write synchronization on a method.<br/><br/>
- *
+ * This annotation is used in conjunction with {@link WithWriteLock} to support read and write synchronization on a method.
+ * <p>
  * To use this annotation, declare {@code @WithReadLock} on your method. The method may be either an instance method or
  * a static method. The resulting method will allow multiple threads to read the information at the same time.
- * However, if some other method obtains a write lock, then this method will force callers to wait until the write is complete. <br/><br/>
- *
+ * However, if some other method obtains a write lock, then this method will force callers to wait until the write is complete.
+ * <p>
  * This annotation is a declarative wrapper around the JDK's <code>java.util.concurrent.locks.ReentrantReadWriteLock</code>.
  * Objects containing this annotation will have a ReentrantReadWriteLock field named <code>$reentrantLock</code> added to the class,
- * and method access is protected by the lock. If the method is static then the field is static and named <code>$REENTRANTLOCK</code>.<br/><br/>
- *
+ * and method access is protected by the lock. If the method is static then the field is static and named <code>$REENTRANTLOCK</code>.
+ * <p>
  * The annotation takes an optional parameter for the name of the field. This field must exist on the class and must be
- * of type ReentrantReadWriteLock. <br/><br/>
- *
+ * of type ReentrantReadWriteLock.
+ * <p>
  * To understand how this annotation works, it is convenient to think in terms of the source code it replaces. The following
  * is a typical usage of this annotation from Groovy:
  * <pre>
@@ -86,6 +86,7 @@ import java.lang.annotation.Target;
  *     }
  * }
  * </pre>
+ *
  * @author Hamlet D'Arcy
  * @since 1.8.0
  */

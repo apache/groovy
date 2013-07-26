@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ package org.codehaus.groovy.transform
 class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testImmutable() {
-        def objects = evaluate("""
+        def objects = evaluate('''
             import groovy.transform.Immutable
             enum Coin { HEAD, TAIL }
             @Immutable class Bar {
@@ -31,11 +31,11 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             }
             [new Bar(x:'x', y:'y', c:Coin.HEAD, nums:[1,2]),
              new Bar('x', 'y', Coin.HEAD, [1,2])]
-        """)
+        ''')
 
-        assertEquals objects[0].hashCode(), objects[1].hashCode()
-        assertEquals objects[0], objects[1]
-        assertTrue objects[0].nums.class.name.contains("Unmodifiable")
+        assert objects[0].hashCode() == objects[1].hashCode()
+        assert objects[0] == objects[1]
+        assert objects[0].nums.class.name.contains("Unmodifiable")
     }
 
     void testImmutableClonesListAndCollectionFields() {
@@ -72,6 +72,55 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         shouldFail(ReadOnlyPropertyException) {
             person.married = true
         }
+    }
+
+    void testCloneableField() {
+        def (originalDolly, lab) = evaluate("""
+            import groovy.transform.Immutable
+
+            class Dolly implements Cloneable {
+                String name
+            }
+
+            @Immutable class Lab {
+                String name
+                Cloneable clone
+            }
+
+            def dolly = new Dolly(name: "The Sheep")
+            [dolly, new Lab(name: "Area 51", clone: dolly)]
+        """)
+
+        def clonedDolly = lab.clone
+        def clonedDolly2 = lab.clone
+
+        assert lab.name == 'Area 51'
+        assert !originalDolly.is(clonedDolly)
+        assert originalDolly.name == clonedDolly.name
+        assert !clonedDolly2.is(clonedDolly)
+        assert clonedDolly2.name == clonedDolly.name
+    }
+
+    void testCloneableFieldNotCloneableObject() {
+        def cls = shouldFail(CloneNotSupportedException) {
+            def objects = evaluate("""
+                import groovy.transform.Immutable
+
+                class Dolly {
+                    String name
+                }
+
+                @Immutable class Lab {
+                    String name
+                    Cloneable clone
+                }
+
+                def dolly = new Dolly(name: "The Sheep")
+                [dolly, new Lab(name: "Area 51", clone: dolly)]
+            """)
+        }
+
+        assert cls == 'Dolly'
     }
 
     void testImmutableCantAlsoBeMutable() {
@@ -476,5 +525,65 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         }
         assert msg.contains("doesn't know how to handle field 'address' of type 'Address'")
         assert msg.contains("@Immutable classes only support properties with effectively immutable types")
+    }
+
+    // GROOVY-5828
+    void testKnownImmutableCollectionClass() {
+        assertScript '''
+            @groovy.transform.Immutable
+            class ItemsControl { List list }
+            def itemsControl = new ItemsControl(['Fee', 'Fi', 'Fo', 'Fum'])
+            assert itemsControl.list.class.name.contains('Unmodifiable')
+
+            // ok, Items not really immutable but pretend so for the purpose of this test
+            @groovy.transform.Immutable(knownImmutableClasses = [List])
+            class Items { List list }
+            def items = new Items(['Fee', 'Fi', 'Fo', 'Fum'])
+            assert !items.list.class.name.contains('Unmodifiable')
+        '''
+    }
+
+    // GROOVY-5828
+    void testKnownImmutables() {
+        assertScript '''
+            // ok, Items not really immutable but pretend so for the purpose of this test
+            @groovy.transform.Immutable(knownImmutables = ['list1'])
+            class Items {
+                List list1
+                List list2
+            }
+            def items = new Items(['Fee', 'Fi'], ['Fo', 'Fum'])
+            assert !items.list1.class.name.contains('Unmodifiable')
+            assert items.list2.class.name.contains('Unmodifiable')
+        '''
+    }
+
+    // GROOVY-5449
+    void testShouldNotThrowNPE() {
+        def msg = shouldFail(RuntimeException) {
+            evaluate '''
+            @groovy.transform.Immutable
+            class Person {
+                def name
+            }
+            '''
+        }
+        assert msg.contains('@Immutable processor doesn\'t know how to handle field \'name\' of type \'java.lang.Object or def\'')
+    }
+
+    // GROOVY-6192
+    void testWithEqualsAndHashCodeASTOverride() {
+        assertScript '''
+            import groovy.transform.*
+
+            @Immutable
+            @EqualsAndHashCode(includes = ['id'])
+            class B {
+                String id
+                String name
+            }
+
+            assert new B('1', 'foo').equals(new B('1', 'foo2'))
+        '''
     }
 }

@@ -40,7 +40,11 @@ public class FileReaderSource extends AbstractReaderSource {
         this.file = file;
     }
 
-   /**
+    public File getFile() {
+        return file;
+    }
+
+    /**
     *  Returns a new Reader on the underlying source object.  
     */
     public Reader getReader() throws IOException {

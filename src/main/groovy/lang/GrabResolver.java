@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.lang.annotation.ElementType;
 
 /**
  * Used to add a repository for resolving Grape dependencies.
- * <p/>
+ * <p>
  * For example:
  * <pre>
  * {@code @GrabResolver}(name='restlet.org', root='http://maven.restlet.org')
@@ -36,7 +36,7 @@ import java.lang.annotation.ElementType;
  * subsystem is shared globally, so added resolvers will become available for any subsequent
  * grab calls. Dependency resolution follows Ivy's artifact resolution which tries
  * to resolve artifacts in the order specified in the chain of resolvers.
- * <p/>
+ * <p>
  * Further information about customising grape behavior can be found on the Grape documentation page:
  * <a href="http://groovy.codehaus.org/Grape">http://groovy.codehaus.org/Grape</a>.
  *
@@ -55,4 +55,11 @@ public @interface GrabResolver {
     String name();
     String root();
     boolean m2Compatible() default true;
+
+    /**
+     * By default, when a {@code @GrabResolver} annotation is used, a {@code Grape.addResolver()} call is added
+     * to the static initializers of the class the annotatable node appears in.
+     * If you wish to disable this, add {@code initClass=false} to the annotation.
+     */
+    boolean initClass() default true;
 }

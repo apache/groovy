@@ -19,7 +19,6 @@ package org.codehaus.groovy.tools.shell.commands
 /**
  * Tests for the {@link HelpCommand} class.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class HelpCommandTest
@@ -34,11 +33,6 @@ class HelpCommandTest
     }
     
     void testCommandHelpInvalidCommand() {
-        try {
-            shell << 'help no-such-command'
-        }
-        catch (Exception e) {
-            // expected
-        }
+        shell << 'help no-such-command'
     }
 }

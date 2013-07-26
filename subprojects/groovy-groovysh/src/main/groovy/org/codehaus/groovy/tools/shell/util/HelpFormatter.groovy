@@ -17,7 +17,7 @@
 package org.codehaus.groovy.tools.shell.util
 
 import jline.Terminal
-
+import org.apache.commons.cli.Option
 import org.apache.commons.cli.Options
 
 //
@@ -49,16 +49,16 @@ class HelpFormatter
         assert sb != null
         assert options
         
-        List prefixes = []
+        List<StringBuffer> prefixes = []
         String lpad = ' ' * leftPad
         
-        List opts = options.shortOpts.values().sort { a, b ->
+        List<Option> opts = options.shortOpts.values().sort {Option a, Option b ->
             return (a.opt == ' ' ? a.longOpt : a.opt) <=> (b.opt == ' ' ? b.longOpt : b.opt)
         }
         
         // Render the prefixes (-X,--xxxx muck)
-        opts.each { option ->
-            def buff = new StringBuffer(8)
+        opts.each {Option option ->
+            StringBuffer buff = new StringBuffer(8)
             
             if (option.opt == ' ') {
                 buff << "${lpad}    ${defaultLongOptPrefix}${option.longOpt}"
@@ -89,12 +89,12 @@ class HelpFormatter
         }
         
         // Figure out how long the biggest prefix is
-        int maxPrefix = prefixes.max { a, b -> a.size() <=> b.size() }.size()
+        int maxPrefix = prefixes.max {StringBuffer a, StringBuffer b -> a.size() <=> b.size() }.size()
         
         String dpad = ' ' * descPad
         
         // And then render each option's prefix with its description
-        opts.eachWithIndex { option, i ->
+        opts.eachWithIndex {Option option, int i ->
             def buff = new StringBuffer(prefixes[i].toString())
             
             if (buff.size() < maxPrefix) {

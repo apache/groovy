@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -39,30 +35,14 @@ import java.util.Map;
 public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
     public void testPrint() throws Exception {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new LinkedHashMap<String, String>();
         map.put("bob", "drools");
         map.put("james", "geronimo");
         List<Map<String, String>> list = new ArrayList<Map<String, String>>();
         list.add(map);
-        assertEquals("[[james:geronimo, bob:drools]]", InvokerHelper.toString(list));
+        assertEquals("[[bob:drools, james:geronimo]]", InvokerHelper.toString(list));
     }
 
-    public void testIncrementString() throws Exception {
-        String original = "z";
-        String answer = StringGroovyMethods.next(original);
-
-        assertEquals("{", answer);
-        assertTrue(answer.compareTo(original) > 0);
-    }
-
-    public void testDecrementString() throws Exception {
-        String original = "a";
-        String answer = StringGroovyMethods.previous(original);
-
-        assertEquals("`", answer);
-        assertTrue(ScriptBytecodeAdapter.compareLessThan(answer, original));
-    }
-    
     public void testFloatRounding() throws Exception {
         Float f = 1000.123456f;
 
@@ -117,68 +97,18 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
     public void testToMethods() throws Exception {
         Number n = 7L;
-
-        assertEquals(StringGroovyMethods.toInteger("1"), new Integer(1));
         assertEquals(DefaultGroovyMethods.toInteger(n), new Integer(7));
-        assertEquals(StringGroovyMethods.toLong("1"), new Long(1));
         assertEquals(DefaultGroovyMethods.toLong(n), new Long(7));
-
-        assertEquals(StringGroovyMethods.toFloat("1"), new Float(1));
         assertEquals(DefaultGroovyMethods.toFloat(n), new Float(7));
-        assertEquals(StringGroovyMethods.toDouble("1"), new Double(1));
         assertEquals(DefaultGroovyMethods.toDouble(n), new Double(7));
-
-        assertEquals(StringGroovyMethods.toBigInteger("1"), new BigInteger("1"));
         assertEquals(DefaultGroovyMethods.toBigInteger(n), new BigInteger("7"));
-        assertEquals(StringGroovyMethods.toBigDecimal("1"), new BigDecimal("1"));
         assertEquals(DefaultGroovyMethods.toBigDecimal(n), new BigDecimal("7"));
-
         // The following is true starting with 1.6 (GROOVY-3171):
         assertEquals(new BigDecimal("0.1"), DefaultGroovyMethods.toBigDecimal(0.1));
-
         assertEquals(ResourceGroovyMethods.toURL("http://example.org/"), new URL("http://example.org/"));
         assertEquals(ResourceGroovyMethods.toURI("http://example.org/"), new URI("http://example.org/"));
-
-        assertEquals(StringGroovyMethods.toBoolean("True"), Boolean.TRUE);
-        assertEquals(StringGroovyMethods.toBoolean("Y"), Boolean.TRUE);
-        assertEquals(StringGroovyMethods.toBoolean(" y "), Boolean.TRUE);
-        assertEquals(StringGroovyMethods.toBoolean("1"), Boolean.TRUE);
-        assertEquals(StringGroovyMethods.toBoolean("false"), Boolean.FALSE);
-        assertEquals(StringGroovyMethods.toBoolean("n"), Boolean.FALSE);
-        assertEquals(StringGroovyMethods.toBoolean("0"), Boolean.FALSE);
-
         assertEquals(DefaultGroovyMethods.toBoolean(Boolean.FALSE), Boolean.FALSE);
         assertEquals(DefaultGroovyMethods.toBoolean(Boolean.TRUE), Boolean.TRUE);
-    }
-
-    public void testIsMethods() throws Exception {
-        String intStr = "123";
-        String floatStr = "1.23E-1";
-        String nonNumberStr = "ONE";
-
-        assertTrue(StringGroovyMethods.isInteger(intStr));
-        assertFalse(StringGroovyMethods.isInteger(floatStr));
-        assertFalse(StringGroovyMethods.isInteger(nonNumberStr));
-        assertTrue(StringGroovyMethods.isLong(intStr));
-        assertFalse(StringGroovyMethods.isLong(floatStr));
-        assertFalse(StringGroovyMethods.isLong(nonNumberStr));
-
-        assertTrue(StringGroovyMethods.isFloat(intStr));
-        assertTrue(StringGroovyMethods.isFloat(floatStr));
-        assertFalse(StringGroovyMethods.isFloat(nonNumberStr));
-        assertTrue(StringGroovyMethods.isDouble(intStr));
-        assertTrue(StringGroovyMethods.isDouble(floatStr));
-        assertFalse(StringGroovyMethods.isDouble(nonNumberStr));
-
-        assertTrue(StringGroovyMethods.isBigInteger(intStr));
-        assertFalse(StringGroovyMethods.isBigInteger(floatStr));
-        assertFalse(StringGroovyMethods.isBigInteger(nonNumberStr));
-        assertTrue(StringGroovyMethods.isBigDecimal(intStr));
-        assertTrue(StringGroovyMethods.isBigDecimal(floatStr));
-        assertFalse(StringGroovyMethods.isBigDecimal(nonNumberStr));
-        assertTrue(StringGroovyMethods.isNumber(intStr));
-        assertTrue(StringGroovyMethods.isNumber(floatStr));
-        assertFalse(StringGroovyMethods.isNumber(nonNumberStr));
     }
 
     public void testGetBytes() {

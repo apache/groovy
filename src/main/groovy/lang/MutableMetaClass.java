@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,17 @@ package groovy.lang;
 import java.lang.reflect.Method;
 
 /**
- * <p>An interface that defines methods that implementers of mutable Meta classes should specify. It provides operations to perform mutations
- * on the MetaClass instance.</p>
- *
- * <p>Whether a MetaClass allows mutation is up to the MetaClass itself and considerations of Thread safety
- * need to be taken into account when making a MetaClass mutable</p>
- *
- * <p>The default implementation allows mutation of MetaClass instances before initialisation (before the initialize() method is called)
- * but not after, thus ensuring Thread safety once a MetaClass has been constructed and placed in the registry</p>
+ * An interface that defines methods that implementers of mutable Meta classes should specify. It provides operations to perform mutations
+ * on the MetaClass instance.
+ * <p>
+ * Whether a MetaClass allows mutation is up to the MetaClass itself and considerations of Thread safety
+ * need to be taken into account when making a MetaClass mutable
+ * <p>
+ * The default implementation allows mutation of MetaClass instances before initialisation (before the initialize() method is called)
+ * but not after, thus ensuring Thread safety once a MetaClass has been constructed and placed in the registry
  *
  * @see MetaClassImpl
  * @see MetaClass
- *
  * @author Graeme Rocher
  * @since 1.5
  */

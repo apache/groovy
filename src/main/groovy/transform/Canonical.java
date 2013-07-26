@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 
 /**
  * Class annotation used to assist in the creation of mutable classes.
- * <p/>
+ * <p>
  * It allows you to write classes in this shortened form:
  * <pre>
  * {@code @Canonical} class Customer {
@@ -59,7 +59,7 @@ import java.lang.annotation.Target;
  * {@code @ToString} and {@code @TupleConstructor}. In addition, you can add one of
  * the other annotations if you need to further customize the behavior of the
  * AST transformation.
- * <p/>
+ * <p>
  * A class created in this way has the following characteristics:
  * <ul>
  * <li>A no-arg constructor is provided which allows you to set properties by name using Groovy's normal bean conventions.
@@ -78,15 +78,15 @@ import java.lang.annotation.Target;
  * </pre>
  * If an "underscore" version of the respective method already exists, then no default implementation is provided.
  * </ul>
- * <p/>
+ * <p>
  * If you want similar functionality to what this annotation provides but also require immutability, see the
- * {@code @Immutable} annotation.
- * <p/>
+ * {@code @}{@link Immutable} annotation.
+ * <p>
  * Limitations:
  * <ul>
- * <li>
- * If you explicitly add your own constructors, then the transformation will not add any other constructor to the class.
- * </li>
+ * <li>If you explicitly add your own constructors, then the transformation will not add any other constructor to the class</li>
+ * <li>Groovy's normal map-style naming conventions will not be available if the first property
+ * has type {@code LinkedHashMap} or if there is a single Map, AbstractMap or HashMap property</li>
  * </ul>
  *
  * @author Paulo Poiati

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package groovy.util.slurpersupport;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
+import groovy.xml.QName;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
  *
  * @author John Wilson
  */
-class Attributes extends NodeChildren {
+public class Attributes extends NodeChildren {
     final String attributeName;
 
     /**
@@ -59,6 +60,9 @@ class Attributes extends NodeChildren {
         return this.name.substring(1);
     }
 
+    /**
+     * Throws a <code>GroovyRuntimeException</code>, because attributes can have no children.
+     */
     public Iterator childNodes() {
         throw new GroovyRuntimeException("Can't get the child nodes on a GPath expression selecting attributes: ...." + this.parent.name() + "." + name() + ".childNodes()");
     }
@@ -71,12 +75,18 @@ class Attributes extends NodeChildren {
                     if (next instanceof Attribute) {
                         return next;
                     } else {
-                        final String value = (String) ((Node) next).attributes().get(Attributes.this.attributeName);
+                        String attributeKey = Attributes.this.attributeName;
+                        if (Attributes.this.namespacePrefix != null &&
+                                !"*".equals(Attributes.this.namespacePrefix) &&
+                                Attributes.this.namespacePrefix.length() > 0) {
+                            attributeKey = new QName(Attributes.this.lookupNamespace(Attributes.this.namespacePrefix), Attributes.this.attributeName).toString();
+                        }
+                        final String value = (String) ((Node) next).attributes().get(attributeKey);
                         if (value != null) {
                             return new Attribute(Attributes.this.name,
                                     value,
                                     new NodeChild((Node) next, Attributes.this.parent.parent, "", Attributes.this.namespaceTagHints),
-                                    "",
+                                    (Attributes.this.namespacePrefix == null || "*".equals(Attributes.this.namespacePrefix)) ? "" : Attributes.this.namespacePrefix,
                                     Attributes.this.namespaceTagHints);
                         }
                     }
@@ -95,12 +105,12 @@ class Attributes extends NodeChildren {
     }
 
     public String text() {
-        final StringBuffer buf = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         final Iterator iter = iterator();
         while (iter.hasNext()) {
-            buf.append(iter.next());
+            sb.append(iter.next());
         }
-        return buf.toString();
+        return sb.toString();
     }
 
     public List list() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,9 @@ package org.codehaus.groovy.ast;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.util.ListHashMap;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 /**
- * Base class for any AST node. This class supports basic information used in all
- * nodes of the AST<ul>
+ * Base class for any AST node. This class supports basic information used in all nodes of the AST:
+ * <ul>
  * <li> line and column number information. Usually a node represents a certain
  * area in a text file determined by a starting position and an ending position.
  * For nodes that do not represent this, this information will be -1. A node can
@@ -35,14 +31,14 @@ import java.util.Set;
  * transform. The only requirement is that the other phase operation or transform
  * runs after the part storing the information. If the information transport is 
  * done it is strongly recommended to remove that meta data.</li> 
- * </ul>
- * <li> a text representation of this node trough getText(). This was in the 
+ * <li> a text representation of this node trough getText(). This was in the
  * past used for assertion messages. Since the usage of power asserts this 
  * method will not be called for this purpose anymore and might be removed in
  * future versions of Groovy</li>
+ * </ul>
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author <a href="maito:blackdrag@gmx.org>Jochen "blackdrag" Theodorou</a>
- * @version $Revision$
+ * @author <a href="maito:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class ASTNode {
 
@@ -50,7 +46,7 @@ public class ASTNode {
     private int columnNumber = -1;
     private int lastLineNumber = -1;
     private int lastColumnNumber = -1;
-    private ListHashMap metaDataMap = new ListHashMap();
+    private ListHashMap metaDataMap = null;
 
     public void visit(GroovyCodeVisitor visitor) {
         throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
@@ -113,8 +109,11 @@ public class ASTNode {
      * @param key - the meta data key
      * @return the node meta data value for this key
      */
-    public Object getNodeMetaData(Object key) {
-        return metaDataMap.get(key);
+    public <T> T getNodeMetaData(Object key) {
+        if (metaDataMap == null) {
+            return (T) null;
+        }
+        return (T) metaDataMap.get(key);
     }
     
     /**
@@ -122,6 +121,12 @@ public class ASTNode {
      * @param other - the other node
      */
     public void copyNodeMetaData(ASTNode other) {
+        if (other.metaDataMap == null) {
+            return;
+        }
+        if (metaDataMap == null) {
+            metaDataMap = new ListHashMap();
+        }
         metaDataMap.putAll(other.metaDataMap);
     }
     
@@ -135,6 +140,9 @@ public class ASTNode {
      */
     public void setNodeMetaData(Object key, Object value) {
         if (key==null) throw new GroovyBugError("Tried to set meta data with null key on "+this+".");
+        if (metaDataMap == null) {
+            metaDataMap = new ListHashMap();
+        }
         Object old = metaDataMap.put(key,value);
         if (old!=null) throw new GroovyBugError("Tried to overwrite existing meta data "+this+".");
     }
@@ -149,6 +157,9 @@ public class ASTNode {
      */
     public Object putNodeMetaData(Object key, Object value) {
         if (key == null) throw new GroovyBugError("Tried to set meta data with null key on " + this + ".");
+        if (metaDataMap == null) {
+            metaDataMap = new ListHashMap();
+        }
         return metaDataMap.put(key, value);
     }
 
@@ -160,6 +171,10 @@ public class ASTNode {
      */
     public void removeNodeMetaData(Object key) {
         if (key==null) throw new GroovyBugError("Tried to remove meta data with null key "+this+".");
+        // GRECLIPSE: start
+        if (metaDataMap == null) {
+            return;
+        }
         metaDataMap.remove(key);
     }
 }

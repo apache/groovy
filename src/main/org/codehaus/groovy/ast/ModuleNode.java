@@ -122,6 +122,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ImportNode importNode = new ImportNode(type, alias);
         imports.put(alias, importNode);
         importNode.addAnnotations(annotations);
+        storeLastAddedImportNode(importNode);
     }
 
     public void addStarImport(String packageName) {
@@ -132,6 +133,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ImportNode importNode = new ImportNode(packageName);
         importNode.addAnnotations(annotations);
         starImports.add(importNode);
+        storeLastAddedImportNode(importNode);
     }
 
     public void addStatement(Statement node) {
@@ -244,14 +246,17 @@ public class ModuleNode extends ASTNode implements Opcodes {
         scriptDummy = classNode;
         return classNode;
     }
-    
+
     private void setScriptBaseClassFromConfig(ClassNode cn) {
+        String baseClassName = null;
         if (unit != null) {
-            String baseClassName = unit.getConfig().getScriptBaseClass();
-            if(baseClassName != null) {
-                if(!cn.getSuperClass().getName().equals(baseClassName)) {
-                    cn.setSuperClass(ClassHelper.make(baseClassName));
-                }
+            baseClassName = unit.getConfig().getScriptBaseClass();
+        } else if (context != null) {
+            baseClassName = context.getConfiguration().getScriptBaseClass();
+        }
+        if (baseClassName != null) {
+            if (!cn.getSuperClass().getName().equals(baseClassName)) {
+                cn.setSuperClass(ClassHelper.make(baseClassName));
             }
         }
     }
@@ -414,6 +419,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ImportNode node = new ImportNode(type, fieldName, alias);
         node.addAnnotations(annotations);
         staticImports.put(alias, node);
+        storeLastAddedImportNode(node);
     }
 
     public void addStaticStarImport(String name, ClassNode type) {
@@ -424,8 +430,17 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ImportNode node = new ImportNode(type);
         node.addAnnotations(annotations);
         staticStarImports.put(name, node);
+        storeLastAddedImportNode(node);
     }
-    
+
+    // This method only exists as a workaround for GROOVY-6094
+    // In order to keep binary compatibility
+    private void storeLastAddedImportNode(final ImportNode node) {
+        if (getNodeMetaData(ImportNode.class)==ImportNode.class) {
+            putNodeMetaData(ImportNode.class, node);
+        }
+    }
+
     public String getMainClassName() {
         return mainClassName;
     }

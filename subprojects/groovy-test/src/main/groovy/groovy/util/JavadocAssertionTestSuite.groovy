@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import junit.textui.TestRunner
  *
  * You can also run this class as an application from the command line (assumes Groovy, JUnit and Ant
  * are on the classpath). As an example:
- * <p/>
+ * <p>
  * <code>
  * java groovy.util.JavadocAssertionTestSuite src/main
  * </code>
@@ -68,7 +68,7 @@ class JavadocAssertionTestSuite extends TestSuite {
     public static final String SYSPROP_SRC_EXCLUDES_PATTERN = "javadocAssertion.src.excludesPattern";
     
     private static JavadocAssertionTestBuilder testBuilder = new JavadocAssertionTestBuilder()
-    private static IFileNameFinder finder = Class.forName('groovy.util.FileNameFinder').newInstance()
+    private static IFileNameFinder finder = Class.forName('groovy.util.FileNameFinder',true,this.classLoader).newInstance()
     
     static Test suite() {
         String basedir = System.getProperty(SYSPROP_SRC_DIR, "./src/")

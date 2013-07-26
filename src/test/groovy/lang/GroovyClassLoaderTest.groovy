@@ -186,6 +186,7 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
             assert i != 0xFFFD
         } finally {
             System.setProperty("file.encoding", encoding)
+            gcl.config.sourceEncoding = encoding
         }
     }
 

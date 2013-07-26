@@ -16,14 +16,14 @@
 
 package org.codehaus.groovy.tools.shell
 
-import jline.Completor
-import jline.NullCompletor
-import jline.ArgumentCompletor
-import jline.History
-
-import org.codehaus.groovy.tools.shell.util.MessageSource
+import jline.console.completer.ArgumentCompleter
+import jline.console.completer.Completer
+import jline.console.completer.NullCompleter
+import jline.console.completer.StringsCompleter
+import jline.console.history.FileHistory
+import jline.console.history.MemoryHistory
 import org.codehaus.groovy.tools.shell.util.Logger
-import org.codehaus.groovy.tools.shell.util.SimpleCompletor
+import org.codehaus.groovy.tools.shell.util.MessageSource
 
 /**
  * Support for {@link Command} instances.
@@ -49,7 +49,7 @@ abstract class CommandSupport
     final String shortcut
     
     /** The owning shell. */
-    protected final Shell shell
+    protected final Groovysh shell
 
     /** The I/O container for the command to spit stuff out. */
     protected final IO io
@@ -63,8 +63,8 @@ abstract class CommandSupport
     /** Flag to indicate if the command should be hidden or not. */
     boolean hidden = false
     
-    protected CommandSupport(final Shell shell, final String name, final String shortcut) {
-        assert shell
+    protected CommandSupport(final Groovysh shell, final String name, final String shortcut) {
+        assert shell != null
         assert name
         assert shortcut
         
@@ -94,37 +94,38 @@ abstract class CommandSupport
     /**
      * Override to provide custom completion semantics for the command.
      */
-    protected List createCompletors() {
+    protected List<Completer> createCompleters() {
         return null
     }
 
     /**
-     * Setup the completor for the command.
+     * Setup the Completer for the command.
      */
-    Completor getCompletor() {
+    Completer getCompleter() {
         if (hidden) {
             return null
         }
-        
-        def list = [ new SimpleCompletor(name, shortcut) ]
 
-        def completors = createCompletors()
+        List<Completer> list = new ArrayList<Completer>()
+        list << new StringsCompleter(name, shortcut)
+
+        List<Completer> completers = createCompleters()
         
-        if (completors) {
-            completors.each {
+        if (completers) {
+            completers.each {Completer it ->
                 if (it) {
                     list << it
                 }
                 else {
-                    list << new NullCompletor()
+                    list << new NullCompleter()
                 }
             }
         }
         else {
-            list << new NullCompletor()
+            list << new NullCompleter()
         }
 
-        return new ArgumentCompletor(list)
+        return new ArgumentCompleter(list)
     }
     
     //
@@ -159,11 +160,11 @@ abstract class CommandSupport
         return shell.buffers
     }
 
-    protected List getBuffer() {
+    protected List<String> getBuffer() {
         return shell.buffers.current()
     }
 
-    protected List getImports() {
+    protected List<String> getImports() {
         return shell.imports
     }
     
@@ -175,7 +176,7 @@ abstract class CommandSupport
         return binding.variables
     }
     
-    protected History getHistory() {
+    protected FileHistory getHistory() {
         return shell.history
     }
     

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.codehaus.groovy.syntax;
-
 
 public class TokenException extends SyntaxException {
     public TokenException(String message, Token token) {
         super(
-            (token == null)
-                ? message + ". No token"
-                : message,
-            getLine(token),
-            getColumn(token));
+                (token == null)
+                        ? message + ". No token"
+                        : message,
+                getLine(token),
+                getColumn(token));
     }
 
     public TokenException(String message, Throwable cause, int line, int column) {
         super(message, cause, line, column);
     }
 
-    public int getEndColumn() {
-        int length = 1;
-        return getStartColumn() + length;
+    public TokenException(String message, Throwable cause, int line, int column, int endLine, int endColumn) {
+        super(message, cause, line, column, endLine, endColumn);
     }
 
-
-    // Implementation methods
-    // ----------------------------------------------------------------------
     private static int getColumn(Token token) {
         return (token != null) ? token.getStartColumn() : -1;
     }

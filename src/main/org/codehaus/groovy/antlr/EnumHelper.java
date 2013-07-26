@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.objectweb.asm.Opcodes;
-
 
 public class EnumHelper {
     private static final int FS = Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
@@ -51,14 +50,15 @@ public class EnumHelper {
         return enumClass;
     }
 
-    public static void addEnumConstant(ClassNode enumClass, String name, Expression init) {
+    public static FieldNode addEnumConstant(ClassNode enumClass, String name, Expression init) {
         int modifiers = PUBLIC_FS | Opcodes.ACC_ENUM;
-        if  (init!=null && !(init instanceof ListExpression)) {
+        if (init != null && !(init instanceof ListExpression)) {
             ListExpression list = new ListExpression();
             list.addExpression(init);
             init = list;
         }
-        FieldNode fn = new FieldNode(name,modifiers,enumClass.getPlainNodeReference(),enumClass,init);
+        FieldNode fn = new FieldNode(name, modifiers, enumClass.getPlainNodeReference(), enumClass, init);
         enumClass.addField(fn);
+        return fn;
     }
 }

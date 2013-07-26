@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,6 +95,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected AST ast;
     private ClassNode classNode;
+    private MethodNode methodNode;
     private String[] tokenNames;
     private int innerClassCounter = 1;
     private boolean enumConstantBeingDef = false;
@@ -326,64 +327,77 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected void importDef(AST importNode) {
-        boolean isStatic = importNode.getType() == STATIC_IMPORT;
-        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
+        try {
+            // GROOVY-6094
+            output.putNodeMetaData(ImportNode.class, ImportNode.class);
 
-        AST node = importNode.getFirstChild();
-        if (isType(ANNOTATIONS, node)) {
-            processAnnotations(annotations, node);
-            node = node.getNextSibling();
-        }
+            boolean isStatic = importNode.getType() == STATIC_IMPORT;
+            List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
 
-        String alias = null;
-        if (isType(LITERAL_as, node)) {
-            //import is like "import Foo as Bar"
-            node = node.getFirstChild();
-            AST aliasNode = node.getNextSibling();
-            alias = identifier(aliasNode);
-        }
-
-        if (node.getNumberOfChildren() == 0) {
-            String name = identifier(node);
-            // import is like  "import Foo"
-            ClassNode type = ClassHelper.make(name);
-            configureAST(type, importNode);
-            addImport(type, name, alias, annotations);
-            return;
-        }
-
-        AST packageNode = node.getFirstChild();
-        String packageName = qualifiedName(packageNode);
-        AST nameNode = packageNode.getNextSibling();
-        if (isType(STAR, nameNode)) {
-            if (isStatic) {
-                // import is like "import static foo.Bar.*"
-                // packageName is actually a className in this case
-                ClassNode type = ClassHelper.make(packageName);
-                configureAST(type, importNode);
-                addStaticStarImport(type, packageName, annotations);
-            } else {
-                // import is like "import foo.*"
-                addStarImport(packageName, annotations);
+            AST node = importNode.getFirstChild();
+            if (isType(ANNOTATIONS, node)) {
+                processAnnotations(annotations, node);
+                node = node.getNextSibling();
             }
 
-            if (alias != null) throw new GroovyBugError(
-                    "imports like 'import foo.* as Bar' are not " +
-                            "supported and should be caught by the grammar");
-        } else {
-            String name = identifier(nameNode);
-            if (isStatic) {
-                // import is like "import static foo.Bar.method"
-                // packageName is really class name in this case
-                ClassNode type = ClassHelper.make(packageName);
-                configureAST(type, importNode);
-                addStaticImport(type, name, alias, annotations);
-            } else {
-                // import is like "import foo.Bar"
-                ClassNode type = ClassHelper.make(packageName + "." + name);
+            String alias = null;
+            if (isType(LITERAL_as, node)) {
+                //import is like "import Foo as Bar"
+                node = node.getFirstChild();
+                AST aliasNode = node.getNextSibling();
+                alias = identifier(aliasNode);
+            }
+
+            if (node.getNumberOfChildren() == 0) {
+                String name = identifier(node);
+                // import is like  "import Foo"
+                ClassNode type = ClassHelper.make(name);
                 configureAST(type, importNode);
                 addImport(type, name, alias, annotations);
+                return;
             }
+
+            AST packageNode = node.getFirstChild();
+            String packageName = qualifiedName(packageNode);
+            AST nameNode = packageNode.getNextSibling();
+            if (isType(STAR, nameNode)) {
+                if (isStatic) {
+                    // import is like "import static foo.Bar.*"
+                    // packageName is actually a className in this case
+                    ClassNode type = ClassHelper.make(packageName);
+                    configureAST(type, importNode);
+                    addStaticStarImport(type, packageName, annotations);
+                } else {
+                    // import is like "import foo.*"
+                    addStarImport(packageName, annotations);
+                }
+
+                if (alias != null) throw new GroovyBugError(
+                        "imports like 'import foo.* as Bar' are not " +
+                                "supported and should be caught by the grammar");
+            } else {
+                String name = identifier(nameNode);
+                if (isStatic) {
+                    // import is like "import static foo.Bar.method"
+                    // packageName is really class name in this case
+                    ClassNode type = ClassHelper.make(packageName);
+                    configureAST(type, importNode);
+                    addStaticImport(type, name, alias, annotations);
+                } else {
+                    // import is like "import foo.Bar"
+                    ClassNode type = ClassHelper.make(packageName + "." + name);
+                    configureAST(type, importNode);
+                    addImport(type, name, alias, annotations);
+                }
+            }
+        } finally {
+            // we're using node metadata here in order to fix GROOVY-6094
+            // without breaking external APIs
+            Object node = output.getNodeMetaData(ImportNode.class);
+            if (node!=null && node!=ImportNode.class) {
+                configureAST((ImportNode)node, importNode);
+            }
+            output.removeNodeMetaData(ImportNode.class);
         }
     }
 
@@ -520,6 +534,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             classNode = new InnerClassNode(outerClass, fullName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         }
         ((InnerClassNode) classNode).setAnonymous(true);
+        classNode.setEnclosingMethod(methodNode);
 
         assertNodeType(OBJBLOCK, node);
         objectBlock(node);
@@ -681,8 +696,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected void enumConstantDef(AST node) {
         enumConstantBeingDef = true;
         assertNodeType(ENUM_CONSTANT_DEF, node);
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST element = node.getFirstChild();
         if (isType(ANNOTATIONS, element)) {
+            processAnnotations(annotations, element);
             element = element.getNextSibling();
         }
         String identifier = identifier(element);
@@ -691,16 +708,39 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         if (element != null) {
             init = expression(element);
-            ClassNode innerClass = getAnonymousInnerClassNode(init);
+            ClassNode innerClass;
+            if (element.getNextSibling() == null) {
+                innerClass = getAnonymousInnerClassNode(init);
+                if (innerClass != null) {
+                    init = null;
+                }
+            } else {
+                element = element.getNextSibling();
+                Expression next = expression(element);
+                innerClass = getAnonymousInnerClassNode(next);
+            }
 
             if (innerClass != null) {
-                // we have to handle an enum that defines a class for a constant
-                // for example the constant having overwriting a method. we need 
-                // to configure the inner class 
+                // we have to handle an enum constant with a class overriding
+                // a method in which case we need to configure the inner class
                 innerClass.setSuperClass(classNode.getPlainNodeReference());
                 innerClass.setModifiers(classNode.getModifiers() | Opcodes.ACC_FINAL);
-                // we use a ClassExpression for transportation o EnumVisitor
-                init = new ClassExpression(innerClass);
+                // we use a ClassExpression for transportation to EnumVisitor
+                Expression inner = new ClassExpression(innerClass);
+                if (init == null) {
+                    ListExpression le = new ListExpression();
+                    le.addExpression(inner);
+                    init = le;
+                } else {
+                    if (init instanceof ListExpression) {
+                        ((ListExpression) init).addExpression(inner);
+                    } else {
+                        ListExpression le = new ListExpression();
+                        le.addExpression(init);
+                        le.addExpression(inner);
+                        init = le;
+                    }
+                }
                 // and remove the final modifier from classNode to allow the sub class
                 classNode.setModifiers(classNode.getModifiers() & ~Opcodes.ACC_FINAL);
             } else if (isType(ELIST, element)) {
@@ -711,7 +751,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 }
             }
         }
-        EnumHelper.addEnumConstant(classNode, identifier, init);
+        FieldNode enumField = EnumHelper.addEnumConstant(classNode, identifier, init);
+        enumField.addAnnotations(annotations);
+        configureAST(enumField, node);
         enumConstantBeingDef = false;
     }
 
@@ -730,6 +772,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected void methodDef(AST methodDef) {
+        MethodNode oldNode = methodNode;
         List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST node = methodDef.getFirstChild();
 
@@ -789,6 +832,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         boolean hasAnnotationDefault = false;
         Statement code = null;
+        boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
+        modifiers &= ~Opcodes.ACC_SYNTHETIC;
+        methodNode = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
         if ((modifiers & Opcodes.ACC_ABSTRACT) == 0) {
             if (node == null) {
                 throw new ASTRuntimeException(methodDef, "You defined a method without body. Try adding a body, or declare it abstract.");
@@ -803,10 +849,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 throw new ASTRuntimeException(methodDef, "Abstract methods do not define a body.");
             }
         }
-
-        boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
-        modifiers &= ~Opcodes.ACC_SYNTHETIC;
-        MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
+        methodNode.setCode(code);
         methodNode.addAnnotations(annotations);
         methodNode.setGenericsTypes(generics);
         methodNode.setAnnotationDefault(hasAnnotationDefault);
@@ -818,6 +861,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         } else {
             output.addMethod(methodNode);
         }
+        methodNode = oldNode;
     }
 
     private void checkNoInvalidModifier(AST node, String nodeType, int modifiers, int modifier, String modifierText) {
@@ -868,11 +912,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
 
         assertNodeType(SLIST, node);
-        Statement code = statementList(node);
-
         boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
         modifiers &= ~Opcodes.ACC_SYNTHETIC;
-        ConstructorNode constructorNode = classNode.addConstructor(modifiers, parameters, exceptions, code);
+        ConstructorNode constructorNode = classNode.addConstructor(modifiers, parameters, exceptions, null);
+        MethodNode oldMethod = methodNode;
+        methodNode = constructorNode;
+        Statement code = statementList(node);
+        methodNode = oldMethod;
+        constructorNode.setCode(code);
         constructorNode.setSyntheticPublic(syntheticPublic);
         constructorNode.addAnnotations(annotations);
         configureAST(constructorNode, constructorDef);
@@ -2504,7 +2551,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             TupleExpression te = (TupleExpression) arguments;
             List<Expression> expressions = te.getExpressions();
             if (expressions.size() == 0) return null;
-            Expression last = (Expression) expressions.remove(expressions.size() - 1);
+            Expression last = expressions.remove(expressions.size() - 1);
             if (last instanceof AnonymousInnerClassCarrier) {
                 AnonymousInnerClassCarrier carrier = (AnonymousInnerClassCarrier) last;
                 return carrier.innerClass;
@@ -2539,6 +2586,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         list.add(size);
         return list;
+    }
+
+    protected Expression enumArguments(AST elist) {
+        List<Expression> expressionList = new ArrayList<Expression>();
+        for (AST node = elist; node != null; node = node.getNextSibling()) {
+            Expression expression = expression(node);
+            expressionList.add(expression);
+        }
+        ArgumentListExpression argumentListExpression = new ArgumentListExpression(expressionList);
+        configureAST(argumentListExpression, elist);
+        return argumentListExpression;
     }
 
     protected Expression arguments(AST elist) {

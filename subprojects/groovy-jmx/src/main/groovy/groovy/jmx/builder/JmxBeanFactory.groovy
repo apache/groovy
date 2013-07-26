@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,8 @@ import javax.management.MBeanServer
  * to declare the descriptor or embed the descriptor directly in the object being
  * exposed using static variable descriptor (or jmx).  You should note that
  * embedded descriptor takes precedence over declared builder descriptor.
- *
- * <p>The following shows all of the different syntax forms supported by the node.</p>
- *
+ * <p>
+ * The following shows all of the different syntax forms supported by the node.
  * <pre><code>
  * bean(instance)
  * bean(target:instance, name:ObjectName|"...", desc|description:"...")

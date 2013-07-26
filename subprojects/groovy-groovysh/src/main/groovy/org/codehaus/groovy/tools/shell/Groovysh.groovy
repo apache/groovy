@@ -16,16 +16,19 @@
 
 package org.codehaus.groovy.tools.shell
 
+import antlr.TokenStreamException
 import jline.Terminal
-import jline.History
-
-import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
+import jline.TerminalFactory
+import jline.console.history.FileHistory
+import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
+import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
+import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.fusesource.jansi.AnsiRenderer
+import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 import org.fusesource.jansi.Ansi
 import org.fusesource.jansi.AnsiConsole
+import org.fusesource.jansi.AnsiRenderer
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -51,18 +54,22 @@ class Groovysh extends Shell {
 
     final Interpreter interp
     
-    final List imports = []
+    final List<String> imports = []
+
+    public static final String AUTOINDENT_PREFERENCE_KEY = "autoindent"
+    int indentSize = 2
     
     InteractiveShellRunner runner
-    
-    History history
+
+    FileHistory history
 
     boolean historyFull  // used as a workaround for GROOVY-2177
     String evictedLine  // remembers the command which will get evicted if history is full
+    PackageHelper packageHelper
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar) {
         super(io)
-        
+
         assert classLoader
         assert binding
         assert registrar
@@ -72,17 +79,20 @@ class Groovysh extends Shell {
         interp = new Interpreter(classLoader, binding)
 
         registrar.call(this)
+
+        this.packageHelper = new PackageHelper(classLoader)
+
     }
 
-    private static Closure createDefaultRegistrar() {
-        return { shell ->
+    private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
+        return {Shell shell ->
             def r = new XmlCommandRegistrar(shell, classLoader)
             r.register(getClass().getResource('commands.xml'))
         }
     }
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
-        this(classLoader, binding, io, createDefaultRegistrar())
+        this(classLoader, binding, io, createDefaultRegistrar(classLoader))
     }
 
     Groovysh(final Binding binding, final IO io) {
@@ -122,15 +132,14 @@ class Groovysh extends Shell {
             
             // For commands, only set the last result when its non-null/true
             if (result) {
-                lastResult = result
+                setLastResult(result)
             }
             
             return result
         }
         
         // Otherwise treat the line as Groovy
-        def current = []
-        current += buffers.current()
+        List<String> current = new ArrayList<String>(buffers.current())
 
         // Append the line to the current buffer
         current << line
@@ -147,9 +156,9 @@ class Groovysh extends Shell {
                 }
 
                 // Evaluate the current buffer w/imports and dummy statement
-                def buff = imports + [ 'true' ] + current
+                List buff = imports + [ 'true' ] + current
 
-                lastResult = result = interp.evaluate(buff)
+                setLastResult(result = interp.evaluate(buff))
                 buffers.clearSelected()
                 break
 
@@ -176,7 +185,7 @@ class Groovysh extends Shell {
     /**
      * Display the given buffer.
      */
-    private void displayBuffer(final List buffer) {
+    void displayBuffer(final List buffer) {
         assert buffer
 
         buffer.eachWithIndex { line, index ->
@@ -201,17 +210,49 @@ class Groovysh extends Shell {
         The code will always assume you want the line number in the prompt.  To implement differently overhead the render
         prompt variable.
      */
-    private String buildPrompt(){
-       def lineNum = formatLineNumber(buffers.current().size())
-       def formattedPrompt = "@|bold groovy:|@${lineNum}@|bold >|@ "
+    private String buildPrompt() {
+        def lineNum = formatLineNumber(buffers.current().size())
 
-       def GROOVYSHELL_PROPERTY =  System.getProperty("groovysh.prompt")
-       def GROOVYSHELL_ENV      =  System.getenv("GROOVYSH_PROMPT")
+        def GROOVYSHELL_PROPERTY = System.getProperty("groovysh.prompt")
+        if (GROOVYSHELL_PROPERTY) {
+            return  "@|bold ${GROOVYSHELL_PROPERTY}:|@${lineNum}@|bold >|@ "
+        }
+        def GROOVYSHELL_ENV = System.getenv("GROOVYSH_PROMPT")
+        if (GROOVYSHELL_ENV) {
+            return  "@|bold ${GROOVYSHELL_ENV}:|@${lineNum}@|bold >|@ "
+        }
+        return "@|bold groovy:|@${lineNum}@|bold >|@ "
 
-       if (GROOVYSHELL_PROPERTY)  return  "@|bold ${GROOVYSHELL_PROPERTY}:|@${lineNum}@|bold >|@ "
-       if (GROOVYSHELL_ENV)       return  "@|bold ${GROOVYSHELL_ENV}:|@${lineNum}@|bold >|@ "
+    }
 
-       return formattedPrompt
+    /**
+     * Calculate probably desired indentation based on parenthesis balance and last char,
+     * as well as what the user used last as indentation.
+     * @return a string to indent the next line in the buffer
+     */
+    String getIndentPrefix() {
+        List<String> buffer = this.buffers.current()
+        if (buffer.size() < 1) {
+            return ""
+        }
+        StringBuilder src = new StringBuilder()
+        for (String line: buffer) {
+            src.append(line + '\n')
+        }
+
+        // not sure whether the same Lexer instance could be reused.
+        def lexer = CurlyCountingGroovyLexer.createGroovyLexer(src.toString());
+
+        // read all tokens
+        try {
+            while (lexer.nextToken().getType() != CurlyCountingGroovyLexer.EOF) {}
+        } catch (TokenStreamException e) {
+            // pass
+        }
+        int parenIndent = (lexer.getParenLevel()) * indentSize
+
+        // dedent after closing brackets
+        return " " * Math.max(parenIndent, 0)
     }
 
     public String renderPrompt() {
@@ -244,7 +285,7 @@ class Groovysh extends Shell {
         def file = new File(userStateDirectory, filename)
         
         if (file.exists()) {
-            def command = registry['load']
+            Command command = registry['load'] as Command
 
             if (command) {
                 log.debug("Loading user-script: $file")
@@ -307,10 +348,23 @@ class Groovysh extends Shell {
 
     final Closure defaultResultHook = { result ->
         boolean showLastResult = !io.quiet && (io.verbose || Preferences.showLastResult)
-
         if (showLastResult) {
             // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-            io.out.println("@|bold ===>|@ ${String.valueOf(result)}")
+
+            if (result != null && result.getClass() && result.getClass().isArray()) {
+                Class typeClass = result.getClass().getComponentType()
+                StringBuilder output = new StringBuilder()
+                if (result.length > 0) {
+                    output.append(String.valueOf(Arrays.toString(result)))
+                } else {
+                    output.append("[]")
+                }
+                output.append(" ($typeClass)")
+
+                io.out.println("@|bold ===>|@ $output")
+            } else {
+                io.out.println("@|bold ===>|@ ${String.valueOf(result)}")
+            }
         }
     }
 
@@ -335,7 +389,7 @@ class Groovysh extends Shell {
     final Closure defaultErrorHook = { Throwable cause ->
         assert cause != null
 
-        io.err.println("@|bold,red ERROR|@ ${cause.class.name}:")
+        io.err.println("@|bold,red ERROR|@ ${cause.getClass().name}:")
         io.err.println("@|bold,red ${cause.message}|@")
 
         maybeRecordError(cause)
@@ -356,7 +410,17 @@ class Groovysh extends Shell {
 
             def buff = new StringBuffer()
 
+            boolean doBreak = false;
+
             for (e in trace) {
+                // Stop the trace once we find the root of the evaluated script
+                if (e.className == Interpreter.SCRIPT_FILENAME && e.methodName == 'run') {
+                    if (io.verbosity != IO.Verbosity.DEBUG && io.verbosity != IO.Verbosity.VERBOSE) {
+                        break
+                    }
+                    doBreak = true
+                }
+
                 buff << "        @|bold at|@ ${e.className}.${e.methodName} (@|bold "
 
                 buff << (e.nativeMethod ? 'Native Method' :
@@ -368,9 +432,7 @@ class Groovysh extends Shell {
                 io.err.println(buff)
 
                 buff.setLength(0) // Reset the buffer
-
-                // Stop the trace once we find the root of the evaluated script
-                if (e.className == Interpreter.SCRIPT_FILENAME && e.methodName == 'run') {
+                if (doBreak) {
                     io.err.println('        @|bold ...|@')
                     break
                 }
@@ -383,6 +445,12 @@ class Groovysh extends Shell {
     private void displayError(final Throwable cause) {
         if (errorHook == null) {
             throw new IllegalStateException("Error hook is not set")
+        }
+        if (cause instanceof MissingPropertyException) {
+            if (cause.type && cause.type.canonicalName == Interpreter.SCRIPT_FILENAME) {
+                io.err.println("@|bold,red Unknown property|@: " + cause.property)
+                return
+            }
         }
 
         errorHook.call(cause)
@@ -403,17 +471,18 @@ class Groovysh extends Shell {
     }
 
     int run(final String commandLine) {
-        def term = Terminal.terminal
+        Terminal term = TerminalFactory.create()
 
         if (log.debug) {
             log.debug("Terminal ($term)")
             log.debug("    Supported:  $term.supported")
-            log.debug("    ECHO:       $term.echo (enabled: $term.echoEnabled)")
-            log.debug("    H x W:      $term.terminalHeight x $term.terminalWidth")
-            log.debug("    ANSI:       ${term.isANSISupported()}")
+            log.debug("    ECHO:       (enabled: $term.echoEnabled)")
+            log.debug("    H x W:      ${term.getHeight()} x ${term.getWidth()}")
+            log.debug("    ANSI:       ${term.isAnsiSupported()}")
 
             if (term instanceof jline.WindowsTerminal) {
-                log.debug("    Direct:     ${term.directConsole}")
+                jline.WindowsTerminal winterm = (jline.WindowsTerminal) term
+                log.debug("    Direct:     ${winterm.directConsole}")
             }
         }
 
@@ -427,16 +496,16 @@ class Groovysh extends Shell {
             if (commandLine != null && commandLine.trim().size() > 0) {
                 // Run the given commands
                 execute(commandLine)
-            }
-            else {
+            } else {
                 loadUserScript('groovysh.rc')
 
                 // Setup the interactive runner
                 runner = new InteractiveShellRunner(this, this.&renderPrompt as Closure)
 
                 // Setup the history
-                runner.history = history = new History()
-                runner.historyFile = new File(userStateDirectory, 'groovysh.history')
+                File histFile = new File(userStateDirectory, 'groovysh.history')
+                history = new FileHistory(histFile)
+                runner.setHistory(history)
 
                 // Setup the error handler
                 runner.errorHandler = this.&displayError
@@ -447,7 +516,7 @@ class Groovysh extends Shell {
 
                 // Display the welcome banner
                 if (!io.quiet) {
-                    def width = term.terminalWidth
+                    int width = term.getWidth()
 
                     // If we can't tell, or have something bogus then use a reasonable default
                     if (width < 1) {

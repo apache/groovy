@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package org.codehaus.groovy.antlr;
 
 import java.io.IOException;
@@ -27,11 +26,8 @@ import antlr.TokenStreamException;
 /**
  * Translates GLS-defined unicode escapes into characters. Throws an exception
  * in the event of an invalid unicode escape being detected.
- *
- * <p>No attempt has been made to optimize this class for speed or
- * space.</p>
- *
- * @version $Revision$
+ * <p>
+ * No attempt has been made to optimize this class for speed or space.
  */
 public class UnicodeEscapingReader extends Reader {
 
@@ -183,6 +179,7 @@ public class UnicodeEscapingReader extends Reader {
 
     /**
      * Closes this reader by calling close on the underlying reader.
+     *
      * @see java.io.Reader#close()
      */
     public void close() throws IOException {

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
 /**
@@ -222,5 +237,24 @@ class ClosureCurryTest extends GroovyTestCase {
         assert { x, y -> x ?: y }(1, 2) == 1
 
         assert { x, y -> x ?: y }.curry([null] as Object[])(2) == 2
+    }
+
+    private a(Integer b, Integer c, Integer d){ "3Int: $b $c $d" }
+    private a(b,c,d){ "3Obj: $b $c $d" }
+    private a(b,c){ "2Obj: $b $c" }
+    private a(b){ "1Obj: $b" }
+
+    void testCurryWithMethodClosure() {
+        def c = (this.&a).curry(0)
+        assert c(1,2) == '3Int: 0 1 2'
+        assert c("foo",2) == '3Obj: 0 foo 2'
+        assert c(1) == '2Obj: 0 1'
+        assert c() == '1Obj: 0'
+
+        def b = (this.&a).rcurry(0)
+        assert b(1,2) == '3Int: 1 2 0'
+        assert b("foo",2) == '3Obj: foo 2 0'
+        assert b(1) == '2Obj: 1 0'
+        assert b() == '1Obj: 0'
     }
 }

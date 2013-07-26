@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class GroovyCollections {
      * @see #combinations(Collection)
      */
     public static List combinations(Object[] collections) {
-        return combinations(Arrays.asList(collections));
+        return combinations((Iterable)Arrays.asList(collections));
     }
 
     /**
@@ -67,7 +67,16 @@ public class GroovyCollections {
     }
 
     /**
-     * Finds all combinations of items from the given collections.
+     * @param collections the given collections
+     * @deprecated use combinations(Iterable)
+     */
+    @Deprecated
+    public static List combinations(Collection collections) {
+        return combinations((Iterable)collections);
+    }
+
+    /**
+     * Finds all combinations of items from the given Iterable aggregate of collections.
      * So, <code>combinations([[true, false], [true, false]])</code>
      * is <code>[[true, true], [false, true], [true, false], [false, false]]</code>
      * and <code>combinations([['a', 'b'],[1, 2, 3]])</code>
@@ -75,28 +84,28 @@ public class GroovyCollections {
      * If a non-collection item is given, it is treated as a singleton collection,
      * i.e. <code>combinations([[1, 2], 'x'])</code> is <code>[[1, 'x'], [2, 'x']]</code>.
      *
-     * @param collections the given collections
+     * @param collections the Iterable of given collections
      * @return a List of the combinations found
+     * @since 2.2.0
      */
-    public static List combinations(Collection collections) {
+    public static List combinations(Iterable collections) {
         List collectedCombos = new ArrayList();
-        for (Iterator outer = collections.iterator(); outer.hasNext();) {
-            Collection items = DefaultTypeTransformation.asCollection(outer.next());
+        for (Object collection : collections) {
+            Iterable items = DefaultTypeTransformation.asCollection(collection);
             if (collectedCombos.isEmpty()) {
-                for (Iterator iterator = items.iterator(); iterator.hasNext();) {
+                for (Object item : items) {
                     List l = new ArrayList();
-                    l.add(iterator.next());
+                    l.add(item);
                     collectedCombos.add(l);
                 }
             } else {
                 List savedCombos = new ArrayList(collectedCombos);
                 List newCombos = new ArrayList();
-                for (Iterator inner = items.iterator(); inner.hasNext();) {
-                    Object value = inner.next();
-                    for (Iterator combos = savedCombos.iterator(); combos.hasNext();) {
-                        List oldlist = new ArrayList((List) combos.next());
-                        oldlist.add(value);
-                        newCombos.add(oldlist);
+                for (Object value : items) {
+                    for (Object savedCombo : savedCombos) {
+                        List oldList = new ArrayList((List) savedCombo);
+                        oldList.add(value);
+                        newCombos.add(oldList);
                     }
                 }
                 collectedCombos = newCombos;
@@ -130,16 +139,16 @@ public class GroovyCollections {
         List result = new ArrayList();
         if (lists.isEmpty() || lists.size() == 0) return result;
         int minSize = Integer.MAX_VALUE;
-        for (Iterator outer = lists.iterator(); outer.hasNext();) {
-            List list = (List) DefaultTypeTransformation.castToType(outer.next(), List.class);
+        for (Object listLike : lists) {
+            List list = (List) DefaultTypeTransformation.castToType(listLike, List.class);
             if (list.size() < minSize) minSize = list.size();
         }
         if (minSize == 0) return result;
         for (int i = 0; i < minSize; i++) {
             result.add(new ArrayList());
         }
-        for (Iterator outer = lists.iterator(); outer.hasNext();) {
-            List list = (List) DefaultTypeTransformation.castToType(outer.next(), List.class);
+        for (Object listLike : lists) {
+            List list = (List) DefaultTypeTransformation.castToType(listLike, List.class);
             for (int i = 0; i < minSize; i++) {
                 List resultList = (List) result.get(i);
                 resultList.add(list.get(i));
@@ -156,16 +165,25 @@ public class GroovyCollections {
      * @return the minimum value
      */
     public static <T> T min(T[] items) {
-        return min(Arrays.asList(items));
+        return min((Iterable<T>)Arrays.asList(items));
     }
 
     /**
-     * Selects the minimum value found in a collection of items.
-     *
-     * @param items a Collection
-     * @return the minimum value
+     * @deprecated use min(Iterable)
      */
+    @Deprecated
     public static <T> T min(Collection<T> items) {
+        return min((Iterable<T>)items);
+    }
+
+    /**
+     * Selects the minimum value found in an Iterable of items.
+     *
+     * @param items an Iterable
+     * @return the minimum value
+     * @since 2.2.0
+     */
+    public static <T> T min(Iterable<T> items) {
         T answer = null;
         for (T value : items) {
             if (value != null) {
@@ -185,16 +203,25 @@ public class GroovyCollections {
      * @return the maximum value
      */
     public static <T> T max(T[] items) {
-        return max(Arrays.asList(items));
+        return max((Iterable<T>)Arrays.asList(items));
     }
 
     /**
-     * Selects the maximum value found in a collection
+     * @deprecated use max(Iterable)
+     */
+    @Deprecated
+    public static <T> T max(Collection<T> items) {
+        return max((Iterable<T>)items);
+    }
+
+    /**
+     * Selects the maximum value found in an Iterable.
      *
      * @param items a Collection
      * @return the maximum value
+     * @since 2.2.0
      */
-    public static <T> T max(Collection<T> items) {
+    public static <T> T max(Iterable<T> items) {
         T answer = null;
         for (T value : items) {
             if (value != null) {
@@ -213,16 +240,25 @@ public class GroovyCollections {
      * @return the sum of the items
      */
     public static Object sum(Object[] items) {
-        return DefaultGroovyMethods.sum(Arrays.asList(items));
+        return sum((Iterable)Arrays.asList(items));
     }
 
     /**
-     * Sums all the items from a collection of items.
-     *
-     * @param items a collection of items
-     * @return the sum of the items
+     * @deprecated use sum(Iterable)
      */
+    @Deprecated
     public static Object sum(Collection items) {
+        return sum((Iterable)items);
+    }
+
+    /**
+     * Sums all the given items.
+     *
+     * @param items an Iterable of items
+     * @return the sum of the item
+     * @since 2.2.0
+     */
+    public static Object sum(Iterable items) {
         return DefaultGroovyMethods.sum(items);
     }
 

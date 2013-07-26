@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import java.util.*;
  * Interceptor that registers the timestamp of each method call
  * before and after invocation. The timestamps are stored internally
  * and can be retrieved through the with the <pre>getCalls()</pre> 
- * and <pre>statistic()</pre> API. <br/><br/>
- * 
- * Example usage can be seen here: 
+ * and <pre>statistic()</pre> API.
+ * <p>
+ * Example usage:
  * <pre>
  * def proxy = ProxyMetaClass.getInstance(ArrayList.class)
  * proxy.interceptor = new BenchmarkInterceptor()

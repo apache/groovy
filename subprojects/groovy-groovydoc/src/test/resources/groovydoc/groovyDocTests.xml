@@ -1,0 +1,43 @@
+<project name="CustomGroovyDocTestProject" basedir="../../../..">
+    <property name="test" location="src/test/groovy"/>
+    <property name="target" location="target"/>
+    <property name="tmpdir" value="${java.io.tmpdir}/${user.name}/${ant.project.name}"/>
+
+    <path id="classpath">
+        <fileset dir="target/classes/main" includes="**/*.*"/>
+        <fileset dir="target/classes/test" includes="**/*.*"/>
+    </path>
+
+    <taskdef name="groovydoc" classpathref="classpath"
+             classname="org.codehaus.groovy.tools.groovydoc.CustomGroovyDoc"/>
+
+    <target name="testCustomClassTemplate">
+        <groovydoc destdir="${tmpdir}" sourcepath="${test}"
+                   packagenames="org/codehaus/groovy/tools/groovydoc/testfiles/**.*"
+                   use="true" windowtitle="GroovyDoc" private="false">
+            <link packages="java.,org.groovy.xml.,javax.,org.groovy.w3c." href="http://docs.oracle.com/javase/7/docs/api/"/>
+            <link packages="org.apache.tools.ant." href="http://evgeny-goldin.org/javadoc/ant/api"/>
+            <link packages="org.junit.,junit.framework." href="http://junit.org/javadoc/latest"/>
+            <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>
+            <link packages="org.codehaus.gmaven." href="http://evgeny-goldin.org/javadoc/gmaven"/>
+        </groovydoc>
+    </target>
+
+    <target name="testFileEncoding">
+        <groovydoc
+                destdir="${tmpdir}"
+                sourcepath="${test}"
+                packagenames="org/codehaus/groovy/tools/groovydoc/testfiles/**.*"
+                use="true"
+                windowtitle="GroovyDoc"
+                private="false"
+                fileEncoding="UTF-16LE">
+
+            <link packages="java.,org.groovy.xml.,javax.,org.groovy.w3c." href="http://docs.oracle.com/javase/7/docs/api/"/>
+            <link packages="org.apache.tools.ant." href="http://evgeny-goldin.org/javadoc/ant/api"/>
+            <link packages="org.junit.,junit.framework." href="http://junit.org/javadoc/latest"/>
+            <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>
+            <link packages="org.codehaus.gmaven." href="http://evgeny-goldin.org/javadoc/gmaven"/>
+        </groovydoc>
+    </target>
+</project>

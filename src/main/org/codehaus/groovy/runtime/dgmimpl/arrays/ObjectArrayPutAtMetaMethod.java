@@ -58,6 +58,8 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 Character ch = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
                 adjustedNewVal = DefaultTypeTransformation.castToType(ch, arrayComponentClass);
             }
+        } else if (arrayComponentClass.isArray()) {
+            adjustedNewVal = DefaultTypeTransformation.castToType(newValue, arrayComponentClass);
         }
         return adjustedNewVal;
     }

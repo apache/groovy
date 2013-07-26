@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ import groovy.util.ResourceException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Matcher;
@@ -33,10 +36,9 @@ import javax.servlet.http.HttpServletRequest;
 
 /**
  * A base class dealing with common HTTP servlet API housekeeping aspects.
- * <p/>
+ * <p>
  * <h4>Resource name mangling (pattern replacement)</h4>
- * <p/>
- * <p/>
+ * <p>
  * Also implements Groovy's {@link groovy.util.ResourceConnector} in a dynamic
  * manner. It allows you to modify the resource name that is searched for with a
  * <i>replace all</i> operation. See {@link java.util.regex.Pattern} and
@@ -49,17 +51,15 @@ import javax.servlet.http.HttpServletRequest;
  * </pre>
  * Note: If you specify a regex, you have to specify a replacement string too!
  * Otherwise an exception gets raised.
- * <p/>
+ * <p>
  * <h4>Logging and bug-hunting options</h4>
- * <p/>
- * <p/>
+ * <p>
  * This implementation provides a verbosity flag switching log statements.
  * The servlet init parameter name is:
  * <pre>
  * verbose = false(default) | true
  * </pre>
- * <p/>
- * <p/>
+ * <p>
  * In order to support class-loading-troubles-debugging with Tomcat 4 or
  * higher, you can log the class loader responsible for loading some classes.
  * See <a href="http://jira.codehaus.org/browse/GROOVY-861">GROOVY-861</a> for details.
@@ -67,8 +67,7 @@ import javax.servlet.http.HttpServletRequest;
  * <pre>
  * log.GROOVY861 = false(default) | true
  * </pre>
- * <p/>
- * <p/>
+ * <p>
  * If you experience class-loading-troubles with Tomcat 4 (or higher) or any
  * other servlet container using custom class loader setups, you can fallback
  * to use (slower) reflection in Groovy's MetaClass implementation. Please
@@ -162,13 +161,40 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         this.logGROOVY861 = false;
     }
 
+    private String removeNamePrefix(String name) throws ResourceException {
+        URI uri = new File(servletContext.getRealPath("/")).toURI();
+        try {
+            String basePath = uri.toURL().toExternalForm();
+            if (name.startsWith(basePath)) return name.substring(basePath.length());
+        } catch (MalformedURLException e) {
+            throw new ResourceException("Malformed URL for base path '"+ uri + "'", e);
+        }
+        
+        try {
+            URL res = servletContext.getResource("/"); 
+            if (res!=null) uri = res.toURI();
+        } catch (MalformedURLException e) {
+            // ignore
+        } catch (URISyntaxException e) {
+            // ignore
+        }
+
+        if (uri!=null) {
+            try {
+                String basePath = uri.toURL().toExternalForm();
+                if (name.startsWith(basePath)) return name.substring(basePath.length());
+            } catch (MalformedURLException e) {
+                throw new ResourceException("Malformed URL for base path '"+ uri + "'", e);
+            }
+        }
+        return name;
+    }
+    
     /**
      * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
      */
     public URLConnection getResourceConnection(String name) throws ResourceException {
-        String basePath = servletContext.getRealPath("/");
-        if (name.startsWith(basePath)) name = name.substring(basePath.length());
-
+        name = removeNamePrefix(name);
         name = name.replaceAll("\\\\", "/");
 
         //remove the leading / as we are trying with a leading / now
@@ -186,17 +212,11 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
             }
             if (url == null) {
                 throw new ResourceException("Resource \"" + name + "\" not found!");
-            } else {
-                url = new URL("file", "", servletContext.getRealPath(tryScriptName));
             }
             return url.openConnection();
         } catch (IOException e) {
             throw new ResourceException("Problems getting resource named \"" + name + "\"!", e);
         }
-    }
-
-    private boolean isFile(URL ret) {
-        return ret != null && ret.getProtocol().equals("file");
     }
 
     /**
@@ -394,7 +414,6 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      * <p>
      * All variables bound the binding are passed to the template source text,
      * e.g. the HTML file, when the template is merged.
-     * </p>
      * <p>
      * The binding provided by TemplateServlet does already include some default
      * variables. As of this writing, they are (copied from
@@ -406,7 +425,6 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      * <li><tt>"application"</tt> : ServletContext </li>
      * <li><tt>"session"</tt> : request.getSession(<b>false</b>) </li>
      * </ul>
-     * </p>
      * <p>
      * And via implicit hard-coded keywords:
      * <ul>
@@ -414,7 +432,6 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      * <li><tt>"sout"</tt> : response.getOutputStream() </li>
      * <li><tt>"html"</tt> : new MarkupBuilder(response.getWriter()) </li>
      * </ul>
-     * </p>
      * <p>
      * The binding also provides convenient methods:
      * <ul>
@@ -422,16 +439,15 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      * <li><tt>"include(String path)"</tt> : request.getRequestDispatcher(path).include(request, response);</li>
      * <li><tt>"redirect(String location)"</tt> : response.sendRedirect(location);</li>
      * </ul>
-     * </p>
-     * <p/>
+     * <p>
      * <p>Example binding all servlet context variables:
      * <pre><code>
      * class MyServlet extends TemplateServlet {
-     * <p/>
+     *
      *   protected void setVariables(ServletBinding binding) {
      *     // Bind a simple variable
      *     binding.setVariable("answer", new Long(42));
-     * <p/>
+     *
      *     // Bind all servlet context attributes...
      *     ServletContext context = (ServletContext) binding.getVariable("context");
      *     Enumeration enumeration = context.getAttributeNames();
@@ -440,10 +456,8 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      *       binding.setVariable(name, context.getAttribute(name));
      *     }
      *   }
-     * <p/>
      * }
      * <code></pre>
-     * </p>
      *
      * @param binding to be modified
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  *
  * @author John Wilson
  */
-class NodeChildren extends GPathResult {
+public class NodeChildren extends GPathResult {
     private int size = -1;
 
     /**
@@ -64,19 +64,13 @@ class NodeChildren extends GPathResult {
 
     public Iterator childNodes() {
         return new Iterator() {
-            private final Iterator iter = parent.childNodes();
+            private final Iterator iter = nodeIterator();
             private Iterator childIter = nextChildIter();
 
-            /* (non-Javadoc)
-            * @see java.util.Iterator#hasNext()
-            */
             public boolean hasNext() {
                 return childIter != null;
             }
 
-            /* (non-Javadoc)
-            * @see java.util.Iterator#next()
-            */
             public Object next() {
                 while (childIter != null) {
                     try {
@@ -92,26 +86,15 @@ class NodeChildren extends GPathResult {
                 return null;
             }
 
-            /* (non-Javadoc)
-            * @see java.util.Iterator#remove()
-            */
             public void remove() {
                 throw new UnsupportedOperationException();
             }
 
             private Iterator nextChildIter() {
                 while (iter.hasNext()) {
-                    final Node node = (Node) iter.next();
-                    if (name.equals(node.name()) || name.equals("*")) {
-                        final Iterator result = node.childNodes();
-                        if (result.hasNext()) {
-                            if ("*".equals(namespacePrefix) ||
-                                    ("".equals(namespacePrefix) && "".equals(node.namespaceURI())) ||
-                                    node.namespaceURI().equals(namespaceMap.get(namespacePrefix))) {
-                                return result;
-                            }
-                        }
-                    }
+                    final Node node = (Node)iter.next();
+                    final Iterator result = node.childNodes();
+                    if (result.hasNext()) return result;
                 }
                 return null;
             }
@@ -127,7 +110,7 @@ class NodeChildren extends GPathResult {
             }
 
             public Object next() {
-                return new NodeChild((Node) iter.next(), parent, namespaceTagHints);
+                return new NodeChild((Node) iter.next(), pop(), namespaceTagHints);
             }
 
             public void remove() {
@@ -141,9 +124,6 @@ class NodeChildren extends GPathResult {
             return parent.childNodes();
         } else {
             return new NodeIterator(parent.childNodes()) {
-                /* (non-Javadoc)
-                * @see org.codehaus.groovy.sandbox.util.slurpersupport.NodeIterator#getNextNode(java.util.Iterator)
-                */
                 protected Object getNextNode(Iterator iter) {
                     while (iter.hasNext()) {
                         final Node node = (Node) iter.next();
@@ -161,6 +141,9 @@ class NodeChildren extends GPathResult {
         }
     }
 
+    /**
+     * Throws a <code>GroovyRuntimeException</code>, because it is not implemented yet.
+     */
     public GPathResult parents() {
         // TODO Auto-generated method stub
         throw new GroovyRuntimeException("parents() not implemented yet");

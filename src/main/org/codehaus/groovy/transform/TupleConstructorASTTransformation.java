@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,19 +24,29 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,6 +63,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     static final Class MY_CLASS = TupleConstructor.class;
     static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+    private static final ClassNode LHMAP_TYPE = ClassHelper.makeWithoutCaching(LinkedHashMap.class, false);
+    private static final ClassNode HMAP_TYPE = ClassHelper.makeWithoutCaching(HashMap.class, false);
+    private static final ClassNode COLLECTIONS_TYPE = ClassHelper.makeWithoutCaching(Collections.class);
+    private static final ClassNode CHECK_METHOD_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
     private static Map<Class<?>, Expression> primitivesInitialValues;
 
     static {
@@ -146,6 +160,25 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             body.addStatement(assignStatement(new PropertyExpression(VariableExpression.THIS_EXPRESSION, name), new VariableExpression(name)));
         }
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
+        // add map constructor if needed, don't do it for LinkedHashMap for now (would lead to duplicate signature)
+        // or if there is only one Map property (for backwards compatibility)
+        if (params.size() > 0) {
+            ClassNode firstParam = params.get(0).getType();
+            if (params.size() > 1 || firstParam.equals(ClassHelper.OBJECT_TYPE)) {
+                if (firstParam.equals(ClassHelper.MAP_TYPE)) {
+                    addMapConstructors(cNode, true, "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.");
+                } else {
+                    ClassNode candidate = HMAP_TYPE;
+                    while (candidate != null) {
+                        if (candidate.equals(firstParam)) {
+                            addMapConstructors(cNode, true, "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.");
+                            break;
+                        }
+                        candidate = candidate.getSuperClass();
+                    }
+                }
+            }
+        }
     }
 
     private static Parameter createParam(FieldNode fNode, String name) {
@@ -167,4 +200,46 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         return initialExp;
     }
 
+    public static void addMapConstructors(ClassNode cNode, boolean hasNoArg, String message) {
+        Parameter[] parameters = new Parameter[1];
+        parameters[0] = new Parameter(LHMAP_TYPE, "__namedArgs");
+        BlockStatement code = new BlockStatement();
+        VariableExpression namedArgs = new VariableExpression("__namedArgs");
+        code.addStatement(new IfStatement(equalsNullExpr(namedArgs),
+                illegalArgumentBlock(message),
+                processArgsBlock(cNode, namedArgs)));
+        ConstructorNode init = new ConstructorNode(ACC_PUBLIC, parameters, ClassNode.EMPTY_ARRAY, code);
+        cNode.addConstructor(init);
+        // add a no-arg constructor too
+        if (!hasNoArg) {
+            code = new BlockStatement();
+            code.addStatement(new ExpressionStatement(new ConstructorCallExpression(ClassNode.THIS, new StaticMethodCallExpression(COLLECTIONS_TYPE, "emptyMap", MethodCallExpression.NO_ARGUMENTS))));
+            init = new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
+            cNode.addConstructor(init);
+        }
+    }
+
+    private static BlockStatement illegalArgumentBlock(String message) {
+        BlockStatement block = new BlockStatement();
+        block.addStatement(new ThrowStatement(new ConstructorCallExpression(ClassHelper.make(IllegalArgumentException.class),
+                new ArgumentListExpression(new ConstantExpression(message)))));
+        return block;
+    }
+
+    private static BlockStatement processArgsBlock(ClassNode cNode, VariableExpression namedArgs) {
+        BlockStatement block = new BlockStatement();
+        for (PropertyNode pNode : cNode.getProperties()) {
+            if (pNode.isStatic()) continue;
+
+            // if namedArgs.containsKey(propertyName) setProperty(propertyName, namedArgs.get(propertyName));
+            BooleanExpression ifTest = new BooleanExpression(new MethodCallExpression(namedArgs, "containsKey", new ConstantExpression(pNode.getName())));
+            Expression pExpr = new VariableExpression(pNode);
+            Statement thenBlock = assignStatement(pExpr, new PropertyExpression(namedArgs, pNode.getName()));
+            IfStatement ifStatement = new IfStatement(ifTest, thenBlock, EmptyStatement.INSTANCE);
+            block.addStatement(ifStatement);
+        }
+        Expression checkArgs = new ArgumentListExpression(new VariableExpression("this"), namedArgs);
+        block.addStatement(new ExpressionStatement(new StaticMethodCallExpression(CHECK_METHOD_TYPE, "checkPropNames", checkArgs)));
+        return block;
+    }
 }

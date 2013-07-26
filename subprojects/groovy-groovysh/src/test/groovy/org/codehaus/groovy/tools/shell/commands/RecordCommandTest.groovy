@@ -16,34 +16,39 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.tools.shell.CommandException
+
 /**
  * Tests for the {@link RecordCommand} class.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class RecordCommandTest
     extends CommandTestSupport
 {
     void testStopNotStarted() {
-        try {
-            shell << 'record stop'
-            fail()
-        }
-        catch (Exception expected) {}
+        shell << 'record stop'
     }
 
     void testStartAlreadyStarted() {
         shell << 'record start'
 
-        try {
-            shell << 'record start'
-            fail()
-        }
-        catch (Exception expected) {}
+        shell << 'record start'
 
-        def file = shell << 'record stop'
+        File file = shell << 'record stop'
 
         file.delete()
+    }
+
+    void testInvoke() {
+        RecordCommand command = new RecordCommand(shell)
+
+        try {
+            // too many args
+            command.do_start([1, 2, 3])
+            fail()
+        } catch (CommandException e) {
+            // pass
+        }
     }
 }

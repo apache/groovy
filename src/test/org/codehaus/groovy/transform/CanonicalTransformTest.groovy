@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -510,6 +510,85 @@ class CanonicalTransformTest extends GroovyShellTestCase {
                 String symbol
             }
             assert Operator.PLUS.next() == Operator.MINUS
+        """
+    }
+
+    void testEqualsCopesWithSelfReference() {
+        assertScript """
+            @groovy.transform.Canonical class Tree {
+              Tree left, right
+              Object item
+            }
+
+            def t = new Tree()
+            t.left = t
+            t.item = 4
+            def s = new Tree()
+            s.left = s
+            s.item = 4
+            assert s.equals(t)
+            // not smart enough to handle mutual-recursion yet
+            // don't use this annotation in such a scenario
+            //
+            // t.right = s
+            // s.right = t
+            // assert s.equals(t) // <= StackOverflowError
+        """
+    }
+
+    void testHashCodeCopesWithSelfReference() {
+        assertScript """
+            @groovy.transform.Canonical class Tree {
+                Object item
+                Tree left, right
+            }
+
+            def t = new Tree(4)
+            t.left = t
+            t.right = t
+            assert t.hashCode() == 3941
+            // not smart enough to handle mutual-recursion yet
+            // don't use this annotation in such a scenario
+            //
+            // def s = new Tree(5, t)
+            // t.left = s
+            // println t.hashCode() // <= StackOverflowError
+        """
+    }
+
+    void testMapStyleConstructorSupportWithObjectOrMapFirstProperty() {
+        // GROOVY-5243: special support for Map, Object, AbstractMap, HashMap but currently not LinkedHashMap
+        assertScript """
+            import groovy.transform.*
+
+            def obj1 = new Canonical1(foo: [:], bar: 'BAR')
+            def obj2 = new Canonical2(foo: [:], bar: 'BAR')
+            def obj3 = new Canonical3(foo: [:], bar: 'BAR')
+
+            check(obj1)
+            check(obj2)
+            check(obj3)
+
+            def check(obj) {
+              assert obj.foo == [:]
+              assert obj.bar == 'BAR'
+            }
+
+            @Canonical
+            class Canonical1 {
+                def foo
+                String bar
+            }
+            @Canonical
+            class Canonical2 {
+                Map foo
+                String bar
+            }
+            @Canonical
+            class Canonical3 {
+                HashMap foo
+                String bar
+            }
         """
     }
 

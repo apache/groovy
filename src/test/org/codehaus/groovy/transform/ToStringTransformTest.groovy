@@ -19,7 +19,7 @@ package org.codehaus.groovy.transform
  * @author Andre Steingress
  */
 class ToStringTransformTest extends GroovyShellTestCase {
-
+    
     void testSimpleToString() {
         def toString = evaluate("""
             import groovy.transform.ToString
@@ -218,6 +218,67 @@ class ToStringTransformTest extends GroovyShellTestCase {
             new Person().toString()
         """)
 
+        assertEquals("Person()", toString)
+    }
+
+    void testSelfReference()  {
+
+        def toString = evaluate("""
+            import groovy.transform.*
+
+            @ToString(includeFields=true, includeNames=true) class Tree {
+                String val
+                Tree left
+                private Tree right
+            }
+
+            def self = new Tree(val:'foo', left:null, right:null)
+            self.left = self
+            self.right = self
+            self.toString()
+        """)
+
+        assert toString == 'Tree(val:foo, left:(this), right:(this))'
+    }
+    
+    void testIncludePackage() {
+        def toString = evaluate("""
+                package my.company
+
+                import groovy.transform.ToString
+
+                @ToString
+                class Person {}
+
+                new Person().toString()
+            """)
+
+        assertEquals("my.company.Person()", toString)
+        
+        toString = evaluate("""
+                package my.company
+
+                import groovy.transform.ToString
+
+                @ToString(includePackage = true)
+                class Person {}
+
+                new Person().toString()
+            """)
+
+        assertEquals("my.company.Person()", toString)
+        
+        toString = evaluate("""
+                package my.company
+                
+                import groovy.transform.ToString
+                
+                @ToString(includePackage = false)
+                class Person {}
+                
+                new Person().toString()
+            """)
+                
         assertEquals("Person()", toString)
     }
 }

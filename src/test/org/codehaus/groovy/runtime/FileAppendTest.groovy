@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package org.codehaus.groovy.runtime
 
 /**
- * Test File append and left shift methods in Groovy
+ * Test File append and leftShift DGM methods
  *
  * @author <a href="mailto:joachim.baumann@xinaris.de">Joachim Baumann</a>
  * @version $Revision$
@@ -59,7 +59,7 @@ class FileAppendTest extends GroovyTestCase {
     void setUp() {
         // Setup guarantees us that we use a non-existent file
         file = File.createTempFile("unitTest", ".txt")
-        assert file.exists() == true
+        assert file.exists()
         //println file.canonicalPath
         assert file.length() == 0L
     }
@@ -97,7 +97,7 @@ class FileAppendTest extends GroovyTestCase {
         assert hasContents(file, expected)
     }
 
-    void testappendWritable() {
+    void testAppendWritable() {
         def expected
 
         // test new
@@ -111,7 +111,7 @@ class FileAppendTest extends GroovyTestCase {
         assert hasContents(file, expected)
     }
 
-    void testappendMixed() {
+    void testAppendMixed() {
         def expected
 
         // test new

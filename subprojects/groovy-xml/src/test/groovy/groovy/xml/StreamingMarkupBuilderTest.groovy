@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,29 @@ package groovy.xml
  *   @author Paul King
  */
 class StreamingMarkupBuilderTest extends BuilderTestSupport {
+
+    // GROOVY-5867
+    void testAttributesAndNamespaces() {
+        def xml = '''<?xml version="1.0" encoding="UTF-8"?>
+        <grammar xml:lang="en-us" xmlns="http://www.w3.org/2001/06/grammar"/>'''
+        def grammar = new XmlSlurper().parseText(xml)
+        def smb = new StreamingMarkupBuilder()
+        assert smb.bindNode(grammar).toString().contains("xml:lang='en-us'")
+    }
+
+    // GROOVY-5879
+    void testXmlNamespaceWithDefaultNamespace() {
+        def xml = '''<?xml version='1.0' encoding='UTF-8'?>
+        <root>
+            <one xml:lang="en">First</one>
+            <one xml:lang="de">Second</one>
+        </root>'''
+        def root = new XmlSlurper().parseText(xml)
+        def smb = new StreamingMarkupBuilder()
+        def result = smb.bindNode(root).toString()
+        assert result.contains("<root>")
+        assert result.contains("<one xml:lang='en'>First</one>")
+    }
 
     protected assertExpectedXml(Closure markup, String expectedXml) {
         assertExpectedXml markup, null, expectedXml

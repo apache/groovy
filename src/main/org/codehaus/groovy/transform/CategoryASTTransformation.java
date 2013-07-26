@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,11 +38,11 @@ import java.util.Set;
 
 /**
  * Handles generation of code for the @Category annotation.
- * <p/>
+ * <p>
  * Transformation logic is as follows:
  * <ul>
- * <li>all non-static methods converted to static ones with an additional 'self' parameter
- * <li>references to 'this' changed to the additional 'self' parameter
+ * <li>all non-static methods converted to static ones with an additional 'self' parameter</li>
+ * <li>references to 'this' changed to the additional 'self' parameter</li>
  * </ul>
  *
  * @author Alex Tkachman
@@ -218,12 +218,10 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
         Expression value = annotation.getMember("value");
         if (value == null || !(value instanceof ClassExpression)) {
             //noinspection ThrowableInstanceNeverThrown
-            source.getErrorCollector().addErrorAndContinue(
-                    new SyntaxErrorMessage(new SyntaxException(
-                            "@groovy.lang.Category must define 'value' which is the class to apply this category to",
-                            annotation.getLineNumber(),
-                            annotation.getColumnNumber()),
-                            source));
+            source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
+                    new SyntaxException("@groovy.lang.Category must define 'value' which is the class to apply this category to",
+                            annotation.getLineNumber(), annotation.getColumnNumber(), annotation.getLastLineNumber(), annotation.getLastColumnNumber()),
+                    source));
             return null;
         } else {
             ClassExpression ce = (ClassExpression) value;

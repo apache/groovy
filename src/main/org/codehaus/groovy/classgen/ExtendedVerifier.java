@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
@@ -27,7 +28,7 @@ import org.objectweb.asm.Opcodes;
 /**
  * A specialized Groovy AST visitor meant to perform additional verifications upon the
  * current AST. Currently it does checks on annotated nodes and annotations itself.
- * <p/>
+ * <p>
  * Current limitations:
  * - annotations on local variables are not supported
  *
@@ -44,6 +45,8 @@ public class ExtendedVerifier implements GroovyClassVisitor {
     }
 
     public void visitClass(ClassNode node) {
+        AnnotationConstantsVisitor acv = new AnnotationConstantsVisitor();
+        acv.visitClass(node, this.source);
         this.currentClass = node;
         if (node.isAnnotationDefinition()) {
             visitAnnotations(node, AnnotationNode.ANNOTATION_TARGET);
@@ -191,13 +194,13 @@ public class ExtendedVerifier implements GroovyClassVisitor {
      * @return true if running on a 1.5+ runtime
      */
     protected boolean isAnnotationCompatible() {
-        return CompilerConfiguration.POST_JDK5.equals(this.source.getConfiguration().getTargetBytecode());
+        return CompilerConfiguration.isPostJDK5(this.source.getConfiguration().getTargetBytecode());
     }
 
     protected void addError(String msg, ASTNode expr) {
         this.source.getErrorCollector().addErrorAndContinue(
                 new SyntaxErrorMessage(
-                        new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber()), this.source)
+                        new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()), this.source)
         );
     }
 

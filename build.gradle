@@ -17,40 +17,6 @@ allprojects {
         mavenCentral()
     }
 
-    // todo: when we get rid of the Ant build, it will be much cleaner to use
-    // the conventional "resources" directory for classpath resources
-    task(copyResources, type: Copy) {
-        destinationDir = file("$buildDir/classes")
-        // text files requiring filtering
-        into("main") {
-            from('src/main/groovy')
-            from('src/main/java')
-            include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
-            filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
-        }
-        // other resources
-        into("main") {
-            from 'src/main/groovy'
-            from 'src/main/java'
-            include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
-        }
-    }
-
-    compileJava.dependsOn(copyResources)
-
-    task(copyTestResources, type: Copy)
-            .from('src/test/groovy')
-            .from('src/test/java')
-            .into("$buildDir/classes/test")
-            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
-
-    compileTestJava.dependsOn(copyTestResources)
-
-    task sourceJar(type: Jar) {
-        classifier = 'sources'
-        from sourceSets.main.allSource
-    }
-
     apply plugin: 'checkstyle'
     apply plugin: 'groovy'
     apply plugin: 'codenarc'
@@ -109,6 +75,41 @@ allprojects {
 
 }
 
+// todo: use the conventional "resources" directory for classpath resources
+task(copyResources, type: Copy) {
+    destinationDir = file("$buildDir/classes")
+    // text files requiring filtering
+    into("main") {
+        from('src/main')
+        include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
+        filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
+    }
+    // other resources
+    into("main") {
+        from 'src/main'
+        include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
+    }
+}
+compileJava.dependsOn(copyResources)
+task(copyTestResources, type: Copy)
+        .from('src/test')
+        .into("$buildDir/classes/test")
+        .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
+compileTestJava.dependsOn(copyTestResources)
+
+task sourceJar(type: Jar) {
+    classifier = 'sources'
+    from 'src/main'
+}
+
+subprojects {
+    task sourceJar(type: Jar) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+}
+
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
 //    mavenCentral() // default, tools
@@ -134,19 +135,21 @@ dependencies {
     compilerCompile "org.ow2.asm:asm-util:4.0"
 
     compilerCompile "commons-cli:commons-cli:1.2"
-    compilerCompile "org.apache.ant:ant:1.8.4"
-    compilerCompile("com.thoughtworks.xstream:xstream:1.4.2") {
+    compilerCompile "org.apache.ant:ant:1.9.1"
+    compilerCompile("com.thoughtworks.xstream:xstream:1.4.4") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compilerCompile("jline:jline:1.0") {
+    compilerCompile("jline:jline:2.10") {
         exclude(group: 'junit', module: 'junit')
     }
-    compilerCompile "org.fusesource.jansi:jansi:1.6"
-    compilerCompile("org.apache.ivy:ivy:2.2.0") {
+    compilerCompile "org.fusesource.jansi:jansi:1.10"
+    compilerCompile("org.apache.ivy:ivy:2.3.0") {
         transitive = false
     }
+    compilerCompile files("$buildDir/classes/compiler")
+
     groovy files("$buildDir/classes/compiler")
     groovy "antlr:antlr:2.7.7"
     groovy "org.ow2.asm:asm:4.0"
@@ -156,29 +159,26 @@ dependencies {
     groovy "org.ow2.asm:asm-util:4.0"
 
     compile "commons-cli:commons-cli:1.2"
-    compile("com.thoughtworks.xstream:xstream:1.4.2") {
+    compile("com.thoughtworks.xstream:xstream:1.4.4") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compile("jline:jline:1.0") {
+    compile("jline:jline:2.10") {
         exclude(group: 'junit', module: 'junit')
     }
-    compile "org.fusesource.jansi:jansi:1.6"
-    compile("org.apache.ivy:ivy:2.2.0") {
+    compile "org.fusesource.jansi:jansi:1.10"
+    compile("org.apache.ivy:ivy:2.3.0") {
         transitive = false
     }
-    runtime "org.codehaus.gpars:gpars:1.0-beta-2"
+    runtime "org.codehaus.gpars:gpars:1.0.0"
     testCompile "jmock:jmock:1.2.0"
     testCompile "jmock:jmock-cglib:1.2.0"
     testCompile "xmlunit:xmlunit:1.3"
-    testCompile "hsqldb:hsqldb:1.8.0.10"
-//    testCompile group:"org.hsqldb", name:"hsqldb", version:"2.2.8", classifier:"jdk5"
-//    testCompile "com.h2database:h2:1.3.164"
     testCompile "ch.qos.logback:logback-classic:0.9.21"
     testCompile "log4j:log4j:1.2.16"
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
-    testCompile "com.thoughtworks.qdox:qdox:1.12"
+    testCompile "com.thoughtworks.qdox:qdox:1.12.1"
 
     tools "com.googlecode.jarjar:jarjar:1.3"
     tools("checkstyle:checkstyle:4.4") {
@@ -191,7 +191,7 @@ dependencies {
         exclude(module: 'ant')
     }
     tools "org.ow2.asm:asm-all:4.0"
-    tools "com.thoughtworks.qdox:qdox:1.12"
+    tools "com.thoughtworks.qdox:qdox:1.12.1"
     tools "biz.aQute:bnd:0.0.401"
 
     examplesCompile "lucene:lucene:1.4.3"
@@ -212,12 +212,14 @@ dependencies {
 
 // TODO use antlr plugin
 //    antlr "antlr:antlr:2.7.7"
-    antlr "org.apache.ant:ant-antlr:1.8.4"
+    antlr "org.apache.ant:ant-antlr:1.9.1"
 
     // TODO remove once M12N refactoring finished
     testCompile project(':groovy-ant')
     testCompile project(':groovy-test')
 }
+
+ext.generatedDirectory = "${buildDir}/generated-sources"
 
 sourceSets {
     compiler {
@@ -231,6 +233,7 @@ sourceSets {
                     "subprojects/groovy-templates/src/main",
                     "subprojects/groovy-xml/src/main",
                     "subprojects/groovy-jmx/src/main",
+                    "$generatedDirectory/src/main"
             ]
             if (!useIndy()) {
                 exclude '**/indy/*'
@@ -243,6 +246,7 @@ sourceSets {
         java {
             srcDirs = [
                     "src/main",
+                    "$generatedDirectory/src/main"
             ]
             fileTree("src/main/groovy/ui").matching {
                 exclude 'GroovyMain.java', 'GroovySocketServer.java'
@@ -258,6 +262,7 @@ sourceSets {
         groovy {
             srcDirs = [
                     "src/main",
+                    "$generatedDirectory/src/main"
             ]
             if (!useIndy()) {
                 exclude '**/indy/*'
@@ -266,24 +271,22 @@ sourceSets {
             }
         }
         resources {
-            srcDirs = ["src/main", "src/tools"]
+            srcDirs = ["src/main", "src/tools", "src/resources"]
             include "META-INF/services/*", "META-INF/groovy-release-info.properties",
                     "groovy/grape/*.xml", "groovy/ui/*.properties", "groovy/ui/**/*.png",
                     "groovy/inspect/swingui/AstBrowserProperties.groovy",
                     "org/codehaus/groovy/tools/shell/**/*.properties",
                     "org/codehaus/groovy/tools/shell/**/*.xml",
-                    "org/codehaus/groovy/antlib.xml",
                     "org/codehaus/groovy/tools/groovydoc/gstringTemplates/**/*.*",
                     "org/codehaus/groovy/tools/groovy.ico"
         }
-        output.classesDir = "$buildDir/classes" as File
     }
     test {
         groovy {
             srcDirs = [
                     "src/test",
             ]
-            if (!isJava16()) {
+            if (isJava15()) {
                 exclude "groovy/**/vm6/*Test.groovy"
                 exclude "org/codehaus/groovy/**/vm6/*Test.groovy"
             }
@@ -332,50 +335,82 @@ task ensureGrammars {
     ext.antlrDirectory = "$projectDir/src/main/org/codehaus/groovy/antlr"
     ext.groovyParserDirectory = "$ext.antlrDirectory/parser"
     ext.javaParserDirectory = "$ext.antlrDirectory/java"
+    ext.genPath = "$generatedDirectory/src/main/org/codehaus/groovy/antlr"
+    ext.groovyOutDir = "$ext.genPath/parser"
+    ext.javaOutDir = "$ext.genPath/java"
+    inputs.dir(antlrDirectory)
+    outputs.dir(groovyOutDir)
+    outputs.dir(javaOutDir)
     doFirst {
+        new File(groovyOutDir).mkdirs()
+        new File(javaOutDir).mkdirs()
         ant {
             taskdef(name: 'antlr',
                     classname: 'org.apache.tools.ant.taskdefs.optional.ANTLR',
                     classpath: configurations.antlr.asPath)
 
             mkdir dir: ext.groovyParserDirectory
-            antlr(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyParserDirectory) {
+            antlr(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyOutDir) {
                 classpath path: configurations.compile.asPath
             }
-            antlr(target: "$ext.javaParserDirectory/java.g", outputdirectory: ext.javaParserDirectory) {
+            antlr(target: "$ext.javaParserDirectory/java.g", outputdirectory: ext.javaOutDir) {
                 classpath path: configurations.compile.asPath
             }
         }
     }
 }
 
+apply from: 'gradle/utils.gradle'
+
+def isJava16() {
+    System.properties['java.version'].contains('1.6')
+}
+def isJava15() {
+    System.properties['java.version'].contains('1.5')
+}
+def modules() {
+    subprojects.findAll { it.name =~ /groovy-(?!all-tests)/ }
+}
+
+// provide to other build scripts
+ext.isJava6 = this.&isJava16()
+ext.isJava5 = this.&isJava15()
+ext.modules = this.&modules()
+
 task dgmConverter(type: JavaExec, dependsOn: 'classes') {
     description = 'Generates DGM info file required for faster startup.'
-    classpath = files(file('target/classes')) + configurations.compile
+    ext.classesDir = sourceSets.main.output.classesDir
+    classpath = files(classesDir) + configurations.compile
     main = 'org.codehaus.groovy.tools.DgmConverter'
-    args = ['--info']
+    args = ['--info', classesDir.absolutePath]
     doFirst {
-        file('target/classes/META-INF').mkdirs()
+        file("$classesDir/META-INF").mkdirs()
     }
+    inputs.files fileTree(dir: projectDir, includes: ['src/**/*GroovyMethods.java'])
+    outputs.file file("$classesDir/META-INF/dgminfo")
 }
 
 task compilerDgmConverter(type: JavaExec) {
     description = 'Generates DGM info file for the bootstrap compiler'
-    classpath = files(file('target/classes/compiler')) + configurations.compilerCompile
+    ext.compilerClassesDir = sourceSets.compiler.output.classesDir
+    classpath = files(compilerClassesDir) + configurations.compilerCompile
     main = 'org.codehaus.groovy.tools.DgmConverter'
-    ext.compilerDirPath = file('target/classes/compiler').absolutePath
-    args = ['--info', compilerDirPath]
+    args = ['--info', compilerClassesDir.absolutePath]
     doFirst {
-        file('target/classes/compiler/META-INF').mkdirs()
+        file("$compilerClassesDir/META-INF").mkdirs()
     }
+    inputs.files fileTree(dir: projectDir, includes: ['src/**/*GroovyMethods.java'])
+    outputs.file file("$compilerClassesDir/META-INF/dgminfo")
 }
 
 compileCompilerJava {
-    dependsOn ensureGrammars
+    dependsOn ensureGrammars, exceptionUtils
+    options.fork(memoryMaximumSize: javacMain_mx)
 }
 
 compileJava {
     dependsOn compilerClasses,compilerDgmConverter,ensureGrammars
+    options.fork(memoryMaximumSize: javacMain_mx)
 }
 
 compileGroovy {
@@ -395,10 +430,6 @@ compileExamplesGroovy {
     groovyOptions.fork(memoryMaximumSize: groovycExamples_mx)
 }
 
-def isJava16() {
-    System.properties['java.version'].contains('1.6')
-}
-
 // suppress CheckStyle/CodeNarc
 task checkstyleExamples(overwrite: true) << {}
 task checkstyleMain(overwrite: true) << {}
@@ -406,26 +437,25 @@ task checkstyleTest(overwrite: true) << {}
 task checkstyleTools(overwrite: true) << {}
 task codenarcExamples(overwrite: true) << {}
 
-// provide to other build scripts
-ext.isJava6 = this.&isJava16()
-
 apply from: "gradle/test.gradle"
 apply from: "gradle/docs.gradle"
 apply from: "gradle/assemble.gradle"
 apply from: "gradle/upload.gradle"
 apply from: "gradle/idea.gradle"
-
-task wrapper(type: Wrapper) {
-//    gradleVersion = '1.0-milestone-5-20110929000016+0200'
-//    distributionUrl = "http://repo.gradle.org/gradle/distributions-snapshots/gradle-${gradleVersion}-bin.zip"
-    gradleVersion = '1.0-rc-3'
-}
-
 // Define a GroovyDoc task which depends on the generated groovydoc tool
 apply from: "gradle/groovydoc.gradle"
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.5'
+}
 
 classes {
     doFirst {
         logger.lifecycle "InvokeDynamic support ${useIndy()?'on':'off'}"
     }
+}
+
+// If a local configuration file for tweaking the build is present, apply it
+if (file('user.gradle').exists()) {
+    apply from: 'user.gradle'
 }

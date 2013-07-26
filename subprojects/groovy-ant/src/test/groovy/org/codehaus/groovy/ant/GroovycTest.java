@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ import java.util.regex.Pattern;
 
 /**
  * Unit tests for the {@link Groovyc} ant task.
- * <p/>
- * <p>NB the *.groovy files in this directory should not get compiled with the rest of the test classes
+ * <p>
+ * NB the *.groovy files in this directory should not get compiled with the rest of the test classes
  * since that would ruin the whole point of testing compilation by the Ant tasks.  In fact it doesn't
  * matter as the tests remove all class files that should not pre-exist from this directory at each
- * step</p>
+ * step
  *
  * @author Russel Winder
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * Represents an inclusive list of objects from a value to a value using
  * comparators.
- * <p/>
+ * <p>
  * This class is similar to {@link IntRange}. If you make any changes to this
  * class, you might consider making parallel changes to {@link IntRange}.
  *
@@ -272,7 +272,8 @@ public class ObjectRange extends AbstractList implements Range {
                 char fromNum = (Character) from;
                 char toNum = (Character) to;
                 size = toNum - fromNum + 1;
-            } else if (from instanceof BigDecimal || to instanceof BigDecimal) {
+            } else if (from instanceof BigDecimal || to instanceof BigDecimal ||
+                       from instanceof BigInteger || to instanceof BigInteger) {
                 // let's fast calculate the size
                 BigDecimal fromNum = new BigDecimal("" + from);
                 BigDecimal toNum = new BigDecimal("" + to);

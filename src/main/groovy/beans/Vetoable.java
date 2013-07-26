@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,22 +24,22 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotates a groovy property or a class. <br/><br/>
- *
+ * Annotates a groovy property or a class.
+ * <p>
  * When annotating a property it indicates that the property should be a
  * constrained property according to the JavaBeans spec, subject to
- * listeners vetoing the property change.<br/><br/>
- *
+ * listeners vetoing the property change.
+ * <p>
  * When annotating a class it indicates that all groovy properties in that
  * class should be bound as though each property had the annotation (even
- * if it already has it explicitly).<br/><br/>
- *
+ * if it already has it explicitly).
+ * <p>
  * It is a compilation error to place this annotation on a field (that is
- * not a property, i.e. has scope visibility modifiers).<br/><br/>
- *
+ * not a property, i.e. has scope visibility modifiers).
+ * <p>
  * If a property with a user defined setter method is annotated the code
- * block is wrapped with the needed code to fire off the event.<br/><br/>
- *
+ * block is wrapped with the needed code to fire off the event.
+ * <p>
  * Here is a simple example of how to annotate a class with Vetoable: 
  * <pre>
  * &#064;groovy.beans.Vetoable
@@ -52,8 +52,7 @@ import java.lang.annotation.Target;
  * snippet. Notice the difference between a String and a def/Object property: 
  * <pre>
  * public class Person implements groovy.lang.GroovyObject { 
- * 
- *     private java.lang.String firstName 
+ *     private java.lang.String firstName
  *     private java.lang.Object zipCode 
  *     final private java.beans.VetoableChangeSupport this$vetoableChangeSupport 
  * 
@@ -100,8 +99,8 @@ import java.lang.annotation.Target;
  *     }
  * }
  * </pre>
- * @see VetoableASTTransformation
  *
+ * @see VetoableASTTransformation
  * @author Danno Ferrin (shemnon)
  */
 @java.lang.annotation.Documented

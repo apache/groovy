@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,11 @@
  */
 package groovy.json
 
+import groovy.transform.CompileStatic
+
 import static JsonTokenType.*
 import java.text.SimpleDateFormat
-import java.text.DateFormat
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
 /**
  * Class responsible for the actual String serialization of the possible values of a JSON structure.
@@ -34,15 +36,12 @@ class JsonOutput {
      * that can be parsed back from JavaScript with:
      * <code>Date.parse(stringRepresentation)</code>
      */
-    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US)
-
-    static {
-        dateFormat.timeZone = TimeZone.getTimeZone('GMT')
-    }
+    private static final ThreadLocal<SimpleDateFormat> dateFormatter = new DateFormatThreadLocal()
 
     /**
      * @return "true" or "false" for a boolean value
      */
+    @CompileStatic
     static String toJson(Boolean bool) {
         bool.toString()
     }
@@ -61,6 +60,7 @@ class JsonOutput {
     /**
      * @return a JSON string representation of the character
      */
+    @CompileStatic
     static String toJson(Character c) {
         "\"$c\""
     }
@@ -68,6 +68,7 @@ class JsonOutput {
     /**
      * @return a properly encoded string with escape sequences
      */
+    @CompileStatic
     static String toJson(String s) {
         "\"${StringEscapeUtils.escapeJava(s)}\""
     }
@@ -78,8 +79,9 @@ class JsonOutput {
      * @param date the date to format to a JSON string
      * @return a formatted date in the form of a string
      */
+    @CompileStatic
     static String toJson(Date date) {
-        "\"${dateFormat.format(date)}\""
+        "\"${dateFormatter.get().format(date)}\""
     }
 
     /**
@@ -88,13 +90,15 @@ class JsonOutput {
      * @param cal the calendar to format to a JSON string
      * @return a formatted date in the form of a string
      */
+    @CompileStatic
     static String toJson(Calendar cal) {
-        "\"${dateFormat.format(cal.time)}\""
+        "\"${dateFormatter.get().format(cal.time)}\""
     }
 
     /**
      * @return the string representation of an uuid
      */
+    @CompileStatic
     static String toJson(UUID uuid) {
         "\"${uuid.toString()}\""
     }
@@ -102,6 +106,7 @@ class JsonOutput {
     /**
      * @return the string representation of the URL
      */
+    @CompileStatic
     static String toJson(URL url) {
         "\"${url.toString()}\""
     }
@@ -111,6 +116,13 @@ class JsonOutput {
      */
     static String toJson(Closure closure) {
         toJson(JsonDelegate.cloneDelegateAndGetContent(closure))
+    }
+
+    /**
+     * @return an object representation of an Expando
+     */
+    static String toJson(Expando expando) {
+        toJson(expando.properties)
     }
 
     /**
@@ -127,7 +139,7 @@ class JsonOutput {
         } else if (object instanceof Enum) {
             '"' + object.name() + '"'
         } else {
-            def properties = object.properties
+            def properties = DefaultGroovyMethods.getProperties(object)
             properties.remove('class')
             properties.remove('declaringClass')
             properties.remove('metaClass')
@@ -153,6 +165,7 @@ class JsonOutput {
      * @param jsonPayload
      * @return
      */
+    @CompileStatic
     static String prettyPrint(String jsonPayload) {
         int indent = 0
         def output = new StringBuilder()
@@ -184,7 +197,12 @@ class JsonOutput {
             } else if (token.type == COLON) {
                 output.append(': ')
             } else if (token.type == STRING) {
-                output.append('"' + StringEscapeUtils.escapeJava(token.text[1..-2]) + '"')
+                // Cannot use a range (1..-2) here as it will reverse for a string of
+                // length 2 (i.e. textStr=/""/ ) and will not strip the leading/trailing
+                // quotes (just reverses them).
+                String textStr = token.text
+                String textWithoutQuotes = textStr.substring( 1, textStr.size()-1 )
+                output.append('"' + StringEscapeUtils.escapeJava( textWithoutQuotes ) + '"')
             } else {
                 output.append(token.text)
             }

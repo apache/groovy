@@ -102,7 +102,15 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
     @Override
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         this.currentMethod = node;
-        super.visitConstructorOrMethod(node, isConstructor);
+        visitAnnotations(node);
+        visitClassCodeContainer(node.getCode());
+        // GROOVY-5681: initial expressions should be visited too!
+        for (Parameter param : node.getParameters()) {
+            if (param.hasInitialExpression()) {
+                param.getInitialExpression().visit(this);
+            }
+            visitAnnotations(param);
+        }
         this.currentMethod = null;
     }
 

@@ -21,7 +21,6 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * Support for testing {@link Command} instances.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 abstract class CommandTestSupport
@@ -42,6 +41,12 @@ abstract class CommandTestSupport
 
         shell.resultHook = { result ->
             lastResult = result
+        }
+    }
+
+    void testGui(Closure test) {
+        if (!HeadlessTestSupport.headless) {
+            test()
         }
     }
 }

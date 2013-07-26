@@ -1256,50 +1256,52 @@ enumConstantBlock  {Token first = LT(1);}
 
 // TODO - maybe allow 'declaration' production within this production,
 // but how to disallow constructors and static initializers...
-enumConstantField!  {Token first = LT(1);}
-    :   mods:modifiersOpt!
-        (   td:typeDefinitionInternal[#mods]
+enumConstantField! {Token first = LT(1);}
+    :   (
+            (typeDeclarationStart)=>
+            mods:modifiersOpt!
+            td:typeDefinitionInternal[#mods]
             {#enumConstantField = #td;}
-        |   // A generic method has the typeParameters before the return type.
-            // This is not allowed for variable definitions, but this production
-            // allows it, a semantic check could be used if you wanted.
-            (tp:typeParameters)? t:typeSpec[false]          // method or variable declaration(s)
-            (
-                // Need a syntactic predicate, since variableDefinitions
-                // can start with foo() also.  Since method defs are not legal
-                // in this context, there's no harm done.
-                (IDENT LPAREN)=>
-
-                IDENT                                     // the name of the method
-
-                // parse the formal parameter declarations.
-                LPAREN! param:parameterDeclarationList RPAREN!
-
-                /*OBS* rt:declaratorBrackets[#t] *OBS*/
-
-                // get the list of exceptions that this method is
-                // declared to throw
-                ((nls "throws") => tc:throwsClause)?
-
-                ( s2:compoundStatement )?
-                // TODO - verify that 't' is useful/correct here, used to be 'rt'
-                {#enumConstantField = #(create(METHOD_DEF,"METHOD_DEF",first,LT(1)),
-                                         mods,
-                                         tp,
-                                         #(create(TYPE,"TYPE",first,LT(1)),t),
-                                         IDENT,
-                                         param,
-                                         tc,
-                                         s2);}
-
-            |   v:variableDefinitions[#mods,#t]
-                {#enumConstantField = #v;}
-            )
+        |
+            (modifiers)=>
+            m1:modifiers
+            (tp1:typeParameters)? (t1:typeSpec[false])?
+            e1:enumConstantFieldInternal[#m1, #tp1, #t1, #first]
+            {#enumConstantField = #e1;}
+        |
+            m2:modifiersOpt!
+            (tp2:typeParameters)? t2:typeSpec[false]
+            e2:enumConstantFieldInternal[#m2, #tp2, #t2, #first]
+            {#enumConstantField = #e2;}
         )
+    |   cs:compoundStatement
+        {#enumConstantField = #(create(INSTANCE_INIT,"INSTANCE_INIT",first,LT(1)), cs);}
+    ;
 
-        // "{ ... }" instance initializer
-    |   s4:compoundStatement
-        {#enumConstantField = #(create(INSTANCE_INIT,"INSTANCE_INIT",first,LT(1)), s4);}
+protected enumConstantFieldInternal![AST mods, AST tp, AST t, Token first]
+    :
+        // Need a syntactic predicate to avoid potential ambiguity
+        (IDENT LPAREN)=>
+        IDENT
+
+        // parse the formal parameter declarations.
+        LPAREN! param:parameterDeclarationList RPAREN!
+
+        // get the list of declared exceptions
+        ((nls "throws") => tc:throwsClause)?
+
+        ( s2:compoundStatement )?
+        {#enumConstantFieldInternal = #(create(METHOD_DEF,"METHOD_DEF",first,LT(1)),
+                                 mods,
+                                 tp,
+                                 #(create(TYPE,"TYPE",first,LT(1)),t),
+                                 IDENT,
+                                 param,
+                                 tc,
+                                 s2);}
+
+    |   v:variableDefinitions[#mods,#t]
+        {#enumConstantFieldInternal = #v;}
     ;
 
 // An interface can extend several other interfaces...

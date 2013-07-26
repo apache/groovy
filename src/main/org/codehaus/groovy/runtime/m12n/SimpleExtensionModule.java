@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,19 +24,21 @@ import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * An extension module which provides extension methods using a {@link org.codehaus.groovy.runtime.DefaultGroovyMethods}-like implementation, that
  * is to say using static methods defined in an "extension class".
- * <p/>
+ * <p>
  * For commodity, multiple extension classes may be defined in a single module, including classes used to define new
  * static methods.
- * <p/>
+ * <p>
  * Modules are required to implement the {@link #getInstanceMethodsExtensionClasses} for classes defining new instance
  * methods, and {@link #getStaticMethodsExtensionClasses()} for classes defining static methods.
- * <p/>
+ * <p>
  * For example, to define a module adding methods to the {@link String} class, you can write a helper class:
- * <pre>class StringExtension {
+ * <pre>
+ * class StringExtension {
  *     public static int count(String self, char c) {
  *         int result = 0;
  *         for (int i=0;i&lt;self.length(); i++) {
@@ -44,37 +46,44 @@ import java.util.List;
  *         }
  *         return result;
  *     }
- * }</pre>
- * <p/>
+ * }
+ * </pre>
+ * <p>
  * This class defines a single static method taking the string instance as first argument, allowing to define
  * a new instance method on the String class: <pre>String#count(char c)</pre>.
- * <p/>
+ * <p>
  * To define a new static method on a class, as the static modifier is already used for instance methods, you must use
  * another helper class, for example:
- * <p/>
- * <pre>class StaticStringExtension {
+ * <p>
+ * <pre>
+ * class StaticStringExtension {
  *     public static void foo(String self) { System.out.println("foo"); }
- * }</pre>
- * <p/>
+ * }
+ * </pre>
+ * <p>
  * The first argument of the method is only used to tell the class for which we add a static method. You can now define
  * an extension module:
- * <p/>
- * <pre>class MyStringModule extends SimpleExtensionModule {
+ * <p>
+ * <pre>
+ * class MyStringModule extends SimpleExtensionModule {
  *     // ...
- * <p/>
+ *
  *     public List&lt;Class&gt; getInstanceMethodsExtensionClasses() {
  *         return Collections.singletonList(StringExtension.class);
  *     }
- * <p/>
+ *
  *     public List&lt;Class&gt; getStaticMethodsExtensionClasses() {
  *         return Collections.singletonList(StaticStringExtension.class);
  *     }
- * }</pre>
+ * }
+ * </pre>
  *
  * @author Cedric Champeau
  * @since 2.0.0
  */
 public abstract class SimpleExtensionModule extends ExtensionModule {
+
+    private final static Logger LOG = Logger.getLogger(SimpleExtensionModule.class.getName());
 
     public SimpleExtensionModule(final String moduleName, final String moduleVersion) {
         super(moduleName, moduleVersion);
@@ -86,11 +95,19 @@ public abstract class SimpleExtensionModule extends ExtensionModule {
         List<MetaMethod> metaMethods = new LinkedList<MetaMethod>();
         List<Class> extensionClasses = getInstanceMethodsExtensionClasses();
         for (Class extensionClass : extensionClasses) {
-            createMetaMethods(extensionClass, metaMethods, false);
+            try {
+                createMetaMethods(extensionClass, metaMethods, false);
+            } catch (LinkageError e) {
+                LOG.warning("Module ["+getName()+"] - Unable to load extension class ["+extensionClass+"] due to ["+e.getMessage()+"]. Maybe this module is not supported by your JVM version.");
+            }
         }
         extensionClasses = getStaticMethodsExtensionClasses();
         for (Class extensionClass : extensionClasses) {
-            createMetaMethods(extensionClass, metaMethods, true);
+            try {
+                createMetaMethods(extensionClass, metaMethods, true);
+            } catch (LinkageError e) {
+                LOG.warning("Module ["+getName()+"] - Unable to load extension class ["+extensionClass+"] due to ["+e.getMessage()+"]. Maybe this module is not supported by your JVM version.");
+            }
         }
         return metaMethods;
     }

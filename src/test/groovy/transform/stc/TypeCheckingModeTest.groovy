@@ -89,4 +89,44 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5884
+    void testShouldSkipTypeCheckingInConstructor() {
+        assertScript '''
+            class GenericsApocalypse {
+                @groovy.transform.TypeChecked(groovy.transform.TypeCheckingMode.SKIP)
+                GenericsApocalypse() {
+                    int x = 'string'
+                }
+            }
+            try {
+                new GenericsApocalypse()
+            } catch (org.codehaus.groovy.runtime.typehandling.GroovyCastException e) {
+                // catch a runtime exception instead of a compile-time one
+            }
+        '''
+    }
+
+    void testSkipAndAnonymousInnerClass() {
+        new GroovyShell().evaluate '''import groovy.transform.TypeChecked
+            public interface HibernateCallback<T> {
+                T doInHibernate()
+            }
+
+            @TypeChecked
+            class Enclosing {
+                @TypeChecked(groovy.transform.TypeCheckingMode.SKIP)
+                def shouldBeSkipped(Closure callable) {
+                    new HibernateCallback() {
+                        @Override
+                        def doInHibernate() {
+                            callable(1+new Date()) // should pass because we're in a skipped section
+                        }}
+                }
+            }
+
+            new Enclosing().shouldBeSkipped {
+                println 'This is ok'
+            }
+        '''
+    }
 }

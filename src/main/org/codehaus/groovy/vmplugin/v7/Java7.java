@@ -26,4 +26,8 @@ import org.codehaus.groovy.vmplugin.v6.Java6;
  * @author Jochen Theodorou
  */
 public class Java7 extends Java6 {
+    @Override
+    public void invalidateCallSites() {
+    	IndyInterface.invalidateSwitchPoints();
+    }
 }

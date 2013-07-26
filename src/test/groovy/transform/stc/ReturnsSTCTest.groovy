@@ -154,7 +154,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             double greeting(String name) {
                 new Object()
             }
-        ''', 'Cannot return value of type java.lang.Object -> java.lang.Object on method returning type double'
+        ''', 'Cannot return value of type java.lang.Object on method returning type double'
     }
 
     void testReturnTypeInference() {
@@ -213,6 +213,16 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             }
             methodWithImplicitConversion().years
         ''', 'No such property: years for class: java.lang.String'
+    }
+
+    // GROOVY-5835
+    void testReturnInClosureShouldNotBeConsideredAsReturnOfEnclosingMethod() {
+        assertScript '''
+            int enclosingMethod() {
+                def cl = { return 'String' } // should not think it's a return for the enclosing method
+                1
+            }
+        '''
     }
 
 }

@@ -397,7 +397,7 @@ import org.codehaus.groovy.ast.ClassHelper
      */
 
     private void empty() {
-        expression << new EmptyStatement()
+        expression << EmptyStatement.INSTANCE
     }
 
 

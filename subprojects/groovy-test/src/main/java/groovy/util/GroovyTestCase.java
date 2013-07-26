@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import java.util.logging.Logger;
  * @author <a href="mailto:bob@werken.com">bob mcwhirter</a>
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Dierk Koenig (the notYetImplemented feature, changes to shouldFail)
- * @version $Revision$
  */
 public class GroovyTestCase extends TestCase {
 
@@ -237,7 +236,7 @@ public class GroovyTestCase extends TestCase {
      * The expected exception class is compared recursively with any nested
      * exceptions using getCause() until either a match is found or no more
      * nested exceptions exist.
-     * <p/>
+     * <p>
      * If a match is found the error message associated with the matching
      * exception is returned. If no match was found the method will fail.
      *
@@ -257,9 +256,9 @@ public class GroovyTestCase extends TestCase {
     }
 
     /**
-     * Runs the calling JUnit test again and fails only if it unexpectedly runs.<br/>
+     * Runs the calling JUnit test again and fails only if it unexpectedly runs.<br>
      * This is helpful for tests that don't currently work but should work one day,
-     * when the tested functionality has been implemented.<br/>
+     * when the tested functionality has been implemented.<br>
      * The right way to use it is:
      * <pre>
      * public void testXXX() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The JmxEventEmitter is a JMX Broadcaster class that is used to send generic events on the MBeanServer's
- * event bus.  It is used by the Emitter node () to send event to registered listeners.
- * <p/>
+ * event bus. It is used by the Emitter node () to send event to registered listeners.
+ * <p>
  * <pre>
- *     def jmx = JmxBuilder()
- *     jmx.emitter(name:"Object name"|ObjectName(), event:"event type")
- *     ...
- *     jmx.emitter.send(object)
+ * def jmx = JmxBuilder()
+ * jmx.emitter(name:"Object name"|ObjectName(), event:"event type")
+ * ...
+ * jmx.emitter.send(object)
  * </pre>
  *
  * @author Vladimir Vivien

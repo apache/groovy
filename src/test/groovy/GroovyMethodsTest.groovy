@@ -112,6 +112,20 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert lists.combinations() as Set == [['a', 3], ['b', 3]] as Set
     }
 
+    void testCombinationsWithAction() {
+        def lists = [[2, 3],[4, 5, 6]]
+        def expected = [8, 12, 10, 15, 12, 18]
+        assert lists.combinations {x,y -> x*y } as Set == expected as Set
+    }
+
+    void testEachCombination() {
+        def lists = [[2, 3],[4, 5, 6]]
+        Set expected = [8, 12, 10, 15, 12, 18]
+        Set collector = []
+        lists.eachCombination {x,y -> collector << x*y }
+        assert collector == expected
+    }
+
     void testTranspose() {
         def list1 = [['a', 'b'], [1, 2, 3]]
         def list2 = [['a', 'b', 'c'], [1, 2]]
@@ -496,6 +510,11 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert string.count('g') == 2
     }
 
+    void testCountForStringEdgeCase_GROOVY5858() {
+        def blank6 = ' ' * 6
+        8.times { assert blank6.count(' ' * it) == 7 - it }
+    }
+
     void testJoinForIterator() {
         assert ['a', 'b', 'c', 'a'].iterator().join('-') == 'a-b-c-a'
     }
@@ -520,22 +539,24 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testObjectSleep() {
         long start = System.currentTimeMillis()
-        sleep 1000
+        long sleeptime = 200
+        sleep sleeptime
         long slept = System.currentTimeMillis() - start
-        long epsilon = 120
-        assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):   \
-               "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
+        long epsilon = 24
+        assert (slept > sleeptime - epsilon) && (slept < sleeptime + epsilon):   \
+               "should have slept for $sleeptime ms (+/- epsilon ms) but was $slept ms"
     }
 
     void testObjectSleepInterrupted() {
         def interruptor = new groovy.TestInterruptor(Thread.currentThread())
         new Thread(interruptor).start()
         long start = System.currentTimeMillis()
-        sleep 1000
+        long sleeptime = 200
+        sleep sleeptime
         long slept = System.currentTimeMillis() - start
-        long epsilon = 150
-        assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):   \
-               "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
+        long epsilon = 30
+        assert (slept > sleeptime - epsilon) && (slept < sleeptime + epsilon):   \
+               "should have slept for $sleeptime ms (+/- $epsilon ms) but slept $slept ms"
     }
 
     void testObjectSleepWithOnInterruptHandler() {
@@ -543,9 +564,10 @@ class GroovyMethodsTest extends GroovyTestCase {
         def interruptor = new groovy.TestInterruptor(Thread.currentThread())
         new Thread(interruptor).start()
         long start = System.currentTimeMillis()
-        sleep(2000) {log += it.toString()}
+        long sleeptime = 200
+        sleep(sleeptime) {log += it.toString()}
         long slept = System.currentTimeMillis() - start
-        assert slept < 2000, "should have been interrupted but slept ${slept}ms > 2s"
+        assert slept < sleeptime, "should have been interrupted but slept $slept ms > $sleeptime ms"
         assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
     }
 
@@ -554,13 +576,14 @@ class GroovyMethodsTest extends GroovyTestCase {
         def interruptor = new groovy.TestInterruptor(Thread.currentThread())
         new Thread(interruptor).start()
         long start = System.currentTimeMillis()
-        sleep(2000) {
+        long sleeptime = 200
+        sleep(sleeptime) {
             log += it.toString()
             false // continue sleeping
         }
         long slept = System.currentTimeMillis() - start
         short allowedError = 4 // ms
-        assert slept + allowedError >= 2000, "should have slept for at least 2s but only slept for ${slept}ms"
+        assert slept + allowedError >= sleeptime, "should have slept for at least $sleeptime ms but only slept for $slept ms"
         assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
     }
 
@@ -802,14 +825,6 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert result == 'fooabcxyz'
     }
 
-    void testThreadNaming() {
-        def t = Thread.start("MyNamedThread"){
-            sleep 200 // give ourselves time to find the thread
-        }
-        assert Thread.allStackTraces.keySet().any{ thread -> thread.name == 'MyNamedThread' }
-        t.join()
-    }
-
     void testDefiningQueue() {
         def result = [1, 2, 3, 4, 5] as Queue
         assert result instanceof Queue
@@ -919,6 +934,11 @@ class GroovyMethodsTest extends GroovyTestCase {
                 ['g', 'f', 'r', 'o'],
                 ['g', 'f', 'o', 'r'],
         ] as Set
+    }
+
+    void testPermutationsWithAction() {
+            def items = [1, 2, 3]
+            assert items.permutations { it.collect { 2*it } } as Set == [[2, 4, 6], [2, 6, 4], [4, 2, 6], [4, 6, 2], [6, 2, 4], [6, 4, 2]] as Set
     }
 
     void testStringTranslate() {

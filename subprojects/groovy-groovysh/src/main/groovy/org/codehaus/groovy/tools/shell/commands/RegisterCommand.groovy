@@ -16,7 +16,9 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.Command
 
@@ -29,7 +31,7 @@ import org.codehaus.groovy.tools.shell.Command
 class RegisterCommand
     extends CommandSupport
 {
-    RegisterCommand(final Shell shell) {
+    RegisterCommand(final Groovysh shell) {
         super(shell, "register", "\\rc")
     }
 
@@ -47,13 +49,13 @@ class RegisterCommand
         Command command = null;
 
         if (args.size() == 1) {                   // use default name
-            command = type.newInstance(shell)
+            command = type.newInstance(shell) as Command
         }
-        else if (args.size() == 2) {              // pass name to ctor
-            command = type.newInstance(shell, args.get(1), null)
+        else if (args.size() == 2) {              // pass name to completor
+            command = type.newInstance(shell, args.get(1), null) as Command
         }
-        else if (args.size() == 3) {              // pass name, alias to ctor
-            command = type.newInstance(shell, args.get(1), args.get(2))
+        else if (args.size() == 3) {              // pass name, alias to completor
+            command = type.newInstance(shell, args.get(1), args.get(2)) as Command
         }
 
         def oldcommand = registry[command.name]   // let's prevent collisions

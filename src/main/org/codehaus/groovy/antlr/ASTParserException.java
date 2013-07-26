@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,16 +27,26 @@ public class ASTParserException extends ParserException {
     private final AST ast;
 
     public ASTParserException(ASTRuntimeException e) {
-        super(e.getMessage(), e, e.getLine(), e.getColumn());
+        super(e.getMessage(), e, e.getLine(), e.getColumn(), getLineLast(e), getColumnLast(e));
         this.ast = e.getAst();
     }
 
     public ASTParserException(String message, ASTRuntimeException e) {
-        super(message, e, e.getLine(), e.getColumn());
+        super(message, e, e.getLine(), e.getColumn(), getLineLast(e), getColumnLast(e));
         this.ast = e.getAst();
     }
 
     public AST getAst() {
         return ast;
+    }
+    
+    private static int getLineLast(ASTRuntimeException e) {
+        final AST ast = e.getAst();
+        return (ast instanceof SourceInfo) ? ((SourceInfo)ast).getLineLast() : ast.getLine();
+    }
+
+    private static int getColumnLast(ASTRuntimeException e) {
+        final AST ast = e.getAst();
+        return (ast instanceof SourceInfo) ? ((SourceInfo)ast).getColumnLast() : ast.getColumn()+1;
     }
 }

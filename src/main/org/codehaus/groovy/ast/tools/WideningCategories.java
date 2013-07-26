@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,18 @@ import java.util.*;
 
 /**
  * This class provides helper methods to determine the type from a widening
- * operation for example for a plus operation.<br/>
+ * operation for example for a plus operation.
+ * <p>
  * To determine the resulting type of for example a=exp1+exp2 we look at the
  * conditions {@link #isIntCategory(ClassNode)}, {@link #isLongCategory(ClassNode)},
  * {@link #isBigIntCategory(ClassNode)}, {@link #isDoubleCategory(ClassNode)} and
  * {@link #isBigDecCategory(ClassNode)} in that order. The first case applying to
- * exp1 and exp2 is defining the result type of the expression. <br/>
+ * exp1 and exp2 is defining the result type of the expression.
+ * <p>
  * If for example you look at x = 1 + 2l we have the first category applying to
  * the number 1 being int, since the 1 is an int. The 2l is a long, therefore the
  * int category will not apply and the result type can't be int. The next category
- * in the list is long, and since both apply to long, the result type is a long.<br/>
+ * in the list is long, and since both apply to long, the result type is a long.
  *
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  * @author Cedric Champeau
@@ -261,7 +263,7 @@ public class WideningCategories {
         if (type.isInterface()) {
             for (ClassNode interfaceNode : source.getAllInterfaces()) {
                 if (interfaceNode.equals(type)) {
-                    ClassNode parameterizedInterface = GenericsUtils.parameterizeInterfaceGenerics(source, interfaceNode);
+                    ClassNode parameterizedInterface = GenericsUtils.parameterizeType(source, interfaceNode);
                     return parameterizedInterface;
                 }
             }

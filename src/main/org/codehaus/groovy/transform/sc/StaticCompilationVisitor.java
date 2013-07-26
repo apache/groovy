@@ -15,29 +15,28 @@
  */
 package org.codehaus.groovy.transform.sc;
 
+import groovy.lang.Reference;
 import groovy.transform.CompileStatic;
 import groovy.transform.TypeChecked;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.classgen.asm.InvocationWriter;
-import org.codehaus.groovy.classgen.asm.TypeChooser;
-import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
-import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.reflect.Modifier;
 import java.util.*;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 /**
  * This visitor is responsible for amending the AST with static compilation metadata or transform the AST so that
@@ -54,13 +53,22 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     private static final ClassNode TYPECHECKED_CLASSNODE = ClassHelper.make(TypeChecked.class);
     private static final ClassNode COMPILESTATIC_CLASSNODE = ClassHelper.make(CompileStatic.class);
     private static final ClassNode[] TYPECHECKED_ANNOTATIONS = {TYPECHECKED_CLASSNODE, COMPILESTATIC_CLASSNODE};
-    
+
+    public static final ClassNode ARRAYLIST_CLASSNODE = ClassHelper.make(ArrayList.class);
+    public static final MethodNode ARRAYLIST_CONSTRUCTOR;
+    public static final MethodNode ARRAYLIST_ADD_METHOD = ARRAYLIST_CLASSNODE.getMethod("add", new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "o")});
+
+    static {
+        ARRAYLIST_CONSTRUCTOR = new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+        ARRAYLIST_CONSTRUCTOR.setDeclaringClass(StaticCompilationVisitor.ARRAYLIST_CLASSNODE);
+    }
+
     private final TypeChooser typeChooser = new StaticTypesTypeChooser();
 
     private ClassNode classNode;
 
-    public StaticCompilationVisitor(final SourceUnit unit, final ClassNode node, final TypeCheckerPluginFactory pluginFactory) {
-        super(unit, node, pluginFactory);
+    public StaticCompilationVisitor(final SourceUnit unit, final ClassNode node) {
+        super(unit, node);
     }
 
     @Override
@@ -79,24 +87,28 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         return false;
     }
 
+    private void addPrivateFieldAndMethodAccessors(ClassNode node) {
+        addPrivateBridgeMethods(node);
+        addPrivateFieldsAccessors(node);
+        Iterator<InnerClassNode> it = node.getInnerClasses();
+        while (it.hasNext()) {
+            addPrivateFieldAndMethodAccessors(it.next());
+        }
+    }
+
     @Override
     public void visitClass(final ClassNode node) {
         boolean skip = shouldSkipClassNode(node);
         ClassNode oldCN = classNode;
         classNode = node;
         Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
-        if (innerClasses.hasNext()) {
-            addPrivateBridgeMethods(classNode);
-            addPrivateFieldsAccessors(classNode);
-        }
         while (innerClasses.hasNext()) {
             InnerClassNode innerClassNode = innerClasses.next();
-            innerClassNode.setNodeMetaData(STATIC_COMPILE_NODE, !skip);
-            innerClassNode.setNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
-            addPrivateBridgeMethods(innerClassNode);
-            addPrivateFieldsAccessors(innerClassNode);
+            innerClassNode.putNodeMetaData(STATIC_COMPILE_NODE, !(skip || isSkippedInnerClass(innerClassNode)));
+            innerClassNode.putNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
         }
         super.visitClass(node);
+        addPrivateFieldAndMethodAccessors(node);
         classNode = oldCN;
     }
 
@@ -113,6 +125,8 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
      */
     @SuppressWarnings("unchecked")
     private void addPrivateFieldsAccessors(ClassNode node) {
+        Set<ASTNode> accessedFields = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
+        if (accessedFields==null) return;
         Map<String, MethodNode> privateConstantAccessors = (Map<String, MethodNode>) node.getNodeMetaData(PRIVATE_FIELDS_ACCESSORS);
         if (privateConstantAccessors!=null) {
             // already added
@@ -120,17 +134,18 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         int acc = -1;
         privateConstantAccessors = new HashMap<String, MethodNode>();
+        final int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
         for (FieldNode fieldNode : node.getFields()) {
-            int access = fieldNode.getModifiers();
-            if (Modifier.isPrivate(fieldNode.getModifiers()) && (access& Opcodes.ACC_SYNTHETIC)==0) {
+            if (accessedFields.contains(fieldNode)) {
+
                 acc++;
-                access = (access - Opcodes.ACC_PRIVATE + Opcodes.ACC_SYNTHETIC) + Opcodes.ACC_FINAL;
-                Expression receiver = fieldNode.isStatic()?new ClassExpression(node):new VariableExpression("this", node);
+                Parameter param = new Parameter(node.getPlainNodeReference(), "$that");
+                Expression receiver = fieldNode.isStatic()?new ClassExpression(node):new VariableExpression(param);
                 Statement stmt = new ExpressionStatement(new PropertyExpression(
                         receiver,
                         fieldNode.getName()
                 ));
-                MethodNode accessor = node.addMethod("pfaccess$"+acc, access, fieldNode.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, stmt);
+                MethodNode accessor = node.addMethod("pfaccess$"+acc, access, fieldNode.getOriginType(), new Parameter[]{param}, ClassNode.EMPTY_ARRAY, stmt);
                 privateConstantAccessors.put(fieldNode.getName(), accessor);
             }
         }
@@ -144,7 +159,10 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
      *
      * @param node an inner/outer class node for which to generate bridge methods
      */
+    @SuppressWarnings("unchecked")
     private void addPrivateBridgeMethods(final ClassNode node) {
+        Set<ASTNode> accessedMethods = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS);
+        if (accessedMethods==null) return;
         List<MethodNode> methods = new ArrayList<MethodNode>(node.getMethods());
         Map<MethodNode, MethodNode> privateBridgeMethods = (Map<MethodNode, MethodNode>) node.getNodeMetaData(PRIVATE_BRIDGE_METHODS);
         if (privateBridgeMethods!=null) {
@@ -153,25 +171,32 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         privateBridgeMethods = new HashMap<MethodNode, MethodNode>();
         int i=-1;
+        final int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
         for (MethodNode method : methods) {
-            int access = method.getModifiers();
-            if (method.isPrivate() && (access& Opcodes.ACC_SYNTHETIC)==0) {
+            if (accessedMethods.contains(method)) {
                 i++;
-                access = (access - Opcodes.ACC_PRIVATE + Opcodes.ACC_SYNTHETIC) + Opcodes.ACC_FINAL;
+                Parameter[] methodParameters = method.getParameters();
+                Parameter[] newParams = new Parameter[methodParameters.length+1];
+                System.arraycopy(methodParameters, 0, newParams, 1, methodParameters.length);
+                newParams[0] = new Parameter(node.getPlainNodeReference(), "$that");
                 Expression arguments;
                 if (method.getParameters()==null || method.getParameters().length==0) {
                     arguments = ArgumentListExpression.EMPTY_ARGUMENTS;
                 } else {
                     List<Expression> args = new LinkedList<Expression>();
-                    for (Parameter parameter : method.getParameters()) {
+                    for (Parameter parameter : methodParameters) {
                         args.add(new VariableExpression(parameter));
                     }
                     arguments = new ArgumentListExpression(args);
                 }
-                Expression receiver = method.isStatic()?new ClassExpression(node):new VariableExpression("this", node);
-                ExpressionStatement returnStatement = new ExpressionStatement(new MethodCallExpression(receiver, method.getName(), arguments));
-                MethodNode bridge = node.addMethod("access$"+i, access, method.getReturnType(), method.getParameters(), method.getExceptions(), returnStatement);
+                Expression receiver = method.isStatic()?new ClassExpression(node):new VariableExpression(newParams[0]);
+                MethodCallExpression mce = new MethodCallExpression(receiver, method.getName(), arguments);
+                mce.setMethodTarget(method);
+
+                ExpressionStatement returnStatement = new ExpressionStatement(mce);
+                MethodNode bridge = node.addMethod("access$"+i, access, method.getReturnType(), newParams, method.getExceptions(), returnStatement);
                 privateBridgeMethods.put(method, bridge);
+                bridge.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
             }
         }
         node.setNodeMetaData(PRIVATE_BRIDGE_METHODS, privateBridgeMethods);
@@ -188,7 +213,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
     @Override
     public void visitSpreadExpression(final SpreadExpression expression) {
-        throw new UnsupportedOperationException("The spread operator cannot be used with static compilation because the number of arguments cannot be determined at compile time");
     }
 
     @Override
@@ -205,12 +229,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             addError("Target method for method call expression hasn't been set", call);
         }
 
-        // add special metadata on closure if the call is a "with" call
-        if (StaticTypeCheckingSupport.isWithCall(call.getMethodAsString(), call.getArguments())) {
-            // no check is required, ensured by isWithCall
-            ClosureExpression closure = (ClosureExpression) ((ArgumentListExpression) call.getArguments()).getExpression(0);
-            closure.setNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE, Boolean.TRUE);
-        }
     }
 
     @Override
@@ -247,6 +265,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             final ClassNode collectionType = getType(forLoop.getCollectionExpression());
             ClassNode componentType = inferLoopElementType(collectionType);
             forLoop.getVariable().setType(componentType);
+            forLoop.getVariable().setOriginType(componentType);
         }
     }
 
@@ -258,4 +277,45 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         return methodNode;
     }
+
+    @Override
+    protected boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
+        Expression objectExpression = pexp.getObjectExpression();
+        ClassNode objectExpressionType = getType(objectExpression);
+        final Reference<ClassNode> rType = new Reference<ClassNode>(objectExpressionType);
+        ClassCodeVisitorSupport receiverMemoizer = new ClassCodeVisitorSupport() {
+            @Override
+            protected SourceUnit getSourceUnit() {
+                return null;
+            }
+
+            public void visitField(final FieldNode node) {
+                if (visitor!=null) visitor.visitField(node);
+                ClassNode declaringClass = node.getDeclaringClass();
+                if (declaringClass!=null) rType.set(declaringClass);
+            }
+
+            public void visitMethod(final MethodNode node) {
+                if (visitor!=null) visitor.visitMethod(node);
+                ClassNode declaringClass = node.getDeclaringClass();
+                if (declaringClass!=null) rType.set(declaringClass);
+            }
+
+            @Override
+            public void visitProperty(final PropertyNode node) {
+                if (visitor!=null) visitor.visitProperty(node);
+                ClassNode declaringClass = node.getDeclaringClass();
+                if (declaringClass!=null) rType.set(declaringClass);
+            }
+        };
+        boolean exists = super.existsProperty(pexp, checkForReadOnly, receiverMemoizer);
+        if (exists) {
+            objectExpression.putNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER, rType.get());
+            if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(objectExpressionType, ClassHelper.LIST_TYPE)) {
+                objectExpression.putNodeMetaData(COMPONENT_TYPE, inferComponentType(objectExpressionType, ClassHelper.int_TYPE));
+            }
+        }
+        return exists;
+    }
+
 }

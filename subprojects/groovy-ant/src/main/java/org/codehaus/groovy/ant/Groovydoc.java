@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,9 @@ public class Groovydoc extends Task {
     private File styleSheetFile;
     // dev note: update javadoc comment for #setExtensions(String) if updating below
     private String extensions = ".java:.groovy:.gv:.gvy:.gsh";
+
     private String charset;
+    private String fileEncoding;
 
     public Groovydoc() {
         packageNames = new ArrayList<String>();
@@ -266,13 +268,24 @@ public class Groovydoc extends Task {
     }
 
     /**
-     * Specifies the charset to be used in the templates, i.e.&nbsp; the value output within:
+     * Specifies the charset to be used in the templates, i.e.&#160;the value output within:
      * &lt;meta http-equiv="Content-Type" content="text/html; charset=<em>charset</em>"&gt;.
      *
      * @param charset the charset value
      */
     public void setCharset(String charset) {
         this.charset = charset;
+    }
+
+    /**
+     * Specifies the file encoding to be used for generated files. If <em>fileEncoding</em> is missing,
+     * the <em>charset</em> encoding will be used for writing the files. If <em>fileEncoding</em> and
+     * <em>charset</em> are missing, the file encoding will default to <em>Charset.defaultCharset()</em>.
+     *
+     * @param fileEncoding the file encoding
+     */
+    public void setFileEncoding(String fileEncoding) {
+        this.fileEncoding = fileEncoding;
     }
 
     /**
@@ -409,6 +422,7 @@ public class Groovydoc extends Task {
         properties.setProperty("includeMainForScripts", includeMainForScripts.toString());
         properties.setProperty("overviewFile", overviewFile != null ? overviewFile.getAbsolutePath() : "");
         properties.setProperty("charset", charset != null ? charset : "");
+        properties.setProperty("fileEncoding", fileEncoding != null ? fileEncoding : "");
 
         if (sourcePath != null) {
             sourceDirs.addExisting(sourcePath);
@@ -471,37 +485,36 @@ public class Groovydoc extends Task {
     }
     
     /**
-     * Creates and returns an array of package template classpath entries.<p/>
-     * 
+     * Creates and returns an array of package template classpath entries.
+     * <p>
      * This method is meant to be overridden by custom GroovyDoc implementations, using custom package templates.
      * 
      * @return an array of package templates, whereas each entry is resolved as classpath entry, defaults to
-     *  {@link GroovyDocTemplateInfo#DEFAULT_PACKAGE_TEMPLATES}.
+     * {@link GroovyDocTemplateInfo#DEFAULT_PACKAGE_TEMPLATES}.
      */
     protected String[] getPackageTemplates() {
         return GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES;
     }
 
     /**
-     * Creates and returns an array of doc template classpath entries.<p/>
-     * 
+     * Creates and returns an array of doc template classpath entries.
+     * <p>
      * This method is meant to be overridden by custom GroovyDoc implementations, using custom doc templates.
      * 
      * @return an array of doc templates, whereas each entry is resolved as classpath entry, defaults to
-     *  {@link GroovyDocTemplateInfo#DEFAULT_DOC_TEMPLATES}.
-     *
+     * {@link GroovyDocTemplateInfo#DEFAULT_DOC_TEMPLATES}.
      */
     protected String[] getDocTemplates() {
         return GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES;
     }
 
     /**
-     * Creates and returns an array of class template classpath entries.<p/>
-     * 
+     * Creates and returns an array of class template classpath entries.
+     * <p>
      * This method is meant to be overridden by custom GroovyDoc implementations, using custom class templates.
      * 
      * @return an array of class templates, whereas each entry is resolved as classpath entry, defaults to
-     *  {@link GroovyDocTemplateInfo#DEFAULT_CLASS_TEMPLATES}.
+     * {@link GroovyDocTemplateInfo#DEFAULT_CLASS_TEMPLATES}.
      */
     protected String[] getClassTemplates() {
         return GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES;

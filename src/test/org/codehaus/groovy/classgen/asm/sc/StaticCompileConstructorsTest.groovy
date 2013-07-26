@@ -31,5 +31,27 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest {
         extraSetup()
     }
 
+    void testMapConstructorError() {
+        assertScript '''import groovy.transform.Canonical
+
+        class WTF {
+            public static void main(String[] args) {
+                new Person(name:"First")
+                first(new Person(name:"First"))
+            }
+
+            static Person first(Person p) {
+                p
+            }
+
+        }
+
+        @Canonical
+        class Person {
+            String name
+        }
+        WTF.main()
+        '''
+    }
 }
 

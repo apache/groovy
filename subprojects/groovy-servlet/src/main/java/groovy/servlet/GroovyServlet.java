@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,7 +137,7 @@ public class GroovyServlet extends AbstractHttpServlet {
              * Null cause?!
              */
             if (e == null) {
-                error.append(" Script processing failed.");
+                error.append(" Script processing failed.\n");
                 error.append(runtimeException.getMessage());
                 if (runtimeException.getStackTrace().length > 0)
                     error.append(runtimeException.getStackTrace()[0].toString());
@@ -172,9 +172,8 @@ public class GroovyServlet extends AbstractHttpServlet {
     }
 
     /**
-     * Hook method to setup the GroovyScriptEngine to use.<br/>
-     * Subclasses may override this method to provide a custom
-     * engine.
+     * Hook method to setup the GroovyScriptEngine to use.<br>
+     * Subclasses may override this method to provide a custom engine.
      */
     protected GroovyScriptEngine createGroovyScriptEngine(){
         return new GroovyScriptEngine(this);

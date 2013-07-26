@@ -15,9 +15,7 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
@@ -27,7 +25,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class TupleExpression extends Expression {
+public class TupleExpression extends Expression implements Iterable<Expression> {
     private List<Expression> expressions;
 
     public TupleExpression() {
@@ -108,5 +106,9 @@ public class TupleExpression extends Expression {
 
     public String toString() {
         return super.toString() + expressions;
+    }
+
+    public Iterator<Expression> iterator() {
+        return Collections.unmodifiableList(expressions).iterator();
     }
 }

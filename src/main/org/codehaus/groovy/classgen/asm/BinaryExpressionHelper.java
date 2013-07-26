@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -37,6 +38,8 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -241,19 +244,27 @@ public class BinaryExpressionHelper {
             evaluateCompareExpression(isCaseMethod, expression);
             break;
 
+        case COMPARE_IDENTICAL:
+        case COMPARE_NOT_IDENTICAL:
+            Token op = expression.getOperation();
+            Throwable cause = new SyntaxException("Operator " + op + " not supported", op.getStartLine(), op.getStartColumn());
+            throw new GroovyRuntimeException(cause);
+
         default:
             throw new GroovyBugError("Operation: " + expression.getOperation() + " not supported");
         }
     }
     
-    protected void assignToArray(Expression parrent, Expression receiver, Expression index, Expression rhsValueLoader) {
+    protected void assignToArray(Expression parent, Expression receiver, Expression index, Expression rhsValueLoader) {
         // let's replace this assignment to a subscript operator with a
         // method call
         // e.g. x[5] = 10
         // -> (x, [], 5), =, 10
         // -> methodCall(x, "putAt", [5, 10])
         ArgumentListExpression ae = new ArgumentListExpression(index,rhsValueLoader);
-        controller.getCallSiteWriter().makeCallSite(receiver, "putAt", ae, false, false, false, false);
+        controller.getInvocationWriter().makeCall(
+                parent, receiver, new ConstantExpression("putAt"),
+                ae, InvocationWriter.invokeMethod, false, false, false);
         controller.getOperandStack().pop();
         // return value of assignment
         rhsValueLoader.visit(controller.getAcg());
@@ -292,6 +303,10 @@ public class BinaryExpressionHelper {
         if (directAssignment) {
             VariableExpression var = (VariableExpression) leftExpression;
             rhsType = controller.getTypeChooser().resolveType(var, controller.getClassNode());
+            if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(rhsType)) {
+                // GROOVY-5570: if a closure shared variable is a primitive type, it must be boxed
+                rhsType = ClassHelper.getWrapper(rhsType);
+            }
             if (!(rightExpression instanceof ConstantExpression) || (((ConstantExpression) rightExpression).getValue()!=null)) {
                 operandStack.doGroovyCast(rhsType);
             } else {
@@ -351,17 +366,6 @@ public class BinaryExpressionHelper {
             TypeChooser typeChooser = controller.getTypeChooser();
             ClassNode targetType = typeChooser.resolveType(leftExpression, controller.getClassNode());
             operandStack.doGroovyCast(targetType);
-            // with flow typing, a variable may change of type
-            // and we can make sure to avoid unnecessary calls to castToType
-            // by specifying the current type
-            if (leftExpression instanceof VariableExpression) {
-                VariableExpression var = (VariableExpression) leftExpression;
-                String varName = var.getName();
-                if (!"this".equals(varName) && !"super".equals(varName)) {
-                    BytecodeVariable variable = controller.getCompileStack().getVariable(varName, false);
-                    if (variable!=null) variable.setType(targetType);
-                }
-            }
             leftExpression.visit(acg);
             operandStack.remove(operandStack.getStackLength()-mark);
         }
@@ -384,10 +388,12 @@ public class BinaryExpressionHelper {
 
     protected void evaluateCompareExpression(MethodCaller compareMethod, BinaryExpression expression) {
         Expression leftExp = expression.getLeftExpression();
-        ClassNode leftType = leftExp.getType();
+        TypeChooser typeChooser = controller.getTypeChooser();
+        ClassNode cn = controller.getClassNode();
+        ClassNode leftType = typeChooser.resolveType(leftExp,cn);
         Expression rightExp = expression.getRightExpression();
-        ClassNode rightType = rightExp.getType();
-        
+        ClassNode rightType = typeChooser.resolveType(rightExp,cn);
+
         boolean done = false;
         if (    ClassHelper.isPrimitiveType(leftType) &&
                 ClassHelper.isPrimitiveType(rightType)) 
@@ -492,75 +498,44 @@ public class BinaryExpressionHelper {
         compileStack.popLHS();        
     }
 
+    protected void evaluateArrayAssignmentWithOperator(String method, BinaryExpression expression, BinaryExpression leftBinExpr) {
+        CompileStack        compileStack    = getController().getCompileStack();
+        AsmClassGenerator   acg             = getController().getAcg();
+        OperandStack        os              = getController().getOperandStack();
+
+        // e.g. x[a] += b
+        // to avoid loading x and a twice we transform the expression to use
+        // ExpressionAsVariableSlot
+        // -> subscript=a, receiver=x, receiver[subscript]+b, =, receiver[subscript]
+        // -> subscript=a, receiver=x, receiver#getAt(subscript)#plus(b), =, receiver#putAt(subscript)
+        // -> subscript=a, receiver=x, receiver#putAt(subscript, receiver#getAt(subscript)#plus(b))
+        // the result of x[a] += b is x[a]+b, thus:
+        // -> subscript=a, receiver=x, receiver#putAt(subscript, ret=receiver#getAt(subscript)#plus(b)), ret
+        ExpressionAsVariableSlot subscript = new ExpressionAsVariableSlot(controller, leftBinExpr.getRightExpression(), "subscript");
+        ExpressionAsVariableSlot receiver  = new ExpressionAsVariableSlot(controller, leftBinExpr.getLeftExpression(), "receiver");
+        MethodCallExpression getAt = new MethodCallExpression(receiver, "getAt", new ArgumentListExpression(subscript));
+        MethodCallExpression operation = new MethodCallExpression(getAt, method, expression.getRightExpression());
+        ExpressionAsVariableSlot ret = new ExpressionAsVariableSlot(controller, operation, "ret");
+        MethodCallExpression putAt = new MethodCallExpression(receiver, "putAt", new ArgumentListExpression(subscript, ret));
+
+        putAt.visit(acg);
+        os.pop();
+        os.load(ret.getType(), ret.getIndex());
+
+        compileStack.removeVar(ret.getIndex());
+        compileStack.removeVar(subscript.getIndex());
+        compileStack.removeVar(receiver.getIndex());
+    }
+
     protected void evaluateBinaryExpressionWithAssignment(String method, BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
-        MethodVisitor mv  = controller.getMethodVisitor();
         AsmClassGenerator acg = controller.getAcg();
         OperandStack operandStack = controller.getOperandStack();
-        CompileStack compileStack = controller.getCompileStack();
         
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
             if (leftBinExpr.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
-                // e.g. x[a] += b
-                // -> subscript=a, x[subscript], =, x[subscript] + b
-                // -> subscript=a, methodCall_3(x, "putAt", [subscript, methodCall_2(methodCall_1(x, "getAt", [subscript]), "plus", b)])
-                
-                Expression subscriptExpression = leftBinExpr.getRightExpression(); 
-                subscriptExpression.visit(acg); // value(subscript)
-                operandStack.box();
-                int subscriptValueId = compileStack.defineTemporaryVariable("$subscript", ClassHelper.OBJECT_TYPE, true);
-
-                // method calls from outer to inner (most inner will be called first):
-                controller.getCallSiteWriter().prepareCallSite("putAt");
-                controller.getCallSiteWriter().prepareCallSite(method);
-                controller.getCallSiteWriter().prepareCallSite("getAt");
-                
-                // getAt call
-                //x = receiver
-                leftBinExpr.getLeftExpression().visit(acg);  
-                operandStack.box();
-                // we save that value for later
-                operandStack.dup();
-                int xValueId = compileStack.defineTemporaryVariable("$xValue", ClassHelper.OBJECT_TYPE, true);
-                // subscript = argument to getAt call
-                operandStack.load(ClassHelper.OBJECT_TYPE, subscriptValueId);
-                // invoke getAt
-                mv.visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-                operandStack.replace(ClassHelper.OBJECT_TYPE, 2); 
-                //x[subscript] with type Object now on stack
-
-                // call with method (e.g. "plus")
-                // receiver is the result from the getAt before
-                // load b
-                expression.getRightExpression().visit(acg);
-                operandStack.box();
-                // invoke "method"
-                mv.visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-                operandStack.replace(ClassHelper.OBJECT_TYPE, 2); 
-                //RHS with type Object now on stack
-                
-                // let us save that value for the return
-                int resultValueId = compileStack.defineTemporaryVariable("$result", ClassHelper.OBJECT_TYPE, true);               
-                
-                // call for putAt
-                // receiver for putAt is x, the arguments will be the subscript
-                // value and the value of the RHS.
-                // load receiver x
-                operandStack.load(ClassHelper.OBJECT_TYPE, xValueId);
-                operandStack.load(ClassHelper.OBJECT_TYPE, subscriptValueId);
-                operandStack.load(ClassHelper.OBJECT_TYPE, resultValueId);
-                // invoke putAt
-                mv.visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-                operandStack.replace(ClassHelper.OBJECT_TYPE, 3);
-
-                // remove result of putAt and keep the result on stack
-                operandStack.pop();
-                operandStack.load(ClassHelper.OBJECT_TYPE, resultValueId);
-                
-                compileStack.removeVar(resultValueId);
-                compileStack.removeVar(xValueId);
-                compileStack.removeVar(subscriptValueId);
+                evaluateArrayAssignmentWithOperator(method, expression, leftBinExpr);
                 return;
             }
         } 
@@ -668,11 +643,12 @@ public class BinaryExpressionHelper {
                 // we store the result of the subscription on the stack
                 Expression subscript = be.getRightExpression();
                 subscript.visit(controller.getAcg());
-                operandStack.box(); //TODO: maybe not box here anymore, but need subscript type then
-                int id = controller.getCompileStack().defineTemporaryVariable("$subscript", true);
-                VariableSlotLoader subscriptExpression = new VariableSlotLoader(id,operandStack);
+                ClassNode subscriptType = operandStack.getTopOperand();
+                int id = controller.getCompileStack().defineTemporaryVariable("$subscript", subscriptType, true);
+                VariableSlotLoader subscriptExpression = new VariableSlotLoader(subscriptType, id, operandStack);
                 // do modified visit
                 BinaryExpression newBe = new BinaryExpression(be.getLeftExpression(), be.getOperation(), subscriptExpression);
+                newBe.copyNodeMetaData(be);
                 newBe.setSourcePosition(be);
                 newBe.visit(controller.getAcg());
                 return subscriptExpression;
@@ -807,7 +783,11 @@ public class BinaryExpressionHelper {
         controller.getOperandStack().replace(common, 2);        
         
     }
-    
+
+    private static boolean isNullConstant(Expression expression) {
+        return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue()==null;
+    }
+
     private void evaluateNormalTernary(TernaryExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
@@ -820,7 +800,7 @@ public class BinaryExpressionHelper {
         ClassNode truePartType = typeChooser.resolveType(truePart, controller.getClassNode());
         ClassNode falsePartType = typeChooser.resolveType(falsePart, controller.getClassNode());
         ClassNode common = WideningCategories.lowestUpperBound(truePartType, falsePartType);
-        
+
         // we compile b?x:y as 
         //      boolean(b)?S(x):S(y), S = common super type of x,y
         // so we load b, do boolean conversion. 

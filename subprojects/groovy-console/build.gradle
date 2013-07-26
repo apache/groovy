@@ -4,9 +4,8 @@ dependencies {
     compile project(':')
     groovy project(':')
     compile project(':groovy-swing')
+    compile project(':groovy-templates')
+    testCompile project(':groovy-test')
     testCompile project(':groovy-swing').sourceSets.test.runtimeClasspath
 }
-
-// Required for MessageSourceTest
-sourceSets.test.runtimeClasspath += files(sourceSets.test.groovy.srcDirs)
 

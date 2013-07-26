@@ -15,6 +15,8 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
+
 /**
  * Unit tests for static type checking : miscellaneous tests.
  *
@@ -28,7 +30,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             int fib(int i) {
                 i < 2 ? 1 : fib(i - 2) + fib(i - 1);
             }
-            println fib(40)
+            println fib(20)
             long dur = System.currentTimeMillis()-sd
             println "${dur}ms"
          '''
@@ -201,6 +203,114 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             void lookup(Class clazz) { }
             lookup(Date)
         '''
+    }
+
+    // GROOVY-5699
+    void testIntRangeInference() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == make(IntRange)
+            })
+            def range = 1..10
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+            })
+            def from = range.fromInt
+        '''
+    }
+
+    // GROOVY-5922
+    void testUnwrapPrimitiveLongType() {
+
+        assertScript '''
+            long[] data = [0] as long[]
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == long_TYPE
+            })
+            long mask = 0 | 0x1L
+        '''
+
+        assertScript '''
+            long[] data = [0] as long[]
+            data[0] = 0x1L
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == long_TYPE
+            })
+            def value = data[0]
+        '''
+
+        assertScript '''
+            def c = { -> 42L }
+
+            long[] data = [0] as long[]
+
+            data[0] = c()
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == long_TYPE
+            })
+            def value = data[0]
+        '''
+
+        assertScript '''
+            def c = { -> 42L }
+
+            Long[] data = [0] as Long[]
+
+            data[0] = c()
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Long_TYPE
+            })
+            def value = data[0]
+        '''
+    }
+
+    // GROOVY-6124
+    void testInferrenceOfIntRange() {
+        assertScript '''
+            String[] args = ['a','b','c','d']
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == make(IntRange)
+            })
+            def range = 1..-1
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def irt = node.getNodeMetaData(INFERRED_TYPE)
+                assert irt == LIST_TYPE
+                assert irt.isUsingGenerics()
+                assert irt.genericsTypes[0].type == STRING_TYPE
+            })
+            def arr = args[range]
+            assert arr == ['b','c','d']
+        '''
+    }
+
+    // GROOVY-6165
+    void testPropertyNameFromMethodName() {
+        // too bad we're not using Spock!
+
+        def tests = [
+                ['get','getName', 'name'],
+                ['get','getFullName', 'fullName'],
+                ['get','getname', null],
+                ['is', 'isFlag', 'flag'],
+                ['is', 'isflag', null],
+                ['is', 'is', null],
+                ['is', 'i', null],
+                ['get', 'getXYZ', 'XYZ'],
+                ['get', 'get_foo', '_foo'],
+                [null, 'foo', null],
+                ['foo', null, null],
+                [null,null,null]
+        ]
+        tests.each { prefix, methodName, expectation ->
+            assert StaticTypeCheckingVisitor.extractPropertyNameFromMethodName(prefix, methodName) == expectation
+        }
     }
 
     public static class MiscSTCTestSupport {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class MarkupBuilderHelper {
 
     /**
      * Produce a comment in the output.
-     * <p/>
+     * <p>
      * <code>mkp.comment 'string'</code> is equivalent to
      * <code>mkp.yieldUnescaped '&lt;!-- string --&gt;'</code>.
      * To create an element with the name 'comment', you need

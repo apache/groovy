@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,8 @@ import java.lang.reflect.Array;
 import java.util.*;
 
 /**
- * Represents a class in the AST.<br/>
+ * Represents a class in the AST.
+ * <p>
  * A ClassNode should be created using the methods in ClassHelper.
  * This ClassNode may be used to represent a class declaration or
  * any other type. This class uses a proxy mechanism allowing to
@@ -43,9 +44,8 @@ import java.util.*;
  * found. To avoid the need of exchanging this ClassNode with an
  * instance of the correct ClassNode the correct ClassNode is set as
  * redirect. Most method calls are then redirected to that ClassNode.
- * <br>
+ * <p>
  * There are three types of ClassNodes:
- * <br>
  * <ol>
  * <li> Primary ClassNodes:<br>
  * A primary ClassNode is one where we have a source representation
@@ -54,7 +54,6 @@ import java.util.*;
  * that passes through AsmBytecodeGenerator... not more, not less.
  * That means for example Closures become such ClassNodes too at
  * some point. 
- * 
  * <li> ClassNodes create through different sources (typically created
  * from a java.lang.reflect.Class object):<br>
  * The compiler will not output classes from these, the methods
@@ -68,7 +67,6 @@ import java.util.*;
  *  isResolved() returning true without having a redirect.In the Groovy 
  *  compiler the only version of this, that exists, is a ClassNode created 
  *  through a Class instance
- *
  * <li> Labels:<br>
  * ClassNodes created through ClassHelper.makeWithoutCaching. They 
  * are place holders, its redirect points to the real structure, which can
@@ -78,11 +76,11 @@ import java.util.*;
  * ResolveVisitor has done its work needs to have a redirect pointing to 
  * case 1 or 2. If not the compiler may react strange... this can be considered 
  * as a kind of dangling pointer. 
- * <br>
+ * </ol>
  * <b>Note:</b> the redirect mechanism is only allowed for classes 
  * that are not primary ClassNodes. Typically this is done for classes
  * created by name only.  The redirect itself can be any type of ClassNode.
- * <br>
+ * <p>
  * To describe generic type signature see {@link #getGenericsTypes()} and
  * {@link #setGenericsTypes(GenericsType[])}. These methods are not proxied,
  * they describe the type signature used at the point of declaration or the
@@ -90,10 +88,8 @@ import java.util.*;
  * by the class are needed, then a call to {@link #redirect()} will help.
  *
  * @see org.codehaus.groovy.ast.ClassHelper
- *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Jochen Theodorou
- * @version $Revision$
  */
 public class ClassNode extends AnnotatedNode implements Opcodes {
     private static class MapOfLists {
@@ -325,6 +321,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (!usesGenerics && interfaces!=null) {
             for (ClassNode anInterface : interfaces) {
                 usesGenerics = usesGenerics || anInterface.isUsingGenerics();
+                if (usesGenerics) break;
             }
         }
         this.methods = new MapOfLists();
@@ -663,6 +660,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         for (ClassNode existing : interfaces) {
             if (type.equals(existing)) {
                 skip = true;
+                break;
             }
         }
         if (!skip) {
@@ -692,6 +690,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         for (MixinNode existing : mixins) {
             if (mixin.equals(existing)) {
                 skip = true;
+                break;
             }
         }
         if (!skip) {
@@ -1122,6 +1121,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public String toString(boolean showRedirect) {
+        if (isArray()) {
+            return componentType.toString(showRedirect)+"[]";
+        }
         String ret = getName();
         if (genericsTypes != null) {
             ret += " <";
@@ -1371,7 +1373,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public ClassNode getPlainNodeReference() {
         if (ClassHelper.isPrimitiveType(this)) return this;
-        ClassNode n = new ClassNode(getName(),getModifiers(),getSuperClass(),null,null);
+        ClassNode n = new ClassNode(name, modifiers, superClass,null,null);
         n.isPrimaryNode = false;
         n.setRedirect(redirect());
         n.componentType = redirect().getComponentType();
@@ -1398,6 +1400,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addTransform(Class<? extends ASTTransformation> transform, ASTNode node) {
         GroovyASTTransformation annotation = transform.getAnnotation(GroovyASTTransformation.class);
+        if (annotation == null) return;
+
         Set<ASTNode> nodes = getTransformInstances().get(annotation.phase()).get(transform);
         if (nodes == null) {
             nodes = new LinkedHashSet<ASTNode>();

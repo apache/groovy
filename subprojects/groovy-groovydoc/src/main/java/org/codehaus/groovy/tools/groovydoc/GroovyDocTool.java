@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2012 the original author or authors.
+ * Copyright 2007-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,8 @@ public class GroovyDocTool {
     private final Logger log = Logger.create(GroovyDocTool.class);
     private final GroovyRootDocBuilder rootDocBuilder;
     private final GroovyDocTemplateEngine templateEngine;
-    private Properties properties;
+
+    protected Properties properties;
 
     /**
      * Constructor for use by people who only want to interact with the Groovy Doclet Tree (rootDoc)
@@ -51,10 +52,19 @@ public class GroovyDocTool {
 
     public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List<LinkArgument> links, Properties properties) {
         rootDocBuilder = new GroovyRootDocBuilder(this, sourcepaths, links, properties);
-        String charset = properties.getProperty("charset");
-        properties.setProperty("charset", charset != null && charset.length() != 0 ? charset : Charset.defaultCharset().name());
-        this.properties = properties;
 
+        String defaultCharset = Charset.defaultCharset().name();
+
+        String fileEncoding = properties.getProperty("fileEncoding");
+        String charset = properties.getProperty("charset");
+
+        if (fileEncoding == null || fileEncoding.length() == 0) fileEncoding = charset;
+        if (charset == null || charset.length() == 0) charset = fileEncoding;
+
+        properties.setProperty("fileEncoding", fileEncoding != null && fileEncoding.length() != 0 ? fileEncoding : defaultCharset);
+        properties.setProperty("charset", charset != null && charset.length() != 0 ? charset : defaultCharset);
+
+        this.properties = properties;
 
         if (resourceManager == null) {
             templateEngine = null;
@@ -94,7 +104,7 @@ public class GroovyDocTool {
     String getPath(String filename) {
         String path = new File(filename).getParent();
         // path length of 1 indicates that probably is 'default package' i.e. "/"
-        if (path == null || path.length() == 1) {
+        if (path == null || (path.length() == 1 && !Character.isJavaIdentifierStart(path.charAt(0)))) {
             path = "DefaultPackage"; // "DefaultPackage" for 'default package' path, rather than null...
         }
         return path;

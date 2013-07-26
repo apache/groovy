@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,34 +56,34 @@ import org.codehaus.groovy.util.FastArray;
 /**
  * ExpandoMetaClass is a MetaClass that behaves like an Expando, allowing the addition or replacement
  * of methods, properties and constructors on the fly.
- * <p/>
+ * <p>
  * Some examples of usage:
  * <pre>
  * // defines or replaces instance method:
  * metaClass.myMethod = { args -> }
- * <p/>
+ *
  * // defines a new instance method
  * metaClass.myMethod << { args -> }
- * <p/>
+ *
  * // creates multiple overloaded methods of the same name
  * metaClass.myMethod << { String s -> } << { Integer i -> }
- * <p/>
+ *
  * // defines or replaces a static method with the 'static' qualifier
  * metaClass.'static'.myMethod = { args ->  }
- * <p/>
+ *
  * // defines a new static method with the 'static' qualifier
  * metaClass.'static'.myMethod << { args ->  }
- * <p/>
+ *
  * // defines a new constructor
  * metaClass.constructor << { String arg -> }
- * <p/>
+ *
  * // defines or replaces a constructor
  * metaClass.constructor = { String arg -> }
- * <p/>
+ *
  * // defines a new property with an initial value of "blah"
  * metaClass.myProperty = "blah"
  * </pre>
- * <p/>
+ * <p>
  * ExpandoMetaClass also supports a DSL/builder like notation to combine multiple definitions together. So instead of this:
  * <pre>
  * Number.metaClass.multiply = { Amount amount -> amount.times(delegate) }
@@ -96,7 +96,7 @@ import org.codehaus.groovy.util.FastArray;
  *     div      { Amount amount -> amount.inverse().times(delegate) }
  * }
  * </pre>
- * <p/>
+ * <p>
  * ExpandoMetaClass also supports runtime mixins. While {@code @Mixin} allows you to mix in new behavior
  * to classes you own and are designing, you can not easily mixin anything to types you didn't own, e.g.
  * from third party libraries or from JDK library classes.
@@ -105,27 +105,27 @@ import org.codehaus.groovy.util.FastArray;
  * interface Vehicle {
  *     String getName()
  * }
- * <p/>
+ *
  * // Category annotation style
  * {@code @Category}(Vehicle) class FlyingAbility {
  *     def fly() { "I'm the ${name} and I fly!" }
  * }
- * <p/>
+ *
  * // traditional category style
  * class DivingAbility {
  *     static dive(Vehicle self) { "I'm the ${self.name} and I dive!" }
  * }
- * <p/>
+ *
  * // provided by a third-party, so can't augment using Mixin annotation
  * class JamesBondVehicle implements Vehicle {
  *     String getName() { "James Bond's vehicle" }
  * }
- * <p/>
+ *
  * // Can be added via metaClass, e.g.:
  * // JamesBondVehicle.metaClass.mixin DivingAbility, FlyingAbility
  * // Or using shorthand through DGM method on Class
  * JamesBondVehicle.mixin DivingAbility, FlyingAbility
- * <p/>
+ *
  * assert new JamesBondVehicle().fly() ==
  *        "I'm the James Bond's vehicle and I fly!"
  * assert new JamesBondVehicle().dive() ==
@@ -137,7 +137,7 @@ import org.codehaus.groovy.util.FastArray;
  *     List<String> schedule = []
  *     def addLecture(String lecture) { schedule << lecture }
  * }
- * <p/>
+ *
  * class Worker {
  *     List<String> schedule = []
  *     def addMeeting(String meeting) { schedule << meeting }
@@ -167,7 +167,7 @@ import org.codehaus.groovy.util.FastArray;
  * be used, e.g. when calling <code>schedule</code>, it will be the schedule property (getSchedule method)
  * from Worker that is used. The schedule property from Student will be shadowed but the <code>mixedIn</code>
  * notation allows us to get to that too if we need as the last two lines show.
- * <p/>
+ * <p>
  * We can also be a little more dynamic and not require the CollegeStudent class to
  * be defined at all, e.g.:
  * <pre>
@@ -218,11 +218,11 @@ import org.codehaus.groovy.util.FastArray;
  * class CustomComparator implements Comparator {
  *     int compare(Object a, b) { return a.size() - b.size() }
  * }
- * <p/>
+ *
  * class CustomCloseable implements Closeable {
  *     void close() { println 'Lights out - I am closing' }
  * }
- * <p/>
+ *
  * import static mypackage.IOUtils.closeQuietly
  * import static java.util.Collections.sort
  * def o = new Object()
@@ -232,25 +232,21 @@ import org.codehaus.groovy.util.FastArray;
  * println items                // => [a, cc, bbb]
  * closeQuietly(o as Closeable) // => Lights out - I am closing
  * </pre>
- * <p/>
+ * <p>
  * <b>Further details</b>
- * <p/>
+ * <p>
  * When using the default implementations of MetaClass, methods are only allowed to be added before initialize() is called.
  * In other words you create a new MetaClass, add some methods and then call initialize(). If you attempt to add new methods
  * after initialize() has been called, an error will be thrown. This is to ensure that the MetaClass can operate appropriately
  * in multi-threaded environments as it forces you to do all method additions at the beginning, before using the MetaClass.
- * <p/>
+ * <p>
  * ExpandoMetaClass differs here from the default in that it allows you to add methods after initialize has been called.
  * This is done by setting the initialize flag internally to false and then add the methods. Since this is not thread
  * safe it has to be done in a synchronized block. The methods to check for modification and initialization are
  * therefore synchronized as well. Any method call done through this meta class will first check if the it is
  * synchronized. Should this happen during a modification, then the method cannot be selected or called unless the
  * modification is completed.
- * <p/>
- * WARNING: This MetaClass uses a thread-bound ThreadLocal instance to store and retrieve properties.
- * In addition properties stored use soft references so they are both bound by the life of the Thread and by the soft
- * references. The implication here is you should NEVER use dynamic properties if you want their values to stick around
- * for long periods because as soon as the JVM is running low on memory or the thread dies they will be garbage collected.
+ * <p>
  *
  * @author Graeme Rocher
  * @since 1.5
@@ -297,8 +293,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private ClosureStaticMetaMethod invokeStaticMethodMethod;
     private final Set<MixinInMetaClass> mixinClasses = new LinkedHashSet<MixinInMetaClass>();
 
-    private ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
-        super(GroovySystem.getMetaClassRegistry(), theClass, add);
+    public ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
+        this(GroovySystem.getMetaClassRegistry(), theClass, register, allowChangesAfterInit, add);
+    }
+    
+    public ExpandoMetaClass(MetaClassRegistry registry, Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
+        super(registry, theClass, add);
         this.myMetaClass = InvokerHelper.getMetaClass(getClass());
         this.inRegistry = register;
         this.allowChangesAfterInit = allowChangesAfterInit;
@@ -555,11 +555,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     /**
      * Instances of this class are returned when using the << left shift operator.
-     * <p/>
+     * <p>
      * Example:
-     * <p/>
+     * <p>
      * metaClass.myMethod << { String args -> }
-     * <p/>
+     * <p>
      * This allows callbacks to the ExpandoMetaClass for registering appending methods
      *
      * @author Graeme Rocher
@@ -1310,6 +1310,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         if (invokeMethodMethod != null)
             return new PogoMetaClassSite(site, this);
         return super.createPogoCallCurrentSite(site, sender, args);
+    }
+    
+    @Override
+    public MetaMethod retrieveConstructor(Object[] args) {
+        Class[] params = MetaClassHelper.convertToTypeArray(args);
+        MetaMethod method = pickMethod(GROOVY_CONSTRUCTOR, params);
+        if (method!=null) return method;
+        return super.retrieveConstructor(args);
     }
 
     public CallSite createConstructorSite(CallSite site, Object[] args) {

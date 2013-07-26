@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package groovy.util
 
 import org.apache.commons.cli.*
+import org.codehaus.groovy.cli.GroovyPosixParser
 import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
@@ -150,7 +151,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * on the size of the command line (e.g. Windows). The feature is similar to
  * the 'Command Line Argument File' processing supported by javadoc and javac.
  * Consult the corresponding documentation for those tools if you wish to see further examples.
- * <p/>
+ * <p>
  * <b>Supported Option Properties</b>:
  * <pre>
  *   argName:        String
@@ -163,7 +164,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * </pre>
  * See {@link org.apache.commons.cli.Option} for the meaning of these properties
  * and {@link CliBuilderTest} for further examples.
- * <p/>
+ * <p>
  *
  * @author Dierk Koenig
  * @author Paul King
@@ -182,8 +183,10 @@ class CliBuilder {
 
     /**
      * To change from the default PosixParser to the GnuParser, set this to false. Ignored if the parser is explicitly set.
+     * @deprecated use the parser option instead with an instance of your preferred parser
      */
-    boolean posix = true
+    @Deprecated
+    Boolean posix = null
 
     /**
      * Whether arguments of the form '{@code @}<i>filename</i>' will be expanded into the arguments contained within the file named <i>filename</i> (default true).
@@ -248,13 +251,13 @@ class CliBuilder {
     }
 
     /**
-     * Make options accessible from command line args with parser (default: Posix).
+     * Make options accessible from command line args with parser.
      * Returns null on bad command lines after displaying usage message.
      */
     OptionAccessor parse(args) {
         if (expandArgumentFiles) args = expandArgumentFiles(args)
         if (!parser) {
-            parser = posix ? new PosixParser() : new GnuParser()
+            parser = posix == null ? new GroovyPosixParser() : posix == true ? new PosixParser() : new GnuParser()
         }
         try {
             return new OptionAccessor(parser.parse(options, args as String[], stopAtNonOption))

@@ -161,7 +161,14 @@ public class ErrorCollector {
     public boolean hasErrors() {
         return this.errors != null;
     }
-    
+
+    /**
+     * @return the compiler configuration used to create this error collector
+     */
+    public CompilerConfiguration getConfiguration() {
+        return configuration;
+    }
+
     /**
      * Returns true if there are any warnings pending.
      */

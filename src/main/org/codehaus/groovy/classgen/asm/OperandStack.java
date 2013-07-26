@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -42,7 +40,7 @@ public class OperandStack {
     private static final MethodCaller castToTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "castToType");
 
     private WriterController controller;
-    private ArrayList<ClassNode> stack = new ArrayList();
+    private ArrayList<ClassNode> stack = new ArrayList<ClassNode>();
 
     public OperandStack(WriterController wc) {
         this.controller = wc;        
@@ -70,15 +68,11 @@ public class OperandStack {
         try {
             return stack.remove(last);
         } catch (ArrayIndexOutOfBoundsException ai) {
-            String method = "";
-            if (controller.getMethodNode()!=null) {
-                method = controller.getMethodNode().getTypeDescriptor();
-            } else {
-                method = controller.getConstructorNode().getTypeDescriptor();
-            }
-            throw new GroovyBugError(
-                    "Error while poping argument from operand stack tracker in"+
-                    " class "+controller.getClassName()+" method "+method+".");
+            String method = controller.getMethodNode() == null ?
+                    controller.getConstructorNode().getTypeDescriptor() :
+                    controller.getMethodNode().getTypeDescriptor();
+            throw new GroovyBugError("Error while popping argument from operand stack tracker in class " +
+                    controller.getClassName() + " method " + method + ".");
         }
     }
 
@@ -308,7 +302,26 @@ public class OperandStack {
     private void doConvertAndCast(ClassNode targetType, boolean coerce) {
         int size = stack.size();
         try {
-            if (size==0) throw new ArrayIndexOutOfBoundsException("size==0");
+            if (size==0) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("Internal compiler error while compiling ").append(controller.getSourceUnit().getName()).append("\n");
+                MethodNode methodNode = controller.getMethodNode();
+                if (methodNode!=null) {
+                    sb.append("Method: ");
+                    sb.append(methodNode);
+                    sb.append("\n");
+                }
+                ConstructorNode constructorNode = controller.getConstructorNode();
+                if (constructorNode!=null) {
+                    sb.append("Constructor: ");
+                    sb.append(methodNode);
+                    sb.append("\n");
+                }
+                sb.append("Line ").append(controller.getLineNumber()).append(",");
+                sb.append(" expecting ").append(coerce ? "coercion" : "casting").append(" to ").append(targetType.toString(false));
+                sb.append(" but operand stack is empty");
+                throw new ArrayIndexOutOfBoundsException(sb.toString());
+            }
         } catch (ArrayIndexOutOfBoundsException ai) {
             throw ai;
         }
@@ -374,9 +387,8 @@ public class OperandStack {
      * Determines if the source class implements an interface or subclasses the target type.
      * This method takes the {@link org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode lowest
      * upper bound class node} type into account, allowing to remove unnecessary casts.
-     * @param source
-     * @param targetType
-     * @return
+     * @param source the type of interest
+     * @param targetType the target type of interest
      */
     private static boolean implementsInterfaceOrSubclassOf(final ClassNode source, final ClassNode targetType) {
         if (source.isDerivedFrom(targetType) || source.implementsInterface(targetType)) return true;
@@ -391,7 +403,7 @@ public class OperandStack {
     }
 
     private boolean convertFromInt(ClassNode target) {
-        int convertCode = 0;
+        int convertCode;
         if (target==ClassHelper.char_TYPE){
             convertCode = I2C;
         } else if (target==ClassHelper.byte_TYPE){
@@ -482,8 +494,7 @@ public class OperandStack {
                     top==ClassHelper.byte_TYPE ||
                     top==ClassHelper.short_TYPE)
         {
-            if (target==ClassHelper.int_TYPE) return true;
-            return convertFromInt(target);
+            return target == ClassHelper.int_TYPE || convertFromInt(target);
         } else if ( top==ClassHelper.float_TYPE) {
             return convertFromFloat(target);
         } else if ( top==ClassHelper.double_TYPE) {
@@ -540,7 +551,7 @@ public class OperandStack {
             }
         } else if (value instanceof Boolean) {
             Boolean bool = (Boolean) value;
-            String text = (bool.booleanValue()) ? "TRUE" : "FALSE";
+            String text = bool ? "TRUE" : "FALSE";
             mv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", text, "Ljava/lang/Boolean;");
         } else if (value instanceof String) {
             mv.visitLdcInsn(value);
@@ -667,6 +678,7 @@ public class OperandStack {
         ClassNode type = variable.getType();
         // value is on stack
         if (variable.isHolder()) {
+            doGroovyCast(type);
             box();
             mv.visitVarInsn(ALOAD, idx);
             mv.visitTypeInsn(CHECKCAST, "groovy/lang/Reference");
@@ -703,7 +715,7 @@ public class OperandStack {
 
     public void pushBool(boolean inclusive) {
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitLdcInsn(new Boolean(inclusive));
+        mv.visitLdcInsn(inclusive);
         push(ClassHelper.boolean_TYPE);
     }
     

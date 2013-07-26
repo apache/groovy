@@ -405,22 +405,14 @@ class ListTest extends GroovyTestCase {
     }
 
     // GROOVY-4946
-    void testWithLazyDefault() {
+    void testLazyDefault() {
         def l1 = [].withLazyDefault { 42 }
         assert l1[0] == 42
         assert l1[2] == 42
         assert l1 == [42, null, 42]
-        assert l1[-1] == 42
-        assert l1[-3] == 42
         assert l1[1] == 42
 
-        def l2 = [].withLazyDefault { 42 }
-        assert l2[-1] == 42
-        assert l2.size() == 1
-        assert l2[0] == 42
-
         def l3 = [].withLazyDefault { it }
-        assert l3[-1] == 0
         assert l3[1] == 1
         assert l3[3] == 3
 
@@ -431,21 +423,19 @@ class ListTest extends GroovyTestCase {
         assert l4 == [0, 1, null, 3]
 
         def l5 = [].withLazyDefault { it }
-        assert l5[-1] == 0
         assert l5[1] == 1
         assert l5[3] == 3
         assert l5[5] == 5
-        assert l5 == [0, 1, null, 3, null, 5]
+        assert l5 == [null, 1, null, 3, null, 5]
 
         def l6 = [].withLazyDefault { int index -> index }
-        assert l6[-1] == 0
         assert l6[1] == 1
         assert l6[3] == 3
         assert l6[5] == 5
-        assert l6[0..5] == [0, 1, null, 3, null, 5]
+        assert l6[0..5] == [null, 1, null, 3, null, 5]
     }
 
-    void testWithEagerDefault() {
+    void testEagerDefault() {
         def l1 = [].withEagerDefault { 42 }
         assert l1[0] == 42
         assert l1[2] == 42
@@ -455,12 +445,9 @@ class ListTest extends GroovyTestCase {
         assert l1[-3] == 42
 
         def l2 = [].withEagerDefault { 42 }
-        assert l2[-1] == 42
-        assert l2.size() == 1
         assert l2[0] == 42
 
         def l3 = [].withEagerDefault { it }
-        assert l3[-1] == 0
         assert l3[1] == 1
         assert l3[3] == 3
         assert l3 == [0, 1, 2, 3]
@@ -472,21 +459,19 @@ class ListTest extends GroovyTestCase {
         assert l4 == [0, 1, null, 3]
 
         def l5 = [].withEagerDefault { it }
-        assert l5[-1] == 0
         assert l5[1] == 1
         assert l5[3] == 3
         assert l5[5] == 5
         assert l5 == [0, 1, 2, 3, 4, 5]
 
         def l6 = [].withEagerDefault { int index -> index }
-        assert l6[-1] == 0
         assert l6[1] == 1
         assert l6[3] == 3
         assert l6[5] == 5
         assert l6[0..5] == [0, 1, 2, 3, 4, 5]
     }
 
-    void testWithDefaultReturnWithDefaultSubList() {
+    void testDefaultReturnWithDefaultSubList() {
         def l1 = [].withLazyDefault { 42 }
         assert l1[2] == 42
         assert l1 == [null, null, 42]
@@ -497,16 +482,193 @@ class ListTest extends GroovyTestCase {
         assert l2 == [null, null, 42]
     }
 
-    void testWithDefaultRedirectsToWithLazyDefault() {
+    void testDefaultRedirectsToWithLazyDefault() {
         def l1 = [].withDefault { 42 }
         assert l1[2] == 42
         assert l1 == [null, null, 42]
     }
 
-    void testWithDefaultNullAsDefaultValue() {
+    void testDefaultNullAsDefaultValue() {
         def l1 = [].withEagerDefault { null }
         assert l1[0] == null
         assert l1[2] == null
         assert l1 == [null, null, null]
+    }
+
+    void testLazyListAndRangeAccess() {
+        def l1 = [].withDefault { 42 }
+        assert [null, 42] == l1[1..2]
+    }
+
+    void testEagerListAndRangeAccess() {
+        def l1 = [].withEagerDefault { 42 }
+        assert [42, 42] == l1[1..2]
+    }
+
+    void testLazyListAndNegativeIndexAccess() {
+        def l1 = [].withDefault { 42 }
+        assert 42 == l1[1]
+        assert 42 == l1[-1]
+    }
+
+    void testeEagerListAndNegativeIndexAccess() {
+        def l1 = [].withEagerDefault { 42 }
+        assert 42 == l1[1]
+        assert 42 == l1[-1]
+    }
+
+    void testLazyListAndNegativeRangeAccess() {
+        def l1 = [].withDefault { 42 }
+        assert 42 == l1[0]
+        assert 42 == l1[1]
+
+        def subList = l1[0..-1]
+        assert [42, 42] == subList
+    }
+
+    void testEagerListAndNegativeRangeAccess() {
+        def l1 = [].withEagerDefault { 42 }
+        assert 42 == l1[0]
+        assert 42 == l1[1]
+
+        def subList = l1[0..-1]
+        assert [42, 42] == subList
+    }
+
+    void testLazyListAndFailingNegativeRangeAccess() {
+        def l1 = [].withDefault { 42 }
+
+        shouldFail(ArrayIndexOutOfBoundsException) {
+            l1[-42..0]
+        }
+    }
+
+    void testEagerListAndFailingNegativeRangeAccess() {
+        def l1 = [].withEagerDefault { 42 }
+
+        shouldFail(ArrayIndexOutOfBoundsException) {
+            l1[-42..0]
+        }
+    }
+
+    void testLazyListAndEmptyRangeAccess() {
+        def l1 = [].withDefault { 42 }
+        assert l1[0..<0] instanceof ListWithDefault
+        assert l1[0..<0] == []
+    }
+
+    void testEagerListAndEmptyRangeAccess() {
+        def l1 = [].withEagerDefault { 42 }
+        assert l1[0..<0] instanceof ListWithDefault
+        assert l1[0..<0] == []
+    }
+
+    void testLazyListAndReversedRangeAccess() {
+        def l1 = [].withDefault { 42 }
+
+        assert 42 == l1[0]
+        assert 42 == l1[1]
+        assert 42 == l1[2]
+
+        def subList = l1[2..0]
+        assert subList instanceof ListWithDefault
+    }
+
+    void testEagerListAndReversedRangeAccess() {
+        def l1 = [].withEagerDefault { 42 }
+
+        assert 42 == l1[0]
+        assert 42 == l1[1]
+        assert 42 == l1[2]
+
+        def subList = l1[2..0]
+        assert subList instanceof ListWithDefault
+    }
+
+    void testLazyListAndCollectionOfIndices() {
+        def l1 = [].withDefault { 42 }
+        assert [42, 42, 42] == l1[0,1,2]
+        assert l1.size() == 3
+    }
+
+    void testEagerListAndCollectionOfIndices() {
+        def l1 = [].withEagerDefault { 42 }
+        assert [42, 42, 42] == l1[0,1,2]
+        assert l1.size() == 3
+    }
+
+    void testLazyListAndCollectionOfCollectionIndices() {
+        def l1 = [].withDefault { 42 }
+        assert [42, 42, 42] == l1[0,[1,2]]
+        assert l1.size() == 3
+    }
+
+    void testLazyListAndCollectionOfRangeIndices() {
+        def l1 = [].withDefault { 42 }
+        assert [42, null, 42] == l1[0,[1..2]]
+        assert l1.size() == 3
+    }
+
+    void testEagerListAndCollectionOfRangeIndices() {
+        def l1 = [].withEagerDefault { 42 }
+        assert [42, 42, 42] == l1[0,[1..2]]
+        assert l1.size() == 3
+    }
+
+    void testDefaultAndCollectionOfIndicesReturnsCorrectType() {
+        def l1 = [].withDefault { 42 }
+        assert  l1[0,[1..2]] instanceof ListWithDefault
+    }
+
+    void testLazyListAndUnorderedCollectionIndices() {
+        def l1 = [].withLazyDefault { 42 }
+
+        assert [42, 42, 42] == l1[2, 0, 3]
+    }
+
+    void testLazyListAndNegativeReversedRangeAccess() {
+        def a = [1].withDefault {42}
+        assert a[2..-1] == [42, null, 1]
+    }
+
+    void testEagerListAndNegativeReversedRangeAccess() {
+        def a = [1].withEagerDefault {42}
+        assert a[2..-1] == [42, 42, 1]
+    }
+
+    void testEagerListAndNegativeCollectionIndicesAccess() {
+        def a = [1].withEagerDefault {42}
+        assert a[0,-1] == [1, 1]
+    }
+
+    void testEagerLazyListInvocation() {
+        def a = [1].withEagerDefault {42}.withEagerDefault {43}
+        assert a[0,2,-1] == [1, 43, 43]
+    }
+
+    void testEagerListWithNegativeIndex() {
+        def a = [].withEagerDefault { 42 }
+        shouldFail(ArrayIndexOutOfBoundsException) {
+            a[-2]
+        }
+    }
+
+    void testLazyListCollectionIndicesSubList() {
+        def list = [1].withDefault{42}
+        assert list[4] == 42
+        assert list == [1, null, null, null, 42]
+
+        def sub = list[0,2,4]
+        assert sub.size() == 3
+        assert sub[3] == 42
+    }
+
+    void testLazyListRangeIndexSubList() {
+        def list = [1].withDefault{42}
+        assert list[4] == 42
+        assert list == [1, null, null, null, 42]
+
+        def sub = list[0..4]
+        assert sub[5] == 42
     }
 }

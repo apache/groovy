@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.ExitNotification
 
@@ -29,7 +30,7 @@ import org.codehaus.groovy.tools.shell.ExitNotification
 class ExitCommand
     extends CommandSupport
 {
-    ExitCommand(final Shell shell) {
+    ExitCommand(final Groovysh shell) {
         super(shell, 'exit', '\\x')
 
         alias('quit', '\\q')

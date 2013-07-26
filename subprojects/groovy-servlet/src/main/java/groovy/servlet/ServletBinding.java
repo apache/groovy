@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import java.util.Map;
 /**
  * Servlet-specific binding extension to lazy load the writer or the output
  * stream from the response.
- * <p/>
+ * <p>
  * <h3>Eager variables</h3>
  * <ul>
  * <li><tt>"request"</tt> : the <code>HttpServletRequest</code> object</li>
@@ -49,7 +49,7 @@ import java.util.Map;
  * <li><tt>"params"</tt> : map of all form parameters - can be empty</li>
  * <li><tt>"headers"</tt> : map of all <tt>request</tt> header fields</li>
  * </ul>
- * <p/>
+ * <p>
  * <h3>Lazy variables</h3>
  * <ul>
  * <li><tt>"out"</tt> : <code>response.getWriter()</code></li>
@@ -68,26 +68,25 @@ import java.util.Map;
  * to write using 'sout' will cause an <code>IllegalStateException</code>. Similarly, if a write method
  * call on 'sout' has been done already, then any further write method call on 'out' or 'html' will cause an
  * <code>IllegalStateException</code>.
- * <p/>
+ * <p>
  * <h3>Reserved internal variable names (see "Methods" below)</h3>
  * <ul>
  * <li><tt>"forward"</tt></li>
  * <li><tt>"include"</tt></li>
  * <li><tt>"redirect"</tt></li>
  * </ul>
- * </p>
+ *
  * If <code>response.getWriter()</code> is called directly (without using out), then a write method
  * call on 'sout' will not cause the <code>IllegalStateException</code>, but it will still be invalid.
  * It is the responsibility of the user of this class, to not to mix these different usage
  * styles. The same applies to calling <code>response.getOutputStream()</code> and using 'out' or 'html'.
- * </p>
+ *
  * <h3>Methods</h3>
  * <ul>
  * <li><tt>"forward(String path)"</tt> : <code>request.getRequestDispatcher(path).forward(request, response)</code></li>
  * <li><tt>"include(String path)"</tt> : <code>request.getRequestDispatcher(path).include(request, response)</code></li>
  * <li><tt>"redirect(String location)"</tt> : <code>response.sendRedirect(location)</code></li>
  * </ul>
- * </p>
  *
  * @author Guillaume Laforge
  * @author Christian Stein

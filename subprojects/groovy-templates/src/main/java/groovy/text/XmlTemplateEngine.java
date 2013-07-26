@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,22 +42,22 @@ import java.util.Map;
 /**
  * Template engine for use in templating scenarios where both the template
  * source and the expected output are intended to be XML.
- * </p>
+ * <p>
  * Templates may use the normal '${expression}' and '$variable' notations
  * to insert an arbitrary expression into the template.
  * In addition, support is also provided for special tags:
  * &lt;gsp:scriptlet&gt; (for inserting code fragments) and
  * &lt;gsp:expression&gt; (for code fragments which produce output).
- * </p>
+ * <p>
  * Comments and processing instructions
  * will be removed as part of processing and special XML characters such as
  * &lt;, &gt;, &quot and &apos; will be escaped using the respective XML notation.
  * The output will also be indented using standard XML pretty printing.
- * </p>
+ * <p>
  * The xmlns namespace definition for <code>gsp:</code> tags will be removed
  * but other namespace definitions will be preserved (but may change to an
  * equivalent position within the XML tree).
- * </p>
+ * <p>
  * Normally, the template source will be in a file but here is a simple
  * example providing the XML template as a string:
  * <pre>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,9 +42,9 @@ import java.util.*;
  * For static dispatching this class uses the MetaClass of Class, again
  * all instances of this class will share that MetaClass. The Class MetaClass
  * is initialized lazy, because most operations do not need this MetaClass.
- * <p/>
+ * <p>
  * The Closure and Class MetaClasses are not replaceable.
- * <p/>
+ * <p>
  * This MetaClass is for internal usage only!
  *
  * @author Jochen Theodorou

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,17 @@ package org.codehaus.groovy.transform;
 
 import groovy.transform.EqualsAndHashCode;
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -43,6 +53,8 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode HASHUTIL_TYPE = ClassHelper.make(HashCodeHelper.class);
     private static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
+    private static final Token LOGICAL_OR = Token.newSymbol(Types.LOGICAL_OR, -1, -1);
+    private static final Token LOGICAL_AND = Token.newSymbol(Types.LOGICAL_AND, -1, -1);
     private static final ClassNode OBJECT_TYPE = ClassHelper.make(Object.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -55,6 +67,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             ClassNode cNode = (ClassNode) parent;
             checkNotInterface(cNode, MY_TYPE_NAME);
             boolean callSuper = memberHasValue(anno, "callSuper", true);
+            boolean cacheHashCode = memberHasValue(anno, "cache", true);
             boolean useCanEqual = !memberHasValue(anno, "useCanEqual", false);
             if (callSuper && cNode.getSuperClass().getName().equals("java.lang.Object")) {
                 addError("Error during " + MY_TYPE_NAME + " processing: callSuper=true but '" + cNode.getName() + "' has no super class.", anno);
@@ -70,7 +83,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
                 addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
             }
-            createHashCode(cNode, false, includeFields, callSuper, excludes, includes);
+            createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes);
             createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes);
         }
     }
@@ -88,7 +101,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             body.addStatement(new IfStatement(
                     isZeroExpr(hash),
                     calculateHashStatements(cNode, hash, includeFields, callSuper, excludes, includes),
-                    new EmptyStatement()
+                    EmptyStatement.INSTANCE
             ));
             body.addStatement(new ReturnStatement(hash));
         } else {
@@ -113,21 +126,25 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            // _result = HashCodeHelper.updateHash(_result, getProperty())
+            // _result = HashCodeHelper.updateHash(_result, getProperty()) // plus self-reference checking
             String getterName = "get" + Verifier.capitalize(pNode.getName());
             Expression getter = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, MethodCallExpression.NO_ARGUMENTS);
             final Expression args = new TupleExpression(result, getter);
             final Expression current = new StaticMethodCallExpression(HASHUTIL_TYPE, "updateHash", args);
-            body.addStatement(assignStatement(result, current));
+            body.addStatement(new IfStatement(identicalExpr(getter, new VariableExpression("this")),
+                    EmptyStatement.INSTANCE,
+                    assignStatement(result, current)));
 
         }
         for (FieldNode fNode : fList) {
             if (shouldSkip(fNode.getName(), excludes, includes)) continue;
-            // _result = HashCodeHelper.updateHash(_result, field)
+            // _result = HashCodeHelper.updateHash(_result, field) // plus self-reference checking
             final Expression fieldExpr = new VariableExpression(fNode);
             final Expression args = new TupleExpression(result, fieldExpr);
             final Expression current = new StaticMethodCallExpression(HASHUTIL_TYPE, "updateHash", args);
-            body.addStatement(assignStatement(result, current));
+            body.addStatement(new IfStatement(identicalExpr(fieldExpr, new VariableExpression("this")),
+                    EmptyStatement.INSTANCE,
+                    assignStatement(result, current)));
         }
         if (callSuper) {
             // _result = HashCodeHelper.updateHash(_result, super.hashCode())
@@ -178,7 +195,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             body.addStatement(returnFalseIfNotInstanceof(cNode, other));
             body.addStatement(new IfStatement(
                     new BooleanExpression(new MethodCallExpression(other, "canEqual", VariableExpression.THIS_EXPRESSION)),
-                    new EmptyStatement(),
+                    EmptyStatement.INSTANCE,
                     new ReturnStatement(ConstantExpression.FALSE)
             ));
         } else {
@@ -191,7 +208,14 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            body.addStatement(returnFalseIfPropertyNotEqual(pNode, otherTyped));
+            body.addStatement(
+                    new IfStatement(differentPropertyExpr(pNode, otherTyped),
+                            new IfStatement(differentSelfRecursivePropertyExpr(pNode, otherTyped),
+                                    new ReturnStatement(ConstantExpression.FALSE),
+                                    new IfStatement(bothSelfRecursivePropertyExpr(pNode, otherTyped),
+                                            EmptyStatement.INSTANCE,
+                                            returnFalseIfPropertyNotEqual(pNode, otherTyped))),
+                            EmptyStatement.INSTANCE));
         }
         List<FieldNode> fList = new ArrayList<FieldNode>();
         if (includeFields) {
@@ -199,12 +223,19 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         }
         for (FieldNode fNode : fList) {
             if (shouldSkip(fNode.getName(), excludes, includes)) continue;
-            body.addStatement(returnFalseIfFieldNotEqual(fNode, otherTyped));
+            body.addStatement(
+                    new IfStatement(differentFieldExpr(fNode, otherTyped),
+                            new IfStatement(differentSelfRecursiveFieldExpr(fNode, otherTyped),
+                                    new ReturnStatement(ConstantExpression.FALSE),
+                                    new IfStatement(bothSelfRecursiveFieldExpr(fNode, otherTyped),
+                                            EmptyStatement.INSTANCE,
+                                            returnFalseIfFieldNotEqual(fNode, otherTyped))),
+                            EmptyStatement.INSTANCE));
         }
         if (callSuper) {
             body.addStatement(new IfStatement(
                     isTrueExpr(new MethodCallExpression(VariableExpression.SUPER_EXPRESSION, "equals", other)),
-                    new EmptyStatement(),
+                    EmptyStatement.INSTANCE,
                     new ReturnStatement(ConstantExpression.FALSE)
             ));
         }
@@ -215,5 +246,37 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         Parameter[] params = {new Parameter(OBJECT_TYPE, other.getName())};
         cNode.addMethod(new MethodNode(hasExistingEquals ? "_equals" : "equals", hasExistingEquals ? ACC_PRIVATE : ACC_PUBLIC,
                 ClassHelper.boolean_TYPE, params, ClassNode.EMPTY_ARRAY, body));
+    }
+
+    private static BooleanExpression differentSelfRecursivePropertyExpr(PropertyNode pNode, Expression other) {
+        String getterName = "get" + Verifier.capitalize(pNode.getName());
+        Expression selfGetter = new MethodCallExpression(new VariableExpression("this"), getterName, MethodCallExpression.NO_ARGUMENTS);
+        Expression otherGetter = new MethodCallExpression(other, getterName, MethodCallExpression.NO_ARGUMENTS);
+        return new BooleanExpression(new BinaryExpression(new BinaryExpression(
+                identicalExpr(selfGetter, new VariableExpression("this")), LOGICAL_AND, differentExpr(otherGetter, other)), LOGICAL_OR, new BinaryExpression(
+                differentExpr(selfGetter, new VariableExpression("this")), LOGICAL_AND, identicalExpr(otherGetter, other))));
+    }
+
+    private static BooleanExpression bothSelfRecursivePropertyExpr(PropertyNode pNode, Expression other) {
+        String getterName = "get" + Verifier.capitalize(pNode.getName());
+        Expression selfGetter = new MethodCallExpression(new VariableExpression("this"), getterName, MethodCallExpression.NO_ARGUMENTS);
+        Expression otherGetter = new MethodCallExpression(other, getterName, MethodCallExpression.NO_ARGUMENTS);
+        return new BooleanExpression(new BinaryExpression(
+                identicalExpr(selfGetter, new VariableExpression("this")), LOGICAL_AND, identicalExpr(otherGetter, other)));
+    }
+
+    private static BooleanExpression differentSelfRecursiveFieldExpr(FieldNode fNode, Expression other) {
+        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression otherExpr = new PropertyExpression(other, fNode.getName());
+        return new BooleanExpression(new BinaryExpression(new BinaryExpression(
+                identicalExpr(fieldExpr, new VariableExpression("this")), LOGICAL_AND, differentExpr(otherExpr, other)), LOGICAL_OR, new BinaryExpression(
+                differentExpr(fieldExpr, new VariableExpression("this")), LOGICAL_AND, identicalExpr(otherExpr, other))));
+    }
+
+    private static BooleanExpression bothSelfRecursiveFieldExpr(FieldNode fNode, Expression other) {
+        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression otherExpr = new PropertyExpression(other, fNode.getName());
+        return new BooleanExpression(new BinaryExpression(
+                identicalExpr(fieldExpr, new VariableExpression("this")), LOGICAL_AND, identicalExpr(otherExpr, other)));
     }
 }

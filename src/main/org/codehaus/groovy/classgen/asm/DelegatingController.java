@@ -250,4 +250,24 @@ public class DelegatingController extends WriterController {
     public void switchToSlowPath() {
         delegationController.switchToSlowPath();
     }
+    
+    @Override
+    public int getBytecodeVersion() {
+        return delegationController.getBytecodeVersion();
+    }
+    
+    @Override
+    public void setLineNumber(int n) {
+        delegationController.setLineNumber(n);
+    }
+    
+    @Override
+    public int getLineNumber() {
+        return delegationController.getLineNumber();
+    }
+    
+    @Override
+    public void resetLineNumber() {
+        delegationController.resetLineNumber();
+    }
 }

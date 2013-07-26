@@ -38,7 +38,9 @@ public class StaticMethodCallExpressionTransformer {
                     orig.getArguments()
             );
             call.setMethodTarget(target);
-            return call;
+            call.setSourcePosition(orig);
+            call.copyNodeMetaData(orig);
+            return transformer.transform(call);
         }
         return transformer.superTransform(orig);
     }
