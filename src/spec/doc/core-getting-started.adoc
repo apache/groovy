@@ -2,134 +2,39 @@
 :toc:
 :icons: font
 :linkcss!:
+:groovy-major-version: 2
+:groovy-minor-version: 2
+:groovy-patch-version: 0
+
+:groovy-full-version: {groovy-major-version}.{groovy-minor-version}.{groovy-patch-version}
+:groovy-short-version: {groovy-major-version}.{groovy-minor-version}
+
 
 == Download
 
-In this download area, you will be able to download the distribution (binary and source), the Windows installer (for some of the versions) and the documentation for **Groovy**.
+In this download area, you will be able to download the distribution (binary and source), the Windows installer and the documentation for **Groovy**.
 
-For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http://gvmtool.net[GVM] (the Groovy enVironment Manager) to download and configure any **Groovy** version of your choice. Basic link:#gvm-the-groovy-environment-manager[instructions] can be found below.
+For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http://gvmtool.net[GVM] (the Groovy enVironment Manager) to download and configure any **Groovy** version of your choice. Basic <<gvm-the-groovy-environment-manager,instructions>> can be found below.
 
-=== Groovy 2.1
+=== Stable
 
-Groovy 2 is the latest official major link:version-scheme.html[version of Groovy].
+- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-{groovy-full-version}.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-{groovy-full-version}.zip[Source Release]
+- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-{groovy-full-version}.zip[**JavaDoc and zipped online documentation**]
+- **Combined binary / source / documentation bundle**: http://dist.groovy.codehaus.org/distributions/groovy-sdk-{groovy-full-version}.zip[**Distribution bundle**]
 
-Learn more about Groovy 2.1 in the link:TODO[release notes].
-
-==== Groovy 2.1.6
-
-- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-2.1.6.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-2.1.6.zip[Source Release]
-- **Download Windows-Installer**: http://dist.codehaus.org/groovy/distributions/installers/windows/nsis/groovy-2.1.6-installer.exe[**Binary Release**] http://dist.codehaus.org/groovy/distributions/installers/windows/nsis/installed_versions_2.1.6.txt[**(Module Versions)**]
-- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-2.1.6.zip[**JavaDoc and zipped online documentation**]
-- **Combined binary / source / documentation bundle**: http://dist.groovy.codehaus.org/distributions/groovy-sdk-2.1.6.zip[**Distribution bundle**]
-
-You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19335[JIRA release notes].
+You can learn more about this version in the http://groovy.codehaus.org/Groovy+{groovy-short-version}+release+notes[release notes] or in the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19074[JIRA release notes].
 
 If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
-
-==== Groovy 2.1.5
-
-- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-2.1.5.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-2.1.5.zip[Source Release]
-- **Download Windows-Installer**: http://dist.codehaus.org/groovy/distributions/installers/windows/nsis/groovy-2.1.5-installer.exe[**Binary Release**] http://dist.codehaus.org/groovy/distributions/installers/windows/nsis/installed_versions_2.1.5.txt[**(Module Versions)**]
-- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-2.1.5.zip[**JavaDoc and zipped online documentation**]
-- **Combined binary / source / documentation bundle**: http://dist.groovy.codehaus.org/distributions/groovy-sdk-2.1.5.zip[**Distribution bundle**]
-
-You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19320[JIRA release notes].
-
-If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
-
-=== Groovy 2.2
-
-Groovy 2.2 is our future main release.
-
-==== Groovy 2.2.0-beta-1
-
-- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-2.2.0-beta-1.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-2.2.0-beta-1.zip[Source Release]
-- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-2.2.0-beta-1.zip[**JavaDoc and zipped online documentation**]
-- **Combined binary / source / documentation bundle**: http://dist.groovy.codehaus.org/distributions/groovy-sdk-2.2.0-beta-1.zip[**Distribution bundle**]
-
-You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19074[JIRA release notes].
-
-If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
-
-=== Groovy 2.0
-
-Groovy 2.0 is the link:version-scheme.html[minor version] before Groovy 2.1.
-
-Learn more about Groovy 2.0 in the link:TODO[release notes].
-
-==== Groovy 2.0.8
-
-- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-2.0.8.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-2.0.8.zip[Source Release]
-- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-2.0.8.zip[**JavaDoc and zipped online documentation**]
-- **Combined binary / source / documentation bundle**: http://dist.groovy.codehaus.org/distributions/groovy-sdk-2.0.8.zip[**Distribution bundle**]
-
-You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19099[JIRA release notes].
-
-If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
-
-=== Groovy 1.8 (Maintenance Release)
-
-Groovy 1.8 is the latest maintenance release branch of the Groovy 1 major version.
-
-Learn more about the Groovy 1.8 in the http://groovy.codehaus.org/Groovy+1.8+release+notes[release notes].
-
-==== Groovy 1.8.9
-
-- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-1.8.9.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-1.8.9.zip[Source Release]
-- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-1.8.9.zip[**JavaDoc and zipped online documentation**]
-
-You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=18778[JIRA release notes].
 
 === Snapshots
 
 For those who want to test the very latest versions of Groovy and live on the bleeding edge, you can use our http://snapshots.repository.codehaus.org/org/codehaus/groovy/groovy-all/[snapshot builds]. As soon as a build succeeds on our continuous integration server a snapshot is deployed to Codehaus' snapshot repository.
 
-=== Older Releases
+== Maven Repository
 
-All maintenance of the Groovy 1.5.X, 1.6.X and 1.7.X series has now stopped. These are the last released versions.
+If you wish to embed Groovy in your application, you may just prefer to point to your favourite maven repositories or the http://repository.codehaus.org/org/codehaus/groovy[codehaus maven repository].
 
-==== Groovy 1.7.11
-
-- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-1.7.11.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-1.7.11.zip[Source Release]
-- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-1.7.11.zip[**JavaDoc and zipped online documentation**]
-
-You can have a look at the https://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=17244[JIRA release notes].
-
-==== Groovy 1.6.9
-
-- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-1.6.9.zip[**Binary Release**] http://dist.groovy.codehaus.org/distributions/groovy-binary-jdk14-1.6.9.zip[(JDK 1.4 version)] | http://dist.groovy.codehaus.org/distributions/groovy-src-1.6.9.zip[Source Release]
-- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-1.6.9.zip[**JavaDoc and zipped online documentation**]
-
-You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=16236[JIRA release notes].
-
-==== Groovy 1.5.8
-
-- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-1.5.8.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-1.5.8.zip[Source Release]
-- **Download Windows-Installer**: http://dist.codehaus.org/groovy/distributions/installers/windows/nsis/groovy-1.5.8-installer.exe[**Binary Release**]
-- **Download unofficial Fedora/RHEL/CentOS package**: http://dist.groovy.codehaus.org/distributions/rpm/groovy-1.5.8-1.noarch.rpm[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/rpm/groovy-1.5.8-1.src.rpm[Source Release]
-- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-1.5.8.zip[**JavaDoc and zipped online documentation**]
-
-You can have a look at the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=14630[JIRA release notes].
-
-=== Legacy Groovy 1.0
-
-If you still need to use the old Groovy 1.0, here are the links you may be interested in:
-
-- **Download zip**: http://dist.codehaus.org/groovy/distributions/groovy-1.0.zip[**Binary Release**] | http://dist.codehaus.org/groovy/distributions/groovy-1.0-src.zip[Source Release]
-- **Download unofficial Ubuntu/Debian package**: http://dist.codehaus.org/groovy/distributions/installers/deb/groovy-1.0.deb[**Binary Release**]
-- **Download Windows-Installer**: http://dist.codehaus.org/groovy/distributions/installers/windows/nsis/groovy1.0-installer.exe[**Binary Release**]
-- **Download tar/gz**: http://dist.codehaus.org/groovy/distributions/groovy-1.0.tar.gz[**Binary Release**] | http://dist.codehaus.org/groovy/distributions/groovy-1.0-src.tar.gz[Source Release]
-- **Download Javadoc**: http://dist.groovy.codehaus.org/distributions/groovy-docs-1.1-BETA-1.zip[**Javadoc zip**]
-
-http://dist.groovy.codehaus.org/distributions/groovy-docs-1.1-BETA-1.zip[Once you've downloaded the distribution, please read the] link:#install-binary[installation instructions].
-
-Other versions can be found in the http://dist.groovy.codehaus.org/distributions/[distributions archive].
-
-== Maven Repositories
-
-If you wish to embed Groovy in your application, you may just prefer to point to your favourite maven repositories or the http://repository.codehaus.org/org/codehaus/groovy[codehaus maven repository]. You should consult the individual pom files for the exact details but here is a summary of the main supported artifactIds and groupIds:
-
-=== Groovy 2.0.X  and newer
+=== Stable Release
 
 [cols="1,1,2" options="header"]
 |===
@@ -137,105 +42,26 @@ If you wish to embed Groovy in your application, you may just prefer to point to
 |Maven
 |Explanation
 
-|\'org.codehaus.groovy:groovy:x.y.z'
+|\'org.codehaus.groovy:groovy:{groovy-full-version}'
 |<groupId>org.codehaus.groovy</groupId>
 <artifactId>groovy</artifactId> 
-<version>x.y.z</version>
+<version>{groovy-full-version}</version>
 |Just the core of groovy without the modules (see below). Treats Antlr, ASM, etc. as standard dependencies. Only useful if you happen to also use the same versions of these jars yourself as it will save you having two copies of these jars.
 
-|\'org.codehaus.groovy:groovy-$module:x.y.z'
+|\'org.codehaus.groovy:groovy-$module:{groovy-full-version}'
 |<groupId>org.codehaus.groovy</groupId>
 <artifactId>groovy-$module</artifactId>
-<version>x.y.z</version>
+<version>{groovy-full-version}</version>
 |"$module" stands for the different optional groovy modules "ant", "bsf", "console", "docgenerator", "groovydoc", "groovysh", "jmx", "json", "jsr223", "servlet", "sql", "swing", "test", "testng" and "xml". Example: <artifactId>groovy-sql</artifactId>
 
-|\'org.codehaus.groovy:groovy-all:x.y.z'
+|\'org.codehaus.groovy:groovy-all:{groovy-full-version}'
 |<groupId>org.codehaus.groovy</groupId>
 <artifactId>groovy-all</artifactId>
-<version>x.y.z</version>
+<version>{groovy-full-version}</version>
 |The core plus all the modules. Also includes jar versions of Antlr, ASM, Commons-CLI and Retrotranslator runtime. Allows you or your other dependencies (e.g. Hibernate) to use other versions of these jars. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
 |===
 
 To use the link:invokedynamic-support.html[InvokeDynamic] version of the jars just append \':indy' for Gradle or <classifier>indy</classifier> for Maven.
-
-=== Groovy 1.6.X - 1.8.X
-
-[cols="1,1,2" options="header"]
-|===
-|Gradle
-|Maven
-|Explanation
-
-|\'org.codehaus.groovy:groovy:x.y.z'
-|<groupId>org.codehaus.groovy</groupId>
-<artifactId>groovy</artifactId>
-<version>x.y.z</version>
-|Treats Antlr, ASM, etc. as standard dependencies. Only useful if you happen to also use the same versions of these jars yourself as it will save you having two copies of these jars. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
-
-|\'org.codehaus.groovy:groovy-all:x.y.z'
-|<groupId>org.codehaus.groovy</groupId>
-<artifactId>groovy-all</artifactId>
-<version>x.y.z</version>
-|Includes jar versions of Antlr, ASM, Commons-CLI and Retrotranslator runtime. Allows you or your other dependencies (e.g. hibernate) to use other versions of these jars. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
-|===
-
-=== Groovy 1.1.X - 1.5.X
-
-[cols="1,1,2" options="header"]
-|===
-|Gradle
-|Maven
-|Explanation
-
-|\'org.codehaus.groovy:groovy:x.y.z'
-|<groupId>org.codehaus.groovy</groupId>
-<artifactId>groovy</artifactId>
-<version>x.y.z</version>
-|Treats Antlr and ASM as standard dependencies. Only useful if you happen to also use the same versions of these jars yourself as it will save you having two copies of these jars. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
-
-|\'org.codehaus.groovy:groovy-all:x.y.z'
-|<groupId>org.codehaus.groovy</groupId>
-<artifactId>groovy-all</artifactId>
-<version>x.y.z</version>
-|Includes jar versions of Antlr, ASM and Commons-CLI. Allows you or your other dependencies (e.g. hibernate) to use other versions of these jars. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
-
-|\'org.codehaus.groovy:groovy-all-minimal:x.y.z'
-|<groupId>org.codehaus.groovy</groupId>
-<artifactId>groovy-all-minimal</artifactId>
-<version>x.y.z</version>
-|Includes jar versions of Antlr and ASM. Does not include Commons-CLI or any optional dependencies. Not suitable by itself if you want to use any tools which do command-line processing, e.g. groovyc, GroovyShell, ...
-|===
-
-=== Groovy 1.0
-
-Available in the http://repo1.maven.org/maven/groovy/[Maven 1] and http://repo1.maven.org/maven2/groovy/[Maven 2] repositories.
-
-[cols="1,1,2" options="header"]
-|===
-|Gradle
-|Maven
-|Explanation
-
-|\'groovy:groovy:x.y.z'
-|<groupId>groovy</groupId> 
-<artifactId>groovy</artifactId>
-<version>1.0</version>
-|Treats Antlr and ASM as standard dependencies. Only useful if you happen to also use the same versions of these jars yourself as it will save you having two copies of these jars. Dependencies mandated for all optional parts of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
-
-|\'groovy:groovy-all:x.y.z'
-|<groupId>groovy</groupId>
-<artifactId>groovy-all</artifactId>
-<version>1.0</version>
-|Includes jar versions of Antlr and ASM. Allows you or your other dependencies (e.g. hibernate) to use other versions of these jars. Dependencies mandated for all optional parts of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
-
-|\'groovy:groovy-all-minimal:x.y.z'
-|<groupId>groovy</groupId>
-<artifactId>groovy-all-minimal</artifactId>
-<version>1.0</version>
-|Includes jar versions of Antlr and ASM. Does not include any optional dependencies.
-|===
-
-For historical purposes, the releases candidates for 1.0 are also available by using the appropriate version instead of 1.0 in the above version tag.
 
 === Snapshot Releases
 
@@ -296,7 +122,7 @@ If you're on MacOS and have http://mxcl.github.com/homebrew[Homebrew] installed,
 
 [source,shell]
 ----
-"brew install groovy" 
+brew install groovy
 ----
 
 === Installation on Windows
@@ -319,7 +145,7 @@ If you are an IDE user, you can just grab the latest link:tools/tools-ide.html[I
 
 These instructions describe how to install a binary distribution of **Groovy**.
 
-* First, link:#download-groovy[Download] a binary distribution of Groovy and unpack it into some file on your local file system.
+* First, <<download-groovy,Download>> a binary distribution of Groovy and unpack it into some file on your local file system.
 * Set your ++GROOVY_HOME++ environment variable to the directory you unpacked the distribution.
 * Add ++GROOVY_HOME/bin++ to your ++PATH++ environment variable.
 * Set your ++JAVA_HOME++ environment variable to point to your JDK. On OS X this is ++/Library/Java/Home++, on other unixes its often ++/usr/java++ etc. If you've already installed tools like Ant or Maven you've probably already done this step.
