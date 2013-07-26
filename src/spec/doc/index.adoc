@@ -23,11 +23,11 @@ include::core-closures.adoc[]
 == Tools
 
 :leveloffset: 2
-include::tools/tools-groovyc.adoc[]
-include::tools/tools-groovysh.adoc[]
-include::tools/tools-groovyconsole.adoc[]
-include::tools/tools-groovydoc.adoc[]
-include::tools/tools-ide.adoc[]
+include::tools-groovyc.adoc[]
+include::tools-groovysh.adoc[]
+include::tools-groovyconsole.adoc[]
+include::tools-groovydoc.adoc[]
+include::tools-ide.adoc[]
 :leveloffset: 0
 
 == User Guides

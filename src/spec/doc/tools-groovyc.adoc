@@ -8,9 +8,9 @@
 `groovyc` is the Groovy compiler command line tool. It allows you to compile Groovy sources into bytecode. It plays
 the same role as `javac` in the Java world. The easiest way to compile a Groovy script or class is to run the following command:
 
------
+----------------------
 groovyc MyClass.groovy
------
+----------------------
 
 This will produce a `MyClass.class` file (as well as other .class files depending on the contents of the source). `groovyc` supports
 a number of command line switches:
@@ -381,7 +381,7 @@ So it may be used as a complement to <<section-groovyeclipse,the Groovy Eclipse 
 
 :leveloffset: 3
 
-include::tools/tools-groovyeclipse.adoc[]
+include::tools-groovyeclipse.adoc[]
 
 :leveloffset: 1
 
@@ -402,13 +402,3 @@ It is important to know that if you don't enable joint compilation and try to co
 Java source files with the Groovy compiler, the Java source files will be compiled as
 if they were Groovy sources. In some situations, this might work since most of the Java
 syntax is compatible with Groovy, but semantics would be different.
-
-:leveloffset: 2
-
-= Groovysh, the Groovy shell
-
-= Groovy console, a graphical user interface
-
-= Groovydoc, documenting Groovy code
-
-= Integration with IDEs
