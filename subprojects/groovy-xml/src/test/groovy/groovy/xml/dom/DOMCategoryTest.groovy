@@ -187,22 +187,8 @@ class DOMCategoryTest extends GroovyTestCase {
             assert removed.name() == 'old'
         }
 
-      // temp deubgging println to see what is happening on CI server
-      println XmlUtil.serialize(oldRoot).normalize().bytes
-      println '''\
-<?xml version="1.0" encoding="UTF-8"?><root>
-  <new>
-    <child/>
-  </new>
-</root>
-'''.bytes
-        assert XmlUtil.serialize(oldRoot).normalize() == '''\
-<?xml version="1.0" encoding="UTF-8"?><root>
-  <new>
-    <child/>
-  </new>
-</root>
-'''
+        assert XmlUtil.serialize(oldRoot).readLines()*.trim().join('') ==
+            '<?xml version="1.0" encoding="UTF-8"?><root><new><child/></new></root>'
     }
 }
 
