@@ -735,7 +735,6 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         print expression?.field?.name
     }
 
-    @Override
     public void visitConstantExpression(ConstantExpression expression, boolean unwrapQuotes = false) {
         if (expression.value instanceof String && !unwrapQuotes) {
             // string reverse escaping is very naive
@@ -751,7 +750,6 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         print expression.text
     }
 
-    @Override
     public void visitVariableExpression(VariableExpression expression, boolean spacePad = true) {
 
         if (spacePad) {
@@ -837,7 +835,6 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         visitGenerics classNode?.genericsTypes
     }
 
-    @Override
     public void visitArgumentlistExpression(ArgumentListExpression expression, boolean showTypes = false) {
         print '('
         int count = expression?.expressions?.size()
