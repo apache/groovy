@@ -103,6 +103,11 @@ class GpathSyntaxTestSupport {
         assert root.'empty'.text() == ''
     }
 
+    static void checkCDataText(Closure getRoot) {
+        def root = getRoot('<root><![CDATA[A & B < C]]></root>')
+        assert root.text() == 'A & B < C'
+    }
+
     static void checkFindElement(Closure getRoot) {
         def root = getRoot(sampleXml)
         // let's find Gromit

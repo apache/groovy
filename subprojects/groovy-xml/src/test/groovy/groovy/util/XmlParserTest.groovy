@@ -206,6 +206,7 @@ p() {
         GpathSyntaxTestSupport.checkElementTypes(getRoot)
         GpathSyntaxTestSupport.checkElementClosureInteraction(getRoot)
         GpathSyntaxTestSupport.checkElementTruth(getRoot)
+        GpathSyntaxTestSupport.checkCDataText(getRoot)
     }
 
     void testAttribute() {
