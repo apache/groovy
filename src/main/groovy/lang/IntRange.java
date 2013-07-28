@@ -333,13 +333,23 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
             int value = from;
             while (value <= to) {
                 closure.call(Integer.valueOf(value));
-                value = value + step;
+                if((0L + value + step) >= Integer.MAX_VALUE) {
+                    break;
+                }
+                else {
+                    value = value + step;
+                }
             }
         } else {
             int value = to;
             while (value >= from) {
                 closure.call(Integer.valueOf(value));
-                value = value + step;
+                if((0L + value + step) <= Integer.MIN_VALUE) {
+                    break;
+                }
+                else {
+                    value = value + step;
+                }
             }
         }
     }
