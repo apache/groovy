@@ -21,7 +21,7 @@ package groovy.lang;
  * @author James Strachan
  * @version $Revision$
  */
-public class IntRangeTest extends NumberRangeTest {
+public class IntRangeTest extends GroovyTestCase {
 
     public void testCreateTooBigRange() {
         try {
@@ -54,6 +54,28 @@ public class IntRangeTest extends NumberRangeTest {
         final IntRange range = new IntRange(from, to);
         assertEquals("wrong 'from'", from, range.getFromInt());
         assertEquals("wrong 'to'", to, range.getToInt());
+    }
+
+    void test_Step_ShouldNotOverflowForIntegerMaxValue() {
+        (Integer.MAX_VALUE..Integer.MAX_VALUE).step(1) {
+            assert it == Integer.MAX_VALUE
+        }
+    }
+
+    void test_Step_ShouldNotOverflowForIntegerMinValue() {
+        (Integer.MIN_VALUE..Integer.MIN_VALUE).step(-1) {
+            assert it == Integer.MIN_VALUE
+        }
+    }
+
+    void test_Step_ShouldNotOverflowForBigSteps(){
+        (0..2000000000).step(1000000000) {
+            assert it >= 0
+        }
+
+        (0..-2000000000).step(-1000000000) {
+            assert it <= 0
+        }
     }
 
     /**
