@@ -72,6 +72,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                       via Immutable.knownImmutableClasses
                      */
     private static List<String> immutableList = Arrays.asList(
+            "java.lang.Class",
             "java.lang.Boolean",
             "java.lang.Byte",
             "java.lang.Character",
@@ -534,7 +535,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return MY_TYPE_NAME + " processor doesn't know how to handle field '" + fieldName + "' of type '" +
                 prettyTypeName(typeName) + "' while " + mode + " class " + className + ".\n" +
                 MY_TYPE_NAME + " classes only support properties with effectively immutable types including:\n" +
-                "- Strings, primitive types, wrapper types, BigInteger and BigDecimal, enums\n" +
+                "- Strings, primitive types, wrapper types, Class, BigInteger and BigDecimal, enums\n" +
                 "- other " + MY_TYPE_NAME + " classes and known immutables (java.awt.Color, java.net.URI)\n" +
                 "- Cloneable classes, collections, maps and arrays, and other classes with special handling (java.util.Date)\n" +
                 "Other restrictions apply, please see the groovydoc for " + MY_TYPE_NAME + " for further details";
