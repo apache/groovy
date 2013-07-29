@@ -18,7 +18,7 @@ a number of command line switches:
 [cols="<,<,<,<",options="header,footer"]
 |=======================================================================
 |Short version |Long version |Description |Example
-|-cp |--classpath | Specify the compilation classpath. Must be the first
+|-cp |-classpath, --classpath | Specify the compilation classpath. Must be the first
 argument. | groovyc -cp lib/dep.jar MyClass.groovy
 | |--sourcepath* |Directory where to find source files|groovyc -sourcepath src script.groovy
 | |--temp |Temporary directory for the compiler |
