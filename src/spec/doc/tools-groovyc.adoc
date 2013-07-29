@@ -388,7 +388,7 @@ include::tools-groovyeclipse.adoc[]
 [[section-jointcompilation]]
 === Joint compilation
 
-Joint compilation means that the Groovy compilation will parse the
+Joint compilation means that the Groovy compiler will parse the
 Groovy source files, create stubs for all of them, invoke the Java
 compiler to compile the stubs along with Java sources, and then continue
 compilation in the normal Groovy compiler way. This allows mixing of
