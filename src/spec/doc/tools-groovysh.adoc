@@ -535,7 +535,7 @@ groovy:000>
 Note that the command class must be found on classpath: you cannot define a new command from within the shell.
 
 [[GroovyShell-ScreenShots]]
-== Screen Shots
+=== Screen Shots
 
 These shots have been taken over the development of the new shell, so
 some of the content might look slightly different. Also, note the yellow
@@ -549,17 +549,17 @@ image:assets/img/groovysh2.jpg[image,title="groovysh2.jpg"]
 image:assets/img/groovysh4.jpg[image,title="groovysh4.jpg"]
 
 [[GroovyShell-Troubleshooting]]
-== Troubleshooting
+=== Troubleshooting
 
 Please http://jira.codehaus.org/browse/GROOVY[report] any problems you
 run into. Please be sure to mark the JIRA issue with the `Groovysh`
 component.
 
 [[GroovyShell-PlatformProblems]]
-=== Platform Problems
+==== Platform Problems
 
 [[GroovyShell-ProblemsloadingtheJLineDLL]]
-==== Problems loading the JLine DLL
+===== Problems loading the JLine DLL
 
 On Windows, http://jline.sf.net[JLine] (which is used for the fancy
 shell input/history/completion fluff), uses a *tiny* DLL file to trick
@@ -581,7 +581,7 @@ groovysh --terminal=none
 ------------------------
 
 [[GroovyShell-ProblemswithCygwinonWindows]]
-==== Problems with Cygwin on Windows
+===== Problems with Cygwin on Windows
 as
 Some people have issues when running groovysh with cygwin. If you have
 troubles, the following may help:
