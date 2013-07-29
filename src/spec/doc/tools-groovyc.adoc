@@ -239,9 +239,9 @@ different to the JRE, or the JUnit runtime.
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>groovy</groupId>
-            <artifactId>groovy-all-1.0-jsr</artifactId>
-            <version>05</version>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>2.1.6</version>
         </dependency>
     </dependencies>
     <build>
