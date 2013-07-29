@@ -7,7 +7,7 @@
 
 === Since Groovy 2.0.0:
 
-Since Groovy 2.0.0 we follow the scheme as described in http://semver.org. This means the next minor version after 2.0.0 is 2.1.0, the first bugfix version after 2.0 is 2.0.1 and the next major version will be 3.0.0.
+Since Groovy 2.0.0 we follow the scheme as described in http://semver.org. This means the next minor version after 2.0.0 is 2.1.0, the first bugfix version after 2.0.0 is 2.0.1 and the next major version will be 3.0.0.
 
 === Before Groovy 2.0.0:
 
