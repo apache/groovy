@@ -7,29 +7,29 @@
 
 That allows to create installer. You can examine the results on the <<download,download page>>.
 
-image::img/setup.png[]
+image::assets/img/setup.png[]
 
 The installer first copies the groovy files to where the user wants,
 
-image::img/outdir.png[]
+image::assets/img/outdir.png[]
 
 then asks for permission to create a variable ++GROOVY_HOME++ and to add the respective bin directory (++%GROOVY_HOME%/bin++) to the path, if no reference to groovy already exists in it.
 
-image::img/variables.jpg[]
+image::assets/img/variables.jpg[]
 
 The user can decide whether to put these into the user or system environment (on Win 95 and Win 98 this information is appended to the autoexec.bat instead) i.e., whether the installation will be for the current user or for all users. Then the installer checks for the existence of ++JAVA_HOME++. If it doesn't exist, a message box points out the potential problem.
 
 Next the user can decide whether or not to install the native launcher,
 
-image::img/native.jpg[]
+image::assets/img/native.jpg[]
 
 can decide to install additional packages,
 
-image::img/additionalmodules.png[]
+image::assets/img/additionalmodules.png[]
 
 and finally whether to associate .groovy files with the native launcher, and whether to add the extension .groovy and .gy to ++PATHEXT++. This allows to start Groovy files from the command line directly, without having to call the groovy explicitly.
 
-image::img/fileassociation.png[]
+image::assets/img/fileassociation.png[]
 
 As you can see in the screen shots (they are clickable thumbnails), currently english, german, french and spanish are supported as installation languages.
 
