@@ -9,8 +9,7 @@ Since Groovy 2.0, we added support for the JVM http://docs.oracle.com/javase/7/d
 
 This means that unlike APIs, AST transformations or syntactic sugar, this feature is **not visible** to the developer or the end user. It is a compilation and runtime feature only. This means that given two programs written in Groovy, you have the choice to compile it with or without invokedynamic support. Whatever you choose, it comes with pros and cons:
 
-- classes compiled with invokedynamic can only be used on JDK 1.7+
--- without invokedynamic, Groovy classes are still compatible with JDK 1.5+
+- classes compiled with invokedynamic can only be used on JDK 1.7+ (without invokedynamic, Groovy classes are still compatible with JDK 1.5+)
 - call site caching, as implemented in "normal" Groovy is replaced with invokedynamic since Groovy 2.1
 - it is possible to mix classes compiled with and without invokedynamic in the same project, as long as you run JDK 1.7+
 - depending on the JVM (even different minor versions of the JVM), you can target close to Java performance for dynamic Groovy with invokedynamic support activated
