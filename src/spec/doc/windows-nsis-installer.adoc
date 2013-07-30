@@ -21,6 +21,7 @@ The user can decide whether to put these into the user or system environment (on
 
 Next the user can decide whether or not to install the native launcher,
 
+
 image::assets/img/native.jpg[]
 
 can decide to install additional packages,
