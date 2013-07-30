@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package groovy.transform
 
-package groovy.transform;
-
+import java.lang.annotation.Documented
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
@@ -102,7 +102,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * @author Hamlet D'Arcy
  * @since 1.8.0
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target([ ElementType.METHOD, ElementType.TYPE])
 @GroovyASTTransformationClass(["org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation"])
@@ -115,13 +115,19 @@ public @interface ThreadInterrupt {
      * script. If you annotate a script, then any enclosed types will not be augmented.
      * @return
      */
-    boolean applyToAllClasses() default true;
+    boolean applyToAllClasses() default true
+
     /**
      * By default an isInterrupted check is added to the start of all user-defined methods. To turn this off simply
-     * set this parameter to false.  
+     * set this parameter to false.
      * @return
      */
-    boolean checkOnMethodStart() default true;
+    boolean checkOnMethodStart() default true
 
-    Class thrown() default InterruptedException;
+    /**
+     * Sets the type of exception which is thrown.
+     *
+     * @return
+     */
+    Class thrown() default InterruptedException
 }
