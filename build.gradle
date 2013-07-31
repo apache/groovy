@@ -43,7 +43,8 @@ allprojects {
         asciidoctor {
             sourceDir = project.file('src/spec/doc')
             options = [
-                    attributes: ['source-highlighter':'prettify']
+                    attributes: ['source-highlighter':'prettify'
+                            , 'groovyversion': groovyVersion ]
             ]
         }
 
