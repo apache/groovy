@@ -183,6 +183,24 @@ include::../test/SyntaxTest.groovy[tags=keywords_valid_id_after_dot,indent=0]
 
 == Booleans
 
+Boolean is a special data type that is used to represent truth values: ++true++ and ++false++. Use this data type for simple flags that track true/false <<_conditional_operators,conditions>>.
+
+Boolean values can be stored in variables, just like any other data type:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=variable_store_boolean_value,indent=0]
+----
+
+A ++null++ is used to indicate the lack of a value in some location:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=boolean_variable_store_null,indent=0]
+----
+
+Each value of Boolean type is a simplest boolean expression. A more complex boolean expression uses one of the <<_bitwise_and_logical_operators,logical operators>>. In addition, Groovy has <<_the_groovy_truth,special rules>> for coercing non-boolean objects to a boolean value.
+
 == Arrays
 
 == Lists

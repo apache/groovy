@@ -2,6 +2,21 @@ import gls.CompilableTestSupport
 
 class SyntaxTest extends CompilableTestSupport {
 
+    void testBooleanVariableStoreNull() {
+        // tag::boolean_variable_store_null[]
+        boolean myFlag = null
+        // end::boolean_variable_store_null[]
+    }
+
+    void testVariableStoreBooleanValue() {
+        shouldCompile '''
+            def myBooleanVariable
+            // tag::variable_store_boolean_value[]
+            myBooleanVariable = true
+            // end::variable_store_boolean_value[]
+        '''
+    }
+
     void testValidIdentifiers() {
         // tag::valid_identifiers[]
         def name
