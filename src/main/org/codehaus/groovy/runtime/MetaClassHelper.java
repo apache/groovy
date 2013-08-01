@@ -489,9 +489,12 @@ public class MetaClassHelper {
     }
 
     /**
+     * Warning: this method does not choose properly if multiple methods with
+     * the same distance are encountered
      * @param methods the methods to choose from
      * @return the method with 1 parameter which takes the most general type of
      *         object (e.g. Object) ignoring primitive types
+     * @deprecated
      */
     public static Object chooseMostGeneralMethodWith1NullParam(FastArray methods) {
         // let's look for methods with 1 argument which matches the type of the
