@@ -145,4 +145,95 @@ class DateGDKTest extends GroovyTestCase {
         assert date == Date.parseToStringDate(toStringRepresentation)
         TimeZone.setDefault(tz)
     }
+
+    void test_Upto_Date_ShouldExecuteClosureForEachDayUpToDate() {
+        Date startDate = new Date()
+        List expectedResults = [startDate, startDate + 1, startDate + 2]
+
+        List actualResults = []
+
+        startDate.upto(startDate + 2){
+            actualResults << it
+        }
+
+        assert actualResults == expectedResults
+    }
+
+    void test_upto_Date_ShouldNotAcceptToDatesLessThanStartDate() {
+        Date startDate = new Date()
+        Date toDate = new Date(startDate.getTime() - 1L)
+
+        shouldFail(GroovyRuntimeException) {
+            startDate.upto(toDate){}
+        }
+    }
+
+    void test_downto_Date_ShouldExecuteClosureForEachDayDownToDate() {
+        Date startDate = new Date()
+        List expectedResults = [startDate, startDate - 1, startDate - 2]
+
+        List actualResults = []
+        startDate.downto(startDate - 2){
+            actualResults << it
+        }
+
+        assert actualResults == expectedResults
+    }
+
+    void test_downto_Date_ShouldNotAcceptToDatesGreaterThanStartDate() {
+        Date startDate = new Date()
+        Date toDate = new Date(startDate.getTime() + 1L)
+
+        shouldFail(GroovyRuntimeException) {
+            startDate.downto(toDate){}
+        }
+    }
+
+    void test_upto_Calendar_ShouldExecuteClosureForEachDayUpToDate() {
+        Calendar startDate = Calendar.getInstance()
+        Calendar toDate = startDate.clone()
+        toDate.add(Calendar.DATE, 1)
+        List expectedResults = [startDate, toDate]
+
+        List actualResults = []
+        startDate.upto(toDate){
+            actualResults << it
+        }
+
+        assert actualResults == expectedResults
+    }
+
+    void test_upto_Calendar_ShouldNotAcceptToDatesLessThanStartDate() {
+        Calendar startDate = Calendar.getInstance()
+        Calendar toDate = startDate.clone()
+        toDate.add(Calendar.MILLISECOND, -1)
+
+        shouldFail(GroovyRuntimeException) {
+            startDate.upto(toDate){}
+        }
+    }
+
+    void test_downto_Calendar_ShouldExecuteClosureForEachDayDownToDate() {
+        Calendar startDate = Calendar.getInstance()
+        Calendar toDate = startDate.clone()
+        toDate.add(Calendar.DATE, -1)
+        List expectedResults = [startDate, toDate]
+
+        List actualResults = []
+        startDate.downto(toDate){
+            actualResults << it
+        }
+
+        assert actualResults == expectedResults
+    }
+
+    void test_downto_Calendar_ShouldNotAcceptToDatesGreaterThanStartDate() {
+        Calendar startDate = Calendar.getInstance()
+        Calendar toDate = startDate.clone()
+        toDate.add(Calendar.MILLISECOND, 1)
+
+        shouldFail(GroovyRuntimeException) {
+            startDate.downto(toDate){}
+        }
+    }
 }

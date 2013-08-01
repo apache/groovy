@@ -15,6 +15,9 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Closure;
+import groovy.lang.GroovyRuntimeException;
+
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -655,4 +658,75 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
         return sdf.format(self.getTime());
     }
 
+    /**
+     * Iterates from this date up to the given date, inclusive,
+     * incrementing by one day each time.
+     *
+     * @param self    a Date
+     * @param to      another Date to go up to
+     * @param closure the closure to call
+     * @since 2.2
+     */
+    public static void upto(Date self, Date to, Closure closure) {
+        if (self.compareTo(to) <= 0) {
+            for (Date i = (Date) self.clone(); i.compareTo(to) <= 0; i = next(i)) {
+                closure.call(i);
+            }
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+    }
+
+    /**
+     * Iterates from the date represented by this calendar up to the date represented
+     * by the given calendar, inclusive, incrementing by one day each time.
+     *
+     * @param self    a Calendar
+     * @param to      another Calendar to go up to
+     * @param closure the closure to call
+     * @since 2.2
+     */
+    public static void upto(Calendar self, Calendar to, Closure closure) {
+        if (self.compareTo(to) <= 0) {
+            for (Calendar i = (Calendar) self.clone(); i.compareTo(to) <= 0; i = next(i)) {
+                closure.call(i);
+            }
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+    }
+
+    /**
+     * Iterates from this date down to the given date, inclusive,
+     * decrementing by one day each time.
+     *
+     * @param self    a Date
+     * @param to      another Date to go down to
+     * @param closure the closure to call
+     * @since 2.2
+     */
+    public static void downto(Date self, Date to, Closure closure) {
+        if (self.compareTo(to) >= 0) {
+            for (Date i = (Date) self.clone(); i.compareTo(to) >= 0; i = previous(i)) {
+                closure.call(i);
+            }
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
+    }
+
+    /**
+     * Iterates from the date represented by this calendar up to the date represented
+     * by the given calendar, inclusive, incrementing by one day each time.
+     *
+     * @param self    a Calendar
+     * @param to      another Calendar to go down to
+     * @param closure the closure to call
+     * @since 2.2
+     */
+    public static void downto(Calendar self, Calendar to, Closure closure) {
+        if (self.compareTo(to) >= 0) {
+            for (Calendar i = (Calendar) self.clone(); i.compareTo(to) >= 0; i = previous(i)) {
+                closure.call(i);
+            }
+        } else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
+    }
 }
