@@ -281,16 +281,14 @@ public class CachedClass {
     }
     
     public int getSuperClassDistance() {
-        synchronized (getTheClass()) {
-            if (distance == -1) {
-                int distance = 0;
-                for (Class klazz= getTheClass(); klazz != null; klazz = klazz.getSuperclass()) {
-                    distance++;
-                }
-                this.distance = distance;
-            }
-            return distance;
+        if (distance>=0) return distance;
+
+        int distance = 0;
+        for (Class klazz= getTheClass(); klazz != null; klazz = klazz.getSuperclass()) {
+            distance++;
         }
+        this.distance = distance;
+        return distance;
     }
 
     public int hashCode() {
