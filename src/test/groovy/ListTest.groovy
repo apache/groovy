@@ -304,7 +304,7 @@ class ListTest extends GroovyTestCase {
         assert list[0..-1] == list        , 'pos - neg value'
         assert list[0..<-1] == [0]        , 'pos - neg value exclusive -> empty'
         assert list[0..<-2] == list       , 'pos - neg value exclusive -> full'
-        shouldFail(NullPointerException) { list[null] }
+        shouldFail(GroovyRuntimeException) { list[null] }
         shouldFail(IndexOutOfBoundsException) { list[5..6] }
     }
 
