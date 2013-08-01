@@ -70,6 +70,34 @@ public class MethodSelectionTest extends CompilableTestSupport {
       def n(String x){1}
       assert n(null) == 1
     """
+    
+    // Exception defines Throwable and String versions, which are both equal
+    shouldFail """
+        new Exception(null)
+    """
+    
+    shouldFail """
+        class A {
+            public A(String a){}
+            public A(Throwable t){}
+            public A(){this(null)}
+        }
+        new A()
+    """
+    
+    shouldFail """
+        class A{}
+        class B{}
+        def m(A a){}
+        def m(B b){}
+        m(null)
+    """
+    shouldFail """
+        class A extends Exception {
+            public A(){super(null)}
+        }
+        new A()
+    """
   }
   
   void testMethodSelectionException() {

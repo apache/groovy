@@ -2842,8 +2842,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         Object answer;
         if (arguments == null || arguments.length == 0) {
             answer = MetaClassHelper.chooseEmptyMethodParams(methods);
-        } else if (arguments.length == 1 && arguments[0] == null) {
-            answer = MetaClassHelper.chooseMostGeneralMethodWith1NullParam(methods);
         } else {
             Object matchingMethods = null;
 
@@ -2880,6 +2878,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         throw new MethodSelectionException(methodName, methods, arguments);
     }
+
 
     private Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
 
