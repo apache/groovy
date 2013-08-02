@@ -2,8 +2,21 @@ import gls.CompilableTestSupport
 
 class SyntaxTest extends CompilableTestSupport {
 
+    void testBinaryLiteral() {
+        // tag::binary_literal_example[]
+        int x = 0b10101111
+        assert x == 175
+
+        byte aByte = 0b00100001
+        assert aByte == 33
+
+        int anInt = 0b1010000101000101
+        assert anInt == 41285
+        // end::binary_literal_example[]
+    }
+
     void testUnderscoreInNumber() {
-        // tag::underscore_in_number_example
+        // tag::underscore_in_number_example[]
         long creditCardNumber = 1234_5678_9012_3456L
         long socialSecurityNumbers = 999_99_9999L
         double monetaryAmount = 12_345_132.12
@@ -12,7 +25,7 @@ class SyntaxTest extends CompilableTestSupport {
         long maxLong = 0x7fff_ffff_ffff_ffffL
         long alsoMaxLong = 9_223_372_036_854_775_807L
         long bytes = 0b11010010_01101001_10010100_10010010
-        // end::underscore_in_number_example
+        // end::underscore_in_number_example[]
     }
 
     void testNumberTypeSuffixes() {
