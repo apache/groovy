@@ -180,9 +180,12 @@ but which are allowed by Groovy when quoted. For example, characters like a dash
 
 === Integer literal
 === Floating point literal
+
+We can't to represent the decimal numbers in the binary or octal format.
+
 === Binary literal
 
-In Java 6 and before, as well as in Groovy, numbers could be represented in decimal, octal and hexadecimal bases, and with Java 7 and Groovy 2, you can use a binary notation with the “0b” prefix:
+In Java 6 and before, as well as in Groovy, numbers could be represented in decimal, octal and hexadecimal bases, and with Java 7 and Groovy 2, you can use a binary notation with the ++0b++ prefix:
 
 [source,groovy]
 ----
@@ -190,9 +193,17 @@ include::../test/SyntaxTest.groovy[tags=binary_literal_example,indent=0]
 ----
 
 === Octal literal
+
+Octal numbers are specified in the typical format of ++0++ followed by octal digits.
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=octal_literal_example,indent=0]
+----
+
 === Hexadecimal literal
 
-Hexadecimal numbers are specified in the typical format of ++0x++ followed by hex digits: 
+Hexadecimal numbers are specified in the typical format of ++0x++ followed by hex digits.
 
 [source,groovy]
 ----

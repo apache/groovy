@@ -2,6 +2,28 @@ import gls.CompilableTestSupport
 
 class SyntaxTest extends CompilableTestSupport {
 
+    void testOctalLiteral() {
+        // tag::octal_literal_example[]
+        int xInt = 077
+        assert xInt == 63
+
+        short xShort = 011
+        assert xShort == 9 as short
+        
+        byte xByte = 032
+        assert xByte == 26 as byte
+
+        long xLong = 0246
+        assert xLong == 166l
+        
+        BigInteger xBigInteger = 01111
+        assert xBigInteger == 585g
+        
+        int xNegativeInt = -077
+        assert xNegativeInt == -63
+        // end::octal_literal_example[]
+    }
+
     void testHexadecimalLiteral() {
         // tag::hexadecimal_literal_example[]
         int xInt = 0x77
@@ -21,6 +43,9 @@ class SyntaxTest extends CompilableTestSupport {
         
         Double xDouble = new Double('0x1.0p0')
         assert xDouble == 1.0d
+
+        int xNegativeInt = -0x77
+        assert xNegativeInt == -179
         // end::hexadecimal_literal_example[]
     }
 
@@ -40,6 +65,9 @@ class SyntaxTest extends CompilableTestSupport {
         
         BigInteger xBigInteger = 0b111100100001
         assert xBigInteger == 3873g
+
+        int xNegativeInt = -0b10101111
+        assert xNegativeInt == -175
         // end::binary_literal_example[]
     }
 
