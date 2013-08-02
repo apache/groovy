@@ -221,6 +221,8 @@ include::../test/SyntaxTest.groovy[tags=underscore_in_number_example,indent=0]
 
 === Number type suffixes
 
+We can force an number (including binary, octals and hexadecimals) to have a specific type by giving a suffix (see table bellow), either uppercase or lowercase.
+
 [cols="1,2" options="header"]
 |====
 |Type
