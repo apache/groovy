@@ -179,9 +179,14 @@ but which are allowed by Groovy when quoted. For example, characters like a dash
 == Numbers
 
 === Integer literal
+
+
+
 === Floating point literal
 
-We can't to represent the decimal numbers in the binary or octal format.
+
+
+NOTE: Decimal numbers can't be represented using a binary, octal or hexadecimal representation.
 
 === Binary literal
 
