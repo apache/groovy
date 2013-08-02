@@ -271,14 +271,9 @@ Boolean values can be stored in variables, just like any other data type:
 include::../test/SyntaxTest.groovy[tags=variable_store_boolean_value,indent=0]
 ----
 
-A ++null++ is used to indicate the lack of a value in some location:
-
-[source,groovy]
-----
-include::../test/SyntaxTest.groovy[tags=boolean_variable_store_null,indent=0]
-----
-
-Each value of Boolean type is a simplest boolean expression. A more complex boolean expression uses one of the <<_bitwise_and_logical_operators,logical operators>>. In addition, Groovy has <<_the_groovy_truth,special rules>> for coercing non-boolean objects to a boolean value.
+++true++ and ++false++ are the only two primitive boolean values.
+But more complex boolean expressions can be represented using <<_bitwise_and_logical_operators,logical operators>>.
+In addition, Groovy has <<_the_groovy_truth,special rules>> (often referred to as _Groovy Truth_) for coercing non-boolean objects to a boolean value.
 
 == Arrays
 

@@ -102,12 +102,6 @@ class SyntaxTest extends CompilableTestSupport {
         // end::number_type_suffixes_example[]
     }
 
-    void testBooleanVariableStoreNull() {
-        // tag::boolean_variable_store_null[]
-        boolean myFlag = null
-        // end::boolean_variable_store_null[]
-    }
-
     void testVariableStoreBooleanValue() {
         shouldCompile '''
             def myBooleanVariable
