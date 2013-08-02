@@ -7,24 +7,39 @@ class SyntaxTest extends CompilableTestSupport {
         int xInt = 0x77
         assert xInt == 119
 
+        short xShort = 0xaa
+        assert xShort == 170 as short
+        
         byte xByte = 0x3a
-        assert xByte == 58
+        assert xByte == 58 as byte
 
         long xLong = 0xffff
         assert xLong == 65535l
+        
+        BigInteger xBigInteger = 0xaaaa
+        assert xBigInteger == 43690g
+        
+        Double xDouble = new Double('0x1.0p0')
+        assert xDouble == 1.0d
         // end::hexadecimal_literal_example[]
     }
 
     void testBinaryLiteral() {
         // tag::binary_literal_example[]
-        int x = 0b10101111
-        assert x == 175
+        int xInt = 0b10101111
+        assert xInt == 175
 
-        byte aByte = 0b00100001
-        assert aByte == 33
+        short xShort = 0b11001001
+        assert xShort == 201 as short
+        
+        byte xByte = 0b11
+        assert xByte == 3 as byte
 
-        int anInt = 0b1010000101000101
-        assert anInt == 41285
+        long xLong = 0b101101101101
+        assert xLong == 2925l
+        
+        BigInteger xBigInteger = 0b111100100001
+        assert xBigInteger == 3873g
         // end::binary_literal_example[]
     }
 
