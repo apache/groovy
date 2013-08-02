@@ -186,6 +186,30 @@ but which are allowed by Groovy when quoted. For example, characters like a dash
 === Underscore in literal
 === Number type suffixes
 
+[cols="1,2"]
+|====
+|Type
+|Suffix
+
+|BigInteger
+|G
+
+|Long
+|L
+
+|Integer
+|I
+
+|BigDecimal
+|G
+
+|Double
+|D
+
+|Float
+|F
+|====
+
 == Booleans
 
 Boolean is a special data type that is used to represent truth values: ++true++ and ++false++. Use this data type for simple flags that track true/false <<_conditional_operators,conditions>>.
