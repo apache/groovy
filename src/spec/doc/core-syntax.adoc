@@ -261,7 +261,8 @@ include::../test/SyntaxTest.groovy[tags=number_type_suffixes_example,indent=0]
 
 == Booleans
 
-Boolean is a special data type that is used to represent truth values: ++true++ and ++false++. Use this data type for simple flags that track true/false <<_conditional_operators,conditions>>.
+Boolean is a special data type that is used to represent truth values: ++true++ and ++false++.
+Use this data type for simple flags that track true/false <<_conditional_operators,conditions>>.
 
 Boolean values can be stored in variables, just like any other data type:
 
