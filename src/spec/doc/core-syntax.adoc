@@ -191,6 +191,14 @@ include::../test/SyntaxTest.groovy[tags=binary_literal_example,indent=0]
 
 === Octal literal
 === Hexadecimal literal
+
+Hexadecimal numbers are specified in the typical format of ++0x++ followed by hex digits: 
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=hexadecimal_literal_example,indent=0]
+----
+
 === Underscore in literal
 
 When writing long literal numbers, it’s harder on the eye to figure out how some numbers are grouped together, for example with groups of thousands, of words, etc. By allowing you to place underscore in number literals, it’s easier to spot those groups:

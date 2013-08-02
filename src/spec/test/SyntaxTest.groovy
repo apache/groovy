@@ -2,6 +2,19 @@ import gls.CompilableTestSupport
 
 class SyntaxTest extends CompilableTestSupport {
 
+    void testHexadecimalLiteral() {
+        // tag::hexadecimal_literal_example[]
+        int xInt = 0x77
+        assert xInt == 119
+
+        byte xByte = 0x3a
+        assert xByte == 58
+
+        long xLong = 0xffff
+        assert xLong == 65535l
+        // end::hexadecimal_literal_example[]
+    }
+
     void testBinaryLiteral() {
         // tag::binary_literal_example[]
         int x = 0b10101111
