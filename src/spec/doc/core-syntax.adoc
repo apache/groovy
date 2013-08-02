@@ -210,6 +210,13 @@ but which are allowed by Groovy when quoted. For example, characters like a dash
 |F
 |====
 
+Examples:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=number_type_suffixes_example,indent=0]
+----
+
 == Booleans
 
 Boolean is a special data type that is used to represent truth values: ++true++ and ++false++. Use this data type for simple flags that track true/false <<_conditional_operators,conditions>>.
