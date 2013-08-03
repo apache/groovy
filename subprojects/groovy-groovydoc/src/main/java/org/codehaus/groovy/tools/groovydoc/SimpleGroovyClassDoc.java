@@ -23,9 +23,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc implements GroovyClassDoc {
+
     public static final Pattern TAG_REGEX = Pattern.compile("(?sm)\\s*@([a-zA-Z.]+)\\s+(.*?)(?=\\s+@)");
-    public static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
-    public static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
+
+    // group 1: tag name, group 2: tag body
+    public static final Pattern LINK_REGEX    = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
+    public static final Pattern LITERAL_REGEX = Pattern.compile("(?m)[{]@(literal)\\s+([^}]*)}");
+    public static final Pattern CODE_REGEX    = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
+
     public static final Pattern REF_LABEL_REGEX = Pattern.compile("([\\w.#\\$]*(\\(.*\\))?)(\\s(.*))?");
     public static final Pattern NAME_ARGS_REGEX = Pattern.compile("([^(]+)\\(([^)]*)\\)");
     public static final Pattern SPLIT_ARGS_REGEX = Pattern.compile(",\\s*");
@@ -752,8 +757,13 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         // {@link processing hack}
         result = replaceAllTags(result, "", "", LINK_REGEX);
 
-        // {@code processing hack}
-        result = replaceAllTags(result, "<TT>", "</TT>", CODE_REGEX);
+        // {@literal tag}
+        result = encodeAngleBracketsInTagBody(result, LITERAL_REGEX);
+        result = replaceAllTags(result, "", "", LITERAL_REGEX);
+
+        // {@code tag}
+        result = encodeAngleBracketsInTagBody(result, CODE_REGEX);
+        result = replaceAllTags(result, "<CODE>", "</CODE>", CODE_REGEX);
 
         // hack to reformat other groovydoc block tags (@see, @return, @param, @throws, @author, @since) into html
         result = replaceAllTagsCollated(result, "<DL><DT><B>", ":</B></DT><DD>", "</DD><DD>", "</DD></DL>", TAG_REGEX);
@@ -836,6 +846,35 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         } else {
             return self;
         }
+    }
+
+    /**
+     * Replaces angle brackets inside a tag.
+     *
+     * @param text GroovyDoc text to process
+     * @param regex has to capture tag name in group 1 and tag body in group 2
+     */
+    public static String encodeAngleBracketsInTagBody(String text, Pattern regex) {
+        Matcher matcher = regex.matcher(text);
+        if (matcher.find()) {
+            matcher.reset();
+            StringBuffer sb = new StringBuffer();
+            while (matcher.find()) {
+                String tagName = matcher.group(1);
+                String tagBody = matcher.group(2);
+                String encodedBody = encodeAngleBrackets(tagBody);
+                String replacement = "{@" + tagName + " " + encodedBody + "}";
+                matcher.appendReplacement(sb, replacement);
+            }
+            matcher.appendTail(sb);
+            return sb.toString();
+        } else {
+            return text;
+        }
+    }
+
+    public static String encodeAngleBrackets(String text) {
+        return text.replace("<", "&lt;").replace(">", "&gt;");
     }
 
     public static String encodeSpecialSymbols(String text) {
