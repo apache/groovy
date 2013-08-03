@@ -69,7 +69,7 @@ allprojects {
         project.artifacts.add('archives', distBin)
 
         def archive = jarAll.archivePath
-        def indyJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1]+'-indy.jar')
+        def indyJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1] + '-indy.jar')
         if (indyJar.exists()) {
             project.artifacts.add('archives', indyJar)
         }
@@ -87,7 +87,7 @@ ext.pomAll = {
     }
 
     // regular pom
-    def groovypom = pom('groovy',pomConfigureClosure)
+    def groovypom = pom('groovy', pomConfigureClosure)
 
     // pom for 'all'
     def allpom = pom('all', pomConfigureClosure)

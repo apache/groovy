@@ -1,5 +1,5 @@
 apply from: 'gradle/filter.gradle'
-apply from: "gradle/indy.gradle"
+apply from: 'gradle/indy.gradle'
 
 buildscript {
     repositories {
@@ -10,7 +10,7 @@ buildscript {
 
     dependencies {
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.4.1'
-        classpath "net.saliman:gradle-cobertura-plugin:1.1.2"
+        classpath 'net.saliman:gradle-cobertura-plugin:1.1.2'
     }
 }
 
@@ -65,17 +65,17 @@ allprojects {
             options.useAnt = true
             // todo: when Gradle includes support for "indy" option, replace this
             // with groovyOptions.indy = true
-            groovyOptions.metaClass.optionMap = {
-                ['indy':true,
-                        memoryMaximumSize:'384m',
-                        fork:true,
-                        includeJavaRuntime:false,
-                        verbose:false,
-                        encoding:'UTF-8',
-                        failonerror:true,
-                        stacktrace:false,
-                        listfiles:false]
-            }
+            groovyOptions.metaClass.optionMap = {[
+                indy: true,
+                memoryMaximumSize: '384m',
+                fork: true,
+                includeJavaRuntime: false,
+                verbose: false,
+                encoding: 'UTF-8',
+                failonerror: true,
+                stacktrace: false,
+                listfiles: false
+            ]}
             groovyOptions.useAnt = true
             sourceCompatibility = 1.7
             targetCompatibility = 1.7
@@ -99,20 +99,19 @@ allprojects {
             classifier = 'indy'
         }
     }
-
 }
 
 // todo: use the conventional "resources" directory for classpath resources
 task(copyResources, type: Copy) {
     destinationDir = file("$buildDir/classes")
     // text files requiring filtering
-    into("main") {
+    into('main') {
         from('src/main')
         include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
         filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
     }
     // other resources
-    into("main") {
+    into('main') {
         from 'src/main'
         include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
     }
@@ -134,14 +133,13 @@ subprojects {
         classifier = 'sources'
         from sourceSets.main.allSource
     }
-
 }
 
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
 //    mavenCentral() // default, tools
-    maven { url "http://www.aQute.biz/repo" } // tools
-    maven { url "http://repository.jboss.org/maven2" } // examples, tools
+    maven { url 'http://www.aQute.biz/repo' } // tools
+    maven { url 'http://repository.jboss.org/maven2' } // examples, tools
 }
 
 // todo do we need compile and runtime scope for examples?
@@ -154,7 +152,6 @@ configurations {
 }
 
 dependencies {
-
     def antVersion = '1.9.2'
     def asmVersion = '4.1'
     def antlrVersion = '2.7.7'
@@ -268,7 +265,7 @@ dependencies {
     }
 
 // TODO use antlr plugin
-//    antlr "antlr:antlr:2.7.7"
+//    antlr 'antlr:antlr:2.7.7'
     antlr "org.apache.ant:ant-antlr:$antVersion"
 
     // TODO remove once M12N refactoring finished
@@ -284,12 +281,12 @@ sourceSets {
         // which will be used by the build itself to compile the groovy files
         java {
             srcDirs = [
-                    "src/main",
-                    "subprojects/groovy-ant/src/main",
-                    "subprojects/groovy-groovydoc/src/main",
-                    "subprojects/groovy-templates/src/main",
-                    "subprojects/groovy-xml/src/main",
-                    "subprojects/groovy-jmx/src/main",
+                    'src/main',
+                    'subprojects/groovy-ant/src/main',
+                    'subprojects/groovy-groovydoc/src/main',
+                    'subprojects/groovy-templates/src/main',
+                    'subprojects/groovy-xml/src/main',
+                    'subprojects/groovy-jmx/src/main',
                     "$generatedDirectory/src/main"
             ]
             if (!useIndy()) {
@@ -302,10 +299,10 @@ sourceSets {
     main {
         java {
             srcDirs = [
-                    "src/main",
+                    'src/main',
                     "$generatedDirectory/src/main"
             ]
-            fileTree("src/main/groovy/ui").matching {
+            fileTree('src/main/groovy/ui').matching {
                 exclude 'GroovyMain.java', 'GroovySocketServer.java'
             }.visit {details ->
                 exclude "groovy/ui/$details.path"
@@ -318,7 +315,7 @@ sourceSets {
         }
         groovy {
             srcDirs = [
-                    "src/main",
+                    'src/main',
                     "$generatedDirectory/src/main"
             ]
             if (!useIndy()) {
@@ -328,37 +325,38 @@ sourceSets {
             }
         }
         resources {
-            srcDirs = ["src/main", "src/tools", "src/resources"]
-            include "META-INF/services/*", "META-INF/groovy-release-info.properties",
-                    "groovy/grape/*.xml", "groovy/ui/*.properties", "groovy/ui/**/*.png",
-                    "groovy/inspect/swingui/AstBrowserProperties.groovy",
-                    "org/codehaus/groovy/tools/shell/**/*.properties",
-                    "org/codehaus/groovy/tools/shell/**/*.xml",
-                    "org/codehaus/groovy/tools/groovydoc/gstringTemplates/**/*.*",
-                    "org/codehaus/groovy/tools/groovy.ico"
+            srcDirs = ['src/main', 'src/tools', 'src/resources']
+            include 'META-INF/services/*',
+                    'META-INF/groovy-release-info.properties',
+                    'groovy/grape/*.xml',
+                    'groovy/ui/*.properties',
+                    'groovy/ui/**/*.png',
+                    'groovy/inspect/swingui/AstBrowserProperties.groovy',
+                    'org/codehaus/groovy/tools/shell/**/*.properties',
+                    'org/codehaus/groovy/tools/shell/**/*.xml',
+                    'org/codehaus/groovy/tools/groovydoc/gstringTemplates/**/*.*',
+                    'org/codehaus/groovy/tools/groovy.ico'
         }
     }
     test {
         groovy {
-            srcDirs = [
-                    "src/test",
-            ]
+            srcDirs = ['src/test']
             if (isJava15()) {
-                exclude "groovy/**/vm6/*Test.groovy"
-                exclude "org/codehaus/groovy/**/vm6/*Test.groovy"
+                exclude 'groovy/**/vm6/*Test.groovy'
+                exclude 'org/codehaus/groovy/**/vm6/*Test.groovy'
             }
         }
         resources {
-            srcDirs = ["src/test-resources"]
+            srcDirs = ['src/test-resources']
         }
         output.classesDir = "$buildDir/test-classes" as File
     }
     tools {
         groovy {
-            srcDirs = ["src/tools"]
+            srcDirs = ['src/tools']
         }
         resources {
-            srcDirs = ["src/tools"]
+            srcDirs = ['src/tools']
         }
         compileClasspath = configurations.tools + sourceSets.main.runtimeClasspath
         runtimeClasspath = output + compileClasspath
@@ -366,10 +364,10 @@ sourceSets {
     }
     examples {
         groovy {
-            srcDirs = ["src/examples"]
+            srcDirs = ['src/examples']
         }
         resources {
-            srcDirs = ["src/examples"]
+            srcDirs = ['src/examples']
         }
         compileClasspath = configurations.examplesRuntime + sourceSets.main.output
         output.classesDir = "$buildDir/examples-classes" as File
@@ -385,16 +383,16 @@ check {
 // remove this from config once GRADLE-854 is fixed.
 processResources.doLast {
     copy {
-        from("src/main") {
-            include "groovy/inspect/swingui/AstBrowserProperties.groovy",
-                    "org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java"
+        from('src/main') {
+            include 'groovy/inspect/swingui/AstBrowserProperties.groovy',
+                    'org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java'
         }
         into sourceSets.main.output.classesDir
     }
 }
 
 task ensureGrammars {
-    description = "Ensure all the Antlr generated files are up to date."
+    description = 'Ensure all the Antlr generated files are up to date.'
     ext.antlrDirectory = "$projectDir/src/main/org/codehaus/groovy/antlr"
     ext.groovyParserDirectory = "$ext.antlrDirectory/parser"
     ext.javaParserDirectory = "$ext.antlrDirectory/java"
@@ -500,18 +498,18 @@ task checkstyleTest(overwrite: true) << {}
 task checkstyleTools(overwrite: true) << {}
 task codenarcExamples(overwrite: true) << {}
 
-apply from: "gradle/test.gradle"
-apply from: "gradle/docs.gradle"
-apply from: "gradle/assemble.gradle"
-apply from: "gradle/upload.gradle"
-apply from: "gradle/idea.gradle"
-apply from: "gradle/eclipse.gradle"
+apply from: 'gradle/test.gradle'
+apply from: 'gradle/docs.gradle'
+apply from: 'gradle/assemble.gradle'
+apply from: 'gradle/upload.gradle'
+apply from: 'gradle/idea.gradle'
+apply from: 'gradle/eclipse.gradle'
 // Define a GroovyDoc task which depends on the generated groovydoc tool
-apply from: "gradle/groovydoc.gradle"
+apply from: 'gradle/groovydoc.gradle'
 
 classes {
     doFirst {
-        logger.lifecycle "InvokeDynamic support ${useIndy()?'on':'off'}"
+        logger.lifecycle "InvokeDynamic support ${useIndy() ? 'on' : 'off'}"
     }
 }
 
@@ -523,8 +521,7 @@ if (file('user.gradle').exists()) {
 allprojects {
     apply plugin: 'cobertura'
     cobertura {
-        coverageFormats = [ 'xml','html' ]
+        coverageFormats = ['xml', 'html']
         coverageReportDir = file("$buildDir/reports/cobertura")
     }
 }
-

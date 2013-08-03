@@ -26,4 +26,5 @@ ext.propertiesFilter = [
                 BundleVersion: rootProject.groovyBundleVersion,
                 BuildDate: new SimpleDateFormat('dd-MMM-yyyy').format(rootProject.buildTime),
                 BuildTime: new SimpleDateFormat('hh:mm aa').format(rootProject.buildTime)
-        ]]
+        ]
+]
