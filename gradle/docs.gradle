@@ -1,5 +1,5 @@
 task doc(dependsOn: ['asciidocAll', 'assembleAsciidoc', 'javadocAll', 'groovydocAll', 'docGDK']) {
-    ext.footer = "Copyright &amp;copy; 2003-2013 The Codehaus. All rights reserved."
+    ext.footer = 'Copyright &amp;copy; 2003-2013 The Codehaus. All rights reserved.'
     ext.title = "Groovy ${groovyVersion}"
 }
 
@@ -17,15 +17,15 @@ def javadocSpec = {
     project.configure(options) {
         windowTitle = doc.title
         docTitle = doc.title
-        encoding = "UTF-8"
+        encoding = 'UTF-8'
         author = true
         version = true
-        overview = rootProject.file("src/main/overviewj.html")
+        overview = rootProject.file('src/main/overviewj.html')
         footer = doc.footer
         source = rootProject.useIndy()?'1.7':'1.5'
-        links("http://docs.oracle.com/javase/7/docs/api/", "http://evgeny-goldin.org/javadoc/ant/api/",
-                "http://commons.apache.org/proper/commons-cli/javadocs/api-release", "http://junit.org/javadoc/latest/",
-                "http://docs.oracle.com/javaee/6/api/", "http://www.antlr2.org/javadoc")
+        links('http://docs.oracle.com/javase/7/docs/api/', 'http://evgeny-goldin.org/javadoc/ant/api/',
+                'http://commons.apache.org/proper/commons-cli/javadocs/api-release', 'http://junit.org/javadoc/latest/',
+                'http://docs.oracle.com/javaee/6/api/', 'http://www.antlr2.org/javadoc')
     }
 }
 
@@ -37,14 +37,14 @@ def groovydocSpec = {
     ext.doctitle = doc.title
     header = doc.title
     footer = doc.footer
-    overview = rootProject.file("src/main/overview.html")
+    overview = rootProject.file('src/main/overview.html')
     includePrivate = false
-    link "http://docs.oracle.com/javaee/6/api/", "javax.servlet.", "javax.management."
-    link "http://docs.oracle.com/javase/7/docs/api/", "java.", "org.xml.", "javax.", "org.w3c."
-    link "http://evgeny-goldin.org/javadoc/ant/api/", "org.apache.ant.", "org.apache.tools.ant."
-    link "http://junit.org/javadoc/latest/", "org.junit.", "junit."
-    link "http://www.antlr2.org/javadoc", "antlr."
-    link "http://commons.apache.org/proper/commons-cli/javadocs/api-release", "org.apache.commons.cli."
+    link 'http://docs.oracle.com/javaee/6/api/', 'javax.servlet.', 'javax.management.'
+    link 'http://docs.oracle.com/javase/7/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
+    link 'http://evgeny-goldin.org/javadoc/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
+    link 'http://junit.org/javadoc/latest/', 'org.junit.', 'junit.'
+    link 'http://www.antlr2.org/javadoc', 'antlr.'
+    link 'http://commons.apache.org/proper/commons-cli/javadocs/api-release', 'org.apache.commons.cli.'
 }
 
 allprojects {
@@ -57,9 +57,9 @@ allprojects {
 }
 
 // Root project has an extra 'all' javadoc task
-task javadocAll(type:Javadoc) << javadocSpec
+task javadocAll(type: Javadoc) << javadocSpec
 javadocAll {
-    destinationDir = new File(buildDir,'alljavadoc')
+    destinationDir = new File(buildDir, 'alljavadoc')
     source = javadoc.source
     classpath = javadoc.classpath
     subprojects.each { sp ->
@@ -69,11 +69,11 @@ javadocAll {
 }
 
 // Root project has an extra 'all' groovydoc task
-task groovydocAll(type:Groovydoc) << groovydocSpec
+task groovydocAll(type: Groovydoc) << groovydocSpec
 groovydocAll {
     dependsOn( { project(':groovy-groovydoc').classes })
     dependsOn( { project(':groovy-docgenerator').classes })
-    destinationDir = new File(buildDir,'allgroovydoc')
+    destinationDir = new File(buildDir, 'allgroovydoc')
     source = groovydoc.source
     classpath = groovydoc.classpath
     groovyClasspath = groovydoc.groovyClasspath
@@ -106,43 +106,45 @@ task docGDK {
     ext.destinationDir = "$buildDir/html/groovy-jdk"
     inputs.files sourceSets.tools.runtimeClasspath
     outputs.dir destinationDir
-    doLast {task ->
+    doLast { task ->
         try {
             ant {
-                java(classname: "org.codehaus.groovy.tools.DocGenerator", fork: "true", failonerror: "true",
-                        classpath: (configurations.tools + groovydocAll.groovyClasspath).asPath,
-                        errorproperty: 'edr',
-                        outputproperty: 'odr') {
+                java(classname: 'org.codehaus.groovy.tools.DocGenerator',
+                     fork: 'true',
+                     failonerror: 'true',
+                     classpath: (configurations.tools + groovydocAll.groovyClasspath).asPath,
+                     errorproperty: 'edr',
+                     outputproperty: 'odr') {
                     // either package name if in core or fully qualified path otherwise
-                    arg(value: "org.codehaus.groovy.runtime.DefaultGroovyMethods")
-                    arg(value: "org.codehaus.groovy.runtime.DefaultGroovyStaticMethods")
-                    arg(value: "org.codehaus.groovy.runtime.DateGroovyMethods")
-                    arg(value: "org.codehaus.groovy.runtime.EncodingGroovyMethods")
-                    arg(value: "org.codehaus.groovy.runtime.IOGroovyMethods")
-                    arg(value: "org.codehaus.groovy.runtime.ProcessGroovyMethods")
-                    arg(value: "org.codehaus.groovy.runtime.ResourceGroovyMethods")
-                    arg(value: "org.codehaus.groovy.runtime.SocketGroovyMethods")
-                    arg(value: "org.codehaus.groovy.runtime.StringGroovyMethods")
-                    arg(value: "org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods")
-                    arg(value: "org.codehaus.groovy.vmplugin.v6.PluginDefaultGroovyMethods")
-                    arg(value: "org.codehaus.groovy.vmplugin.v6.PluginStaticGroovyMethods")
+                    arg(value: 'org.codehaus.groovy.runtime.DefaultGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.runtime.DefaultGroovyStaticMethods')
+                    arg(value: 'org.codehaus.groovy.runtime.DateGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.runtime.EncodingGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.runtime.IOGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.runtime.ProcessGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.runtime.ResourceGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.runtime.SocketGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.runtime.StringGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.vmplugin.v6.PluginDefaultGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.vmplugin.v6.PluginStaticGroovyMethods')
                     // TODO don't hard-code these
-                    arg(value: "subprojects/groovy-sql/src/main/java/org/codehaus/groovy/runtime/SqlGroovyMethods.java")
-                    arg(value: "subprojects/groovy-swing/src/main/java/org/codehaus/groovy/runtime/SwingGroovyMethods.java")
-                    arg(value: "subprojects/groovy-xml/src/main/java/org/codehaus/groovy/runtime/XmlGroovyMethods.java")
+                    arg(value: 'subprojects/groovy-sql/src/main/java/org/codehaus/groovy/runtime/SqlGroovyMethods.java')
+                    arg(value: 'subprojects/groovy-swing/src/main/java/org/codehaus/groovy/runtime/SwingGroovyMethods.java')
+                    arg(value: 'subprojects/groovy-xml/src/main/java/org/codehaus/groovy/runtime/XmlGroovyMethods.java')
                 }
             }
         } finally {
             if (ant.properties.odr) {
-                logger.info "Out: " + ant.properties.odr
+                logger.info 'Out: ' + ant.properties.odr
             }
             if (ant.properties.edr) {
-                logger.error "Err: " + ant.properties.edr
+                logger.error 'Err: ' + ant.properties.edr
             }
         }
         copy {
             into task.destinationDir
-            from "src/tools/org/codehaus/groovy/tools/groovy.ico", "src/tools/org/codehaus/groovy/tools/stylesheet.css"
+            from 'src/tools/org/codehaus/groovy/tools/groovy.ico', 'src/tools/org/codehaus/groovy/tools/stylesheet.css'
         }
     }
 }

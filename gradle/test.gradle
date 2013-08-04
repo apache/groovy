@@ -1,23 +1,23 @@
 test {
-    jvmArgs "-ea", "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}"
+    jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}"
     def headless = System.properties['java.awt.headless']
     if (headless == 'true') {
-        systemProperties 'java.awt.headless': "true"
+        systemProperties 'java.awt.headless': 'true'
     }
     def testdb = System.properties['groovy.testdb.props']
     if (testdb) {
         systemProperties 'groovy.testdb.props': testdb
     }
-    systemProperties 'apple.awt.UIElement': "true", "javadocAssertion.src.dir": './src/main'
-    systemProperties "gradle.home": gradle.gradleHomeDir // this is needed by the security.policy
+    systemProperties 'apple.awt.UIElement': 'true', 'javadocAssertion.src.dir': './src/main'
+    systemProperties 'gradle.home': gradle.gradleHomeDir // this is needed by the security.policy
     if (rootProject.hasProperty('indy') && (Boolean.valueOf(rootProject.indy))) {
-        println "adding indy target"
-        systemProperties "groovy.target.indy": true
+        println 'adding indy target'
+        systemProperties 'groovy.target.indy': true
     }
     doFirst {
         // this is needed by the security.policy. We set it at execution time to avoid resolving a configuration when not needed.
 // temp hack
-//        systemProperties "gradle.junit": configurations.testCompile.fileCollection { dep -> dep.name == 'junit' }.singleFile.absolutePath
+//        systemProperties 'gradle.junit': configurations.testCompile.fileCollection { dep -> dep.name == 'junit' }.singleFile.absolutePath
     }
     classpath = files('src/test') + classpath
 //    forkEvery = 10
@@ -37,12 +37,12 @@ boolean isRunningOnCI() {
     new File('.').absolutePath.contains('ci.codehaus.org')
 }
 
-logger.lifecycle "Detected ${isRunningOnCI()?'Continuous Integration environment':'development environment'}"
+logger.lifecycle "Detected ${isRunningOnCI() ? 'Continuous Integration environment' : 'development environment'}"
 
 allprojects {
     test {
-        forkEvery = isRunningOnCI()?50:200
-        maxParallelForks = isRunningOnCI()?1:Runtime.runtime.availableProcessors()
+        forkEvery = isRunningOnCI() ? 50 : 200
+        maxParallelForks = isRunningOnCI() ? 1 : Runtime.runtime.availableProcessors()
         testLogging {
             exceptionFormat = 'full'
         }
@@ -51,13 +51,13 @@ allprojects {
     sourceSets {
         test {
             groovy {
-                srcDirs += "src/spec/test"
+                srcDirs += 'src/spec/test'
             }
         }
     }
 }
-tasks.addRule("Pattern: testSingle<Name> will test **/<Name>.class") {String taskName ->
-    if (taskName.startsWith("testSingle")) {
+tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String taskName ->
+    if (taskName.startsWith('testSingle')) {
         tasks.add(taskName).dependsOn(test)
         test.includes = ['**/' + taskName.substring(10) + '.class']
         test.outputs.upToDateWhen { false }
@@ -65,29 +65,30 @@ tasks.addRule("Pattern: testSingle<Name> will test **/<Name>.class") {String tas
 }
 
 def getIncludePattern() {
-    def baseInclude = ['UberTestCaseBugs.class',
-            'UberTestCaseGroovySourceCodehausPackages.class',
-            'UberTestCaseGroovySourceRootPackage.class',
-            "UberTestCaseGroovySourceSubPackages.class",
-            "UberTestCaseJavaSourceCodehausPackages.class",
-            "UberTestCaseJavaSourceGroovyPackagesNonSecurity.class",
-            "UberTestCaseTCK.class"
-            // temporarily disable security test suite, see GRADLE-2170
-            //,"UberTestCaseJavaSourceGroovyPackagesSecurity.class"
+    def baseInclude = [
+        'UberTestCaseBugs.class',
+        'UberTestCaseGroovySourceCodehausPackages.class',
+        'UberTestCaseGroovySourceRootPackage.class',
+        'UberTestCaseGroovySourceSubPackages.class',
+        'UberTestCaseJavaSourceCodehausPackages.class',
+        'UberTestCaseJavaSourceGroovyPackagesNonSecurity.class',
+        'UberTestCaseTCK.class',
+        // temporarily disable security test suite, see GRADLE-2170
+        // 'UberTestCaseJavaSourceGroovyPackagesSecurity.class'
     ]
     if (System.properties['junit.network']) {
         baseInclude += ['groovy/grape/*Test.class']    
     }
     if (!isJava15()) {
         baseInclude += [
-                "UberTestCaseGroovySourceSubPackages_VM6.class",
-                "UberTestCaseGroovySourceCodehausPackages_VM6.class"
+            'UberTestCaseGroovySourceSubPackages_VM6.class',
+            'UberTestCaseGroovySourceCodehausPackages_VM6.class'
         ]
     }
     if (rootProject.hasProperty('indy') && (Boolean.valueOf(rootProject.indy))) {
-        println "adding indy include"
+        println 'adding indy include'
         baseInclude += [
-            "UberTestCaseIndy.class"
+            'UberTestCaseIndy.class'
         ]
     }
     baseInclude

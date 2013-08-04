@@ -2,7 +2,7 @@ dependencies {
     compile rootProject
     groovy rootProject
     testCompile rootProject.sourceSets.test.runtimeClasspath
-    testCompile "xmlunit:xmlunit:1.3"
+    testCompile 'xmlunit:xmlunit:1.3'
     testCompile project(':groovy-test')
 }
 
@@ -10,7 +10,7 @@ sourceSets {
     test {
         groovy {
             if (isJava15()) {
-                exclude "**/vm6/*Test.groovy"
+                exclude '**/vm6/*Test.groovy'
             }
         }
     }

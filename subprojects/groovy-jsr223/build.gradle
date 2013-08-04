@@ -9,7 +9,7 @@ ext.scriptingCapable = {
 
 dependencies {
     if (!scriptingCapable()) {
-        compile("org.livetribe:livetribe-jsr223:2.0.6") { dep ->
+        compile('org.livetribe:livetribe-jsr223:2.0.6') { dep ->
             provided dep
         }
     }
