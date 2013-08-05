@@ -13,11 +13,11 @@ include::core-introduction.adoc[]
 
 :leveloffset: 2
 include::core-syntax.adoc[]
-include::core-semantics.adoc[]
 include::core-operators.adoc[]
 include::core-program-structure.adoc[]
 include::core-object-orientation.adoc[]
 include::core-closures.adoc[]
+include::core-semantics.adoc[]
 :leveloffset: 0
 
 == Tools
