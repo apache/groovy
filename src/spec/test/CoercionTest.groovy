@@ -304,6 +304,13 @@ try {
 } catch (MissingMethodException e) {
     println "Caught exception"
 }
+try {
+// tag::call_notimplemented_method[]
+    x.g(5) // UnsupportedOperationException here
+// end::call_notimplemented_method[]
+} catch (UnsupportedOperationException e) {
+    println "Caught exception"
+}
 '''
     }
 

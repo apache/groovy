@@ -140,7 +140,8 @@ include::../test/CoercionTest.groovy[tags=coerce_map_to_iterator,indent=0]
 ----
 
 Of course this example rather contrived example, but illustrates the concept. You only need to implement those methods
-that are actually called, but if a method is called that doesn't exist in the map a `MissingMethodException` is thrown,
+that are actually called, but if a method is called that doesn't exist in the map a `MissingMethodException` or an
+`UnsupportedOperationException` is thrown, depending on the arguments passed to the call,
 as in the following example:
 
 [source,groovy]
@@ -148,7 +149,13 @@ as in the following example:
 include::../test/CoercionTest.groovy[tags=define_x_interface,indent=0]
 include::../test/CoercionTest.groovy[tags=call_existing_method,indent=0]
 include::../test/CoercionTest.groovy[tags=call_non_existing_method,indent=0]
+include::../test/CoercionTest.groovy[tags=call_notimplemented_method,indent=0]
 ----
+
+The type of the exception depends on the call itself:
+
+* `MissingMethodException` if the arguments of the call do not match those from the interface/class
+* `UnsupportedOperationException` if the arguments of the call match one of the overloaded methods of the interface/class
 
 === String to enum coercion
 
