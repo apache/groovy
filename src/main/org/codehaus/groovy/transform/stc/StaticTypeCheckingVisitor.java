@@ -955,11 +955,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
 
                     FieldNode field = current.getDeclaredField(propertyName);
-                    field  = nullIfStaticOnlyAndNotStatic(field, staticOnly);
+                    field  = allowStaticAccessToMember(field, staticOnly);
                     if (storeField(field, isAttributeExpression, pexp, objectExpressionType, visitor)) return true;
 
                     PropertyNode propertyNode = current.getProperty(propertyName);
-                    propertyNode = nullIfStaticOnlyAndNotStatic(propertyNode, staticOnly);
+                    propertyNode = allowStaticAccessToMember(propertyNode, staticOnly);
                     if (storeProperty(propertyNode, pexp, objectExpressionType, visitor)) return true;
 
                     boolean isThisExpression = objectExpression instanceof VariableExpression && 
@@ -967,11 +967,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (storeField(field, isThisExpression, pexp, objectExpressionType, visitor)) return true;
 
                     MethodNode getter = current.getGetterMethod("get" + capName);
-                    getter = nullIfStaticOnlyAndNotStatic(getter, staticOnly);
+                    getter = allowStaticAccessToMember(getter, staticOnly);
                     if (getter == null) getter = current.getGetterMethod("is" + capName);
-                    getter = nullIfStaticOnlyAndNotStatic(getter, staticOnly);
+                    getter = allowStaticAccessToMember(getter, staticOnly);
                     MethodNode setter = current.getSetterMethod("set" + capName, false);
-                    setter = nullIfStaticOnlyAndNotStatic(setter, staticOnly);
+                    setter = allowStaticAccessToMember(setter, staticOnly);
 
                     // TODO: remove this visit
                     // need to visit even if we only look for a setter for compatibility
@@ -1062,7 +1062,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return foundGetterOrSetter;
     }
 
-    private <T> T nullIfStaticOnlyAndNotStatic(T member, boolean staticOnly) {
+    /**
+     * This method is used to filter search results in which null means "no match",
+     * to filter out illegal access to instance members from a static context. 
+     * 
+     * Return null if the given member is not static, but we want to access in
+     * a static way (staticOnly=true). If we want to access in a non-static way
+     * we always return the member, since then access to static members and 
+     * non-static members is allowed. 
+     */
+    private <T> T allowStaticAccessToMember(T member, boolean staticOnly) {
         if (member == null) return null;
         if (!staticOnly) return member;
         boolean isStatic = false;
