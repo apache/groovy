@@ -8,6 +8,296 @@
 == Script base classes
 == Adding properties to numbers
 == @DelegatesTo
+
+[[TheDelegatesToannotation-DSLsmadeeasy]]
+=== Explaining delegation strategy at compile time
+
+`@groovy.lang.DelegatesTo` is a documentation and compile-time annotation aimed at:
+
+ * documenting APIs that use closures as arguments
+ * providing type information for the static type checker and compiler
+
+The Groovy language is a platform of choice for building DSLs. Using
+closures, it’s quite easy to create custom control structures, as well
+as it is simple to create builders. Imagine that you have the following
+code:
+
+[source,groovy]
+---------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
+---------------------------------------
+
+One way of implementing this is using the builder strategy, which
+implies a method, named `email` which accepts a closure as an argument.
+The method may delegate subsequent calls to an object that implements
+the `from`, `to`, `subject` and `body` methods. Again, `body` is a
+method which accepts a closure as an argument and that uses the builder
+strategy.
+
+Implementing such a builder is usually done the following way:
+
+[source,groovy]
+----------------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=email_method_no_delegatesto,indent=0]
+----------------------------------------------
+
+the `EmailSpec` class implements the `from`, `to`, … methods. By
+calling `rehydrate`, we’re creating a copy of the closure for which we
+set the `delegate`, `owner` and `thisObject` values. Setting the owner
+and the `this` object is not very important here since we will use the
+`DELEGATE_ONLY` strategy which says that the method calls will be
+resolved only against the delegate of the closure.
+
+[source,groovy]
+----------------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=emailspec_no_delegatesto,indent=0]
+----------------------------------------------
+
+The `EmailSpec` class has itself a `body` method accepting a closure that is cloned and executed. This is what
+we call the builder pattern in Groovy.
+
+One of the problems with the code that we’ve shown is that the user of
+the `email` method doesn’t have any information about the methods that
+he’s allowed to call inside the closure. The only possible information
+is from the method documentation. There are two issues with this: first
+of all, documentation is not always written, and if it is, it’s not
+always available (javadoc not downloaded, for example). Second, it
+doesn’t help IDEs. What would be really interesting, here, is for IDEs
+to help the developper by suggesting, once they are in the closure body,
+methods that exist on the `email` class.
+
+Moreover, if the user calls a method in the closure which is not defined
+by the `EmailSpec` class, the IDE should at least issue a warning (because
+it’s very likely that it will break at runtime).
+
+One more problem with the code above is that it is not compatible with static type checking. Type checking would let
+the user know if a method call is authorized at compile time instead of runtime, but if you try to perform type
+checking on this code:
+
+[source,groovy]
+---------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
+---------------------------------------
+
+Then the type checker will know that there’s an `email` method accepting
+a `Closure`, but it will complain for every method call *inside* the
+closure, because `from`, for example, is not a method which is defined
+in the class. Indeed, it’s defined in the `EmailSpec` class and it has
+absolutely no hint to help it knowing that the closure delegate will, at
+runtime, be of type `EmailSpec`:
+
+[source,groovy]
+---------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_nodelegatesto,indent=0]
+---------------------------------------
+
+will fail compilation with errors like this one:
+
+----
+[Static type checking] - Cannot find matching method MyScript#from(java.lang.String). Please check if the declared type is right and if the method exists.
+ @ line 31, column 21.
+                       from 'dsl-guru@mycompany.com'
+----
+
+[[TheDelegatesToannotation-DelegatesTo]]
+=== @DelegatesTo
+
+For those reasons, Groovy 2.1 introduced a new annotation
+named `@DelegatesTo`. The goal of this annotation is to solve both the
+documentation issue, that will let your IDE know about the expected
+methods in the closure body, and it will also solve the type checking
+issue, by giving hints to the compiler about what are the potential
+receivers of method calls in the closure body.
+
+The idea is to annotate the `Closure` parameter of the `email` method:
+
+[source,groovy]
+---------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto,indent=0]
+---------------------------------------
+
+What we’ve done here is telling the compiler (or the IDE) that when the
+method will be called with a closure, the delegate of this closure will
+be set to an object of type `email`. But there is still a problem: the
+defaut delegation strategy is not the one which is used in our method.
+So we will give more information and tell the compiler (or the IDE) that
+the delegation strategy is also changed:
+
+[source,groovy]
+---------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto_strategy,indent=0]
+---------------------------------------
+
+Now, both the IDE and the type checker (if you are using `@TypeChecked`)
+will be aware of the delegate and the delegation strategy. This is very
+nice because it will both allow the IDE to provide smart completion, but
+it will also remove errors at compile time that exist only because the
+behaviour of the program is normally only known at runtime!
+
+The following code will now pass compilation:
+
+[source,groovy]
+---------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_pass,indent=0]
+---------------------------------------
+
+[[TheDelegatesToannotation-DelegatesTomodes]]
+=== DelegatesTo modes
+
+`@DelegatesTo` supports multiple modes that we will describe with examples
+in this section.
+
+[[TheDelegatesToannotation-Simpledelegation]]
+==== Simple delegation
+
+In this mode, the only mandatory parameter is the _value_ which says to
+which class we delegate calls. Nothing more. We’re telling the compiler
+that the type of the delegate will *always* be of the type documented
+by `@DelegatesTo` (note that it can be a subclass, but if it is, the
+methods defined by the subclass will not be visible to the type
+checker).
+
+[source,groovy]
+-----------------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=simple_delegation,indent=0]
+-----------------------------------------------
+
+[[TheDelegatesToannotation-Delegationstrategy]]
+==== Delegation strategy
+
+In this mode, you must specify both the delegate class *and* a
+delegation strategy. This must be used if the closure will not be called
+with the default delegation strategy, which is `Closure.OWNER_FIRST`.
+
+[source,groovy]
+----------------------------------------------------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=delegation_with_strategy,indent=0]
+----------------------------------------------------------------------------------
+
+[[TheDelegatesToannotation-Delegatetoparameter]]
+==== Delegate to parameter
+
+In this variant, we will tell the compiler that we are delegating to
+another parameter of the method. Take the following code:
+
+[source,groovy]
+-------------------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=exec_method_no_delegatesto,indent=0]
+-------------------------------------------------
+
+Here, the delegate which will be used is *not* created inside the `exec`
+method. In fact, we take an argument of the method and delegate to it.
+Usage may look like this:
+
+[source,groovy]
+-----------------------
+include::../test/DelegatesToSpecTest.groovy[tags=exec_usage,indent=0]
+-----------------------
+
+Each of the method calls are delegated to the `email` parameter. This is
+a widely used pattern which is also supported by `@DelegatesTo` using a
+companion annotation:
+
+[source,groovy]
+---------------------------------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=exec_method_with_delegatesto,indent=0]
+---------------------------------------------------------------
+
+A closure is annotated with `@DelegatesTo`, but this time, without
+specifying any class. Instead, we’re annotating another parameter
+with `@DelegatesTo.Target`. The type of the delegate is then determined
+at compile time. One could think that we are using the parameter type,
+which in this case is `Object` but this is not true. Take this code:
+
+[source,groovy]
+--------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_header,indent=0]
+include::../test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_footer,indent=0]
+--------------------------------------
+
+Remember that this works out of the box *without* having to annotate
+with `@DelegatesTo`. However, to make the IDE aware of the delegate
+type, or the *type checker* aware of it, we need to add `@DelegatesTo`.
+And in this case, it will now that the `Greeter` variable is of
+type `Greeter`, so it will not report errors on the _sayHello_
+method *even if the exec method doesn’t explicitely define the target as
+of type Greeter*. This is a very powerful feature, because it prevents
+you from writing multiple versions of the same `exec` method for
+different receiver types!
+
+In this mode, the `@DelegatesTo` annotation also supports the `strategy`
+parameter that we’ve described upper.
+
+[[TheDelegatesToannotation-Multipleclosures]]
+==== Multiple closures
+
+In the previous example, the `exec` method accepted only one closure,
+but you may have methods that take multiple closures:
+
+[source,groovy]
+--------------------------------------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_no_delegatesto,indent=0]
+--------------------------------------------------------------------
+
+Then nothing prevents you from annotating each closure
+with `@DelegatesTo`:
+
+[source,groovy]
+--------------------------------------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=foobarbaz_classes,indent=0]
+
+include::../test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_header,indent=0]
+   ...
+include::../test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_footer,indent=0]
+--------------------------------------------------------------------
+
+But more importantly, if you have multiple closures *and* multiple
+arguments, you can use several targets:
+
+[source,groovy]
+-----------------------------------------------------------------------------
+include::../test/DelegatesToSpecTest.groovy[tags=foobarbaz_multitarget,indent=0]
+
+include::../test/DelegatesToSpecTest.groovy[tags=multitarget_test,indent=0]
+-----------------------------------------------------------------------------
+
+NOTE: At this point, you may wonder why we don’t use the parameter names as
+references. The reason is that the information (the parameter name) is
+not always available (it’s a debug-only information), so it’s a
+limitation of the JVM.
+
+==== Delegating to a generic type
+
+In some situations, it is interesting to instruct the IDE or the compiler that the delegate type will not be a parameter
+but a generic type. Imagine a configurator that runs on a list of elements:
+
+[source,groovy]
+----
+include::../test/DelegatesToSpecTest.groovy[tags=configure_list_method,indent=0]
+----
+
+Then this method can be called with any list like this:
+
+[source,groovy]
+----
+include::../test/DelegatesToSpecTest.groovy[tags=configure_list_usage,indent=0]
+----
+
+To let the type checker and the IDE know that the `configure` method calls the closure on each element of the list, you
+ need to use `@DelegatesTo` differently:
+
+[source,groovy]
+----
+include::../test/DelegatesToSpecTest.groovy[tags=configure_list_with_delegatesto,indent=0]
+----
+
+`@DelegatesTo` takes an optional `genericTypeIndex` argument that tells what is the index of the generic type that will
+be used as the delegate type. This *must* be used in conjunction with `@DelegatesTo.Target` and the index starts at 0. In
+the example above, that means that the delegate type is resolved against `List<T>`, and since the generic type at index
+0 is `T` and inferred as a `Realm`, the type checker infers that the delegate type will be of type `Realm`.
+
+NOTE: We're using a `genericTypeIndex` instead of a placeholder (`T`) because of JVM limitations.
+
 == Compilation customizers
 === Import customizer
 === AST customizer
