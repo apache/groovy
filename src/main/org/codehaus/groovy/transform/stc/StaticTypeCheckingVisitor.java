@@ -994,7 +994,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             storeType(pexp, setter.getParameters()[0].getType());
                             SetterInfo info = new SetterInfo(current, setter);
                             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
-                            putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
+                            if (enclosingBinaryExpression!=null) putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
                             return true;
                         } else if (getter!=null) {
                             pexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, true);
