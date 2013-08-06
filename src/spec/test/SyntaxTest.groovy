@@ -45,7 +45,7 @@ class SyntaxTest extends CompilableTestSupport {
         assert xDouble == 1.0d
 
         int xNegativeInt = -0x77
-        assert xNegativeInt == -179
+        assert xNegativeInt == -119
         // end::hexadecimal_literal_example[]
     }
 
