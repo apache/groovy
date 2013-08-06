@@ -134,7 +134,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             foo.with {
                 name = 'Error'
             }
-        ''', 'The variable [name] is undeclared.' // todo: can we provide a better error message ?
+        ''', 'Cannot set read-only property: name'
     }
 
     void testFindMethodFromSameClass() {
