@@ -1290,6 +1290,29 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Impl impl = new Impl()
             Integer i = impl.value
         """
+        
+        // GROOVY-5920
+        assertScript """
+            class Data<T> {
+              T value
+            }
+
+            class StringDataIterator implements Iterator<Data<String>> {
+              boolean hasNext() { true }
+              void    remove()  {}
+              Data<String> next() {
+                new Data<String>( value: 'tim' )
+              }
+            }
+
+            class Runner {
+              static main( args ) {
+                Data<String> elem = new StringDataIterator().next()
+                assert elem.value.length() == 3
+              }
+            }
+            Runner.main(null);
+        """
     }
     
     static class MyList extends LinkedList<String> {}
