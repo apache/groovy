@@ -525,3 +525,7 @@ allprojects {
         coverageReportDir = file("$buildDir/reports/cobertura")
     }
 }
+
+wrapper {
+    gradleVersion = '1.7'
+}
