@@ -17,7 +17,7 @@ package gls
 
 import org.codehaus.groovy.control.CompilationFailedException
 
-public class CompilableTestSupport extends GroovyTestCase {
+public abstract class CompilableTestSupport extends GroovyTestCase {
     protected shouldNotCompile(String script) {
         try {
             GroovyClassLoader gcl = new GroovyClassLoader()

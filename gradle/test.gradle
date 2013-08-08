@@ -14,18 +14,12 @@ test {
         println 'adding indy target'
         systemProperties 'groovy.target.indy': true
     }
-    doFirst {
-        // this is needed by the security.policy. We set it at execution time to avoid resolving a configuration when not needed.
-// temp hack
-//        systemProperties 'gradle.junit': configurations.testCompile.fileCollection { dep -> dep.name == 'junit' }.singleFile.absolutePath
-    }
     classpath = files('src/test') + classpath
-//    forkEvery = 10
-//    maxParallelForks = Runtime.runtime.availableProcessors()
-    scanForTestClasses = false
+    scanForTestClasses = true
     ignoreFailures = false
     ext.resultText = ''
-    includes = getIncludePattern()
+    excludes = getExcludesPattern()
+//    includes = getIncludePattern()
     doLast {
         ant.delete {
             fileset(dir: '.', includes: '*.class')
@@ -41,8 +35,13 @@ logger.lifecycle "Detected ${isRunningOnCI() ? 'Continuous Integration environme
 
 allprojects {
     test {
-        forkEvery = isRunningOnCI() ? 50 : 200
+//        forkEvery = isRunningOnCI() ? 50 : 200
+        forkEvery = 50
         maxParallelForks = isRunningOnCI() ? 1 : Runtime.runtime.availableProcessors()
+//        maxParallelForks = 1
+        beforeTest { descriptor ->
+            logger.lifecycle("Running test: " + descriptor)
+        }
         testLogging {
             exceptionFormat = 'full'
         }
@@ -64,6 +63,26 @@ tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String ta
     }
 }
 
+def getExcludesPattern() {
+    def list = [
+        // groovy core and groovy test classes that shouldn't be considered as tests
+        '**/GroovyTestCase*', '**/TestSupport*', '**/DummyTestDerivation*',
+
+        // temporarily disable security test suite, see GRADLE-2170
+        'groovy/security/SecurityTest.class'
+    ]
+    if (isJava15()) {
+        list << '**/*VM6*'
+    }
+    if (!rootProject.useIndy()) {
+        list += ['**/indy/*', '*Indy*']
+    }
+    logger.lifecycle("Excluding ${list}")
+
+    list
+}
+
+/*
 def getIncludePattern() {
     def baseInclude = [
         'UberTestCaseBugs.class',
@@ -77,7 +96,8 @@ def getIncludePattern() {
         // 'UberTestCaseJavaSourceGroovyPackagesSecurity.class'
     ]
     if (System.properties['junit.network']) {
-        baseInclude += ['groovy/grape/*Test.class']    
+        baseInclude += ['groovy/grape*/
+/*Test.class']
     }
     if (!isJava15()) {
         baseInclude += [
@@ -93,3 +113,4 @@ def getIncludePattern() {
     }
     baseInclude
 }
+*/
