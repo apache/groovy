@@ -125,6 +125,13 @@ public class JavaStubGenerator {
         }
         try {
             Verifier verifier = new Verifier() {
+                @Override
+                public void visitClass(final ClassNode node) {
+                    List<Statement> savedStatements = new ArrayList<Statement>(node.getObjectInitializerStatements());
+                    super.visitClass(node);
+                    node.getObjectInitializerStatements().addAll(savedStatements);
+                }
+
                 public void addCovariantMethods(ClassNode cn) {}
                 protected void addTimeStamp(ClassNode node) {}
                 protected void addInitialization(ClassNode node) {}
