@@ -7,7 +7,7 @@
  */
 package groovy.bugs
 
-class Groovy2365Base extends GroovyTestCase {
+abstract class Groovy2365Base extends GroovyTestCase {
 
     protected String createData () {
 
