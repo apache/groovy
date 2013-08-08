@@ -115,6 +115,10 @@ import java.lang.annotation.Target;
  * {@code java.util.Date} is treated as "effectively immutable" but is not final so it isn't strictly immutable.
  * Use at your own risk.
  * </li>
+ * <li>
+ * Groovy's normal map-style naming conventions will not be available if the first property
+ * has type {@code LinkedHashMap} or if there is a single Map, AbstractMap or HashMap property.
+ * </li>
  * </ul>
  *
  * @author Paul King

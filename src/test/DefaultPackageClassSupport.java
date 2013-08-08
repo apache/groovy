@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import junit.framework.TestCase;
-import junit.framework.Test;
 
-/**
- * Collecting all security-related Unit Tests under groovy package, written in Java.
- *
- * @author Christian Stein
- * @author Dierk Koenig
- */
-public class UberTestCaseJavaSourceGroovyPackagesNonSecurity extends TestCase {
-    public static Test suite() {
-        return JavaSourceGroovyPackagesNonSecuritySuite.suite();
-    }
+import groovy.util.GroovyTestCase;
+
+public abstract class DefaultPackageClassSupport extends GroovyTestCase {
 }

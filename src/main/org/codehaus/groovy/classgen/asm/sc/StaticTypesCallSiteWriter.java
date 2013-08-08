@@ -534,67 +534,72 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             } else if ("power".equals(message)) {
                 writePowerCall(receiver, arguments, rType, aType);
                 return;
+            } else if ("mod".equals(message)) {
+                writeModCall(receiver, arguments, rType, aType);
+                return;
             }
         } else if (STRING_TYPE.equals(rType) && "plus".equals(message)) {
             writeStringPlusCall(receiver, message, arguments);
             return;
-        } else if (rType.isArray() && "getAt".equals(message) && getWrapper(aType).isDerivedFrom(Number_TYPE)) {
-            writeArrayGet(receiver, arguments, rType, aType);
-            return;
-        }
-
-        // check if a getAt method can be found on the receiver
-        ClassNode current = rType;
-        MethodNode getAtNode = null;
-        while (current!=null && getAtNode==null) {
-            getAtNode = current.getMethod("getAt", new Parameter[]{new Parameter(aType, "index")});
-            current = current.getSuperClass();
-        }
-        if (getAtNode!=null) {
-            MethodCallExpression call = new MethodCallExpression(
-                    receiver,
-                    "getAt",
-                    arguments
-            );
-            call.setSourcePosition(arguments);
-            call.setImplicitThis(false);
-            call.setMethodTarget(getAtNode);
-            call.visit(controller.getAcg());
-            return;
-        }
-
-        // make sure Map#getAt() and List#getAt handled with the bracket syntax are properly compiled
-        ClassNode[] args = {aType};
-        boolean acceptAnyMethod =
-                MAP_TYPE.equals(rType) || rType.implementsInterface(MAP_TYPE)
-                || LIST_TYPE.equals(rType) || rType.implementsInterface(LIST_TYPE);
-        List<MethodNode> nodes = StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
-        nodes = StaticTypeCheckingSupport.chooseBestMethod(rType, nodes, args);
-        if (nodes.size()==1 || nodes.size()>1 && acceptAnyMethod) {
-            MethodNode methodNode = nodes.get(0);
-            MethodCallExpression call = new MethodCallExpression(
-                    receiver,
-                    message,
-                    arguments
-            );
-            call.setSourcePosition(arguments);
-            call.setImplicitThis(false);
-            call.setMethodTarget(methodNode);
-            call.visit(controller.getAcg());
-            return;
-        }
-        if (implementsInterfaceOrIsSubclassOf(rType, MAP_TYPE)) {
-            // fallback to Map#get
-            MethodCallExpression call = new MethodCallExpression(
-                    receiver,
-                    "get",
-                    arguments
-            );
-            call.setMethodTarget(MAP_GET_METHOD);
-            call.setSourcePosition(arguments);
-            call.setImplicitThis(false);
-            call.visit(controller.getAcg());
-            return;
+        } else if ("getAt".equals(message)) {
+            if (rType.isArray() && getWrapper(aType).isDerivedFrom(Number_TYPE)) {
+                writeArrayGet(receiver, arguments, rType, aType);
+                return;
+            } else {
+                // check if a getAt method can be found on the receiver
+                ClassNode current = rType;
+                MethodNode getAtNode = null;
+                while (current!=null && getAtNode==null) {
+                    getAtNode = current.getMethod("getAt", new Parameter[]{new Parameter(aType, "index")});
+                    current = current.getSuperClass();
+                }
+                if (getAtNode!=null) {
+                    MethodCallExpression call = new MethodCallExpression(
+                            receiver,
+                            "getAt",
+                            arguments
+                    );
+                    call.setSourcePosition(arguments);
+                    call.setImplicitThis(false);
+                    call.setMethodTarget(getAtNode);
+                    call.visit(controller.getAcg());
+                    return;
+                }
+        
+                // make sure Map#getAt() and List#getAt handled with the bracket syntax are properly compiled
+                ClassNode[] args = {aType};
+                boolean acceptAnyMethod =
+                        MAP_TYPE.equals(rType) || rType.implementsInterface(MAP_TYPE)
+                        || LIST_TYPE.equals(rType) || rType.implementsInterface(LIST_TYPE);
+                List<MethodNode> nodes = StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
+                nodes = StaticTypeCheckingSupport.chooseBestMethod(rType, nodes, args);
+                if (nodes.size()==1 || nodes.size()>1 && acceptAnyMethod) {
+                    MethodNode methodNode = nodes.get(0);
+                    MethodCallExpression call = new MethodCallExpression(
+                            receiver,
+                            message,
+                            arguments
+                    );
+                    call.setSourcePosition(arguments);
+                    call.setImplicitThis(false);
+                    call.setMethodTarget(methodNode);
+                    call.visit(controller.getAcg());
+                    return;
+                }
+                if (implementsInterfaceOrIsSubclassOf(rType, MAP_TYPE)) {
+                    // fallback to Map#get
+                    MethodCallExpression call = new MethodCallExpression(
+                            receiver,
+                            "get",
+                            arguments
+                    );
+                    call.setMethodTarget(MAP_GET_METHOD);
+                    call.setSourcePosition(arguments);
+                    call.setImplicitThis(false);
+                    call.visit(controller.getAcg());
+                    return;
+                }
+            }
         }
         // todo: more cases
         throw new GroovyBugError(
@@ -618,6 +623,19 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         operandStack.replace(rType.getComponentType(), m2-m1);
     }
 
+    private void writeModCall(Expression receiver, Expression arguments, ClassNode rType, ClassNode aType) {
+        prepareSiteAndReceiver(receiver, "mod", false, controller.getCompileStack().isLHS());
+        controller.getOperandStack().doGroovyCast(Number_TYPE);
+        visitBoxedArgument(arguments);
+        controller.getOperandStack().doGroovyCast(Number_TYPE);
+        MethodVisitor mv = controller.getMethodVisitor();
+        mv.visitMethodInsn(INVOKESTATIC,
+                "org/codehaus/groovy/runtime/typehandling/NumberMath",
+                "mod",
+                "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
+        controller.getOperandStack().replace(Number_TYPE, 2);
+    }
+    
     private void writePowerCall(Expression receiver, Expression arguments, final ClassNode rType, ClassNode aType) {
         OperandStack operandStack = controller.getOperandStack();
         int m1 = operandStack.getStackLength();

@@ -15,8 +15,6 @@
  */
 package groovy.transform.stc
 
-import java.util.LinkedList;
-
 import groovy.transform.NotYetImplemented
 
 /**
@@ -971,7 +969,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
         //---------------------------
 
-        List<Double> list2 = new MyList<>()
+        List<Double> list2 = new MyList()
         list2 << 0.0d
 
         //Groovyc: [Static type checking] - Cannot assign value of type java.lang.Object to variable of type java.lang.Double
@@ -1157,9 +1155,120 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             bar()
         ''', '[Static type checking] - Cannot find matching method Foo#<init>(java.lang.String, int)'
     }
+    
+    // Groovy-5742
+    void testNestedGenerics() {
+        assertScript '''
+            import static Next.*
 
-    // Groovy-6237
+            abstract class Base<A extends Base<A>> {}
+            class Done extends Base<Done> { }
+            class Next<H, T extends Base<T>> extends Base<Next<H, T>> {
+                H head; T tail
+                static Next<H, T> next(H h, T t) { new Next<H, T>(head:h, tail:t) }
+                String toString() { "Next($head, ${tail.toString()})" }
+            }
+
+            Next<Integer, Next<String, Done>> x = next(3, next("foo", new Done()))
+        '''
+    }
+
+    void testMethodLevelGenericsFromInterface() {
+        assertScript '''
+            interface A {
+                public <T> T getBean(Class<T> c)
+            }
+            interface B extends A {}
+            interface C extends B {}
+
+            void foo(C c) {
+                String s = c?.getBean("".class)
+            }
+            foo(null)
+            true
+        '''
+    }
+        
+    // Groovy-5610
+    void testMethodWithDefaultArgument() {
+        assertScript '''
+            class A{}
+            class B extends A{}
+            def foo(List<? extends A> arg, String value='default'){1}
+
+            List<B> b = new ArrayList<>()
+            assert foo(b) == 1
+            List<A> a = new ArrayList<>()
+            assert foo(a) == 1
+        '''
+
+        shouldFailWithMessages '''
+            class A{}
+            class B extends A{}
+            def foo(List<? extends A> arg, String value='default'){1}
+
+            List<Object> l = new ArrayList<>()
+            assert foo(l) == 1
+        ''',
+        'Cannot find matching method'
+    }
+    
+    void testMethodLevelGenericsForMethodCall() {
+        // Groovy-5891
+        assertScript '''
+            public <T extends List<Integer>> T foo(Class<T> type, def x) {
+                return type.cast(x)
+            }
+            def l = [1,2,3]
+            assert foo(l.class, l) == l
+        '''
+        assertScript '''
+            public <T extends Runnable> T foo(Class<T> type, def x) {
+                return type.cast(x)
+            }
+            def cl = {1}
+            assert foo(cl.class, cl) == cl
+         '''
+         assertScript '''
+            public <T extends Runnable> T foo(Class<T> type, def x) {
+                return type.cast(x) as T
+            }
+            def cl = {1}
+            assert foo(cl.class, cl) == cl
+         '''
+         //GROOVY-5885
+         assertScript '''
+            class Test {
+                public <X extends Test> X castToMe(Class<X> type, Object o) {
+                    return type.cast(o);
+                }
+            }
+            def t = new Test()
+            assert t.castToMe(Test, t)  == t
+         '''
+    }
+
+    // Groovy-5839
+    void testMethodShadowGenerics() {
+        shouldFailWithMessages '''
+            public class GoodCodeRed<T> {
+                Collection<GoodCodeRed<T>> attached = []
+                public <T> void attach(GoodCodeRed<T> toAttach) {
+                    attached.add(toAttach)
+                }
+                static void foo() {
+                    def g1 = new GoodCodeRed<Long>()
+                    def g2 = new GoodCodeRed<Integer>()
+                    g1.attach(g2);
+                }
+            }
+            GoodCodeRed.foo()
+        ''',
+        "Cannot find matching method"
+    }
+    
     void testHiddenGenerics() {
+        // Groovy-6237
         assertScript '''
             class MyList extends LinkedList<Object> {}
             List<Object> o = new MyList()
@@ -1171,6 +1280,39 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Blah> o = new MyList()
         ''',
         'Incompatible generic argument types. Cannot assign MyList to: java.util.List <Blah>'
+        
+        // Groovy-5873
+        assertScript """
+            abstract class Parent<T> {
+                public T value
+            }
+            class Impl extends Parent<Integer> {}
+            Impl impl = new Impl()
+            Integer i = impl.value
+        """
+        
+        // GROOVY-5920
+        assertScript """
+            class Data<T> {
+              T value
+            }
+
+            class StringDataIterator implements Iterator<Data<String>> {
+              boolean hasNext() { true }
+              void    remove()  {}
+              Data<String> next() {
+                new Data<String>( value: 'tim' )
+              }
+            }
+
+            class Runner {
+              static main( args ) {
+                Data<String> elem = new StringDataIterator().next()
+                assert elem.value.length() == 3
+              }
+            }
+            Runner.main(null);
+        """
     }
     
     static class MyList extends LinkedList<String> {}

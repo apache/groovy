@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,6 +101,11 @@ class GpathSyntaxTestSupport {
         assert isSlurper(root) || !unknownAttr
         assert !isSlurper(root) || unknownAttr.isEmpty()
         assert root.'empty'.text() == ''
+    }
+
+    static void checkCDataText(Closure getRoot) {
+        def root = getRoot('<root><![CDATA[A & B < C]]></root>')
+        assert root.text() == 'A & B < C'
     }
 
     static void checkFindElement(Closure getRoot) {
@@ -362,9 +367,8 @@ class GpathSyntaxTestSupport {
 
         // XmlSlurper replacements are deferred so can't check here
         if (!isSlurper(root)) {
-            assert r.name() == 'n'
-            assert r.'@type' == 'string'
-            assert r.hello.text() == 'world'
+            assert r.name() == 'c'
+            assert r.'@a1' == '4'
         }
     }
 
@@ -395,9 +399,8 @@ class GpathSyntaxTestSupport {
 
         // XmlSlurper replacements are deferred so can't check here
         if (!isSlurper(root)) {
-            assert r.name() == 'n'
-            assert r.'@type' == 'int'
-            assert r.text() == '330'
+            assert r.name() == 'c'
+            assert r.'@a1' == '4'
         }
     }
 

@@ -343,11 +343,12 @@ class ImmutableTransformTest extends GroovyShellTestCase {
                 String name
                 Date dob
                 Color favColor
+                Class helperType
             }
 
-            def p = new Person(id: UUID.randomUUID(), name: 'Fred', dob: new Date(), favColor: Color.GREEN)
-            def propClasses = [p.id, p.name, p.dob, p.favColor]*.class.name
-            assert propClasses == ['java.util.UUID', 'java.lang.String', 'java.util.Date', 'java.awt.Color']
+            def p = new Person(id: UUID.randomUUID(), name: 'Fred', dob: new Date(), favColor: Color.GREEN, helperType: StringBuffer)
+            def propClasses = [p.id, p.name, p.dob, p.favColor, p.helperType]*.class.name
+            assert propClasses == ['java.util.UUID', 'java.lang.String', 'java.util.Date', 'java.awt.Color', 'java.lang.Class']
         '''
     }
 

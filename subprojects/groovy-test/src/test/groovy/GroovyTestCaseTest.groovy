@@ -88,6 +88,6 @@ class Foo {
 
 class MyException extends RuntimeException {
     MyException(Throwable cause) {
-        super(cause);
+        super((Throwable) cause);
     }
 }

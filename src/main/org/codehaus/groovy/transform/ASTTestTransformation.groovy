@@ -1,12 +1,12 @@
 package org.codehaus.groovy.transform
 
-import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.io.ReaderSource
+import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.tools.Utilities
 import org.codehaus.groovy.control.*
 import groovy.transform.CompilationUnitAware
@@ -33,10 +33,10 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
         }
         member = annotationNode.getMember('value')
         if (member && !(member instanceof ClosureExpression)) {
-            throw new GroovyBugError("ASTTest value must be a closure")
+            throw new SyntaxException("ASTTest value must be a closure", member.getLineNumber(), member.getColumnNumber())
         }
         if (!member && !annotationNode.getNodeMetaData(ASTTestTransformation)) {
-            throw new GroovyBugError("Missing test expression at line " + annotationNode.getLineNumber())
+            throw new SyntaxException("Missing test expression", annotationNode.getLineNumber(), annotationNode.getColumnNumber())
         }
         // convert value into node metadata so that the expression doesn't mix up with other AST xforms like type checking
         annotationNode.putNodeMetaData(ASTTestTransformation, member)

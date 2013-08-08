@@ -983,5 +983,41 @@ assert it.next() == 1G
         assert swap(o1,o2) == [o2, o1]
         '''
     }
+
+    // GROOVY-5882
+    void testMod() {
+        assertScript """
+            int foo(Map<Integer, Object> markers, int i) {
+                int res = 0
+                for (e in markers.entrySet()) {
+                    res += i % e.key
+                }
+                return res
+            }
+            assert foo([(1):null,(2):null,(3):null],2)==2
+        """
+
+        assertScript """
+            int foo(Map<Integer, Object> markers, int i) {
+                int res = 0
+                for (e in markers.entrySet()) {
+                    int intKey = e.key
+                    res += i % intKey
+                }
+                return res
+            }
+            assert foo([(1):null,(2):null,(3):null],2)==2
+        """
+        assertScript """
+            int foo(Map<Integer, Object> markers, int i) {
+                int res = 0
+                for (e in markers.entrySet()) {
+                    res += i % e.key.intValue()
+                }
+                return res
+            }
+            assert foo([(1):null,(2):null,(3):null],2)==2
+        """
+    }
 }
 

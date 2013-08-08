@@ -1,7 +1,19 @@
-include 'groovy-ant', 'groovy-bsf', 'groovy-console', 'groovy-docgenerator',
-        'groovy-groovydoc', 'groovy-groovysh', 'groovy-jmx', 'groovy-json',
-        'groovy-jsr223', 'groovy-servlet', 'groovy-sql', 'groovy-swing',
-        'groovy-templates', 'groovy-test', 'groovy-testng', 'groovy-xml',
+include 'groovy-ant',
+        'groovy-bsf',
+        'groovy-console',
+        'groovy-docgenerator',
+        'groovy-groovydoc',
+        'groovy-groovysh',
+        'groovy-jmx',
+        'groovy-json',
+        'groovy-jsr223',
+        'groovy-servlet',
+        'groovy-sql',
+        'groovy-swing',
+        'groovy-templates',
+        'groovy-test',
+        'groovy-testng',
+        'groovy-xml',
         'groovy-all-tests'
         
 rootProject.children.each { prj ->

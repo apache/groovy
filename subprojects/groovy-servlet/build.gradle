@@ -1,13 +1,13 @@
 dependencies {
-    compile("javax.servlet:servlet-api:2.4") { dep ->
+    compile('javax.servlet:servlet-api:2.4') { dep ->
         provided dep
     }
-    compile("javax.servlet:jsp-api:2.0") { dep ->
+    compile('javax.servlet:jsp-api:2.0') { dep ->
         provided dep
     }
     compile project(':')
     groovy project(':')
-    testCompile "jmock:jmock:1.2.0"
+    testCompile 'jmock:jmock:1.2.0'
     // needed for MarkupBuilder
     compile project(':groovy-xml')
     // needed by TemplateServlet
