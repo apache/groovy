@@ -341,10 +341,6 @@ sourceSets {
     test {
         groovy {
             srcDirs = ['src/test']
-            if (isJava15()) {
-                exclude 'groovy/**/vm6/*Test.groovy'
-                exclude 'org/codehaus/groovy/**/vm6/*Test.groovy'
-            }
         }
         resources {
             srcDirs = ['src/test-resources']
