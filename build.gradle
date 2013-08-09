@@ -68,6 +68,14 @@ allprojects {
     if (useIndy()) {
         tasks.withType(GroovyCompile) {
             groovyOptions.optimizationOptions.indy = true
+            groovyClasspath = files(
+                    rootProject.compileJava.destinationDir,
+                    rootProject.compileJava.classpath,
+                    { project(':groovy-docgenerator').compileJava.destinationDir },
+                    { project(':groovy-groovydoc').compileJava.destinationDir },
+                    { project(':groovy-ant').compileJava.destinationDir },
+                    { project(':groovy-templates').compileJava.destinationDir },
+            )
         }
 
         compileJava.sourceCompatibility = 1.7
