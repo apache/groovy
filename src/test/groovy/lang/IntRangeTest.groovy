@@ -19,13 +19,12 @@ package groovy.lang;
  * Provides unit tests for the <code>IntRange</code> class.
  *
  * @author James Strachan
- * @version $Revision$
  */
-public class IntRangeTest extends NumberRangeTest {
+public class IntRangeTest extends GroovyTestCase {
 
     public void testCreateTooBigRange() {
         try {
-            createRange(0, Integer.MAX_VALUE);
+            new IntRange(0, Integer.MAX_VALUE);
             fail("too large range accepted");
         }
         catch (IllegalArgumentException e) {
@@ -56,17 +55,25 @@ public class IntRangeTest extends NumberRangeTest {
         assertEquals("wrong 'to'", to, range.getToInt());
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected Comparable createValue(int value) {
-        return new Integer(value);
+    void test_Step_ShouldNotOverflowForIntegerMaxValue() {
+        (Integer.MAX_VALUE..Integer.MAX_VALUE).step(1) {
+            assert it == Integer.MAX_VALUE
+        }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected Range createRange(int from, int to) {
-        return new IntRange(from, to);
+    void test_Step_ShouldNotOverflowForIntegerMinValue() {
+        (Integer.MIN_VALUE..Integer.MIN_VALUE).step(-1) {
+            assert it == Integer.MIN_VALUE
+        }
+    }
+
+    void test_Step_ShouldNotOverflowForBigSteps(){
+        (0..2000000000).step(1000000000) {
+            assert it >= 0
+        }
+
+        (0..-2000000000).step(-1000000000) {
+            assert it <= 0
+        }
     }
 }
