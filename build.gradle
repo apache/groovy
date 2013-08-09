@@ -4,12 +4,14 @@ apply from: 'gradle/indy.gradle'
 buildscript {
     repositories {
         mavenCentral()
-        mavenRepo name: 'Bintray Asciidoctor repo', url: 'http://dl.bintray.com/content/aalmiray/asciidoctor'
-        mavenRepo name: 'Bintray JCenter', url: 'http://jcenter.bintray.com'
+//        mavenRepo name: 'Bintray Asciidoctor repo', url: 'http://dl.bintray.com/content/aalmiray/asciidoctor'
+//        mavenRepo name: 'Bintray JCenter', url: 'http://jcenter.bintray.com'
+        mavenLocal()
+        mavenCentral()
     }
 
     dependencies {
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.4.1'
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.5.0-SNAPSHOT'
         classpath 'net.saliman:gradle-cobertura-plugin:1.1.2'
     }
 }
@@ -43,6 +45,7 @@ allprojects {
         apply plugin: 'asciidoctor'
 
         asciidoctor {
+            logDocuments = true
             sourceDir = project.file('src/spec/doc')
             options = [
                     attributes: ['source-highlighter':'prettify'
@@ -125,6 +128,7 @@ configurations {
     examplesCompile.extendsFrom compile
     examplesRuntime.extendsFrom examplesCompile
     antlr
+    spec
 }
 
 dependencies {
