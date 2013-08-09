@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2013 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.codehaus.groovy.ast;
 
 import java.util.ArrayList;
@@ -7,12 +22,10 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 
-
 /**
  * Tests the MethodCallExpression
  * 
  * @author <a href="mailto:martin.kempf@gmail.com">Martin Kempf</a>
- *
  */
 
 public class MethodCallExpressionTest extends ASTTest {
@@ -27,7 +40,7 @@ public class MethodCallExpressionTest extends ASTTest {
     
     private List<String> defaultScriptMethods = new ArrayList<String>();
     
-    private ClassCodeVisitorSupport MethodCallVisitor = new ClassCodeVisitorSupport() {
+    private ClassCodeVisitorSupport methodCallVisitor = new ClassCodeVisitorSupport() {
         
         public void visitMethodCallExpression(MethodCallExpression methodCall) {
             if (defaultScriptMethods.contains(methodCall.getMethodAsString())) {
@@ -52,21 +65,21 @@ public class MethodCallExpressionTest extends ASTTest {
     
     public void testIsImplicitThisOnObject() {
         ModuleNode root = getAST("string.substring(2)", Phases.SEMANTIC_ANALYSIS);
-        MethodCallVisitor.visitClass(root.getClasses().get(0));
+        methodCallVisitor.visitClass(root.getClasses().get(0));
         assertTrue(visited);
         assertFalse(isImplicitThis);
     }
     
     public void testIsImplicitThisExplicitThis() {
         ModuleNode root = getAST("this.println()", Phases.SEMANTIC_ANALYSIS);
-        MethodCallVisitor.visitClass(root.getClasses().get(0));
+        methodCallVisitor.visitClass(root.getClasses().get(0));
         assertTrue(visited);
         assertFalse(isImplicitThis);
     }
     
     public void testIsImplicitThisNoObject() {
         ModuleNode root = getAST("println()", Phases.SEMANTIC_ANALYSIS);
-        MethodCallVisitor.visitClass(root.getClasses().get(0));
+        methodCallVisitor.visitClass(root.getClasses().get(0));
         assertTrue(visited);
         assertTrue(isImplicitThis);
     }
