@@ -59,7 +59,7 @@ logger.lifecycle "Detected ${isRunningOnCI() ? 'Continuous Integration environme
 
 tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String taskName ->
     if (taskName.startsWith('testSingle')) {
-        tasks.add(taskName).dependsOn(test)
+        tasks.create(taskName).dependsOn(test)
         test.includes = ['**/' + taskName.substring(10) + '.class']
         test.outputs.upToDateWhen { false }
     }

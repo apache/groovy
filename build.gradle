@@ -65,37 +65,9 @@ allprojects {
     }
     
     if (useIndy()) {
-        def indyGroovy = {
-            options.useAnt = true
-            // todo: when Gradle includes support for "indy" option, replace this
-            // with groovyOptions.indy = true
-            groovyOptions.metaClass.optionMap = {[
-                indy: true,
-                memoryMaximumSize: '384m',
-                fork: true,
-                includeJavaRuntime: false,
-                verbose: false,
-                encoding: 'UTF-8',
-                failonerror: true,
-                stacktrace: false,
-                listfiles: false
-            ]}
-            groovyOptions.useAnt = true
-            sourceCompatibility = 1.7
-            targetCompatibility = 1.7
-            groovyClasspath = files(
-                    rootProject.compileJava.destinationDir,
-                    rootProject.compileJava.classpath,
-                    { project(':groovy-docgenerator').compileJava.destinationDir },
-                    { project(':groovy-groovydoc').compileJava.destinationDir },
-                    { project(':groovy-ant').compileJava.destinationDir },
-                    { project(':groovy-templates').compileJava.destinationDir },
-            )
+        tasks.withType(GroovyCompile) {
+            groovyOptions.optimizationOptions.indy = true
         }
-        // add tasks to compile the invokedynamic version
-
-        compileGroovy indyGroovy.clone()
-        compileTestGroovy indyGroovy.clone()
 
         compileJava.sourceCompatibility = 1.7
         compileJava.targetCompatibility = 1.7
