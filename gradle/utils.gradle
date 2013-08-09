@@ -27,7 +27,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'org.ow2.asm:asm:4.0'
+        classpath 'org.ow2.asm:asm:4.1'
     }
 }
 
