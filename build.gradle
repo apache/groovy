@@ -525,3 +525,13 @@ allprojects {
 wrapper {
     gradleVersion = '1.7'
 }
+
+// produce warning if running on 1.5 or 1.6
+if (isJava15() || isJava16()) {
+    logger.lifecycle '''
+    **************************************** WARNING **********************************************
+    ****** You are running the build with an older JDK. NEVER try to release with 1.5 or 1.6 ******
+    ****** You must use a JDK 1.7+ in order to compile all features of the language.         ******
+    ***********************************************************************************************
+'''
+}

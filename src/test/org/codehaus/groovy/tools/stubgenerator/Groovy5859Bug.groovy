@@ -19,16 +19,9 @@ package org.codehaus.groovy.tools.stubgenerator
 class Groovy5859Bug extends StringSourcesStubTestCase {
     @Override
     Map<String, String> provideSources() {
-        ['TaggedsMap.groovy': '''class TaggedsMap extends TreeMap {
+        ['TaggedsMap.groovy': '''import org.codehaus.groovy.tools.stubgenerator.Groovy5859Support
 
-    TaggedsMap() { super() }
-
-    TaggedsMap(Comparator comparator) { super(comparator)}
-
-    TaggedsMap(Map m) {
-        super()
-        putAll( m)
-    }
+class TaggedsMap extends Groovy5859Support {
 
     TaggedsMap(SortedMap m) {
         super()
@@ -41,6 +34,7 @@ class Groovy5859Bug extends StringSourcesStubTestCase {
     @Override
     void verifyStubs() {
         def stubSource = stubJavaSourceFor('TaggedsMap')
+        println stubSource
         assert stubSource.contains('super ((java.util.SortedMap)null);')
     }
 }
