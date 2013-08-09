@@ -28,11 +28,10 @@ import java.util.List;
  * Represents a list of Integer objects from a specified int up (or down) to and including
  * a given to.<p>
  * <p>
- * This class is a copy of {@link ObjectRange} optimized for <code>int</code>.  If you make any
+ * This class is a copy of {@link ObjectRange} optimized for <code>int</code>. If you make any
  * changes to this class, you might consider making parallel changes to {@link ObjectRange}.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class IntRange extends AbstractList<Integer> implements Range<Integer> {
 
@@ -336,9 +335,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
                 if((0L + value + step) >= Integer.MAX_VALUE) {
                     break;
                 }
-                else {
-                    value = value + step;
-                }
+                value = value + step;
             }
         } else {
             int value = to;
@@ -347,9 +344,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
                 if((0L + value + step) <= Integer.MIN_VALUE) {
                     break;
                 }
-                else {
-                    value = value + step;
-                }
+                value = value + step;
             }
         }
     }
