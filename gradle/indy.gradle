@@ -39,7 +39,7 @@ rootProject.ext.useIndy = {
     indy |= rootProject.hasProperty('indy') && (Boolean.valueOf(rootProject.indy))
 
     // set the groovy runtime system property to ensure forked junit test will get the indy flag properly
-    if (indy) System.setProperty('groovy.target.indy', 'true')
+    System.setProperty('groovy.target.indy', indy?'true':null)
 
     indy && rootProject.indyCapable()
 }
