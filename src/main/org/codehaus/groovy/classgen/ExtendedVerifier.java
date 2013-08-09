@@ -124,6 +124,8 @@ public class ExtendedVerifier implements GroovyClassVisitor {
                         visited);
             }
             visitDeprecation(node, visited);
+            // TODO GROOVY-5011
+//            visitOverride(node, visited);
         }
     }
 
@@ -141,6 +143,36 @@ public class ExtendedVerifier implements GroovyClassVisitor {
             }
         }
     }
+
+    /*
+    // TODO GROOVY-5011 handle case of @Override on a property
+    private void visitOverride(AnnotatedNode node, AnnotationNode visited) {
+        ClassNode annotationClassNode = visited.getClassNode();
+        if (annotationClassNode.isResolved() && annotationClassNode.getName().equals("java.lang.Override")) {
+            if (node instanceof MethodNode) {
+                MethodNode mn = (MethodNode) node;
+                ClassNode cNode = node.getDeclaringClass();
+                ClassNode sNode = cNode;
+                outer:
+                while (sNode != null) {
+                    if (sNode != cNode && sNode.getDeclaredMethod(mn.getName(), mn.getParameters()) != null) break;
+                    for (ClassNode anInterface : sNode.getInterfaces()) {
+                        ClassNode iNode = anInterface;
+                        while (iNode != null) {
+                            if (iNode.getDeclaredMethod(mn.getName(), mn.getParameters()) != null) break outer;
+                            iNode = iNode.getSuperClass();
+                        }
+                    }
+                    sNode = sNode.getSuperClass();
+                }
+                if (sNode == null) {
+                    addError("Method '" + mn.getName() + "' from class '" + cNode.getName() + "' does not override " +
+                            "method from its superclass or interfaces but is annotated with @Override.", visited);
+                }
+            }
+        }
+    }
+    */
 
     /**
      * Resolve metadata and details of the annotation.
