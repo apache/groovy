@@ -6,9 +6,13 @@ package groovy.util
  */
 class IndentPrinterTest extends GroovyTestCase {
 
-    public void testSimpleIndentation() {
-        def out = new StringWriter()
+    Writer out
 
+    void setUp(){
+        out = new StringWriter()
+    }
+
+    void testSimpleIndentation() {
         def printer = new IndentPrinter(new PrintWriter(out))
 
         printer.printIndent()
@@ -24,8 +28,21 @@ class IndentPrinterTest extends GroovyTestCase {
         assert 'parent\n  child\nparent2\n' == out.toString()
     }
 
-    public void testInWithBlock() {
-        def out = new StringWriter()
+    void testAutoIndentation() {
+        def printer = new IndentPrinter(new PrintWriter(out))
+        printer.autoIndent = true
+
+        printer.println 'parent'
+        printer.incrementIndent()
+        printer.println 'child'
+        printer.decrementIndent()
+        printer.println 'parent2'
+        printer.flush()
+
+        assert 'parent\n  child\nparent2\n' == out.toString()
+    }
+
+    void testInWithBlock() {
         new IndentPrinter(new PrintWriter(out)).with { p ->
             p.printIndent()
             p.println('parent1')
