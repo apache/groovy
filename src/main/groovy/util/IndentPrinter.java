@@ -113,7 +113,7 @@ public class IndentPrinter {
      * @param out Writer to output to
      * @param indent character(s) used to indent each line
      * @param addNewlines set to false to gobble all new lines (default true)
-     * @param autoIndent whether or not println() should prepend the indent automatically
+     * @param autoIndent set to true to make println() prepend the indent automatically (default false)
      */
     public IndentPrinter(Writer out, String indent, boolean addNewlines, boolean autoIndent) {
         this.addNewlines = addNewlines;
