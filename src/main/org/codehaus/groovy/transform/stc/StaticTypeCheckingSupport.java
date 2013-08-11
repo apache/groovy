@@ -306,7 +306,7 @@ public abstract class StaticTypeCheckingSupport {
      * assignment checks where you want to verify that the assignment is valid.
      * @param type
      * @param toBeAssignedTo
-     * @return
+     * @return true if the class node is assignable to the other class node, false otherwise
      */
     static boolean isAssignableTo(ClassNode type, ClassNode toBeAssignedTo) {
         if (UNKNOWN_PARAMETER_TYPE==type) return true;
