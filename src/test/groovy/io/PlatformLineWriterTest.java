@@ -19,10 +19,12 @@ public class PlatformLineWriterTest extends TestCase {
         Writer platformWriter = new PlatformLineWriter(stringWriter);
         GroovyShell shell = new GroovyShell(binding);
         platformWriter.write(shell.evaluate("\"$first\\n$last\\n\"").toString());
+        platformWriter.flush();
         assertEquals("Tom" + LS + "Adams" + LS, stringWriter.toString());
         stringWriter = new StringWriter();
         platformWriter = new PlatformLineWriter(stringWriter);
         platformWriter.write(shell.evaluate("\"$first\\r\\n$last\\r\\n\"").toString());
+        platformWriter.flush();
         assertEquals("Tom" + LS + "Adams" + LS, stringWriter.toString());
     }
 }

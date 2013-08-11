@@ -135,16 +135,25 @@ class CommonsTest extends GroovyTestCase {
 
     public void testLogGuards() {
         Class clazz = new GroovyClassLoader().parseClass('''
-            def traceCalled = false
+
+            class LogDecorator extends groovy.util.Proxy {
+                boolean isTraceEnabled() { false }
+            }
+
             @groovy.util.logging.Commons
             class MyClass {
+                boolean traceCalled = false
+                MyClass() {
+                    log = new LogDecorator().wrap(log) as org.apache.commons.logging.Log
+                }
 
                 def loggingMethod() {
                     log.trace (traceCalled = true)
                 }
             }
-            new MyClass().loggingMethod()
-            return traceCalled''')
+            def o = new MyClass()
+            o.loggingMethod()
+            o.traceCalled''')
 
         Script s = (Script) clazz.newInstance()
         def result = s.run()

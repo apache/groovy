@@ -27,7 +27,7 @@ import org.objectweb.asm.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GenericsTestBase extends GroovyTestCase {
+public abstract class GenericsTestBase extends GroovyTestCase {
     MyLoader loader;
     HashMap signatures = new HashMap();
     

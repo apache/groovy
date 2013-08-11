@@ -390,6 +390,65 @@ class ClosureTest extends GroovyTestCase {
             '''
         }
     }
+
+    // GROOVY-5875
+    void testStaticInnerClassDelegateFirstAccess() {
+        assertScript '''
+             class Owner {
+                 Object delegate
+                 String ownerProp = "owner"
+
+                 void run() {
+                     def c = {
+                         delegateProp = ownerProp
+                     }
+                     c.delegate = delegate
+                     c.resolveStrategy = Closure.DELEGATE_FIRST
+                     c()
+                     assert c.delegate.delegateProp == ownerProp
+                 }
+             }
+
+             class Container {
+                 static class Delegate {
+                      String delegateProp = "delegate"
+                 }
+             }
+
+             def owner = new Owner()
+             owner.delegate = new Container.Delegate()
+             owner.run()
+        '''
+    }
+
+    void testStaticInnerClassOwnerFirstAccess() {
+        assertScript '''
+             class Owner {
+                 Object delegate
+                 String ownerProp = "owner"
+
+                 void run() {
+                     def c = {
+                         delegateProp = ownerProp
+                     }
+                     c.delegate = delegate
+                     c.resolveStrategy = Closure.OWNER_FIRST
+                     c()
+                     assert c.delegate.delegateProp == ownerProp
+                 }
+             }
+
+             class Container {
+                 static class Delegate {
+                      String delegateProp = "delegate"
+                 }
+             }
+
+             def owner = new Owner()
+             owner.delegate = new Container.Delegate()
+             owner.run()
+        '''
+    }
 }
 
 public class TinyAgent {

@@ -757,7 +757,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public List<Statement> getObjectInitializerStatements() {
         if (objectInitializers == null)
-            objectInitializers = new ArrayList<Statement> ();
+            objectInitializers = new LinkedList<Statement> ();
         return objectInitializers;
     }
 

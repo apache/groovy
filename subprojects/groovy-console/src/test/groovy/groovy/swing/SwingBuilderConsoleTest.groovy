@@ -424,7 +424,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 console.runScript(new EventObject([:]))
 
                 def doc = console.outputArea.document
-                assert doc.getText(0, doc.getLength()) =~ /java.lang.Exception\s*at ConsoleScript0.run\(ConsoleScript0:1\)/
+                assert doc.getText(0, doc.getLength()) =~ /java.lang.Exception/
             } finally {
                 GroovySystem.metaClassRegistry.removeMetaClass(Thread.class)
                 GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities.class)

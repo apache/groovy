@@ -2092,10 +2092,20 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Remove a part of a String. This replaces the first occurrence
-     * of target within self with '' and returns the result. If
-     * target is a regex Pattern, the first occurrence of that
-     * pattern will be removed (using regex matching), otherwise
-     * the first occurrence of target.toString() will be removed.
+     * of the regex pattern within self with '' and returns the result. 
+     *
+     * @param self   a String
+     * @param pattern a Pattern representing the part to remove
+     * @return a String minus the part to be removed
+     * @since 2.2.0
+     */
+    public static String minus(String self, Pattern pattern) {
+        return pattern.matcher(self).replaceFirst("");
+    }
+
+    /**
+     * Remove a part of a String. This replaces the first occurrence
+     * of target.toString() within self with '' and returns the result. 
      *
      * @param self   a String
      * @param target an object representing the part to remove
@@ -2103,9 +2113,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String minus(String self, Object target) {
-        if (target instanceof Pattern) {
-            return ((Pattern)target).matcher(self).replaceFirst("");
-        }
         String text = DefaultGroovyMethods.toString(target);
         int index = self.indexOf(text);
         if (index == -1) return self;

@@ -27,7 +27,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression
  *
  * @author Cedric Champeau
  */
-class GenericsTestCase extends GroovyTestCase {
+abstract class GenericsTestCase extends GroovyTestCase {
 
     def extractTypesFromCode(String string) {
         def result = [generics:[], type:null]
