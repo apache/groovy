@@ -96,15 +96,15 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * new MyClass().myMethod()
  * </pre>
  *
- * @see groovy.transform.TimedInterrupt
- * @see groovy.transform.ConditionalInterrupt
+ * @see TimedInterrupt
+ * @see ConditionalInterrupt
  * @author Cedric Champeau
  * @author Hamlet D'Arcy
  * @since 1.8.0
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target([ ElementType.METHOD, ElementType.TYPE])
+@Target([ ElementType.PACKAGE, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE])
 @GroovyASTTransformationClass(["org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation"])
 public @interface ThreadInterrupt {
     /**

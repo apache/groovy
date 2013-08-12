@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package groovy.transform;
-
+package groovy.transform
 
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
@@ -99,15 +98,15 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * new MyClass().myMethod()
  * </pre>
  *
- * @see groovy.transform.TimedInterrupt
- * @see groovy.transform.ThreadInterrupt
+ * @see TimedInterrupt
+ * @see ThreadInterrupt
  * @author Cedric Champeau
  * @author Hamlet D'Arcy
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target([ ElementType.METHOD, ElementType.TYPE])
+@Target([ ElementType.PACKAGE, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE])
 @GroovyASTTransformationClass(["org.codehaus.groovy.transform.ConditionalInterruptibleASTTransformation"])
 public @interface ConditionalInterrupt {
     /**
@@ -119,27 +118,27 @@ public @interface ConditionalInterrupt {
      *
      * @return
      */
-    boolean applyToAllClasses() default true;
+    boolean applyToAllClasses() default true
     /**
      * By default an isInterrupted check is added to the start of all user-defined methods. To turn this off simply
      * set this parameter to false.
      *
      * @return
      */
-    boolean checkOnMethodStart() default true;
+    boolean checkOnMethodStart() default true
 
     /**
      * Sets the type of exception which is thrown.
      *
      * @return
      */
-    Class thrown() default InterruptedException;
+    Class thrown() default InterruptedException
 
     /**
      * Condition should be set as a closure expression. 
      * @return
      */
-    Class value();
+    Class value()
 
 }
 
