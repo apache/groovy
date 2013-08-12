@@ -1,6 +1,8 @@
 package org.codehaus.groovy.transform
 
 import org.codehaus.groovy.ast.AnnotationNode
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
@@ -30,6 +32,7 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
             } else if (member instanceof PropertyExpression) {
                 phase = CompilePhase.valueOf(member.propertyAsString)
             }
+            annotationNode.setMember('phase', new PropertyExpression(new ClassExpression(ClassHelper.make(CompilePhase)), phase.toString()))
         }
         member = annotationNode.getMember('value')
         if (member && !(member instanceof ClosureExpression)) {
