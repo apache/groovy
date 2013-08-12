@@ -153,7 +153,7 @@ public class AnnotationVisitor {
             String methodName = mn.getName();
             // if the annotation attribute has a default, getCode() returns a ReturnStatement with the default value
             if (mn.getCode() == null && !attributes.containsKey(methodName)) {
-                addError("No explicit/default value found for annotation attribute '" + methodName + "' in annotation " + classNode, node);
+                addError("No explicit/default value found for annotation attribute '" + methodName + "'", node);
                 ok = false;
             }
         }
