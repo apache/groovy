@@ -13,8 +13,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         Thread.metaClass = null
     }
 
-
-    public void testDefaultParameters_Method() {
+    void testDefaultParameters_Method() {
 
         def c = new GroovyClassLoader().parseClass("""
             @groovy.transform.ThreadInterrupt
@@ -32,7 +31,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 1 == counter.interruptedCheckCount
     }
 
-    public void testNoMethodCheck_Method() {
+    void testNoMethodCheck_Method() {
 
         def c = new GroovyClassLoader().parseClass("""
             @groovy.transform.ThreadInterrupt(checkOnMethodStart = false)
@@ -49,7 +48,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         // no exception means success
     }
 
-    public void testDefaultParameters_ForLoop() {
+    void testDefaultParameters_ForLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
             @groovy.transform.ThreadInterrupt
@@ -71,7 +70,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 100 == counter.interruptedCheckCount
     }
 
-    public void testDefaultParameters_WhileLoop() {
+    void testDefaultParameters_WhileLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
             @groovy.transform.ThreadInterrupt
@@ -94,7 +93,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 100 == counter.interruptedCheckCount
     }
 
-    public void testDefaultParameters_Closure() {
+    void testDefaultParameters_Closure() {
 
         def c = new GroovyClassLoader().parseClass("""
             @groovy.transform.ThreadInterrupt
@@ -116,7 +115,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 100 == counter.interruptedCheckCount
     }
 
-    public void testInterrupt_Method_AndTestExceptionMessage() {
+    void testInterrupt_Method_AndTestExceptionMessage() {
 
         def c = new GroovyClassLoader().parseClass("""
             @groovy.transform.ThreadInterrupt
@@ -133,7 +132,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         }
     }
 
-    public void testInterrupt_ForLoop() {
+    void testInterrupt_ForLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
             @groovy.transform.ThreadInterrupt
@@ -153,7 +152,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         }
     }
 
-    public void testInterrupt_WhileLoop() {
+    void testInterrupt_WhileLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
             @groovy.transform.ThreadInterrupt
@@ -174,7 +173,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         }
     }
 
-    public void testInterrupt_Closure() {
+    void testInterrupt_Closure() {
 
         def c = new GroovyClassLoader().parseClass("""
             @groovy.transform.ThreadInterrupt
@@ -194,7 +193,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         }
     }
 
-    public void testInterrupt_ClosureWithCustomExceptionType() {
+    void testInterrupt_ClosureWithCustomExceptionType() {
 
         def c = new GroovyClassLoader(this.class.classLoader).parseClass("""
             @groovy.transform.ThreadInterrupt(thrown=groovy.transform.CustomException)
@@ -214,7 +213,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         }
     }
 
-    public void testEntireCompileUnitIsAffected() {
+    void testEntireCompileUnitIsAffected() {
 
         def script = '''
             def scriptMethod() {
@@ -241,7 +240,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 3 == counter.interruptedCheckCount
     }
 
-    public void testOnlyScriptAffected() {
+    void testOnlyScriptAffected() {
 
         def script = '''
             @groovy.transform.ThreadInterrupt(applyToAllClasses = false)
@@ -267,7 +266,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 2 == counter.interruptedCheckCount
     }
 
-    public void testAnnotationOnImport() {
+    void testAnnotationOnImport() {
 
         def script = '''
             @groovy.transform.ThreadInterrupt
@@ -287,7 +286,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 4 == counter.interruptedCheckCount
     }
 
-    public void testOnlyClassAffected() {
+    void testOnlyClassAffected() {
 
         def script = '''
             def scriptMethod() {
@@ -313,7 +312,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 1 == counter.interruptedCheckCount
     }
 
-    public void testThreadInterruptOnAbstractClass() {
+    void testThreadInterruptOnAbstractClass() {
         def script = '''
             @groovy.transform.ThreadInterrupt
             abstract class MyAbstractClass {
@@ -354,12 +353,10 @@ class CountingThread extends Thread {
         interruptedCheckCount++
         false
     }
-
 }
 
 class CustomException extends Exception {
-
-    public CustomException(final String message) {
+    CustomException(final String message) {
         super(message)
     }
 }
