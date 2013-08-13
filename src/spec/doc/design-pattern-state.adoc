@@ -26,7 +26,7 @@ message received
 offline
 ----
 
-This example was inspired from a similar http://wiki.rubygarden.org/Ruby/page/show/StatePattern[Ruby Example]. One of the great things about a dynamic language like Groovy though is that we can take this example and express it in many different ways depending on our particular needs. Some potential variations for this example are shown below.
+One of the great things about a dynamic language like Groovy though is that we can take this example and express it in many different ways depending on our particular needs. Some potential variations for this example are shown below.
 
 == Variation 1: Leveraging Interface-Oriented Design
 

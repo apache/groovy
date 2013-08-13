@@ -9,7 +9,7 @@ The goal of the pattern is to separate an algorithm from an object structure. A 
 
 == Simple Example
 
-This example (inspired by http://wiki.rubygarden.org/Ruby/page/show/VisitorPattern[this]) considers how to calculate the bounds of shapes (or collections of shapes). Our first attempt uses the traditional visitor pattern. We will see a more Groovy way to do this shortly.
+This example considers how to calculate the bounds of shapes (or collections of shapes). Our first attempt uses the traditional visitor pattern. We will see a more Groovy way to do this shortly.
 
 [source,groovy]
 ----

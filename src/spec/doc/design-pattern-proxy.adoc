@@ -20,5 +20,3 @@ Here is what your server code might look like (start this first):
 ----
 include::../test/DesignPatternsTest.groovy[tags=proxy_server,indent=0]
 ----
-
-This example was inspired by this http://wiki.rubygarden.org/Ruby/page/show/ProxyPattern[Ruby example].

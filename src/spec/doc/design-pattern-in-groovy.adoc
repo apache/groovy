@@ -61,7 +61,7 @@ include::design-pattern-visitor.adoc[]
  *_A great book to read, informative as well as amusing._
 . Dierk Koenig with Andrew Glover, Paul King, Guillaume Laforge and Jon Skeet (2007). _Groovy in Action_. Manning. ISBN 1-932394-84-2.
  * _Discusses Visitor, Builder and other Patterns._
-. Brad Appleton (1999). http://www.cmcrossroads.com/bradapp/docs/pizza-inv.html[Pizza Inversion - a Pattern for Efficient Resource Consumption].
+. Brad Appleton (1999). http://www.bradapp.com/docs/pizza-inv.html[Pizza Inversion - a Pattern for Efficient Resource Consumption].
  * _One of the most frequently used patterns by many software engineers!_
 . _Design Patterns in Dynamic Languages_ by Neil Ford. Houston Java User’s Group. Examples in Groovy and Ruby. http://www.hjug.org/present/Neal_Ford-Design_Patterns_in_Dynamic_Languages-slides.pdf
 

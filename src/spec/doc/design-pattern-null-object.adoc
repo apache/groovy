@@ -41,7 +41,7 @@ Two things are going on here to allow this to work. First of all, ++max()++ is _
 
 == Tree Example
 
-Consider the following example (inspired by http://wiki.rubygarden.org/Ruby/page/show/NullObjectPattern[this]) where we want to calculate size, cumulative sum and cumulative product of all the values in a tree structure.
+Consider the following example where we want to calculate size, cumulative sum and cumulative product of all the values in a tree structure.
 
 Our first attempt has special logic within the calculation methods to handle null values.
 
