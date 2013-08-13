@@ -539,10 +539,10 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testObjectSleep() {
         long start = System.currentTimeMillis()
-        long sleeptime = 200
+        long sleeptime = 500
         sleep sleeptime
         long slept = System.currentTimeMillis() - start
-        long epsilon = 24
+        long epsilon = 50
         assert (slept > sleeptime - epsilon) && (slept < sleeptime + epsilon):   \
                "should have slept for $sleeptime ms (+/- epsilon ms) but was $slept ms"
     }
