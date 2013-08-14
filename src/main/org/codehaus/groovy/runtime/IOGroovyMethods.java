@@ -1067,10 +1067,9 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new PrintWriter for this file, using specified
-     * charset.
+     * Create a new PrintWriter for this Writer.
      *
-     * @param writer a writer
+     * @param writer a Writer
      * @return a PrintWriter
      * @since 1.6.0
      */
@@ -1079,9 +1078,19 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new PrintWriter with a specified charset for
-     * this file.  The writer is passed to the closure, and will be closed
-     * before this method returns.
+     * Create a new PrintWriter for this OutputStream.
+     *
+     * @param stream an OutputStream
+     * @return a PrintWriter
+     * @since 2.2.0
+     */
+    public static PrintWriter newPrintWriter(OutputStream stream) {
+        return new GroovyPrintWriter(stream);
+    }
+
+    /**
+     * Create a new PrintWriter for this Writer.  The writer is passed to the
+     * closure, and will be closed before this method returns.
      *
      * @param writer  a writer
      * @param closure the closure to invoke with the PrintWriter
@@ -1091,6 +1100,20 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T withPrintWriter(Writer writer, Closure<T> closure) throws IOException {
         return withWriter(newPrintWriter(writer), closure);
+    }
+
+    /**
+     * Create a new PrintWriter for this OutputStream.  The writer is passed to the
+     * closure, and will be closed before this method returns.
+     *
+     * @param stream  an OutputStream
+     * @param closure the closure to invoke with the PrintWriter
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @since 2.2.0
+     */
+    public static <T> T withPrintWriter(OutputStream stream, Closure<T> closure) throws IOException {
+        return withWriter(newPrintWriter(stream), closure);
     }
 
     /**
@@ -1218,6 +1241,17 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates a writer for this stream.
+     *
+     * @param stream the stream which is used and then closed
+     * @return the newly created Writer
+     * @since 2.2.0
+     */
+    public static Writer newWriter(OutputStream stream) {
+        return new OutputStreamWriter(stream);
+    }
+
+    /**
      * Creates a writer from this stream, passing it to the given closure.
      * This method ensures the stream is closed after the closure returns.
      *
@@ -1231,6 +1265,19 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T withWriter(OutputStream stream, String charset, Closure<T> closure) throws IOException {
         return withWriter(new OutputStreamWriter(stream, charset), closure);
+    }
+
+    /**
+     * Creates a writer for this stream using the given charset.
+     *
+     * @param stream the stream which is used and then closed
+     * @param charset the charset used
+     * @return the newly created Writer
+     * @throws UnsupportedEncodingException if an encoding exception occurs.
+     * @since 2.2.0
+     */
+    public static Writer newWriter(OutputStream stream, String charset) throws UnsupportedEncodingException {
+        return new OutputStreamWriter(stream, charset);
     }
 
     /**
