@@ -317,14 +317,19 @@ class GrapeIvy implements GrapeEngine {
     }
 
     void processOtherServices(ClassLoader loader, File f) {
-        ZipFile zf = new ZipFile(f)
-        ZipEntry serializedCategoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.SerializedCategoryMethods")
-        if (serializedCategoryMethods != null) {
-            processSerializedCategoryMethods(zf.getInputStream(serializedCategoryMethods))
-        }
-        ZipEntry pluginRunners = zf.getEntry("META-INF/services/org.codehaus.groovy.plugins.Runners")
-        if (pluginRunners != null) {
-            processRunners(zf.getInputStream(pluginRunners), f.getName(), loader)
+        try {
+            ZipFile zf = new ZipFile(f)
+            ZipEntry serializedCategoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.SerializedCategoryMethods")
+            if (serializedCategoryMethods != null) {
+                processSerializedCategoryMethods(zf.getInputStream(serializedCategoryMethods))
+            }
+            ZipEntry pluginRunners = zf.getEntry("META-INF/services/org.codehaus.groovy.plugins.Runners")
+            if (pluginRunners != null) {
+                processRunners(zf.getInputStream(pluginRunners), f.getName(), loader)
+            }
+        } catch(ZipException ignore) {
+            // ignore files we can't process, e.g. non-jar/zip artifacts
+            // TODO log a warning
         }
     }
 
