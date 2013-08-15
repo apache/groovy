@@ -102,4 +102,33 @@ assert closure() == "A"
 assert visited==true
         """
     }
+
+    void testStaticMethod() {
+        assertScript '''
+            class Foo {
+                static visited 
+                static closureInStaticContext = {
+                    foo()
+                }
+                static foo(){ visited = true }
+            }
+            Foo.closureInStaticContext()
+            assert Foo.visited == true
+        '''
+    }
+
+    void testStaticContextClosureDelegation() {
+        assertScript '''
+            class Foo {
+                static aClosure = { foo() }
+                static { aClosure.delegate = new Bar() }
+            }
+            class Bar {
+                static visited
+                def foo() { visited = true }
+            }
+            Foo.aClosure()
+            assert Bar.visited == true
+        '''
+    }
 }
