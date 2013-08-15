@@ -166,7 +166,9 @@ public class StaticInvocationWriter extends InvocationWriter {
                         INVOKERHELER_RECEIVER,
                         target.isStatic() ? "invokeStaticMethod" : "invokeMethodSafe",
                         new ArgumentListExpression(
-                                receiver,
+                                target.isStatic() ? 
+                                        new ClassExpression(target.getDeclaringClass()) :
+                                        receiver,
                                 new ConstantExpression(target.getName()),
                                 arr
                         )
