@@ -9,7 +9,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.4.1'
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.5.0'
         classpath 'net.saliman:gradle-cobertura-plugin:1.1.2'
     }
 }
@@ -43,7 +43,7 @@ allprojects {
         apply plugin: 'asciidoctor'
 
         asciidoctor {
-//            logDocuments = true
+            logDocuments = true
             sourceDir = project.file('src/spec/doc')
         }
 
