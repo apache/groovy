@@ -503,5 +503,13 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.util.Collection#putAt(int, java.lang.Object)'
     }
 
+    // GROOVY-6266
+    void testMapKeyGenerics() {
+        assertScript """
+            HashMap<String,List<List>> AR=new HashMap<String,List<List>>()
+            AR.get('key',[['val1'],['val2']])
+            assert AR.'key'[0] == ['val1']
+        """
+    }
 }
 
