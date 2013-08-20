@@ -153,4 +153,26 @@ class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         1
         '''
     }
+    
+    // GROOVY-6199
+    void testCallClassMethodFromNestedClosure() {
+        assertScript '''
+            class MyClass {
+                void run() {
+                    1.times {
+                        1.times {
+                            myMethod()
+                        }
+                    }
+                }
+                void myMethod() {
+                    bool = true
+                }
+                def bool = false
+            }
+            def mc = new MyClass()
+            mc.run()
+            assert mc.bool
+        '''
+    }
 }
