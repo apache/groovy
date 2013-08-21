@@ -169,7 +169,30 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         checkReturnInObjectInitializer(node.getObjectInitializerStatements());
         node.getObjectInitializerStatements().clear();
         node.visitContents(this);
+        checkForDuplicateMethods(node);
         addCovariantMethods(node);
+    }
+    
+    private String makeDescriptorWithoutReturnType(MethodNode mn) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(mn.getName()).append(':');
+        for (Parameter p : mn.getParameters()) {
+            sb.append(p.getType()).append(',');
+        }
+        return sb.toString();
+    }
+    
+    private void checkForDuplicateMethods(ClassNode cn) {
+        HashSet<String> descriptors = new HashSet<String>();
+        for (MethodNode mn : cn.getMethods()) {
+            if (mn.isSynthetic()) continue;
+            String mySig = makeDescriptorWithoutReturnType(mn);
+            if (descriptors.contains(mySig)) {
+                throw new RuntimeParserException("The method " + mn.getText() +
+                        " duplicates another method of the same signature", mn);
+            }
+            descriptors.add(mySig);
+        }
     }
 
     private FieldNode checkFieldDoesNotExist(ClassNode node, String fieldName) {
