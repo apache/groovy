@@ -22,7 +22,7 @@ class Groovy_2473Bug extends GroovyTestCase {
         def w = new StringWriter()
         def b = new StreamingMarkupBuilder()
 
-        w << b.bind() {
+        w << b.bind {
             mkp.xmlDeclaration()
             a("\u0083")
         }
@@ -33,7 +33,7 @@ class Groovy_2473Bug extends GroovyTestCase {
 
         w = new StringWriter()
 
-        w << b.bind() {
+        w << b.bind {
             mkp.xmlDeclaration()
             a("\u0083")
         }
