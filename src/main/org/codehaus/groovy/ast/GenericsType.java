@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.ast;
 
+import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -85,7 +86,11 @@ public class GenericsType extends ASTNode {
         } else if (theType.redirect() instanceof InnerClassNode) {
             InnerClassNode innerClassNode = (InnerClassNode) theType.redirect();
             String parentClassNodeName = innerClassNode.getOuterClass().getName();
-            ret.append(genericsBounds(innerClassNode.getOuterClass(), new HashSet<String>()));
+            if (Modifier.isStatic(innerClassNode.getModifiers()) || innerClassNode.isInterface()) {
+                ret.append(innerClassNode.getOuterClass().getName());
+            } else {
+                ret.append(genericsBounds(innerClassNode.getOuterClass(), new HashSet<String>()));
+            }
             ret.append(".");
             String typeName = theType.getName();
             ret.append(typeName.substring(parentClassNodeName.length() + 1));
