@@ -142,13 +142,11 @@ subprojects {
                 filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
             }
         }
-        if (project.name != 'groovy-all-tests') {
-            manifest = osgiManifest {
-                symbolicName = project.name
-                classesDir = sourceSets.main.output.classesDir
-            }
-            manifest subprojectOsgiManifest
+        manifest = osgiManifest {
+            symbolicName = project.name
+            classesDir = sourceSets.main.output.classesDir
         }
+        manifest subprojectOsgiManifest
         exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
     }
 }
