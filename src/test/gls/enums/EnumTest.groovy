@@ -552,12 +552,12 @@ enum EmptyEnum{}
 
 enum GroovyColors3161 {
     red, blue, green
-    static def ALL_COLORS = [red, blue, green]
+    static ALL_COLORS = [red, blue, green]
 }
 
 enum GroovyColors3161B {
     red, blue, green,
-    static def ALL_COLORS = [red, blue, green]
+    static ALL_COLORS = [red, blue, green]
 }
 
 enum Foo3284 {

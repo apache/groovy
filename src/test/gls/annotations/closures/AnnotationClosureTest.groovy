@@ -56,59 +56,59 @@ class Foo {}
     }
 
     void testIsCompiledToPublicClass() {
-        def closureClass = ClassWithAnnClosure.class.getAnnotation(AnnWithClassElement).elem()
+        def closureClass = ClassWithAnnClosure.getAnnotation(AnnWithClassElement).elem()
         assert Modifier.isPublic(closureClass.modifiers)
     }
 
     void testDefaultValueIsCompiledToPublicClass() {
-        def closureClass = ClosureAsDefaultValue.class.getAnnotation(AnnWithDefaultValue).elem()
+        def closureClass = ClosureAsDefaultValue.getAnnotation(AnnWithDefaultValue).elem()
         assert Modifier.isPublic(closureClass.modifiers)
     }
 
     void testCanBeUsedAsDefaultValue() {
-        def closureClass = ClosureAsDefaultValue.class.getAnnotation(AnnWithDefaultValue).elem()
+        def closureClass = ClosureAsDefaultValue.getAnnotation(AnnWithDefaultValue).elem()
         def closure = closureClass.newInstance(null, null)
 
         assert closure.call() == 3
     }
 
     void testCanBeNested() {
-        def closureClass = NestedClosure.class.getAnnotation(AnnWithClassElement).elem()
+        def closureClass = NestedClosure.getAnnotation(AnnWithClassElement).elem()
         def closure = closureClass.newInstance(null, null)
 
         assert closure.call(9) == 9
     }
 
     void testWorksOnInnerClass() {
-        def closureClass = ClassWithAnnClosure.InnerClassWithAnnClosure.class.getAnnotation(AnnWithClassElement).elem()
+        def closureClass = ClassWithAnnClosure.InnerClassWithAnnClosure.getAnnotation(AnnWithClassElement).elem()
         def closure = closureClass.newInstance(null, null)
 
         assert closure.call() == 3
     }
 
     void testWorksOnNestedClass() {
-        def closureClass = ClassWithAnnClosure.NestedClassWithAnnClosure.class.getAnnotation(AnnWithClassElement).elem()
+        def closureClass = ClassWithAnnClosure.NestedClassWithAnnClosure.getAnnotation(AnnWithClassElement).elem()
         def closure = closureClass.newInstance(null, null)
 
         assert closure.call() == 3
     }
 
     void testWorksOnNestedAnnotation() {
-        def closureClass = NestedAnnotation.class.getAnnotation(AnnWithNestedAnn).elem().elem()
+        def closureClass = NestedAnnotation.getAnnotation(AnnWithNestedAnn).elem().elem()
         def closure = closureClass.newInstance(null, null)
 
         assert closure.call() == 3
     }
 
     void testWorksOnNestedAnnotationWithDefaultValue() {
-        def closureClass = NestedAnnotationWithDefault.class.getAnnotation(AnnWithNestedAnnWithDefault).elem().elem()
+        def closureClass = NestedAnnotationWithDefault.getAnnotation(AnnWithNestedAnnWithDefault).elem().elem()
         def closure = closureClass.newInstance(null, null)
 
         assert closure.call() == 3
     }
 
     void testMayContainGString() {
-        def closureClass = ClosureWithGString.class.getAnnotation(AnnWithClassElement).elem()
+        def closureClass = ClosureWithGString.getAnnotation(AnnWithClassElement).elem()
         def closure = closureClass.newInstance(null, null)
 
         assert closure.call([1, 2, 3]) == "list has 3 elements"
