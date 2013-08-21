@@ -42,7 +42,7 @@ import java.util.concurrent.TimeoutException
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class TimedInterruptibleASTTransformation implements ASTTransformation {
 
-  private static final ClassNode MY_TYPE = ClassHelper.make(TimedInterrupt.class)
+  private static final ClassNode MY_TYPE = ClassHelper.make(TimedInterrupt)
   private static final String CHECK_METHOD_START_MEMBER = 'checkOnMethodStart'
   private static final String APPLY_TO_ALL_CLASSES = 'applyToAllClasses'
   private static final String APPLY_TO_ALL_MEMBERS = 'applyToAllMembers'

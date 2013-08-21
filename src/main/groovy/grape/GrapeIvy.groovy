@@ -88,13 +88,13 @@ class GrapeIvy implements GrapeEngine {
         // configure settings
         def grapeConfig = getLocalGrapeConfig()
         if (!grapeConfig.exists()) {
-            grapeConfig = GrapeIvy.class.getResource("defaultGrapeConfig.xml")
+            grapeConfig = GrapeIvy.getResource("defaultGrapeConfig.xml")
         }
         try {
             settings.load(grapeConfig) // exploit multi-methods for convenience
         } catch (java.text.ParseException ex) {
             System.err.println "Local Ivy config file '$grapeConfig.canonicalPath' appears corrupt - ignoring it and using default config instead\nError was: " + ex.message
-            grapeConfig = GrapeIvy.class.getResource("defaultGrapeConfig.xml")
+            grapeConfig = GrapeIvy.getResource("defaultGrapeConfig.xml")
             settings.load(grapeConfig)
         }
 
@@ -132,9 +132,7 @@ class GrapeIvy implements GrapeEngine {
         if(grapeConfig) {
             return new File(grapeConfig)
         }
-        else {
-            return new File(getGrapeDir(), 'grapeConfig.xml')
-        }
+        return new File(getGrapeDir(), 'grapeConfig.xml')
     }
 
     public File getGrapeDir() {
@@ -142,15 +140,13 @@ class GrapeIvy implements GrapeEngine {
         if(root == null) {
             return getGroovyRoot()
         }
-        else {
-            File grapeRoot = new File(root)
-            try {
-                grapeRoot = grapeRoot.canonicalFile
-            } catch (IOException e) {
-                // skip canonicalization then, it may not exist yet
-            }
-            return grapeRoot
+        File grapeRoot = new File(root)
+        try {
+            grapeRoot = grapeRoot.canonicalFile
+        } catch (IOException e) {
+            // skip canonicalization then, it may not exist yet
         }
+        return grapeRoot
     }
 
     public File getGrapeCacheDir() {
@@ -270,9 +266,8 @@ class GrapeIvy implements GrapeEngine {
 
             if (args.noExceptions) {
                 return e
-            } else {
-                throw e
             }
+            throw e
         }
         return null
     }
@@ -618,9 +613,8 @@ class GrapeIvy implements GrapeEngine {
                 results << dep
             }
             return results
-        } else {
-            return null
         }
+        return null
     }
 
     public void addResolver(Map<String, Object> args) {
