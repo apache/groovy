@@ -55,6 +55,8 @@ boolean isRunningOnCI() {
 
 logger.lifecycle "Detected ${isRunningOnCI() ? 'Continuous Integration environment' : 'development environment'}"
 
+
+
 tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String taskName ->
     if (taskName.startsWith('testSingle')) {
         tasks.create(taskName).dependsOn(test)
@@ -80,8 +82,8 @@ def buildExcludeFilter() {
     }
     excludes += osSpecificTests
 
-    // temporarily disable security tests, see GRADLE-2170
-    excludes << ['RunOneGroovyScript', 'SecurityTest', 'SignedJarTest']
+    // temporarily disable security test suite, see GRADLE-2170
+    excludes << '/security/'
 
     // if on Java 5, disable 5+ specific tests
     if (isJava15()) {
