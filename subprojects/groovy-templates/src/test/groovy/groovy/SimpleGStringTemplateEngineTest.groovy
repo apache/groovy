@@ -9,7 +9,7 @@ import groovy.text.GStringTemplateEngine;
  */
 public class SimpleGStringTemplateEngineTest extends GroovyTestCase
 {
-  public void testRegressionCommentBug() throws Exception
+  void testRegressionCommentBug()
   {
     final Template template = new GStringTemplateEngine().createTemplate(
         "<% // This is a comment that will be filtered from output %>\n" +
