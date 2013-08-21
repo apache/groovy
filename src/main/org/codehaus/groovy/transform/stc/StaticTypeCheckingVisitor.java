@@ -355,13 +355,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private boolean visitPropertyExpressionSilent(PropertyExpression pe, Expression lhsPart) {
-        super.visitPropertyExpression(pe);
         return (existsProperty(pe, !isLHSOfEnclosingAssignment(lhsPart)));
     }
 
     @Override
     public void visitPropertyExpression(final PropertyExpression pexp) {
-        super.visitPropertyExpression(pexp);
         if (visitPropertyExpressionSilent(pexp,pexp)) return;
 
         if (!extension.handleUnresolvedProperty(pexp)) {
@@ -907,6 +905,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @return true if the property is defined in any of the possible receiver classes
      */
     protected boolean existsProperty(final PropertyExpression pexp, final boolean readMode, final ClassCodeVisitorSupport visitor) {
+        super.visitPropertyExpression(pexp);
+
         String propertyName = pexp.getPropertyAsString();
         if (propertyName == null) return false;
 
@@ -1031,6 +1031,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode testClass = receiver.getType();
             ClassNode propertyType = getTypeForMapPropertyExpression(testClass, objectExpressionType, pexp);
             if (propertyType==null) propertyType = getTypeForListPropertyExpression(testClass, objectExpressionType, pexp);
+            if (propertyType==null) propertyType = getTypeForSpreadExpression(testClass, objectExpressionType, pexp);
             if (propertyType==null) continue;
             if (visitor!=null) {
                 // todo : type inferrence on maps and lists, if possible
@@ -1041,6 +1042,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return true;
         }
         return foundGetterOrSetter;
+    }
+
+    private ClassNode getTypeForSpreadExpression(ClassNode testClass, ClassNode objectExpressionType, PropertyExpression pexp) {
+        if (!pexp.isSpreadSafe()) return null;
+        MethodCallExpression mce = new MethodCallExpression(new VariableExpression("_", testClass), "iterator", ArgumentListExpression.EMPTY_ARGUMENTS);
+        mce.visit(this);
+        ClassNode callType = getType(mce);
+        if (!implementsInterfaceOrIsSubclassOf(callType, Iterator_TYPE)) return null;
+        GenericsType[] types = callType.getGenericsTypes();
+        ClassNode contentType = OBJECT_TYPE;
+        if (types!=null && types.length==1) contentType = types[0].getType();
+        PropertyExpression subExp = new PropertyExpression(
+                new VariableExpression("{}", contentType),
+                pexp.getPropertyAsString());
+        AtomicReference<ClassNode> result = new AtomicReference<ClassNode>();
+        if (existsProperty(subExp, true, new PropertyLookupVisitor(result))) {
+            ClassNode intf = LIST_TYPE.getPlainNodeReference();
+            intf.setGenericsTypes(new GenericsType[] { new GenericsType(getWrapper(result.get()))});
+            return intf;
+        }
+        return null;
     }
 
     private ClassNode getTypeForListPropertyExpression(ClassNode testClass, ClassNode objectExpressionType, PropertyExpression pexp) {
@@ -2003,6 +2025,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // if the call expression is a spread operator call, then we must make sure that
         // the call is made on a collection type
         if (call.isSpreadSafe()) {
+            //TODO check if this should not be change to iterator based call logic
             ClassNode expressionType = getType(objectExpression);
             if (!implementsInterfaceOrIsSubclassOf(expressionType, Collection_TYPE) && !expressionType.isArray()) {
                 addStaticTypeError("Spread operator can only be used on collection types", objectExpression);
