@@ -99,7 +99,7 @@ class XmlSlurperTest extends GroovyTestCase {
         def input = "<doc><sec>Hello<p>World</p></sec></doc>"
         def replaceSlurper = new XmlSlurper().parseText(input)
         replaceSlurper.sec.replaceNode { node ->
-            t() { delegate.mkp.yield node.getBody() }
+            t { delegate.mkp.yield node.getBody() }
         }
         def outputSlurper = new StreamingMarkupBuilder()
         String output = outputSlurper.bind { mkp.yield replaceSlurper }

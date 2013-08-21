@@ -23,7 +23,7 @@ import groovy.xml.XmlUtil
  * @author Paul King
  */
 class GpathSyntaxTestSupport {
-    private static sampleXml = '''
+    private static final sampleXml = '''
 <characters>
     <character id="1" name="Wallace">
         <likes>cheese</likes>
@@ -39,7 +39,7 @@ class GpathSyntaxTestSupport {
 </characters>
 '''
 
-    private static nestedXml = '''
+    private static final nestedXml = '''
 <root>
     <a><z/><z/><y/></a>
     <b><z/></b>

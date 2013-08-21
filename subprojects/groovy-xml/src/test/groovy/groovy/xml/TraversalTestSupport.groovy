@@ -1,7 +1,7 @@
 package groovy.xml
 
 class TraversalTestSupport {
-    private static def nestedXml = '''
+    private static final nestedXml = '''
     <_1>
         <_1_1>
             <_1_1_1/>

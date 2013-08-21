@@ -19,7 +19,6 @@ import groovy.xml.MarkupBuilder
 
 /**
  * @author Ted Leung
- * @version $Revision$
  */
 class TedsClosureBug extends GroovyTestCase {
     def EXPECTED= '''<atom>
@@ -57,18 +56,18 @@ class TedsClosureBug extends GroovyTestCase {
         def sw = new StringWriter()
         def xml = new MarkupBuilder(sw)
 
-        def atom = xml.atom() {
+        def atom = xml.atom {
           title("Ted Leung off the air")
           link("http://www.sauria.com/noblog")
-          author() {
-            person() {
+          author {
+            person {
               name(f.author.name)
               url(f.author.url)
               email(f.author.email)
             }
           }
           for (e in f.entries) {
-            entry() {
+            entry {
               title(e.title)
               summary(e.summary)
             }
@@ -82,10 +81,7 @@ class Feed {
     String title
     String link
     Person author
-    String tagline
-    String generator
     String copyright
-    String modified
     List entries
 }
 
@@ -97,8 +93,6 @@ class Entry {
     String content
     Person author
     String created
-    String issued
-    String modified
 }
 
 class Person {

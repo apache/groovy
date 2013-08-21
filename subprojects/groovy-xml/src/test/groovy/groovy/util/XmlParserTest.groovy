@@ -58,7 +58,7 @@ class XmlParserTest extends GroovyTestCase {
 <p>Please read the <a href="index.html">Home</a> page</p>
 """
         def node = new XmlParser().parseText(text)
-        def StringWriter sw = new StringWriter()
+        StringWriter sw = new StringWriter()
         new NodePrinter(new PrintWriter(sw)).print(node)
         def result = fixEOLs(sw.toString())
         def expected = '''\
@@ -78,7 +78,7 @@ p() {
 <p>Please read the <a href="index.html">Home</a> page</p>
 """
         def node = new XmlParser().parseText(text)
-        def StringWriter sw = new StringWriter()
+        StringWriter sw = new StringWriter()
         new XmlNodePrinter(new PrintWriter(sw)).print(node)
         def result = fixEOLs(sw.toString())
         def expected = '''\
@@ -95,7 +95,7 @@ p() {
 
     void testXmlNodePrinterNamespaces() {
         def html = new XmlParser().parseText(bookXml)
-        def StringWriter sw = new StringWriter()
+        StringWriter sw = new StringWriter()
         new XmlNodePrinter(new PrintWriter(sw)).print(html)
         def result = fixEOLs(sw.toString())
         def expected = '''\

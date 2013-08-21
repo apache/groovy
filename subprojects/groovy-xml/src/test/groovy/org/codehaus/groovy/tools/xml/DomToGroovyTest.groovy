@@ -86,13 +86,13 @@ class DomToGroovyTest extends GroovyTestCase {
     protected DomToGroovy converter
     protected File dir = new File("target/generated-groovyxml")
 
-    void testConversion() throws Exception {
+    void testConversion() {
         convert("test1.xml", "test1.groovy")
         convert("po.xsd", "poSchema.groovy")
         convert("swing.xml", "swing.groovy")
     }
 
-    void testConversionFormat() throws Exception {
+    void testConversionFormat() {
         checkConversion(TEST_XML_1, EXPECTED_BUILDER_SCRIPT_1)
         checkConversion(TEST_XML_2, EXPECTED_BUILDER_SCRIPT_2)
         checkConversion(TEST_XML_3, EXPECTED_BUILDER_SCRIPT_3)
