@@ -27,9 +27,9 @@ import java.util.regex.Pattern
  */
 
 class JavadocAssertionTestBuilder {
-    private static Pattern javadocPattern =
+    private static final Pattern javadocPattern =
         Pattern.compile( /(?ims)\/\*\*.*?\*\// )
-    private static Pattern assertionPattern =
+    private static final Pattern assertionPattern =
         Pattern.compile( /(?ims)<([a-z]+)\s+class\s*=\s*['"]groovyTestCase['"]\s*>.*?<\s*\/\s*\1>/ )
 
     Class buildTest(String filename, String code) {
