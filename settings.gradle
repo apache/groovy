@@ -13,8 +13,7 @@ include 'groovy-ant',
         'groovy-templates',
         'groovy-test',
         'groovy-testng',
-        'groovy-xml',
-        'groovy-all-tests'
+        'groovy-xml'
         
 rootProject.children.each { prj ->
     prj.projectDir = new File("$rootDir/subprojects/$prj.name")
