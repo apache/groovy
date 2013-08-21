@@ -68,10 +68,14 @@ include::{subprojroot}json{specfolder}json-userguide.adoc[]
 ===== Reloading
 ==== Bean Scripting Framework
 ==== JSR 223 javax.script API
+
 :leveloffset: 2
+
 include::core-domain-specific-languages.adoc[]
+include::jmx.adoc[]
+
 :leveloffset: 0
-=== Working with JMX
+
 === Creating Swing UIs
 === Security
 === Design patterns in Groovy
