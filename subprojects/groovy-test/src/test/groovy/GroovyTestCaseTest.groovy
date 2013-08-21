@@ -14,6 +14,8 @@
 * limitations under the License.
 */
 
+import junit.framework.AssertionFailedError
+
 /**
  * Testing the notYetImplemented feature of GroovyTestCase.
  * TODO: testing all other features.
@@ -25,30 +27,32 @@ class GroovyTestCaseTest extends GroovyTestCase {
         if (notYetImplemented()) return
         fail 'here the code that is expected to fail'
     }
+
     void testNotYetImplementedStaticUse () {
         if (GroovyTestCase.notYetImplemented(this)) return
         fail 'here the code that is expected to fail'
     }
 
-    // we cannot test this automatically...
-    // remove the leading x, run the test and see it failing
-    void xtestSubclassFailing() {
-        if (notYetImplemented()) return
-        assert true // passes unexpectedly
-    }
-    void xtestStaticFailing() {
-        if (GroovyTestCase.notYetImplemented(this)) return
-        assert true // passes unexpectedly
+    void testSubclassFailing() {
+        try{ if (notYetImplemented()) return}
+        catch (AssertionFailedError expected){
+        }
+        fail 'Expected AssertionFailedError was not thrown.'
     }
 
-// ----------------
+    void testStaticFailing() {
+        try{ if (GroovyTestCase.notYetImplemented(this)) return}
+        catch (AssertionFailedError expected){
+        }
+        fail 'Expected AssertionFailedError was not thrown.'
+    }
 
     void testShouldFailWithMessage() {
         def msg = shouldFail { throw new RuntimeException('x') }
         assertEquals 'x', msg
     }
     void testShouldFailWithMessageForClass() {
-        def msg = shouldFail(RuntimeException.class) { throw new RuntimeException('x') }
+        def msg = shouldFail(RuntimeException) { throw new RuntimeException('x') }
         println msg
         assertEquals 'x', msg
     }
