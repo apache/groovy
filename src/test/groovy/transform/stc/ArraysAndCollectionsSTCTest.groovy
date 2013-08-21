@@ -511,5 +511,18 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert AR.'key'[0] == ['val1']
         """
     }
+    
+    // GROOVY-6311
+    void testSetSpread() {
+        assertScript """
+            class Inner {Set<String> strings}
+            class Outer {Set<Inner> inners}
+            Outer outer = new Outer(inners: [ new Inner(strings: ['abc', 'def'] as Set), new Inner(strings: ['ghi'] as Set) ] as Set)
+            def res = outer.inners*.strings
+            assert res[1].contains('ghi')
+            assert res[0].contains('abc')
+            assert res[0].contains('def')
+        """
+    }
 }
 
