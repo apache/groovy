@@ -72,6 +72,22 @@ class PropertyMissingTest extends GroovyTestCase {
         assertEquals "FOO", PMTest1.FOO
     }
 
+    // GROOVY-6260
+    void testStaticNonStaticMessage() {
+        assertScript """
+            class Foo {
+                void setBar(String bar) {}
+            }
+            def foo = new Foo()
+            try {
+                foo.bar
+                assert false
+            } catch (MissingPropertyException e) {
+                assert e.getMessageWithoutLocationText().contains("bar (non-static! You probably tried it static)")
+            }
+        """
+    }
+
 }
 
 class PMTest1 {

@@ -19,6 +19,7 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -185,7 +186,11 @@ public class MethodRankHelper{
             if (i > MAX_RECOMENDATIONS) break;
             if (f.score > MAX_FIELD_SCORE) break;
             if(i > 0) sb.append(", ");
-            sb.append(f.f.getName());
+            MetaProperty mp = f.f;
+            sb.append(mp.getName());
+            if (mp.getName().equals(fieldName) && !Modifier.isStatic(mp.getModifiers())) {
+                sb.append(" (non-static! You probably tried it static)");
+            }
             i++;
         }
         return i > 0? sb.toString(): "";
