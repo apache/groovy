@@ -1,7 +1,12 @@
-class JmxTest extends GroovyTestCase {
+import gls.CompilableTestSupport
+
+class JmxTest extends CompilableTestSupport {
 
     void testIntroduction() {
         shouldCompile '''
+            import javax.management.Attribute
+            import javax.management.MBeanServerConnection
+
             MBeanServerConnection server = null
             String beanName = 'Person'
             
@@ -107,16 +112,19 @@ class JmxTest extends GroovyTestCase {
 
     void testTomcat() {
         shouldCompile '''
-            @Grab('org.jfree:jfreechart:1.0.15')
+            @Grapes([@Grab('org.jfree:jfreechart:1.0.15'), @Grab('org.codehaus.groovy:groovy-swing:2.1.6')])
+
             // tag::tomcat[]
+            import groovy.swing.SwingBuilder
+
             import javax.management.ObjectName
             import javax.management.remote.JMXConnectorFactory as JmxFactory
             import javax.management.remote.JMXServiceURL as JmxUrl
+            import javax.swing.WindowConstants as WC
+
             import org.jfree.chart.ChartFactory
             import org.jfree.data.category.DefaultCategoryDataset as Dataset
             import org.jfree.chart.plot.PlotOrientation as Orientation
-            import groovy.swing.SwingBuilder
-            import javax.swing.WindowConstants as WC
 
             def serverUrl = 'service:jmx:rmi:///jndi/rmi://localhost:9004/jmxrmi'
             def server = JmxFactory.connect(new JmxUrl(serverUrl)).MBeanServerConnection
@@ -283,5 +291,378 @@ class JmxTest extends GroovyTestCase {
             def connector = JMXConnectorFactory.connect(new JMXServiceURL(serverUrl), jmxEnv)
             // end::troubleshooting[]
         '''   
+    }
+
+    void testJmxBuilder() {
+        shouldCompile '''
+            @Grab('org.codehaus.groovy:groovy-jmx:2.1.6')
+            import groovy.jmx.builder.JmxBuilder
+            import javax.management.ObjectName
+
+            // tag::instantiating_jmxbuilder[]
+            def jmx = new JmxBuilder()
+            // end::instantiating_jmxbuilder[]
+
+            // tag::connector_server[]
+            jmx.connectorServer(port: 9000).start()
+            // end::connector_server[]
+
+            // tag::connector_server_and_local_registry[]
+            import java.rmi.registry.LocateRegistry
+            //...
+
+            LocateRegistry.createRegistry(9000)
+            jmx.connectorServer(port: 9000).start()
+            // end::connector_server_and_local_registry[]
+
+            // tag::client_connector[]
+            def client = jmx.connectorClient(port: 9000)
+            client.connect()
+            // end::client_connector[]
+
+            // tag::client_connector_usage[]
+            client.getMBeanServerConnection()
+            // end::client_connector_usage[]
+
+            class Foo {}
+            class Bar {}
+            class SomeBar {}
+            if (true) {
+                // tag::jmxbuilder_export[]
+                def beans = jmx.export {
+                    bean(new Foo())
+                    bean(new Bar())
+                    bean(new SomeBar())
+                }
+                // end::jmxbuilder_export[]
+            }
+
+            // tag::request_controller[]
+            class RequestController {
+                // constructors
+                RequestController() { super() }
+                RequestController(Map resource) { }
+
+                // attributes
+                boolean isStarted() { true }
+                int getRequestCount() { 0 }
+                int getResourceCount() { 0 }
+                void setRequestLimit(int limit) { }
+                int getRequestLimit() { 0 }
+
+                // operations
+                void start() { }
+                void stop() { }
+                void putResource(String name, Object resource) { }
+                void makeRequest(String res) { }
+                void makeRequest() { }
+            }
+            // end::request_controller[]
+
+            if (true) {            
+                // tag::implicit_export[]
+                jmx.export {
+                    bean(new RequestController(resource: "Hello World"))
+                }
+                // end::implicit_export[]
+            }
+
+            if (true) {
+                // tag::using_bean[]
+                def ctrl = new RequestController(resource:"Hello World")
+                def beans = jmx.export {
+                    bean(target: ctrl, name: "jmx.tutorial:type=Object")
+                }
+                // end::using_bean[]
+            }
+
+            if (true) {
+                // tag::export_all_attributes[]
+                def objName = new ObjectName("jmx.tutorial:type=Object")
+                def beans = jmx.export {
+                    bean(target: new RequestController(),
+                    name: objName,
+                    attributes: "*")
+                }
+                // end::export_all_attributes[]
+            }
+
+            if (true) {
+                // tag::export_attribute_list[]
+                def objName = new ObjectName("jmx.tutorial:type=Object")
+                def beans = jmx.export {
+                    bean(
+                        target: new RequestController(),
+                        name: objName,
+                        attributes: ["Resource", "RequestCount"]
+                    )
+                }
+                // end::export_attribute_list[]
+            }
+
+            if (true) {
+                // tag::export_attribute_with_explicit_descriptors[]
+                def objName = new ObjectName("jmx.tutorial:type=Object")
+                def beans = jmx.export {
+                    bean(
+                        target: new RequestController(),
+                        name: objName,
+                        attributes: [
+                            "Resource": [desc: "The resource to request.", readable: true, writable: true, defaultValue: "Hello"],
+                            "RequestCount": "*"
+                        ]
+                    )
+                }
+                // end::export_attribute_with_explicit_descriptors[]
+            }
+
+            if (true) {
+                // tag::export_all_constructors[]
+                def objName = new ObjectName("jmx.tutorial:type=Object")
+                def beans = jmx.export {
+                    bean(
+                        target: new RequestController(),
+                        name: objName,
+                        constructors: "*"
+                    )
+                }
+                // end::export_all_constructors[]
+            }
+
+            if (true) {
+                // tag::export_constructors_using_parameter_descriptor[]
+                def objName = new ObjectName("jmx.tutorial:type=Object")
+                def beans = jmx.export {
+                    bean(
+                        target: new RequestController(),
+                        name: objName,
+                        constructors: [
+                            "RequestController": ["Object"]
+                        ]
+                    )
+                }
+                // end::export_constructors_using_parameter_descriptor[]
+            }
+
+            if (true) {
+                // tag::export_constructor_with_explicit_descriptors[]
+                def objName = new ObjectName("jmx.tutorial:type=Object")
+                def beans = jmx.export {
+                    bean(target: new RequestController(), name: objName,
+                        constructors: [
+                            "RequestController": [
+                                desc: "Constructor takes param",
+                                params: ["Object" : [name: "Resource", desc: "Resource for controller"]]
+                            ]
+                        ]
+                    )
+                }
+                // end::export_constructor_with_explicit_descriptors[]
+            }
+
+            if (true) {
+                // tag::export_all_operations[]
+                def objName = new ObjectName("jmx.tutorial:type=Object")
+                def beans = jmx.export {
+                    bean(
+                        target: new RequestController(),
+                        name: objName,
+                        operations: "*"
+                    )
+                }
+                // end::export_all_operations[]
+            }
+
+            if (true) {
+                // tag::export_operation_list[]
+                def objName = new ObjectName("jmx.tutorial:type=Object")
+                def beans = jmx.export {
+                    bean(
+                        target: new RequestController(),
+                        name: objName,
+                        operations: ["start", "stop"]
+                    )
+                }
+                // end::export_operation_list[]
+            }
+
+            if (true) {
+                // tag::export_operations_by_signature[]
+                def objName = new ObjectName("jmx.tutorial:type=Object")
+                def beans = jmx.export {
+                    bean(
+                        target: new RequestController(),
+                        name: objName,
+                        operations: [
+                            "makeRequest": ["String"]
+                        ]
+                    )
+                }
+                // end::export_operations_by_signature[]
+            }
+
+            if (true) {
+                // tag::export_operations_with_explicit_descriptors[]
+                def objName = new ObjectName("jmx.tutorial:type=Object")
+                def beans = jmx.export {
+                    bean(target: new RequestController(), name: objName,
+                        operations: [
+                            "start": [desc: "Starts request controller"],
+                            "stop": [desc: "Stops the request controller"],
+                            "setResource": [params: ["Object"]],
+                            "makeRequest": [
+                                desc: "Executes the request.",
+                                params: [
+                                    "String": [name: "Resource", desc: "The resource to request"]
+                                ]
+                            ]
+                        ]
+                    )
+                }
+                // end::export_operations_with_explicit_descriptors[]
+            }
+
+            // tag::embedding_descriptor[]
+            class RequestControllerGroovy {
+                // attributes
+                boolean started
+                int requestCount
+                int resourceCount
+                int requestLimit
+                Map resources
+
+                // operations
+                void start() { }
+                void stop(){ }
+                void putResource(String name, Object resource) { }
+                void makeRequest(String res) { }
+                void makeRequest() { }
+
+                static descriptor = [
+                    name: "jmx.builder:type=EmbeddedObject",
+                    operations: ["start", "stop", "putResource"],
+                    attributes: "*"
+                ]
+            }
+            
+            // export
+            jmx.export(
+                bean(new RequestControllerGroovy())
+            )
+            // end::embedding_descriptor[]
+
+            // tag::exporting_timer[]
+            def timer = jmx.timer(name: "jmx.builder:type=Timer", event: "heartbeat", period: "1s")
+            timer.start()
+            // end::exporting_timer[]
+
+            if (true) {
+                // tag::exporting_timer_beans[]
+                def beans = jmx.export {
+                    timer(name: "jmx.builder:type=Timer1", event: "event.signal", period: "1s")
+                    timer(name: "jmx.builder:type=Timer2", event: "event.log", period: "1s")
+                }
+                beans[0].start()
+                beans[1].start()
+                // end::exporting_timer_beans[]
+            }
+
+            def callback
+            // tag::event_handling_closures[]
+            callback = { ->
+                // event handling code here.
+            }
+            // end::event_handling_closures[]
+
+            // tag::event_handling_closures_event[]
+            callback = { event ->
+                // event handling code
+            }
+            // end::event_handling_closures_event[]
+
+            // tag::handling_attribute_onchange_event[]
+            jmx.export {
+                bean(
+                    target: new RequestController(), name: "jmx.tutorial:type=Object",
+                    attributes: [
+                        "Resource": [
+                            readable: true, writable: true,
+                            onChange: { e ->
+                                println e.oldValue
+                                println e.newValue
+                            }
+                        ]
+                    ]
+                )
+            }
+            // end::handling_attribute_onchange_event[]
+
+            // tag::event_handler[]
+            class EventHandler {
+                void handleStart(e){
+                    println e
+                }
+            }
+            // end::event_handler[]
+
+            if (true) {
+                // tag::event_handler_usage[]
+                def handler = new EventHandler()
+
+                def beans = jmx.export {
+                    bean(target: new RequestController(), name: "jmx.tutorial:type=Object",
+                        operations: [
+                            "start": [
+                                desc:"Starts request controller",
+                                onCall:handler.&handleStart
+                            ]
+                        ]
+                    )
+                }
+                // end::event_handler_usage[]
+            }
+
+            if (true) {
+                // tag::listener_mbean[]
+                def beans = jmx.export {
+                    timer(name: "jmx.builder:type=Timer", event: "heartbeat", period: "1s").start()
+                    bean(target: new RequestController(), name: "jmx.tutorial:type=Object",
+                        operations: "*",
+                        listeners: [
+                            heartbeat: [
+                                from: "jmx.builder:type=Timer",
+                                call: { e ->
+                                    println e
+                                }
+                            ]
+                        ]
+                    )
+                }
+                // end::listener_mbean[]
+            }
+
+            // tag::jmxbuilders_listener[]
+            jmx.timer(name: "jmx.builder:type=Timer", period: "1s").start()
+
+            jmx.listener(
+                from: "jmx.builder:type=Timer",
+                call: { e ->
+                    println "beep..."
+                }
+            )
+            // end::jmxbuilders_listener[]
+
+            // tag::declare_emitter[]
+            def emitter = jmx.emitter()
+            // end::declare_emitter[]
+
+            // tag::emitter_broadcast_event[]
+            emitter.send()
+            // end::emitter_broadcast_event[]
+
+            // tag::emitter_broadcast_event_with_objects[]
+            emitter.send("Hello!")
+            // end::emitter_broadcast_event_with_objects[]
+        '''
     }
 }
