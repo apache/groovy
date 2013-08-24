@@ -17,7 +17,6 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import groovy.util.CharsetToolkit;
 import org.apache.tools.ant.BuildFileTest;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.File;
@@ -30,9 +29,24 @@ import java.util.List;
  */
 public class GroovyDocTest extends BuildFileTest {
 
-    private static final String SRC_TESTFILES = "src/test/resources/groovydoc/";
+    private static final String SRC_TESTFILES;
 
     private File tmpDir;
+
+    static{
+        String groovyDocResourcesPathInSubproject = "src/test/resources/groovydoc/";
+        String groovyDocResourcesPathFromMainProject = "subprojects/groovy-groovydoc/" + groovyDocResourcesPathInSubproject;
+        if (new File(groovyDocResourcesPathInSubproject).exists()){
+            SRC_TESTFILES = groovyDocResourcesPathInSubproject;
+        }
+        else if (new File(groovyDocResourcesPathFromMainProject).exists()){
+            SRC_TESTFILES = groovyDocResourcesPathFromMainProject;
+        }
+        else {
+            fail("Could not identify path to resources dir.");
+            SRC_TESTFILES = "";
+        }
+    }
 
     public GroovyDocTest(String name) {
         super(name);
