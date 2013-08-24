@@ -45,8 +45,5 @@ eclipse.classpath.file {
             node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/$it/src/main/java"])
         }
         node.appendNode('classpathentry', [kind: 'src', path: '/groovy/subprojects/groovy-templates/src/main/java'])
-        node.appendNode('classpathentry', [kind: 'lib', path: "${project.configurations.compilerCompile.find { it.name.startsWith('ant-') }}"])
-        def groovyAntSubproject = project.subprojects.find { it.name == 'groovy-ant' }
-        node.appendNode('classpathentry', [kind: 'lib', path: "${groovyAntSubproject.configurations.runtime.find { it.name.startsWith('ant-launcher-') }}"])
     }
 }
