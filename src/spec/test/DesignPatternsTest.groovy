@@ -1,4 +1,6 @@
-class DesignPatternsTest extends GroovyTestCase {
+import gls.CompilableTestSupport
+
+class DesignPatternsTest extends CompilableTestSupport {
 
     void testAbstractFactory() {
         shouldCompile '''
@@ -24,7 +26,8 @@ class DesignPatternsTest extends GroovyTestCase {
                         println "You have $money, how much would you like to bet?"
                         return true
                     }
-                    return false
+
+                    false
                 }
                 def play(amount) {
                     def coin1 = tossWasHead()
@@ -35,7 +38,9 @@ class DesignPatternsTest extends GroovyTestCase {
                     } else if (!coin1 && !coin2) {
                         money -= amount
                         println 'You lose'
-                    } else println 'Draw'
+                    } else {
+                        println 'Draw'
+                    }
                 }
             }
             // end::abstract_factory_example1[]
@@ -56,19 +61,26 @@ class DesignPatternsTest extends GroovyTestCase {
                 private guess = new Random().nextInt(upper - lower) + lower
                 def moreTurns() {
                     def done = (lower == guess || upper == guess)
-                    if (!done) println "Enter a number between $lower and $upper"
+                    if (!done) {
+                        println "Enter a number between $lower and $upper"
+                    }
+
                     !done
                 }
                 def play(nextGuess) {
-                    if (nextGuess <= guess) lower = [lower, nextGuess].max()
-                    if (nextGuess >= guess) upper = [upper, nextGuess].min()
+                    if (nextGuess <= guess) {
+                        lower = [lower, nextGuess].max()
+                    }
+                    if (nextGuess >= guess) {
+                        upper = [upper, nextGuess].min()
+                    }
                 }
             }
             // end::abstract_factory_example2[]
 
             // tag::abstract_factory_code[]
-            def guessFactory = [messages:GuessGameMessages, control:GuessGameControl, converter:GuessGameInputConverter]
-            def twoupFactory = [messages:TwoupMessages, control:TwoupControl, converter:TwoupInputConverter]
+            def guessFactory = [messages: GuessGameMessages, control: GuessGameControl, converter: GuessGameInputConverter]
+            def twoupFactory = [messages: TwoupMessages, control: TwoupControl, converter: TwoupInputConverter]
 
             class GameFactory {
                 def static factory
@@ -85,7 +97,7 @@ class DesignPatternsTest extends GroovyTestCase {
             def converter = GameFactory.converter
             println messages.welcome
             def reader = new BufferedReader(new InputStreamReader(System.in))
-            while (control.moreTurns()){
+            while (control.moreTurns()) {
                 def input = reader.readLine().trim()
                 control.play(converter.convert(input))
             }
@@ -118,7 +130,7 @@ class DesignPatternsTest extends GroovyTestCase {
             class SquarePegAdapter {
                 def peg
                 def getRadius() {
-                    Math.sqrt(((peg.width/2) ** 2)*2)
+                    Math.sqrt(((peg.width / 2) ** 2) * 2)
                 }
                 String toString() {
                     "SquarePegAdapter with peg width $peg.width (and notional radius $radius)"
@@ -127,13 +139,14 @@ class DesignPatternsTest extends GroovyTestCase {
             // end::adapter_delegation_code[]
 
             // tag::adapter_delegation_usage[]
-            def hole = new RoundHole(radius:4.0)
+            def hole = new RoundHole(radius: 4.0)
             (4..7).each { w ->
-                def peg = new SquarePegAdapter(peg:new SquarePeg(width:w))
-                if (hole.pegFits(peg))
+                def peg = new SquarePegAdapter(peg: new SquarePeg(width: w))
+                if (hole.pegFits(peg)) {
                     println "peg $peg fits in hole $hole"
-                else
+                } else {
                     println "peg $peg does not fit in hole $hole"
+                }
             }
             // end::adapter_delegation_usage[]
         '''
@@ -162,7 +175,7 @@ class DesignPatternsTest extends GroovyTestCase {
             // tag::adapter_inheritance_code[]
             class SquarePegAdapter extends SquarePeg {
                 def getRadius() {
-                    Math.sqrt(((width/2) ** 2)*2)
+                    Math.sqrt(((width / 2) ** 2) * 2)
                 }
                 String toString() {
                     "SquarePegAdapter with width $width (and notional radius $radius)"
@@ -171,13 +184,14 @@ class DesignPatternsTest extends GroovyTestCase {
             // end::adapter_inheritance_code[]
 
             // tag::adapter_inheritance_usage[]
-            def hole = new RoundHole(radius:4.0)
+            def hole = new RoundHole(radius: 4.0)
             (4..7).each { w ->
-                def peg = new SquarePegAdapter(peg:new SquarePeg(width:w))
-                if (hole.pegFits(peg))
+                def peg = new SquarePegAdapter(peg: new SquarePeg(width: w))
+                if (hole.pegFits(peg)) {
                     println "peg $peg fits in hole $hole"
-                else
+                } else {
                     println "peg $peg does not fit in hole $hole"
+                }
             }
             // end::adapter_inheritance_usage[]
 
@@ -189,26 +203,25 @@ class DesignPatternsTest extends GroovyTestCase {
 
             // tag::adapter_closure_define[]
             def adapter = {
-                p -> [getRadius:{Math.sqrt(((p.width/2) ** 2)*2)}] as RoundThing
+                p -> [getRadius: { Math.sqrt(((p.width / 2) ** 2) * 2) }] as RoundThing
             }
             // end::adapter_closure_define[]
 
             def isoHelper = {
                 // tag::adapter_closure_usage[]
-                def peg = new SquarePeg(width:w)
-                if (hole.pegFits(adapter(peg)))
-                // ... as before
+                def peg = new SquarePeg(width: 4)
+                if (hole.pegFits(adapter(peg))) {
+                    // ... as before
+                }
                 // end::adapter_closure_usage[]
             }
-            isoHelper()
 
             def isoHelper2 = {
                 // tag::adapter_expando_meta_class[]
-                def peg = new SquarePeg(width:w)
-                peg.metaClass.radius = Math.sqrt(((peg.width/2) ** 2)*2)
+                def peg = new SquarePeg(width: 4)
+                peg.metaClass.radius = Math.sqrt(((peg.width / 2) ** 2) * 2)
                 // end::adapter_expando_meta_class[]
             }
-            isoHelper2()
         '''
     }
 
@@ -226,7 +239,7 @@ class DesignPatternsTest extends GroovyTestCase {
 
             class Test1 {
                 // tag::bouncer_null_check_usage[]
-                public void doStuff(String name, Object value) {
+                void doStuff(String name, Object value) {
                     NullChecker.check('name', name)
                     NullChecker.check('value', value)
                     // do stuff
@@ -236,7 +249,7 @@ class DesignPatternsTest extends GroovyTestCase {
 
             class Test2 {
                 // tag::bouncer_null_check_usage_groovy_way[]
-                public void doStuff(String name, Object value) {
+                void doStuff(String name, Object value) {
                     assert name != null, 'name should not be null'
                     assert value != null, 'value should not be null'
                     // do stuff
@@ -250,7 +263,7 @@ class DesignPatternsTest extends GroovyTestCase {
         shouldCompile '''
             // tag::bouncer_validation[]
             class NumberChecker {
-                static final NUMBER_PATTERN = "\\d+(\\.\\d+(E-?\\d+)?)?"
+                static final String NUMBER_PATTERN = "\\\\d+(\\\\.\\\\d+(E-?\\\\d+)?)?"
                 static isNumber(str) {
                     if (!str ==~ NUMBER_PATTERN) {
                         throw new IllegalArgumentException("Argument '$str' must be a number")
@@ -322,7 +335,7 @@ class DesignPatternsTest extends GroovyTestCase {
 
             class DefaultLister {
                 def listFiles(dir) {
-                    new File(dir).eachFile{ f -> println f }
+                    new File(dir).eachFile { f -> println f }
                 }
             }
 
@@ -347,8 +360,8 @@ class DesignPatternsTest extends GroovyTestCase {
                 private children = []
                 def toString(indent) {
                     def s = super.toString(indent)
-                    children.each{ child ->
-                        s += "\n" + child.toString(indent+1)
+                    children.each { child ->
+                        s += "\\n" + child.toString(indent + 1)
                     }
                     s
                 }
@@ -357,15 +370,15 @@ class DesignPatternsTest extends GroovyTestCase {
                 }
             }
 
-            class Leaf extends Component {}
+            class Leaf extends Component { }
 
-            def root = new Composite(name:"root")
-            root << new Leaf(name:"leaf A")
-            def comp = new Composite(name:"comp B")
+            def root = new Composite(name: "root")
+            root << new Leaf(name: "leaf A")
+            def comp = new Composite(name: "comp B")
             root << comp
-            root << new Leaf(name:"leaf C")
-            comp << new Leaf(name:"leaf B1")
-            comp << new Leaf(name:"leaf B2")
+            root << new Leaf(name: "leaf C")
+            comp << new Leaf(name: "leaf B1")
+            comp << new Leaf(name: "leaf B2")
             println root.toString(0)
             // end::composite_code[]
         '''
@@ -423,23 +436,25 @@ class DesignPatternsTest extends GroovyTestCase {
             }
             // end::decorator_dynamic_behaviour_class[]
 
-            // tag::decorator_traditional_usage[]
-            def logger = new UpperLogger(new TimeStampingLogger(new Logger()))
-            logger.log("G'day Mate")
-            // => Tue May 22 07:13:50 EST 2007: G'DAY MATE
-            // end::decorator_traditional_usage[]
+            def separateHelper = {
+                // tag::decorator_traditional_usage[]
+                def logger = new UpperLogger(new TimeStampingLogger(new Logger()))
+                logger.log("G'day Mate")
+                // => Tue May 22 07:13:50 EST 2007: G'DAY MATE
+                // end::decorator_traditional_usage[]
 
-            // tag::decorator_traditional_usage2[]
-            logger = new TimeStampingLogger(new UpperLogger(new Logger()))
-            logger.log('Hi There')
-            // => TUE MAY 22 07:13:50 EST 2007: HI THERE
-            // end::decorator_traditional_usage2[]
+                // tag::decorator_traditional_usage2[]
+                logger = new TimeStampingLogger(new UpperLogger(new Logger()))
+                logger.log('Hi There')
+                // => TUE MAY 22 07:13:50 EST 2007: HI THERE
+                // end::decorator_traditional_usage2[]
 
-            // tag::decorator_dynamic_behaviour_usage[]
-            logger = new GenericLowerDecorator(new TimeStampingLogger(new Logger()))
-            logger.log('IMPORTANT Message')
-            // => Tue May 22 07:27:18 EST 2007: important message
-            // end::decorator_dynamic_behaviour_usage[]
+                // tag::decorator_dynamic_behaviour_usage[]
+                logger = new GenericLowerDecorator(new TimeStampingLogger(new Logger()))
+                logger.log('IMPORTANT Message')
+                // => Tue May 22 07:27:18 EST 2007: important message
+                // end::decorator_dynamic_behaviour_usage[]
+            }
 
             // tag::decorator_runtime_behaviour[]
             // current mechanism to enable ExpandoMetaClass
@@ -489,10 +504,10 @@ class DesignPatternsTest extends GroovyTestCase {
                     super.beforeInvoke(object, methodName, arguments)
                     beforeTime = System.currentTimeMillis()
                 }
-                public Object afterInvoke(Object object, String methodName, Object[] arguments, Object result) {
+                Object afterInvoke(Object object, String methodName, Object[] arguments, Object result) {
                     super.afterInvoke(object, methodName, arguments, result)
                     def duration = System.currentTimeMillis() - beforeTime
-                    writer.write("Duration: $duration ms\n")
+                    writer.write("Duration: $duration ms\\n")
                     writer.flush()
                     result
                 }
@@ -511,6 +526,7 @@ class DesignPatternsTest extends GroovyTestCase {
 
     void testDecoratorSql() {
         shouldCompile '''
+            @Grab('org.codehaus.groovy:groovy-sql:2.1.6')
             import groovy.sql.Sql
             import java.lang.reflect.InvocationHandler
             import java.sql.Connection
@@ -523,7 +539,7 @@ class DesignPatternsTest extends GroovyTestCase {
                         log.debug("ignoring call to Connection.close() for use by groovy.sql.Sql")
                     } else {
                         log.trace("delegating $method")
-                        return con.invokeMethod(method.name,args)
+                        return con.invokeMethod(method.name, args)
                     }
                 } as InvocationHandler;
                 def proxy = Proxy.newProxyInstance( getClass().getClassLoader(), [Connection] as Class[], invoker )
@@ -576,7 +592,7 @@ class DesignPatternsTest extends GroovyTestCase {
             }
 
             def words(String text) {
-                text.replaceAll('[^a-zA-Z]', ' ').trim().split("\\s+")*.toLowerCase()
+                text.replaceAll('[^a-zA-Z]', ' ').trim().split("\\\\s+")*.toLowerCase()
             }
 
             def avgWordLength = {
@@ -584,9 +600,9 @@ class DesignPatternsTest extends GroovyTestCase {
                 sprintf "Avg Word Length: %4.2f", words*.size().sum() / words.size()
             }
             def modeWord = {
-                def wordGroups = words(it.text).groupBy {it}.collectEntries{ k, v -> [k, v.size()] }
+                def wordGroups = words(it.text).groupBy {it}.collectEntries { k, v -> [k, v.size()] }
                 def maxSize = wordGroups*.value.max()
-                def maxWords = wordGroups.findAll{ it.value == maxSize }
+                def maxWords = wordGroups.findAll { it.value == maxSize }
                 "Mode Word(s): ${maxWords*.key.join(', ')} ($maxSize occurrences)"
             }
             def wordCount = { d -> "Word Count: " + words(d.text).size() }
@@ -602,7 +618,7 @@ class DesignPatternsTest extends GroovyTestCase {
             }
 
             Document d = asyncDecorator(asyncDecorator(asyncDecorator(
-                    new DocumentImpl(document:"This is the file with the words in it\n\t\nDo you see the words?\n"),
+                    new DocumentImpl(document:"This is the file with the words in it\\n\\t\\nDo you see the words?\\n"),
             //        new DocumentImpl(document: new File('AsyncDecorator.groovy').text),
                     wordCount), modeWord), avgWordLength)
             d.print()
@@ -645,10 +661,10 @@ class DesignPatternsTest extends GroovyTestCase {
 
             class MortgageLender {
                 def borrowAmount(amount) {
-                   "borrow \$$amount"
+                   "borrow \\$$amount"
                 }
                 def borrowFor(thing) {
-                   "buy $thing"
+                   "buy \\$thing"
                 }
             }
 
@@ -691,7 +707,7 @@ class DesignPatternsTest extends GroovyTestCase {
 
             class MortgageLender {
                 def borrowAmount(amount) {
-                   "borrow \$$amount"
+                   "borrow \\$$amount"
                 }
                 def borrowFor(thing) {
                    "buy $thing"
@@ -701,7 +717,7 @@ class DesignPatternsTest extends GroovyTestCase {
             def p = new Person()
 
             assert "buy present" == p.borrowFor('present')
-            assert "borrow $50" == p.borrowAmount(50)
+            assert "borrow \\$50" == p.borrowAmount(50)
             // end::delegation_annotation[]
         '''
     }
@@ -760,7 +776,7 @@ class DesignPatternsTest extends GroovyTestCase {
                 new Aircraft(797, 1004, '10-Nov-2008')
             ]
 
-            fleet.each{ p -> p.describe() }
+            fleet.each { p -> p.describe() }
             // end::flyweight_factory[]
         '''
     }
@@ -781,7 +797,7 @@ class DesignPatternsTest extends GroovyTestCase {
             // end::iterator_example[]
 
             // tag::iterator_example2[]
-            colors.eachWithIndex{ item, pos ->
+            colors.eachWithIndex { item, pos ->
                 println "Position $pos contains '$item'"
             }
             // end::iterator_example2[]
@@ -855,29 +871,29 @@ class DesignPatternsTest extends GroovyTestCase {
             }
 
             def people = [
-                new Person(name:'Tom', job:new Job(salary:1000)),
-                new Person(name:'Dick', job:new Job(salary:1200)),
+                new Person(name: 'Tom', job: new Job(salary: 1000)),
+                new Person(name: 'Dick', job: new Job(salary: 1200)),
             ]
 
-            def biggestSalary = people.collect{ p -> p.job.salary }.max()
+            def biggestSalary = people.collect { p -> p.job.salary }.max()
             println biggestSalary
             // end::null_object_simple_example[]
 
             // tag::null_object_simple_example2[]
-            people << new Person(name:'Harry')
+            people << new Person(name: 'Harry')
             // end::null_object_simple_example2[]
 
             // tag::null_object_simple_example3[]
             class NullJob extends Job { def salary = 0 }
 
-            people << new Person(name:'Harry', job:new NullJob())
-            biggestSalary = people.collect{ p -> p.job.salary }.max()
+            people << new Person(name: 'Harry', job: new NullJob())
+            biggestSalary = people.collect { p -> p.job.salary }.max()
             println biggestSalary
             // end::null_object_simple_example3[]
 
             // tag::null_object_simple_example4[]
             people << new Person(name:'Harry')
-            biggestSalary = people.collect{ p -> p.job?.salary }.max()
+            biggestSalary = people.collect { p -> p.job?.salary }.max()
             println biggestSalary
             // end::null_object_simple_example4[]
         '''
@@ -903,11 +919,11 @@ class DesignPatternsTest extends GroovyTestCase {
             }
 
             def root = new NullHandlingTree(
-                value:2,
+                value: 2,
                 left: new NullHandlingTree(
-                    value:3,
-                    right: new NullHandlingTree(value:4),
-                    left: new NullHandlingTree(value:5)
+                    value: 3,
+                    right: new NullHandlingTree(value: 4),
+                    left: new NullHandlingTree(value: 5)
                 )
             )
 
@@ -944,11 +960,11 @@ class DesignPatternsTest extends GroovyTestCase {
             }
 
             def root = new Tree(
-                value:2,
+                value: 2,
                 left: new Tree(
-                    value:3,
-                    right: new Tree(value:4),
-                    left: new Tree(value:5)
+                    value: 3,
+                    right: new Tree(value: 4),
+                    left: new Tree(value: 5)
                 )
             )
 
@@ -967,7 +983,7 @@ class DesignPatternsTest extends GroovyTestCase {
                     greaterThanAll(self, others)
                 }
                 static boolean greaterThanAll(Integer self, others) {
-                    others.every{ self > it }
+                    others.every { self > it }
                 }
             }
             // end::pimp_my_library_example[]
@@ -991,7 +1007,7 @@ class DesignPatternsTest extends GroovyTestCase {
                 def accumulate(args) {
                     def result
                     def s = new Socket("localhost", 54321)
-                    s.withObjectStreams{ ois, oos ->
+                    s.withObjectStreams { ois, oos ->
                         oos << args
                         result = ois.readObject()
                     }
@@ -1011,7 +1027,7 @@ class DesignPatternsTest extends GroovyTestCase {
             // tag::proxy_server[]
             class Accumulator {
                 def accumulate(args) {
-                    args.inject(0){ total, arg -> total += arg }
+                    args.inject(0) { total, arg -> total += arg }
                 }
             }
 
@@ -1037,8 +1053,8 @@ class DesignPatternsTest extends GroovyTestCase {
             class VoteCollector {
                 def votes = 0
                 private static final INSTANCE = new VoteCollector()
-                static getInstance(){ return INSTANCE }
-                private VoteCollector() {}
+                static getInstance() { return INSTANCE }
+                private VoteCollector() { }
                 def display() { println "Collector:${hashCode()}, Votes:$votes" }
             }
             // end::singleton_vote_collector[]
@@ -1069,13 +1085,13 @@ class DesignPatternsTest extends GroovyTestCase {
                 private total = 0
                 def add(a, b) { total++; a + b }
                 def getTotalCalculations() { 'Total Calculations: ' + total }
-                String toString() { 'Calc: ' + hashCode()}
+                String toString() { 'Calc: ' + hashCode() }
             }
 
             class Client {
                 def calc = new Calculator()
                 def executeCalc(a, b) { calc.add(a, b) }
-                String toString() { 'Client: ' + hashCode()}
+                String toString() { 'Client: ' + hashCode() }
             }
             // end::singleton_meta_programming_classes[]
 
@@ -1116,13 +1132,13 @@ class DesignPatternsTest extends GroovyTestCase {
                 private total = 0
                 def add(a, b) { total++; a + b }
                 def getTotalCalculations() { 'Total Calculations: ' + total }
-                String toString() { 'Calc: ' + hashCode()}
+                String toString() { 'Calc: ' + hashCode() }
             }
 
             class Client {
                 @Inject Calculator calc
                 def executeCalc(a, b) { calc.add(a, b) }
-                String toString() { 'Client: ' + hashCode()}
+                String toString() { 'Client: ' + hashCode() }
             }
 
             def injector = Guice.createInjector (
@@ -1184,14 +1200,14 @@ class DesignPatternsTest extends GroovyTestCase {
                 private total = 0
                 def add(a, b) { total++; a + b }
                 def getTotalCalculations() { 'Total Calculations: ' + total }
-                String toString() { 'Calc: ' + hashCode()}
+                String toString() { 'Calc: ' + hashCode() }
             }
 
             class Client {
                 Client(Calculator calc) { this.calc = calc }
                 def calc
                 def executeCalc(a, b) { calc.add(a, b) }
-                String toString() { 'Client: ' + hashCode()}
+                String toString() { 'Client: ' + hashCode() }
             }
 
             // Here we 'wire' up our dependencies through the API. Alternatively,
@@ -1307,7 +1323,13 @@ class DesignPatternsTest extends GroovyTestCase {
                 def receive_message()
             }
             // end::state_variation1_interface[]
+        '''
+    }
 
+    void testStateVariation2() {
+        shouldCompile '''
+            interface State { }
+            
             // tag::state_variation1_impl[]
             class Client implements State {
               // ... as before ... 
@@ -1324,7 +1346,7 @@ class DesignPatternsTest extends GroovyTestCase {
         '''
     }
 
-    void testStateVariation2() {
+    void testStateVariation3() {
         shouldCompile '''
             // tag::state_variation2_classes[]
             abstract class InstanceProvider {
@@ -1389,16 +1411,16 @@ class DesignPatternsTest extends GroovyTestCase {
                     super(client)
                     println "connected"
                 }
-                def connect(){
+                def connect() {
                     println "error: already connected"
                 }
-                def disconnect(){
+                def disconnect() {
                     transitionTo(Offline)
                 }
                 def send_message(message) {
                     println "\"$message\" sent"
                 }
-                def receive_message(){
+                def receive_message() {
                     println "message received"
                 }
             }
@@ -1414,7 +1436,7 @@ class DesignPatternsTest extends GroovyTestCase {
         '''
     }
 
-    void testStateVariation3() {
+    void testStateVariation4() {
         shouldCompile '''
             // tag::state_variation31[]
             class Grammar {
@@ -1576,7 +1598,8 @@ class DesignPatternsTest extends GroovyTestCase {
                     n.times{
                         result += m
                     }
-                    return result
+
+                    result
                 }
             }
 
@@ -1591,7 +1614,7 @@ class DesignPatternsTest extends GroovyTestCase {
             ]
 
             sampleData.each{ data ->
-                multiplicationStrategies.each{ calc ->
+                multiplicationStrategies.each { calc ->
                     assert data[2] == calc.execute(data[0], data[1])
                 }
             }
@@ -1613,7 +1636,7 @@ class DesignPatternsTest extends GroovyTestCase {
             ]
 
             sampleData.each{ data ->
-                multiplicationStrategies.each{ calc ->
+                multiplicationStrategies.each { calc ->
                     assert data[2] == calc(data[0], data[1])
                 }
             }
@@ -1902,10 +1925,10 @@ class DesignPatternsTest extends GroovyTestCase {
             // tag::visitor_advanced_example4[]
             class DefaultVisitor {
                 void visit(NodeType1 n1) {
-                    n1.children.each {  visit(it)   }
+                    n1.children.each { visit(it) }
                 }
                 void visit(NodeType2 n2) {
-                    n2.children.each {  visit(it)   }
+                    n2.children.each { visit(it) }
                 }
                 void visit(Visitable v) { }
             }
