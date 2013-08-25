@@ -48,9 +48,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
                 new String[] {"src/main/java", "../../src/main", // source file dirs
+                		"src/test/groovy",
                         "../../subprojects/groovy-swing/src/main/groovy",
                         "../../subprojects/groovy-swing/src/main/java",
-                        "../../subprojects/groovy-xml/src/main/java",
                         "../../subprojects/groovy-console/src/main/groovy",
                         "../../subprojects/groovy-sql/src/main/java"},
                 new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
@@ -166,14 +166,14 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testClassComment() throws Exception {
         List<String> srcList = new ArrayList<String>();
-        String base = "groovy/xml/DOMBuilder";
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/Builder";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        String domBuilderDoc = output.getText(MOCK_DIR + "/" + base + ".html");
-        assertNotNull("No GroovyDoc found for " + base, domBuilderDoc);
-        assertTrue(domBuilderDoc.contains("A helper class for creating a W3C DOM tree"));
+        String builderDoc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for " + base, builderDoc);
+        assertTrue(builderDoc.contains("A class comment"));
     }
 
     public void testMethodComment() throws Exception {
@@ -188,39 +188,39 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testPackageName() throws Exception {
         List<String> srcList = new ArrayList<String>();
-        String base = "groovy/xml/DOMBuilder";
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/Builder";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        String domBuilderDoc = output.getText(MOCK_DIR + "/" + base + ".html");
-        assertNotNull("No GroovyDoc found for " + base, domBuilderDoc);
-        assertTrue(domBuilderDoc.contains("<containingPackage name=\"groovy/xml\">groovy.xml</containingPackage>"));
+        String builderDoc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for " + base, builderDoc);
+        assertTrue(builderDoc.contains("<containingPackage name=\"org/codehaus/groovy/tools/groovydoc/testfiles\">org.codehaus.groovy.tools.groovydoc.testfiles</containingPackage>"));
     }
 
     public void testExtendsClauseWithoutSuperClassInTree() throws Exception {
         List<String> srcList = new ArrayList<String>();
-        String base = "groovy/xml/DOMBuilder";
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/Builder";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        String domBuilderDoc = output.getText(MOCK_DIR + "/" + base + ".html");
-        assertNotNull("No GroovyDoc found for " + base, domBuilderDoc);
-        assertTrue(domBuilderDoc.contains("<extends>BuilderSupport</extends>"));
+        String builderDoc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for " + base, builderDoc);
+        assertTrue(builderDoc.contains("<extends>BuilderSupport</extends>"));
     }
 
     public void testExtendsClauseWithSuperClassInTree() throws Exception {
         List<String> srcList = new ArrayList<String>();
-        String base = "groovy/xml/DOMBuilder";
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/Builder";
         srcList.add(base + ".java");
         srcList.add("groovy/util/BuilderSupport.java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        String domBuilderDoc = output.getText(MOCK_DIR + "/" + base + ".html");
-        assertNotNull("No GroovyDoc found for " + base, domBuilderDoc);
-        assertTrue(domBuilderDoc.contains("<extends>BuilderSupport</extends>"));
+        String builderDoc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for " + base, builderDoc);
+        assertTrue(builderDoc.contains("<extends>BuilderSupport</extends>"));
     }
 
     public void testInterfaceExtendsClauseWithMultipleInterfaces() throws Exception {
@@ -290,8 +290,8 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlToolForTests.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
-        String domBuilderDoc = output.getText(MOCK_DIR + "/DefaultPackage/DefaultPackageClassSupport.html");
-        assertTrue(domBuilderDoc.indexOf("<extends>GroovyTestCase</extends>") > 0);
+        String doc = output.getText(MOCK_DIR + "/DefaultPackage/DefaultPackageClassSupport.html");
+        assertTrue(doc.indexOf("<extends>GroovyTestCase</extends>") > 0);
     }
 
     public void testStaticModifier() throws Exception {
