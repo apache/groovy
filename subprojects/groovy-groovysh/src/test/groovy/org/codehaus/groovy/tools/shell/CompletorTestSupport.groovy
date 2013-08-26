@@ -53,7 +53,7 @@ abstract class CompletorTestSupport extends GroovyTestCase {
         idCompletorMocker = new MockFor(IdentifierCompletor)
 
         groovyshMocker = new MockFor(Groovysh)
-        groovyshMocker.demand.createDefaultRegistrar() { { shell -> null } }
+        groovyshMocker.demand.createDefaultRegistrar { { shell -> null } }
         groovyshMocker.demand.getIo(0..2) { testio }
         packageHelperMocker = new MockFor(PackageHelper)
         def registry = new CommandRegistry()

@@ -426,9 +426,9 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 def doc = console.outputArea.document
                 assert doc.getText(0, doc.getLength()) =~ /java.lang.Exception/
             } finally {
-                GroovySystem.metaClassRegistry.removeMetaClass(Thread.class)
-                GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities.class)
-                GroovySystem.metaClassRegistry.removeMetaClass(Preferences.class)
+                GroovySystem.metaClassRegistry.removeMetaClass(Thread)
+                GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities)
+                GroovySystem.metaClassRegistry.removeMetaClass(Preferences)
             }
         }
     }
