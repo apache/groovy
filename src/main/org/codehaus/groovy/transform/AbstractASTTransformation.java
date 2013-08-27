@@ -104,4 +104,8 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     protected List<String> tokenize(String rawExcludes) {
         return rawExcludes == null ? new ArrayList<String>() : StringGroovyMethods.tokenize(rawExcludes, ", ");
     }
+
+    protected boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
+        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
+    }
 }

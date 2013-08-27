@@ -88,7 +88,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         }
     }
 
-    public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes) {
+    public void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingHashCode = hasDeclaredMethod(cNode, "hashCode", 0);
         if (hasExistingHashCode && hasDeclaredMethod(cNode, "_hashCode", 0)) return;
@@ -112,7 +112,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
-    private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes) {
+    private Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes) {
         final List<PropertyNode> pList = getInstanceProperties(cNode);
         final List<FieldNode> fList = new ArrayList<FieldNode>();
         if (includeFields) {
@@ -161,10 +161,6 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         return body;
     }
 
-    private static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
-        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
-    }
-
     private static void createCanEqual(ClassNode cNode) {
         boolean hasExistingCanEqual = hasDeclaredMethod(cNode, "canEqual", 1);
         if (hasExistingCanEqual && hasDeclaredMethod(cNode, "_canEqual", 1)) return;
@@ -178,7 +174,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
     }
 
-    public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes) {
+    public void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes) {
         if (useCanEqual) createCanEqual(cNode);
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingEquals = hasDeclaredMethod(cNode, "equals", 1);
