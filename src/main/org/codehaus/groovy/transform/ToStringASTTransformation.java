@@ -90,19 +90,19 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    public void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames) {
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, false);
     }
 
-    public void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls) {
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, true);
     }
-    
-    public void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage) {
+
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, false);
     }
 
-    public void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache) {
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingToString = hasDeclaredMethod(cNode, "toString", 0);
         if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
@@ -127,7 +127,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
                 ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
-    private Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, BlockStatement body) {
+    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, BlockStatement body) {
         // def _result = new StringBuilder()
         final Expression result = new VariableExpression("_result");
         final Expression init = new ConstructorCallExpression(STRINGBUILDER_TYPE, MethodCallExpression.NO_ARGUMENTS);
