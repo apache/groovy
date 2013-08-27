@@ -112,7 +112,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
     }
 
-    public static void createConstructor(ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes) {
+    public void createConstructor(ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes) {
         // no processing if existing constructors found
         List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
         if (constructors.size() > 1 && !force) return;
@@ -185,10 +185,6 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         Parameter param = new Parameter(fNode.getType(), name);
         param.setInitialExpression(providedOrDefaultInitialValue(fNode));
         return param;
-    }
-
-    private static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
-        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
     }
 
     private static Expression providedOrDefaultInitialValue(FieldNode fNode) {
