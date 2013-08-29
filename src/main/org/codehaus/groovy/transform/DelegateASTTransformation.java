@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.lang.Delegate;
 import groovy.lang.GroovyObject;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
@@ -43,11 +44,19 @@ import java.util.*;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class DelegateASTTransformation extends AbstractASTTransformation implements ASTTransformation, Opcodes {
 
+    private static final Class MY_CLASS = Delegate.class;
+    private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode DEPRECATED_TYPE = ClassHelper.make(Deprecated.class);
     private static final ClassNode GROOVYOBJECT_TYPE = ClassHelper.make(GroovyObject.class);
 
     private static final String MEMBER_DEPRECATED = "deprecated";
     private static final String MEMBER_INTERFACES = "interfaces";
+    private static final String MEMBER_INCLUDES = "includes";
+    private static final String MEMBER_EXCLUDES = "excludes";
+    // GROOVY-6329: awaiting resolution of GROOVY-6330
+//    private static final String MEMBER_INCLUDE_TYPES = "includeTypes";
+//    private static final String MEMBER_EXCLUDE_TYPES = "excludeTypes";
     private static final String MEMBER_PARAMETER_ANNOTATIONS = "parameterAnnotations";
     private static final String MEMBER_METHOD_ANNOTATIONS = "methodAnnotations";
 
@@ -62,12 +71,12 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
             final ClassNode type = fieldNode.getType();
             final ClassNode owner = fieldNode.getOwner();
             if (type.equals(ClassHelper.OBJECT_TYPE) || type.equals(GROOVYOBJECT_TYPE)) {
-                addError("@Delegate field '" + fieldNode.getName() + "' has an inappropriate type: " + type.getName() +
+                addError(MY_TYPE_NAME + " field '" + fieldNode.getName() + "' has an inappropriate type: " + type.getName() +
                         ". Please add an explicit type but not java.lang.Object or groovy.lang.GroovyObject.", parent);
                 return;
             }
             if (type.equals(owner)) {
-                addError("@Delegate field '" + fieldNode.getName() + "' has an inappropriate type: " + type.getName() +
+                addError(MY_TYPE_NAME + " field '" + fieldNode.getName() + "' has an inappropriate type: " + type.getName() +
                         ". Delegation to own type not supported. Please use a different type.", parent);
                 return;
             }
@@ -78,10 +87,21 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
 
             final boolean skipInterfaces = hasBooleanValue(node.getMember(MEMBER_INTERFACES), false);
             final boolean includeDeprecated = hasBooleanValue(node.getMember(MEMBER_DEPRECATED), true) || (type.isInterface() && !skipInterfaces);
+            List<String> excludes = getMemberList(node, MEMBER_EXCLUDES);
+            List<String> includes = getMemberList(node, MEMBER_INCLUDES);
+            // GROOVY-6329: awaiting resolution of GROOVY-6330
+/*
+            List<ClassNode> excludeTypes = getClassList(node, MEMBER_EXCLUDE_TYPES);
+            List<ClassNode> includeTypes = getClassList(node, MEMBER_INCLUDE_TYPES);
+            checkIncludeExclude(node, excludes, includes, excludeTypes, includeTypes, MY_TYPE_NAME);
+*/
+            checkIncludeExclude(node, excludes, includes, MY_TYPE_NAME);
 
             final List<MethodNode> ownerMethods = getAllMethods(owner);
             for (MethodNode mn : fieldMethods) {
-                addDelegateMethod(node, fieldNode, owner, ownerMethods, mn, includeDeprecated);
+                // GROOVY-6329: awaiting resolution of GROOVY-6330
+//                addDelegateMethod(node, fieldNode, owner, ownerMethods, mn, includeDeprecated, includes, excludes, includeTypes, excludeTypes);
+                addDelegateMethod(node, fieldNode, owner, ownerMethods, mn, includeDeprecated, includes, excludes);
             }
 
             for (PropertyNode prop : getAllProperties(type)) {
@@ -179,12 +199,20 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
         }
     }
 
-    private void addDelegateMethod(AnnotationNode node, FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated) {
+    private void addDelegateMethod(AnnotationNode node, FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated, List<String> includes, List<String> excludes/*, List<ClassNode> includeTypes, List<ClassNode> excludeTypes*/) {
         if (!candidate.isPublic() || candidate.isStatic() || 0 != (candidate.getModifiers () & Opcodes.ACC_SYNTHETIC))
             return;
 
         if (!candidate.getAnnotations(DEPRECATED_TYPE).isEmpty() && !includeDeprecated)
             return;
+
+        if (shouldSkip(candidate.getName(), excludes, includes)) return;
+        checkIncludeExclude(node, excludes, includes, MY_TYPE_NAME);
+        // GROOVY-6329: awaiting resolution of GROOVY-6330
+/*
+        checkIncludeExclude(node, excludes, includes, excludeTypes, includeTypes, MY_TYPE_NAME);
+        if (shouldSkipOnDescriptor(candidate.getTypeDescriptor(), excludeTypes, includeTypes)) return;
+*/
 
         // ignore methods from GroovyObject
         for (MethodNode mn : GROOVYOBJECT_TYPE.getMethods()) {
@@ -276,7 +304,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
             if (annotations.isEmpty()) continue;
 
             if (hasClosureMember(annotation)) {
-                addError("@Delegate does not support keeping Closure annotation members.", annotation);
+                addError(MY_TYPE_NAME + " does not support keeping Closure annotation members.", annotation);
                 continue;
             }
 
@@ -319,19 +347,5 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
         }
 
         return false;
-    }
-
-    private ClassNode nonGeneric(ClassNode type) {
-        if (type.isUsingGenerics()) {
-            final ClassNode nonGen = ClassHelper.makeWithoutCaching(type.getName());
-            nonGen.setRedirect(type);
-            nonGen.setGenericsTypes(null);
-            nonGen.setUsingGenerics(false);
-            return nonGen;
-        } else if (type.isArray() && type.getComponentType().isUsingGenerics()) {
-            return type.getComponentType().getPlainNodeReference().makeArray();
-        } else {
-            return type;
-        }
     }
 }
