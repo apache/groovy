@@ -57,7 +57,7 @@ class DelegateTransformTest extends CompilableTestSupport {
         assertScript """
           class MapSet {
             @Delegate(interfaces=false, excludes=['remove','clear']) Map m = [a: 1]
-            @Delegate Set s = [2, 3, 4]
+            @Delegate Set s = new LinkedHashSet([2, 3, 4] as Set) // HashSet not good enough in JDK 1.5
             String toString() { m.toString() + ' ' + s }
           }
 
