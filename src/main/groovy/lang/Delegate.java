@@ -158,4 +158,45 @@ public @interface Delegate {
      * @return true if generated delegate methods should keep parameter annotations
      */
     boolean parameterAnnotations() default false;
+
+    /**
+     * List of method and/or property names to exclude when delegating.
+     * Must not be used if 'includes' is used. For convenience, a String with comma separated names
+     * can be used in addition to an array (using Groovy's literal list notation) of String values.
+     * If interfaces is true (the default), you will need to manually supply any methods excluded
+     * from delegation that are required for the interface.
+     * @since 2.2.0
+     */
+    String[] excludes() default {};
+
+
+    /* *
+     * List of interfaces containing method signatures to exclude when delegating.
+     * Only one of 'includes', 'includeTypes', 'excludes', 'excludeTypes' should be used.
+     * If interfaces is true (the default), you will need to manually supply any methods excluded
+     * from delegation that are required for the interface.
+     * @since ???
+     */
+    // GROOVY-6329: awaiting resolution of GROOVY-6330
+//    Class[] excludeTypes() default {};
+
+    /**
+     * List of method and/or property names to include when delegating.
+     * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
+     * can be used in addition to an array (using Groovy's literal list notation) of String values.
+     * If interfaces is true (the default), you will need to manually supply any methods not included
+     * via delegation that are required for the interface.
+     * @since 2.2.0
+     */
+    String[] includes() default {};
+
+    /* *
+     * List of interfaces containing method signatures to exclude when delegating.
+     * Only one of 'includes', 'includeTypes', 'excludes', 'excludeTypes' should be used.
+     * If interfaces is true (the default), you will need to manually supply any methods excluded
+     * from delegation that are required for the interface.
+     * @since ???
+     */
+    // GROOVY-6329: awaiting resolution of GROOVY-6330
+//    Class[] includeTypes() default {};
 }
