@@ -345,7 +345,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         pe.setImplicitThis(true);
         if (visitPropertyExpressionSilent(pe, vexp)) {
             storeType(vexp, getType(pe));
-            vexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, pe.getNodeMetaData(StaticTypesMarker.READONLY_PROPERTY)); 
+            Object val = pe.getNodeMetaData(StaticTypesMarker.READONLY_PROPERTY); 
+            if (val!=null) vexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY,val);
+            val = pe.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+            if (val!=null) vexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER,val);
             return;
         }
 
@@ -957,15 +960,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                     FieldNode field = current.getDeclaredField(propertyName);
                     field  = allowStaticAccessToMember(field, staticOnly);
-                    if (storeField(field, isAttributeExpression, pexp, objectExpressionType, visitor)) return true;
+                    if (storeField(field, isAttributeExpression, pexp, objectExpressionType, visitor, receiver.getData())) return true;
 
                     PropertyNode propertyNode = current.getProperty(propertyName);
                     propertyNode = allowStaticAccessToMember(propertyNode, staticOnly);
-                    if (storeProperty(propertyNode, pexp, objectExpressionType, visitor)) return true;
+                    if (storeProperty(propertyNode, pexp, objectExpressionType, visitor, receiver.getData())) return true;
 
                     boolean isThisExpression = objectExpression instanceof VariableExpression && 
                                                 ((VariableExpression)objectExpression).isThisExpression();
-                    if (storeField(field, isThisExpression, pexp, objectExpressionType, visitor)) return true;
+                    if (storeField(field, isThisExpression, pexp, objectExpressionType, visitor, receiver.getData())) return true;
 
                     MethodNode getter = current.getGetterMethod("get" + capName);
                     getter = allowStaticAccessToMember(getter, staticOnly);
@@ -983,6 +986,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             ClassNode cn = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                             storeInferredTypeForPropertyExpression(pexp, cn);
                             pexp.removeNodeMetaData(StaticTypesMarker.READONLY_PROPERTY);
+                            String delegationData = receiver.getData();
+                            if (delegationData!=null) pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
                             return true;
                         }
                     } else {
@@ -996,6 +1001,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             SetterInfo info = new SetterInfo(current, setter);
                             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
                             if (enclosingBinaryExpression!=null) putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
+                            String delegationData = receiver.getData();
+                            if (delegationData!=null) pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
                             return true;
                         } else if (getter!=null) {
                             pexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, true);
@@ -1003,7 +1010,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                     foundGetterOrSetter = foundGetterOrSetter || setter!=null || getter!=null;
 
-                    if (storeField(field, true, pexp, objectExpressionType, visitor)) return true;
+                    if (storeField(field, true, pexp, objectExpressionType, visitor, receiver.getData())) return true;
                     // if the property expression is an attribute expression (o.@attr), then
                     // we stop now, otherwise we must check the parent class
                     if (/*!isAttributeExpression && */current.getSuperClass() != null) {
@@ -1034,11 +1041,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (propertyType==null) propertyType = getTypeForSpreadExpression(testClass, objectExpressionType, pexp);
             if (propertyType==null) continue;
             if (visitor!=null) {
-                // todo : type inferrence on maps and lists, if possible
+                // todo : type inference on maps and lists, if possible
                 PropertyNode node = new PropertyNode(propertyName, Opcodes.ACC_PUBLIC, propertyType, objectExpressionType, null, null, null);
                 visitor.visitProperty(node);
             }
             storeType(pexp, propertyType);
+            String delegationData = receiver.getData();
+            if (delegationData!=null) pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
             return true;
         }
         return foundGetterOrSetter;
@@ -1144,18 +1153,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         storeType(expressionToStoreOn, type);
     }
 
-    private boolean storeField(FieldNode field, boolean returnTrueIfFieldExists, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor) {
+    private boolean storeField(FieldNode field, boolean returnTrueIfFieldExists, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor, String delegationData) {
         if (field==null || !returnTrueIfFieldExists) return false;
         if (visitor != null) visitor.visitField(field);
         storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
         checkOrMarkPrivateAccess(field);
+        if (delegationData!=null) {
+            expressionToStoreOn.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
+        }
         return true;
     }
 
-    private boolean storeProperty(PropertyNode propertyNode, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor) {
+    private boolean storeProperty(PropertyNode propertyNode, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor, String delegationData) {
         if (propertyNode == null) return false;
         if (visitor != null) visitor.visitProperty(propertyNode);
         storeWithResolve(propertyNode.getOriginType(), receiver, propertyNode.getDeclaringClass(), propertyNode.isStatic(), expressionToStoreOn);
+        if (delegationData!=null) {
+            expressionToStoreOn.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
+        }
         return true;
     }
 
