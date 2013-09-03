@@ -59,6 +59,7 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     private final BinaryExpressionTransformer binaryExpressionTransformer = new BinaryExpressionTransformer(this);
     private final ClosureExpressionTransformer closureExpressionTransformer = new ClosureExpressionTransformer(this);
     private final BooleanExpressionTransformer booleanExpressionTransformer = new BooleanExpressionTransformer(this);
+    private final VariableExpressionTransformer variableExpressionTransformer = new VariableExpressionTransformer();
 
     public StaticCompilationTransformer(final SourceUnit unit) {
         this.unit = unit;
@@ -101,6 +102,9 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         }
         if (expr instanceof BooleanExpression) {
             return booleanExpressionTransformer.transformBooleanExpression((BooleanExpression)expr);
+        }
+        if (expr instanceof VariableExpression) {
+            return variableExpressionTransformer.transformVariableExpression((VariableExpression)expr);
         }
         return super.transform(expr);
     }
