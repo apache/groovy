@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+
+
+
+
 package groovy.transform.stc
 
 /**
- * Units tests aimed at testing the behavior of {@link DelegatesTo} in combination
+ * Units tests aimed at testing the behaviour of {@link DelegatesTo} in combination
  * with static type checking.
  *
  * @author Cedric Champeau
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     void testShouldChooseMethodFromOwner() {
@@ -627,107 +631,6 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
 
         test([new Person('Guillaume'), new Person('Cedric')])
         ''', 'Cannot find matching method'
-    }
-
-    // GROOVY-6323, GROOVY-6325, GROOVY-6332
-    void testStaticContextAndProperty() {
-        assertScript '''
-            class MyCar {
-                String brand
-                String model
-            }
-
-            class MyCarMain {
-                MyCar configureCar(@DelegatesTo(MyCar) Closure closure) {
-                    def car = new MyCar()
-                    closure.delegate = car
-                    closure.resolveStrategy = Closure.DELEGATE_FIRST
-                    closure()
-                    car
-                }
-                static void main(String[] args) {
-                    def main = new MyCarMain()
-                    def car = main.configureCar {
-                        brand = "BMW"
-                        model = brand + " X5"
-                    }
-                    assert car.model == "BMW X5"
-                }
-            }
-            MyCarMain.main()
-        '''
-
-        assertScript '''
-            class MyCar {
-                private String _brand
-                private String _model
-
-                String getBrand() {
-                    return _brand
-                }
-
-                void setBrand(String brand) {
-                    _brand = brand
-                }
-
-                String getModel() {
-                    return _model
-                }
-
-                void setModel(String model) {
-                    _model = model
-                }
-            }
-
-            class MyCarMain {
-                MyCar configureCar(@DelegatesTo(value = MyCar, strategy = Closure.DELEGATE_FIRST) Closure closure) {
-                    def car = new MyCar()
-                    closure.delegate = car
-                    closure.resolveStrategy = Closure.DELEGATE_FIRST
-                    closure()
-                    car
-                }
-
-                static void main(String[] args) {
-                    def main = new MyCarMain()
-                    def car = main.configureCar {
-                        brand = "BMW"
-                        model = brand
-                    }
-                    assert car.model == "BMW"
-                }
-            }
-            MyCarMain.main()
-        '''
-
-        assertScript '''
-            class Car {
-              private String _brand
-              String getBrand() { _brand }
-              void setBrand(String brand) { _brand = brand }
-            }
-
-            class Builder {
-              def <T> T configure(@DelegatesTo.Target Class<T> target, @DelegatesTo(genericTypeIndex=0) Closure cl) {
-                def obj = target.newInstance() 
-                cl.delegate = obj
-                cl.resolveStrategy = Closure.DELEGATE_FIRST
-                cl.call()
-                obj 
-              }
-            }
-
-            class Main {
-              void run() {
-                def builder = new Builder()
-                def car = builder.configure(Car) {
-                  brand = brand 
-                }
-              }
-            }
-
-            new Main().run()
-        '''
     }
 
 }
