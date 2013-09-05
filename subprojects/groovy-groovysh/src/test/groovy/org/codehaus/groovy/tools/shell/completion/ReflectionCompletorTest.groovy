@@ -17,7 +17,6 @@
 package org.codehaus.groovy.tools.shell.completion
 
 import org.codehaus.groovy.antlr.parser.GroovyLexer
-import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 import org.codehaus.groovy.tools.shell.Interpreter
 
 import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokenList
@@ -69,9 +68,9 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
         assertTrue(result.toString(), "notify()" in result)
         assertTrue("bitCount(" in result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(3, "una")
-        assertEquals(["unaryMinus()"], result)
+        assertEquals(["unaryMinus()", "unaryPlus()"], result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "una")
-        assertEquals(["unaryMinus()"], result)
+        assertEquals(["unaryMinus()", "unaryPlus()"], result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "MA")
         assertEquals(["MAX_VALUE"], result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "getI")
