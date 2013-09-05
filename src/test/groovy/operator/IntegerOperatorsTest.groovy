@@ -21,6 +21,8 @@ class IntegerOperatorsTest extends GroovyTestCase {
         x = 3
         y = +x
         assert y == 3
+        y = x.unaryPlus()
+        assert y == 3
     }
 
     void testCharacterPlus() {
@@ -64,6 +66,16 @@ class IntegerOperatorsTest extends GroovyTestCase {
         x = 3
         y = -x
         assert y == -3
+        y = x.unaryMinus()
+        assert y == -3
+    }
+
+    void testBitwiseNegate() {
+        x = 3
+        y = ~x
+        assert y == -4
+        y = x.bitwiseNegate()
+        assert y == -4
     }
 
     void testCharacterMinus() {
