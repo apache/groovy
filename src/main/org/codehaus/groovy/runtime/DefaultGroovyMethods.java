@@ -11183,6 +11183,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return NumberMath.unaryMinus(left);
     }
 
+    /**
+     * Returns the number, effectively being a noop for numbers.
+     * Operator overloaded form of the '+' operator when it preceeds
+     * a single operand, i.e. <code>+10</code>
+     *
+     * @param left a Number
+     * @return the number
+     * @since 2.2.0
+     */
+    public static Number unaryPlus(Number left) {
+        return NumberMath.unaryPlus(left);
+    }
 
     /**
      * Executes the closure this many times, starting from zero.  The current
