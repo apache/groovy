@@ -127,11 +127,15 @@ public abstract class NumberMath {
         }
         return getMath(left).rightShiftUnsignedImpl(left,right);
     }
-    
+
+    public static Number bitwiseNegate(Number left) {
+        return getMath(left).bitwiseNegateImpl(left);
+    }
+
     public static Number unaryMinus(Number left) {
         return getMath(left).unaryMinusImpl(left);
     }
-    
+
     public static Number unaryPlus(Number left) {
         return getMath(left).unaryPlusImpl(left);
     }
@@ -222,11 +226,14 @@ public abstract class NumberMath {
     protected abstract Number unaryMinusImpl(Number left);
     protected abstract Number unaryPlusImpl(Number left);
 
+    protected Number bitwiseNegateImpl(Number left) {
+        throw createUnsupportedException("bitwiseNegate()", left);
+    }
 
     protected Number orImpl(Number left, Number right) {
         throw createUnsupportedException("or()", left);
     }
-    
+
     protected Number andImpl(Number left, Number right) {
         throw createUnsupportedException("and()", left);
     }

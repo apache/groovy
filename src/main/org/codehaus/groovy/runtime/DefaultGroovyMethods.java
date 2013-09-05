@@ -11133,6 +11133,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Bitwise NEGATE a Number.
+     *
+     * @param left a Number
+     * @return the bitwise NEGATE of the Number
+     * @since 2.2.0
+     */
+    public static Number bitwiseNegate(Number left) {
+        return NumberMath.bitwiseNegate(left);
+    }
+
+    /**
      * Bitwise OR together two BitSets.  Called when the '|' operator is used
      * between two bit sets.
      *
