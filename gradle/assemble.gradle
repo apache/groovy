@@ -355,6 +355,9 @@ task distDoc(type: Zip, dependsOn: doc) {
 }
 
 task syncDoc(type: Copy, dependsOn: doc) {
+    inputs.files javadoc.outputs.files
+    inputs.files groovydoc.outputs.files
+
     destinationDir(file("$buildDir/html"))
     into("api") {
         from javadoc.destinationDir
