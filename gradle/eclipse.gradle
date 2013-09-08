@@ -32,7 +32,7 @@ allprojects {
 eclipse.classpath.file {
     whenMerged { classpath ->
         classpath.entries.find { entry -> entry.path =~ /src\/main/ }.path = '/groovy/src/main'
-........classpath.entries.find { entry -> entry.path =~ /src\/main/ }.includes = []
+        classpath.entries.find { entry -> entry.path =~ /src\/main/ }.includes = []
         classpath.entries.each { entry -> if(entry.path == 'src/test'){ entry.excludes = ['groovy/PropertyTest.groovy'] as List } }
         classpath.entries.removeAll{ entry -> entry.path == '/groovy-test' }
         classpath.entries.removeAll{ entry -> entry.path =~ /subprojects/ }
