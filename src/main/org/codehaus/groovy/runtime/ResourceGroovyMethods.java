@@ -85,8 +85,6 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.get;
  */
 public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
-//    private static final Logger LOG = Logger.getLogger(FileIOGroovyMethods.class.getName());
-
     /**
      * Provide the standard Groovy <code>size()</code> method for <code>File</code>.
      *
@@ -698,9 +696,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void write(File file, String text) throws IOException {
-        BufferedWriter writer = null;
+        Writer writer = null;
         try {
-            writer = newWriter(file);
+            writer = new FileWriter(file);
             writer.write(text);
             writer.flush();
 
@@ -799,9 +797,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void write(File file, String text, String charset) throws IOException {
-        BufferedWriter writer = null;
+        Writer writer = null;
         try {
-            writer = newWriter(file, charset);
+            writer = new OutputStreamWriter(new FileOutputStream(file), charset);
             writer.write(text);
             writer.flush();
 
@@ -822,6 +820,45 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void append(File file, Object text) throws IOException {
+        Writer writer = null;
+        try {
+            writer = new FileWriter(file, true);
+            InvokerHelper.write(writer, text);
+            writer.flush();
+
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        } finally {
+            closeWithWarning(writer);
+        }
+    }
+    
+    /**
+     * Append the text supplied by the Writer at the end of the File.
+     *
+     * @param file a File
+     * @param reader the Reader supplying the text to append at the end of the File
+     * @throws IOException if an IOException occurs.
+     * @since 2.2
+     */
+    public static void append(File file, Reader reader) throws IOException {
+        appendBuffered(file, reader);
+    }
+    
+    /**
+     * Append the text supplied by the Writer at the end of the File.
+     *
+     * @param file a File
+     * @param writer the Writer supplying the text to append at the end of the File
+     * @throws IOException if an IOException occurs.
+     * @since 2.2
+     */
+    public static void append(File file, Writer writer) throws IOException {
+         appendBuffered(file, writer);
+    }
+    
+    private static void appendBuffered(File file, Object text) throws IOException {
         BufferedWriter writer = null;
         try {
             writer = newWriter(file, true);
@@ -845,9 +882,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.1
      */
     public static void append(File file, byte[] bytes) throws IOException {
-        BufferedOutputStream stream = null;
+        OutputStream stream = null;
         try {
-            stream = new BufferedOutputStream(new FileOutputStream(file, true));
+            stream = new FileOutputStream(file, true);
             stream.write(bytes, 0, bytes.length);
             stream.flush();
 
@@ -887,6 +924,47 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void append(File file, Object text, String charset) throws IOException {
+        Writer writer = null;
+        try {
+            writer = new OutputStreamWriter(new FileOutputStream(file, true), charset); 
+            InvokerHelper.write(writer, text);
+            writer.flush();
+
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        } finally {
+            closeWithWarning(writer);
+        }
+    }
+    
+    /**
+     * Append the text supplied by the Writer at the end of the File, using a specified encoding.
+     *
+     * @param file a File
+     * @param writer the Writer supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @throws IOException if an IOException occurs.
+     * @since 2.2
+     */
+    public static void append(File file, Writer writer, String charset) throws IOException {
+        appendBuffered(file, writer, charset);
+    }
+    
+    /**
+     * Append the text supplied by the Reader at the end of the File, using a specified encoding.
+     *
+     * @param file a File
+     * @param reader the Reader supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @throws IOException if an IOException occurs.
+     * @since 2.2
+     */
+    public static void append(File file, Reader reader, String charset) throws IOException {
+        appendBuffered(file, reader, charset);
+    }
+    
+    private static void appendBuffered(File file, Object text, String charset) throws IOException {
         BufferedWriter writer = null;
         try {
             writer = newWriter(file, charset, true);
