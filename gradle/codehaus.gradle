@@ -1,0 +1,44 @@
+import com.github.sardine.*
+import com.github.sardine.impl.*
+import groovy.io.*
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.github.lookfirst:sardine:5.0.1'
+    }
+}
+
+task htmlPush {
+    //inputs.files syncDoc.inputs.files
+
+    doLast {
+        def sardine = SardineFactory.begin(System.getProperty('groovy.deploy.username'), System.getProperty('groovy.deploy.password'))
+        def serverBase = "https://dav.codehaus.org/groovy/"
+        //sardine.list(serverBase).each {println it}
+        def copyConf = ["gapi":file("$buildDir/allgroovydoc"), "api":file("$buildDir/alljavadoc")]
+
+        copyConf.each { targetDirPart, base ->
+            def basePath = base.canonicalPath
+            base.eachFileRecurse {
+                def name = it.canonicalPath.substring(basePath.length()+1)
+                def target = serverBase+targetDirPart+"/"+name
+                if (it.directory) {
+                    println "MKCOL $target"
+                    try {
+                        sardine.createDirectory(target+"/");
+                    } catch (SardineException se) {
+                        //ignore 405, thrown for existing directories
+                        if (se.statusCode != 405) throw se 
+                    }
+                } else {
+                    println "PUT $target"
+                    sardine.put (target, it.newInputStream())
+                }
+                
+            }
+        }
+    }
+}
