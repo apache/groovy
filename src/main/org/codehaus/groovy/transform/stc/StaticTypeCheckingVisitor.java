@@ -3070,10 +3070,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (prefix==null || methodName==null) return null;
         if (methodName.startsWith(prefix) && prefix.length()<methodName.length()) {
             String result = methodName.substring(prefix.length());
-            char firstChar = result.charAt(0);
-            if (Character.isUpperCase(firstChar) || !Character.isLetter(firstChar)) {
-                return java.beans.Introspector.decapitalize(result);
-            }
+            String propertyName = java.beans.Introspector.decapitalize(result);
+            if (result.equals(MetaClassHelper.capitalize(propertyName))) return propertyName;
         }
         return null;
     }
