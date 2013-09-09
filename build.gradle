@@ -361,6 +361,7 @@ task ensureGrammars {
 }
 
 apply from: 'gradle/utils.gradle'
+apply from: 'gradle/codehaus.gradle'
 
 def isJava16() {
     System.properties['java.version'].contains('1.6')
@@ -454,3 +455,4 @@ classes {
         logger.lifecycle "InvokeDynamic support ${useIndy()?'on':'off'}"
     }
 }
+
