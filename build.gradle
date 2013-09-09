@@ -484,6 +484,7 @@ apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 // Define a GroovyDoc task which depends on the generated groovydoc tool
 apply from: 'gradle/groovydoc.gradle'
+apply from: 'gradle/codehaus.gradle'
 
 classes {
     doFirst {
