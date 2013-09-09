@@ -56,6 +56,7 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Commons {
     String value() default "log";
+    String category() default LogASTTransformation.DEFAULT_CATEGORY_NAME;
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default CommonsLoggingStrategy.class;
 
     public  static class CommonsLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
@@ -67,14 +68,14 @@ public @interface Commons {
             super(loader);
         }
 
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName) {
             return classNode.addField(logFieldName,
                     Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
                     classNode(LOGGER_NAME),
                     new MethodCallExpression(
                             new ClassExpression(classNode(LOGGERFACTORY_NAME)),
                             "getLog",
-                            new ClassExpression(classNode)));
+                            new ConstantExpression(getCategoryName(classNode, categoryName))));
         }
 
         public boolean isLoggingMethod(String methodName) {
