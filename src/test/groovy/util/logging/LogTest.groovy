@@ -261,6 +261,45 @@ class LogTest extends GroovyTestCase {
         }
     }
 
+    public void testDefaultCategory() {
+        Class clazz = new GroovyClassLoader().parseClass("""
+            @groovy.util.logging.Log
+            class MyClass {
+                static loggingMethod() {
+                  log.info("info called")
+                }
+            }""")
+        LogFormaterSpy logFormaterSpy = registerLogFormaterSpy('MyClass')
+
+        clazz.newInstance().loggingMethod()
+
+        assert logFormaterSpy.messageReceived
+    }
+
+    public void testCustomCategory() {
+        String categoryName = 'customCategory'
+        Class clazz = new GroovyClassLoader().parseClass("""
+            @groovy.util.logging.Log(category='$categoryName')
+            class MyClass {
+                static loggingMethod() {
+                  log.info("info called")
+                }
+            }""")
+        LogFormaterSpy logFormaterSpy = registerLogFormaterSpy(categoryName)
+
+        clazz.newInstance().loggingMethod()
+
+        assert logFormaterSpy.messageReceived
+    }
+
+    private LogFormaterSpy registerLogFormaterSpy(String loggerName) {
+        Logger logger = Logger.getLogger(loggerName)
+        ConsoleHandler handler = new ConsoleHandler()
+        LogFormaterSpy loggerNameSpy = new LogFormaterSpy()
+        handler.setFormatter(loggerNameSpy)
+        logger.addHandler(handler)
+        return loggerNameSpy
+    }
 }
 
 @groovy.transform.PackageScope class LoggerSpy extends Logger {
@@ -310,5 +349,16 @@ class LogTest extends GroovyTestCase {
     void finest(String s) {
         if (finestParameter) throw new AssertionError("Finest already called once with parameter $finestParameter")
         finestParameter = s
+    }
+}
+
+class LogFormaterSpy extends Formatter {
+
+    boolean messageReceived = false
+
+    @Override
+    public String format(LogRecord record) {
+        messageReceived = true
+        return record.message
     }
 }
