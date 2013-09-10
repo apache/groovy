@@ -524,5 +524,15 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert res[0].contains('def')
         """
     }
+    
+    // GROOVY-6241
+    void testAsImmutable() {
+        assertScript """
+            List<Integer> list = [1, 2, 3]
+            List<Integer> immutableList = [1, 2, 3].asImmutable()
+            Map<String, Integer> map = [foo: 123, bar: 456]
+            Map<String, Integer> immutableMap = [foo: 123, bar: 456].asImmutable()
+        """
+    }
 }
 

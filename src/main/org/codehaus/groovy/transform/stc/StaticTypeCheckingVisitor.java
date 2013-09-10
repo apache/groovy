@@ -2336,6 +2336,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
+     * add various getAt and setAt methods for primtive arrays
+     * @param receiver the receiver class
+     * @param name  the name of the method
+     * @param args the argument classes
+     * @return a list containing the single match or null
+     */
+    private void addArrayMethods(List<MethodNode> methods, ClassNode receiver, String name, ClassNode[] args) {
+        if (args.length!=1) return;
+        if (!receiver.isArray()) return;
+        if (!isIntCategory(args[0])) return;
+        if ("getAt".equals(name)) {
+            MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, receiver.getComponentType(), new Parameter[]{new Parameter(args[0],"arg")}, null, null);
+            node.setDeclaringClass(receiver.redirect());
+            methods.add(node);
+        } else if ("setAt".equals(name)) {
+            MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, VOID_TYPE, new Parameter[]{new Parameter(args[0],"arg")}, null, null);
+            node.setDeclaringClass(receiver.redirect());
+            methods.add(node);
+        } else {
+            return;
+        }
+    }
+
+    /**
      * In the case of a <em>Object.with { ... }</em> call, this method is supposed to retrieve
      * the inferred closure return type.
      *
@@ -3005,6 +3029,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     methods.addAll(findMethodsWithGenerated(parent,name));
                 }
             }
+            if (methods.isEmpty()) {
+                addArrayMethods(methods, receiver, name, args);
+            }
             if (methods.isEmpty() && (args == null || args.length == 0)) {
                 // check if it's a property
                 String pname = extractPropertyNameFromMethodName("get", name);
@@ -3033,7 +3060,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (methods.isEmpty() && args != null && args.length == 1) {
                 // maybe we are looking for a setter ?
                 String pname = extractPropertyNameFromMethodName("set", name);
-                if (name!=null) {
+                if (pname!=null) {
                     ClassNode curNode = receiver;
                     PropertyNode property = null;
                     while (property == null && curNode != null) {
@@ -3109,10 +3136,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (prefix==null || methodName==null) return null;
         if (methodName.startsWith(prefix) && prefix.length()<methodName.length()) {
             String result = methodName.substring(prefix.length());
-            char firstChar = result.charAt(0);
-            if (Character.isUpperCase(firstChar) || !Character.isLetter(firstChar)) {
-                return java.beans.Introspector.decapitalize(result);
-            }
+            String propertyName = java.beans.Introspector.decapitalize(result);
+            if (result.equals(MetaClassHelper.capitalize(propertyName))) return propertyName;
         }
         return null;
     }
@@ -3333,7 +3358,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else {
                 argList.addExpression(arguments);
             }
-            return inferReturnTypeGenerics(dc, dgmMethod, argList);
+            return inferReturnTypeGenerics(receiver, dgmMethod, argList);
         }
         if (!isUsingGenericsOrIsArrayUsingGenerics(returnType)) return returnType;
         if (getGenericsWithoutArray(returnType)==null) return returnType;
@@ -3540,7 +3565,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            if (nextNode==null) nextNode = current.getUnresolvedSuperClass();
+            if (nextNode==null) {
+                nextNode = current.getUnresolvedSuperClass();
+                if (current.isArray()) {
+                    nextNode = current.getComponentType();
+                    nextNode = nextNode.getUnresolvedSuperClass();
+                    if (nextNode!=null) {
+                        nextNode = nextNode.makeArray();
+                    } else {
+                        nextNode = OBJECT_TYPE;
+                    }
+                }
+            }
             current = nextNode;
             if (current==null) {
                 String descriptor = "<>";
