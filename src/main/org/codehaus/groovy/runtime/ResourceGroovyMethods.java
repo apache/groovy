@@ -840,7 +840,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param file a File
      * @param reader the Reader supplying the text to append at the end of the File
      * @throws IOException if an IOException occurs.
-     * @since 2.2
+     * @since 2.3
      */
     public static void append(File file, Reader reader) throws IOException {
         appendBuffered(file, reader);
@@ -852,7 +852,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param file a File
      * @param writer the Writer supplying the text to append at the end of the File
      * @throws IOException if an IOException occurs.
-     * @since 2.2
+     * @since 2.3
      */
     public static void append(File file, Writer writer) throws IOException {
          appendBuffered(file, writer);
@@ -945,7 +945,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param writer the Writer supplying the text to append at the end of the File
      * @param charset the charset used
      * @throws IOException if an IOException occurs.
-     * @since 2.2
+     * @since 2.3
      */
     public static void append(File file, Writer writer, String charset) throws IOException {
         appendBuffered(file, writer, charset);
@@ -958,7 +958,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param reader the Reader supplying the text to append at the end of the File
      * @param charset the charset used
      * @throws IOException if an IOException occurs.
-     * @since 2.2
+     * @since 2.3
      */
     public static void append(File file, Reader reader, String charset) throws IOException {
         appendBuffered(file, reader, charset);
