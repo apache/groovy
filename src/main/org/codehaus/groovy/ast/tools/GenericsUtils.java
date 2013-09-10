@@ -116,6 +116,12 @@ public class GenericsUtils {
      */
     public static void extractPlaceholders(ClassNode node, Map<String, GenericsType> map) {
         if (node == null) return;
+
+        if (node.isArray()) {
+            extractPlaceholders(node.getComponentType(), map);
+            return;
+        }
+
         if (!node.isUsingGenerics() || !node.isRedirectNode()) return;
         GenericsType[] parameterized = node.getGenericsTypes();
         if (parameterized == null || parameterized.length == 0) return;
@@ -127,9 +133,6 @@ public class GenericsUtils {
                 String name = redirectType.getName();
                 if (!map.containsKey(name)) map.put(name, parameterized[i]);
             }
-        }
-        if (node.isArray()) {
-            extractPlaceholders(node.getComponentType(), map);
         }
     }
 
