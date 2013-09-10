@@ -150,7 +150,7 @@ dependencies {
     def jlineVersion = '2.10'
     def jmockVersion = '1.2.0'
     def logbackVersion = '0.9.21'
-    def log4jVersion = '1.2.16'
+    def log4jVersion = '1.2.17'
     def luceneVersion = '4.3.1'
     def openejbVersion = '1.0'
     def qdoxVersion = '1.12.1'
