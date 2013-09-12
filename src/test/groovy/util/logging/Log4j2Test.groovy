@@ -3,16 +3,6 @@ package groovy.util.logging
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
-import org.apache.log4j.spi.Filter
-import org.apache.log4j.spi.LoggingEvent
-import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.core.Layout
-import org.apache.logging.log4j.core.LogEvent
-import org.apache.logging.log4j.core.Logger
-import org.apache.logging.log4j.core.appender.AbstractAppender
-import org.apache.logging.log4j.core.layout.PatternLayout
-
 class Log4j2Test extends GroovyTestCase {
 
     // Log4j2 requires at least Java 1.6
@@ -23,17 +13,38 @@ class Log4j2Test extends GroovyTestCase {
         }
     }
 
-    Log4j2InterceptingAppender appender
-    Logger logger
+    def appender
+    def logger
 
     protected void setUp() {
         super.setUp()
         if(javaVersionGreaterThan1_5) {
-            PatternLayout layout = PatternLayout.createLayout("%m", null, null, "UTF-8", "false")
-            appender = new Log4j2InterceptingAppender('MyAppender', null, layout)
-            logger = LogManager.getLogger('MyClass')
+            Class appenderClazz = new GroovyClassLoader().parseClass('''
+                class Log4j2InterceptingAppender extends org.apache.logging.log4j.core.appender.AbstractAppender {
+                    List<org.apache.log4j.spi.LoggingEvent> events
+                    boolean isLogGuarded = true
+                
+                    Log4j2InterceptingAppender(String name, org.apache.log4j.spi.Filter filter, org.apache.logging.log4j.core.Layout<String> layout){
+                        super(name, filter, layout)
+                        this.events = new ArrayList<org.apache.log4j.spi.LoggingEvent>()
+                    }
+                
+                    @Override
+                    public void append(org.apache.logging.log4j.core.LogEvent event) {
+                        events.add(event)
+                    }
+                }''')
+            
+            def layoutClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.core.layout.PatternLayout')
+            def layout = layoutClazz.metaClass.invokeStaticMethod(layoutClazz, 'createLayout', ["%m", null, null, "UTF-8", "false"] as Object[])
+     
+            appender = appenderClazz.newInstance(['MyAppender', null, layout] as Object[])
+            def logManagerClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.LogManager')
+            logger = logManagerClazz.metaClass.invokeStaticMethod(logManagerClazz, 'getLogger', 'MyClass')
             logger.addAppender(appender)
-            logger.setLevel(Level.ALL)
+            def levelClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.Level')
+            def allLevel = levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'ALL')
+            logger.setLevel(allLevel)
         }
     }
 
@@ -111,17 +122,18 @@ class Log4j2Test extends GroovyTestCase {
             int ind = 0
             def events = appender.getEvents()
             assert events.size() == 6
-            assert events[ind].level == Level.FATAL
+            def levelClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.Level')
+            assert events[ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'FATAL')
             assert events[ind].message.message == "fatal called"
-            assert events[++ind].level == Level.ERROR
+            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'ERROR')
             assert events[ind].message.message == "error called"
-            assert events[++ind].level == Level.WARN
+            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'WARN')
             assert events[ind].message.message == "warn called"
-            assert events[++ind].level == Level.INFO
+            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'INFO')
             assert events[ind].message.message == "info called"
-            assert events[++ind].level == Level.DEBUG
+            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'DEBUG')
             assert events[ind].message.message == "debug called"
-            assert events[++ind].level == Level.TRACE
+            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'TRACE')
             assert events[ind].message.message == "trace called"
         }
     }
@@ -141,7 +153,8 @@ class Log4j2Test extends GroovyTestCase {
 
             def events = appender.getEvents()
             assert events.size() == 1
-            assert events[0].level == Level.INFO
+            def levelClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.Level')
+            assert events[0].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'INFO')
             assert events[0].message.message == "(static) info called"
         }
     }
@@ -168,17 +181,18 @@ class Log4j2Test extends GroovyTestCase {
             int ind = 0
             def events = appender.getEvents()
             assert events.size() == 6
-            assert events[ind].level == Level.FATAL
+            def levelClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.Level')
+            assert events[ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'FATAL')
             assert events[ind].message.message == "fatal called"
-            assert events[++ind].level == Level.ERROR
+            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'ERROR')
             assert events[ind].message.message == "error called"
-            assert events[++ind].level == Level.WARN
+            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'WARN')
             assert events[ind].message.message == "warn called"
-            assert events[++ind].level == Level.INFO
+            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'INFO')
             assert events[ind].message.message == "info called"
-            assert events[++ind].level == Level.DEBUG
+            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'DEBUG')
             assert events[ind].message.message == "debug called"
-            assert events[++ind].level == Level.TRACE
+            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'TRACE')
             assert events[ind].message.message == "trace called"
         }
     }
@@ -212,17 +226,4 @@ class Log4j2Test extends GroovyTestCase {
     }
 }
 
-class Log4j2InterceptingAppender extends AbstractAppender {
-    List<LoggingEvent> events
-    boolean isLogGuarded = true
 
-    Log4j2InterceptingAppender(String name, Filter filter, Layout<String> layout){
-        super(name, filter, layout)
-        this.events = new ArrayList<LoggingEvent>()
-    }
-
-    @Override
-    public void append(LogEvent event) {
-        events.add(event)
-    }
-}
