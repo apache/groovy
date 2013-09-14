@@ -673,7 +673,8 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to upto() cannot be earlier than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -691,7 +692,8 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to upto() cannot be earlier than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -709,7 +711,8 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to downto() cannot be later than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -727,6 +730,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to downto() cannot be later than the value (" + self + ") it's called on.");
     }
 }
