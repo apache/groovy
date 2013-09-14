@@ -4148,6 +4148,12 @@ options {
                 (LA(1) == '.' || lastSigTokenType == DOT || lastSigTokenType == LITERAL_package)) {
                 ttype = IDENT;
             }
+            // allow access to classes with the name package
+            if ((ttype == LITERAL_package) &&
+                (LA(1) == '.' || lastSigTokenType == DOT || lastSigTokenType == LITERAL_import
+                || (LA(1) == ')' && lastSigTokenType == LPAREN))) {
+                ttype = IDENT;
+            }
             if (ttype == LITERAL_static && LA(1) == '.') {
                 ttype = IDENT;
             }
