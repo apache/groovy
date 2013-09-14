@@ -11246,7 +11246,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -11265,7 +11266,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -11284,7 +11286,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -11303,7 +11306,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -11322,7 +11326,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -11341,7 +11346,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -11360,7 +11366,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to upto() cannot be less than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -11386,7 +11393,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to upto() cannot be less than the value (" + self + ") it's called on.");
         } else if (to instanceof BigInteger) {
             final BigInteger one = BigInteger.valueOf(1);
             BigInteger to1 = (BigInteger) to;
@@ -11395,7 +11403,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to upto() cannot be less than the value (" + self + ") it's called on.");
         } else {
             final BigInteger one = BigInteger.valueOf(1);
             BigInteger to1 = new BigInteger(to.toString());
@@ -11404,7 +11413,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to upto() cannot be less than the value (" + self + ") it's called on.");
         }
     }
 
@@ -11430,7 +11440,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to upto() cannot be less than the value (" + self + ") it's called on.");
         } else if (to instanceof BigInteger) {
             BigDecimal to1 = new BigDecimal((BigInteger) to);
             if (self.compareTo(to1) <= 0) {
@@ -11438,7 +11449,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to upto() cannot be less than the value (" + self + ") it's called on.");
         } else {
             BigDecimal to1 = new BigDecimal(to.toString());
             if (self.compareTo(to1) <= 0) {
@@ -11446,7 +11458,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to upto() cannot be less than the value (" + self + ") it's called on.");
         }
     }
 
@@ -11467,7 +11480,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to downto() cannot be greater than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -11486,7 +11500,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to downto() cannot be greater than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -11505,7 +11520,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to downto() cannot be greater than the value (" + self + ") it's called on.");
     }
 
     /**
@@ -11524,8 +11540,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
-    }
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to downto() cannot be greater than the value (" + self + ") it's called on.");    }
 
     /**
      * Iterates from this number down to the given number, inclusive,
@@ -11543,8 +11559,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
-    }
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to downto() cannot be greater than the value (" + self + ") it's called on.");    }
 
     /**
      * Iterates from this number down to the given number, inclusive,
@@ -11562,8 +11578,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
-    }
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to downto() cannot be greater than the value (" + self + ") it's called on.");    }
 
     /**
      * Iterates from this number down to the given number, inclusive,
@@ -11581,8 +11597,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(i);
             }
         } else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
-    }
+            throw new GroovyRuntimeException("The argument (" + to + 
+                    ") to downto() cannot be greater than the value (" + self + ") it's called on.");    }
 
     /**
      * Iterates from this number down to the given number, inclusive,
@@ -11603,8 +11619,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i.toBigInteger());
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
-        } else if (to instanceof BigInteger) {
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to downto() cannot be greater than the value (" + self + ") it's called on.");        } else if (to instanceof BigInteger) {
             final BigInteger one = BigInteger.valueOf(1);
             final BigInteger to1 = (BigInteger) to;
             if (self.compareTo(to1) >= 0) {
@@ -11612,8 +11628,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
-        } else {
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to downto() cannot be greater than the value (" + self + ") it's called on.");        } else {
             final BigInteger one = BigInteger.valueOf(1);
             final BigInteger to1 = new BigInteger(to.toString());
             if (self.compareTo(to1) >= 0) {
@@ -11621,8 +11637,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
-        }
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to downto() cannot be greater than the value (" + self + ") it's called on.");        }
     }
 
     /**
@@ -11648,24 +11664,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
-        } else if (to instanceof BigInteger) {
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to downto() cannot be greater than the value (" + self + ") it's called on.");        } else if (to instanceof BigInteger) {
             BigDecimal to1 = new BigDecimal((BigInteger) to);
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
-        } else {
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to downto() cannot be greater than the value (" + self + ") it's called on.");        } else {
             BigDecimal to1 = new BigDecimal(to.toString());
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
-        }
+                throw new GroovyRuntimeException("The argument (" + to + 
+                        ") to downto() cannot be greater than the value (" + self + ") it's called on.");        }
     }
 
     /**
