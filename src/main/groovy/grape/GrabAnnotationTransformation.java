@@ -90,6 +90,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     private static final Pattern ATTRIBUTES_PATTERN = Pattern.compile("(.*;|^)([a-zA-Z0-9]+)=([a-zA-Z0-9.*\\[\\]\\-\\(\\),]*)$");
 
     private static final String AUTO_DOWNLOAD_SETTING = Grape.AUTO_DOWNLOAD_SETTING;
+    private static final String DISABLE_CHECKSUMS_SETTING = Grape.DISABLE_CHECKSUMS_SETTING;
 
     private static String dotName(String className) {
         return className.substring(className.lastIndexOf("."));
@@ -124,6 +125,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     ClassLoader loader;
     boolean initContextClassLoader;
     Boolean autoDownload;
+    Boolean disableChecksums;
 
     public SourceUnit getSourceUnit() {
         return sourceUnit;
@@ -257,6 +259,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     checkForClassLoader(node);
                     checkForInitContextClassLoader(node);
                     checkForAutoDownload(node);
+                    checkForDisableChecksums(node);
                 }
                 addInitContextClassLoaderIfNeeded(classNode);
             }
@@ -313,6 +316,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             basicArgs.put("classLoader", loader != null ? loader : sourceUnit.getClassLoader());
             if (!grabExcludeMaps.isEmpty()) basicArgs.put("excludes", grabExcludeMaps);
             if (autoDownload != null) basicArgs.put(AUTO_DOWNLOAD_SETTING, autoDownload);
+            if (disableChecksums != null) basicArgs.put(DISABLE_CHECKSUMS_SETTING, disableChecksums);
 
             try {
                 Grape.grab(basicArgs, grabMaps.toArray(new Map[grabMaps.size()]));
@@ -349,6 +353,10 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
             if (autoDownload != null)  {
                 me.addMapEntryExpression(new ConstantExpression(AUTO_DOWNLOAD_SETTING), new ConstantExpression(autoDownload));
+            }
+
+            if (disableChecksums != null)  {
+                me.addMapEntryExpression(new ConstantExpression(DISABLE_CHECKSUMS_SETTING), new ConstantExpression(disableChecksums));
             }
 
             ArgumentListExpression grabArgs;
@@ -431,6 +439,14 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         Object autoDownloadValue = ((ConstantExpression)val).getValue();
         if (!(autoDownloadValue instanceof Boolean)) return;
         autoDownload = (Boolean) autoDownloadValue;
+    }
+
+    private void checkForDisableChecksums(AnnotationNode node) {
+        Object val = node.getMember(DISABLE_CHECKSUMS_SETTING);
+        if (val == null || !(val instanceof ConstantExpression)) return;
+        Object disableChecksumsValue = ((ConstantExpression)val).getValue();
+        if (!(disableChecksumsValue instanceof Boolean)) return;
+        disableChecksums = (Boolean) disableChecksumsValue;
     }
 
     private void checkForConvenienceForm(AnnotationNode node, boolean exclude) {
