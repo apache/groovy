@@ -502,17 +502,6 @@ class CanonicalTransformTest extends GroovyShellTestCase {
         """
     }
 
-    void testTupleConstructorWithEnum() {
-        assertScript """
-            @groovy.transform.TupleConstructor
-            enum Operator {
-                PLUS('+'), MINUS('-')
-                String symbol
-            }
-            assert Operator.PLUS.next() == Operator.MINUS
-        """
-    }
-
     void testEqualsCopesWithSelfReference() {
         assertScript """
             @groovy.transform.Canonical class Tree {
