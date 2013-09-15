@@ -484,7 +484,12 @@ apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 // Define a GroovyDoc task which depends on the generated groovydoc tool
 apply from: 'gradle/groovydoc.gradle'
-apply from: 'gradle/codehaus.gradle'
+if (isJava15()) {
+  // do nothing on JDK 5 as sardine is built for Java 6
+  logger.warn 'You must run on JDK 6+ to be able to deploy to codehaus.'
+} else {
+  apply from: 'gradle/codehaus.gradle'
+}
 
 classes {
     doFirst {
