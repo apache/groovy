@@ -372,6 +372,9 @@ class GrapeIvy implements GrapeEngine {
             .setValidate(args.containsKey('validate') ? args.validate : false)
 
         ivyInstance.settings.defaultResolver = args.autoDownload ? 'downloadGrapes' : 'cachedGrapes'
+        if (args.disableChecksums) {
+            ivyInstance.settings.setVariable('ivy.checksums', '')
+        }
         boolean reportDownloads = System.getProperty('groovy.grape.report.downloads', 'false') == 'true'
         if (reportDownloads) {
             ivyInstance.eventManager.addIvyListener([progress:{ ivyEvent -> switch(ivyEvent) {

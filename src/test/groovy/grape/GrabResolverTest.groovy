@@ -56,6 +56,19 @@ class GrabResolverTest extends GroovyTestCase {
         }
     }
 
+    public void testChecksumsCanBeDisabled() {
+        GroovyShell shell = new GroovyShell(new GroovyClassLoader())
+        shouldFail(CompilationFailedException) {
+            shell.evaluate("""
+            @Grab('org.mvel:mvel2:2.1.3.Final')
+            @GrabConfig(disableChecksums=true)
+            import org.mvel2.MVEL
+
+            assert MVEL.name == 'org.mvel2.MVEL'
+            """)
+        }
+    }
+
     public void testResolverDefinitionResolvesDependency() {
         GroovyShell shell = new GroovyShell(new GroovyClassLoader())
         shell.evaluate("""
