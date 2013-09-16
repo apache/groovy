@@ -3692,7 +3692,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode firstArgType = GenericsUtils.parameterizeType(receiver, dgmMethodFirstArgType);
 
 
-                Map<String, GenericsType> placeholders = new HashMap<String, GenericsType>();
+                Map<String, GenericsType> placeholders = new HashMap<String, GenericsType>() {
+                    public GenericsType put(String key, GenericsType value) {
+                        if (key==null || value==null) throw new NullPointerException("Key and value have to be no null.");
+                        return super.put(key,value);
+                    }
+                };
                 GenericsType[] gts = dgmMethodFirstArgType.getGenericsTypes();
                 for (int i = 0; gts != null && i < gts.length; i++) {
                     GenericsType gt = gts[i];
@@ -4012,7 +4017,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private static Map<String, GenericsType> mergeGenerics(Map<String, GenericsType> current, GenericsType[] newGenerics) {
         if (newGenerics == null || newGenerics.length == 0) return null;
-        if (current==null) current = new HashMap<String, GenericsType>();
+        if (current==null) current = new HashMap<String, GenericsType>() {
+            public GenericsType put(String key, GenericsType value) {
+                if (key==null || value==null) throw new NullPointerException("Key and value have to be no null.");
+                return super.put(key,value);
+            }
+        };
         for (int i = 0; i < newGenerics.length; i++) {
             GenericsType gt = newGenerics[i];
             if (!gt.isPlaceholder()) continue;
