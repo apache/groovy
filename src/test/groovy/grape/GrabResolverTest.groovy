@@ -61,11 +61,15 @@ class GrabResolverTest extends GroovyTestCase {
         shouldFail(CompilationFailedException) {
             shell.evaluate("""
             @Grab('org.mvel:mvel2:2.1.3.Final')
-            @GrabConfig(disableChecksums=true)
             import org.mvel2.MVEL
-
             assert MVEL.name == 'org.mvel2.MVEL'
             """)
+        shell.evaluate("""
+        @Grab('org.mvel:mvel2:2.1.3.Final')
+        @GrabConfig(disableChecksums=true)
+        import org.mvel2.MVEL
+        assert MVEL.name == 'org.mvel2.MVEL'
+        """)
         }
     }
 
