@@ -3467,12 +3467,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private Map<String, GenericsType> resolvePlaceHoldersFromDeclartion(ClassNode receiver, ClassNode declaration, MethodNode method, boolean isStaticTarget) {
         Map<String, GenericsType> resolvedPlaceholders;
         if (isStaticTarget && CLASS_Type.equals(receiver) && receiver.isUsingGenerics() && receiver.getGenericsTypes().length>0) {
-            resolvedPlaceholders = new HashMap<String, GenericsType>() {
-                public GenericsType put(String key, GenericsType value) {
-                    if (key==null || value==null) throw new NullPointerException("Key and value must not be null.");
-                    return super.put(key,value);
-                }
-            };
+            resolvedPlaceholders = new HashMap<String, GenericsType>();
             GenericsUtils.extractPlaceholders(receiver.getGenericsTypes()[0].getType(), resolvedPlaceholders);
         } else {
             resolvedPlaceholders = extractPlaceHolders(method, receiver, declaration);
@@ -3488,12 +3483,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     
     private static Map<String, GenericsType> extractPlaceHolders(MethodNode method, ClassNode receiver, ClassNode declaringClass) {
         if (declaringClass.equals(OBJECT_TYPE)) {
-            Map<String, GenericsType> resolvedPlaceholders = new HashMap<String, GenericsType>() {
-                public GenericsType put(String key, GenericsType value) {
-                    if (key==null || value==null) throw new NullPointerException("Key and value must not be null.");
-                    return super.put(key,value);
-                }
-            };
+            Map<String, GenericsType> resolvedPlaceholders = new HashMap<String, GenericsType>();
             if (method!=null) addMethodLevelDeclaredGenerics(method, resolvedPlaceholders);
             return resolvedPlaceholders;
         }
@@ -3502,12 +3492,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode current = receiver;
         while (true) {
             //extract the place holders
-            Map<String, GenericsType> currentPlaceHolders = new HashMap<String, GenericsType>() {
-                public GenericsType put(String key, GenericsType value) {
-                    if (key==null || value==null) throw new NullPointerException("Key and value must not be null.");
-                    return super.put(key,value);
-                }
-            };
+            Map<String, GenericsType> currentPlaceHolders = new HashMap<String, GenericsType>();
             GenericsUtils.extractPlaceholders(current, currentPlaceHolders);
 
             if (method!=null && declaringClass.equals(current)) {
@@ -3572,13 +3557,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * for which placeholders are resolved recursively.
      */
     protected static GenericsType fullyResolve(GenericsType gt, Map<String, GenericsType> placeholders) {
-        if (gt==null) throw new GroovyBugError("gt must not be null.");
-        if (placeholders==null) throw new GroovyBugError("placeholders map must not be null");
         GenericsType fromMap = placeholders.get(gt.getName());
-        if (fromMap==null) throw new GroovyBugError("placeholders entry has null value, key was: "+gt.getName()+" and map entry exists: "+placeholders.containsKey(gt.getName()));
-
-        if (gt.isPlaceholder() && placeholders.containsKey(gt.getName()) && !placeholders.get(gt.getName()).isPlaceholder()) {
-            gt = placeholders.get(gt.getName());
+        if (gt.isPlaceholder() && fromMap!=null) {
+            gt = fromMap;
         }
 
         ClassNode type = fullyResolveType(gt.getType(), placeholders);
@@ -3697,12 +3678,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode firstArgType = GenericsUtils.parameterizeType(receiver, dgmMethodFirstArgType);
 
 
-                Map<String, GenericsType> placeholders = new HashMap<String, GenericsType>() {
-                    public GenericsType put(String key, GenericsType value) {
-                        if (key==null || value==null) throw new NullPointerException("Key and value must not be null.");
-                        return super.put(key,value);
-                    }
-                };
+                Map<String, GenericsType> placeholders = new HashMap<String, GenericsType>();
                 GenericsType[] gts = dgmMethodFirstArgType.getGenericsTypes();
                 for (int i = 0; gts != null && i < gts.length; i++) {
                     GenericsType gt = gts[i];
@@ -4022,12 +3998,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private static Map<String, GenericsType> mergeGenerics(Map<String, GenericsType> current, GenericsType[] newGenerics) {
         if (newGenerics == null || newGenerics.length == 0) return null;
-        if (current==null) current = new HashMap<String, GenericsType>() {
-            public GenericsType put(String key, GenericsType value) {
-                if (key==null || value==null) throw new NullPointerException("Key and value must not be null.");
-                return super.put(key,value);
-            }
-        };
+        if (current==null) current = new HashMap<String, GenericsType>();
         for (int i = 0; i < newGenerics.length; i++) {
             GenericsType gt = newGenerics[i];
             if (!gt.isPlaceholder()) continue;
