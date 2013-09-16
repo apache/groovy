@@ -3611,8 +3611,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * for which placeholders are resolved recursively.
      */
     protected static GenericsType fullyResolve(GenericsType gt, Map<String, GenericsType> placeholders) {
-        if (gt.isPlaceholder() && placeholders.containsKey(gt.getName()) && !placeholders.get(gt.getName()).isPlaceholder()) {
-            gt = placeholders.get(gt.getName());
+        GenericsType fromMap = placeholders.get(gt.getName());
+        if (gt.isPlaceholder() && fromMap!=null) {
+            gt = fromMap;
         }
 
         ClassNode type = fullyResolveType(gt.getType(), placeholders);
