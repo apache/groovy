@@ -109,8 +109,10 @@ class IntRangeTest extends GroovyTestCase {
     }
 
     void testInclusiveRangesWithNegativesAndPositivesBitset() {
-        byte[] ba = [0x7E,0x44,0x87]
-        def bs = BitSet.valueOf(ba)
+        int bits = 0b100001110100010001111110
+        int numBits = 24
+        def bs = new BitSet()
+        numBits.times{ index -> bs[index] = (bits & 0x1).asBoolean(); bits >>= 1 }
         bs[3..5] = false
         assert bs.toString() == '{1, 2, 6, 10, 14, 16, 17, 18, 23}'
         assert bs[bs.length()-1] == true
