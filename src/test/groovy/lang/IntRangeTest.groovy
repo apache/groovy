@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ package groovy.lang;
  *
  * @author James Strachan
  */
-public class IntRangeTest extends GroovyTestCase {
+class IntRangeTest extends GroovyTestCase {
 
-    public void testCreateTooBigRange() {
+    void testCreateTooBigRange() {
         try {
             new IntRange(0, Integer.MAX_VALUE);
             fail("too large range accepted");
         }
-        catch (IllegalArgumentException e) {
+        catch (IllegalArgumentException ignore) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -35,12 +35,12 @@ public class IntRangeTest extends GroovyTestCase {
     /**
      * Tests providing invalid arguments to the protected constructor.
      */
-    public void testInvalidArgumentsToConstructor() {
+    void testInvalidArgumentsToConstructor() {
         try {
             new IntRange(2, 1, true);
             fail("invalid range created");
         }
-        catch (IllegalArgumentException e) {
+        catch (IllegalArgumentException ignore) {
             assertTrue("expected exception thrown", true);
         }
     }
@@ -48,7 +48,7 @@ public class IntRangeTest extends GroovyTestCase {
     /**
      * Tests getting the to and from values as <code>int</code>s.
      */
-    public void testGetToFromInt() {
+    void testGetToFromInt() {
         final int from = 3, to = 7;
         final IntRange range = new IntRange(from, to);
         assertEquals("wrong 'from'", from, range.getFromInt());
@@ -75,5 +75,52 @@ public class IntRangeTest extends GroovyTestCase {
         (0..-2000000000).step(-1000000000) {
             assert it <= 0
         }
+    }
+
+    void testInclusiveRangesWithNegativesAndPositives() {
+        final a = [1, 2, 3, 4]
+        assert a[-3..-2] == [2, 3]
+        assert a[-3..<-2] == [2]
+        assert a[2..-3] == [3, 2]
+        assert a[1..-1] == [2, 3, 4]
+        assert a[1..<-1] == [2, 3]
+        assert a[-2..<1] == [3]
+        assert a[-2..<-3] == [3]
+    }
+
+    void testInclusiveRangesWithNegativesAndPositivesStrings() {
+        def items = 'abcde'
+        assert items[1..-2]   == 'bcd'
+        assert items[1..<-2]  == 'bc'
+        assert items[-3..<-2] == 'c'
+        assert items[-2..-4]  == 'dcb'
+        assert items[-2..<-4] == 'dc'
+    }
+
+    void testInclusiveRangesWithNegativesAndPositivesPrimBoolArray() {
+        boolean[] bs = [true, false, true, true]
+        assert bs[-3..-2]  == [false, true]
+        assert bs[-3..<-2] == [false]
+        assert bs[2..-3]   == [true, false]
+        assert bs[1..-1]   == [false, true, true]
+        assert bs[1..<-1]  == [false, true]
+        assert bs[-2..<1]  == [true]
+        assert bs[-2..<-3] == [true]
+    }
+
+    void testInclusiveRangesWithNegativesAndPositivesBitset() {
+        byte[] ba = [0x7E,0x44,0x87]
+        def bs = BitSet.valueOf(ba)
+        bs[3..5] = false
+        assert bs.toString() == '{1, 2, 6, 10, 14, 16, 17, 18, 23}'
+        assert bs[bs.length()-1] == true
+        assert bs[-1] == true
+        assert bs[6..17].toString() == '{0, 4, 8, 10, 11}'
+        assert bs[6..<17].toString() == '{0, 4, 8, 10}'
+        assert bs[17..6].toString() == '{0, 1, 3, 7, 11}'
+        assert bs[17..<6].toString() == '{0, 1, 3, 7}'
+        assert bs[-1..-7].toString() == '{0, 5, 6}'
+        assert bs[-1..<-7].toString() == '{0, 5}'
+        assert bs[20..<-8].toString() == '{2, 3}'
     }
 }

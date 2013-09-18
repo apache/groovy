@@ -5220,7 +5220,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> List<T> getAt(List<T> self, Range range) {
         RangeInfo info = subListBorders(self.size(), range);
 
-        List<T> subList = self.subList(info.from, info.to);  // sublist is always exclusive, but Ranges are not
+        List<T> subList = self.subList(info.from, info.to);
         if (info.reverse) {
             subList = reverse(subList);
         }
@@ -5276,7 +5276,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             self.get(info.to - 1);
         }
 
-        List<T> answer = self.subList(info.from, info.to);  // sublist is always exclusive, but Ranges are not
+        List<T> answer = self.subList(info.from, info.to);
         if (info.reverse) {
             answer =  ListWithDefault.newInstance(reverse(answer), self.isLazyDefaultValues(), self.getInitClosure());
         } else {
@@ -5773,8 +5773,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             right = DefaultTypeTransformation.intUnbox(splice.get(1));
         } else if (splice instanceof IntRange) {
             IntRange range = (IntRange) splice;
-            left = range.getFromInt();
-            right = range.getToInt();
+            left = range.getFrom();
+            right = range.getTo();
         } else if (splice instanceof EmptyRange) {
             RangeInfo info = subListBorders(self.size(), (EmptyRange) splice);
             left = info.from;
@@ -9386,7 +9386,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Byte> getAt(byte[] array, IntRange range) {
-        return primitiveArrayGet(array, range);
+        RangeInfo info = subListBorders(array.length, range);
+        List<Byte> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        return info.reverse ? reverse(answer) : answer;
     }
 
     /**
@@ -9399,7 +9401,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Character> getAt(char[] array, IntRange range) {
-        return primitiveArrayGet(array, range);
+        RangeInfo info = subListBorders(array.length, range);
+        List<Character> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        return info.reverse ? reverse(answer) : answer;
     }
 
     /**
@@ -9412,7 +9416,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Short> getAt(short[] array, IntRange range) {
-        return primitiveArrayGet(array, range);
+        RangeInfo info = subListBorders(array.length, range);
+        List<Short> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        return info.reverse ? reverse(answer) : answer;
     }
 
     /**
@@ -9425,7 +9431,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Integer> getAt(int[] array, IntRange range) {
-        return primitiveArrayGet(array, range);
+        RangeInfo info = subListBorders(array.length, range);
+        List<Integer> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        return info.reverse ? reverse(answer) : answer;
     }
 
     /**
@@ -9438,7 +9446,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Long> getAt(long[] array, IntRange range) {
-        return primitiveArrayGet(array, range);
+        RangeInfo info = subListBorders(array.length, range);
+        List<Long> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        return info.reverse ? reverse(answer) : answer;
     }
 
     /**
@@ -9451,7 +9461,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Float> getAt(float[] array, IntRange range) {
-        return primitiveArrayGet(array, range);
+        RangeInfo info = subListBorders(array.length, range);
+        List<Float> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        return info.reverse ? reverse(answer) : answer;
     }
 
     /**
@@ -9464,7 +9476,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Double> getAt(double[] array, IntRange range) {
-        return primitiveArrayGet(array, range);
+        RangeInfo info = subListBorders(array.length, range);
+        List<Double> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        return info.reverse ? reverse(answer) : answer;
     }
 
     /**
@@ -9477,7 +9491,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Boolean> getAt(boolean[] array, IntRange range) {
-        return primitiveArrayGet(array, range);
+        RangeInfo info = subListBorders(array.length, range);
+        List<Boolean> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        return info.reverse ? reverse(answer) : answer;
     }
 
     /**
@@ -9698,7 +9714,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static boolean getAt(BitSet self, int index) {
-        return self.get(index);
+        int i = normaliseIndex(index, self.length());
+        return self.get(i);
     }
 
     /**
@@ -9712,18 +9729,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static BitSet getAt(BitSet self, IntRange range) {
-        int from = DefaultTypeTransformation.intUnbox(range.getFrom());
-        int to = DefaultTypeTransformation.intUnbox(range.getTo());
-
+        RangeInfo info = subListBorders(self.length(), range);
         BitSet result = new BitSet();
 
-        int numberOfBits = to - from + 1;
+        int numberOfBits = info.to - info.from;
         int adjuster = 1;
-        int offset = from;
+        int offset = info.from;
 
-        if (range.isReverse()) {
+        if (info.reverse) {
             adjuster = -1;
-            offset = to;
+            offset = info.to - 1;
         }
 
         for (int i = 0; i < numberOfBits; i++) {
@@ -9807,16 +9822,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static void putAt(BitSet self, IntRange range, boolean value) {
-        int from = DefaultTypeTransformation.intUnbox(range.getFrom());
-        int to = DefaultTypeTransformation.intUnbox(range.getTo());
-
-        // If this is a backwards range, reverse the arguments to set.
-        if (from > to) {
-            int tmp = to;
-            to = from;
-            from = tmp;
-        }
-        self.set(from, to + 1, value);
+        RangeInfo info = subListBorders(self.length(), range);
+        self.set(info.from, info.to, value);
     }
 
     /**

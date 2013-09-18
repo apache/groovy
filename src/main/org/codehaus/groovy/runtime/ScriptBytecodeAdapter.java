@@ -619,22 +619,13 @@ public class ScriptBytecodeAdapter {
         return InvokerHelper.createMap(values);
     }
 
-    //TODO: refactor
     public static List createRange(Object from, Object to, boolean inclusive) throws Throwable {
         if (from instanceof Integer && to instanceof Integer) {
-            int ito = (Integer) to;
             int ifrom = (Integer) from;
-            if (!inclusive) {
-                if (ifrom == ito) {
-                    return new EmptyRange((Comparable) from);
-                }
-                if (ifrom > ito) {
-                    ito++;
-                } else {
-                    ito--;
-                }
-            }
-            return new IntRange(ifrom, ito);
+            int ito = (Integer) to;
+            if (inclusive || ifrom != ito) {
+                return new IntRange(inclusive, ifrom, ito);
+            } // else fall through for EmptyRange
         }
         if (!inclusive) {
             if (compareEqual(from, to)) {

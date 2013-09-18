@@ -1339,20 +1339,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static CharSequence getAt(CharSequence text, Range range) {
-        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), text.length());
-        int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), text.length());
-
-        boolean reverse = range.isReverse();
-        // If this is a backwards range, reverse the arguments to substring.
-        if (from > to) {
-            int tmp = from;
-            from = to;
-            to = tmp;
-            reverse = !reverse;
-        }
-
-        CharSequence sequence = text.subSequence(from, to + 1);
-        return reverse ? reverse((String) sequence) : sequence;
+        RangeInfo info = subListBorders(text.length(), range);
+        CharSequence sequence = text.subSequence(info.from, info.to);
+        return info.reverse ? reverse((String) sequence) : sequence;
     }
 
     /**
@@ -1530,20 +1519,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String getAt(String text, Range range) {
-        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), text.length());
-        int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), text.length());
-
-        // If this is a backwards range, reverse the arguments to substring.
-        boolean reverse = range.isReverse();
-        if (from > to) {
-            int tmp = to;
-            to = from;
-            from = tmp;
-            reverse = !reverse;
-        }
-
-        String answer = text.substring(from, to + 1);
-        if (reverse) {
+        RangeInfo info = subListBorders(text.length(), range);
+        String answer = text.substring(info.from, info.to);
+        if (info.reverse) {
             answer = reverse(answer);
         }
         return answer;
