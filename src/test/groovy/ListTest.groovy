@@ -302,8 +302,8 @@ class ListTest extends GroovyTestCase {
         assert list[-1..-2] == [3, 2]     , 'negative index range reversed'
         assert list[-1..<-2] == [3]       , 'negative index range reversed exclusive'  // aaaahhhhh !
         assert list[0..-1] == list        , 'pos - neg value'
-        assert list[0..<-1] == [0]        , 'pos - neg value exclusive -> empty'
-        assert list[0..<-2] == list       , 'pos - neg value exclusive -> full'
+        assert list[0..<-1] == [0, 1, 2]  , 'pos - neg value exclusive'
+        assert list[0..<-2] == [0, 1]     , 'pos - neg value exclusive'
         shouldFail(GroovyRuntimeException) { list[null] }
         shouldFail(IndexOutOfBoundsException) { list[5..6] }
     }
@@ -538,7 +538,7 @@ class ListTest extends GroovyTestCase {
     void testLazyListAndFailingNegativeRangeAccess() {
         def l1 = [].withDefault { 42 }
 
-        shouldFail(ArrayIndexOutOfBoundsException) {
+        shouldFail(IndexOutOfBoundsException) {
             l1[-42..0]
         }
     }
@@ -546,7 +546,7 @@ class ListTest extends GroovyTestCase {
     void testEagerListAndFailingNegativeRangeAccess() {
         def l1 = [].withEagerDefault { 42 }
 
-        shouldFail(ArrayIndexOutOfBoundsException) {
+        shouldFail(IndexOutOfBoundsException) {
             l1[-42..0]
         }
     }
@@ -648,7 +648,7 @@ class ListTest extends GroovyTestCase {
 
     void testEagerListWithNegativeIndex() {
         def a = [].withEagerDefault { 42 }
-        shouldFail(ArrayIndexOutOfBoundsException) {
+        shouldFail(IndexOutOfBoundsException) {
             a[-2]
         }
     }
