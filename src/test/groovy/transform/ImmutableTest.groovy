@@ -16,7 +16,15 @@ class ImmutableTest extends GroovyTestCase {
         // This should be the same instance and no changes
         def tim2 = tim.copyWith( first:'tim' )
         assert tim.is( tim2 )
-        
+
+        // This should also be the same instance and no changes
+        def tim3 = tim.copyWith( first:'tim', whatever:true )
+        assert tim.is( tim3 )
+
+        // As should this
+        def tim4 = tim.copyWith( whatever:true )
+        assert tim.is( tim4 )
+
         // This should be a new instance with a new firstname
         def alice = tim.copyWith( first:'alice' )
         assert tim != alice
@@ -41,6 +49,14 @@ class ImmutableTest extends GroovyTestCase {
         def tim2 = tim.copyWith( first:'tim' )
         assert tim.is( tim2 )
 
+        // This should also be the same instance and no changes
+        def tim3 = tim.copyWith( first:'tim', whatever:true )
+        assert tim.is( tim3 )
+
+        // As should this
+        def tim4 = tim.copyWith( whatever:true )
+        assert tim.is( tim4 )
+
         // This should be a new instance with a new firstname
         def alice = tim.copyWith( first:'alice' )
         assert tim != alice
@@ -64,6 +80,14 @@ class ImmutableTest extends GroovyTestCase {
         // This should be the same instance and no changes
         def tim2 = tim.copyWith( first:'tim' )
         assert tim.is( tim2 )
+
+        // This should also be the same instance and no changes
+        def tim3 = tim.copyWith( first:'tim', whatever:true )
+        assert tim.is( tim3 )
+
+        // As should this
+        def tim4 = tim.copyWith( whatever:true )
+        assert tim.is( tim4 )
 
         // This should be a new instance with a new firstname
         def alice = tim.copyWith( first:'alice' )
