@@ -43,7 +43,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -108,7 +107,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode DGM_TYPE = ClassHelper.make(DefaultGroovyMethods.class);
     private static final ClassNode SELF_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
     private static final ClassNode HASHMAP_TYPE = ClassHelper.makeWithoutCaching(HashMap.class, false);
-    private static final ClassNode LINKED_HASHMAP_TYPE = ClassHelper.makeWithoutCaching(LinkedHashMap.class);
     private static final ClassNode MAP_TYPE = ClassHelper.makeWithoutCaching(Map.class, false);
     private static final ClassNode FIELD_TYPE = ClassHelper.makeWithoutCaching(Field.class);
     private static final ClassNode REFLECTION_INVOKER_TYPE = ClassHelper.make(ReflectionMethodInvoker.class);
@@ -646,7 +644,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private Statement createAddToConstructMap() {
         return new ExpressionStatement(
             new MethodCallExpression(
-                new VariableExpression( "construct", ClassHelper.MAP_TYPE ),
+                new VariableExpression( "construct", HASHMAP_TYPE ),
                 "put",
                 new ArgumentListExpression( new Expression[] {
                     new MethodCallExpression(
@@ -670,7 +668,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 AbstractASTTransformUtil.declStatement(
                     new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
                     new MethodCallExpression(
-                        new VariableExpression( "map", ClassHelper.MAP_TYPE ),
+                        new VariableExpression( "map", HASHMAP_TYPE ),
                         "get",
                         new MethodCallExpression(
                             new VariableExpression( "field", FIELD_TYPE ),
@@ -692,8 +690,8 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
                 ConstantExpression.PRIM_FALSE ),
             AbstractASTTransformUtil.declStatement(
-                new VariableExpression( "construct", ClassHelper.MAP_TYPE ),
-                new ConstructorCallExpression( LINKED_HASHMAP_TYPE, MethodCallExpression.NO_ARGUMENTS )
+                new VariableExpression( "construct", HASHMAP_TYPE ),
+                new ConstructorCallExpression( HASHMAP_TYPE, MethodCallExpression.NO_ARGUMENTS )
             ),
             new ForStatement(
                 new Parameter( FIELD_TYPE, "field" ),
@@ -711,7 +709,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                     new ConstructorCallExpression(
                         cNode,
                         new ArgumentListExpression( new Expression[] {
-                            new VariableExpression( "construct", ClassHelper.MAP_TYPE )
+                            new VariableExpression( "construct", HASHMAP_TYPE )
                         } )
                     ),
                     new VariableExpression( "this", cNode )
