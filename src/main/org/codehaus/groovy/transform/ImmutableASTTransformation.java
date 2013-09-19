@@ -24,7 +24,9 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.control.CompilePhase;
@@ -35,11 +37,13 @@ import org.codehaus.groovy.runtime.ReflectionMethodInvoker;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,6 +61,7 @@ import static org.codehaus.groovy.transform.ToStringASTTransformation.createToSt
  *
  * @author Paul King
  * @author Andre Steingress
+ * @author Tim Yates
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ImmutableASTTransformation extends AbstractASTTransformation {
@@ -93,6 +98,8 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
+    static final String MEMBER_ADD_COPY_WITH = "addCopyWith";
+    static final String COPY_WITH_METHOD = "copyWith";
 
     private static final ClassNode DATE_TYPE = ClassHelper.make(Date.class);
     private static final ClassNode CLONEABLE_TYPE = ClassHelper.make(Cloneable.class);
@@ -101,14 +108,14 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode DGM_TYPE = ClassHelper.make(DefaultGroovyMethods.class);
     private static final ClassNode SELF_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
     private static final ClassNode HASHMAP_TYPE = ClassHelper.makeWithoutCaching(HashMap.class, false);
+    private static final ClassNode LINKED_HASHMAP_TYPE = ClassHelper.makeWithoutCaching(LinkedHashMap.class);
     private static final ClassNode MAP_TYPE = ClassHelper.makeWithoutCaching(Map.class, false);
+    private static final ClassNode FIELD_TYPE = ClassHelper.makeWithoutCaching(Field.class);
     private static final ClassNode REFLECTION_INVOKER_TYPE = ClassHelper.make(ReflectionMethodInvoker.class);
     private static final ClassNode SORTEDSET_CLASSNODE = ClassHelper.make(SortedSet.class);
     private static final ClassNode SORTEDMAP_CLASSNODE = ClassHelper.make(SortedMap.class);
     private static final ClassNode SET_CLASSNODE = ClassHelper.make(Set.class);
     private static final ClassNode MAP_CLASSNODE = ClassHelper.make(Map.class);
-
-
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -147,6 +154,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             }
             if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
                 createToString(cNode, false, false, null, null, false, true);
+            }
+            if( memberHasValue(node, MEMBER_ADD_COPY_WITH, true) && !hasDeclaredMethod( cNode, COPY_WITH_METHOD, 1 ) ) {
+                createCopyWith( cNode ) ;
             }
         }
     }
@@ -555,6 +565,165 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         final Expression fieldExpr = new VariableExpression(fNode);
         final Expression expression = cloneDateExpr(fieldExpr);
         return safeExpression(fieldExpr, expression);
+    }
+
+    private Statement createNewValueIf() {
+        return new IfStatement(
+            new BooleanExpression(
+                new BinaryExpression(
+                    new BinaryExpression(
+                        new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
+                        new Token(Types.COMPARE_NOT_EQUAL, "!=", -1, -1),
+                        ConstantExpression.NULL ),
+                    new Token( Types.LOGICAL_AND, "&&", -1, -1 ),
+                    new BinaryExpression(
+                        new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
+                        new Token(Types.COMPARE_NOT_EQUAL, "!=", -1, -1),
+                        new VariableExpression( "value", ClassHelper.OBJECT_TYPE )
+                    )
+                )
+            ),
+            new BlockStatement( new Statement[] {
+                AbstractASTTransformUtil.assignStatement(
+                    new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
+                    ConstantExpression.TRUE ),
+                AbstractASTTransformUtil.assignStatement(
+                    new VariableExpression( "value", ClassHelper.OBJECT_TYPE ),
+                    new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ) )
+            }, new VariableScope() ),
+            EmptyStatement.INSTANCE
+        ) ;
+    }
+
+    private Statement createCallGetterForField( final ClassNode cNode ) {
+        return AbstractASTTransformUtil.declStatement(
+            new VariableExpression( "value", ClassHelper.OBJECT_TYPE ),
+            new MethodCallExpression(
+                new MethodCallExpression(
+                    new ClassExpression( cNode ),
+                    "getMethod",
+                    new ArgumentListExpression( new Expression[] {
+                        new BinaryExpression(
+                            new ConstantExpression( "get" ),
+                            new Token( Types.PLUS, "+", -1, -1 ),
+                            new BinaryExpression(
+                                new MethodCallExpression(
+                                    new MethodCallExpression(
+                                        new MethodCallExpression(
+                                            new VariableExpression( "field", FIELD_TYPE ),
+                                            "getName",
+                                            MethodCallExpression.NO_ARGUMENTS ),
+                                        "substring",
+                                        new ArgumentListExpression( new Expression[] {
+                                            new ConstantExpression( 0 ),
+                                            new ConstantExpression( 1 ),
+                                        } )
+                                    ),
+                                    "toUpperCase",
+                                    MethodCallExpression.NO_ARGUMENTS
+                                ),
+                                new Token( Types.PLUS, "+", -1, -1 ),
+                                new MethodCallExpression(
+                                    new MethodCallExpression(
+                                        new VariableExpression( "field", FIELD_TYPE ),
+                                        "getName",
+                                        MethodCallExpression.NO_ARGUMENTS ),
+                                    "substring",
+                                    new ArgumentListExpression( new Expression[] {
+                                        new ConstantExpression( 1 ),
+                                    } )
+                                )
+                            )
+                        )
+                    } )
+                ),
+                "invoke",
+                new VariableExpression( "this", cNode )
+            )
+        ) ;
+    }
+
+    private Statement createAddToConstructMap() {
+        return new ExpressionStatement(
+            new MethodCallExpression(
+                new VariableExpression( "construct", ClassHelper.MAP_TYPE ),
+                "put",
+                new ArgumentListExpression( new Expression[] {
+                    new MethodCallExpression(
+                        new VariableExpression( "field", FIELD_TYPE ),
+                        "getName",
+                        MethodCallExpression.NO_ARGUMENTS ),
+                    new VariableExpression( "value", ClassHelper.OBJECT_TYPE )
+                } )
+            )
+        ) ;
+    }
+
+    private Statement createSyntheticCheckingBlock( final ClassNode cNode ) {
+        return new IfStatement(
+            new NotExpression(
+                new MethodCallExpression(
+                    new VariableExpression( "field", FIELD_TYPE ),
+                    "isSynthetic",
+                    MethodCallExpression.NO_ARGUMENTS ) ),
+            new BlockStatement( new Statement[] {
+                AbstractASTTransformUtil.declStatement(
+                    new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
+                    new MethodCallExpression(
+                        new VariableExpression( "map", ClassHelper.MAP_TYPE ),
+                        "get",
+                        new MethodCallExpression(
+                            new VariableExpression( "field", FIELD_TYPE ),
+                            "getName",
+                            MethodCallExpression.NO_ARGUMENTS )
+                    )
+                ),
+                createCallGetterForField( cNode ),
+                createNewValueIf(),
+                createAddToConstructMap(),
+            }, new VariableScope() ),
+            EmptyStatement.INSTANCE
+        ) ;
+    }
+
+    private void createCopyWith( final ClassNode cNode ) {
+        BlockStatement body = new BlockStatement( new Statement[] {
+            AbstractASTTransformUtil.declStatement(
+                new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
+                ConstantExpression.PRIM_FALSE ),
+            AbstractASTTransformUtil.declStatement(
+                new VariableExpression( "construct", ClassHelper.MAP_TYPE ),
+                new ConstructorCallExpression( LINKED_HASHMAP_TYPE, MethodCallExpression.NO_ARGUMENTS )
+            ),
+            new ForStatement(
+                new Parameter( FIELD_TYPE, "field" ),
+                new MethodCallExpression(
+                    new ClassExpression( cNode ),
+                    "getDeclaredFields",
+                    MethodCallExpression.NO_ARGUMENTS ),
+                new BlockStatement( new Statement[] {
+                    createSyntheticCheckingBlock( cNode )
+                }, new VariableScope() ) ),
+            new ReturnStatement(
+                new TernaryExpression(
+                    AbstractASTTransformUtil.isTrueExpr(
+                        new VariableExpression( "dirty", ClassHelper.boolean_TYPE ) ),
+                    new ConstructorCallExpression(
+                        cNode,
+                        new ArgumentListExpression( new Expression[] {
+                            new VariableExpression( "construct", ClassHelper.MAP_TYPE )
+                        } )
+                    ),
+                    new VariableExpression( "this", cNode )
+                )
+            ),
+        }, new VariableScope() );
+        cNode.addMethod( COPY_WITH_METHOD,
+                         ACC_PUBLIC | ACC_FINAL,
+                         cNode,
+                         new Parameter[] { new Parameter( new ClassNode( Map.class ), "map" ) },
+                         null,
+                         body );
     }
 
     /**
