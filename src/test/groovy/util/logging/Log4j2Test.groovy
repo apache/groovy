@@ -13,13 +13,14 @@ class Log4j2Test extends GroovyTestCase {
         }
     }
 
+    Class appenderClazz
     def appender
     def logger
 
     protected void setUp() {
         super.setUp()
         if(javaVersionGreaterThan1_5) {
-            Class appenderClazz = new GroovyClassLoader().parseClass('''
+            appenderClazz = new GroovyClassLoader().parseClass('''
                 class Log4j2InterceptingAppender extends org.apache.logging.log4j.core.appender.AbstractAppender {
                     List<org.apache.log4j.spi.LoggingEvent> events
                     boolean isLogGuarded = true
@@ -224,6 +225,47 @@ class Log4j2Test extends GroovyTestCase {
             assert appender.isLogGuarded == true
         }
     }
+    
+    void testDefaultCategory() {
+        if(javaVersionGreaterThan1_5) {
+            Class clazz = new GroovyClassLoader().parseClass("""
+                @groovy.util.logging.Log4j2
+                class MyClass {
+                    static loggingMethod() {
+                      log.info("info called")
+                    }
+                }""")
+
+            def s = clazz.newInstance()
+            s.loggingMethod()
+
+            assert appender.getEvents().size() == 1
+        }
+    }
+
+    public void testCustomCategory() {
+        if(javaVersionGreaterThan1_5) {
+            def layoutClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.core.layout.PatternLayout')
+            def layout = layoutClazz.metaClass.invokeStaticMethod(layoutClazz, 'createLayout', ["%m", null, null, "UTF-8", "false"] as Object[])
+            def appenderForCustomCategory = appenderClazz.newInstance(['Appender4CustomCategory', null, layout] as Object[])
+
+            def logManagerClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.LogManager')
+            def loggerForCustomCategory = logManagerClazz.metaClass.invokeStaticMethod(logManagerClazz, 'getLogger', 'customCategory')
+            loggerForCustomCategory.addAppender(appenderForCustomCategory)
+
+            Class clazz = new GroovyClassLoader().parseClass("""
+                @groovy.util.logging.Log4j2(category='customCategory')
+                class MyClass {
+                    static loggingMethod() {
+                      log.error("error called")
+                    }
+                }""")
+            def s = clazz.newInstance()
+
+            s.loggingMethod()
+
+            assert appenderForCustomCategory.getEvents().size() == 1
+            assert appender.getEvents().size() == 0
+        }
+    }
 }
-
-
