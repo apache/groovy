@@ -23,7 +23,7 @@ public class FrameFactory extends RootPaneContainerFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         JFrame frame
-        if (FactoryBuilderSupport.checkValueIsType(value, name, JFrame.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, JFrame)) {
             frame = value
         } else {
             frame = new JFrame()
@@ -31,7 +31,7 @@ public class FrameFactory extends RootPaneContainerFactory {
 
         handleRootPaneTasks(builder, frame, attributes)
 
-        return frame;
+        return frame
     }
 
     public void setChild(FactoryBuilderSupport build, Object parent, Object child) {

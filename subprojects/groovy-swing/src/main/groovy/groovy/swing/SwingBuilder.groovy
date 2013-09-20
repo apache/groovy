@@ -90,7 +90,7 @@ import groovy.swing.factory.CollectionFactory
  */
 public class SwingBuilder extends FactoryBuilderSupport {
     // local fields
-    private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
+    private static final Logger LOG = Logger.getLogger(SwingBuilder)
     private static boolean headless = false
 
     public static final String DELEGATE_PROPERTY_OBJECT_ID = "_delegateProperty:id";

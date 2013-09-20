@@ -27,7 +27,7 @@ import javax.swing.table.TableModel
 public class TableModelFactory extends AbstractFactory {
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (FactoryBuilderSupport.checkValueIsType(value, name, TableModel.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, TableModel)) {
             return value;
         } else if (attributes.get(name) instanceof TableModel) {
             return attributes.remove(name);
@@ -81,7 +81,7 @@ public class PropertyColumnFactory extends AbstractFactory {
             }
             Class type = (Class) attributes.remove("type");
             if (type == null) {
-                type = Object.class;
+                type = Object;
             }
             Boolean editable = (Boolean) attributes.remove("editable");
             if (editable == null) {
@@ -112,7 +112,7 @@ public class ClosureColumnFactory extends AbstractFactory {
             Closure writeClosure = (Closure) attributes.remove("write");
             Class type = (Class) attributes.remove("type");
             if (type == null) {
-                type = Object.class;
+                type = Object;
             }
             return model.addClosureColumn(header, readClosure, writeClosure, type);
         } else {

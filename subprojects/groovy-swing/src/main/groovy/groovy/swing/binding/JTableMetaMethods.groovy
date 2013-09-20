@@ -47,7 +47,7 @@ class JTableMetaMethods {
             },
             getSelectedElements:{->
                 def myTable = delegate
-                return myTable.getSelectedRows().collect() { getElement(myTable, it) }
+                return myTable.getSelectedRows().collect { getElement(myTable, it) }
             }
         ]);
     }
@@ -71,11 +71,9 @@ class JTableMetaMethods {
             Object rowValue = model.getRowsModel().value
             if (rowValue == null) {
                 return null;
-            } else {
-                return InvokerHelper.asList(rowValue)[row]
             }
+            return InvokerHelper.asList(rowValue)[row]
         }
     }
-
 
 }
