@@ -41,7 +41,7 @@ abstract class ShellRunner
         running = false
     }
     
-    ShellRunner(final Shell shell) {
+    protected ShellRunner(final Shell shell) {
         assert(shell != null)
         
         this.shell = shell

@@ -26,7 +26,7 @@ import org.codehaus.groovy.tools.shell.util.Logger
  */
 class CommandRegistry
 {
-    protected final Logger log = Logger.create(CommandRegistry.class)
+    protected final Logger log = Logger.create(CommandRegistry)
     
     //
     // TODO: Hook up support so one can for (command in registry) { }

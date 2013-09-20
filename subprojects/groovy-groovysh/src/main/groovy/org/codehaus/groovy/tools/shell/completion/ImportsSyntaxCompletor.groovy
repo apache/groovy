@@ -18,7 +18,6 @@ package org.codehaus.groovy.tools.shell.completion
 
 import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.util.Logger
 
 /**
  * Completor completing imported classnames
@@ -95,21 +94,21 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
      * @return
      */
     void collectImportedSymbols(String importSpec, Collection matches) {
-        String AS_KEYWORD = " as "
-        int asIndex = importSpec.indexOf(AS_KEYWORD)
+        String asKeyword = " as "
+        int asIndex = importSpec.indexOf(asKeyword)
         if (asIndex > -1) {
-            String alias = importSpec.substring(asIndex + AS_KEYWORD.length())
+            String alias = importSpec.substring(asIndex + asKeyword.length())
             matches << alias
             return
         }
-        String static_prefix = 'import static '
-        if (importSpec.startsWith(static_prefix)) {
+        String staticPrefix = 'import static '
+        if (importSpec.startsWith(staticPrefix)) {
             // make sure pattern is safe, though shell should have done anyway
             if (importSpec  ==~ STATIC_IMPORT_PATTERN) {
                 if (importSpec.endsWith(".*")) {
-                    importSpec = importSpec[static_prefix.length()..-3]
+                    importSpec = importSpec[staticPrefix.length()..-3]
                 } else {
-                    importSpec = importSpec[static_prefix.length()..(importSpec.lastIndexOf('.') - 1)]
+                    importSpec = importSpec[staticPrefix.length()..(importSpec.lastIndexOf('.') - 1)]
                 }
                 Class clazz = shell.interp.evaluate([importSpec]) as Class
                 if (clazz != null) {

@@ -39,7 +39,7 @@ class Main
         Ansi.setDetector(new AnsiDetector())
     }
 
-    private static final MessageSource messages = new MessageSource(Main.class)
+    private static final MessageSource messages = new MessageSource(Main)
 
     static void main(final String[] args) {
         IO io = new IO()
@@ -203,5 +203,4 @@ class Main
         System.setProperty(name, value)
     }
 }
-
 
