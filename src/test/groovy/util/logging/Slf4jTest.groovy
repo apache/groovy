@@ -1,9 +1,9 @@
 package groovy.util.logging
 
 import java.lang.reflect.*
-import org.slf4j.LoggerFactory;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.core.OutputStreamAppender;
+import org.slf4j.LoggerFactory
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.core.OutputStreamAppender
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.spi.LoggingEvent
@@ -41,37 +41,37 @@ class Slf4jTest extends GroovyTestCase {
         logger.detachAppender(appender)
     }
 
-      public void testPrivateFinalStaticLogFieldAppears() {
+    public void testPrivateFinalStaticLogFieldAppears() {
 
-          Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass('''
                 @groovy.util.logging.Slf4j
                 class MyClass {
                 } ''')
 
-          assert clazz.declaredFields.find { Field field ->
-              field.name == "log" &&
-                      Modifier.isPrivate(field.getModifiers()) &&
-                      Modifier.isStatic(field.getModifiers()) &&
-                      Modifier.isTransient(field.getModifiers()) &&
-                      Modifier.isFinal(field.getModifiers())
-          }
-      }
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    Modifier.isPrivate(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
 
-      public void testPrivateFinalStaticNamedLogFieldAppears() {
+    public void testPrivateFinalStaticNamedLogFieldAppears() {
 
-          Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass('''
                 @groovy.util.logging.Slf4j('logger')
                 class MyClass {
                 } ''')
 
-          assert clazz.declaredFields.find { Field field ->
-              field.name == "logger" &&
-                      Modifier.isPrivate(field.getModifiers()) &&
-                      Modifier.isStatic(field.getModifiers()) &&
-                      Modifier.isTransient(field.getModifiers()) &&
-                      Modifier.isFinal(field.getModifiers())
-          }
-      }
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "logger" &&
+                    Modifier.isPrivate(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
 
     public void testClassAlreadyHasLogField() {
 
@@ -101,9 +101,9 @@ class Slf4jTest extends GroovyTestCase {
         }
     }
 
-  public void testLogInfo() {
+    public void testLogInfo() {
 
-      Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass('''
           @groovy.util.logging.Slf4j
           class MyClass {
 
@@ -117,23 +117,23 @@ class Slf4jTest extends GroovyTestCase {
           }
           new MyClass().loggingMethod() ''')
 
-      Script s = (Script) clazz.newInstance()
-      s.run()
+        Script s = (Script) clazz.newInstance()
+        s.run()
 
-      def events = appender.getEvents()
-      int ind = 0
-      assert events.size() == 5
-      assert events[ind].level == Level.ERROR
-      assert events[ind].message == "error called"
-      assert events[++ind].level == Level.WARN
-      assert events[ind].message == "warn called"
-      assert events[++ind].level == Level.INFO
-      assert events[ind].message == "info called"
-      assert events[++ind].level == Level.DEBUG
-      assert events[ind].message == "debug called"
-      assert events[++ind].level == Level.TRACE
-      assert events[ind].message == "trace called"
-  }
+        def events = appender.getEvents()
+        int ind = 0
+        assert events.size() == 5
+        assert events[ind].level == Level.ERROR
+        assert events[ind].message == "error called"
+        assert events[++ind].level == Level.WARN
+        assert events[ind].message == "warn called"
+        assert events[++ind].level == Level.INFO
+        assert events[ind].message == "info called"
+        assert events[++ind].level == Level.DEBUG
+        assert events[ind].message == "debug called"
+        assert events[++ind].level == Level.TRACE
+        assert events[ind].message == "trace called"
+    }
 
     void testLogFromStaticMethods() {
         Class clazz = new GroovyClassLoader().parseClass("""
@@ -154,9 +154,9 @@ class Slf4jTest extends GroovyTestCase {
         assert events[0].message == "(static) info called"
     }
 
-  public void testLogInfoWithNamedLogger() {
+    public void testLogInfoWithNamedLogger() {
 
-      Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass('''
           @groovy.util.logging.Slf4j('logger')
           class MyClass {
 
@@ -170,23 +170,23 @@ class Slf4jTest extends GroovyTestCase {
           }
           new MyClass().loggingMethod() ''')
 
-      Script s = (Script) clazz.newInstance()
-      s.run()
+        Script s = (Script) clazz.newInstance()
+        s.run()
 
-      def events = appender.getEvents()
-      int ind = 0
-      assert events.size() == 5
-      assert events[ind].level == Level.ERROR
-      assert events[ind].message == "error called"
-      assert events[++ind].level == Level.WARN
-      assert events[ind].message == "warn called"
-      assert events[++ind].level == Level.INFO
-      assert events[ind].message == "info called"
-      assert events[++ind].level == Level.DEBUG
-      assert events[ind].message == "debug called"
-      assert events[++ind].level == Level.TRACE
-      assert events[ind].message == "trace called"
-  }
+        def events = appender.getEvents()
+        int ind = 0
+        assert events.size() == 5
+        assert events[ind].level == Level.ERROR
+        assert events[ind].message == "error called"
+        assert events[++ind].level == Level.WARN
+        assert events[ind].message == "warn called"
+        assert events[++ind].level == Level.INFO
+        assert events[ind].message == "info called"
+        assert events[++ind].level == Level.DEBUG
+        assert events[ind].message == "debug called"
+        assert events[++ind].level == Level.TRACE
+        assert events[ind].message == "trace called"
+    }
 
     public void testLogGuard() {
         Class clazz = new GroovyClassLoader().parseClass('''
@@ -205,6 +205,44 @@ class Slf4jTest extends GroovyTestCase {
         assert s.run() == false
     }
 
+    void testDefaultCategory() {
+        Class clazz = new GroovyClassLoader().parseClass("""
+            @groovy.util.logging.Slf4j
+            class MyClass {
+                static loggingMethod() {
+                  log.info("info called")
+                }
+            }""")
+
+        def s = clazz.newInstance()
+        s.loggingMethod()
+
+        assert appender.getEvents().size() == 1
+    }
+
+    public void testCustomCategory() {
+        LogbackInterceptingAppender appenderForCustomCategory = new LogbackInterceptingAppender()
+        appenderForCustomCategory.setOutputStream(new ByteArrayOutputStream())
+        appenderForCustomCategory.setLayout(new EchoLayout())
+        appenderForCustomCategory.start()
+
+        Logger loggerForCustomCategory = LoggerFactory.getLogger("customCategory")
+        loggerForCustomCategory.addAppender(appenderForCustomCategory)
+
+        Class clazz = new GroovyClassLoader().parseClass("""
+            @groovy.util.logging.Slf4j(category='customCategory')
+            class MyClass {
+                static loggingMethod() {
+                  log.error("error called")
+                }
+            }""")
+        def s = clazz.newInstance()
+
+        s.loggingMethod()
+
+        assert appenderForCustomCategory.getEvents().size() == 1
+        assert appender.getEvents().size() == 0
+    }
 }
 
 class LogbackInterceptingAppender<E> extends OutputStreamAppender<E> {
@@ -223,5 +261,4 @@ class LogbackInterceptingAppender<E> extends OutputStreamAppender<E> {
         }
         super.append(event)
     }
-
 }

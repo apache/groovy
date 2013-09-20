@@ -45,6 +45,12 @@ import java.util.Arrays;
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class LogASTTransformation implements ASTTransformation {
+    
+    /**
+     * This is just a dummy value used because String annotations values can not be null.
+     * It will be replaced by the fully qualified class name of the annotated class.
+     */
+    public static final String DEFAULT_CATEGORY_NAME = "##default-category-name##";
 
     public void visit(ASTNode[] nodes, final SourceUnit source) {
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
@@ -58,6 +64,8 @@ public class LogASTTransformation implements ASTTransformation {
         if (loggingStrategy == null) return;
 
         final String logFieldName = lookupLogFieldName(logAnnotation);
+
+        final String categoryName = lookupCategoryName(logAnnotation);
 
         if (!(targetClass instanceof ClassNode))
             throw new GroovyBugError("Class annotation " + logAnnotation.getClassNode().getName() + " annotated no Class, this must not happen.");
@@ -88,7 +96,7 @@ public class LogASTTransformation implements ASTTransformation {
                 } else if (logField != null && !Modifier.isPrivate(logField.getModifiers())) {
                     addError("Class annotated with Log annotation cannot have log field declared because the field exists in the parent class: " + logField.getOwner().getName(), logField);
                 } else {
-                    logNode = loggingStrategy.addLoggerFieldToClass(node, logFieldName);
+                    logNode = loggingStrategy.addLoggerFieldToClass(node, logFieldName, categoryName);
                 }
                 super.visitClass(node);
             }
@@ -144,6 +152,14 @@ public class LogASTTransformation implements ASTTransformation {
         } else {
             return "log";
         }
+    }
+
+    private String lookupCategoryName(AnnotationNode logAnnotation) {
+         Expression member = logAnnotation.getMember("category");
+         if (member != null && member.getText() != null) {
+             return member.getText();
+         }
+         return DEFAULT_CATEGORY_NAME;
     }
 
     public void addError(String msg, ASTNode expr, SourceUnit source) {
@@ -202,16 +218,19 @@ public class LogASTTransformation implements ASTTransformation {
      */
     public interface LoggingStrategy {
         /**
-         * In this method, you are given a ClassNode and a field name, and you must add a new Field
+         * In this method, you are given a ClassNode, a field name and a category name, and you must add a new Field
          * onto the class. Return the result of the ClassNode.addField operations.
          *
          * @param classNode the class that was originally annotated with the Log transformation.
          * @param fieldName the name of the logger field
+         * @param categoryName the name of the logging category
          * @return the FieldNode instance that was created and added to the class
          */
-        FieldNode addLoggerFieldToClass(ClassNode classNode, String fieldName);
+        FieldNode addLoggerFieldToClass(ClassNode classNode, String fieldName, String categoryName);
 
         boolean isLoggingMethod(String methodName);
+
+        String getCategoryName(ClassNode classNode, String categoryName);
 
         Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression);
     }
@@ -225,6 +244,13 @@ public class LogASTTransformation implements ASTTransformation {
 
         protected AbstractLoggingStrategy() {
             this(null);
+        }
+
+        public String getCategoryName(ClassNode classNode, String categoryName){
+            if(categoryName == DEFAULT_CATEGORY_NAME){
+                return classNode.getName();
+            }
+            return categoryName;
         }
 
         protected ClassNode classNode(String name) {
