@@ -77,7 +77,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     static final String DEFAULT_SCRIPT_NAME_START = "ConsoleScript"
 
-    static private prefs = Preferences.userNodeForPackage(Console)
+    static private final prefs = Preferences.userNodeForPackage(Console)
 
     // Whether or not std output should be captured to the console
     static boolean captureStdOut = prefs.getBoolean('captureStdOut', true)
@@ -251,7 +251,7 @@ options:
         shell = new GroovyShell(parent, binding, config)
     }
 
-    static def frameConsoleDelegates = [
+    static frameConsoleDelegates = [
             rootContainerDelegate:{
                 frame(
                     title: 'GroovyConsole',
@@ -672,11 +672,11 @@ options:
     boolean fileSave(EventObject evt = null) {
         if (scriptFile == null) {
             return fileSaveAs(evt)
-        } else {
-            scriptFile.write(inputArea.text)
-            setDirty(false)
-            return true
         }
+
+        scriptFile.write(inputArea.text)
+        setDirty(false)
+        return true
     }
 
     // Save file - return false if user cancelled save
