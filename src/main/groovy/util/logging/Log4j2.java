@@ -61,6 +61,7 @@ import org.objectweb.asm.Opcodes;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Log4j2 {
     String value() default "log";
+    String category() default LogASTTransformation.DEFAULT_CATEGORY_NAME;
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Log4j2LoggingStrategy.class;
 
     public static class Log4j2LoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
@@ -71,14 +72,14 @@ public @interface Log4j2 {
             super(loader);
         }
 
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName) {
             return classNode.addField(logFieldName,
                     Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
                     classNode(LOGGER_NAME),
                     new MethodCallExpression(
                             new ClassExpression(classNode(LOG_MANAGER_NAME)),
                             "getLogger",
-                            new ClassExpression(classNode)));
+                            new ConstantExpression(getCategoryName(classNode, categoryName))));
         }
 
         public boolean isLoggingMethod(String methodName) {
