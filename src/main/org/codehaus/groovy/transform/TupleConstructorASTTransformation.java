@@ -44,7 +44,6 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -65,7 +64,6 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode LHMAP_TYPE = ClassHelper.makeWithoutCaching(LinkedHashMap.class, false);
     private static final ClassNode HMAP_TYPE = ClassHelper.makeWithoutCaching(HashMap.class, false);
-    private static final ClassNode COLLECTIONS_TYPE = ClassHelper.makeWithoutCaching(Collections.class);
     private static final ClassNode CHECK_METHOD_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
     private static Map<Class<?>, Expression> primitivesInitialValues;
 
@@ -185,10 +183,6 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         Parameter param = new Parameter(fNode.getType(), name);
         param.setInitialExpression(providedOrDefaultInitialValue(fNode));
         return param;
-    }
-
-    private static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
-        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
     }
 
     private static Expression providedOrDefaultInitialValue(FieldNode fNode) {

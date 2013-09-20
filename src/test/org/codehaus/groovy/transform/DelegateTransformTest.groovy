@@ -52,6 +52,26 @@ class DelegateTransformTest extends CompilableTestSupport {
         """
     }
 
+    /** test for GROOVY-GROOVY-5974 */
+    void testDelegateExcludes() {
+        assertScript """
+          class MapSet {
+            @Delegate(interfaces=false, excludes=['remove','clear']) Map m = [a: 1]
+            @Delegate Set s = new LinkedHashSet([2, 3, 4] as Set) // HashSet not good enough in JDK 1.5
+            String toString() { m.toString() + ' ' + s }
+          }
+
+          def ms = new MapSet()
+          assert ms.size() == 1
+          assert ms.toString() == '[a:1] [2, 3, 4]'
+          ms.remove(3)
+          assert ms.size() == 1
+          assert ms.toString() == '[a:1] [2, 4]'
+          ms.clear()
+          assert ms.toString() == '[a:1] []'
+        """
+    }
+
     void testLock() {
         def res = new GroovyShell().evaluate("""
               import java.util.concurrent.locks.*

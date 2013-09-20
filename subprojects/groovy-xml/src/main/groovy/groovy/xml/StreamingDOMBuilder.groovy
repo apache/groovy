@@ -199,13 +199,12 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
                 def document = it.getOwnerDocument()
                 boundClosure.trigger = ['document' : document, 'element' : it]
                 return document
-            } else {
-                def dBuilder = DocumentBuilderFactory.newInstance()
-                dBuilder.namespaceAware = true
-                def newDocument = dBuilder.newDocumentBuilder().newDocument()
-                boundClosure.trigger = ['document' : newDocument, 'element' : newDocument]
-                return newDocument
             }
+            def dBuilder = DocumentBuilderFactory.newInstance()
+            dBuilder.namespaceAware = true
+            def newDocument = dBuilder.newDocumentBuilder().newDocument()
+            boundClosure.trigger = ['document' : newDocument, 'element' : newDocument]
+            return newDocument
         }
     }
 }

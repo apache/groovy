@@ -16,7 +16,9 @@
 package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
@@ -34,7 +36,7 @@ import org.objectweb.asm.Opcodes;
  *
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
-public class ExtendedVerifier implements GroovyClassVisitor {
+public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyClassVisitor {
     public static final String JVM_ERROR_MESSAGE = "Please make sure you are running on a JVM >= 1.5";
 
     private SourceUnit source;
@@ -62,6 +64,11 @@ public class ExtendedVerifier implements GroovyClassVisitor {
 
     public void visitField(FieldNode node) {
         visitAnnotations(node, AnnotationNode.FIELD_TARGET);
+    }
+
+    @Override
+    public void visitDeclarationExpression(DeclarationExpression expression) {
+        visitAnnotations(expression, AnnotationNode.LOCAL_VARIABLE_TARGET);
     }
 
     public void visitConstructor(ConstructorNode node) {
@@ -97,6 +104,11 @@ public class ExtendedVerifier implements GroovyClassVisitor {
             }
             this.source.getErrorCollector().addCollectorContents(errorCollector);
         }
+        Statement code = node.getCode();
+        if (code != null) {
+            code.visit(this);
+        }
+
     }
 
     public void visitProperty(PropertyNode node) {
@@ -202,6 +214,11 @@ public class ExtendedVerifier implements GroovyClassVisitor {
                 new SyntaxErrorMessage(
                         new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()), this.source)
         );
+    }
+
+    @Override
+    protected SourceUnit getSourceUnit() {
+        return source;
     }
 
     // TODO use it or lose it

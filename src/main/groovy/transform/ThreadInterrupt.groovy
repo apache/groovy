@@ -22,10 +22,9 @@ import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Target
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
 
-
 /**
  * Allows "interrupt-safe" executions of scripts by adding Thread.currentThread().isInterrupted()
- * checks on loops (for, while, do), the first statement of closures, and the first statement of methods.
+ * checks into loops (for, while) and at the start of closures and methods.
  * <p>
  * This is especially useful when executing foreign scripts that you do not have control over. Inject this
  * transformation into a script that you need to interrupt.
@@ -36,23 +35,21 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * in the entire file ('Compilation Unit') to be enhanced. You can fine tune what is enhanced using the annotation
  * parameters. 
  * <p>
- * Extensive usage examples can be found in the unit test for this class. A smaller example is presented here.
  * The following is sample usage of the annotation:
  *
  * <pre>
  * <code>@groovy.transform.ThreadInterrupt</code>
  * def scriptMethod() {
- *     4.times {
- *         println 'executing script method...'
- *     }
+ *   4.times {
+ *     println 'executing script method...'
+ *   }
  * }
  *
  * class MyClass {
- *
  *   def myMethod() {
- *       for (i in (1..10)) {
- *           println 'executing method...'
- *       }
+ *     for (i in (1..10)) {
+ *       println 'executing method...'
+ *     }
  *   }
  * }
  *
@@ -79,55 +76,69 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * }
  * public class MyClass extends java.lang.Object {
  *
- *     public java.lang.Object myMethod() {
- *         if (java.lang.Thread.currentThread().isInterrupted()) {
- *             throw new java.lang.InterruptedException('Execution Interrupted')
- *         }
- *         for (java.lang.Object i : (1..10)) {
- *             if (java.lang.Thread.currentThread().isInterrupted()) {
- *                 throw new java.lang.InterruptedException('Execution Interrupted')
- *             }
- *             this.println('executing method...')
- *         }
+ *   public java.lang.Object myMethod() {
+ *     if (java.lang.Thread.currentThread().isInterrupted()) {
+ *       throw new java.lang.InterruptedException('Execution Interrupted')
  *     }
+ *     for (java.lang.Object i : (1..10)) {
+ *       if (java.lang.Thread.currentThread().isInterrupted()) {
+ *         throw new java.lang.InterruptedException('Execution Interrupted')
+ *       }
+ *       this.println('executing method...')
+ *     }
+ *   }
  * }
  *
  * this.scriptMethod()
  * new MyClass().myMethod()
  * </pre>
+ * Additional usage examples can be found in the unit test for this class.
  *
- * @see groovy.transform.TimedInterrupt
- * @see groovy.transform.ConditionalInterrupt
+ * @see TimedInterrupt
+ * @see ConditionalInterrupt
  * @author Cedric Champeau
  * @author Hamlet D'Arcy
+ * @author Paul King
  * @since 1.8.0
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target([ ElementType.METHOD, ElementType.TYPE])
+@Target([ElementType.PACKAGE, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE])
 @GroovyASTTransformationClass(["org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation"])
-public @interface ThreadInterrupt {
-    /**
-     * By default, annotating anything in a source file ('Compilation Unit') will trigger this transformation
-     * for all classes and scripts in that file. If you add the Annotation to an import statement, then all
-     * scripts and Classes will be enhanced. If you want to change this behavior then set applyToAllClasses
-     * to false. If you annotate a type then only that type will be augmented, not other types or the surrounding
-     * script. If you annotate a script, then any enclosed types will not be augmented.
-     * @return
-     */
-    boolean applyToAllClasses() default true
+@interface ThreadInterrupt {
+  /**
+   * Set this to false if you have multiple classes within one source file and only
+   * want isInterrupted checks on some of the classes. Place annotations on the classes
+   * you want enhanced. Set to true (the default) for blanket coverage of isInterrupted
+   * checks on all methods, loops and closures within all classes/script code.
+   *
+   * For even finer-grained control see {@code applyToAllMembers}.
+   *
+   * @see #applyToAllMembers()
+   */
+  boolean applyToAllClasses() default true
 
-    /**
-     * By default an isInterrupted check is added to the start of all user-defined methods. To turn this off simply
-     * set this parameter to false.
-     * @return
-     */
-    boolean checkOnMethodStart() default true
+  /**
+   * Set this to false if you have multiple methods/closures within a class or script and only
+   * want isInterrupted checks on some of them. Place annotations on the methods/closures that
+   * you want enhanced. When false, {@code applyToAllClasses} is automatically set to false.
+   *
+   * Set to true (the default) for blanket coverage of isInterrupted checks on all methods, loops
+   * and closures within the class/script.
+   *
+   * @since 2.2.0
+   * @see #applyToAllClasses()
+   */
+  boolean applyToAllMembers() default true
 
-    /**
-     * Sets the type of exception which is thrown.
-     *
-     * @return
-     */
-    Class thrown() default InterruptedException
+  /**
+   * By default an isInterrupted check is added to the start of all user-defined methods. To turn this off simply
+   * set this parameter to false.
+   */
+  boolean checkOnMethodStart() default true
+
+  /**
+   * Sets the type of exception which is thrown.
+   */
+  Class thrown() default InterruptedException
 }

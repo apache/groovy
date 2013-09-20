@@ -46,13 +46,31 @@ class GrabResolverTest extends GroovyTestCase {
         Grape.@instance = null // isolate our test from other tests
     }
 
-    public void testResolverDefinitionIsRequired() {
+    public void testChecksumsCanBeDisabled() {
+        GroovyShell shell = new GroovyShell(new GroovyClassLoader())
+        shouldFail(RuntimeException) {
+            shell.evaluate """
+            @Grab('org.mvel:mvel2:2.1.3.Final')
+            import org.mvel2.MVEL
+            assert MVEL.name == 'org.mvel2.MVEL'
+            """
+        }
+        shell.evaluate """
+        @Grab('org.mvel:mvel2:2.1.3.Final')
+        @GrabConfig(disableChecksums=true)
+        import org.mvel2.MVEL
+        assert MVEL.name == 'org.mvel2.MVEL'
+        """
+    }
+
+  public void testResolverDefinitionIsRequired() {
         GroovyShell shell = new GroovyShell(new GroovyClassLoader())
         shouldFail(CompilationFailedException) {
             shell.evaluate("""
                 @Grab(group='org.restlet', module='org.restlet', version='1.1.6')
                 class AnnotationHost {}
-                  import org.restlet.Application""")
+                import org.restlet.Application
+            """)
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ package groovy.transform
  */
 class ConditionalInterruptTest extends GroovyTestCase {
 
-    public void testMethodIsVisited_AndExceptionMessage() {
+    void testMethodIsVisited_AndExceptionMessage() {
 
         def c = new GroovyClassLoader().parseClass('''
             import groovy.transform.ConditionalInterrupt
@@ -39,7 +39,7 @@ class ConditionalInterruptTest extends GroovyTestCase {
         assert instance.visited
     }
 
-    public void testMethodIsVisited_AndCustomExceptionMessage() {
+    void testMethodIsVisited_AndCustomExceptionMessage() {
 
         def c = new GroovyClassLoader(this.class.classLoader).parseClass('''
             import groovy.transform.ConditionalInterrupt
@@ -58,9 +58,7 @@ class ConditionalInterruptTest extends GroovyTestCase {
         assert instance.visited
     }
 
-
-    public void testStaticMethodIsNotVisited() {
-
+    void testStaticMethodIsNotVisited() {
          def c = new GroovyClassLoader().parseClass('''
             import groovy.transform.ConditionalInterrupt
             @ConditionalInterrupt({ visited = true })
@@ -75,7 +73,7 @@ class ConditionalInterruptTest extends GroovyTestCase {
         assert !instance.visited
     }
 
-    public void testClosureFieldIsVisited() {
+    void testClosureFieldIsVisited() {
 
         def c = new GroovyClassLoader().parseClass('''
             import groovy.transform.ConditionalInterrupt
@@ -93,8 +91,7 @@ class ConditionalInterruptTest extends GroovyTestCase {
         assert instance.visited
     }
 
-    public void testWhileLoopVisited() {
-
+    void testWhileLoopVisited() {
         def c = new GroovyClassLoader().parseClass('''
             import groovy.transform.ConditionalInterrupt
             @ConditionalInterrupt({ count > 5 })
@@ -115,7 +112,7 @@ class ConditionalInterruptTest extends GroovyTestCase {
         assert 6 == instance.count
     }
 
-    public void testForLoopVisited() {
+    void testForLoopVisited() {
 
         def c = new GroovyClassLoader().parseClass('''
             import groovy.transform.ConditionalInterrupt
@@ -137,14 +134,14 @@ class ConditionalInterruptTest extends GroovyTestCase {
         assert 6 == instance.count
     }
 
-    public void testStaticClosureFieldNotVisited() {
+    void testStaticClosureFieldNotVisited() {
 
-         def c = new GroovyClassLoader().parseClass('''
+        def c = new GroovyClassLoader().parseClass('''
             import groovy.transform.ConditionalInterrupt
             @ConditionalInterrupt({ visited = true })
             class MyClass {
-              boolean visited = false
-              static def myMethod = { }
+                boolean visited = false
+                static def myMethod = { }
             }
         ''')
 
@@ -153,29 +150,29 @@ class ConditionalInterruptTest extends GroovyTestCase {
         assert !instance.visited
     }
 
-    public void testSharedContext() {
+    void testSharedContext() {
         def shell = new GroovyShell()
 
         def script = shell.parse('''
             import groovy.transform.ConditionalInterrupt
 
-class Helper {
-  static int i=0
-  static def shouldInterrupt() { i++>1 }
-}
+            class Helper {
+                static int i=0
+                static def shouldInterrupt() { i++>1 }
+            }
 
-@ConditionalInterrupt({ Helper.shouldInterrupt() })
-class MyClass {
-   def myMethod() { }
-}
+            @ConditionalInterrupt({ Helper.shouldInterrupt() })
+            class MyClass {
+                def myMethod() { }
+            }
 
-@ConditionalInterrupt({ Helper.shouldInterrupt() })
-class MyOtherClass {
-   def myOtherMethod() { new MyClass().myMethod() }
-}
+            @ConditionalInterrupt({ Helper.shouldInterrupt() })
+            class MyOtherClass {
+                def myOtherMethod() { new MyClass().myMethod() }
+            }
 
-new MyOtherClass().myOtherMethod()
-''', 'myScript')
+            new MyOtherClass().myOtherMethod()
+        ''', 'myScript')
         shouldFail(InterruptedException) {
             script.run()
         }

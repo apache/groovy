@@ -38,23 +38,16 @@ extends GroovyTestCase {
 
     void setUp() {
         super.setUp()
-        mockOut = new BufferedOutputStream(
-                new ByteArrayOutputStream());
-
-        mockErr = new BufferedOutputStream(
-                new ByteArrayOutputStream());
-
-        testio = new IO(
-                new ByteArrayInputStream(),
-                mockOut,
-                mockErr)
+        mockOut = new BufferedOutputStream(new ByteArrayOutputStream())
+        mockErr = new BufferedOutputStream(new ByteArrayOutputStream())
+        testio = new IO(new ByteArrayInputStream(), mockOut, mockErr)
         testio.verbosity = IO.Verbosity.QUIET
         // setup mock and stub with calls expected from InteractiveShellRunner Constructor
 
-        shellMocker = new MockFor(Groovysh.class)
+        shellMocker = new MockFor(Groovysh)
         shellMocker.demand.createDefaultRegistrar(1) { {Shell shell -> null} }
         // when run with compileStatic
-        shellMocker.demand.getClass(0..1) {Groovysh.class}
+        shellMocker.demand.getClass(0..1) {Groovysh}
         shellMocker.demand.getIo(2) { testio }
         shellMocker.demand.getRegistry(1) {[]}
         shellMocker.demand.getHistory(1) {new Serializable(){def size() {0}; def getMaxSize() {1}}}
@@ -68,11 +61,11 @@ extends GroovyTestCase {
         }
 
         readerStubber = new StubFor(ConsoleReader)
-        readerStubber.demand.setExpandEvents() {}
+        readerStubber.demand.setExpandEvents {}
         // adding 2 completers
-        readerStubber.demand.addCompleter() {}
-        readerStubber.demand.printNewline() {}
-        readerStubber.demand.addCompleter() {}
+        readerStubber.demand.addCompleter {}
+        readerStubber.demand.printNewline {}
+        readerStubber.demand.addCompleter {}
         shellMocker.demand.getIo(0..1) { testio }
     }
 

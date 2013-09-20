@@ -1466,7 +1466,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * This is a helper class introduced in Groovy 2.1.0, which is used only by
      * indy. This class is for internal use only.
-     * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
      * @since Groovy 2.1.0
      */
     public final static class MetaConstructor extends MetaMethod {

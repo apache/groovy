@@ -25,7 +25,7 @@ import jline.console.ConsoleReader
 public class ErrorDisplayTest extends ShellRunnerTestSupport {
 
     void testInput() {
-        readerStubber.demand.readLine() { "foo" }
+        readerStubber.demand.readLine { "foo" }
         shellMocker.use {
             readerStubber.use {
                 Groovysh shellMock = new Groovysh()
@@ -40,7 +40,7 @@ public class ErrorDisplayTest extends ShellRunnerTestSupport {
     }
 
     void testError() {
-        readerStubber.demand.readLine() { throw new StringIndexOutOfBoundsException() }
+        readerStubber.demand.readLine { throw new StringIndexOutOfBoundsException() }
         shellMocker.use {
             readerStubber.use {
                 Groovysh shellMock = new Groovysh()
@@ -55,7 +55,7 @@ public class ErrorDisplayTest extends ShellRunnerTestSupport {
     }
 
     void testError2() {
-        readerStubber.demand.readLine() { throw new Throwable("MockException") }
+        readerStubber.demand.readLine { throw new Throwable("MockException") }
         shellMocker.use { readerStubber.use {
             Groovysh shellMock = new Groovysh()
             ConsoleReader readerStub = new ConsoleReader()

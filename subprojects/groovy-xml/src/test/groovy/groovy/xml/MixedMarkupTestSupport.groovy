@@ -2,7 +2,7 @@ package groovy.xml
 
 class MixedMarkupTestSupport {
 
-    private static def mixedXml = '''
+    private static final mixedXml = '''
 <p>Please read the <a href="index.html">Home</a> page</p>
 '''
     static void checkMixedMarkup(Closure getRoot) {

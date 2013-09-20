@@ -16,7 +16,6 @@
 
 package org.codehaus.groovy.transform.stc;
 
-import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
@@ -187,8 +186,8 @@ public abstract class StaticTypeCheckingSupport {
         }
         if (clazz.isArray()) {
             ClassNode componentClass = clazz.getComponentType();
-            if (!componentClass.equals(OBJECT_TYPE)) {
-                if (componentClass.isInterface() || componentClass.getSuperClass()==null) {
+            if (!componentClass.equals(OBJECT_TYPE) && !ClassHelper.isPrimitiveType(componentClass)) {
+                if (componentClass.isInterface()) {
                     findDGMMethodsForClassNode(loader, OBJECT_TYPE.makeArray(), name, accumulator);
                 } else {
                     findDGMMethodsForClassNode(loader, componentClass.getSuperClass().makeArray(), name, accumulator);
@@ -306,7 +305,7 @@ public abstract class StaticTypeCheckingSupport {
      * assignment checks where you want to verify that the assignment is valid.
      * @param type
      * @param toBeAssignedTo
-     * @return
+     * @return true if the class node is assignable to the other class node, false otherwise
      */
     static boolean isAssignableTo(ClassNode type, ClassNode toBeAssignedTo) {
         if (UNKNOWN_PARAMETER_TYPE==type) return true;

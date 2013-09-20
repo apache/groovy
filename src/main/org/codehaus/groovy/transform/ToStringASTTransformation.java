@@ -97,7 +97,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, true);
     }
-    
+
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, false);
     }
@@ -208,9 +208,4 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         append.setImplicitThis(false);
         return new ExpressionStatement(append);
     }
-
-    private static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
-        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
-    }
-
 }

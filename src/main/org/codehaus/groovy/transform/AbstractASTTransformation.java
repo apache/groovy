@@ -19,7 +19,10 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+//import org.codehaus.groovy.ast.MethodNode;
+//import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -81,6 +84,27 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return list;
     }
 
+    // GROOVY-6329: awaiting resolution of GROOVY-6330
+/*
+    protected List<ClassNode> getClassList(AnnotationNode anno, String name) {
+        List<ClassNode> list = new ArrayList<ClassNode>();
+        Expression expr = anno.getMember(name);
+        if (expr != null && expr instanceof ListExpression) {
+            final ListExpression listExpression = (ListExpression) expr;
+            for (Expression itemExpr : listExpression.getExpressions()) {
+                if (itemExpr != null && itemExpr instanceof ClassExpression) {
+                    ClassNode cn = itemExpr.getType();
+                    if (cn != null) list.add(cn);
+                }
+            }
+        } else if (expr != null && expr instanceof ClassExpression) {
+            ClassNode cn = expr.getType();
+            if (cn != null) list.add(cn);
+        }
+        return list;
+    }
+*/
+
     protected void addError(String msg, ASTNode expr) {
         sourceUnit.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
                 new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
@@ -103,5 +127,66 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
 
     protected List<String> tokenize(String rawExcludes) {
         return rawExcludes == null ? new ArrayList<String>() : StringGroovyMethods.tokenize(rawExcludes, ", ");
+    }
+
+    public static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
+        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
+    }
+
+    // GROOVY-6329: awaiting resolution of GROOVY-6330
+/*
+    public static boolean shouldSkipOnDescriptor(String descriptor, List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
+        if (excludeTypes != null) {
+            for (ClassNode cn : excludeTypes) {
+                for (MethodNode mn : nonGeneric(cn).getMethods()) {
+                    if (mn.getTypeDescriptor().equals(descriptor)) return true;
+                }
+            }
+            return false;
+        }
+        if (includeTypes != null) {
+            for (ClassNode cn : includeTypes) {
+                for (MethodNode mn : nonGeneric(cn).getMethods()) {
+                    if (mn.getTypeDescriptor().equals(descriptor)) return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+*/
+
+    protected void checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
+        if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
+            addError("Error during " + typeName + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", node);
+        }
+    }
+
+    // GROOVY-6329: awaiting resolution of GROOVY-6330
+/*
+    protected void checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, List<ClassNode> excludeTypes, List<ClassNode> includeTypes, String typeName) {
+        int found = 0;
+        if (includes != null && !includes.isEmpty()) found++;
+        if (excludes != null && !excludes.isEmpty()) found++;
+        if (includeTypes != null && !includeTypes.isEmpty()) found++;
+        if (excludeTypes != null && !excludeTypes.isEmpty()) found++;
+        if (found > 1) {
+            addError("Error during " + typeName + " processing: Only one of 'includes', 'excludes', 'includeTypes' and 'excludeTypes' should be supplied.", node);
+        }
+    }
+*/
+
+    public static ClassNode nonGeneric(ClassNode type) {
+        if (type.isUsingGenerics()) {
+            final ClassNode nonGen = ClassHelper.makeWithoutCaching(type.getName());
+            nonGen.setRedirect(type);
+            nonGen.setGenericsTypes(null);
+            nonGen.setUsingGenerics(false);
+            return nonGen;
+        }
+        if (type.isArray() && type.getComponentType().isUsingGenerics()) {
+            return type.getComponentType().getPlainNodeReference().makeArray();
+        }
+        return type;
     }
 }

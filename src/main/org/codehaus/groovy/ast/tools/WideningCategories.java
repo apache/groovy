@@ -221,7 +221,7 @@ public class WideningCategories {
      * @param a parameterized type a
      * @param b parameterized type b
      * @param fallback if we detect a recursive call, use this LUB as the parameterized type instead of computing a value
-     * @return
+     * @return the class node representing the parameterized lowest upper bound
      */
     private static ClassNode parameterizeLowestUpperBound(final ClassNode lub, final ClassNode a, final ClassNode b, final ClassNode fallback) {
         if (!lub.isUsingGenerics()) return lub;
@@ -446,7 +446,7 @@ public class WideningCategories {
      * implemented interfaces.
      * @param fromA
      * @param fromB
-     * @return
+     * @return the list of the most specific common implemented interfaces
      */
     private static List<ClassNode> keepLowestCommonInterfaces(List<ClassNode> fromA, List<ClassNode> fromB) {
         if (fromA==null||fromB==null) return EMPTY_CLASSNODE_LIST;
@@ -494,12 +494,12 @@ public class WideningCategories {
     }
 
     /**
-     * Given two class nodes supposely at the upper common level, returns a class node which is able to represent
+     * Given two class nodes supposedly at the upper common level, returns a class node which is able to represent
      * their lowest upper bound.
      * @param baseType1
      * @param baseType2
      * @param interfaces interfaces both class nodes share, which their lowest common super class do not implement.
-     * @return
+     * @return the class node representing the lowest upper bound
      */
     private static ClassNode buildTypeWithInterfaces(ClassNode baseType1, ClassNode baseType2, Collection<ClassNode> interfaces) {
         boolean noInterface = interfaces.isEmpty();
@@ -639,7 +639,7 @@ public class WideningCategories {
      * Compares two class nodes, but including their generics types.
      * @param a
      * @param b
-     * @return
+     * @return true if the class nodes are equal, false otherwise
      */
     private static boolean areEqualWithGenerics(ClassNode a, ClassNode b) {
         if (a==null) return b==null;

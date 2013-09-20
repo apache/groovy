@@ -96,4 +96,9 @@ public @interface GrabConfig {
      * Set to false if you want to disable automatic downloading of locally missing jars.
      */
     boolean autoDownload() default true;
+
+    /**
+     * Set to true if you want to disable checksum checking.
+     */
+    boolean disableChecksums() default false;
 }

@@ -15,10 +15,7 @@
  */
 package gls.invocation
 
-import java.io.Serializable;
-
 import gls.CompilableTestSupport
-import groovy.lang.GroovyCallable;
 
 public class MethodSelectionTest extends CompilableTestSupport {
 

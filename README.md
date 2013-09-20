@@ -27,7 +27,7 @@ To build from IntelliJ IDEA
 
 Then open the generated project in IDEA.
 
-To build from Eclipse (work in progress see [GROOVY-6226](https://jira.codehaus.org/browse/GROOVY-6226) for details)
+To build from Eclipse
 
     ./gradlew jarAll eclipse
 

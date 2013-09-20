@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package groovy.transform;
-
+package groovy.transform
 
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
@@ -25,7 +24,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
 
 /**
  * Allows "interrupt-safe" executions of scripts by adding a custom check for interruption
- * on loops (for, while, do), the first statement of closures, and the first statement of methods.
+ * into loops (for, while, ...) and at the start of closures and methods.
  * <p>
  * This is especially useful when executing foreign scripts that you do not have control over. Inject this
  * transformation into a script that you need to interrupt based on some custom criteria.
@@ -36,7 +35,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * as well. Annotated a class will cause (by default) all classes in the entire file ('Compilation Unit') to be
  * enhanced. You can fine tune what is enhanced using the annotation parameters.
  * <p>
- * Extensive usage examples can be found in the unit test for this class. A smaller example is presented here.
  * The following is sample usage of the annotation:
  * <pre>
  * <code>@ConditionalInterrupt({ counter++> 10})</code>
@@ -51,31 +49,30 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  *
  * scriptMethod()
  * </pre>
- * Which results in the following code being generated. Notice the checks and exceptions:
+ * Which results in the following code being generated (XXXXXX will be replaced with some runtime generated hashCode). Notice the checks and exceptions:
  * <pre>
  * public class script1291741477073 extends groovy.lang.Script {
+ *   Object counter = 0
  *
- *     Object counter = 0
+ *   public java.lang.Object run() {
+ *     counter = 0
+ *   }
  *
- *     public java.lang.Object run() {
- *         counter = 0
+ *   public java.lang.Object scriptMethod() {
+ *     if (this.conditionalTransformXXXXXX$condition()) {
+ *       throw new java.lang.InterruptedException('Execution interrupted. The following condition failed: { counter++> 10}')
  *     }
+ *     4.times({
+ *       if (this.conditionalTransformXXXXXX$condition()) {
+ *         throw new java.lang.InterruptedException('Execution interrupted. The following condition failed: { counter++> 10}')
+ *       }
+ *       this.println('executing script method...')
+ *     })
+ *   }
  *
- *     public java.lang.Object scriptMethod() {
- *         if (this.conditionalTransform$condition()) {
- *             throw new java.lang.InterruptedException('Execution interrupted. The following condition failed: { counter++> 10}')
- *         }
- *         4.times({
- *             if (this.conditionalTransform$condition()) {
- *                 throw new java.lang.InterruptedException('Execution interrupted. The following condition failed: { counter++> 10}')
- *             }
- *             this.println('executing script method...')
- *         })
- *     }
- *
- *     private java.lang.Object conditionalTransform$condition() {
- *         counter++ > 10
- *     }
+ *   private java.lang.Object conditionalTransformXXXXXX$condition() {
+ *     counter++ > 10
+ *   }
  * }
  * </pre>
  *
@@ -89,57 +86,67 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * def counter = 0
  * <code>@ConditionalInterrupt({ counter++> 10})</code>
  * class MyClass {
- *     def myMethod() {
- *         4.times {
- *             println 'executing script method...'
- *         }
+ *   def myMethod() {
+ *     4.times {
+ *       println 'executing script method...'
  *     }
+ *   }
  * }
  *
  * new MyClass().myMethod()
  * </pre>
+ * Additional usage examples can be found in the unit test for this class.
  *
- * @see groovy.transform.TimedInterrupt
- * @see groovy.transform.ThreadInterrupt
+ * @see TimedInterrupt
+ * @see ThreadInterrupt
  * @author Cedric Champeau
  * @author Hamlet D'Arcy
+ * @author Paul King
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target([ ElementType.METHOD, ElementType.TYPE])
+@Target([ElementType.PACKAGE, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE])
 @GroovyASTTransformationClass(["org.codehaus.groovy.transform.ConditionalInterruptibleASTTransformation"])
-public @interface ConditionalInterrupt {
-    /**
-     * By default, annotating anything in a source file ('Compilation Unit') will trigger this transformation
-     * for all classes and scripts in that file. If you add the Annotation to an import statement, then all
-     * scripts and Classes will be enhanced. If you want to change this behavior then set applyToAllClasses
-     * to false. If you annotate a type then only that type will be augmented, not other types or the surrounding
-     * script. If you annotate a script, then any enclosed types will not be augmented.
-     *
-     * @return
-     */
-    boolean applyToAllClasses() default true;
-    /**
-     * By default an isInterrupted check is added to the start of all user-defined methods. To turn this off simply
-     * set this parameter to false.
-     *
-     * @return
-     */
-    boolean checkOnMethodStart() default true;
+@interface ConditionalInterrupt {
+  /**
+   * Set this to false if you have multiple classes within one source file and only
+   * want a conditional check on some of the classes. Place annotations on the classes
+   * you want enhanced. Set to true (the default) for blanket coverage of conditional
+   * checks on all methods, loops and closures within all classes/script code.
+   *
+   * For even finer-grained control see {@code applyToAllMembers}.
+   *
+   * @see #applyToAllMembers()
+   */
+  boolean applyToAllClasses() default true
 
-    /**
-     * Sets the type of exception which is thrown.
-     *
-     * @return
-     */
-    Class thrown() default InterruptedException;
+  /**
+   * Set this to false if you have multiple methods/closures within a class or script and only
+   * want conditional checks on some of them. Place annotations on the methods/closures that
+   * you want enhanced. When false, {@code applyToAllClasses} is automatically set to false.
+   *
+   * Set to true (the default) for blanket coverage of conditional checks on all methods, loops
+   * and closures within the class/script.
+   *
+   * @since 2.2.0
+   * @see #applyToAllClasses()
+   */
+  boolean applyToAllMembers() default true
 
-    /**
-     * Condition should be set as a closure expression. 
-     * @return
-     */
-    Class value();
+  /**
+   * By default a conditional check is added to the start of all user-defined methods. To turn this off simply
+   * set this parameter to false.
+   */
+  boolean checkOnMethodStart() default true
 
+  /**
+   * Sets the type of exception which is thrown.
+   */
+  Class thrown() default InterruptedException
+
+  /**
+   * Conditional check - set as a closure expression.
+   */
+  Class value()
 }
-

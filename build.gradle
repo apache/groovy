@@ -9,7 +9,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.4.1'
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.5.0'
         classpath 'net.saliman:gradle-cobertura-plugin:1.1.2'
     }
 }
@@ -43,7 +43,7 @@ allprojects {
         apply plugin: 'asciidoctor'
 
         asciidoctor {
-//            logDocuments = true
+            logDocuments = true
             sourceDir = project.file('src/spec/doc')
         }
 
@@ -149,13 +149,13 @@ dependencies {
     def jarjarVersion = '1.3'
     def jlineVersion = '2.10'
     def jmockVersion = '1.2.0'
-    def logbackVersion = '0.9.21'
-    def log4jVersion = '1.2.16'
+    def logbackVersion = '1.0.13'
+    def log4jVersion = '1.2.17'
     def luceneVersion = '4.3.1'
     def openejbVersion = '1.0'
     def qdoxVersion = '1.12.1'
     def simianVersion = '2.2.4'
-    def slf4jVersion = '1.6.0'
+    def slf4jVersion = '1.7.5'
     def xmlunitVersion = '1.3'
     def xstreamVersion = '1.4.4'
 
@@ -484,6 +484,12 @@ apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 // Define a GroovyDoc task which depends on the generated groovydoc tool
 apply from: 'gradle/groovydoc.gradle'
+if (isJava15()) {
+  // do nothing on JDK 5 as sardine is built for Java 6
+  logger.warn 'You must run on JDK 6+ to be able to deploy to codehaus.'
+} else {
+  apply from: 'gradle/codehaus.gradle'
+}
 
 classes {
     doFirst {

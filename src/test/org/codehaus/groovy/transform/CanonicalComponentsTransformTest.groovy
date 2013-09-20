@@ -29,6 +29,17 @@ import groovy.transform.Canonical
  */
 class CanonicalComponentsTransformTest extends GroovyShellTestCase {
 
+    void testTupleConstructorWithEnum() {
+        assertScript """
+            @groovy.transform.TupleConstructor
+            enum Operator {
+                PLUS('+'), MINUS('-')
+                String symbol
+            }
+            assert Operator.PLUS.next() == Operator.MINUS
+        """
+    }
+
     void testCloningWithFinalFields() {
         def p1 = new Person1('John', 'Smith')
         def p2 = p1.clone()

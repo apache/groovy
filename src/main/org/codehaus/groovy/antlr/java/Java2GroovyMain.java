@@ -117,20 +117,12 @@ public class Java2GroovyMain {
         return header + new String(baos.toByteArray());
     }
 
-    /**
-     * @param ast
-     * @param groovyTokenNames
-     */
     private static void groovifyFatJavaLikeGroovyAST(AST ast, String[] groovyTokenNames) {
         Visitor groovifier = new Groovifier(groovyTokenNames);
         AntlrASTProcessor groovifierTraverser = new PreOrderTraversal(groovifier);
         groovifierTraverser.process(ast);
     }
 
-    /**
-     * @param tokenNames
-     * @param ast
-     */
     private static void modifyJavaASTintoGroovyAST(String[] tokenNames, AST ast) {
         // mutate the tree when in Javaland
         Visitor preJava2groovyConverter = new PreJava2GroovyConverter(tokenNames);
@@ -143,10 +135,6 @@ public class Java2GroovyMain {
         java2groovyTraverser.process(ast);
     }
 
-    /**
-     * @param input
-     * @return
-     */
     private static JavaRecognizer getJavaParser(String input) {
         JavaRecognizer parser = null;
         SourceBuffer sourceBuffer = new SourceBuffer();

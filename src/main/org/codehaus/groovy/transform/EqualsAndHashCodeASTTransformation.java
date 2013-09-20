@@ -161,10 +161,6 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         return body;
     }
 
-    private static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
-        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
-    }
-
     private static void createCanEqual(ClassNode cNode) {
         boolean hasExistingCanEqual = hasDeclaredMethod(cNode, "canEqual", 1);
         if (hasExistingCanEqual && hasDeclaredMethod(cNode, "_canEqual", 1)) return;
