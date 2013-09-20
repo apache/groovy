@@ -247,7 +247,7 @@ public class LogASTTransformation implements ASTTransformation {
         }
 
         public String getCategoryName(ClassNode classNode, String categoryName){
-            if(categoryName == DEFAULT_CATEGORY_NAME){
+            if(categoryName.equals(DEFAULT_CATEGORY_NAME)){
                 return classNode.getName();
             }
             return categoryName;
@@ -258,7 +258,7 @@ public class LogASTTransformation implements ASTTransformation {
             try {
                 return ClassHelper.make(Class.forName(name, false, cl));
             } catch (ClassNotFoundException e) {
-                throw new GroovyRuntimeException(e);
+                throw new GroovyRuntimeException("Unable to load logging class", e);
             }
         }
     }
