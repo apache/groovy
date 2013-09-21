@@ -130,13 +130,12 @@ public class ConditionalInterruptibleASTTransformation extends AbstractInterrupt
       def line = source.source.getLine(it, null)
       if (line == null) {
         return "Error calculating source code for expression. Trying to read line $it from ${source.source.class}"
-      } else {
-        if (it == expression.lastLineNumber) {
-          line = line.substring(0, expression.lastColumnNumber - 1)
-        }
-        if (it == expression.lineNumber) {
-          line = line.substring(expression.columnNumber - 1)
-        }
+      }
+      if (it == expression.lastLineNumber) {
+        line = line.substring(0, expression.lastColumnNumber - 1)
+      }
+      if (it == expression.lineNumber) {
+        line = line.substring(expression.columnNumber - 1)
       }
       return line
     }?.join('\n')?.trim()   //restoring line breaks is important b/c of lack of semicolons

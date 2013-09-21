@@ -23,7 +23,7 @@ import javax.swing.JSplitPane
 public class SplitPaneFactory extends AbstractFactory {
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (FactoryBuilderSupport.checkValueIsType(value, name, JSplitPane.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, JSplitPane)) {
             return value;
         }
         JSplitPane answer = new JSplitPane();
@@ -33,7 +33,6 @@ public class SplitPaneFactory extends AbstractFactory {
         answer.setBottomComponent(null);
         return answer;
     }
-
 
     public void setChild(FactoryBuilderSupport factory, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {

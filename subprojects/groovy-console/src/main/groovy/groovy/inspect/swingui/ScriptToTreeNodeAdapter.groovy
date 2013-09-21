@@ -166,7 +166,7 @@ class ScriptToTreeNodeAdapter {
                 def type = it.type.simpleName.toString()
                 [name, value, type]
             }?.
-            sort() { it[0] }
+            sort { it[0] }
     }
 
     /**
@@ -193,15 +193,15 @@ class ScriptToTreeNodeAdapter {
  */
 class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
-    final def root
-    final def sourceCollected = new AtomicBoolean(false)
+    final root
+    final sourceCollected = new AtomicBoolean(false)
     final ScriptToTreeNodeAdapter adapter
 
-    final def showScriptFreeForm
-    final def showScriptClass
-    final def showClosureClasses
+    final showScriptFreeForm
+    final showScriptClass
+    final showClosureClasses
 
-    final def nodeMaker
+    final nodeMaker
 
     def TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter, showScriptFreeForm, showScriptClass) {
         this(adapter, showScriptFreeForm, showScriptClass, false)
@@ -366,7 +366,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 @groovy.transform.PackageScope class TreeNodeBuildingVisitor extends CodeVisitorSupport {
 
     def currentNode
-    private adapter
+    private final adapter
 
     /**
      * Creates the visitor. A file named AstBrowserProperties.groovy is located which is

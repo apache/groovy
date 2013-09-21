@@ -105,7 +105,7 @@ class ImportCompleter implements Completer {
 
     PackageHelper packageHelper
     Groovysh shell
-    protected final Logger log = Logger.create(ImportCompleter.class)
+    protected final Logger log = Logger.create(ImportCompleter)
     /*
      * The following rules do not need to work for all thinkable situations,just for all reasonable situations.
      * In particular the underscore and dollar signs in Class or method names usually indicate something internal,

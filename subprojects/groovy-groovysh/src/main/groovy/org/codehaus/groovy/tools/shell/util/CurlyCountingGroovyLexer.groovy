@@ -27,7 +27,7 @@ import org.codehaus.groovy.antlr.parser.GroovyLexer;
  */
 public class CurlyCountingGroovyLexer extends GroovyLexer {
 
-    public endReached = false
+    private endReached = false
 
     protected CurlyCountingGroovyLexer(Reader reader) {
         super(reader);
@@ -48,7 +48,7 @@ public class CurlyCountingGroovyLexer extends GroovyLexer {
     @Override
     public void uponEOF() {
         super.uponEOF()
-        endReached=true
+        endReached = true
     }
 
     public List<GroovySourceToken> toList() {

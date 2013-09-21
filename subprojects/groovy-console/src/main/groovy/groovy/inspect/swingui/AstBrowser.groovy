@@ -127,9 +127,9 @@ public class AstBrowser {
                     }
                 }
                 menu(text: 'View', mnemonic: 'V') {
-                    menuItem() {action(name: 'Larger Font', closure: this.&largerFont, mnemonic: 'L', accelerator: shortcut('shift L'))}
-                    menuItem() {action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))}
-                    menuItem() {
+                    menuItem {action(name: 'Larger Font', closure: this.&largerFont, mnemonic: 'L', accelerator: shortcut('shift L'))}
+                    menuItem {action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))}
+                    menuItem {
                         action(name: 'Refresh', closure: {
                             decompile(phasePicker.selectedItem.phaseId, script())
                             compile(jTree, script(), phasePicker.selectedItem.phaseId)
@@ -137,7 +137,7 @@ public class AstBrowser {
                     }
                 }
                 menu(text: 'Help', mnemonic: 'H') {
-                    menuItem() {action(name: 'About', closure: this.&showAbout, mnemonic: 'A')}
+                    menuItem {action(name: 'About', closure: this.&showAbout, mnemonic: 'A')}
                 }
             }
             panel {
@@ -162,13 +162,13 @@ public class AstBrowser {
                         constraints: gbc(gridx: 2, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: NORTHEAST, fill: NONE, insets: [2, 2, 2, 3]))
                 splitterPane = splitPane(
                         visible: showTreeView, 
-                        leftComponent: scrollPane() {
+                        leftComponent: scrollPane {
                             jTree = tree(
                                     name: "AstTreeView",
                                     model: new DefaultTreeModel(new DefaultMutableTreeNode("Loading..."))) {}
                         },
-                        rightComponent: scrollPane() {
-                            propertyTable = table() {
+                        rightComponent: scrollPane {
+                            propertyTable = table {
                                 tableModel(list: [[:]]) {
                                     propertyColumn(header: 'Name', propertyName: 'name')
                                     propertyColumn(header: 'Value', propertyName: 'value')
@@ -293,7 +293,7 @@ public class AstBrowser {
         updateFontSize(decompiledSource.textEditor.font.size - 2)
     }
 
-    private updateFontSize = {newFontSize ->
+    private final updateFontSize = { newFontSize ->
         if (newFontSize > 40) {
             newFontSize = 40
         } else if (newFontSize < 4) {
@@ -404,10 +404,10 @@ public class AstBrowser {
  */
 class AstBrowserUiPreferences {
 
-    final def frameLocation
-    final def frameSize
-    final def verticalDividerLocation
-    final def horizontalDividerLocation
+    final frameLocation
+    final frameSize
+    final verticalDividerLocation
+    final horizontalDividerLocation
     final boolean showScriptFreeForm
     final boolean showTreeView
     final boolean showScriptClass

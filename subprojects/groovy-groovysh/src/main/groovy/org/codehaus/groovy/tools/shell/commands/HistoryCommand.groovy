@@ -16,7 +16,6 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.console.history.FileHistory
 import jline.console.history.History
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh

@@ -42,7 +42,7 @@ class Parser
 {
     static final String NEWLINE = System.getProperty('line.separator')
 
-    private static final Logger log = Logger.create(Parser.class)
+    private static final Logger log = Logger.create(Parser)
 
     private final Parsing delegate
 
@@ -244,3 +244,4 @@ final class ParseStatus
         this(ParseCode.ERROR, cause)
     }
 }
+

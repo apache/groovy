@@ -34,7 +34,7 @@ public class ActionFactory extends AbstractFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         Action action
-        if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, Action.class)) {
+        if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, Action)) {
             action = (Action) value
         } else if (attributes.get(name) instanceof Action) {
             action = (Action) attributes.remove(name)

@@ -21,7 +21,6 @@ import jline.console.completer.Completer
 import jline.console.completer.NullCompleter
 import jline.console.completer.StringsCompleter
 import jline.console.history.FileHistory
-import jline.console.history.MemoryHistory
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
 
@@ -40,7 +39,7 @@ abstract class CommandSupport
     protected final Logger log
 
     /** i18n message source for the command. */
-    protected final MessageSource messages = new MessageSource(this.class, CommandSupport.class)
+    protected final MessageSource messages = new MessageSource(this.class, CommandSupport)
 
     /** The name of the command. */
     final String name

@@ -46,7 +46,7 @@ class Groovysh extends Shell {
         Ansi.setDetector(new AnsiDetector())
     }
 
-    private static final MessageSource messages = new MessageSource(Groovysh.class)
+    private static final MessageSource messages = new MessageSource(Groovysh)
 
     final BufferManager buffers = new BufferManager()
 
@@ -199,7 +199,7 @@ class Groovysh extends Shell {
     // Prompt
     //
 
-    private AnsiRenderer prompt = new AnsiRenderer()
+    private final AnsiRenderer prompt = new AnsiRenderer()
 
     /*
         Builds the command prompt name in 1 of 3 ways:
@@ -213,13 +213,13 @@ class Groovysh extends Shell {
     private String buildPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
 
-        def GROOVYSHELL_PROPERTY = System.getProperty("groovysh.prompt")
-        if (GROOVYSHELL_PROPERTY) {
-            return  "@|bold ${GROOVYSHELL_PROPERTY}:|@${lineNum}@|bold >|@ "
+        def groovyshellProperty = System.getProperty("groovysh.prompt")
+        if (groovyshellProperty) {
+            return  "@|bold ${groovyshellProperty}:|@${lineNum}@|bold >|@ "
         }
-        def GROOVYSHELL_ENV = System.getenv("GROOVYSH_PROMPT")
-        if (GROOVYSHELL_ENV) {
-            return  "@|bold ${GROOVYSHELL_ENV}:|@${lineNum}@|bold >|@ "
+        def groovyshellEnv = System.getenv("GROOVYSH_PROMPT")
+        if (groovyshellEnv) {
+            return  "@|bold ${groovyshellEnv}:|@${lineNum}@|bold >|@ "
         }
         return "@|bold groovy:|@${lineNum}@|bold >|@ "
 

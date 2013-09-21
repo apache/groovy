@@ -22,7 +22,7 @@ class PackageHelper implements PreferenceChangeListener {
 
     Map<String, CachedPackage> rootPackages = null
     ClassLoader groovyClassLoader
-    protected static final Logger log = Logger.create(PackageHelper.class)
+    protected static final Logger log = Logger.create(PackageHelper)
 
     PackageHelper(ClassLoader groovyClassLoader) {
         this.groovyClassLoader = groovyClassLoader
@@ -58,7 +58,7 @@ class PackageHelper implements PreferenceChangeListener {
         }
 
         // System classes
-        Class[] systemClasses = [String.class, javax.swing.JFrame.class, GroovyObject.class] as Class[]
+        Class[] systemClasses = [String, javax.swing.JFrame, GroovyObject] as Class[]
         systemClasses.each { Class systemClass ->
             // normal slash even in Windows
             String classfileName = systemClass.name.replace('.', '/') + ".class"

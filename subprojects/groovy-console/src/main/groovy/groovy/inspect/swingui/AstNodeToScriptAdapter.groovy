@@ -115,7 +115,7 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
  */
 class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements GroovyCodeVisitor, GroovyClassVisitor {
 
-    private Writer _out
+    private final Writer _out
     Stack<String> classNameStack = new Stack<String>();
     String _indent = ""
     boolean readyToIndent = true

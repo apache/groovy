@@ -43,7 +43,7 @@ class DocCommand extends CommandSupport {
 
     // indicates support for java.awt.Desktop#browse on the current platform
     static boolean hasAWTDesktopPlatformSupport;
-    static def desktop;
+    static desktop;
 
     /**
      * Check for java.awt.Desktop#browse platform support

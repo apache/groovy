@@ -37,13 +37,13 @@ import javax.management.remote.JMXServiceURL
  * @see <a href="http://java.sun.com/j2se/1.5.0/docs/api/javax/management/remote/JMXConnector.html">JMXConnector</a>
  */
 class JmxClientConnectorFactory extends AbstractFactory {
-    private static List SUPPORTED_PROTOCOLS = ["rmi", "jrmp", "iiop", "jmxmp"]
+
+    private static final List SUPPORTED_PROTOCOLS = ["rmi", "jrmp", "iiop", "jmxmp"]
 
     public Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeArgs, Map nodeAttribs) {
         if (nodeArgs) {
             throw new JmxBuilderException("Node '${nodeName}' only supports named attributes.")
         }
-        JmxBuilder fsb = (JmxBuilder) builder
         def protocol = nodeAttribs?.remove("protocol") ?: nodeAttribs?.remove("transport") ?: "rmi"
         def port = nodeAttribs?.remove("port")
         def host = nodeAttribs?.remove("host") ?: nodeAttribs?.remove("address") ?: "localhost"
@@ -62,7 +62,6 @@ class JmxClientConnectorFactory extends AbstractFactory {
         JMXConnector connector = JMXConnectorFactory.newJMXConnector(serviceUrl, props);
 
         return connector
-
     }
 
     private JMXServiceURL generateServiceUrl(def protocol, def host, def port) {

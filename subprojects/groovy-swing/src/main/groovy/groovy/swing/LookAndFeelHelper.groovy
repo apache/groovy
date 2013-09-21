@@ -34,7 +34,7 @@ class LookAndFeelHelper {
         return instance ?: (instance = new LookAndFeelHelper())
     }
 
-    private Map lafCodeNames = [
+    private final Map lafCodeNames = [
         // stuff built into various JDKs
         metal   : 'javax.swing.plaf.metal.MetalLookAndFeel',
         nimbus  : getNimbusLAFName(),
@@ -65,7 +65,7 @@ class LookAndFeelHelper {
         lafCodeNames[alias] = className
     }
 
-    private Map extendedAttributes = [
+    private final Map extendedAttributes = [
         'javax.swing.plaf.metal.MetalLookAndFeel' : [
             theme : { laf, theme ->
                 if (!(theme instanceof MetalTheme)) {

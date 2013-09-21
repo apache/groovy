@@ -27,7 +27,7 @@ public class BoxFactory extends ComponentFactory {
     }
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (FactoryBuilderSupport.checkValueIsType(value, name, Box.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, Box)) {
             return value;
         }
         int axis = BoxLayout.X_AXIS; // default to X so it behaves like FlowLayout
@@ -62,7 +62,7 @@ public class HGlueFactory extends AbstractFactory {
 
 public class HStrutFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        FactoryBuilderSupport.checkValueIsType(value, name, Number.class);
+        FactoryBuilderSupport.checkValueIsType(value, name, Number);
         Object num;
         if (value != null) {
             num = value;
@@ -98,7 +98,7 @@ public class VGlueFactory extends AbstractFactory {
 
 public class VStrutFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        FactoryBuilderSupport.checkValueIsType(value, name, Number.class);
+        FactoryBuilderSupport.checkValueIsType(value, name, Number);
         Object num;
         if (value != null) {
             num = value;
