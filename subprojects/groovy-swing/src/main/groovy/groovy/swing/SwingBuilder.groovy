@@ -86,11 +86,10 @@ import groovy.swing.factory.CollectionFactory
  * A helper class for creating Swing widgets using GroovyMarkup
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class SwingBuilder extends FactoryBuilderSupport {
-    // local fields
-    private static final Logger LOG = Logger.getLogger(SwingBuilder)
+
+    private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
     private static boolean headless = false
 
     public static final String DELEGATE_PROPERTY_OBJECT_ID = "_delegateProperty:id";
@@ -100,7 +99,6 @@ public class SwingBuilder extends FactoryBuilderSupport {
 
     public SwingBuilder(boolean init = true) {
         super(init)
-        //registerWidgets()
         headless = GraphicsEnvironment.isHeadless()
         containingWindows = new LinkedList()
         this[DELEGATE_PROPERTY_OBJECT_ID] = DEFAULT_DELEGATE_PROPERTY_OBJECT_ID
