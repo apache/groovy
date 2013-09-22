@@ -557,13 +557,16 @@ class GroovyMethodsTest extends GroovyTestCase {
                "Should have slept for at least $sleeptime ms (+/- epsilon ms) but slept only $slept ms"
     }
 
-    void testObjectSleepWithOnInterruptHandler() {
+    void testObjectSleepWithOnInterruptHandlerStopSleeping() {
         def log = ''
         def interruptor = new groovy.TestInterruptor(Thread.currentThread())
         new Thread(interruptor).start()
         long start = System.currentTimeMillis()
-        long sleeptime = 1250
-        sleep(sleeptime) {log += it.toString()}
+        long sleeptime = 3000
+        sleep(sleeptime) {
+            log += it.toString()
+            true
+        }
         long slept = System.currentTimeMillis() - start
         assert slept < sleeptime, "should have been interrupted but slept $slept ms > $sleeptime ms"
         assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
