@@ -51,7 +51,6 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 		"src/test/groovy",
                         "../../subprojects/groovy-swing/src/main/groovy",
                         "../../subprojects/groovy-swing/src/main/java",
-                        "../../subprojects/groovy-console/src/main/groovy",
                         "../../subprojects/groovy-sql/src/main/java"},
                 new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
@@ -149,19 +148,16 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testConstructors() throws Exception {
-        if (HeadlessTestSupport.isHeadless()) {
-            return;
-        }
         List<String> srcList = new ArrayList<String>();
-        String base = "groovy/ui/Console";
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/TestConstructors";
         srcList.add(base + ".groovy");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        String consoleDoc = output.getText(MOCK_DIR + "/" + base + ".html");
-        assertNotNull("No GroovyDoc found for " + base, consoleDoc);
-        assertTrue(consoleDoc.indexOf("<constructor modifiers=\"public \" name=\"Console\">") > 0);
-        assertTrue(consoleDoc.indexOf("<parameter type=\"java.lang.ClassLoader\" name=\"parent\" />") > 0);
+        String constructorDoc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for " + base, constructorDoc);
+        assertTrue(constructorDoc.indexOf("<constructor modifiers=\"public \" name=\"TestConstructors\">") > 0);
+        assertTrue(constructorDoc.indexOf("<parameter type=\"java.lang.ClassLoader\" name=\"parent\" />") > 0);
     }
 
     public void testClassComment() throws Exception {
