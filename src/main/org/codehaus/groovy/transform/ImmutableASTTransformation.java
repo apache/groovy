@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -38,7 +37,6 @@ import org.codehaus.groovy.runtime.ReflectionMethodInvoker;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -101,7 +99,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     static final String MEMBER_ADD_COPY_WITH = "copyWith";
     static final String COPY_WITH_METHOD = "copyWith";
 
-    private static final ClassNode ARRAYLIST_TYPE = ClassHelper.makeWithoutCaching(ArrayList.class, false);
     private static final ClassNode DATE_TYPE = ClassHelper.make(Date.class);
     private static final ClassNode CLONEABLE_TYPE = ClassHelper.make(Cloneable.class);
     private static final ClassNode COLLECTION_TYPE = ClassHelper.makeWithoutCaching(Collection.class, false);
@@ -110,7 +107,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode SELF_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
     private static final ClassNode HASHMAP_TYPE = ClassHelper.makeWithoutCaching(HashMap.class, false);
     private static final ClassNode MAP_TYPE = ClassHelper.makeWithoutCaching(Map.class, false);
-    private static final ClassNode FIELD_TYPE = ClassHelper.makeWithoutCaching(Field.class);
     private static final ClassNode REFLECTION_INVOKER_TYPE = ClassHelper.make(ReflectionMethodInvoker.class);
     private static final ClassNode SORTEDSET_CLASSNODE = ClassHelper.make(SortedSet.class);
     private static final ClassNode SORTEDMAP_CLASSNODE = ClassHelper.make(SortedMap.class);
