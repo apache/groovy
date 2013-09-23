@@ -568,37 +568,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return safeExpression(fieldExpr, expression);
     }
 
-    private Statement createValueCheckingIf() {
-        return new IfStatement(
-            new BooleanExpression(
-                new BinaryExpression(
-                    new BinaryExpression(
-                        new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
-                        new Token(Types.COMPARE_NOT_EQUAL, "!=", -1, -1),
-                        new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE )
-                    ),
-                    new Token(Types.LOGICAL_OR, "||", -1, -1),
-                    new BinaryExpression(
-                        new MethodCallExpression(
-                            new VariableExpression( "map", HASHMAP_TYPE ),
-                            "size",
-                            ArgumentListExpression.EMPTY_ARGUMENTS ),
-                        new Token(Types.COMPARE_EQUAL, "==", -1, -1),
-                        new ConstantExpression( 0 )
-                    ) )
-                ),
-            new BlockStatement( new Statement[] {
-                AbstractASTTransformUtil.assignStatement(
-                    new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE ),
-                    new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ) ),
-                AbstractASTTransformUtil.assignStatement(
-                    new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
-                    ConstantExpression.TRUE ),
-            }, new VariableScope() ),
-            EmptyStatement.INSTANCE
-        ) ;
-    }
-
     private Statement createCheckForProperty( final PropertyNode pNode ) {
         return new BlockStatement( new Statement[] {
             new IfStatement(
@@ -677,9 +646,21 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         statements.add( new IfStatement(
                             new BooleanExpression(
                                 new BinaryExpression(
-                                    new VariableExpression( "map", ClassHelper.MAP_TYPE ),
-                                    new Token(Types.COMPARE_EQUAL, "==", -1, -1),
-                                    ConstantExpression.NULL ) ),
+                                    new BinaryExpression(
+                                        new VariableExpression( "map", ClassHelper.MAP_TYPE ),
+                                        new Token(Types.COMPARE_EQUAL, "==", -1, -1),
+                                        ConstantExpression.NULL ),
+                                    new Token(Types.LOGICAL_OR, "||", -1, -1),
+                                    new BinaryExpression(
+                                        new MethodCallExpression(
+                                            new VariableExpression( "map", HASHMAP_TYPE ),
+                                            "size",
+                                            ArgumentListExpression.EMPTY_ARGUMENTS ),
+                                        new Token(Types.COMPARE_EQUAL, "==", -1, -1),
+                                        new ConstantExpression( 0 )
+                                    )
+                                )
+                            ),
                             new ReturnStatement( new VariableExpression( "this", cNode ) ),
                             EmptyStatement.INSTANCE ) ) ;
         statements.add( AbstractASTTransformUtil.declStatement(
