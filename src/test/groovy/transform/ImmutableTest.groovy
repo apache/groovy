@@ -32,6 +32,29 @@ class ImmutableTest extends GroovyTestCase {
         assert !alice.is( tim )
     }
 
+    public void testGenericsCopyWith() {
+        def tester = new GroovyClassLoader().parseClass(
+          '''@groovy.transform.Immutable(copyWith = true)
+            |class Person {
+            |    List<String> names
+            |}
+            |'''.stripMargin() )
+
+        // One instance
+        def tim = tester.newInstance( [ 'Tim', 'Yates' ] )
+        assert tim.names == [ 'Tim', 'Yates' ]
+
+        // This should be the same instance and no changes
+        def tim2 = tim.copyWith( names:[ 'Tim', 'Yates' ] )
+        assert tim.is( tim2 )
+
+        // This should be a new instance
+        def alice = tim.copyWith( names:[ 'Alice', 'Yates' ] )
+        assert tim != alice
+        assert alice.names == [ 'Alice', 'Yates' ]
+        assert !alice.is( tim )
+    }
+
     public void testStaticCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
           '''@groovy.transform.Immutable(copyWith = true)

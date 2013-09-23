@@ -716,9 +716,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 )
             ),
         }, new VariableScope() );
+
+        final ClassNode clonedNode = ClassHelper.makeWithoutCaching(cNode.getName());
+        clonedNode.setRedirect(cNode);
+
         cNode.addMethod( COPY_WITH_METHOD,
                          ACC_PUBLIC | ACC_FINAL,
-                         cNode,
+                         clonedNode,
                          new Parameter[] { new Parameter( new ClassNode( Map.class ), "map" ) },
                          null,
                          body );
