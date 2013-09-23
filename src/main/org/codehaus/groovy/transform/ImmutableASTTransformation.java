@@ -97,7 +97,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
-    static final String MEMBER_ADD_COPY_WITH = "addCopyWith";
+    static final String MEMBER_ADD_COPY_WITH = "copyWith";
     static final String COPY_WITH_METHOD = "copyWith";
 
     private static final ClassNode DATE_TYPE = ClassHelper.make(Date.class);

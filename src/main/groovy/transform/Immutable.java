@@ -179,7 +179,7 @@ public @interface Immutable {
      * these values set.
      * Example:
      * <pre>
-     * {@code @groovy.transform.Immutable}(addCopyWith = true)
+     * {@code @groovy.transform.Immutable}(copyWith = true)
      * class Person {
      *     String first, last
      * }
@@ -198,5 +198,5 @@ public @interface Immutable {
      *
      * @since 2.2.0
      */
-    boolean addCopyWith() default false;
+    boolean copyWith() default false;
 }
