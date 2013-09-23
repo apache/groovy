@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -593,7 +594,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                     ),
                     AbstractASTTransformUtil.declStatement(
                         new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE ),
-                        new FieldExpression( pNode.getField() )
+                        new MethodCallExpression( VariableExpression.THIS_EXPRESSION,
+                                                  "get" + Verifier.capitalize( pNode.getName() ),
+                                                  MethodCallExpression.NO_ARGUMENTS )
                     ),
                     new IfStatement(
                         new BooleanExpression(
@@ -631,7 +634,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                             "put",
                             new ArgumentListExpression( new Expression[] {
                                 new ConstantExpression( pNode.getName() ),
-                                new FieldExpression( pNode.getField() )
+                                new MethodCallExpression( VariableExpression.THIS_EXPRESSION,
+                                                          "get" + Verifier.capitalize( pNode.getName() ),
+                                                          MethodCallExpression.NO_ARGUMENTS )
                             } )
                         )
                     )
@@ -641,56 +646,51 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private void createCopyWith( final ClassNode cNode, final List<PropertyNode> pList ) {
-        List<Expression> nameList = new ArrayList<Expression>() ;
-        List<Statement> statements = new ArrayList<Statement>() ;
-        statements.add( new IfStatement(
-                            new BooleanExpression(
-                                new BinaryExpression(
+        BlockStatement body = new BlockStatement();
+        body.addStatement( new IfStatement(
+                                new BooleanExpression(
                                     new BinaryExpression(
-                                        new VariableExpression( "map", ClassHelper.MAP_TYPE ),
-                                        new Token(Types.COMPARE_EQUAL, "==", -1, -1),
-                                        ConstantExpression.NULL ),
-                                    new Token(Types.LOGICAL_OR, "||", -1, -1),
-                                    new BinaryExpression(
-                                        new MethodCallExpression(
-                                            new VariableExpression( "map", HASHMAP_TYPE ),
-                                            "size",
-                                            ArgumentListExpression.EMPTY_ARGUMENTS ),
-                                        new Token(Types.COMPARE_EQUAL, "==", -1, -1),
-                                        new ConstantExpression( 0 )
+                                        equalsNullExpr( new VariableExpression( "map", ClassHelper.MAP_TYPE ) ),
+                                        new Token(Types.LOGICAL_OR, "||", -1, -1),
+                                        new BinaryExpression(
+                                            new MethodCallExpression(
+                                                new VariableExpression( "map", HASHMAP_TYPE ),
+                                                "size",
+                                                ArgumentListExpression.EMPTY_ARGUMENTS ),
+                                            new Token(Types.COMPARE_EQUAL, "==", -1, -1),
+                                            new ConstantExpression( 0 )
+                                        )
                                     )
-                                )
-                            ),
-                            new ReturnStatement( new VariableExpression( "this", cNode ) ),
-                            EmptyStatement.INSTANCE ) ) ;
-        statements.add( AbstractASTTransformUtil.declStatement(
-                            new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
-                            ConstantExpression.PRIM_FALSE ) ) ;
-        statements.add( AbstractASTTransformUtil.declStatement(
-                            new VariableExpression( "construct", HASHMAP_TYPE ),
-                            new ConstructorCallExpression( HASHMAP_TYPE, MethodCallExpression.NO_ARGUMENTS )
-                        ) ) ;
+                                ),
+                                new ReturnStatement( new VariableExpression( "this", cNode ) ),
+                                EmptyStatement.INSTANCE ) ) ;
+        body.addStatement( AbstractASTTransformUtil.declStatement(
+                                new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
+                                ConstantExpression.PRIM_FALSE ) ) ;
+        body.addStatement( AbstractASTTransformUtil.declStatement(
+                                new VariableExpression( "construct", HASHMAP_TYPE ),
+                                new ConstructorCallExpression( HASHMAP_TYPE, MethodCallExpression.NO_ARGUMENTS )
+                            ) ) ;
 
         // Check for each property
         for( final PropertyNode pNode : pList ) {
-            statements.add( createCheckForProperty( pNode ) ) ;
+            body.addStatement( createCheckForProperty( pNode ) ) ;
         }
 
-        statements.add( new ReturnStatement(
-                            new TernaryExpression(
-                                AbstractASTTransformUtil.isTrueExpr(
-                                    new VariableExpression( "dirty", ClassHelper.boolean_TYPE ) ),
-                                new ConstructorCallExpression(
-                                    cNode,
-                                    new ArgumentListExpression( new Expression[] {
-                                        new VariableExpression( "construct", HASHMAP_TYPE )
-                                    } )
-                                ),
-                                new VariableExpression( "this", cNode )
-                            )
-                        ) ) ;
+        body.addStatement( new ReturnStatement(
+                                new TernaryExpression(
+                                    AbstractASTTransformUtil.isTrueExpr(
+                                        new VariableExpression( "dirty", ClassHelper.boolean_TYPE ) ),
+                                    new ConstructorCallExpression(
+                                        cNode,
+                                        new ArgumentListExpression( new Expression[] {
+                                            new VariableExpression( "construct", HASHMAP_TYPE )
+                                        } )
+                                    ),
+                                    new VariableExpression( "this", cNode )
+                                )
+                            ) ) ;
 
-        BlockStatement body = new BlockStatement( statements, new VariableScope() );
 
         final ClassNode clonedNode = ClassHelper.makeWithoutCaching(cNode.getName());
         clonedNode.setRedirect(cNode);
