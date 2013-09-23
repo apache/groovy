@@ -3466,7 +3466,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     
     private Map<String, GenericsType> resolvePlaceHoldersFromDeclartion(ClassNode receiver, ClassNode declaration, MethodNode method, boolean isStaticTarget) {
         Map<String, GenericsType> resolvedPlaceholders;
-        if (isStaticTarget && CLASS_Type.equals(receiver) && receiver.isUsingGenerics() && receiver.getGenericsTypes().length>0) {
+        if (    isStaticTarget && CLASS_Type.equals(receiver) && 
+                receiver.isUsingGenerics() && 
+                receiver.getGenericsTypes().length>0 &&
+                !OBJECT_TYPE.equals(receiver.getGenericsTypes()[0].getType()))
+        {
             resolvedPlaceholders = new HashMap<String, GenericsType>();
             GenericsUtils.extractPlaceholders(receiver.getGenericsTypes()[0].getType(), resolvedPlaceholders);
         } else {
@@ -3480,7 +3484,33 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         dummy.setGenericsTypes(method.getGenericsTypes());
         GenericsUtils.extractPlaceholders(dummy, resolvedPlaceholders);
     }
-    
+
+    private static ClassNode getNextSuperClass(ClassNode clazz, ClassNode goalClazz) {
+        if (clazz.isArray()) {
+            ClassNode cn = getNextSuperClass(clazz.getComponentType(),goalClazz.getComponentType());
+            if (cn!=null) cn = cn.makeArray();
+            return cn;
+        }
+
+        if (!goalClazz.isInterface()) {
+            if (clazz.isInterface()) {
+                if (OBJECT_TYPE.equals(clazz)) return null;
+                return OBJECT_TYPE;
+            } else {
+                return clazz.getUnresolvedSuperClass();
+            }
+        }
+
+        ClassNode[] interfaces = clazz.getUnresolvedInterfaces();
+        for (int i=0; i<interfaces.length; i++) {
+            if (implementsInterfaceOrIsSubclassOf(interfaces[i],goalClazz)) {
+                return interfaces[i];
+            }
+        }
+        //none of the interfaces here match, so continue with super class
+        return clazz.getUnresolvedSuperClass();
+    }
+
     private static Map<String, GenericsType> extractPlaceHolders(MethodNode method, ClassNode receiver, ClassNode declaringClass) {
         if (declaringClass.equals(OBJECT_TYPE)) {
             Map<String, GenericsType> resolvedPlaceholders = new HashMap<String, GenericsType>();
@@ -3506,6 +3536,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     GenericsType gt = entry.getValue();
                     if (!gt.isPlaceholder()) continue;
                     GenericsType referenced = resolvedPlaceholders.get(gt.getName());
+                    if (referenced==null) continue;
                     entry.setValue(referenced);
                 }
             }
@@ -3514,31 +3545,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // we are done if we are now in the declaring class
             if (current.equals(declaringClass)) break;
 
-            // we have to continue with either an interface or normal super class
-            ClassNode nextNode = null;
-            if (declaringClass.isInterface()) {
-                ClassNode[] interfaces = current.getUnresolvedInterfaces();
-                for (int i=0; i<interfaces.length; i++) {
-                    if (implementsInterfaceOrIsSubclassOf(interfaces[i],declaringClass)) {
-                        nextNode = interfaces[i];
-                        break;
-                    }
-                }
-            }
-
-            if (nextNode==null) {
-                nextNode = current.getUnresolvedSuperClass();
-                if (current.isArray()) {
-                    nextNode = current.getComponentType();
-                    nextNode = nextNode.getUnresolvedSuperClass();
-                    if (nextNode!=null) {
-                        nextNode = nextNode.makeArray();
-                    } else {
-                        nextNode = OBJECT_TYPE;
-                    }
-                }
-            }
-            current = nextNode;
+            current = getNextSuperClass(current, declaringClass);
             if (current==null) {
                 String descriptor = "<>";
                 if (method!=null) descriptor = method.getTypeDescriptor();
