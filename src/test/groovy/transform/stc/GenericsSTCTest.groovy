@@ -861,7 +861,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 println arg1 == arg2
             }
             printEqual(1, 'foo')
-        ''', '#printEqual(java.lang.Object <T>, java.lang.Object <T>) with arguments [int, java.lang.String]'
+        ''', '#printEqual(T, T) with arguments [int, java.lang.String]'
     }
     void testIncompatibleGenericsForTwoArgumentsUsingEmbeddedPlaceholder() {
         shouldFailWithMessages '''
@@ -869,7 +869,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 println arg1 == arg2
             }
             printEqual(1, ['foo'])
-        ''', '#printEqual(java.lang.Object <T>, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
+        ''', '#printEqual(T, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
     }
 
     void testGroovy5748() {

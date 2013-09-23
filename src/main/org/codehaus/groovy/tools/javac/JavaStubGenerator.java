@@ -435,6 +435,7 @@ public class JavaStubGenerator {
             if (noExceptionToAvoid(node,c)) return copy;
             if (bestMatch==null) bestMatch = copy;
         }
+        if (bestMatch!=null) return bestMatch;
 
         // fall back for parameterless constructor
         if (superType.isPrimaryClassNode()) {
@@ -447,28 +448,14 @@ public class JavaStubGenerator {
     final private static ClassNode RUNTIME_EXCEPTION = ClassHelper.make(RuntimeException.class);
 
     private boolean noExceptionToAvoid(ConstructorNode fromStub, ConstructorNode fromSuper) {
-        ClassNode[] superExceptions = fromSuper.getExceptions();
-        if (superExceptions==null || superExceptions.length==0) return true;
-        superExceptions = superExceptions.clone();
-
-        // let's filter out all runtime exceptions
-        int offset = 0;
-        for (int i=0; i<superExceptions.length; i++) {
-            ClassNode exc = superExceptions[i];
-            if (exc.isDerivedFrom(RUNTIME_EXCEPTION)) {
-                superExceptions[i]=superExceptions[offset];
-                superExceptions[offset] = null;
-                offset++;
-            }
-        }
-
-        // if nothing left, we are good
-        if (offset>=superExceptions.length) return true;
-
-        // if all remaining exceptions are used in the stub weare good
         ClassNode[] stubExceptions = fromStub.getExceptions();
         if (stubExceptions==null || stubExceptions.length==0) return false;
-        outer: for (int i=offset; i<superExceptions.length; i++) {
+
+        ClassNode[] superExceptions = fromSuper.getExceptions();
+        if (superExceptions==null || superExceptions.length==0) return true;
+
+        // if all remaining exceptions are used in the stub we are good
+        outer: for (int i=0; i<superExceptions.length; i++) {
             ClassNode superExc = superExceptions[i];
             for (ClassNode stub:stubExceptions) {
                 if (stub.isDerivedFrom(superExc)) continue outer;
