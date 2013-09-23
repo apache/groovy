@@ -25,6 +25,10 @@ class ImmutableTest extends GroovyTestCase {
         def tim4 = tim.copyWith( whatever:true )
         assert tim.is( tim4 )
 
+        // And this
+        def tim5 = tim.copyWith()
+        assert tim.is( tim5 )
+
         // This should be a new instance with a new firstname
         def alice = tim.copyWith( first:'alice' )
         assert tim != alice
@@ -55,6 +59,98 @@ class ImmutableTest extends GroovyTestCase {
         assert !alice.is( tim )
     }
 
+    public void testWithPrivatesCopyWith() {
+        def tester = new GroovyClassLoader().parseClass(
+          '''@groovy.transform.Immutable(copyWith=true)
+            |class Foo {
+            |  String first
+            |  String last
+            |  private String cache
+            |  List<String> nicknames
+            |  def full() {
+            |    if (!cache) cache = "$first $last (${nicknames.join(', ')})"
+            |    cache
+            |  }
+            |}
+            |'''.stripMargin() )
+
+        // One instance
+        def tim = tester.newInstance( 'Tim', 'Yates', [ 'tim', 'nick1' ] )
+        assert tim.full() == 'Tim Yates (tim, nick1)'
+
+        // This should be the same instance and no changes
+        def tim2 = tim.copyWith( nicknames:[ 'tim', 'nick1' ] )
+        assert tim.is( tim2 )
+
+        // This should be a new instance
+        def alice = tim.copyWith( first:'Alice', nicknames:[ 'ali' ] )
+        assert tim != alice
+        assert !alice.is( tim )
+        assert alice.full() == 'Alice Yates (ali)'
+    }
+
+    public void testStaticWithPrivatesCopyWith() {
+        def tester = new GroovyClassLoader().parseClass(
+          '''@groovy.transform.Immutable(copyWith=true)
+            |@groovy.transform.CompileStatic
+            |class Foo {
+            |  String first
+            |  String last
+            |  private String cache
+            |  List<String> nicknames
+            |  def full() {
+            |    if (!cache) cache = "$first $last (${nicknames.join(', ')})"
+            |    cache
+            |  }
+            |}
+            |'''.stripMargin() )
+
+        // One instance
+        def tim = tester.newInstance( 'Tim', 'Yates', [ 'tim', 'nick1' ] )
+        assert tim.full() == 'Tim Yates (tim, nick1)'
+
+        // This should be the same instance and no changes
+        def tim2 = tim.copyWith( nicknames:[ 'tim', 'nick1' ] )
+        assert tim.is( tim2 )
+
+        // This should be a new instance
+        def alice = tim.copyWith( first:'Alice', nicknames:[ 'ali' ] )
+        assert tim != alice
+        assert !alice.is( tim )
+        assert alice.full() == 'Alice Yates (ali)'
+    }
+
+    public void testTypedWithPrivatesCopyWith() {
+        def tester = new GroovyClassLoader().parseClass(
+          '''@groovy.transform.Immutable(copyWith=true)
+            |@groovy.transform.TypeChecked
+            |class Foo {
+            |  String first
+            |  String last
+            |  private String cache
+            |  List<String> nicknames
+            |  def full() {
+            |    if (!cache) cache = "$first $last (${nicknames.join(', ')})"
+            |    cache
+            |  }
+            |}
+            |'''.stripMargin() )
+
+        // One instance
+        def tim = tester.newInstance( 'Tim', 'Yates', [ 'tim', 'nick1' ] )
+        assert tim.full() == 'Tim Yates (tim, nick1)'
+
+        // This should be the same instance and no changes
+        def tim2 = tim.copyWith( nicknames:[ 'tim', 'nick1' ] )
+        assert tim.is( tim2 )
+
+        // This should be a new instance
+        def alice = tim.copyWith( first:'Alice', nicknames:[ 'ali' ] )
+        assert tim != alice
+        assert !alice.is( tim )
+        assert alice.full() == 'Alice Yates (ali)'
+    }
+
     public void testStaticCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
           '''@groovy.transform.Immutable(copyWith = true)
@@ -79,6 +175,10 @@ class ImmutableTest extends GroovyTestCase {
         // As should this
         def tim4 = tim.copyWith( whatever:true )
         assert tim.is( tim4 )
+
+        // And this
+        def tim5 = tim.copyWith()
+        assert tim.is( tim5 )
 
         // This should be a new instance with a new firstname
         def alice = tim.copyWith( first:'alice' )
@@ -111,6 +211,10 @@ class ImmutableTest extends GroovyTestCase {
         // As should this
         def tim4 = tim.copyWith( whatever:true )
         assert tim.is( tim4 )
+
+        // And this
+        def tim5 = tim.copyWith()
+        assert tim.is( tim5 )
 
         // This should be a new instance with a new firstname
         def alice = tim.copyWith( first:'alice' )
