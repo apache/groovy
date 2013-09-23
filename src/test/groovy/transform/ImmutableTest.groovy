@@ -3,7 +3,7 @@ package groovy.transform
 class ImmutableTest extends GroovyTestCase {
     public void testCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
-          '''@groovy.transform.Immutable(addCopyWith = true)
+          '''@groovy.transform.Immutable(copyWith = true)
             |class Person {
             |    String first, last
             |}
@@ -34,7 +34,7 @@ class ImmutableTest extends GroovyTestCase {
 
     public void testStaticCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
-          '''@groovy.transform.Immutable(addCopyWith = true)
+          '''@groovy.transform.Immutable(copyWith = true)
             |@groovy.transform.CompileStatic
             |class Person {
             |    String first, last
@@ -66,7 +66,7 @@ class ImmutableTest extends GroovyTestCase {
 
     public void testTypedCopyWith() {
         def tester = new GroovyClassLoader().parseClass(
-          '''@groovy.transform.Immutable(addCopyWith = true)
+          '''@groovy.transform.Immutable(copyWith = true)
             |@groovy.transform.TypeChecked
             |class Person {
             |    String first, last
@@ -98,7 +98,7 @@ class ImmutableTest extends GroovyTestCase {
 
     public void testCopyWithSkipping() {
         def tester = new GroovyClassLoader().parseClass(
-          '''@groovy.transform.Immutable(addCopyWith = true)
+          '''@groovy.transform.Immutable(copyWith = true)
             |class Person {
             |    String first, last
             |    List<Person> copyWith( i ) {
@@ -119,7 +119,7 @@ class ImmutableTest extends GroovyTestCase {
 
     public void testStaticCopyWithSkipping() {
         def tester = new GroovyClassLoader().parseClass(
-          '''@groovy.transform.Immutable(addCopyWith = true)
+          '''@groovy.transform.Immutable(copyWith = true)
             |@groovy.transform.CompileStatic
             |class Person {
             |    String first, last
@@ -141,7 +141,7 @@ class ImmutableTest extends GroovyTestCase {
 
     public void testTypedCopyWithSkipping() {
         def tester = new GroovyClassLoader().parseClass(
-          '''@groovy.transform.Immutable(addCopyWith = true)
+          '''@groovy.transform.Immutable(copyWith = true)
             |@groovy.transform.TypeChecked
             |class Person {
             |    String first, last
