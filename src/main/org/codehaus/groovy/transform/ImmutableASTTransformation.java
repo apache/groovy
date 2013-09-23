@@ -100,6 +100,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     static final String MEMBER_ADD_COPY_WITH = "copyWith";
     static final String COPY_WITH_METHOD = "copyWith";
 
+    private static final ClassNode ARRAYLIST_TYPE = ClassHelper.makeWithoutCaching(ArrayList.class, false);
     private static final ClassNode DATE_TYPE = ClassHelper.make(Date.class);
     private static final ClassNode CLONEABLE_TYPE = ClassHelper.make(Cloneable.class);
     private static final ClassNode COLLECTION_TYPE = ClassHelper.makeWithoutCaching(Collection.class, false);
@@ -153,8 +154,10 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
                 createToString(cNode, false, false, null, null, false, true);
             }
-            if( memberHasValue(node, MEMBER_ADD_COPY_WITH, true) && !hasDeclaredMethod( cNode, COPY_WITH_METHOD, 1 ) ) {
-                createCopyWith( cNode ) ;
+            if( memberHasValue(node, MEMBER_ADD_COPY_WITH, true) &&
+                pList.size() > 0 &&
+                !hasDeclaredMethod( cNode, COPY_WITH_METHOD, 1 ) ) {
+                createCopyWith( cNode, pList ) ;
             }
         }
     }
@@ -565,157 +568,148 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return safeExpression(fieldExpr, expression);
     }
 
-    private Statement createNewValueIf() {
+    private Statement createValueCheckingIf() {
         return new IfStatement(
             new BooleanExpression(
                 new BinaryExpression(
                     new BinaryExpression(
                         new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
                         new Token(Types.COMPARE_NOT_EQUAL, "!=", -1, -1),
-                        ConstantExpression.NULL ),
-                    new Token( Types.LOGICAL_AND, "&&", -1, -1 ),
+                        new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE )
+                    ),
+                    new Token(Types.LOGICAL_OR, "||", -1, -1),
                     new BinaryExpression(
-                        new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
-                        new Token(Types.COMPARE_NOT_EQUAL, "!=", -1, -1),
-                        new VariableExpression( "value", ClassHelper.OBJECT_TYPE )
-                    )
-                )
-            ),
+                        new MethodCallExpression(
+                            new VariableExpression( "map", HASHMAP_TYPE ),
+                            "size",
+                            ArgumentListExpression.EMPTY_ARGUMENTS ),
+                        new Token(Types.COMPARE_EQUAL, "==", -1, -1),
+                        new ConstantExpression( 0 )
+                    ) )
+                ),
             new BlockStatement( new Statement[] {
+                AbstractASTTransformUtil.assignStatement(
+                    new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE ),
+                    new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ) ),
                 AbstractASTTransformUtil.assignStatement(
                     new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
                     ConstantExpression.TRUE ),
-                AbstractASTTransformUtil.assignStatement(
-                    new VariableExpression( "value", ClassHelper.OBJECT_TYPE ),
-                    new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ) )
             }, new VariableScope() ),
             EmptyStatement.INSTANCE
         ) ;
     }
 
-    private Statement createCallGetterForField( final ClassNode cNode ) {
-        return AbstractASTTransformUtil.declStatement(
-            new VariableExpression( "value", ClassHelper.OBJECT_TYPE ),
-            new MethodCallExpression(
-                new MethodCallExpression(
-                    new ClassExpression( cNode ),
-                    "getMethod",
-                    new ArgumentListExpression( new Expression[] {
-                        new BinaryExpression(
-                            new ConstantExpression( "get" ),
-                            new Token( Types.PLUS, "+", -1, -1 ),
-                            new BinaryExpression(
-                                new MethodCallExpression(
-                                    new MethodCallExpression(
-                                        new MethodCallExpression(
-                                            new VariableExpression( "field", FIELD_TYPE ),
-                                            "getName",
-                                            MethodCallExpression.NO_ARGUMENTS ),
-                                        "substring",
-                                        new ArgumentListExpression( new Expression[] {
-                                            new ConstantExpression( 0 ),
-                                            new ConstantExpression( 1 ),
-                                        } )
-                                    ),
-                                    "toUpperCase",
-                                    MethodCallExpression.NO_ARGUMENTS
-                                ),
-                                new Token( Types.PLUS, "+", -1, -1 ),
-                                new MethodCallExpression(
-                                    new MethodCallExpression(
-                                        new VariableExpression( "field", FIELD_TYPE ),
-                                        "getName",
-                                        MethodCallExpression.NO_ARGUMENTS ),
-                                    "substring",
-                                    new ArgumentListExpression( new Expression[] {
-                                        new ConstantExpression( 1 ),
-                                    } )
-                                )
-                            )
-                        )
-                    } )
-                ),
-                "invoke",
-                new VariableExpression( "this", cNode )
-            )
-        ) ;
-    }
-
-    private Statement createAddToConstructMap() {
-        return new ExpressionStatement(
-            new MethodCallExpression(
-                new VariableExpression( "construct", HASHMAP_TYPE ),
-                "put",
-                new ArgumentListExpression( new Expression[] {
-                    new MethodCallExpression(
-                        new VariableExpression( "field", FIELD_TYPE ),
-                        "getName",
-                        MethodCallExpression.NO_ARGUMENTS ),
-                    new VariableExpression( "value", ClassHelper.OBJECT_TYPE )
-                } )
-            )
-        ) ;
-    }
-
-    private Statement createSyntheticCheckingBlock( final ClassNode cNode ) {
-        return new IfStatement(
-            new NotExpression(
-                new MethodCallExpression(
-                    new VariableExpression( "field", FIELD_TYPE ),
-                    "isSynthetic",
-                    MethodCallExpression.NO_ARGUMENTS ) ),
-            new BlockStatement( new Statement[] {
-                AbstractASTTransformUtil.declStatement(
-                    new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
+    private Statement createCheckForProperty( final PropertyNode pNode ) {
+        return new BlockStatement( new Statement[] {
+            new IfStatement(
+                new BooleanExpression( 
                     new MethodCallExpression(
                         new VariableExpression( "map", HASHMAP_TYPE ),
-                        "get",
-                        new MethodCallExpression(
-                            new VariableExpression( "field", FIELD_TYPE ),
-                            "getName",
-                            MethodCallExpression.NO_ARGUMENTS )
+                        "containsKey",
+                        new ArgumentListExpression( new Expression[] {
+                            new ConstantExpression( pNode.getName() ),
+                        } )
                     )
                 ),
-                createCallGetterForField( cNode ),
-                createNewValueIf(),
-                createAddToConstructMap(),
-            }, new VariableScope() ),
-            EmptyStatement.INSTANCE
-        ) ;
+                new BlockStatement( new Statement[] {
+                    AbstractASTTransformUtil.declStatement(
+                        new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
+                        new MethodCallExpression(
+                            new VariableExpression( "map", HASHMAP_TYPE ),
+                            "get",
+                            new ArgumentListExpression( new Expression[] {
+                                new ConstantExpression( pNode.getName() ),
+                            } )
+                        )
+                    ),
+                    AbstractASTTransformUtil.declStatement(
+                        new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE ),
+                        new FieldExpression( pNode.getField() )
+                    ),
+                    new IfStatement(
+                        new BooleanExpression(
+                            new BinaryExpression(
+                                new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
+                                new Token(Types.COMPARE_NOT_EQUAL, "!=", -1, -1),
+                                new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE )
+                            )
+                        ),
+                        new BlockStatement( new Statement[] {
+                            AbstractASTTransformUtil.assignStatement(
+                                new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE ),
+                                new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ) ),
+                            AbstractASTTransformUtil.assignStatement(
+                                new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
+                                ConstantExpression.TRUE ),
+                        }, new VariableScope() ),
+                        EmptyStatement.INSTANCE
+                    ),
+                    new ExpressionStatement(
+                        new MethodCallExpression(
+                            new VariableExpression( "construct", HASHMAP_TYPE ),
+                            "put",
+                            new ArgumentListExpression( new Expression[] {
+                                new ConstantExpression( pNode.getName() ),
+                                new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE )
+                            } )
+                        )
+                    )
+                }, new VariableScope() ),
+                new BlockStatement( new Statement[] {
+                    new ExpressionStatement(
+                        new MethodCallExpression(
+                            new VariableExpression( "construct", HASHMAP_TYPE ),
+                            "put",
+                            new ArgumentListExpression( new Expression[] {
+                                new ConstantExpression( pNode.getName() ),
+                                new FieldExpression( pNode.getField() )
+                            } )
+                        )
+                    )
+                }, new VariableScope() )
+            )
+        }, new VariableScope() ) ;
     }
 
-    private void createCopyWith( final ClassNode cNode ) {
-        BlockStatement body = new BlockStatement( new Statement[] {
-            AbstractASTTransformUtil.declStatement(
-                new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
-                ConstantExpression.PRIM_FALSE ),
-            AbstractASTTransformUtil.declStatement(
-                new VariableExpression( "construct", HASHMAP_TYPE ),
-                new ConstructorCallExpression( HASHMAP_TYPE, MethodCallExpression.NO_ARGUMENTS )
-            ),
-            new ForStatement(
-                new Parameter( FIELD_TYPE, "field" ),
-                new MethodCallExpression(
-                    new ClassExpression( cNode ),
-                    "getDeclaredFields",
-                    MethodCallExpression.NO_ARGUMENTS ),
-                new BlockStatement( new Statement[] {
-                    createSyntheticCheckingBlock( cNode )
-                }, new VariableScope() ) ),
-            new ReturnStatement(
-                new TernaryExpression(
-                    AbstractASTTransformUtil.isTrueExpr(
-                        new VariableExpression( "dirty", ClassHelper.boolean_TYPE ) ),
-                    new ConstructorCallExpression(
-                        cNode,
-                        new ArgumentListExpression( new Expression[] {
-                            new VariableExpression( "construct", HASHMAP_TYPE )
-                        } )
-                    ),
-                    new VariableExpression( "this", cNode )
-                )
-            ),
-        }, new VariableScope() );
+    private void createCopyWith( final ClassNode cNode, final List<PropertyNode> pList ) {
+        List<Expression> nameList = new ArrayList<Expression>() ;
+        List<Statement> statements = new ArrayList<Statement>() ;
+        statements.add( new IfStatement(
+                            new BooleanExpression(
+                                new BinaryExpression(
+                                    new VariableExpression( "map", ClassHelper.MAP_TYPE ),
+                                    new Token(Types.COMPARE_EQUAL, "==", -1, -1),
+                                    ConstantExpression.NULL ) ),
+                            new ReturnStatement( new VariableExpression( "this", cNode ) ),
+                            EmptyStatement.INSTANCE ) ) ;
+        statements.add( AbstractASTTransformUtil.declStatement(
+                            new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
+                            ConstantExpression.PRIM_FALSE ) ) ;
+        statements.add( AbstractASTTransformUtil.declStatement(
+                            new VariableExpression( "construct", HASHMAP_TYPE ),
+                            new ConstructorCallExpression( HASHMAP_TYPE, MethodCallExpression.NO_ARGUMENTS )
+                        ) ) ;
+
+        // Check for each property
+        for( final PropertyNode pNode : pList ) {
+            statements.add( createCheckForProperty( pNode ) ) ;
+        }
+
+        statements.add( new ReturnStatement(
+                            new TernaryExpression(
+                                AbstractASTTransformUtil.isTrueExpr(
+                                    new VariableExpression( "dirty", ClassHelper.boolean_TYPE ) ),
+                                new ConstructorCallExpression(
+                                    cNode,
+                                    new ArgumentListExpression( new Expression[] {
+                                        new VariableExpression( "construct", HASHMAP_TYPE )
+                                    } )
+                                ),
+                                new VariableExpression( "this", cNode )
+                            )
+                        ) ) ;
+
+        BlockStatement body = new BlockStatement( statements, new VariableScope() );
 
         final ClassNode clonedNode = ClassHelper.makeWithoutCaching(cNode.getName());
         clonedNode.setRedirect(cNode);
