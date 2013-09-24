@@ -34,9 +34,9 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ReflectionMethodInvoker;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -596,10 +596,15 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                     ),
                     new IfStatement(
                         new BooleanExpression(
-                            new BinaryExpression(
-                                new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
-                                new Token(Types.COMPARE_NOT_EQUAL, "!=", -1, -1),
-                                new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE )
+                            new NotExpression(
+                                new MethodCallExpression( 
+                                    new ClassExpression( ClassHelper.make( DefaultTypeTransformation.class ) ),
+                                    "compareEqual",
+                                    new ArgumentListExpression( new Expression[] {
+                                        new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
+                                        new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE )
+                                    } )
+                                )
                             )
                         ),
                         new BlockStatement( new Statement[] {
