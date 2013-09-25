@@ -448,11 +448,12 @@ public class JavaStubGenerator {
     final private static ClassNode RUNTIME_EXCEPTION = ClassHelper.make(RuntimeException.class);
 
     private boolean noExceptionToAvoid(ConstructorNode fromStub, ConstructorNode fromSuper) {
+        ClassNode[] superExceptions = fromSuper.getExceptions();
+        if (superExceptions==null || superExceptions.length==0) return true;
+
         ClassNode[] stubExceptions = fromStub.getExceptions();
         if (stubExceptions==null || stubExceptions.length==0) return false;
 
-        ClassNode[] superExceptions = fromSuper.getExceptions();
-        if (superExceptions==null || superExceptions.length==0) return true;
 
         // if all remaining exceptions are used in the stub we are good
         outer: for (int i=0; i<superExceptions.length; i++) {
