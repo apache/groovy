@@ -688,8 +688,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                             ) ) ;
 
 
-        final ClassNode clonedNode = ClassHelper.makeWithoutCaching(cNode.getName());
-        clonedNode.setRedirect(cNode);
+        final ClassNode clonedNode = cNode.getPlainNodeReference() ;
 
         cNode.addMethod( COPY_WITH_METHOD,
                          ACC_PUBLIC | ACC_FINAL,
