@@ -27,14 +27,18 @@ class ExceptionThrowingSuperConstructorTest extends StringSourcesStubTestCase {
                 import java.io.*;
                  class Dummy{
                     public Dummy(String s) {}
-                    public Dummy(Integer s) {}
                     public Dummy(InputStream i) throws IOException {}
                  }
                  ''',
             'Derived6282.groovy': '''
-                class Derived6282 extends jline.SimpleCompletor {
-                  Derived6282(foo) {
-                    super(foo)
+                class Derived6282A extends org.codehaus.groovy.tools.stubgenerator.ExceptionThrowingTestHelper {
+                  Derived6282A(foo) {
+                    super((String) foo)
+                  }
+                }
+                class Derived6282B extends Dummy {
+                  Derived6282B(foo) {
+                    super((String) foo)
                   }
                 }
             '''
@@ -42,8 +46,16 @@ class ExceptionThrowingSuperConstructorTest extends StringSourcesStubTestCase {
     }
 
     void verifyStubs() {
-        String source = stubJavaSourceFor('Derived6282')
+        String source = stubJavaSourceFor('Derived6282A')
         // it should never select the exception throwing constructor
         assert source.contains("super ((java.lang.String")
+        source = stubJavaSourceFor('Derived6282B')
+        // it should never select the exception throwing constructor
+        assert source.contains("super((String")
     }
+}
+
+class ExceptionThrowingTestHelper {
+    ExceptionThrowingTestHelper(InputStream io) throws IOException {}
+    ExceptionThrowingTestHelper(String s) {}
 }
