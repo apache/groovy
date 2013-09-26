@@ -3,6 +3,10 @@
 :icons: font
 :linkcss!:
 
+The Groovy language supports two flavors of metaprogramming: runtime metaprogramming and compile-time metaprogramming.
+The first one allows altering the class model and the behavior of a program at runtime, while the second only occurs
+at compile-time. Both have pros and cons, that we will detail in this section.
+
 == Runtime metaprogramming
 
 === GroovyObject interface
@@ -38,59 +42,528 @@
 
 == Compile-time metaprogramming
 
+Compile-time metaprogramming in Groovy allows code generation at compile-time. Those transformations are altering the
+Abstract Syntax Tree (AST) of a program, which is why in Groovy we call it AST transformations. AST transformations
+allow you to hook into the compilation process, modify the AST and continue the compilation process to generate regular
+bytecode. Compared to runtime metaprogramming, this has the advantage of making the changes visible in the class file
+itself (that is to say, in the bytecode). Making it visible in the bytecode is important for example if you want the
+transformations to be part of the class contract (implementing interfaces, extending abstract classes, ...) or even
+if you need your class to be callable from Java (or other JVM languages). For example, an AST transformation can add
+methods to a class. If you do it with runtime metaprogramming, the new method would only be visible from Groovy. If you
+do the same using compile-time metaprogramming, the method would be visible from Java too. Last but not least, performance
+would likely be better with compile-time metaprogramming (because no initialization phase is required).
+
+In this section, we will start with explaining the various compile-time transformations that are bundled with the Groovy
+distribution. In a second time, we will describe how you can <<developing-ast-xforms,implement your own AST transformations>>
+and what are the disadvantages of this technique.
+
+=== Available AST transformations
+
+Groovy comes with various AST transformations covering different needs: reducing boilerplate (code generation), implementing
+design patterns (delegation, ...), logging, declarative concurrency, cloning, safer scripting, tweaking the compilation,
+implementing Swing patterns, testing and eventually managing dependencies. If none of those AST transformations cover
+your needs, you can still implement your own, as show in section <<developing-ast-xforms,Developping your own AST
+transformations>>.
+
+AST transformations can be separated into two categories:
+
+* global AST transformations are applied transparently, globally, as soon as they are found on compile classpath
+* local AST transformations are applied by annotating the source code with markers. Unlike global AST transformations,
+local AST transformations may support parameters.
+
+Groovy doesn't ship with any global AST transformation, but you can find a list of local AST transformations
+available for you to use in your code here:
+
+==== Code generation transformations
+
+This category of transformation includes AST transformations which helps removing boilerplate code. This is typically
+code that you have to write but that does not carry any useful information.
+
+[[xform-ToString]]
+===== @groovy.transform.ToString
+The `@ToString` AST transformation generates a human readable `toString` representation of the class. For example,
+annotating the `Person` class like below will automatically generate the `toString` method for you:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_import,indent=0]
+
+include::../test/ASTTransformsTest.groovy[tags=tostring_simple,indent=0]
+----
+
+With this definition, then the following assertion passes, meaning that a `toString` method taking the field valuess from
+the class and printing them out has been generated:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_simple_assert,indent=0]
+----
+
+The `@ToString` annotation accepts several parameters which are summarized in the following table:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|includeNames|false|Whether to include names of properties in generated toString.|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_example_includeNames,indent=0]
+----
+|excludes|Empty list|List of properties to exclude from toString|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_example_excludes,indent=0]
+----
+|includes|Empty list|List of fields to include in toString|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_example_includes,indent=0]
+----
+|includeSuper|False|Should superclass be included in toString|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_example_includeSuper,indent=0]
+----
+|includeFields|False|Should fields be included in toString, in addition to properties|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_example_includeFields,indent=0]
+----
+|ignoreNulls|False|Should properties/fields with null value be displayed|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_example_ignoreNulls,indent=0]
+----
+|includePackage|False|Use fully qualified class name instead of simple name in toString|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_example_includePackage,indent=0]
+----
+|cache|False|Cache the toString string. Should only be set to true if the class is immutable.|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_example_cache,indent=0]
+----
+
+|=======================================================================
+
+[[xform-EqualsAndHashCode]]
+===== @groovy.transform.EqualsAndHashCode
+
+The `@EqualsAndHashCode` AST transformation aims at generating `equals` and `hashCode` methods for you. The generated
+hashcode follows the best practices as described in _Effective Java_ by _Josh Bloch_:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=equalshashcode,indent=0]
+----
+
+There are several options available to tweak the behavior of `@EqualsAndHashCode`:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|excludes|Empty list|List of properties to exclude from equals/hashCode|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=equalshashcode_example_excludes,indent=0]
+----
+|includes|Empty list|List of fields to include in equals/hashCode|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=equalshashcode_example_includes,indent=0]
+----
+|callSuper|False|Whether to include super in equals and hashCode calculations|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=equalshashcode_example_super,indent=0]
+----
+|includeFields|False|Should fields be included in equals/hashCode, in addition to properties|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_example_includeFields,indent=0]
+----
+|cache|False|Cache the hashCode computation. Should only be set to true if the class is immutable.|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tostring_example_cache,indent=0]
+----
+|useCanEqual|True|Should equals call canEqual helper method.|See http://www.artima.com/lejava/articles/equality.html
+|=======================================================================
+
+[[xform-TupleConstructor]]
+===== @groovy.transform.TupleConstructor
+
+The `@TupleConstructor` annotation aims at eliminating boilerplate code by generating constructors for you. A tuple
+constructor is created for each property, with default values (using the Java default values). For example, the
+following code will generate 3 constructors:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_simple,indent=0]
+----
+
+The first constructor is a no-arg constructor which allows the traditional map-style construction. It is worth noting
+that if the first property (or field) has type LinkedHashMap or if there is a single Map, AbstractMap or HashMap
+property (or field), then the map-style mapping is not available.
+
+The other constructors are generated by taking the properties in the order they are defined. Groovy will generate as
+many constructors as they are properties (or fields, depending on the options).
+
+The `@TupleConstructor` AST transformation accepts several configuration options:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|excludes|Empty list|List of properties to exclude from tuple constructor generation|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_excludes,indent=0]
+----
+|includes|Empty list|List of fields to include in tuple constructor generation|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includes,indent=0]
+----
+|includeFields|False|Should fields be included in tuple constructor generation, in addition to properties|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeFields,indent=0]
+----
+|includeProperties|True|Should properties be included in tuple constructor generation|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeProperties,indent=0]
+----
+|includeSuperFields|False|Should fields from super classes be included in tuple constructor generation|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeSuperFields,indent=0]
+----
+|includeSuperProperties|True|Should properties from super classes be included in tuple constructor generation|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeSuperProperties,indent=0]
+----
+|callSuper|False|Should super properties be called within a call to the parent constructor rather than set as properties|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_callSuper,indent=0]
+----
+|force|False|By default, the transformation will do nothing if a constructor is already defined. Setting this property
+to true, the constructor will be generated and it's your responsability to ensure that no duplicate constructor
+is defined|See javadocs
+|=======================================================================
+
+[[xform-Canonical]]
+===== @groovy.transform.Canonical
+
+The `@Canonical` AST transformation combines the effects of the <<xform-ToString,@ToString>>,
+<<xform-EqualsAndHashCode,@EqualsAndHashCode>> and <<xform-TupleConstructor,@TupleConstructor>>
+annotations:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=canonical_simple,indent=0]
+----
+
+A similar immutable class can be generated using the <<xform-Immutable,@Immutable>> AST transformation instead.
+The `@Canonical` AST transformation supports several configuration options:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|excludes|Empty list|List of properties to exclude from tuple constructor generation|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=canonical_example_excludes,indent=0]
+----
+|includes|Empty list|List of fields to include in tuple constructor generation|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=canonical_example_includes,indent=0]
+----
+|=======================================================================
+
+[[xform-InheritConstructors]]
+===== @groovy.transform.InheritConstructors
+
+The `@InheritConstructor` AST transformation aims at generating constructors matching super constructors for you. This
+is in particular useful when overridding exception classes:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=inheritconstructors_simple,indent=0]
+----
+
+[[xform-Category]]
+===== @groovy.lang.Category
+
+The `@Category` AST transformation simplifies the creation of Groovy categories. Historically, a Groovy category was
+written like this:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=oldstyle_category,indent=0]
+----
+
+The `@Category` transformation lets you write the same using an instance-style class, rather that a static class style.
+This removes the need for having the first argument of each method being the receiver. The category can be written like
+this:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=newstyle_category,indent=0]
+----
+
+Note that the mixed in class can be referenced using `this` instead. It's also worth noting that using instance fields
+in a category class is inherently unsafe: categories are not stateful (like traits).
+
+[[xform-IndexedProperty]]
+===== @groovy.transform.IndexedProperty
+
+The `@IndexedProperty` annotation aims at generating indexed getters/setters for properties of list/array types.
+This is in particular useful if you want to use a Groovy class from Java. While Groovy supports GPath to access properties,
+this is not available from Java. The `@IndexedProperty` annotation will generate indexed properties of the following
+form:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=indexedproperty_simple,indent=0]
+----
+
+[[xform-Lazy]]
+===== @groovy.lang.Lazy
+
+The `@Lazy` AST transformation implements lazy initialization of fields. For example, the following code:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=lazy_simple,indent=0]
+----
+
+will produce the following code:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=lazy_simple_generated,indent=0]
+----
+
+The default value which is used to initialize the field is the default constructor of the declaration type. It is possible
+to define a default value by using a closure on the right hand side of the property assignement, as in the following
+example:
+
+----
+include::../test/ASTTransformsTest.groovy[tags=lazy_default,indent=0]
+----
+
+In that case, the generated code looks like the following:
+
+----
+include::../test/ASTTransformsTest.groovy[tags=lazy_default_generated,indent=0]
+----
+
+If the field is declared volatile then initialization will be synchronized using the
+http://en.wikipedia.org/wiki/Double-checked_locking[double-checked locking] pattern.
+
+Using the `soft=true` parameter, the helper field will use a `SoftReference` instead, providing a simple way to
+implement caching. In that case, if the garbage collector decides to collect the reference, initialization will occur
+the next time the field is accessed.
+
+[[xform-Newify]]
+===== @groovy.lang.Newify
+
+The `@Newify` AST transformation is used to bring alternative syntaxes to construct objects:
+
+* Using the `Python` style:
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=newify_python,indent=0]
+----
+* or using the `Ruby` style:
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=newify_ruby,indent=0]
+----
+The `Ruby` version can be disabled by setting the `auto` flag to `false`.
+
+==== Class design annotations
+
+This category of annotations are aimed at simplifying the implementation of well-known design patterns (delegation,
+singleton, ...) by using a declarative style.
+
+[[xform-Delegate]]
+===== @groovy.lang.Delegate
+
+The `@Delegate` AST transformation aims at implementing the delegation design pattern. In the following class:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=delegating_class,indent=0]
+----
+
+The `when` field is annotated with `@Delegate`, meaning that the `Event` class will delegate calls to `Date` methods
+to the `when` field. In this case, the generated code looks like this:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=delegating_class_generated,indent=0]
+----
+
+Then you can call the `before` method, for example, directly on the `Event` class:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=delegation_assert,indent=0]
+----
+
+The behavior of the `@Delegate` AST transformation can be changed using the following parameters:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|interfaces|True|Should the interfaces implemented by the field be implemented by the class too|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=delegate_example_interfaces,indent=0]
+----
+|deprecated|false|If true, also delegates methods annotated with @Deprecated|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=delegate_deprecated_header,indent=0]
+include::../test/ASTTransformsTest.groovy[tags=delegate_deprecated_footer,indent=0]
+----
+|methodAnnotations|False|Whether to carry over annotations from the methods of the delegate to your delegating method.|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=delegate_example_annotations,indent=0]
+----
+|parameterAnnotations|False|Whether to carry over annotations from the method parameters of the delegate to your delegating method.|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=delegate_example_parameter_annotations,indent=0]
+----
+|excludes|Empty array|A list of methods to be excluded from delegation|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=delegate_example_excludes_header,indent=0]
+include::../test/ASTTransformsTest.groovy[tags=delegate_example_excludes_footer,indent=0]
+----
+|includes|Empty array|A list of methods to be included in delegation|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=delegate_example_includes_header,indent=0]
+include::../test/ASTTransformsTest.groovy[tags=delegate_example_includes_footer,indent=0]
+----
+|=======================================================================
+
+[[xform-Immutable]]
+===== @groovy.transform.Immutable
+
+[[xform-Memoized]]
+===== @groovy.transform.Memoized
+
+[[xform-Mixin]]
+===== @groovy.transform.Mixin
+
+[[xform-Singleton]]
+===== @groovy.lang.Singleton
+
+==== Logging improvements
+[[xform-Commons]]
+===== @groovy.util.logging.Commons
+
+[[xform-Log]]
+===== @groovy.util.logging.Log
+
+[[xform-Log4j]]
+===== @groovy.util.logging.Log4j
+
+[[xform-Slf4j]]
+===== @groovy.util.logging.Slf4j
+
+==== Declarative concurrency
+[[xform-Synchronized]]
+===== @groovy.transform.Synchronized
+
+[[xform-WithReadLock]]
+===== @groovy.transform.WithReadLock
+
+[[xform-WithWriteLock]]
+===== @groovy.transform.WithWriteLock
+
+==== Easier cloning and externalizing
+[[xform-AutoClone]]
+===== @groovy.transform.AutoClone
+
+[[xform-AutoExternalize]]
+===== @groovy.transform.AutoExternalize
+
+==== Safer scripting
+[[xform-ConditionalInterrupt]]
+===== @groovy.transform.ConditionalInterrupt
+
+[[xform-ThreadInterrupt]]
+===== @groovy.transform.ThreadInterrupt
+
+[[xform-TimedInterrupt]]
+===== @groovy.transform.TimedInterrupt
+
+==== Compiler directives
+[[xform-Field]]
+===== @groovy.transform.Field
+
+[[xform-PackageScope]]
+===== @groovy.transform.PackageScope
+
+[[xform-AnnotationCollector]]
+===== @groovy.transform.AnnotationCollector
+
+[[xform-DelegatesTo]]
+===== @groovy.lang.DelegatesTo
+
+[[xform-TypeChecked]]
+===== @groovy.transform.TypeChecked
+
+[[xform-CompileStatic]]
+===== @groovy.transform.CompileStatic
+
+[[xform-CompileDynamic]]
+===== @groovy.transform.CompileDynamic
+
+==== Swing patterns
+[[xform-Bindable]]
+===== @groovy.beans.Bindable
+[[xform-ListenerList]]
+===== @groovy.beans.ListenerList
+
+[[xform-Vetoable]]
+===== @groovy.beans.Vetoable
+
+
+==== Test assistance
+[[xform-NotYetImplemented]]
+===== @groovy.lang.NotYetImplemented
+
+[[xform-ASTTest]]
+===== @groovy.transform.ASTTest
+
+==== Grape handling
+[[xform-Grab]]
+===== @groovy.lang.Grab
+[[xform-GrabConfig]]
+===== @groovy.lang.GrabConfig
+[[xform-GrabExclude]]
+===== @groovy.lang.GrabExclude
+[[xform-GrabResolver]]
+===== @groovy.lang.GrabResolver
+[[xform-Grapes]]
+===== @groovy.lang.Grapes
+
+[[developing-ast-xforms]]
 === Developing AST transformations
 ==== Compilation phases guide
 ==== Local transformations
 ==== Global transformations
 ==== AST API guide
 ==== Testing AST transformations
-
-=== Available AST transformations
-==== Binding
-===== @Bindable
-===== @Vetoable
-==== Beans related
-===== Constructors
-====== @TupleConstructor
-====== @InheritConstructors
-===== @Singleton
-===== @IndexedProperty
-===== @ToString
-===== @EqualsAndHashCode
-===== @Canonical
-===== @Immutable
-===== @PackageScope
-===== @Field
-===== @ListenerList
-==== Synchronization and locking
-===== @Sinchronized
-===== @WithReadLock
-===== @WithWriterLock
-==== Static typing and compilation
-===== @TypeChecked
-====== Custom type checking extensions
-===== @CompileStatic
-====== @CompileDynamic
-==== Logging
-===== @Log
-===== @Commons
-===== @Slf4j
-===== @Log4j
-==== @ASTTest
-==== Metaprogramming
-===== @Category
-===== @Mixin
-==== Execution control
-===== @ThreadInterrupt
-===== @TimedInterrupt
-===== @ConditionalInterrupt
-==== Other
-===== @Grab
-====== @GrabResolver
-====== @GrabExclude
-===== @Delegate
-===== @Lazy
-===== @Memoized
-===== @AutoClone
-===== @AutoExternalizable
-===== @Newify
