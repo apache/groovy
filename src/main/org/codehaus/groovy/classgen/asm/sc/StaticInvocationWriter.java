@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -39,7 +38,6 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -47,7 +45,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
 import static org.objectweb.asm.Opcodes.*;
 
@@ -322,6 +319,17 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     @Override
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
+        ClassNode dynamicCallReturnType = origin.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
+        if (dynamicCallReturnType !=null) {
+            StaticTypesWriterController staticController = (StaticTypesWriterController) controller;
+            if (origin instanceof MethodCallExpression) {
+                ((MethodCallExpression) origin).setMethodTarget(null);
+            }
+            InvocationWriter dynamicInvocationWriter = staticController.getRegularInvocationWriter();
+            dynamicInvocationWriter.
+                    makeCall(origin, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
+            return;
+        }
         Object implicitReceiver = origin.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         if (implicitReceiver !=null && implicitThis) {
             String[] propertyPath = ((String) implicitReceiver).split("\\.");

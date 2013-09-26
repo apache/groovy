@@ -31,5 +31,6 @@ public enum StaticTypesMarker {
     DELEGATION_METADATA, // used to store the delegation strategy and delegate type of a closure when declared with @DelegatesTo
     IMPLICIT_RECEIVER, // if the receiver is implicit but not "this", store the name of the receiver (delegate or owner)
     PV_FIELDS_ACCESS, // set of private fields that are accessed from closures or inner classes
-    PV_METHODS_ACCESS // set of private methods that are accessed from closures or inner classes
+    PV_METHODS_ACCESS, // set of private methods that are accessed from closures or inner classes
+    DYNAMIC_RESOLUTION // call recognized by a type checking extension as a dynamic method call
 }
