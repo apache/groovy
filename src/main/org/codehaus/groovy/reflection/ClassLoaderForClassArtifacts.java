@@ -30,7 +30,7 @@ import groovy.lang.MetaMethod;
 
 public class ClassLoaderForClassArtifacts extends ClassLoader {
     public final SoftReference<Class> klazz;
-    private AtomicInteger classNamesCounter = new AtomicInteger(-1);
+    private final AtomicInteger classNamesCounter = new AtomicInteger(-1);
 
     public ClassLoaderForClassArtifacts(Class klazz) {
         super(klazz.getClassLoader());
