@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package groovy
 class ThreadMethodsTest extends GroovyTestCase {
     void testThreadNaming() {
         def t = Thread.start("MyNamedThread") {
-            sleep 2000 // give ourselves time to find the thread
+            sleep 3000 // give ourselves time to find the thread
         }
         def threadFoundByName = false
-        10.times {
+        30.times {
             if (!threadFoundByName) {
-                sleep 200 // a little bit of time for t to start
+                sleep 100 // a little bit of time for t to start
                 threadFoundByName = Thread.allStackTraces.keySet().any { thread -> thread.name == 'MyNamedThread' }
             }
         }
