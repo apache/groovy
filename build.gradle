@@ -59,6 +59,7 @@ allprojects {
     tasks.withType(Checkstyle) {
         ignoreFailures = true
         configFile = file("$rootProject.projectDir/config/checkstyle/checkstyle.xml")
+        configProperties = ['rootProject.projectDir': rootProject.projectDir]
     }
     
     if (useIndy()) {
