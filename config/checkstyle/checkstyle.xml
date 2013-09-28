@@ -150,7 +150,7 @@
                   value="((public)|(protected))\s+void\s+finalize\(\s*\)"/>
     </module>
     <module name="RegexpHeader">
-        <property name="headerFile" value="config/checkstyle/codeHeader.txt"/>
+        <property name="headerFile" value="${rootProject.projectDir}/config/checkstyle/codeHeader.txt"/>
     </module>
     <module name="JavadocPackage">
         <property name="allowLegacy" value="true"/>
