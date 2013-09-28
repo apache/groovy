@@ -134,32 +134,34 @@ configurations {
     spec
 }
 
-dependencies {
-    def antVersion = '1.9.2'
-    def asmVersion = '4.1'
-    def antlrVersion = '2.7.7'
-    def bndVersion = '0.0.401'
-    def checkstyleVersion = '4.4'
-    def coberturaVersion = '1.9.4.1'
-    def commonsCliVersion = '1.2'
-    def commonsHttpClientVersion = '3.1'
-    def eclipseOsgiVersion = '3.5.0.v20090520'
-    def gparsVersion = '1.1.0'
-    def ivyVersion = '2.3.0'
-    def jansiVersion = '1.11'
-    def jarjarVersion = '1.3'
-    def jlineVersion = '2.11'
-    def jmockVersion = '1.2.0'
-    def logbackVersion = '1.0.13'
-    def log4jVersion = '1.2.17'
-    def luceneVersion = '4.3.1'
-    def openejbVersion = '1.0'
-    def qdoxVersion = '1.12.1'
-    def simianVersion = '2.2.4'
-    def slf4jVersion = '1.7.5'
-    def xmlunitVersion = '1.3'
-    def xstreamVersion = '1.4.4'
+ext {
+    antVersion = '1.9.2'
+    asmVersion = '4.1'
+    antlrVersion = '2.7.7'
+    bndVersion = '0.0.401'
+    checkstyleVersion = '4.4'
+    coberturaVersion = '1.9.4.1'
+    commonsCliVersion = '1.2'
+    commonsHttpClientVersion = '3.1'
+    eclipseOsgiVersion = '3.5.0.v20090520'
+    gparsVersion = '1.1.0'
+    ivyVersion = '2.3.0'
+    jansiVersion = '1.11'
+    jarjarVersion = '1.3'
+    jlineVersion = '2.11'
+    jmockVersion = '1.2.0'
+    logbackVersion = '1.0.13'
+    log4jVersion = '1.2.17'
+    luceneVersion = '4.3.1'
+    openejbVersion = '1.0'
+    qdoxVersion = '1.12.1'
+    simianVersion = '2.2.4'
+    slf4jVersion = '1.7.5'
+    xmlunitVersion = '1.3'
+    xstreamVersion = '1.4.4'
+}
 
+dependencies {
     compilerCompile "antlr:antlr:$antlrVersion"
     compilerCompile "org.ow2.asm:asm:$asmVersion"
     compilerCompile "org.ow2.asm:asm-analysis:$asmVersion"
@@ -248,7 +250,7 @@ dependencies {
     }
 
 // TODO use antlr plugin
-//    antlr 'antlr:antlr:2.7.7'
+//    antlr "antlr:antlr:$antlrVersion"
     antlr "org.apache.ant:ant-antlr:$antVersion"
 
     // TODO remove once M12N refactoring finished
