@@ -22,7 +22,7 @@ import org.codehaus.groovy.tools.shell.Interpreter
 import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokenList
 import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokensString
 
-class ReflectionCompletorUnitTest extends GroovyTestCase {
+class ReflectionCompletorTest extends GroovyTestCase {
 
     void testGetFieldsAndMethodsArray() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(([] as String[]), "")
@@ -78,8 +78,8 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
     }
 
     interface ForTestInterface extends Comparable {
-        static final int forTestField = 1;
-        void forTestMethod();
+        static final int FOR_TEST_FIELD = 1
+        void forTestMethod()
     }
 
     void testGetFieldsAndMethodsAnonymousClass() {
@@ -90,7 +90,7 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
             @Override
             int compareTo(Object o) {return 0}
         }, "")
-        assertTrue('forTestField' in result)
+        assertTrue('FOR_TEST_FIELD' in result)
         assertTrue('forTestMethod()' in result)
         assertTrue('compareTo(' in result)
         GroovyLexer
@@ -99,8 +99,8 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
     }
 
     enum ForTestEnum {
-        val1, val2;
-        public static final ForTestEnum val3;
+        val1, val2
+        static final ForTestEnum VAL_3
         int enumMethod() {return 0}
         static int staticMethod() {return 1}
     }

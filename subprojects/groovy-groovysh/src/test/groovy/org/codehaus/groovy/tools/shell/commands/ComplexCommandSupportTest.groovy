@@ -57,7 +57,7 @@ class ComplexCommandSupportTest
 
     void testNewFunctionsBadDefault() {
         try {
-            ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar"], "foo") {}
+            new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar"], "foo") {}
             fail()
         } catch (AssertionError e) {
             // pass
