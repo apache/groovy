@@ -23,7 +23,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
 
     void testJsonBuilderConstructor() {
         new StringWriter().with { w ->
-            def json = new StreamingJsonBuilder( w, [a: 1, b: true])
+            new StreamingJsonBuilder( w, [a: 1, b: true])
             assert w.toString() == '{"a":1,"b":true}'
         }
     }

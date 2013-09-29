@@ -117,7 +117,6 @@ where lastname=:foo
 
     void testUnterminatedQuoteAtEndOfString() {
         String query = "select * from FOOD where country type = :foo and country = '"
-        String expected = "select * from FOOD where country type = ? and country = '"
 
         shouldFail(IllegalStateException) {
             ExtractIndexAndSql.from(query).newSql

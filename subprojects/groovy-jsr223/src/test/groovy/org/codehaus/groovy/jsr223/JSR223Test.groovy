@@ -78,7 +78,7 @@ class JSR223Test extends GroovyTestCase {
         assertEquals(GroovySystem.getVersion(), factory.getLanguageVersion())
     }
 
-    void testSimpleExpr() throws ScriptException {
+    void testSimpleExpr() {
         ScriptEngine engine = manager.getEngineByName("groovy")
         assertNotNull(engine)
 

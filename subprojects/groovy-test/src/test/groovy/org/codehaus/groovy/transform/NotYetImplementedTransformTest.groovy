@@ -73,7 +73,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
         assertNotNull output
 
         assertEquals "test method marked with @NotYetImplemented must throw an AssertionFailedError", 1, output.failureCount()
-        assertEquals "test method marked with @NotYetImplemented must throw an AssertionFailedError", AssertionFailedError.class, output.failures().nextElement().thrownException().class
+        assertEquals "test method marked with @NotYetImplemented must throw an AssertionFailedError", AssertionFailedError, output.failures().nextElement().thrownException().class
     }
 
     void testEmptyTestMethod() {
@@ -130,6 +130,6 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
         assertNotNull output
 
         assertEquals "test method marked with @NotYetImplemented must throw an AssertionFailedError", 1, output.failureCount
-        assertEquals "test method marked with @NotYetImplemented must throw an AssertionFailedError", AssertionFailedError.class, output.failures.first().exception.class
+        assertEquals "test method marked with @NotYetImplemented must throw an AssertionFailedError", AssertionFailedError, output.failures.first().exception.class
     }
 }
