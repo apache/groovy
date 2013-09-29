@@ -41,7 +41,7 @@ class JmxListenerFactoryTest extends GroovyTestCase {
     void testListenerEvent() {
         def eventCount = 0
         builder.timer(name: "test:type=timer", period: 400).start()
-        def lstr = builder.listener(from: "test:type=timer", call: {event ->
+        builder.listener(from: "test:type=timer", call: {event ->
             eventCount = eventCount + 1
         })
         sleep 1100
@@ -49,7 +49,7 @@ class JmxListenerFactoryTest extends GroovyTestCase {
 
         shouldFail {
             eventCount = 0
-            def lstr2 = builder.listener(from: "test:type=timer", call: {event ->
+            builder.listener(from: "test:type=timer", call: {event ->
                 eventCount = eventCount + 1
             })
             sleep 700

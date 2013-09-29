@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,11 @@ class JmxTimerFactoryTest extends GroovyTestCase {
         GroovyMBean timer = builder.timer()
         assert timer
         assert server.queryNames(new ObjectName("jmx.builder:type=TimerService,*"), null).size() > 0
-
         shouldFail {
-            GroovyMBean timer2 = builder.timer("This is a timer")
-            GroovyMBean timer3 = builder.timer(["foo"])
+            builder.timer("This is a timer")
+        }
+        shouldFail {
+            builder.timer(["foo"])
         }
     }
 
@@ -79,7 +80,6 @@ class JmxTimerFactoryTest extends GroovyTestCase {
             assertEqual timer2.getNotificationMessage(1), today
         }
     }
-
 
     void testTimerDate() {
         def today = new Date()
@@ -151,5 +151,4 @@ class JmxTimerFactoryTest extends GroovyTestCase {
             assert timers[2].getNotificationType(1) == "event.low.heartbeat"
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import javax.management.remote.rmi.RMIConnectorServer
 
 class JmxServerConnectorFactoryTest extends GroovyTestCase {
     def builder
-    int DEFAULT_PORT = 10997
+    int defaultPort = 10997
     def rmi
 
     void setUp() {
         builder = new JmxBuilder()
-        rmi = JmxConnectorHelper.createRmiRegistry(DEFAULT_PORT)
+        rmi = JmxConnectorHelper.createRmiRegistry(defaultPort)
     }
 
     void tearDown() {
@@ -40,7 +40,6 @@ class JmxServerConnectorFactoryTest extends GroovyTestCase {
         assert result.isActive()
         result.stop()
     }
-
 
     void testJmxServerConnectorClient() {
         RMIConnectorServer result = builder.serverConnector(port: rmi.port)

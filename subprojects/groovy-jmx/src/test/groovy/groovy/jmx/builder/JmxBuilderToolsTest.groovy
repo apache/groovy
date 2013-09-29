@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package groovy.jmx.builder
 import javax.management.ObjectName
 
 class JmxBuilderToolsTest extends GroovyTestCase {
+
     void testCapitalize() {
         assert JmxBuilderTools.capitalize("test") == "Test"
     }
@@ -81,12 +82,12 @@ class JmxBuilderToolsTest extends GroovyTestCase {
     void testIsClassMBean() {
         def object = new MockManagedObject()
         assert !JmxBuilderTools.isClassMBean(object.getClass())
-        assert !JmxBuilderTools.isClassMBean(MockManagedGroovyObject.class)
-        assert JmxBuilderTools.isClassMBean(MockJmxListener.class)
-        assert JmxBuilderTools.isClassMBean(JmxBuilderModelMBean.class)
+        assert !JmxBuilderTools.isClassMBean(MockManagedGroovyObject)
+        assert JmxBuilderTools.isClassMBean(MockJmxListener)
+        assert JmxBuilderTools.isClassMBean(JmxBuilderModelMBean)
 
         shouldFail {
-            assert JmxBuilderTools.isClassMBean(Class.class)
+            assert JmxBuilderTools.isClassMBean(Class)
         }
     }
 
@@ -123,6 +124,5 @@ class JmxBuilderToolsTest extends GroovyTestCase {
         assert bean.info().getOperation("doTwoThings")
         assert bean.info().getOperation("doThreeThings")
         assert bean.info().getOperation("doThreeThings").signature.size() == 3
-
     }
 }
