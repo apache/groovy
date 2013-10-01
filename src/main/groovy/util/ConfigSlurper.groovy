@@ -273,7 +273,7 @@ class ConfigSlurper {
 
 }
 /**
- * Since Groovy Script don't support overriding setProperty, we have to using a trick with the Binding to provide this
+ * Since Groovy Script doesn't support overriding setProperty, we have to using a trick with the Binding to provide this
  * functionality
  */
 class ConfigBinding extends Binding {
