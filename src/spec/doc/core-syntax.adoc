@@ -161,11 +161,30 @@ include::../test/SyntaxTest.groovy[tags=keywords_valid_id_after_dot,indent=0]
 === Quoted identifiers
 
 Quoted identifiers appear after the dot of a dotted expression.
-For instance, the +name+ part of the +person.name+ expression can be quoted with +person."name"+ or +person.'name'+.
+For instance, the +name+ part of the +person.name+ expression can be quoted with +person."name"+ or +person.\'name'+.
 This is particularly interesting when certain identifiers contain illegal characters that are forbidden by the Java Language Specification,
 but which are allowed by Groovy when quoted. For example, characters like a dash, a space, an exclamation mark, etc.
 
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=quoted_id,indent=0]
+----
 
+As we shall see in the following section on strings, Groovy provides different string literals.
+All kind of strings are actually allowed after the dot:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=quoted_id_with_all_strings,indent=0]
+----
+
+There's a difference between plain character strings and Groovy's GStrings (interpolated strings),
+as in that the latter case, the interpolated values are inserted in the final string for evaluating the whole identifier:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
+----
 
 == Strings
 
