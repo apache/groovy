@@ -170,7 +170,7 @@ but which are allowed by Groovy when quoted. For example, characters like a dash
 include::../test/SyntaxTest.groovy[tags=quoted_id,indent=0]
 ----
 
-As we shall see in the following section on strings, Groovy provides different string literals.
+As we shall see in the <<all-strings,following section on strings>>, Groovy provides different string literals.
 All kind of strings are actually allowed after the dot:
 
 [source,groovy]
@@ -186,6 +186,7 @@ as in that the latter case, the interpolated values are inserted in the final st
 include::../test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
 ----
 
+[[all-strings]]
 == Strings
 
 === Single quoted string
