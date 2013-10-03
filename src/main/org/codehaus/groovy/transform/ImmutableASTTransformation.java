@@ -25,8 +25,10 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -57,6 +59,7 @@ import static org.codehaus.groovy.transform.ToStringASTTransformation.createToSt
  *
  * @author Paul King
  * @author Andre Steingress
+ * @author Tim Yates
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ImmutableASTTransformation extends AbstractASTTransformation {
@@ -93,6 +96,8 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
+    static final String MEMBER_ADD_COPY_WITH = "copyWith";
+    static final String COPY_WITH_METHOD = "copyWith";
 
     private static final ClassNode DATE_TYPE = ClassHelper.make(Date.class);
     private static final ClassNode CLONEABLE_TYPE = ClassHelper.make(Cloneable.class);
@@ -107,8 +112,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode SORTEDMAP_CLASSNODE = ClassHelper.make(SortedMap.class);
     private static final ClassNode SET_CLASSNODE = ClassHelper.make(Set.class);
     private static final ClassNode MAP_CLASSNODE = ClassHelper.make(Map.class);
-
-
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -147,6 +150,11 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             }
             if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
                 createToString(cNode, false, false, null, null, false, true);
+            }
+            if( memberHasValue(node, MEMBER_ADD_COPY_WITH, true) &&
+                pList.size() > 0 &&
+                !hasDeclaredMethod( cNode, COPY_WITH_METHOD, 1 ) ) {
+                createCopyWith( cNode, pList ) ;
             }
         }
     }
@@ -555,6 +563,139 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         final Expression fieldExpr = new VariableExpression(fNode);
         final Expression expression = cloneDateExpr(fieldExpr);
         return safeExpression(fieldExpr, expression);
+    }
+
+    private Statement createCheckForProperty( final PropertyNode pNode ) {
+        return new BlockStatement( new Statement[] {
+            new IfStatement(
+                new BooleanExpression( 
+                    new MethodCallExpression(
+                        new VariableExpression( "map", HASHMAP_TYPE ),
+                        "containsKey",
+                        new ArgumentListExpression( new Expression[] {
+                            new ConstantExpression( pNode.getName() ),
+                        } )
+                    )
+                ),
+                new BlockStatement( new Statement[] {
+                    AbstractASTTransformUtil.declStatement(
+                        new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
+                        new MethodCallExpression(
+                            new VariableExpression( "map", HASHMAP_TYPE ),
+                            "get",
+                            new ArgumentListExpression( new Expression[] {
+                                new ConstantExpression( pNode.getName() ),
+                            } )
+                        )
+                    ),
+                    AbstractASTTransformUtil.declStatement(
+                        new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE ),
+                        new MethodCallExpression( VariableExpression.THIS_EXPRESSION,
+                                                  "get" + Verifier.capitalize( pNode.getName() ),
+                                                  MethodCallExpression.NO_ARGUMENTS )
+                    ),
+                    new IfStatement(
+                        new BooleanExpression(
+                            new BinaryExpression(
+                                new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ),
+                                new Token(Types.COMPARE_NOT_EQUAL, "!=", -1, -1),
+                                new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE )
+                            )
+                        ),
+                        new BlockStatement( new Statement[] {
+                            AbstractASTTransformUtil.assignStatement(
+                                new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE ),
+                                new VariableExpression( "newValue", ClassHelper.OBJECT_TYPE ) ),
+                            AbstractASTTransformUtil.assignStatement(
+                                new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
+                                ConstantExpression.TRUE ),
+                        }, new VariableScope() ),
+                        EmptyStatement.INSTANCE
+                    ),
+                    new ExpressionStatement(
+                        new MethodCallExpression(
+                            new VariableExpression( "construct", HASHMAP_TYPE ),
+                            "put",
+                            new ArgumentListExpression( new Expression[] {
+                                new ConstantExpression( pNode.getName() ),
+                                new VariableExpression( "oldValue", ClassHelper.OBJECT_TYPE )
+                            } )
+                        )
+                    )
+                }, new VariableScope() ),
+                new BlockStatement( new Statement[] {
+                    new ExpressionStatement(
+                        new MethodCallExpression(
+                            new VariableExpression( "construct", HASHMAP_TYPE ),
+                            "put",
+                            new ArgumentListExpression( new Expression[] {
+                                new ConstantExpression( pNode.getName() ),
+                                new MethodCallExpression( VariableExpression.THIS_EXPRESSION,
+                                                          "get" + Verifier.capitalize( pNode.getName() ),
+                                                          MethodCallExpression.NO_ARGUMENTS )
+                            } )
+                        )
+                    )
+                }, new VariableScope() )
+            )
+        }, new VariableScope() ) ;
+    }
+
+    private void createCopyWith( final ClassNode cNode, final List<PropertyNode> pList ) {
+        BlockStatement body = new BlockStatement();
+        body.addStatement( new IfStatement(
+                                new BooleanExpression(
+                                    new BinaryExpression(
+                                        equalsNullExpr( new VariableExpression( "map", ClassHelper.MAP_TYPE ) ),
+                                        new Token(Types.LOGICAL_OR, "||", -1, -1),
+                                        new BinaryExpression(
+                                            new MethodCallExpression(
+                                                new VariableExpression( "map", HASHMAP_TYPE ),
+                                                "size",
+                                                ArgumentListExpression.EMPTY_ARGUMENTS ),
+                                            new Token(Types.COMPARE_EQUAL, "==", -1, -1),
+                                            new ConstantExpression( 0 )
+                                        )
+                                    )
+                                ),
+                                new ReturnStatement( new VariableExpression( "this", cNode ) ),
+                                EmptyStatement.INSTANCE ) ) ;
+        body.addStatement( AbstractASTTransformUtil.declStatement(
+                                new VariableExpression( "dirty", ClassHelper.boolean_TYPE ),
+                                ConstantExpression.PRIM_FALSE ) ) ;
+        body.addStatement( AbstractASTTransformUtil.declStatement(
+                                new VariableExpression( "construct", HASHMAP_TYPE ),
+                                new ConstructorCallExpression( HASHMAP_TYPE, MethodCallExpression.NO_ARGUMENTS )
+                            ) ) ;
+
+        // Check for each property
+        for( final PropertyNode pNode : pList ) {
+            body.addStatement( createCheckForProperty( pNode ) ) ;
+        }
+
+        body.addStatement( new ReturnStatement(
+                                new TernaryExpression(
+                                    AbstractASTTransformUtil.isTrueExpr(
+                                        new VariableExpression( "dirty", ClassHelper.boolean_TYPE ) ),
+                                    new ConstructorCallExpression(
+                                        cNode,
+                                        new ArgumentListExpression( new Expression[] {
+                                            new VariableExpression( "construct", HASHMAP_TYPE )
+                                        } )
+                                    ),
+                                    new VariableExpression( "this", cNode )
+                                )
+                            ) ) ;
+
+
+        final ClassNode clonedNode = cNode.getPlainNodeReference() ;
+
+        cNode.addMethod( COPY_WITH_METHOD,
+                         ACC_PUBLIC | ACC_FINAL,
+                         clonedNode,
+                         new Parameter[] { new Parameter( new ClassNode( Map.class ), "map" ) },
+                         null,
+                         body );
     }
 
     /**
