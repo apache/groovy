@@ -17,6 +17,7 @@ package org.codehaus.groovy.transform
 
 /**
  * @author Paul King
+ * @author Tim Yates
  */
 class ImmutableTransformTest extends GroovyShellTestCase {
 
