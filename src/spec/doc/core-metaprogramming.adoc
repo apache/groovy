@@ -460,14 +460,105 @@ include::../test/ASTTransformsTest.groovy[tags=delegate_example_includes_footer,
 [[xform-Immutable]]
 ===== @groovy.transform.Immutable
 
+The `@Immutable` AST transformation simplifies the creation of immutable classes, that is to say classes for which
+members are deemed immutable. For that, all you have to do is annotating the class like in the following example:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=immutable_simple,indent=0]
+----
+
+Immutable classes generated with `@Immutable` are automatically made final. For a class to be immutable, you have to
+make sure that properties are of an immutable type (primitive or boxed types), of a known-immutable type or another
+class annotated with `@Immutable`. The effect of applying `@Immutable` to a class are pretty similar to those of
+applying the <<xform-Canonical,@Canonical>> AST transformation, but with an immutable class: automatic generation of
+`toString`, `equals` and `hashCode` methods for example, but trying to modify a property would throw a `ReadOnlyPropertyException`
+in that case.
+
+Since `@Immutable` relies on a predefined list of known immutable classes (like `java.net.URI` or `java.lang.String`
+and fails if you use a type which is not in that list, you are allowed to instruct the transformation that some types
+are deemed immutable thanks to the following parameters:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|knownImmutableClasses|Empty list|A list of classes which are deemed immutable.|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=immutable_example_knownimmutableclasses,indent=0]
+----
+|knownImmutables|Empty list|A list of property names which are deemed immutable.|
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=immutable_example_knownimmutables,indent=0]
+----
+|=======================================================================
+
 [[xform-Memoized]]
 ===== @groovy.transform.Memoized
 
-[[xform-Mixin]]
-===== @groovy.transform.Mixin
+The `@Memoized` AST transformations simplifies the implementation of caching by allowing the result of method calls
+to be cached just by annotating the method with `@Memoized`. Let's imagine the following method:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=memoized_long_computation,indent=0]
+----
+
+This emulates a long computation, based on the actual parameters of the method. Without `@Memoized`, each method call
+would take several seconds plus it would return a random result:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=memoized_long_computation_asserts,indent=0]
+----
+
+Adding `@Memoized` changes the semantics of the method by adding caching, based on the parameters:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=memoized_long_computation_cached,indent=0]
+----
+
+The size of the cache can be configured using two optional parameters:
+
+* _protectedCacheSize_: the number of results which are guaranteed not to be cleared after garbage collection
+* _maxCacheSize_: the maximum number of results that can be kept in memory
+
+By default, the size of the cache is unlimited and no cache result is protected from garbage collection. Setting a
+_protectedCacheSize>0_ would create an unlimited cache with some results protected. Setting _maxCacheSize>0_ would
+ create a limited cache but without any protection from garbage protection. Setting both would create a limited,
+ protected cache.
 
 [[xform-Singleton]]
 ===== @groovy.lang.Singleton
+
+The `@Singleton` annotation can be used to implement the singleton design pattern on a class. The singleton instance
+is defined eagerly by default, using class initialization, or lazily, in which case the field is initialized using
+double checked locking.
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=singleton_simple,indent=0]
+----
+
+By default, the singleton is created eagerly when the class is initialized and available through the `instance` property.
+It is possible to change the name of the singleton using the `property` parameter:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=singleton_example_property,indent=0]
+----
+
+And it is also possible to make initialization lazy using the `lazy` parameter:
+
+[source,groovy]
+----
+include::../test/ASTTransformsTest.groovy[tags=singleton_example_lazy,indent=0]
+----
+
+[[xform-Mixin]]
+===== @groovy.transform.Mixin
 
 ==== Logging improvements
 [[xform-Commons]]

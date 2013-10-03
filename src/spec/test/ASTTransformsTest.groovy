@@ -859,4 +859,174 @@ d.bar() // fails because method is not included
 
 '''
     }
+
+    void testImmutable() {
+        assertScript '''
+// tag::immutable_simple[]
+import groovy.transform.Immutable
+
+@Immutable
+class Point {
+    int x
+    int y
+}
+// end::immutable_simple[]
+
+def p = new Point(x:1,y:2)
+assert p.toString() == 'Point(1, 2)' // @ToString equivalent
+try {
+    p.x = 2
+} catch (ReadOnlyPropertyException rope) {
+    println 'ReadOnly property'
+}
+'''
+
+        assertScript '''
+// tag::immutable_example_knownimmutablesclasses[]
+import groovy.transform.Immutable
+import groovy.transform.TupleConstructor
+
+@TupleConstructor
+final class Point {
+    final int x
+    final int y
+    public String toString() { "($x,$y)" }
+}
+
+@Immutable//(knownImmutableClasses=[Point])
+class Triangle {
+    Point a,b,c
+}
+// end::immutable_example_knownimmutablesclasses[]
+
+def p = new Triangle(a:[47,22], b:[12,12],c:[88,17])
+assert p.toString() == 'Triangle((47,22), (12,12), (88,17))' // @ToString equivalent
+try {
+    p.a = [0,0]
+} catch (ReadOnlyPropertyException rope) {
+    println 'ReadOnly property'
+}
+'''
+
+
+        assert false:"the two following tests pass but should not because the members are mutable";
+
+        assertScript '''
+// tag::immutable_example_knownimmutables[]
+import groovy.transform.Immutable
+import groovy.transform.TupleConstructor
+
+@TupleConstructor
+final class Point {
+    final int x
+    final int y
+    public String toString() { "($x,$y)" }
+}
+
+@Immutable//(knownImmutables=['a','b','c'])
+class Triangle {
+    Point a,b,c
+}
+// end::immutable_example_knownimmutables[]
+
+def p = new Triangle(a:[47,22], b:[12,12],c:[88,17])
+assert p.toString() == 'Triangle((47,22), (12,12), (88,17))' // @ToString equivalent
+try {
+    p.a = [0,0]
+} catch (ReadOnlyPropertyException rope) {
+    println 'ReadOnly property'
+}
+'''
+    }
+
+    void testMemoized() {
+        assertScript '''
+import groovy.transform.Memoized
+
+// tag::memoized_long_computation[]
+long longComputation(int seed) {
+    // slow computation
+    Thread.sleep(1000*seed)
+    System.nanoTime()
+}
+// end::memoized_long_computation[]
+// tag::memoized_long_computation_asserts[]
+def x = longComputation(1)
+def y = longComputation(1)
+assert x!=y
+// end::memoized_long_computation_asserts[]
+'''
+
+        assertScript '''
+import groovy.transform.Memoized
+
+// tag::memoized_long_computation_cached[]
+@Memoized
+long longComputation(int seed) {
+    // slow computation
+    Thread.sleep(1000*seed)
+    System.nanoTime()
+}
+
+def x = longComputation(1) // returns after 1 second
+def y = longComputation(1) // returns immediatly
+def z = longComputation(2) // returns after 2 seconds
+assert x==y
+assert x!=z
+// end::memoized_long_computation_cached[]
+'''
+    }
+
+    void testSingleton() {
+        assertScript '''
+// tag::singleton_simple[]
+class Collaborator {
+    public static boolean init = false
+}
+@Singleton
+class GreetingService {
+    static void init() {}
+    GreetingService() {
+        Collaborator.init = true
+    }
+    String greeting(String name) { "Hello, $name!" }
+}
+GreetingService.init() // make sure class is initialized
+assert Collaborator.init == true // make sure singleton is eager
+assert GreetingService.instance.greeting('Bob') == 'Hello, Bob!'
+// end::singleton_simple[]
+'''
+
+        assertScript '''
+// tag::singleton_example_property[]
+@Singleton(property='theOne')
+class GreetingService {
+    String greeting(String name) { "Hello, $name!" }
+}
+
+assert GreetingService.theOne.greeting('Bob') == 'Hello, Bob!'
+// end::singleton_example_property[]
+'''
+
+        assertScript '''
+// tag::singleton_example_lazy[]
+class Collaborator {
+    public static boolean init = false
+}
+@Singleton(lazy=true)
+class GreetingService {
+    static void init() {}
+    GreetingService() {
+        Collaborator.init = true
+    }
+    String greeting(String name) { "Hello, $name!" }
+}
+GreetingService.init() // make sure class is initialized
+assert Collaborator.init == false
+GreetingService.instance
+assert Collaborator.init == true
+assert GreetingService.instance.greeting('Bob') == 'Hello, Bob!'
+// end::singleton_example_lazy[]
+'''
+    }
 }
