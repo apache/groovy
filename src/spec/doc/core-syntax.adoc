@@ -189,12 +189,91 @@ include::../test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
 [[all-strings]]
 == Strings
 
+Text literals are represented in the form of chain of characters called strings.
+Groovy lets you instantiate +java.lang.String+ objects, as well as GStrings (+groovy.lang.GString+)
+which are also called _interpolated strings_ in other programming languages.
+
 === Single quoted string
-=== Double quoted string
+
+Single quoted strings are a series of characters surounded by single quotes:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
+----
+
+
 === Triple single quoted string
+
+Triple single quoted strings are a series of characters surounded by single quotes:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=string_1,indent=0]
+----
+
+==== Escaping special characters
+
+You can escape single quotes with the the backslash character to avoid terminating the string literal:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=string_2,indent=0]
+----
+
+And you can escape the escape character itself with a double backslash:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=string_3,indent=0]
+----
+
+Some special characters also use the backslash as escape character:
+
+[cols="1,2" options="header"]
+|====
+|Escape sequence
+|Character
+
+|'\t'
+|tabulation
+
+|'\b'
+|backspace
+
+|'\n'
+|newline
+
+|'\r'
+|carriage return
+
+|'\f'
+|formfeed
+|====
+
+==== Unicode escape sequence
+
+For characters that are not present on your keyboard, you can use unicode escape sequances: 
+a backslash, followed by 'u', then 4 hexadecimal digits.
+
+For example, the Euro currency symbol can be represented with:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=string_4,indent=0]
+----
+
+
+
+=== Double quoted string
 === Triple double quoted string
+
 === Slashy string
 === Dollar slashy string
+
+=== Characters
+
+=== Useful extension methods on Strings and GStrings
 
 == Numbers
 

@@ -254,4 +254,25 @@ class SyntaxTest extends CompilableTestSupport {
         map.$/dollar slashy string/$
         // end::quoted_id_with_all_strings[]
     }
+
+    void testStrings() {
+        // tag::string_0[]
+        // end::string_0[]
+
+        // tag::string_1[]
+        'a single quoted string'
+        // end::string_1[]
+
+        // tag::string_2[]
+        'an escaped single quote: \' needs a backslash'
+        // end::string_2[]
+
+        // tag::string_3[]
+        'an escaped escape character: \\ needs a double backslash'
+        // end::string_3[]
+
+        // tag::string_4[]
+        'The Euro currency symbol: \u20AC'
+        // end::string_4[]
+    }
 }
