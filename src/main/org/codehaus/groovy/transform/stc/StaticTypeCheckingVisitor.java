@@ -2574,11 +2574,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode targetType = expression.getType();
             Expression source = expression.getExpression();
             ClassNode expressionType = getType(source);
-            if (!checkCast(targetType, source)) {
+            if (!checkCast(targetType, source) && !isDelegateOrOwnerInClosure(source)) {
                 addStaticTypeError("Inconvertible types: cannot cast " + expressionType.toString(false) + " to " + targetType.toString(false), expression);
             }
         }
         storeType(expression, expression.getType());
+    }
+
+    private boolean isDelegateOrOwnerInClosure(Expression exp) {
+        return typeCheckingContext.getEnclosingClosure()!=null &&
+                exp instanceof VariableExpression &&
+                (("delegate".equals(((VariableExpression) exp).getName())) || ("owner".equals(((VariableExpression) exp).getName())));
     }
 
     protected boolean checkCast(final ClassNode targetType, final Expression source) {

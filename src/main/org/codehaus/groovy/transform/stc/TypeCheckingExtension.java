@@ -326,4 +326,42 @@ public class TypeCheckingExtension {
         }
         return result;
     }
+
+    /**
+     * Builds a parametrized class node for List, to represent List&lt;X&gt;
+     * @param componentType the classnode for the component type of the list
+     * @return a classnode representing List&lt;componentType&gt;
+     * @since 2.2.0
+     */
+    public ClassNode buildListType(ClassNode componentType) {
+        return parameterizedType(ClassHelper.LIST_TYPE, componentType);
+    }
+
+    /**
+     * Builds a parametrized class node representing the Map&lt;keyType,valueType&gt; type.
+     * @param keyType the classnode type of the key
+     * @param valueType the classnode type of the value
+     * @return a class node for Map&lt;keyType,valueType&gt;
+     * @since 2.2.0
+     */
+    public ClassNode buildMapType(ClassNode keyType, ClassNode valueType) {
+        return parameterizedType(ClassHelper.MAP_TYPE, keyType, valueType);
+    }
+
+    public boolean isStaticMethodCallOnClass(MethodCall call, ClassNode receiver) {
+        if (call instanceof StaticMethodCallExpression) {
+            return ((StaticMethodCallExpression) call).getOwnerType().equals(receiver);
+        } else if (call instanceof MethodCallExpression) {
+            Expression objectExpr = ((MethodCallExpression) call).getObjectExpression();
+            if (objectExpr instanceof ClassExpression && objectExpr.getType().equals(receiver)) {
+                return true;
+            }
+            if (objectExpr instanceof ClassExpression && ClassHelper.CLASS_Type.equals(objectExpr.getType())) {
+                GenericsType[] genericsTypes = objectExpr.getType().getGenericsTypes();
+                return genericsTypes!=null && genericsTypes.length==1 && genericsTypes[0].getType().equals(receiver);
+            }
+        }
+        return false;
+    }
+
 }

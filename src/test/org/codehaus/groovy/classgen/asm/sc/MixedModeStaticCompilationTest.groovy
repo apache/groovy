@@ -25,12 +25,15 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
     protected void setUp() {
         super.setUp()
         extraSetup()
+        removeCustomizer()
+    }
+
+    private void removeCustomizer() {
+        def customizers = config.compilationCustomizers
+        customizers.removeAll { it instanceof ASTTransformationCustomizer }
     }
 
     void testDynamicMethodCall() {
-        def customizers = config.compilationCustomizers
-        customizers.removeAll { it instanceof ASTTransformationCustomizer}
-        //config.optimizationOptions.indy = true
         try {
             assertScript '''import groovy.transform.CompileStatic
                 @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -49,9 +52,6 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
     }
 
     void testDynamicMethodCallWithStaticCallArgument() {
-        def customizers = config.compilationCustomizers
-        customizers.removeAll { it instanceof ASTTransformationCustomizer}
-        //config.optimizationOptions.indy = true
         try {
             assertScript '''import groovy.transform.CompileStatic
                 @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -70,9 +70,6 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
     }
 
     void testDynamicMethodCallOnField() {
-        def customizers = config.compilationCustomizers
-        customizers.removeAll { it instanceof ASTTransformationCustomizer}
-        //config.optimizationOptions.indy = true
         try {
             assertScript '''import groovy.transform.CompileStatic
                 @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -94,9 +91,6 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
     }
 
     void testDynamicProperty() {
-        def customizers = config.compilationCustomizers
-        customizers.removeAll { it instanceof ASTTransformationCustomizer}
-        //config.optimizationOptions.indy = true
         try {
             assertScript '''import groovy.transform.CompileStatic
                 @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -117,9 +111,6 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
     }
 
     void testDynamicPropertyMixedWithStatic() {
-        def customizers = config.compilationCustomizers
-        customizers.removeAll { it instanceof ASTTransformationCustomizer}
-        //config.optimizationOptions.indy = true
         try {
             assertScript '''import groovy.transform.CompileStatic
                 @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -144,9 +135,6 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
     }
 
     void testDynamicPropertyAsStaticArgument() {
-        def customizers = config.compilationCustomizers
-        customizers.removeAll { it instanceof ASTTransformationCustomizer}
-        //config.optimizationOptions.indy = true
         try {
             assertScript '''import groovy.transform.CompileStatic
                 @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -171,9 +159,6 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
     }
 
     void testDynamicVariable() {
-        def customizers = config.compilationCustomizers
-        customizers.removeAll { it instanceof ASTTransformationCustomizer}
-        //config.optimizationOptions.indy = true
         try {
             shell.setVariable("myVariable", 123)
             assertScript '''import groovy.transform.CompileStatic
@@ -189,9 +174,6 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
     }
 
     void testDynamicVariableMixedWithStaticCall() {
-        def customizers = config.compilationCustomizers
-        customizers.removeAll { it instanceof ASTTransformationCustomizer}
-        //config.optimizationOptions.indy = true
         try {
             shell.setVariable("myVariable", 123)
             assertScript '''import groovy.transform.CompileStatic
@@ -213,9 +195,6 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
     }
 
     void testDynamicVariableAsStaticCallParameter() {
-        def customizers = config.compilationCustomizers
-        customizers.removeAll { it instanceof ASTTransformationCustomizer}
-        //config.optimizationOptions.indy = true
         try {
             shell.setVariable("myVariable", 123)
             assertScript '''import groovy.transform.CompileStatic
@@ -235,4 +214,32 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
             // println astTrees
         }
     }
+
+    void testAllowMetaClass() {
+        assertScript '''import groovy.transform.CompileStatic
+                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+                void foo() {
+                    String.metaClass.up = { ((String)delegate).toUpperCase() }
+                }
+                foo()
+                assert 'aaa'.up() == 'AAA'
+'''
+    }
+
+    void testRecognizeStaticMethodCall() {
+        assertScript '''import groovy.transform.CompileStatic
+                @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
+                Map<String, Integer> foo() {
+                    String.map()
+                }
+                @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
+                List<Integer> bar() {
+                    Date.list()
+                }
+                String.metaClass.static.map = { [a: 1, b:2 ]}
+                Date.metaClass.static.list = { [1,2] }
+                assert foo().values().sort() == bar()
+        '''
+    }
+
 }
