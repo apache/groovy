@@ -234,8 +234,8 @@ class DateGDKTest extends GroovyTestCase {
     }
 
     void testCopyWith() {
-        Date janOne1970 = new Date(0)
-        Date aprilSix = janOne1970.copyWith(dayOfMonth: 6, month: Calendar.APRIL)
+        Date febOne1970 = new Date(70, 1, 1)
+        Date aprilSix = febOne1970.copyWith(dayOfMonth: 6, month: Calendar.APRIL)
         assertEquals '1970-04-06', aprilSix.format('yyyy-MM-dd')
         Map updates = [:]
         updates[Calendar.DAY_OF_MONTH] = 4
