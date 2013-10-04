@@ -21,8 +21,7 @@ import org.codehaus.groovy.runtime.callsite.CallSite;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -31,7 +30,7 @@ import groovy.lang.MetaMethod;
 
 public class ClassLoaderForClassArtifacts extends ClassLoader {
     public final SoftReference<Class> klazz;
-    private final Set<String> allocatedNames = new HashSet<String>();
+    private final AtomicInteger classNamesCounter = new AtomicInteger(-1);
 
     public ClassLoaderForClassArtifacts(Class klazz) {
         super(klazz.getClassLoader());
@@ -58,26 +57,15 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
         return super.loadClass(name);
     }
 
-    public synchronized String createClassName(Method method) {
+    public String createClassName(Method method) {
         final String name;
         final String clsName = klazz.get().getName();
         if (clsName.startsWith("java."))
           name = clsName.replace('.','_') + "$" + method.getName();
         else
           name = clsName + "$" + method.getName();
-
-        if (!allocatedNames.contains(name)) {
-          allocatedNames.add(name);
-          return name;
-        }
-
-        for (int i = 0; ; i++) {
-            String newName = name + "$" + i;
-            if (!allocatedNames.contains(newName)) {
-              allocatedNames.add(newName);
-              return newName;
-            }
-        }
+        int suffix = classNamesCounter.getAndIncrement();
+        return suffix == -1? name : name + "$" + suffix;
     }
 
     public Constructor defineClassAndGetConstructor(final String name, final byte[] bytes) {
