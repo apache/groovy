@@ -67,7 +67,6 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
                 return;
             }
             
-            // GROOVY-4548: temp fix to stop CCE until proper support is added
             if (de.isMultipleAssignmentDeclaration()) {
                 addError("Annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", parent);
                 return;

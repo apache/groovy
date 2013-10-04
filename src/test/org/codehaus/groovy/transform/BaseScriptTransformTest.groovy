@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,6 @@ class BaseScriptTransformTest extends CompilableTestSupport {
         """
     }
 
-    
     void testBaseScriptFromCompiler(){
         CompilerConfiguration config = new CompilerConfiguration()
         config.scriptBaseClass = MyCustomScript.name
@@ -122,10 +121,6 @@ class BaseScriptTransformTest extends CompilableTestSupport {
             assert meaningOfLife == 42
         ''')
     }
-    
-
-    // old
-
 }
 
 abstract class MyCustomScript extends Script {}

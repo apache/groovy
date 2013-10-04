@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import java.lang.annotation.Target;
 /**
  * Variable annotation used for changing the base script class of the current script.
  * <p>
- * The type of the variable must be set and it must extend {@link groovy.lang.Script} class
- * than the type of the variable became the base script class of the current script.
+ * The type of the variable annotated with {@BaseScript} must extend {@link groovy.lang.Script}.
+ * It will be used as the base script class.
  * The annotated variable will become shortcut to <code>this</code> object.
  * Using this annotation will override base script set by Groovy compiler or
  * {@link org.codehaus.groovy.control.CompilerConfiguration} of {@link groovy.lang.GroovyShell}
