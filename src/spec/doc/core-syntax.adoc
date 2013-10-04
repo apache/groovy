@@ -202,6 +202,7 @@ Single quoted strings are a series of characters surounded by single quotes:
 include::../test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
 ----
 
+NOTE: Single quoted strings are plain +java.lang+String+ and don't support interpolation.
 
 === Triple single quoted string
 
@@ -211,6 +212,8 @@ Triple single quoted strings are a series of characters surounded by single quot
 ----
 include::../test/SyntaxTest.groovy[tags=string_1,indent=0]
 ----
+
+NOTE: Triple single quoted strings are plain +java.lang+String+ and don't support interpolation.
 
 ==== Escaping special characters
 
@@ -263,15 +266,49 @@ For example, the Euro currency symbol can be represented with:
 include::../test/SyntaxTest.groovy[tags=string_4,indent=0]
 ----
 
-
-
 === Double quoted string
+
+Double quoted strings are a series of characters surrounded by double quotes:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=string_4,indent=0]
+----
+
+NOTE: Double quoted strings are plain +java.lang.String+ if there's no interpolated expression, 
+but are +groovy.lang.GString+ instances if interpolation is present.
+
+==== String interpolation
+
+Any Groovy expression can be interpolated in all string literals, apart from single and triple single quoted strings.
+Interpolation is the act of replacing a placeholder in the string with its value upon evaluation of the string.
+The placeholder expressions are surrounded by +${}+ or prefixed with +$+ for dotted expressions.
+
+
+
 === Triple double quoted string
 
 === Slashy string
 === Dollar slashy string
 
+=== String summary table
+
+
+
 === Characters
+
+Unlike Java, Groovy doesn't have an explicit character literal.
+However, you can be explicit about making a Groovy string an actual character, by three different means:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=char,indent=0]
+----
+<1> by being explicit when declaring a variable holding the character by specifying the +char+ type
+<2> by using type coercion with the +as+ operator
+<3> by using a cast to char operation
+
+NOTE: Option <1> is interesting when the character is held in a variable, but <2> and <3> are more interesting when a char value must be passed as argument of a method call.
 
 === Useful extension methods on Strings and GStrings
 

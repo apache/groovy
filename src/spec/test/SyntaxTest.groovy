@@ -274,5 +274,22 @@ class SyntaxTest extends CompilableTestSupport {
         // tag::string_4[]
         'The Euro currency symbol: \u20AC'
         // end::string_4[]
+
+        // tag::string_5[]
+        "a double quoted string"
+        // end::string_5[]
+    }
+
+    void testCharacters() {
+        // tag::char[]
+        char c1 = 'A' // <1>
+        assert c1 instanceof Character
+
+        def c2 = 'B' as char // <2>
+        assert c2 instanceof Character
+
+        def c3 = (char)'C' // <3>
+        assert c3 instanceof Character
+        // end::char[]
     }
 }
