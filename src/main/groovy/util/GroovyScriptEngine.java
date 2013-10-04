@@ -74,7 +74,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     private static class LocalData {
         CompilationUnit cu;
         StringSetMap dependencyCache = new StringSetMap();
-        Map<String,String> precompiledEntries = new HashMap();
+        Map<String,String> precompiledEntries = new HashMap<String,String>();
     }
     private static WeakReference<ThreadLocal<LocalData>> localData = new WeakReference<ThreadLocal<LocalData>>(null);
     private static synchronized ThreadLocal<LocalData> getLocalData() {
@@ -90,7 +90,13 @@ public class GroovyScriptEngine implements ResourceConnector {
     private final ClassLoader parentLoader;
     private final GroovyClassLoader groovyLoader;
     private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();
-    private CompilerConfiguration config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+    private CompilerConfiguration config;
+
+    {
+        config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+        config.setSourceEncoding("UTF-8");
+    }
+
 
     //TODO: more finals?
 
@@ -113,13 +119,14 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     private class ScriptClassLoader extends GroovyClassLoader {
+
+
         public ScriptClassLoader(GroovyClassLoader loader) {
             super(loader);
-            setResLoader();
         }
 
-        public ScriptClassLoader(ClassLoader loader) {
-            super(loader);
+        public ScriptClassLoader(ClassLoader loader, CompilerConfiguration config) {
+            super(loader, config, false);
             setResLoader();
         }
 
@@ -325,7 +332,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                 if (parentLoader instanceof GroovyClassLoader) {
                     return new ScriptClassLoader((GroovyClassLoader) parentLoader);
                 } else {
-                    return new ScriptClassLoader(parentLoader);
+                    return new ScriptClassLoader(parentLoader, config);
                 }
             }
         });
@@ -509,7 +516,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         try {
             if (isSourceNewer(entry)) {
                 try {
-                    String encoding = conn.getContentEncoding() != null ? conn.getContentEncoding() : "UTF-8";
+                    String encoding = conn.getContentEncoding() != null ? conn.getContentEncoding() : config.getSourceEncoding();
                     String content = IOGroovyMethods.getText(conn.getInputStream(), encoding);
                     clazz = groovyLoader.parseClass(content, path);
                 } catch (IOException e) {
