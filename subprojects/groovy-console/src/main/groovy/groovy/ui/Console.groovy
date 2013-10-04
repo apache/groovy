@@ -1271,10 +1271,9 @@ options:
         def component = e.getComponent()
         if (component == outputArea || component == inputArea) {
             def rect = component.getVisibleRect()
-            prefs.putInt("${component.name}Width", rec.getWidth())
-            prefs.putInt("${component.name}Height", rec.getHeight())
-        }
-        else {
+            prefs.putInt("${component.name}Width", rect.getWidth().intValue())
+            prefs.putInt("${component.name}Height", rect.getHeight().intValue())
+        } else {
             prefs.putInt("${component.name}Width", component.width)
             prefs.putInt("${component.name}Height", component.height)
         }
