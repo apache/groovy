@@ -63,7 +63,6 @@ import javax.swing.event.DocumentListener
  *
  * Allows user to interactively enter and execute Groovy.
  *
- * @version $Id$
  * @author Danno Ferrin
  * @author Dierk Koenig, changed Layout, included Selection sensitivity, included ObjectBrowser
  * @author Alan Green more features: history, System.out capture, bind result to _
@@ -1270,8 +1269,15 @@ options:
 
     void componentResized(ComponentEvent e) {
         def component = e.getComponent()
-        prefs.putInt("${component.name}Width", component.width)
-        prefs.putInt("${component.name}Height", component.height)
+        if (component == outputArea || component == inputArea) {
+            def rect = component.getVisibleRect()
+            prefs.putInt("${component.name}Width", rec.getWidth())
+            prefs.putInt("${component.name}Height", rec.getHeight())
+        }
+        else {
+            prefs.putInt("${component.name}Width", component.width)
+            prefs.putInt("${component.name}Height", component.height)
+        }
     }
 
     public void componentShown(ComponentEvent e) { }
