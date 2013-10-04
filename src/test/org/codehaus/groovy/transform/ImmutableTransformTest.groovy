@@ -509,6 +509,21 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testKnownImmutableClassesWithCoercedConstruction() {
+        assertScript '''
+            @groovy.transform.Immutable(knownImmutableClasses = [Address])
+            class Person {
+                String first, last
+                Address address
+            }
+
+            // ok, not really immutable but deem it such for the purpose of this test
+            @groovy.transform.Canonical class Address { String street }
+
+            assert new Person(first: 'John', last: 'Doe', address: ['Street']).toString() == 'Person(John, Doe, Address(Street))\'
+        '''
+    }
+
     void testKnownImmutableClassesMissing() {
         def msg = shouldFail(RuntimeException) {
             evaluate '''

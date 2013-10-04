@@ -35,6 +35,7 @@ import org.codehaus.groovy.runtime.ReflectionMethodInvoker;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -578,8 +579,22 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
 
         if (field == null || field instanceof Enum || inImmutableList(field.getClass().getName()) || knownImmutableClasses.contains(field.getClass()))
             return field;
-        if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection) field);
         if (field.getClass().getAnnotation(MY_CLASS) != null) return field;
+        if (field instanceof Collection) {
+            Field declaredField;
+            try {
+                declaredField = clazz.getDeclaredField(fieldName);
+                Class<?> fieldType = declaredField.getType();
+                if (Collection.class.isAssignableFrom(fieldType)) {
+                    return DefaultGroovyMethods.asImmutable((Collection) field);
+                }
+                // potentially allow Collection coercion for a constructor
+                if (fieldType.getAnnotation(MY_CLASS) != null) return field;
+                if (inImmutableList(fieldType.getName()) || knownImmutableClasses.contains(fieldType)) {
+                    return field;
+                }
+            } catch (NoSuchFieldException ignore) { }
+        }
         final String typeName = field.getClass().getName();
         throw new RuntimeException(createErrorMessage(clazz.getName(), fieldName, typeName, "constructing"));
     }
