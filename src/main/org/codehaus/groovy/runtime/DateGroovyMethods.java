@@ -124,6 +124,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      *   <tr><td>year</td><td>Calendar.YEAR</td></tr>
      *   <tr><td>month</td><td>Calendar.MONTH</td></tr>
      *   <tr><td>date</td><td>Calendar.DATE</td></tr>
+     *   <tr><td>dayOfMonth</td><td>Calendar.DATE</td></tr>
      *   <tr><td>hourOfDay</td><td>Calendar.HOUR_OF_DAY</td></tr>
      *   <tr><td>minute</td><td>Calendar.MINUTE</td></tr>
      *   <tr><td>second</td><td>Calendar.SECOND</td></tr>
@@ -158,6 +159,18 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Legacy alias for copyWith. Will be deprecated and removed in future versions of Groovy.
+     *
+     * @see #copyWith(java.util.Calendar, java.util.Map)
+     * @since 1.7.3
+     */
+    public static Calendar updated(Calendar self, Map<Object, Integer> updates) {
+        Calendar result = (Calendar) self.clone();
+        set(result, updates);
+        return result;
+    }
+
+    /**
      * Support creating a new Date having similar properties to
      * an existing Date (which remains unaltered) but with
      * some fields updated according to a Map of changes.
@@ -167,7 +180,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * import static java.util.Calendar.YEAR
      * def now = Calendar.instance
      * def nextYear = now[YEAR] + 1
-     * def oneYearFromNow = now.updated(year: nextYear)
+     * def oneYearFromNow = now.copyWith(year: nextYear)
      * println now.time
      * println oneYearFromNow.time
      * </pre>
@@ -178,21 +191,31 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Calendar#set(int, int)
      * @see java.util.Calendar#set(int, int, int, int, int, int)
      * @see #set(java.util.Calendar, java.util.Map)
-     * @since 1.7.3
+     * @since 2.2.0
      */
-    public static Calendar updated(Calendar self, Map<Object, Integer> updates) {
+    public static Calendar copyWith(Calendar self, Map<Object, Integer> updates) {
         Calendar result = (Calendar) self.clone();
-        for (Map.Entry<Object, Integer> entry : updates.entrySet()) {
-            Object key = entry.getKey();
-            if (key instanceof String) key = CAL_MAP.get(key);
-            if (key instanceof Integer) result.set((Integer) key, entry.getValue());
-        }
+        set(result, updates);
         return result;
     }
 
     /**
      * Support mutating a Date with a Map.
      * <p>
+     * The map values are the normal values provided as the
+     * second parameter to <code>java.util.Calendar#set(int, int)</code>.
+     * The keys can either be the normal fields values provided as
+     * the first parameter to that method or one of the following Strings:
+     * <table border="1" cellpadding="4">
+     *   <caption>Calendar index values</caption>
+     *   <tr><td>year</td><td>Calendar.YEAR</td></tr>
+     *   <tr><td>month</td><td>Calendar.MONTH</td></tr>
+     *   <tr><td>date</td><td>Calendar.DATE</td></tr>
+     *   <tr><td>dayOfMonth</td><td>Calendar.DATE</td></tr>
+     *   <tr><td>hourOfDay</td><td>Calendar.HOUR_OF_DAY</td></tr>
+     *   <tr><td>minute</td><td>Calendar.MINUTE</td></tr>
+     *   <tr><td>second</td><td>Calendar.SECOND</td></tr>
+     * </table>
      * Example usage:
      * <pre>
      * import static java.util.Calendar.YEAR
@@ -216,6 +239,19 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Legacy alias for copyWith. Will be deprecated and removed in future versions of Groovy.
+     *
+     * @see #copyWith(java.util.Date, java.util.Map)
+     * @since 1.7.3
+     */
+    public static Date updated(Date self, Map<Object, Integer> updates) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(self);
+        set(cal, updates);
+        return cal.getTime();
+    }
+
+    /**
      * Support creating a new Date having similar properties to
      * an existing Date (which remains unaltered) but with
      * some fields updated according to a Map of changes.
@@ -225,7 +261,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * import static java.util.Calendar.YEAR
      * def today = new Date()
      * def nextYear = today[YEAR] + 1
-     * def oneYearFromNow = today.updated(year: nextYear)
+     * def oneYearFromNow = today.copyWith(year: nextYear)
      * println today
      * println oneYearFromNow
      * </pre>
@@ -235,11 +271,10 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return The newly created Date
      * @see java.util.Calendar#set(int, int)
      * @see #set(java.util.Date, java.util.Map)
-     * @see #set(java.util.Calendar, java.util.Map)
-     * @see #updated(java.util.Calendar, java.util.Map)
-     * @since 1.7.3
+     * @see #copyWith(java.util.Calendar, java.util.Map)
+     * @since 2.2.0
      */
-    public static Date updated(Date self, Map<Object, Integer> updates) {
+    public static Date copyWith(Date self, Map<Object, Integer> updates) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(self);
         set(cal, updates);
@@ -252,6 +287,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
         CAL_MAP.put("year", Calendar.YEAR);
         CAL_MAP.put("month", Calendar.MONTH);
         CAL_MAP.put("date", Calendar.DATE);
+        CAL_MAP.put("dayOfMonth", Calendar.DATE);
         CAL_MAP.put("hourOfDay", Calendar.HOUR_OF_DAY);
         CAL_MAP.put("minute", Calendar.MINUTE);
         CAL_MAP.put("second", Calendar.SECOND);
