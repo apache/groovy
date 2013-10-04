@@ -53,7 +53,7 @@ import org.objectweb.asm.Opcodes;
  * If the expression exp is a constant or only a variable access the method call will
  * not be transformed. But this will still cause a call on the injected logger.
  *
- * @since 2.3.0
+ * @since 2.2.0
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
