@@ -78,8 +78,15 @@ include::jmx.adoc[]
 
 === Creating Swing UIs
 === Security
-=== Design patterns in Groovy
+
+:leveloffset: 2
+
+include::design-pattern-in-groovy.adoc[]
+
+:leveloffset: 0
+
 == Acknowledgements
+
 :leveloffset: 2
 include::license-contributors.adoc[]
 :leveloffset: 0
