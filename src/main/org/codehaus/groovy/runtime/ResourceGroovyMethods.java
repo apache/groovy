@@ -609,6 +609,15 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Read the content of this URL and returns it as a String.
+     * The default connection parameters can be modified by adding keys to the
+     * <i>parameters map</i>:
+     * <ul>
+     * <li>connectTimeout : the connection timeout</li>
+     * <li>readTimeout : the read timeout</li>
+     * <li>useCaches : set the use cache property for the URL connection</li>
+     * <li>allowUserInteraction : set the user interaction flag for the URL connection</li>
+     * <li>requestProperties : a map of properties to be passed to the URL connection</li>
+     * </ul>
      *
      * @param url        URL to read content from
      * @param parameters connection parameters
@@ -1893,7 +1902,16 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a buffered input stream for this URL.
-     *
+     * The default connection parameters can be modified by adding keys to the
+     * <i>parameters map</i>:
+     * <ul>
+     * <li>connectTimeout : the connection timeout</li>
+     * <li>readTimeout : the read timeout</li>
+     * <li>useCaches : set the use cache property for the URL connection</li>
+     * <li>allowUserInteraction : set the user interaction flag for the URL connection</li>
+     * <li>requestProperties : a map of properties to be passed to the URL connection</li>
+     * </ul>
+     * 
      * @param url        a URL
      * @param parameters connection parameters
      * @return a BufferedInputStream for the URL
@@ -1920,6 +1938,15 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a buffered reader for this URL.
+     * The default connection parameters can be modified by adding keys to the
+     * <i>parameters map</i>:
+     * <ul>
+     * <li>connectTimeout : the connection timeout</li>
+     * <li>readTimeout : the read timeout</li>
+     * <li>useCaches : set the use cache property for the URL connection</li>
+     * <li>allowUserInteraction : set the user interaction flag for the URL connection</li>
+     * <li>requestProperties : a map of properties to be passed to the URL connection</li>
+     * </ul>
      *
      * @param url        a URL
      * @param parameters connection parameters
