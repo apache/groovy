@@ -22,14 +22,14 @@ import javax.swing.text.StyleConstants
 build(Defaults)
 
 // menu bar tweaks
-System.setProperty("apple.laf.useScreenMenuBar", "true")
-System.setProperty("com.apple.mrj.application.apple.menu.about.name", "GroovyConsole")
+System.setProperty('apple.laf.useScreenMenuBar', 'true')
+System.setProperty('com.apple.mrj.application.apple.menu.about.name', 'GroovyConsole')
 
 // redo output styles
 styles = [
     // output window styles
     regular: [
-            (StyleConstants.FontFamily): "Monaco"
+            (StyleConstants.FontFamily): 'Monaco'
         ],
     prompt: [
             (StyleConstants.Foreground): Color.LIGHT_GRAY

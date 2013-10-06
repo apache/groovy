@@ -37,15 +37,15 @@ class TextNode {
         this.properties = properties
     }
     
-    public void add(TextNode child) {
+    void add(TextNode child) {
         children << child
     }
     
-    public void setParent(TextNode newParent) {
+    void setParent(TextNode newParent) {
         parent = newParent
     }
     
     String toString() {
-        userObject ? userObject.toString() : "null" 
+        userObject ? userObject.toString() : 'null' 
     }
 }

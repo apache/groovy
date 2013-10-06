@@ -29,7 +29,7 @@ import javax.swing.WindowConstants
 import javax.swing.JSplitPane
 
 def prefs = Preferences.userNodeForPackage(Console)
-def detachedOutputFlag = prefs.getBoolean("detachedOutput", false)
+def detachedOutputFlag = prefs.getBoolean('detachedOutput', false)
 outputWindow = frame(visible:false, defaultCloseOperation: WindowConstants.HIDE_ON_CLOSE) {
     blank = glue()
     blank.preferredSize = [0, 0] as Dimension
@@ -43,10 +43,10 @@ private def buildOutputArea(prefs) {
     scrollArea = scrollPane(border: emptyBorder(0)) {
         outputArea = textPane(
                 editable: false,
-                name: "outputArea",
-                contentType: "text/html",
+                name: 'outputArea',
+                contentType: 'text/html',
                 background: new Color(255, 255, 218),
-                font: new Font("Monospaced", Font.PLAIN, prefs.getInt("fontSize", 12)),
+                font: new Font('Monospaced', Font.PLAIN, prefs.getInt('fontSize', 12)),
                 border: emptyBorder(4)
         )
     }
@@ -57,12 +57,12 @@ inputArea = inputEditor.textEditor
 // attach ctrl-enter to input area
 // need to wrap in actions to keep it from being added as a component
 actions {
-    container(inputArea, name: "inputArea", font:new Font("Monospaced", Font.PLAIN, prefs.getInt("fontSize", 12)), border:emptyBorder(4)) {
+    container(inputArea, name: 'inputArea', font:new Font('Monospaced', Font.PLAIN, prefs.getInt('fontSize', 12)), border:emptyBorder(4)) {
         action(runAction)
         action(runSelectionAction)
         action(showOutputWindowAction)
     }
-    container(outputArea, name: "outputArea") {
+    container(outputArea, name: 'outputArea') {
         action(hideOutputWindowAction1)
         action(hideOutputWindowAction2)
         action(hideOutputWindowAction3)
@@ -71,32 +71,32 @@ actions {
 }
 
 // add styles to the output area, should this be moved into SwingBuilder somehow?
-outputArea.font = new Font("Monospaced", outputArea.font.style, outputArea.font.size)
+outputArea.font = new Font('Monospaced', outputArea.font.style, outputArea.font.size)
 StyledDocument doc = outputArea.styledDocument
 
 Style defStyle = StyleContext.defaultStyleContext.getStyle(StyleContext.DEFAULT_STYLE)
 
 def applyStyle = {Style style, values -> values.each{k, v -> style.addAttribute(k, v)}}
 
-Style regular = doc.addStyle("regular", defStyle)
+Style regular = doc.addStyle('regular', defStyle)
 applyStyle(regular, styles.regular)
 
-promptStyle = doc.addStyle("prompt", regular)
+promptStyle = doc.addStyle('prompt', regular)
 applyStyle(promptStyle, styles.prompt)
 
-commandStyle = doc.addStyle("command", regular)
+commandStyle = doc.addStyle('command', regular)
 applyStyle(commandStyle, styles.command)
 
-outputStyle = doc.addStyle("output", regular)
+outputStyle = doc.addStyle('output', regular)
 applyStyle(outputStyle, styles.output)
 
-resultStyle = doc.addStyle("result", regular)
+resultStyle = doc.addStyle('result', regular)
 applyStyle(resultStyle, styles.result)
 
-stacktraceStyle = doc.addStyle("stacktrace", regular)
+stacktraceStyle = doc.addStyle('stacktrace', regular)
 applyStyle(stacktraceStyle, styles.stacktrace)
 
-hyperlinkStyle = doc.addStyle("hyperlink", regular)
+hyperlinkStyle = doc.addStyle('hyperlink', regular)
 applyStyle(hyperlinkStyle, styles.hyperlink)
 
 // redo styles for editor
@@ -120,13 +120,13 @@ Graphics g = GraphicsEnvironment.localGraphicsEnvironment.createGraphics (new Bu
 FontMetrics fm = g.getFontMetrics(outputArea.font)
 
 outputArea.preferredSize = [
-    prefs.getInt("outputAreaWidth", fm.charWidth(0x77) * 81),
-    prefs.getInt("outputAreaHeight", (fm.getHeight() + fm.leading) * 12)
+    prefs.getInt('outputAreaWidth', fm.charWidth(0x77) * 81),
+    prefs.getInt('outputAreaHeight', (fm.getHeight() + fm.leading) * 12)
 ] as Dimension
 
 inputEditor.preferredSize = [
-    prefs.getInt("inputAreaWidth", fm.charWidth(0x77) * 81),
-    prefs.getInt("inputAreaHeight", (fm.getHeight() + fm.leading) * 12)
+    prefs.getInt('inputAreaWidth', fm.charWidth(0x77) * 81),
+    prefs.getInt('inputAreaHeight', (fm.getHeight() + fm.leading) * 12)
 ] as Dimension
 
 origDividerSize = -1

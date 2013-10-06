@@ -38,7 +38,7 @@ class ObjectBrowser {
     def swing, frame, fieldTable, methodTable, itemTable, mapTable
 
     static void main(args) {
-        inspect("some String")
+        inspect('some String')
     }
     static void inspect(objectUnderInspection){
         def browser = new ObjectBrowser()
@@ -61,7 +61,7 @@ class ObjectBrowser {
             }
             panel {
                 borderLayout()
-                panel(  name:"Class Info",
+                panel(  name:'Class Info',
                         border: emptyBorder([5,10,5,10]),
                         constraints:NORTH) {
                     flowLayout(alignment:FlowLayout.LEFT)

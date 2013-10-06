@@ -124,7 +124,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             // GROOVY-3288
             def model = [wordValue: 'word']
             swing.tabbedPane {
-                panel(title: "a") {
+                panel(title: 'a') {
                     textField(id: 'wordValue', columns: 20)
                 }
                 bean(model, word: bind { wordValue.text })
@@ -187,7 +187,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         testInEDT {
             def swing = new SwingBuilder()
             final String ICON_PATH = '/groovy/ui/ConsoleIcon.png'
-            String baseDir = new File("src/main/resources").absolutePath
+            String baseDir = new File('src/main/resources').absolutePath
 
             String resource = ICON_PATH
             GString gresource = "${ICON_PATH}"
@@ -338,7 +338,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     void testMacOSXMenuBarHasBasicMenuBarSubElements() {
         testInEDT {
             def binding = new Binding()
-            binding.setVariable("controller", new Console())
+            binding.setVariable('controller', new Console())
 
             final basicMenuBarScript = new BasicMenuBar()
             final macOSXMenuBarScript = new MacOSXMenuBar()
@@ -369,7 +369,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     void testAutoSaveOnRunMenuBarCheckbox() {
         testInEDT {
             def binding = new Binding()
-            binding.setVariable("controller", new Console())
+            binding.setVariable('controller', new Console())
 
             final consoleActions = new ConsoleActions()
 
@@ -409,7 +409,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
             try {
                 def binding = new Binding()
-                binding.setVariable("controller", new Console())
+                binding.setVariable('controller', new Console())
 
                 final consoleActions = new ConsoleActions()
                 final console = new Console()
@@ -424,7 +424,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 console.runScript(new EventObject([:]))
 
                 def doc = console.outputArea.document
-                assert doc.getText(0, doc.getLength()) =~ /java.lang.Exception/
+                assert doc.getText(0, doc.length) =~ /java.lang.Exception/
             } finally {
                 GroovySystem.metaClassRegistry.removeMetaClass(Thread)
                 GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities)
