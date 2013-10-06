@@ -35,15 +35,15 @@ import org.codehaus.groovy.tools.shell.commands.ImportCompleter
  */
 class DocCommand extends CommandSupport {
 
-    static String ENV_BROWSER = "BROWSER"
-    static String ENV_BROWSER_GROOVYSH = "GROOVYSH_BROWSER"
+    private static final String ENV_BROWSER = "BROWSER"
+    private static final String ENV_BROWSER_GROOVYSH = "GROOVYSH_BROWSER"
 
-    static int TIMEOUT_CONN = 5 * 1000 // ms
-    static int TIMEOUT_READ = 5 * 1000 // ms
+    private static final int TIMEOUT_CONN = 5 * 1000 // ms
+    private static final int TIMEOUT_READ = 5 * 1000 // ms
 
     // indicates support for java.awt.Desktop#browse on the current platform
-    static boolean hasAWTDesktopPlatformSupport;
-    static desktop;
+    private static boolean hasAWTDesktopPlatformSupport
+    private static desktop
 
     /**
      * Check for java.awt.Desktop#browse platform support

@@ -33,7 +33,6 @@ import org.fusesource.jansi.AnsiRenderer
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class Groovysh extends Shell {
@@ -81,7 +80,6 @@ class Groovysh extends Shell {
         registrar.call(this)
 
         this.packageHelper = new PackageHelper(classLoader)
-
     }
 
     private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
@@ -380,10 +378,6 @@ class Groovysh extends Shell {
         interp.context['_'] = result
 
         maybeRecordResult(result)
-    }
-
-    private Object getLastResult() {
-        return interp.context['_']
     }
 
     final Closure defaultErrorHook = { Throwable cause ->

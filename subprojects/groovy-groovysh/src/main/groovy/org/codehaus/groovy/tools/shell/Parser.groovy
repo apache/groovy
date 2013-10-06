@@ -184,11 +184,8 @@ final class RigidParser implements Parsing
 
             return new ParseStatus(error)
         }
-        else {
-            log.debug('Parse incomplete')
-
-            return new ParseStatus(ParseCode.INCOMPLETE)
-        }
+        log.debug('Parse incomplete')
+        return new ParseStatus(ParseCode.INCOMPLETE)
     }
     
     private boolean ignoreSyntaxErrorForLineEnding(String line) {

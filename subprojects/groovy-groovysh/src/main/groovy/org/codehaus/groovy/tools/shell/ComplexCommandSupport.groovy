@@ -21,7 +21,6 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 /**
  * Support for more complex commands.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 abstract class ComplexCommandSupport
@@ -81,9 +80,8 @@ abstract class ComplexCommandSupport
             log.debug("Invoking function '$fname' w/args: $args")
             
             return func.call(args)
-        } else {
-            fail("Unknown function name: '$fname'. Valid arguments: $myFunctions")
         }
+        fail("Unknown function name: '$fname'. Valid arguments: $myFunctions")
     }
     
     protected Closure loadFunction(final String name) {

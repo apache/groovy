@@ -28,7 +28,7 @@ import org.codehaus.groovy.tools.shell.util.Logger
 class DocGenerator {
     private static final String PRIMITIVE_TYPE_PSEUDO_PACKAGE = 'primitive-types'
     private static final Logger log = Logger.create(DocGenerator)
-    private final String TITLE = "Groovy JDK"
+    private static final String TITLE = "Groovy JDK"
     def sourceFiles = []
     File outputFolder
     JavaDocBuilder builder
@@ -226,7 +226,7 @@ class DocGenerator {
         int start = boundary.first()
         int end = boundary.next()
         if (start > -1 && end > -1) {
-            text = text.substring(start, end)
+            text = text[start..end]
         }
         text
     }
@@ -340,7 +340,6 @@ class DocGenerator {
     }
 
     def createTemplate(templateEngine, resourceFile) {
-//        def resourceUrl = getClass().getClassLoader().getResource(resourceFile)
         def resourceUrl = getClass().getResource(resourceFile)
         return templateEngine.createTemplate(resourceUrl.text)
     }
@@ -353,9 +352,8 @@ class DocGenerator {
 
         if (returnType != null) {
             return returnType.toString()
-        } else {
-            return ""
         }
+        return ""
     }
 
     /**
@@ -375,10 +373,10 @@ class DocGenerator {
      * @return a list of parameters without the first one
      */
     private getParameters(method) {
-        if (method.getParameters().size() > 1)
+        if (method.getParameters().size() > 1) {
             return method.getParameters().toList()[1..-1]
-        else
-            return []
+        }
+        return []
     }
 
     /**

@@ -23,7 +23,7 @@ import org.codehaus.groovy.antlr.GroovySourceToken
  */
 public class KeywordSyntaxCompletor implements IdentifierCompletor {
 
-    final String[] KEYWORDS = [
+    private static final String[] KEYWORDS = [
             "abstract",
             "assert", "boolean", "break", "byte",
             "case",
@@ -66,14 +66,14 @@ public class KeywordSyntaxCompletor implements IdentifierCompletor {
     ]
 
     // VALUE_KEYWORDS and SPECIAL_FUNCTIONS completed without added blank
-    final String[] VALUE_KEYWORDS = [
+    private static final String[] VALUE_KEYWORDS = [
             "true",
             "false",
             "this",
             "super",
             "null"]
 
-    final String[] SPECIAL_FUNCTIONS = [
+    private static final String[] SPECIAL_FUNCTIONS = [
             "catch (",
             "finally {",
             "for (",
