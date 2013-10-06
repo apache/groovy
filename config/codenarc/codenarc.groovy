@@ -101,6 +101,7 @@ ruleset {
         'ConfusingMethodName'  {
             doNotApplyToClassNames='Groovy1059Foo'
         }
+        exclude 'FactoryMethodName' // many violations
     }
     ruleset('rulesets/unused.xml') {
         'UnusedVariable' {
@@ -252,6 +253,7 @@ ruleset {
         exclude 'JUnitTearDownCallsSuper'  // too many to worry about, review later
         exclude 'UseAssertNullInsteadOfAssertEquals'   // too many to worry about, review later
         exclude 'JUnitAssertAlwaysFails'   // too many to worry about, review later
+        exclude 'JUnitLostTest' //we do not use the @Test annotation, so it is o.k. to use JUnit 4 classes and have test* Methods without this annotation
     }
 
     ruleset('rulesets/concurrency.xml') {
