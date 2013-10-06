@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 the original author or authors.
+ * Copyright 2010-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,11 +142,9 @@ ruleset {
                 'StringMethodName,Foo' 
         }
 
-        try {
-            'UnusedPrivateMethodParameter' {
-                doNotApplyToClassNames='CurryFoo4170,AssertionRenderingTest'
-            } 
-        } catch(AssertionError e) { /* only exists in 0.13 */ }
+        'UnusedPrivateMethodParameter' {
+            doNotApplyToClassNames='CurryFoo4170,AssertionRenderingTest'
+        }
 
         'UnusedObject'  {
             doNotApplyToClassNames='groovy.ui.OutputTransforms,org.codehaus.groovy.ast.builder.AstSpecificationCompiler,groovy.lang.GroovyCodeSourceTest'        
@@ -167,13 +165,9 @@ ruleset {
     }
 
     ruleset('rulesets/logging.xml') {
-        try {
-            'LoggerForDifferentClass' {
-                doNotApplyToClassNames='' // BUG in CodeNarc 0.13, add exclude for SwingBuilder only
-            }
-        } catch (AssertionError e) {
-            // only in CodeNarc 0.13        
-        }   
+        'LoggerForDifferentClass' {
+            doNotApplyToClassNames='' // BUG in CodeNarc 0.13, add exclude for SwingBuilder only
+        }
 
         exclude 'Println'  // too many to worry about, review later
         exclude 'SystemOutPrint'  // too many to worry about, review later
@@ -187,21 +181,9 @@ ruleset {
         exclude 'ElseBlockBraces'   // else statements without braces seems acceptable in our coding standards
     }
     ruleset('rulesets/basic.xml') {
-    /* not available with gradle 0.9.2
-        'ConsecutiveStringConcatenation' {
-            doNotApplyToClassNames='groovy.DynamicMemberTest,groovy.StaticImportTest,groovy.bugs.Groovy675_Bug,groovy.bugs.MorgansBug,' + 
-                        'groovy.bugs.WriteOnlyPropertyBug,groovy.operator.StringOperatorsTest,groovy.swing.SwingBuilderTest,' + 
-                        'org.codehaus.groovy.runtime.powerassert.EvaluationTest' 
-        } 
-    */
         'DeadCode' {
             doNotApplyToClassNames='ThrowTest'
         }
-    /* not available with gradle 0.9.2
-        'ConsecutiveLiteralAppends' {
-            doNotApplyToClassNames='groovy.bugs.ByteIndexBug'
-        }
-    */
 
         exclude 'ConstantTernaryExpression'    // too many to worry about, review later
         exclude 'GStringAsMapKey'    // too many to worry about, review later
@@ -279,11 +261,19 @@ ruleset {
     }
 
     ruleset('rulesets/unnecessary.xml') {
-        exclude 'UnnecessaryObjectReferences'   // CodeNarc 0.12 has a bug
-
         'UnnecessaryInstantiationToGetClass'  {
              doNotApplyToClassNames='SpreadDotTest'
         } 
+
+        'ConsecutiveStringConcatenation' {
+            doNotApplyToClassNames='groovy.DynamicMemberTest,groovy.StaticImportTest,groovy.bugs.Groovy675_Bug,groovy.bugs.MorgansBug,' + 
+                        'groovy.bugs.WriteOnlyPropertyBug,groovy.operator.StringOperatorsTest,groovy.swing.SwingBuilderTest,' + 
+                        'org.codehaus.groovy.runtime.powerassert.EvaluationTest' 
+        }
+
+        'ConsecutiveLiteralAppends' {
+            doNotApplyToClassNames='groovy.bugs.ByteIndexBug'
+        }
 
         exclude 'UnnecessaryNullCheck'   // too many to worry about, review later
         exclude 'UnnecessaryBooleanInstantiation'  // too many to worry about, review later
@@ -343,4 +333,3 @@ ruleset {
 
     }
 }
-
