@@ -23,6 +23,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
     MBeanServerConnection server
 
     void setUp() {
+        super.setUp()
         builder = new JmxBuilder()
         server = builder.getMBeanServer()
     }

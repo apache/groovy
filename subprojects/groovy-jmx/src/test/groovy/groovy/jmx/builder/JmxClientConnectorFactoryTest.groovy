@@ -24,11 +24,13 @@ class JmxClientConnectorFactoryTest extends GroovyTestCase {
     def rmi
 
     void setUp() {
+        super.setUp()
         builder = new JmxBuilder()
         rmi = JmxConnectorHelper.createRmiRegistry(defaultPort)
     }
 
     void tearDown() {
+        super.tearDown()
         JmxConnectorHelper.destroyRmiRegistry(rmi.registry)
     }
 

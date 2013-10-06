@@ -23,6 +23,7 @@ class JmxBeansFactoryTest extends GroovyTestCase {
     def builder
 
     void setUp() {
+        super.setUp()
         builder = new JmxBuilder()
         builder.registerFactory("beans", new JmxBeansFactory())
     }

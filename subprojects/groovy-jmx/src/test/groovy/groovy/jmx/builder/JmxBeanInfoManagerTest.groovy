@@ -25,6 +25,7 @@ class JmxBeanInfoManagerTest extends GroovyTestCase {
     def object
 
     void setUp() {
+        super.setUp()
         object = new MockManagedObject()
         defaultDomain = "jmx.builder"
         defaultType = "ExportedObject"

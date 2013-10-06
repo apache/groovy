@@ -19,8 +19,6 @@ import javax.management.modelmbean.DescriptorSupport
 import javax.management.modelmbean.ModelMBeanAttributeInfo
 
 class JmxAttributeInfoManagerTest extends GroovyTestCase {
-    def setup() {
-    }
 
     void testGetAttributeInfoFromAttributeMap() {
         def object = new MockManagedObject()

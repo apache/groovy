@@ -23,6 +23,7 @@ class JmxTimerFactoryTest extends GroovyTestCase {
     MBeanServer server
 
     void setUp() {
+        super.setUp()
         builder = new JmxBuilder()
         builder.registerFactory "timer", new JmxTimerFactory()
         server = builder.getMBeanServer()
@@ -95,7 +96,6 @@ class JmxTimerFactoryTest extends GroovyTestCase {
             assertEqual timer2.getDate(1), today
         }
     }
-
 
     void testTimerPeriod() {
         GroovyMBean timer = builder.timer(period: 1000)
