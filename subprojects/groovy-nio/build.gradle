@@ -2,5 +2,7 @@ dependencies {
     compile project(':')
     groovy project(':')
     testCompile project(':groovy-test')
-    testCompile ('org.spockframework:spock-core:0.7-groovy-2.0')
+    testCompile ('org.spockframework:spock-core:0.7-groovy-2.0') {
+        exclude module: 'groovy-all'
+    }
 }
