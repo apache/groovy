@@ -19,7 +19,7 @@ class NioGroovyMethodsTest extends Specification {
         Path path = Files.createTempFile('test-size',null)
         Files.copy( new ByteArrayInputStream(str.getBytes()), path, StandardCopyOption.REPLACE_EXISTING )
         then:
-        NioGroovyMethods.size(path) == str.size()
+        path.size() == str.size()
         cleanup:
         Files.deleteIfExists(path)
     }
@@ -29,9 +29,9 @@ class NioGroovyMethodsTest extends Specification {
 
         setup:
         def str = 'Hello world!'
-        def path = Paths.get('new_obj_out_stream')
+        Path path = Paths.get('new_obj_out_stream')
         when:
-        def out = NioGroovyMethods.newObjectOutputStream(path)
+        def out = path.newObjectOutputStream()
         out.writeObject(str)
         out.flush()
         def stream = new ObjectInputStream(new FileInputStream(path.toFile()))
@@ -54,7 +54,7 @@ class NioGroovyMethodsTest extends Specification {
         stream.close()
 
         when:
-        def obj = NioGroovyMethods.newObjectInputStream(path)
+        def obj = path.newObjectInputStream()
         then:
         obj.readObject() == str
         cleanup:
@@ -77,7 +77,7 @@ class NioGroovyMethodsTest extends Specification {
 
         when:
         def list = []
-        NioGroovyMethods.eachObject(path) { list << it }
+        path.eachObject() { list << it }
 
         then:
         list.size()==3
@@ -95,7 +95,7 @@ class NioGroovyMethodsTest extends Specification {
         def file = new File('test_each_file')
         file.text = 'alpha\nbeta\ndelta';
         when:
-        def lines = NioGroovyMethods.readLines(file.toPath())
+        def lines = file.toPath().readLines()
         then:
         lines.size()==3
         lines[0]=='alpha'
@@ -113,7 +113,7 @@ class NioGroovyMethodsTest extends Specification {
         def file = new File('test_new_reader')
         file.text = str
         when:
-        def reader = NioGroovyMethods.newReader(file.toPath())
+        def reader = file.toPath().newReader()
         def line = reader.readLine()
         then:
         line == str
