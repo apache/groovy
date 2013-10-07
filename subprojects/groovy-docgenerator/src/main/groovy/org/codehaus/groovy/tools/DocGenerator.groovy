@@ -226,7 +226,7 @@ class DocGenerator {
         int start = boundary.first()
         int end = boundary.next()
         if (start > -1 && end > -1) {
-            text = text[start..end]
+            text = text.substring(start, end)
         }
         text
     }
