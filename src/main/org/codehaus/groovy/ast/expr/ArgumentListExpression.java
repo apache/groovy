@@ -47,7 +47,7 @@ public class ArgumentListExpression extends TupleExpression {
     public ArgumentListExpression(Parameter[] parameters) {
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
-            addExpression(new VariableExpression(parameter.getName()));
+            addExpression(new VariableExpression(parameter));
         }
     }
     
