@@ -34,6 +34,7 @@ import org.objectweb.asm.Opcodes;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.logging.Logger;
 
 /**
  * Base class for type checking extensions written in Groovy. Compared to its superclass, {@link TypeCheckingExtension},
@@ -80,6 +81,9 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
     private boolean handled = false;
     private final CompilationUnit compilationUnit;
 
+    private boolean debug = false;
+    private final static Logger LOG = Logger.getLogger(GroovyTypeCheckingExtensionSupport.class.getName());
+
     /**
      * Builds a type checking extension relying on a Groovy script (type checking DSL).
      *
@@ -94,6 +98,10 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         this.scriptPath = scriptPath;
         this.context = typeCheckingVisitor.typeCheckingContext;
         this.compilationUnit = compilationUnit;
+    }
+
+    public void setDebug(final boolean debug) {
+        this.debug = debug;
     }
 
     @Override
@@ -562,9 +570,18 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
      * @return a virtual method node with the same name as the expected call
      */
     public MethodNode makeDynamic(MethodCall call, ClassNode returnType) {
-        context.getEnclosingMethod().putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, Boolean.TRUE);
+        TypeCheckingContext.EnclosingClosure enclosingClosure = context.getEnclosingClosure();
+        MethodNode enclosingMethod = context.getEnclosingMethod();
         ((ASTNode)call).putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
+        if (enclosingClosure!=null) {
+            enclosingClosure.getClosureExpression().putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, Boolean.TRUE);
+        } else {
+            enclosingMethod.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, Boolean.TRUE);
+        }
         setHandled(true);
+        if (debug) {
+            LOG.info("Turning "+call.getText()+" into a dynamic method call returning "+returnType.toString(false));
+        }
         return new MethodNode(call.getMethodAsString(), 0, returnType, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
     }
 
@@ -588,6 +605,9 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
         storeType(pexp, returnType);
         setHandled(true);
+        if (debug) {
+            LOG.info("Turning '"+pexp.getText()+"' into a dynamic property access of type "+returnType.toString(false));
+        }
     }
 
     /**
@@ -610,6 +630,13 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         vexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
         storeType(vexp, returnType);
         setHandled(true);
+        if (debug) {
+            LOG.info("Turning '"+vexp.getText()+"' into a dynamic variable access of type "+returnType.toString(false));
+        }
+    }
+
+    public void log(String message) {
+        LOG.info(message);
     }
 
     // -------------------------------------
