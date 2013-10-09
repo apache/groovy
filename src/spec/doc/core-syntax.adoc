@@ -308,8 +308,8 @@ include::../test/SyntaxTest.groovy[tags=char,indent=0]
 <2> by using type coercion with the +as+ operator
 <3> by using a cast to char operation
 
-NOTE: The first option is interesting when the character is held in a variable, 
-while the other two are more interesting when a char value must be passed as argument of a method call.
+NOTE: The first option (&#x278A;) is interesting when the character is held in a variable,
+while the other two (&#x278B; and &#x278C;) are more interesting when a char value must be passed as argument of a method call.
 
 === Useful extension methods on Strings and GStrings
 
