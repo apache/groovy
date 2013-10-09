@@ -51,6 +51,25 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    void testDynamicMethodCallInsideClosure() {
+        try {
+            assertScript '''import groovy.transform.CompileStatic
+                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+                int bar() {
+                    def cl = { foo() + baz() }
+                    cl()
+                }
+                int baz() {
+                    456
+                }
+                this.metaClass.foo = { 123 }
+                assert bar() == 579
+            '''
+        } finally {
+//            println astTrees
+        }
+    }
+
     void testDynamicMethodCallWithStaticCallArgument() {
         try {
             assertScript '''import groovy.transform.CompileStatic
@@ -240,6 +259,37 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
                 Date.metaClass.static.list = { [1,2] }
                 assert foo().values().sort() == bar()
         '''
+    }
+
+    void testDynamicBuilder() {
+        try {
+            assertScript '''import groovy.transform.CompileStatic
+                import groovy.xml.MarkupBuilder
+
+                @CompileStatic(extensions='groovy/transform/sc/MixedModeDynamicBuilder.groovy')
+                String render(List<String> items) {
+                    def sw = new StringWriter()
+                    def mb = new MarkupBuilder(sw)
+                    mb.html {
+                        body {
+                            ul {
+                                items.each { String item ->
+                                    li("Item ${item.toUpperCase()}")
+                                }
+                            }
+                        }
+                    }
+
+                    sw
+                }
+                def list = ['Chocolate','Milk','Butter']
+                def rendered = render(list).replaceAll(/[\r\n]|[ ]{2,}/,'')
+                assert rendered == '<html><body><ul><li>Item CHOCOLATE</li><li>Item MILK</li><li>Item BUTTER</li></ul></body></html>'
+                '''
+        } finally {
+//            println astTrees
+        }
+
     }
 
 }
