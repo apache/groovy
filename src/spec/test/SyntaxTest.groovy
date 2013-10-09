@@ -292,4 +292,45 @@ class SyntaxTest extends CompilableTestSupport {
         assert c3 instanceof Character
         // end::char[]
     }
+
+    void testGString() {
+        // tag::gstring_1[]
+        def name = 'Guillaume' // a plain string
+        def greeting = "Hello ${name}"
+
+        assert greeting.toString() == 'Hello Guillaume'
+        // end::gstring_1[]
+
+        // tag::gstring_2[]
+        def sum = "The sum of 2 and 3 equals ${2 + 3}"
+        assert sum.toString() == 'The sum of 2 and 3 equals 5'
+        // end::gstring_2[]
+
+        // tag::gstring_3[]
+        def person = [name: 'Guillaume', age: 36]
+        assert "$person.name is $person.age years old" == 'Guillaume is 36 years old'
+        // end::gstring_3[]
+
+        // tag::gstring_4[]
+        def number = 3.14
+        // end::gstring_4[]
+        // tag::gstring_5[]
+        shouldFail(MissingPropertyException) {
+            println "$number.toString()"
+        }
+        // end::gstring_5[]
+
+        // tag::gstring_6[]
+        // end::gstring_6[]
+
+        // tag::gstring_7[]
+        // end::gstring_7[]
+
+        // tag::gstring_8[]
+        // end::gstring_8[]
+
+        // tag::gstring_9[]
+        // end::gstring_9[]
+
+    }
 }

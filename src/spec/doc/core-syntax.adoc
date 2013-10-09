@@ -283,8 +283,48 @@ but are +groovy.lang.GString+ instances if interpolation is present.
 Any Groovy expression can be interpolated in all string literals, apart from single and triple single quoted strings.
 Interpolation is the act of replacing a placeholder in the string with its value upon evaluation of the string.
 The placeholder expressions are surrounded by +${}+ or prefixed with +$+ for dotted expressions.
+The expression value inside the placeholder is evaluated to its string representation when the GString is passed to a method taking a String as argument by calling +toString()+ on that expression.
 
+Here, we have a string with a placeholder referencing a local variable:
 
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=gstring_1,indent=0]
+----
+
+But any Groovy expression is valid, as we can see in this example with an arithmetic expression:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=gstring_2,indent=0]
+----
+
+[NOTE]
+Not only expressions are actually allowed in between the +${}+ placeholder. Statements are also allowed, but a statement's value is just +null+. 
+So if several statements are inserted in that placeholder, the last one should somehow return a meaningful value to be inserted. 
+For instance, +"The sum of 1 and 2 is equal to ${def a = 1; def b = 2; a + b}"+ is supported and works as expected but a good practice is usually to stick to simple expressions inside GString placeholders.
+
+In addition to +${}+ placeholders, we can also use a lone +$+ sign prefixing a dotted expression:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=gstring_3,indent=0]
+----
+
+But only dotted expressions of the form +a.b+, +a.b.c+, etc, are valid, but expressions that would contain parentheses like method calls, curly braces for closures, or arithmetic operators would be invalid.
+Given the following variable definition of a number:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=gstring_3,indent=0]
+----
+
+The following statement will throw a +groovy.lang.MissingPropertyException+ because Groovy believes you're trying to access the +toString+ property of that number, which doesn't exist:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=gstring_4,indent=0]
+----
 
 === Triple double quoted string
 
