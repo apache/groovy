@@ -63,15 +63,15 @@ import static org.codehaus.groovy.transform.ToStringASTTransformation.createToSt
 public class ImmutableASTTransformation extends AbstractASTTransformation {
 
     /*
-                      Currently leaving BigInteger and BigDecimal in list but see:
-                      http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6348370
+      Currently leaving BigInteger and BigDecimal in list but see:
+      http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6348370
 
-                      Also, Color is not final so while not normally used with child
-                      classes, it isn't strictly immutable. Use at your own risk.
+      Also, Color is not final so while not normally used with child
+      classes, it isn't strictly immutable. Use at your own risk.
 
-                      This list can by extended by providing "known immutable" classes
-                      via Immutable.knownImmutableClasses
-                     */
+      This list can by extended by providing "known immutable" classes
+      via Immutable.knownImmutableClasses
+     */
     private static List<String> immutableList = Arrays.asList(
             "java.lang.Boolean",
             "java.lang.Byte",
@@ -107,7 +107,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode SORTEDMAP_CLASSNODE = ClassHelper.make(SortedMap.class);
     private static final ClassNode SET_CLASSNODE = ClassHelper.make(Set.class);
     private static final ClassNode MAP_CLASSNODE = ClassHelper.make(Map.class);
-
 
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -426,11 +425,11 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 new IfStatement(
                         equalsNullExpr(initExpr),
                         new EmptyStatement(),
-                        assignStatement(fieldExpr, checkUnresolved(cNode, fNode, initExpr))),
-                assignStatement(fieldExpr, checkUnresolved(cNode, fNode, unknown)));
+                        assignStatement(fieldExpr, checkUnresolved(fNode, initExpr))),
+                assignStatement(fieldExpr, checkUnresolved(fNode, unknown)));
     }
 
-    private Expression checkUnresolved(ClassNode cNode, FieldNode fNode, Expression value) {
+    private Expression checkUnresolved(FieldNode fNode, Expression value) {
         Expression args = new TupleExpression(new MethodCallExpression(new VariableExpression("this"), "getClass", ArgumentListExpression.EMPTY_ARGUMENTS), new ConstantExpression(fNode.getName()), value);
         return new StaticMethodCallExpression(SELF_TYPE, "checkImmutable", args);
     }
@@ -454,12 +453,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private boolean isKnownImmutableClass(ClassNode fieldType, List<String> knownImmutableClasses) {
+        if (inImmutableList(fieldType.getName()) || knownImmutableClasses.contains(fieldType.getName()))
+            return true;
         if (!fieldType.isResolved()) return false;
         return fieldType.isEnum() ||
                 ClassHelper.isPrimitiveType(fieldType) ||
-                fieldType.getAnnotations(MY_TYPE).size() != 0 ||
-                inImmutableList(fieldType.getName()) ||
-                knownImmutableClasses.contains(fieldType.getName());
+                fieldType.getAnnotations(MY_TYPE).size() != 0;
     }
 
     private boolean isKnownImmutable(String fieldName, List<String> knownImmutables) {
