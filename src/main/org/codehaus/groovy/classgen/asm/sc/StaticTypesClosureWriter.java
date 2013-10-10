@@ -25,6 +25,7 @@ import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
 
@@ -46,7 +47,12 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         if (doCall.size() != 1) {
             throw new GroovyBugError("Expected to find one (1) doCall method on generated closure, but found " + doCall.size());
         }
-        MethodTargetCompletionVisitor visitor = new MethodTargetCompletionVisitor(doCall.get(0));
+        MethodNode doCallMethod = doCall.get(0);
+        MethodTargetCompletionVisitor visitor = new MethodTargetCompletionVisitor(doCallMethod);
+        Object dynamic = expression.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
+        if (dynamic!=null) {
+            doCallMethod.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, dynamic);
+        }
         for (MethodNode method : methods) {
             visitor.visitMethod(method);
         }

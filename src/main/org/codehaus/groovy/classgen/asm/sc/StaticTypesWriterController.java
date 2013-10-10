@@ -21,6 +21,7 @@ import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.ClassVisitor;
 
 
@@ -97,11 +98,14 @@ public class StaticTypesWriterController extends DelegatingController {
     
     @Override
     public CallSiteWriter getCallSiteWriter() {
-        if (isInStaticallyCheckedMethod) {
-            return callSiteWriter;
-        } else {
+        MethodNode methodNode = getMethodNode();
+        if (methodNode !=null && methodNode.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION)==Boolean.TRUE) {
             return super.getCallSiteWriter();
         }
+        if (isInStaticallyCheckedMethod) {
+            return callSiteWriter;
+        }
+        return super.getCallSiteWriter();
     }
 
     public CallSiteWriter getRegularCallSiteWriter() {
@@ -133,6 +137,10 @@ public class StaticTypesWriterController extends DelegatingController {
         } else {
             return super.getInvocationWriter();
         }
+    }
+
+    public InvocationWriter getRegularInvocationWriter() {
+        return super.getInvocationWriter();
     }
 
     @Override

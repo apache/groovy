@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -39,7 +38,6 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -47,7 +45,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
 import static org.objectweb.asm.Opcodes.*;
 
@@ -116,6 +113,8 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     @Override
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
+        if (target==null) return false;
+
         if (target instanceof ExtensionMethodNode) {
             ExtensionMethodNode emn = (ExtensionMethodNode) target;
             MethodNode node = emn.getExtensionMethodNode();
@@ -154,8 +153,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 return super.writeDirectMethodCall(target, implicitThis, receiver, new ArgumentListExpression(arr));
             }
             ClassNode classNode = controller.getClassNode();
-            if (target != null
-                    && classNode.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
+            if (classNode.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
                     && controller.isInClosure()
                     && !(target.isPublic() || target.isProtected())
                     && target.getDeclaringClass() != classNode) {
@@ -177,7 +175,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 mce.visit(controller.getAcg());
                 return true;
             }
-            if (target != null && target.isPrivate()) {
+            if (target.isPrivate()) {
                 ClassNode declaringClass = target.getDeclaringClass();
                 if ((isPrivateBridgeMethodsCallAllowed(declaringClass, classNode) || isPrivateBridgeMethodsCallAllowed(classNode, declaringClass))
                         && declaringClass.getNodeMetaData(PRIVATE_BRIDGE_METHODS) != null
@@ -198,7 +196,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                                                         declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false), receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
                 }
             }
-            if (target != null && receiver != null) {
+            if (receiver != null) {
                 if (!(receiver instanceof VariableExpression) || !((VariableExpression) receiver).isSuperExpression()) {
                     // in order to avoid calls to castToType, which is the dynamic behaviour, we make sure that we call CHECKCAST instead
                     // then replace the top operand type
@@ -322,6 +320,17 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     @Override
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
+        ClassNode dynamicCallReturnType = origin.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
+        if (dynamicCallReturnType !=null) {
+            StaticTypesWriterController staticController = (StaticTypesWriterController) controller;
+            if (origin instanceof MethodCallExpression) {
+                ((MethodCallExpression) origin).setMethodTarget(null);
+            }
+            InvocationWriter dynamicInvocationWriter = staticController.getRegularInvocationWriter();
+            dynamicInvocationWriter.
+                    makeCall(origin, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
+            return;
+        }
         Object implicitReceiver = origin.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         if (implicitReceiver !=null && implicitThis) {
             String[] propertyPath = ((String) implicitReceiver).split("\\.");
