@@ -206,7 +206,7 @@ NOTE: Single quoted strings are plain +java.lang+String+ and don't support inter
 
 === Triple single quoted string
 
-Triple single quoted strings are a series of characters surounded by single quotes:
+Triple single quoted strings are a series of characters surrounded by single quotes:
 
 [source,groovy]
 ----
@@ -214,6 +214,33 @@ include::../test/SyntaxTest.groovy[tags=string_1,indent=0]
 ----
 
 NOTE: Triple single quoted strings are plain +java.lang+String+ and don't support interpolation.
+
+Triple single quoted strings are multiline.
+You can span the content of the string across line boundaries without the need to split the string in several pieces, without contatenation or newline escape characters:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=triple_single_1,indent=0]
+----
+
+If your code is indented, for example in the body of the method of a class, your string will contain the whitespace of the indentation.
+The Groovy Development Kit contains methods for stripping out the indentation with the +String#stripIndent()+ method,
+and with the +String#stripMargin()+ method that takes a delimiter character to identify the text to remove from the beginning of a string.
+
+When creating a string as follows:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=triple_single_2,indent=0]
+----
+
+You will notice that the resulting string contains a newline character as first character.
+It is possible to strip that character by escaping the newline with a backslash:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=triple_single_3,indent=0]
+----
 
 ==== Escaping special characters
 
@@ -272,7 +299,7 @@ Double quoted strings are a series of characters surrounded by double quotes:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=string_4,indent=0]
+include::../test/SyntaxTest.groovy[tags=string_5,indent=0]
 ----
 
 NOTE: Double quoted strings are plain +java.lang.String+ if there's no interpolated expression, 
@@ -316,17 +343,27 @@ Given the following variable definition of a number:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=gstring_3,indent=0]
+include::../test/SyntaxTest.groovy[tags=gstring_4,indent=0]
 ----
 
 The following statement will throw a +groovy.lang.MissingPropertyException+ because Groovy believes you're trying to access the +toString+ property of that number, which doesn't exist:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=gstring_4,indent=0]
+include::../test/SyntaxTest.groovy[tags=gstring_5,indent=0]
 ----
 
+NOTE: You can think of +"$number.toString()"+ as being interpreted by the parser as +"${number.toString}()"+.
+
 === Triple double quoted string
+
+Triple double quoted strings behave like double quoted strings, with the addition that they are multiline, like the triple single quoted strings.
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=triple_double_1,indent=0]
+----
+
 
 === Slashy string
 === Dollar slashy string

@@ -319,18 +319,48 @@ class SyntaxTest extends CompilableTestSupport {
             println "$number.toString()"
         }
         // end::gstring_5[]
+    }
 
-        // tag::gstring_6[]
-        // end::gstring_6[]
+    void testTripleSingleQuotedString() {
+        // tag::triple_single_1[]
+        def aMultilineString = '''line one
+        line two
+        line three'''
+        // end::triple_single_1[]
 
-        // tag::gstring_7[]
-        // end::gstring_7[]
+        // tag::triple_single_2[]
+        def startingAndEndingWithANewline = '''
+        line one
+        line two
+        line three
+        '''
+        // end::triple_single_2[]
 
-        // tag::gstring_8[]
-        // end::gstring_8[]
+        // tag::triple_single_3[]
+        def strippedFirstNewline = '''\
+        line one
+        line two
+        line three
+        '''
 
-        // tag::gstring_9[]
-        // end::gstring_9[]
+        assert !strippedFirstNewline.startsWith('\n')
+        // end::triple_single_3[]
+    }
 
+    void testTripleDoubleQuotedString() {
+        // tag::triple_double_1[]
+        def name = 'Groovy'
+        def template = """
+            Dear Mr ${name},
+
+            You're the winner of the lottery!
+
+            Yours sincerly,
+
+            Dave
+        """
+
+        assert template.toString().contains('Groovy')
+        // end::triple_double_1[]
     }
 }
