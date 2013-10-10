@@ -34,7 +34,8 @@ public class InvocationWriter {
     public static final MethodCallerMultiAdapter invokeMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeMethod", true, false);
     public static final MethodCallerMultiAdapter invokeStaticMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod", true, true);
     public static final MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
-
+    private static final MethodNode CLASS_FOR_NAME_STRING = ClassHelper.CLASS_Type.getDeclaredMethod("forName", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE,"name")}); 
+    
     private WriterController controller;
     
     public InvocationWriter(WriterController wc) {
@@ -199,6 +200,8 @@ public class InvocationWriter {
         MethodCallerMultiAdapter adapter,
         boolean implicitThis, boolean containsSpreadExpression
     ) {
+        if (makeClassForNameCall(origin, receiver, message, arguments)) return true;
+
         // optimization path
         boolean fittingAdapter =   adapter == invokeMethodOnCurrent ||
                                     adapter == invokeStaticMethod;
@@ -323,6 +326,7 @@ public class InvocationWriter {
     ) {
         // direct method call paths
         boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
+
         if (makeDirectCall(origin, receiver, message, arguments, adapter, implicitThis, containsSpreadExpression)) return;
 
         // normal path
@@ -330,6 +334,20 @@ public class InvocationWriter {
 
         // path through ScriptBytecodeAdapter
         makeUncachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression);
+    }
+
+    /**
+     * if Class.forName(x) is recognized, make a direct method call
+     */
+    protected boolean makeClassForNameCall(Expression origin, Expression receiver, Expression message, Expression arguments) {
+        if (! (receiver instanceof ClassExpression)) return false;
+        ClassExpression ce = (ClassExpression) receiver;
+        if (!ClassHelper.CLASS_Type.equals(ce.getType())) return false;
+        String msg = getMethodName(message);
+        if (!"forName".equals(msg)) return false;
+        ArgumentListExpression ae = makeArgumentList(arguments);
+        if (ae.getExpressions().size()!=1) return false;
+        return writeDirectMethodCall(CLASS_FOR_NAME_STRING,false, receiver, ae);
     }
 
     public static ArgumentListExpression makeArgumentList(Expression arguments) {
