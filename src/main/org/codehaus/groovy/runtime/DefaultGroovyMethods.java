@@ -7039,9 +7039,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * true when passed each of the dropped entries (or key/value pairs).
      * <pre class="groovyTestCase">
      * def shopping = [milk:1, bread:2, chocolate:3]
-     * assert shopping.takeWhile{ it.key.size() < 6 } == [milk:1, bread:2]
-     * assert shopping.takeWhile{ it.value % 2 } == [milk:1]
-     * assert shopping.takeWhile{ k, v -> k.size() + v <= 7 } == [milk:1, bread:2]
+     * assert shopping.dropWhile{ it.key.size() < 6 } == [chocolate:3]
+     * assert shopping.dropWhile{ it.value % 2 } == [bread:2, chocolate:3]
+     * assert shopping.dropWhile{ k, v -> k.size() + v <= 7 } == [chocolate:3]
      * </pre>
      * If the map instance does not have ordered keys, then this function could appear to drop random
      * entries. Groovy by default uses LinkedHashMap, so this shouldn't be an issue in the main.
