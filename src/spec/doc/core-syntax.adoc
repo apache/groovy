@@ -279,6 +279,15 @@ Some special characters also use the backslash as escape character:
 
 |'\f'
 |formfeed
+
+|'\\'
+|backslash
+
+|'\''
+|single quote (for single quoted and triple single quoted strings)
+
+|'\"'
+|double quote (for double quoted and triple double quoted strings)
 |====
 
 ==== Unicode escape sequence
@@ -304,6 +313,8 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_5,indent=0]
 
 NOTE: Double quoted strings are plain +java.lang.String+ if there's no interpolated expression, 
 but are +groovy.lang.GString+ instances if interpolation is present.
+
+NOTE: To escape a double quote, you can use the backslash character: +"A double quote: \""+.
 
 ==== String interpolation
 
@@ -364,6 +375,7 @@ Triple double quoted strings behave like double quoted strings, with the additio
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_double_1,indent=0]
 ----
 
+NOTE: Neither double quote nor single quotes need be escaped in triple double quoted strings.
 
 === Slashy string
 === Dollar slashy string
