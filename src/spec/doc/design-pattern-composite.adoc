@@ -21,7 +21,7 @@ Here is the code:
 
 [source,groovy]
 ----
-include::../test/DesignPatternsTest.groovy[tags=composite_code,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=composite_code,indent=0]
 ----
 
 Here is the resulting output:

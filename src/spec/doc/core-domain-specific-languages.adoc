@@ -24,7 +24,7 @@ code:
 
 [source,groovy]
 ---------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
 ---------------------------------------
 
 One way of implementing this is using the builder strategy, which
@@ -38,7 +38,7 @@ Implementing such a builder is usually done the following way:
 
 [source,groovy]
 ----------------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=email_method_no_delegatesto,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_method_no_delegatesto,indent=0]
 ----------------------------------------------
 
 the `EmailSpec` class implements the `from`, `to`, … methods. By
@@ -50,7 +50,7 @@ resolved only against the delegate of the closure.
 
 [source,groovy]
 ----------------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=emailspec_no_delegatesto,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=emailspec_no_delegatesto,indent=0]
 ----------------------------------------------
 
 The `EmailSpec` class has itself a `body` method accepting a closure that is cloned and executed. This is what
@@ -76,7 +76,7 @@ checking on this code:
 
 [source,groovy]
 ---------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
 ---------------------------------------
 
 Then the type checker will know that there’s an `email` method accepting
@@ -88,7 +88,7 @@ runtime, be of type `EmailSpec`:
 
 [source,groovy]
 ---------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_nodelegatesto,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_nodelegatesto,indent=0]
 ---------------------------------------
 
 will fail compilation with errors like this one:
@@ -113,7 +113,7 @@ The idea is to annotate the `Closure` parameter of the `email` method:
 
 [source,groovy]
 ---------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto,indent=0]
 ---------------------------------------
 
 What we’ve done here is telling the compiler (or the IDE) that when the
@@ -125,7 +125,7 @@ the delegation strategy is also changed:
 
 [source,groovy]
 ---------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto_strategy,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto_strategy,indent=0]
 ---------------------------------------
 
 Now, both the IDE and the type checker (if you are using `@TypeChecked`)
@@ -138,7 +138,7 @@ The following code will now pass compilation:
 
 [source,groovy]
 ---------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_pass,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_pass,indent=0]
 ---------------------------------------
 
 [[TheDelegatesToannotation-DelegatesTomodes]]
@@ -159,7 +159,7 @@ checker).
 
 [source,groovy]
 -----------------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=simple_delegation,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=simple_delegation,indent=0]
 -----------------------------------------------
 
 [[TheDelegatesToannotation-Delegationstrategy]]
@@ -171,7 +171,7 @@ with the default delegation strategy, which is `Closure.OWNER_FIRST`.
 
 [source,groovy]
 ----------------------------------------------------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=delegation_with_strategy,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegation_with_strategy,indent=0]
 ----------------------------------------------------------------------------------
 
 [[TheDelegatesToannotation-Delegatetoparameter]]
@@ -182,7 +182,7 @@ another parameter of the method. Take the following code:
 
 [source,groovy]
 -------------------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=exec_method_no_delegatesto,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=exec_method_no_delegatesto,indent=0]
 -------------------------------------------------
 
 Here, the delegate which will be used is *not* created inside the `exec`
@@ -191,7 +191,7 @@ Usage may look like this:
 
 [source,groovy]
 -----------------------
-include::../test/DelegatesToSpecTest.groovy[tags=exec_usage,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=exec_usage,indent=0]
 -----------------------
 
 Each of the method calls are delegated to the `email` parameter. This is
@@ -200,7 +200,7 @@ companion annotation:
 
 [source,groovy]
 ---------------------------------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=exec_method_with_delegatesto,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=exec_method_with_delegatesto,indent=0]
 ---------------------------------------------------------------
 
 A closure is annotated with `@DelegatesTo`, but this time, without
@@ -211,8 +211,8 @@ which in this case is `Object` but this is not true. Take this code:
 
 [source,groovy]
 --------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_header,indent=0]
-include::../test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_footer,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_header,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_footer,indent=0]
 --------------------------------------
 
 Remember that this works out of the box *without* having to annotate
@@ -236,7 +236,7 @@ but you may have methods that take multiple closures:
 
 [source,groovy]
 --------------------------------------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_no_delegatesto,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_no_delegatesto,indent=0]
 --------------------------------------------------------------------
 
 Then nothing prevents you from annotating each closure
@@ -244,11 +244,11 @@ with `@DelegatesTo`:
 
 [source,groovy]
 --------------------------------------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=foobarbaz_classes,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_classes,indent=0]
 
-include::../test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_header,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_header,indent=0]
    ...
-include::../test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_footer,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_footer,indent=0]
 --------------------------------------------------------------------
 
 But more importantly, if you have multiple closures *and* multiple
@@ -256,9 +256,9 @@ arguments, you can use several targets:
 
 [source,groovy]
 -----------------------------------------------------------------------------
-include::../test/DelegatesToSpecTest.groovy[tags=foobarbaz_multitarget,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_multitarget,indent=0]
 
-include::../test/DelegatesToSpecTest.groovy[tags=multitarget_test,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=multitarget_test,indent=0]
 -----------------------------------------------------------------------------
 
 NOTE: At this point, you may wonder why we don’t use the parameter names as
@@ -273,14 +273,14 @@ but a generic type. Imagine a configurator that runs on a list of elements:
 
 [source,groovy]
 ----
-include::../test/DelegatesToSpecTest.groovy[tags=configure_list_method,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=configure_list_method,indent=0]
 ----
 
 Then this method can be called with any list like this:
 
 [source,groovy]
 ----
-include::../test/DelegatesToSpecTest.groovy[tags=configure_list_usage,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=configure_list_usage,indent=0]
 ----
 
 To let the type checker and the IDE know that the `configure` method calls the closure on each element of the list, you
@@ -288,7 +288,7 @@ To let the type checker and the IDE know that the `configure` method calls the c
 
 [source,groovy]
 ----
-include::../test/DelegatesToSpecTest.groovy[tags=configure_list_with_delegatesto,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=configure_list_with_delegatesto,indent=0]
 ----
 
 `@DelegatesTo` takes an optional `genericTypeIndex` argument that tells what is the index of the generic type that will

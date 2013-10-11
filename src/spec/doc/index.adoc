@@ -12,27 +12,27 @@ include::core-introduction.adoc[]
 == Groovy Language Specification
 
 :leveloffset: 2
-include::src/spec/doc/core-syntax.adoc[]
-include::src/spec/doc/core-operators.adoc[]
-include::src/spec/doc/core-program-structure.adoc[]
-include::src/spec/doc/core-object-orientation.adoc[]
-include::src/spec/doc/core-closures.adoc[]
-include::src/spec/doc/core-semantics.adoc[]
+include::{projectdir}/src/spec/doc/core-syntax.adoc[]
+include::{projectdir}/src/spec/doc/core-operators.adoc[]
+include::{projectdir}/src/spec/doc/core-program-structure.adoc[]
+include::{projectdir}/src/spec/doc/core-object-orientation.adoc[]
+include::{projectdir}/src/spec/doc/core-closures.adoc[]
+include::{projectdir}/src/spec/doc/core-semantics.adoc[]
 :leveloffset: 0
 
 == Tools
 
 :leveloffset: 2
-include::src/spec/doc/tools-groovyc.adoc[]
-include::src/spec/doc/tools-groovysh.adoc[]
-include::src/spec/doc/tools-groovyconsole.adoc[]
-include::src/spec/doc/tools-groovydoc.adoc[]
-include::src/spec/doc/tools-ide.adoc[]
+include::{projectdir}/src/spec/doc/tools-groovyc.adoc[]
+include::{projectdir}/src/spec/doc/tools-groovysh.adoc[]
+include::{projectdir}/src/spec/doc/tools-groovyconsole.adoc[]
+include::{projectdir}/src/spec/doc/tools-groovydoc.adoc[]
+include::{projectdir}/src/spec/doc/tools-ide.adoc[]
 :leveloffset: 0
 
 == User Guides
 :leveloffset: 2
-include::src/spec/doc/core-getting-started.adoc[]
+include::{projectdir}/src/spec/doc/core-getting-started.adoc[]
 :leveloffset: 0
 === Differences with Java
 ==== Multi-methods
@@ -48,7 +48,7 @@ include::src/spec/doc/core-getting-started.adoc[]
 ===== Expando
 ===== Observable list, map and set
 :leveloffset: 2
-include::src/spec/doc/core-metaprogramming.adoc[]
+include::{projectdir}/src/spec/doc/core-metaprogramming.adoc[]
 :leveloffset: 0
 === Testing guide
 === Interacting with a SQL database
@@ -71,8 +71,8 @@ include::{subprojroot}json{specfolder}json-userguide.adoc[]
 
 :leveloffset: 2
 
-include::src/spec/doc/core-domain-specific-languages.adoc[]
-include::src/spec/doc/jmx.adoc[]
+include::{projectdir}/src/spec/doc/core-domain-specific-languages.adoc[]
+include::{projectdir}/src/spec/doc/jmx.adoc[]
 
 :leveloffset: 0
 
@@ -81,12 +81,12 @@ include::src/spec/doc/jmx.adoc[]
 
 :leveloffset: 2
 
-include::src/spec/doc/design-pattern-in-groovy.adoc[]
+include::{projectdir}/src/spec/doc/design-pattern-in-groovy.adoc[]
 
 :leveloffset: 0
 
 == Acknowledgements
 
 :leveloffset: 2
-include::src/spec/doc/license-contributors.adoc[]
+include::{projectdir}/src/spec/doc/license-contributors.adoc[]
 :leveloffset: 0

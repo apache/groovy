@@ -86,9 +86,9 @@ annotating the `Person` class like below will automatically generate the `toStri
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_import,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_import,indent=0]
 
-include::../test/ASTTransformsTest.groovy[tags=tostring_simple,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_simple,indent=0]
 ----
 
 With this definition, then the following assertion passes, meaning that a `toString` method taking the field valuess from
@@ -96,7 +96,7 @@ the class and printing them out has been generated:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_simple_assert,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_simple_assert,indent=0]
 ----
 
 The `@ToString` annotation accepts several parameters which are summarized in the following table:
@@ -107,42 +107,42 @@ The `@ToString` annotation accepts several parameters which are summarized in th
 |includeNames|false|Whether to include names of properties in generated toString.|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_example_includeNames,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_example_includeNames,indent=0]
 ----
 |excludes|Empty list|List of properties to exclude from toString|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_example_excludes,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_example_excludes,indent=0]
 ----
 |includes|Empty list|List of fields to include in toString|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_example_includes,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_example_includes,indent=0]
 ----
 |includeSuper|False|Should superclass be included in toString|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_example_includeSuper,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_example_includeSuper,indent=0]
 ----
 |includeFields|False|Should fields be included in toString, in addition to properties|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_example_includeFields,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_example_includeFields,indent=0]
 ----
 |ignoreNulls|False|Should properties/fields with null value be displayed|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_example_ignoreNulls,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_example_ignoreNulls,indent=0]
 ----
 |includePackage|False|Use fully qualified class name instead of simple name in toString|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_example_includePackage,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_example_includePackage,indent=0]
 ----
 |cache|False|Cache the toString string. Should only be set to true if the class is immutable.|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_example_cache,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_example_cache,indent=0]
 ----
 
 |=======================================================================
@@ -155,7 +155,7 @@ hashcode follows the best practices as described in _Effective Java_ by _Josh Bl
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=equalshashcode,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=equalshashcode,indent=0]
 ----
 
 There are several options available to tweak the behavior of `@EqualsAndHashCode`:
@@ -166,27 +166,27 @@ There are several options available to tweak the behavior of `@EqualsAndHashCode
 |excludes|Empty list|List of properties to exclude from equals/hashCode|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=equalshashcode_example_excludes,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=equalshashcode_example_excludes,indent=0]
 ----
 |includes|Empty list|List of fields to include in equals/hashCode|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=equalshashcode_example_includes,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=equalshashcode_example_includes,indent=0]
 ----
 |callSuper|False|Whether to include super in equals and hashCode calculations|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=equalshashcode_example_super,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=equalshashcode_example_super,indent=0]
 ----
 |includeFields|False|Should fields be included in equals/hashCode, in addition to properties|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_example_includeFields,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_example_includeFields,indent=0]
 ----
 |cache|False|Cache the hashCode computation. Should only be set to true if the class is immutable.|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tostring_example_cache,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tostring_example_cache,indent=0]
 ----
 |useCanEqual|True|Should equals call canEqual helper method.|See http://www.artima.com/lejava/articles/equality.html
 |=======================================================================
@@ -200,7 +200,7 @@ following code will generate 3 constructors:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_simple,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tupleconstructor_simple,indent=0]
 ----
 
 The first constructor is a no-arg constructor which allows the traditional map-style construction. It is worth noting
@@ -218,37 +218,37 @@ The `@TupleConstructor` AST transformation accepts several configuration options
 |excludes|Empty list|List of properties to exclude from tuple constructor generation|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_excludes,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tupleconstructor_example_excludes,indent=0]
 ----
 |includes|Empty list|List of fields to include in tuple constructor generation|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includes,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includes,indent=0]
 ----
 |includeFields|False|Should fields be included in tuple constructor generation, in addition to properties|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeFields,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeFields,indent=0]
 ----
 |includeProperties|True|Should properties be included in tuple constructor generation|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeProperties,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeProperties,indent=0]
 ----
 |includeSuperFields|False|Should fields from super classes be included in tuple constructor generation|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeSuperFields,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeSuperFields,indent=0]
 ----
 |includeSuperProperties|True|Should properties from super classes be included in tuple constructor generation|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeSuperProperties,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tupleconstructor_example_includeSuperProperties,indent=0]
 ----
 |callSuper|False|Should super properties be called within a call to the parent constructor rather than set as properties|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=tupleconstructor_example_callSuper,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=tupleconstructor_example_callSuper,indent=0]
 ----
 |force|False|By default, the transformation will do nothing if a constructor is already defined. Setting this property
 to true, the constructor will be generated and it's your responsability to ensure that no duplicate constructor
@@ -264,7 +264,7 @@ annotations:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=canonical_simple,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=canonical_simple,indent=0]
 ----
 
 A similar immutable class can be generated using the <<xform-Immutable,@Immutable>> AST transformation instead.
@@ -276,12 +276,12 @@ The `@Canonical` AST transformation supports several configuration options:
 |excludes|Empty list|List of properties to exclude from tuple constructor generation|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=canonical_example_excludes,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=canonical_example_excludes,indent=0]
 ----
 |includes|Empty list|List of fields to include in tuple constructor generation|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=canonical_example_includes,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=canonical_example_includes,indent=0]
 ----
 |=======================================================================
 
@@ -293,7 +293,7 @@ is in particular useful when overridding exception classes:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=inheritconstructors_simple,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=inheritconstructors_simple,indent=0]
 ----
 
 [[xform-Category]]
@@ -304,7 +304,7 @@ written like this:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=oldstyle_category,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=oldstyle_category,indent=0]
 ----
 
 The `@Category` transformation lets you write the same using an instance-style class, rather that a static class style.
@@ -313,7 +313,7 @@ this:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=newstyle_category,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=newstyle_category,indent=0]
 ----
 
 Note that the mixed in class can be referenced using `this` instead. It's also worth noting that using instance fields
@@ -329,7 +329,7 @@ form:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=indexedproperty_simple,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=indexedproperty_simple,indent=0]
 ----
 
 [[xform-Lazy]]
@@ -339,14 +339,14 @@ The `@Lazy` AST transformation implements lazy initialization of fields. For exa
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=lazy_simple,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=lazy_simple,indent=0]
 ----
 
 will produce the following code:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=lazy_simple_generated,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=lazy_simple_generated,indent=0]
 ----
 
 The default value which is used to initialize the field is the default constructor of the declaration type. It is possible
@@ -354,13 +354,13 @@ to define a default value by using a closure on the right hand side of the prope
 example:
 
 ----
-include::../test/ASTTransformsTest.groovy[tags=lazy_default,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=lazy_default,indent=0]
 ----
 
 In that case, the generated code looks like the following:
 
 ----
-include::../test/ASTTransformsTest.groovy[tags=lazy_default_generated,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=lazy_default_generated,indent=0]
 ----
 
 If the field is declared volatile then initialization will be synchronized using the
@@ -378,12 +378,12 @@ The `@Newify` AST transformation is used to bring alternative syntaxes to constr
 * Using the `Python` style:
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=newify_python,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=newify_python,indent=0]
 ----
 * or using the `Ruby` style:
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=newify_ruby,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=newify_ruby,indent=0]
 ----
 The `Ruby` version can be disabled by setting the `auto` flag to `false`.
 
@@ -399,7 +399,7 @@ The `@Delegate` AST transformation aims at implementing the delegation design pa
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=delegating_class,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegating_class,indent=0]
 ----
 
 The `when` field is annotated with `@Delegate`, meaning that the `Event` class will delegate calls to `Date` methods
@@ -407,14 +407,14 @@ to the `when` field. In this case, the generated code looks like this:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=delegating_class_generated,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegating_class_generated,indent=0]
 ----
 
 Then you can call the `before` method, for example, directly on the `Event` class:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=delegation_assert,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegation_assert,indent=0]
 ----
 
 The behavior of the `@Delegate` AST transformation can be changed using the following parameters:
@@ -425,35 +425,35 @@ The behavior of the `@Delegate` AST transformation can be changed using the foll
 |interfaces|True|Should the interfaces implemented by the field be implemented by the class too|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=delegate_example_interfaces,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegate_example_interfaces,indent=0]
 ----
 |deprecated|false|If true, also delegates methods annotated with @Deprecated|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=delegate_deprecated_header,indent=0]
-include::../test/ASTTransformsTest.groovy[tags=delegate_deprecated_footer,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegate_deprecated_header,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegate_deprecated_footer,indent=0]
 ----
 |methodAnnotations|False|Whether to carry over annotations from the methods of the delegate to your delegating method.|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=delegate_example_annotations,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegate_example_annotations,indent=0]
 ----
 |parameterAnnotations|False|Whether to carry over annotations from the method parameters of the delegate to your delegating method.|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=delegate_example_parameter_annotations,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegate_example_parameter_annotations,indent=0]
 ----
 |excludes|Empty array|A list of methods to be excluded from delegation|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=delegate_example_excludes_header,indent=0]
-include::../test/ASTTransformsTest.groovy[tags=delegate_example_excludes_footer,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegate_example_excludes_header,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegate_example_excludes_footer,indent=0]
 ----
 |includes|Empty array|A list of methods to be included in delegation|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=delegate_example_includes_header,indent=0]
-include::../test/ASTTransformsTest.groovy[tags=delegate_example_includes_footer,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegate_example_includes_header,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=delegate_example_includes_footer,indent=0]
 ----
 |=======================================================================
 
@@ -465,7 +465,7 @@ members are deemed immutable. For that, all you have to do is annotating the cla
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=immutable_simple,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=immutable_simple,indent=0]
 ----
 
 Immutable classes generated with `@Immutable` are automatically made final. For a class to be immutable, you have to
@@ -485,12 +485,12 @@ are deemed immutable thanks to the following parameters:
 |knownImmutableClasses|Empty list|A list of classes which are deemed immutable.|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=immutable_example_knownimmutableclasses,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=immutable_example_knownimmutableclasses,indent=0]
 ----
 |knownImmutables|Empty list|A list of property names which are deemed immutable.|
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=immutable_example_knownimmutables,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=immutable_example_knownimmutables,indent=0]
 ----
 |=======================================================================
 
@@ -502,7 +502,7 @@ to be cached just by annotating the method with `@Memoized`. Let's imagine the f
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=memoized_long_computation,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=memoized_long_computation,indent=0]
 ----
 
 This emulates a long computation, based on the actual parameters of the method. Without `@Memoized`, each method call
@@ -510,14 +510,14 @@ would take several seconds plus it would return a random result:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=memoized_long_computation_asserts,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=memoized_long_computation_asserts,indent=0]
 ----
 
 Adding `@Memoized` changes the semantics of the method by adding caching, based on the parameters:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=memoized_long_computation_cached,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=memoized_long_computation_cached,indent=0]
 ----
 
 The size of the cache can be configured using two optional parameters:
@@ -539,7 +539,7 @@ double checked locking.
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=singleton_simple,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=singleton_simple,indent=0]
 ----
 
 By default, the singleton is created eagerly when the class is initialized and available through the `instance` property.
@@ -547,14 +547,14 @@ It is possible to change the name of the singleton using the `property` paramete
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=singleton_example_property,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=singleton_example_property,indent=0]
 ----
 
 And it is also possible to make initialization lazy using the `lazy` parameter:
 
 [source,groovy]
 ----
-include::../test/ASTTransformsTest.groovy[tags=singleton_example_lazy,indent=0]
+include::{projectdir}/src/spec/test/ASTTransformsTest.groovy[tags=singleton_example_lazy,indent=0]
 ----
 
 [[xform-Mixin]]

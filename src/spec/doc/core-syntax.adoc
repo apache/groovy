@@ -16,7 +16,7 @@ The characters following +//+, till the end of the line, are considered part of 
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=single_line_comment,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=single_line_comment,indent=0]
 ----
 
 === Multiline comment
@@ -28,7 +28,7 @@ Multiline comments can thus be put at the end of a statement, or even inside a s
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=multiline_comment,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=multiline_comment,indent=0]
 ----
 
 === GroovyDoc comment
@@ -46,7 +46,7 @@ you should prepend those constructs with the comment right before it.
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=groovydoc_comment,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=groovydoc_comment,indent=0]
 ----
 
 GroovyDoc follows the same conventions as Java's own JavaDoc.
@@ -60,7 +60,7 @@ and the +groovy+ command is available on the +PATH+.
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=shebang_comment_line,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=shebang_comment_line,indent=0]
 ----
 
 NOTE: The +#+ character must be the first character of the file. Any indentation would yield a compilation error.
@@ -141,21 +141,21 @@ Here are a few examples of valid identifiers (here, variable names):
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=valid_identifiers,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=valid_identifiers,indent=0]
 ----
 
 But the following ones are invalid identifiers:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=invalid_identifiers,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=invalid_identifiers,indent=0]
 ----
 
 All keywords are also valid identifiers when following a dot:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=keywords_valid_id_after_dot,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=keywords_valid_id_after_dot,indent=0]
 ----
 
 === Quoted identifiers
@@ -167,7 +167,7 @@ but which are allowed by Groovy when quoted. For example, characters like a dash
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=quoted_id,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=quoted_id,indent=0]
 ----
 
 As we shall see in the <<all-strings,following section on strings>>, Groovy provides different string literals.
@@ -175,7 +175,7 @@ All kind of strings are actually allowed after the dot:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=quoted_id_with_all_strings,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=quoted_id_with_all_strings,indent=0]
 ----
 
 There's a difference between plain character strings and Groovy's GStrings (interpolated strings),
@@ -183,7 +183,7 @@ as in that the latter case, the interpolated values are inserted in the final st
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
 ----
 
 [[all-strings]]
@@ -199,7 +199,7 @@ Single quoted strings are a series of characters surounded by single quotes:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
 ----
 
 NOTE: Single quoted strings are plain +java.lang+String+ and don't support interpolation.
@@ -210,7 +210,7 @@ Triple single quoted strings are a series of characters surrounded by single quo
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=string_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_1,indent=0]
 ----
 
 NOTE: Triple single quoted strings are plain +java.lang+String+ and don't support interpolation.
@@ -220,7 +220,7 @@ You can span the content of the string across line boundaries without the need t
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=triple_single_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_1,indent=0]
 ----
 
 If your code is indented, for example in the body of the method of a class, your string will contain the whitespace of the indentation.
@@ -231,7 +231,7 @@ When creating a string as follows:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=triple_single_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_2,indent=0]
 ----
 
 You will notice that the resulting string contains a newline character as first character.
@@ -239,7 +239,7 @@ It is possible to strip that character by escaping the newline with a backslash:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=triple_single_3,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_3,indent=0]
 ----
 
 ==== Escaping special characters
@@ -248,14 +248,14 @@ You can escape single quotes with the the backslash character to avoid terminati
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=string_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_2,indent=0]
 ----
 
 And you can escape the escape character itself with a double backslash:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=string_3,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_3,indent=0]
 ----
 
 Some special characters also use the backslash as escape character:
@@ -290,7 +290,7 @@ For example, the Euro currency symbol can be represented with:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=string_4,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_4,indent=0]
 ----
 
 === Double quoted string
@@ -299,7 +299,7 @@ Double quoted strings are a series of characters surrounded by double quotes:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=string_5,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_5,indent=0]
 ----
 
 NOTE: Double quoted strings are plain +java.lang.String+ if there's no interpolated expression, 
@@ -316,14 +316,14 @@ Here, we have a string with a placeholder referencing a local variable:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=gstring_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_1,indent=0]
 ----
 
 But any Groovy expression is valid, as we can see in this example with an arithmetic expression:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=gstring_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_2,indent=0]
 ----
 
 [NOTE]
@@ -335,7 +335,7 @@ In addition to +${}+ placeholders, we can also use a lone +$+ sign prefixing a d
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=gstring_3,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_3,indent=0]
 ----
 
 But only dotted expressions of the form +a.b+, +a.b.c+, etc, are valid, but expressions that would contain parentheses like method calls, curly braces for closures, or arithmetic operators would be invalid.
@@ -343,14 +343,14 @@ Given the following variable definition of a number:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=gstring_4,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_4,indent=0]
 ----
 
 The following statement will throw a +groovy.lang.MissingPropertyException+ because Groovy believes you're trying to access the +toString+ property of that number, which doesn't exist:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=gstring_5,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_5,indent=0]
 ----
 
 NOTE: You can think of +"$number.toString()"+ as being interpreted by the parser as +"${number.toString}()"+.
@@ -361,7 +361,7 @@ Triple double quoted strings behave like double quoted strings, with the additio
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=triple_double_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_double_1,indent=0]
 ----
 
 
@@ -379,7 +379,7 @@ However, you can be explicit about making a Groovy string an actual character, b
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=char,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=char,indent=0]
 ----
 <1> by being explicit when declaring a variable holding the character by specifying the +char+ type
 <2> by using type coercion with the +as+ operator
@@ -408,7 +408,7 @@ In Java 6 and before, as well as in Groovy, numbers could be represented in deci
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=binary_literal_example,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=binary_literal_example,indent=0]
 ----
 
 === Octal literal
@@ -417,7 +417,7 @@ Octal numbers are specified in the typical format of ++0++ followed by octal dig
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=octal_literal_example,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=octal_literal_example,indent=0]
 ----
 
 === Hexadecimal literal
@@ -426,7 +426,7 @@ Hexadecimal numbers are specified in the typical format of ++0x++ followed by he
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=hexadecimal_literal_example,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=hexadecimal_literal_example,indent=0]
 ----
 
 === Underscore in literal
@@ -435,7 +435,7 @@ When writing long literal numbers, it’s harder on the eye to figure out how so
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=underscore_in_number_example,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=underscore_in_number_example,indent=0]
 ----
 
 === Number type suffixes
@@ -470,7 +470,7 @@ Examples:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=number_type_suffixes_example,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=number_type_suffixes_example,indent=0]
 ----
 
 == Booleans
@@ -482,7 +482,7 @@ Boolean values can be stored in variables, just like any other data type:
 
 [source,groovy]
 ----
-include::../test/SyntaxTest.groovy[tags=variable_store_boolean_value,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_store_boolean_value,indent=0]
 ----
 
 ++true++ and ++false++ are the only two primitive boolean values.

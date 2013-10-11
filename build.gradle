@@ -45,9 +45,13 @@ allprojects {
         asciidoctor {
             logDocuments = true
             sourceDir = project.file('src/spec/doc')
+            baseDir = null
+
             options = [
-                    attributes: ['source-highlighter':'prettify'
-                            , 'groovyversion': groovyVersion ]
+                    attributes: [
+                            'source-highlighter': 'prettify',
+                            'groovyversion': groovyVersion
+                    ]
             ]
         }
 
