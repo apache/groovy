@@ -140,7 +140,7 @@ public class CompileUnit {
                             " the script body based on the file name. Solutions are to change the file name or to change the class name.\n";
                 }
             } else {
-                txt += "The sources " + nodeSource.getName() + " and " + storedSource.getName() + " each contain a class with the name " + node.getName() + ".\n";
+                txt += "The sources " + nodeSource.getName() + " and " + storedSource.getName() + " are containing both a class of the name " + node.getName() + ".\n";
             }
             nodeSource.getErrorCollector().addErrorAndContinue(
                     new SyntaxErrorMessage(new SyntaxException(txt, node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()), nodeSource)
