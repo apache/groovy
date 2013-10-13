@@ -43,7 +43,7 @@ class ListIteratingTest extends GroovyTestCase {
         assertSequence([1, 2, 3, 4 ])
     }
     
-    def testIteratingWithList() {
+    void testIteratingWithList() {
         def s = new ArrayList()
         s.add(1)
         s.add(2)
