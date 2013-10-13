@@ -57,7 +57,9 @@ class MapConstructionTest extends GroovyTestCase {
             text = text + e.value
         }
         assert result == 6
-        assert text == "abcdefxyz"
+        assert text.contains('abc')
+		assert text.contains('def')
+		assert text.contains('xyz')
 
         assert m.size() == 3
 
