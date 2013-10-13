@@ -347,7 +347,7 @@ class GStringTest extends GroovyTestCase {
      *
      * GROOVY-781
      */
-    void fixmeTestExtractRangeStartToBeforeEndLiteral() {
+    void testExtractRangeStartToBeforeEndLiteral() {
         def literal = "0123456789";
         doTestExtractRangeStartToBeforeEnd(literal);
     }
@@ -357,7 +357,7 @@ class GStringTest extends GroovyTestCase {
      *
      * GROOVY-781
      */
-    void fixmeTestExtractRangeStartToBeforeEndTemplate() {
+    void testExtractRangeStartToBeforeEndTemplate() {
         def literal = "0123456789";
         def template = "${literal}";
 
@@ -369,7 +369,7 @@ class GStringTest extends GroovyTestCase {
      *
      * GROOVY-781
      */
-    void fixmeTestExtractRangeBeforeEndToStartLiteral() {
+    void testExtractRangeBeforeEndToStartLiteral() {
         def literal = "0123456789";
         doTestExtractRangeBeforeEndToStart(literal);
     }
@@ -379,7 +379,7 @@ class GStringTest extends GroovyTestCase {
      *
      * GROOVY-781
      */
-    void fixmeTestExtractRangeBeforeEndToStartTemplate() {
+    void testExtractRangeBeforeEndToStartTemplate() {
         def literal = "0123456789";
         def template = "${literal}";
 
