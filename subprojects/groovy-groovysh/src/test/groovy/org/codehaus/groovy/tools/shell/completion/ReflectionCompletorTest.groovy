@@ -41,6 +41,11 @@ class ReflectionCompletorUnitTest extends GroovyTestCase {
         assertTrue('clear()' in result)
         assertTrue('containsKey(' in result)
         assertTrue('clear()' in result)
+        // 'class' as key can cause bugs where .class is used instead of getClass()
+        result = ReflectionCompletor.getPublicFieldsAndMethods(['class': '42'], "")
+        assertTrue('clear()' in result)
+        assertTrue('containsKey(' in result)
+        assertTrue('clear()' in result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "size")
         // e.g. don't show non-public inherited size field
         assertEquals(["size()"], result)
