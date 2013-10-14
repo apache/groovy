@@ -100,15 +100,15 @@ final class RelaxedParser implements Parsing
             return new ParseStatus(ParseCode.COMPLETE)
         }
         catch (e) {
-            switch (e.class) {
+            switch (e.getClass()) {
                 case TokenStreamException:
                 case RecognitionException:
-                    log.debug("Parse incomplete: $e (${e.class.name})")
+                    log.debug("Parse incomplete: $e (${e.getClass().getName()})")
     
                     return new ParseStatus(ParseCode.INCOMPLETE)
 
                 default:
-                    log.debug("Parse error: $e (${e.class.name})")
+                    log.debug("Parse error: $e (${e.getClass().getName()})")
 
                     return new ParseStatus(e)
             }
