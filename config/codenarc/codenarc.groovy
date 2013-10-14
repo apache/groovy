@@ -207,7 +207,7 @@ ruleset {
         'ConsecutiveStringConcatenation' {
             doNotApplyToClassNames='groovy.DynamicMemberTest,groovy.StaticImportTest,groovy.bugs.Groovy675_Bug,groovy.bugs.MorgansBug,' + 
                         'groovy.bugs.WriteOnlyPropertyBug,groovy.operator.StringOperatorsTest,groovy.swing.SwingBuilderTest,' + 
-                        'org.codehaus.groovy.runtime.powerassert.EvaluationTest' 
+                        'org.codehaus.groovy.runtime.powerassert.EvaluationTest,groovy.json.JsonLexerTest'
         }
 
         'ConsecutiveLiteralAppends' {
