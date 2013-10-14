@@ -136,7 +136,7 @@ public class AsmClassGenerator extends ClassGenerator {
         try {
             cv.visit(
                     controller.getBytecodeVersion(),
-                    adjustedClassModifiers(classNode.getModifiers()),
+                    adjustedClassModifiers(classNode),
                     controller.getInternalClassName(),
                     BytecodeHelper.getGenericsSignature(classNode),
                     controller.getInternalBaseClassName(),
@@ -217,18 +217,8 @@ public class AsmClassGenerator extends ClassGenerator {
             outerClassName = null;
             innerClassName = null;
         }
-        int mods = innerClass.getModifiers();
+        int mods = adjustedClassModifiers(cn);
 
-        if (Modifier.isPrivate(mods)) {
-            // GROOVY-6357 : The JVM does not allow private modifier on inner classes: should be package private
-            mods = mods ^ Modifier.PRIVATE;
-            innerClass.setModifiers(mods);
-        }
-        if (Modifier.isProtected(mods)) {
-            // GROOVY-6357 : Following Java's behavior for protected modifier on inner classes: should be public
-            mods = mods ^ Modifier.PROTECTED | Modifier.PUBLIC;
-            innerClass.setModifiers(mods);
-        }
 
         cv.visitInnerClass(
                 innerClassInternalName,
@@ -240,11 +230,23 @@ public class AsmClassGenerator extends ClassGenerator {
     /*
      * Classes but not interfaces should have ACC_SUPER set
      */
-    private int adjustedClassModifiers(int modifiers) {
+    private int adjustedClassModifiers(ClassNode classNode) {
+        int modifiers = classNode.getModifiers();
         boolean needsSuper = (modifiers & ACC_INTERFACE) == 0;
         modifiers = needsSuper ? modifiers | ACC_SUPER : modifiers;
         // eliminate static
         modifiers = modifiers & ~ACC_STATIC;
+        if (classNode instanceof InnerClassNode) {
+            if (Modifier.isPrivate(modifiers)) {
+                // GROOVY-6357 : The JVM does not allow private modifier on inner classes: should be package private
+                modifiers = modifiers & ~Modifier.PRIVATE;
+            }
+            if (Modifier.isProtected(modifiers)) {
+                // GROOVY-6357 : Following Java's behavior for protected modifier on inner classes: should be public
+                modifiers = (modifiers & ~Modifier.PROTECTED) | Modifier.PUBLIC;
+            }
+        }
+
         return modifiers;
     }
 
