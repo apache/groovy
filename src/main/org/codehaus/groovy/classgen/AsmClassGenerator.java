@@ -218,6 +218,18 @@ public class AsmClassGenerator extends ClassGenerator {
             innerClassName = null;
         }
         int mods = innerClass.getModifiers();
+
+        if (Modifier.isPrivate(mods)) {
+            // GROOVY-6357 : The JVM does not allow private modifier on inner classes: should be package private
+            mods = mods ^ Modifier.PRIVATE;
+            innerClass.setModifiers(mods);
+        }
+        if (Modifier.isProtected(mods)) {
+            // GROOVY-6357 : Following Java's behavior for protected modifier on inner classes: should be public
+            mods = mods ^ Modifier.PROTECTED | Modifier.PUBLIC;
+            innerClass.setModifiers(mods);
+        }
+
         cv.visitInnerClass(
                 innerClassInternalName,
                 outerClassName,
