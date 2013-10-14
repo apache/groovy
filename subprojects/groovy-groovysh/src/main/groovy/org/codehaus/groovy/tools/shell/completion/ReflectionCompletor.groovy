@@ -273,7 +273,6 @@ class ReflectionCompletor {
      */
     static Collection<String> getPublicFieldsAndMethods(Object instance, String prefix) {
         Set<String> rv = new HashSet<String>()
-        Set.getInterfaces()
         Class clazz = instance.getClass()
         if (clazz == null) {
             return rv;
