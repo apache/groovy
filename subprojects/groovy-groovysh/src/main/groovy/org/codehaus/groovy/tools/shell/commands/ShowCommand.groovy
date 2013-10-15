@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.MethodClosure
 
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
@@ -52,8 +53,7 @@ class ShowCommand
                     value = "method ${value.method}()"
                 }
 
-                // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-                io.out.println("  $key = ${String.valueOf(value)}")
+                io.out.println("  $key = ${InvokerHelper.toString(value)}")
             }
         }
     }
