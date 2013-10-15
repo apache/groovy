@@ -90,7 +90,7 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     @Override
     public void writeInvokeConstructor(final ConstructorCallExpression call) {
-        MethodNode mn = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        MethodNode mn = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         if (mn == null) {
             super.writeInvokeConstructor(call);
             return;
@@ -110,6 +110,32 @@ public class StaticInvocationWriter extends InvocationWriter {
         finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength() - before);
 
     }
+
+    @Override
+    public void writeSpecialConstructorCall(final ConstructorCallExpression call) {
+        MethodNode mn = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        if (mn==null) {
+            super.writeSpecialConstructorCall(call);
+            return;
+        }
+        ConstructorNode cn;
+        if (mn instanceof ConstructorNode) {
+            cn = (ConstructorNode) mn;
+        } else {
+            cn = new ConstructorNode(mn.getModifiers(), mn.getParameters(), mn.getExceptions(), mn.getCode());
+            cn.setDeclaringClass(mn.getDeclaringClass());
+        }
+        // load "this"
+        controller.getMethodVisitor().visitVarInsn(ALOAD, 0);
+        String ownerDescriptor = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
+        TupleExpression args = makeArgumentList(call.getArguments());
+        int before = controller.getOperandStack().getStackLength();
+        loadArguments(args.getExpressions(), cn.getParameters());
+        finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength() - before);
+        // on a special call, there's no object on stack
+        controller.getOperandStack().remove(1);
+    }
+
 
     @Override
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {

@@ -1019,5 +1019,24 @@ assert it.next() == 1G
             assert foo([(1):null,(2):null,(3):null],2)==2
         """
     }
+
+    void testSuperCallShouldBeDirect() {
+        try {
+            assertScript '''
+                class TwoException extends Exception {
+                    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                        def superCall = node.code.statements[0].expression
+                        assert superCall.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)!=null
+                    })
+                    public TwoException(Throwable t) {
+                        super(t)
+                    }
+                }
+                def e = new TwoException(null) // will not throw an exception
+            '''
+        } finally {
+            assert !astTrees.TwoException.contains('selectConstructorAndTransformArguments')
+        }
+    }
 }
 
