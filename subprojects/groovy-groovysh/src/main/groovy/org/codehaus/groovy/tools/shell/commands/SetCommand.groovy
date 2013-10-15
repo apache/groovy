@@ -84,10 +84,10 @@ class SetCommand
         }
         
         String name = args[0]
-        String value
+        def value
         
         if (args.size() == 1) {
-            value = "true"
+            value = true
         }
         else {
             value = args[1]
@@ -95,6 +95,6 @@ class SetCommand
         
         log.debug("Setting preference: $name=$value")
         
-        Preferences.put(name, value)
+        Preferences.put(name, String.valueOf(value))
     }
 }

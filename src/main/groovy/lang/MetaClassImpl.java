@@ -3083,12 +3083,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     public CallSite createStaticSite(CallSite site, Object[] args) {
         if (!(this instanceof AdaptingMetaClass)) {
-
+            Class [] params = MetaClassHelper.convertToTypeArray(args);
             MetaMethod metaMethod = retrieveStaticMethod(site.getName(), args);
-            if (metaMethod != null) {
-                Class [] params = MetaClassHelper.convertToTypeArray(args);
-                return StaticMetaMethodSite.createStaticMetaMethodSite(site, this, metaMethod, params, args);
-            }
+            if (metaMethod != null)
+               return StaticMetaMethodSite.createStaticMetaMethodSite(site, this, metaMethod, params, args);
         }
         return new StaticMetaClassSite(site, this);
     }

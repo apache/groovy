@@ -16,7 +16,6 @@
 
 package org.codehaus.groovy.tools.shell
 
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.runtime.MethodClosure
 import java.lang.reflect.Method
@@ -68,7 +67,8 @@ class Interpreter
                 result = script.run()
             }
 
-            log.debug("Evaluation result: ${InvokerHelper.toString(result)} (${result?.getClass()})")
+            // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
+            log.debug("Evaluation result: ${String.valueOf(result)} (${result?.getClass()})")
 
             // Keep only the methods that have been defined in the script
             type.declaredMethods.each { Method m ->

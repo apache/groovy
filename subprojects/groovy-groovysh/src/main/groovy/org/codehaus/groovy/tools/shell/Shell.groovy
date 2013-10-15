@@ -16,7 +16,6 @@
 
 package org.codehaus.groovy.tools.shell
 
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.fusesource.jansi.Ansi
 
@@ -104,7 +103,7 @@ class Shell
             } catch (CommandException e) {
                 io.err.println(ansi().a(Ansi.Attribute.INTENSITY_BOLD).fg(Ansi.Color.RED).a(e.getMessage()).reset());
             }
-            log.debug("Result: ${InvokerHelper.toString(result)}")
+            log.debug("Result: ${String.valueOf(result)}")
         }
         
         return result

@@ -17,7 +17,6 @@
 package org.codehaus.groovy.tools.shell.util
 
 import jline.console.completer.Completer
-import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
  * Support for simple completors.
@@ -67,7 +66,7 @@ public class SimpleCompletor implements Completer {
         Iterator iter = list.iterator();
 
         while (iter.hasNext()) {
-            add(InvokerHelper.toString(iter.next()));
+            add(String.valueOf(iter.next()));
         }
     }
 
