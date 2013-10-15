@@ -115,7 +115,7 @@ public class ASTNode {
         }
         return (T) metaDataMap.get(key);
     }
-    
+
     /**
      * Copies all node meta data from the other node to this one
      * @param other - the other node
