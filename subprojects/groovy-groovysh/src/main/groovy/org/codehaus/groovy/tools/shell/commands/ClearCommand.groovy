@@ -32,7 +32,7 @@ class ClearCommand
         super(shell, 'clear', '\\c')
     }
     
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assertNoArguments(args)
         
         buffer.clear()

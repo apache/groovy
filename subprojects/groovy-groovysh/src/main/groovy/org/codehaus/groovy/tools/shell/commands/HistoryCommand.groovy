@@ -49,7 +49,7 @@ class HistoryCommand
         ]
     }
 
-    Object execute(List args) {
+    Object execute(List<String> args) {
         if (!history) {
             fail("Shell does not appear to be interactive; Can not query history")
         }

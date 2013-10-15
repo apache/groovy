@@ -40,7 +40,7 @@ class SaveCommand
         ]
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assert args != null
         
         if (args.size() != 1) {

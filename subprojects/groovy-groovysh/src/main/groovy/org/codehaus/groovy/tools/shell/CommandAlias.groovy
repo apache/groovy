@@ -71,7 +71,7 @@ class CommandAlias
         return target.hidden
     }
     
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         target.execute(args)
     }
 }

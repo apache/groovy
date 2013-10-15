@@ -54,7 +54,7 @@ abstract class ComplexCommandSupport
         return functions
     }
     
-    Object execute(List args) {
+    Object execute(List<String> args) {
         assert args != null
         
         if (args.size() == 0) {
@@ -68,7 +68,7 @@ abstract class ComplexCommandSupport
         return executeFunction(args[0], args.tail())
     }
     
-    protected executeFunction(String fname, List args) {
+    protected executeFunction(String fname, List<String> args) {
         assert args != null
 
         List<String> myFunctions = getFunctions()

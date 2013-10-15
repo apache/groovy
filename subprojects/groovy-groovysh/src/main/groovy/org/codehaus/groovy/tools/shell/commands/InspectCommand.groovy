@@ -48,7 +48,7 @@ class InspectCommand
         ]
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assert args != null
         
         log.debug("Inspecting w/args: $args")

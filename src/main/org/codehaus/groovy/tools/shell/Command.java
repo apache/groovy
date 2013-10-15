@@ -41,7 +41,7 @@ public interface Command
 
     public List/*<CommandAlias>*/ getAliases();
 
-    public Object execute(List args);
+    public Object execute(List<String> args);
 
     public boolean getHidden();
 }

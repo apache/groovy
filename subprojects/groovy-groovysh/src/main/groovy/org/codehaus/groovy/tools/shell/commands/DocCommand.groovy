@@ -22,6 +22,7 @@ import jline.console.completer.Completer
 import jline.console.completer.StringsCompleter
 
 import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.commands.ImportCompleter
 
@@ -63,7 +64,7 @@ class DocCommand extends CommandSupport {
         }
     }
 
-    DocCommand(final Shell shell) {
+    DocCommand(final Groovysh shell) {
         super(shell, 'doc', '\\D')
     }
 
@@ -75,7 +76,7 @@ class DocCommand extends CommandSupport {
                 new ImportCompleter(shell.packageHelper, shell.interp, false)])])
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         if (args?.size() == 1) {
             doc(args[0])
             return

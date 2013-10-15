@@ -79,7 +79,7 @@ class RecordCommand
         }
     }
 
-    def do_start = {args ->
+    def do_start = {List<String> args ->
         if (isRecording()) {
             fail("Already recording to: $file")
         }

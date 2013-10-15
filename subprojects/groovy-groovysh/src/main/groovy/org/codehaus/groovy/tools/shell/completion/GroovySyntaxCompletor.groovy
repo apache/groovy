@@ -39,7 +39,7 @@ class GroovySyntaxCompletor implements Completer {
     private final Groovysh shell
     private final List<IdentifierCompletor> identifierCompletors
     private final ReflectionCompletor reflectionCompletor
-    private final FileNameCompleter filenameCompletor
+    private final Completer filenameCompletor
     protected String[] classes
     protected final static Logger log = Logger.create(GroovySyntaxCompletor)
 

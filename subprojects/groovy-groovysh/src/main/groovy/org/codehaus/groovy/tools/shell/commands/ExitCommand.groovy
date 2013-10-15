@@ -35,7 +35,7 @@ class ExitCommand
         alias('quit', '\\q')
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assertNoArguments(args)
         
         //
