@@ -24,6 +24,8 @@ import org.codehaus.groovy.tools.shell.Command
 
 /**
  * The 'register' command.
+ * Registers a class as a new groovysh command.
+ * Requires the command to have matching constructors (shell) or (shell, name, alias).
  *
  * @version $Id$
  * @author <a href="mailto:chris@wensel.net">Chris K Wensel</a>
@@ -35,7 +37,7 @@ class RegisterCommand
         super(shell, "register", "\\rc")
     }
 
-    public Object execute(List args) {
+    public Object execute(List<String> args) {
         assert args != null
 
         if (args.size() < 1) {

@@ -16,7 +16,9 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.tools.shell.Command
 import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Shell
 
 /**
@@ -28,7 +30,7 @@ import org.codehaus.groovy.tools.shell.Shell
 class AliasCommand
     extends CommandSupport
 {
-    AliasCommand(final Shell shell) {
+    AliasCommand(final Groovysh shell) {
         super(shell, 'alias', '\\a')
     }
 
@@ -42,7 +44,7 @@ class AliasCommand
         String name = args[0]
         List target = args[1..-1]
         
-        def command = registry[name]
+        Command command = registry.find(name)
         
         if (command) {
             if (command instanceof AliasTargetProxyCommand) {
@@ -72,13 +74,13 @@ class AliasCommand
 }
 
 class AliasTargetProxyCommand
-    extends CommandSupport
+    extends CommandSupport implements Command
 {
     private static int counter = 0
     
     final List args
     
-    AliasTargetProxyCommand(final Shell shell, final String name, final List args) {
+    AliasTargetProxyCommand(final Groovysh shell, final String name, final List args) {
         super(shell, name, '\\a' + counter++)
         
         assert args

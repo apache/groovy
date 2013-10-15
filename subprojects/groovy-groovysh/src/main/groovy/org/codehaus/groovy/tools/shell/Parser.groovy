@@ -30,7 +30,7 @@ import antlr.TokenStreamException
 
 
 interface Parsing {
-    ParseStatus parse(final List<String> buffer);
+    ParseStatus parse(final Collection<String> buffer);
 }
 
 /**
@@ -67,7 +67,7 @@ class Parser
         }
     }
     
-    ParseStatus parse(final List<String> buffer) {
+    ParseStatus parse(final Collection<String> buffer) {
         return delegate.parse(buffer)
     }
 }
@@ -83,7 +83,7 @@ final class RelaxedParser implements Parsing
 
     private String[] tokenNames
 
-    ParseStatus parse(final List buffer) {
+    ParseStatus parse(final Collection<String> buffer) {
         assert buffer
 
         sourceBuffer = new SourceBuffer()
@@ -137,7 +137,7 @@ final class RigidParser implements Parsing
 
     private final Logger log = Logger.create(this.class)
 
-    ParseStatus parse(final List<String> buffer) {
+    ParseStatus parse(final Collection<String> buffer) {
         assert buffer
 
         String source = buffer.join(Parser.NEWLINE)

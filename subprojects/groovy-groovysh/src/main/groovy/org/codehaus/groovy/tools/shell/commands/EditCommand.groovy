@@ -61,7 +61,7 @@ class EditCommand
         return editor
     }
     
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assertNoArguments(args)
         
         File file = File.createTempFile('groovysh-buffer', '.groovy')
@@ -95,7 +95,7 @@ class EditCommand
         
         // load editor contents into current buffer
         for (line in contents) {
-            shell << line as String
+            shell.execute(line as String)
         }
     }
     

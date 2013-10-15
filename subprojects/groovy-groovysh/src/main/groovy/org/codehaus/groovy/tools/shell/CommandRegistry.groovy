@@ -52,7 +52,9 @@ class CommandRegistry
         commands << command
         
         // Hookup context for alias commands
-        command.registry = this
+        if (command instanceof CommandSupport) {
+            ((CommandSupport) command).registry = this
+        }
 
         // Add any standard aliases for the command if any
         command.aliases?.each {Command it -> this << it }
@@ -96,8 +98,8 @@ class CommandRegistry
     List<Command> commands() {
         return commands
     }
-    
-    def getProperty(final String name) {
+
+    Command getProperty(final String name) {
         return find(name)
     }
     

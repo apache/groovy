@@ -36,12 +36,12 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
  */
 class GroovySyntaxCompletor implements Completer {
 
-    private Groovysh shell;
-    protected String[] classes;
-    private List<IdentifierCompletor> identifierCompletors
-    private ReflectionCompletor reflectionCompletor
-    private FileNameCompleter filenameCompletor
-    protected final static Logger log = Logger.create(GroovySyntaxCompletor.class)
+    private final Groovysh shell
+    private final List<IdentifierCompletor> identifierCompletors
+    private final ReflectionCompletor reflectionCompletor
+    private final Completer filenameCompletor
+    protected String[] classes
+    protected final static Logger log = Logger.create(GroovySyntaxCompletor)
 
     static final enum CompletionCase {
         NO_COMPLETION,

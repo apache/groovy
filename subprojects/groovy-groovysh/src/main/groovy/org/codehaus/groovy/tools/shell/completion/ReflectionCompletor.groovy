@@ -104,7 +104,7 @@ class ReflectionCompletor {
             try {
                 String instanceRefExpression = tokenListToEvalString(invokerTokens)
                 instanceRefExpression = instanceRefExpression.replace('\n', '')
-                Object instance = shell.interp.evaluate(shell.imports + ['true'] + instanceRefExpression)
+                Object instance = shell.interp.evaluate(shell.imports + ['true'] + [instanceRefExpression])
                 return instance
             } catch (MissingPropertyException |
                     MissingMethodException |

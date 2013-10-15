@@ -33,7 +33,7 @@ class DisplayCommand
         super(shell, 'display', '\\d')
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assertNoArguments(args)
         
         if (buffer.isEmpty()) {
