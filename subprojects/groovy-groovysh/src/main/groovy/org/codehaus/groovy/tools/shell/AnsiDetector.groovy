@@ -16,8 +16,9 @@
 
 package org.codehaus.groovy.tools.shell
 
-
-import jline.Terminal
+import groovy.transform.CompileStatic
+import groovy.transform.TypeChecked
+import jline.TerminalFactory
 
 import java.util.concurrent.Callable
 
@@ -25,6 +26,6 @@ class AnsiDetector
 implements Callable<Boolean>
 {
     public Boolean call() throws Exception {
-        return Terminal.getTerminal().isANSISupported()
+        return TerminalFactory.create().isAnsiSupported()
     }
 }

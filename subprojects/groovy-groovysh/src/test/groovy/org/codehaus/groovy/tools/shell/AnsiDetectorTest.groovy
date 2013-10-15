@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell.commands
+package org.codehaus.groovy.tools.shell
 
-/**
- * Tests for the {@link AliasCommand} class.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- */
-class AliasCommandTest
-    extends CommandTestSupport
-{
-    void testAlias() {
-        shell.execute('alias')
-        shell.execute('alias foo bar')
-        shell.execute('alias history foo') // cannot rebind
+class AnsiDetectorTest extends GroovyTestCase {
+
+    void testAnsiCall() {
+        AnsiDetector det = new AnsiDetector()
+        assert det.call()
     }
+
 }
