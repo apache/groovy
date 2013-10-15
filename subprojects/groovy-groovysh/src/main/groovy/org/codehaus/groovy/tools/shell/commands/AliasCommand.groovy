@@ -66,7 +66,7 @@ class AliasCommand
         
         // Try to install the completor
         if (shell.runner) {
-            shell.runner.completor << command
+            shell.runner.completer << command
         }
     }
 }
