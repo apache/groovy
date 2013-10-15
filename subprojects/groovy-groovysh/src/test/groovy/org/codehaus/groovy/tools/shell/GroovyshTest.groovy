@@ -82,24 +82,24 @@ class GroovyshTest extends GroovyTestCase {
                     new StackTraceElement("fooClass", "fooMethod", "fooFile", 42),
                     new StackTraceElement(Interpreter.SCRIPT_FILENAME, "run", "scriptFile", 42)]
         })
-        assertEquals("", mockOut.toString())
-        assertTrue(mockErr.toString(), mockErr.toString().contains("foo"))
-        assertFalse(mockErr.toString(), mockErr.toString().contains(Interpreter.SCRIPT_FILENAME))
-        assertFalse(mockErr.toString(), mockErr.toString().contains("..."))
+        assert "" == mockOut.toString()
+        assert mockErr.toString().contains("foo")
+        assert ! mockErr.toString().contains(Interpreter.SCRIPT_FILENAME)
+        assert ! mockErr.toString().contains("...")
     }
 
-    void testDefaultResultHookString() {
+    void testDefaultResultHookStringArray() {
         Groovysh groovysh = new Groovysh(testio)
         groovysh.defaultResultHook("foo bar".split())
-        assertTrue(mockOut.toString(), mockOut.toString().trim().endsWith("[foo, bar] (class java.lang.String)"))
-        assertEquals("", mockErr.toString())
+        assertTrue(mockOut.toString(), mockOut.toString().trim().endsWith("[foo, bar]"))
+        assert "" == mockErr.toString()
     }
 
-    void testDefaultResultHookObject() {
+    void testDefaultResultHookObjectArray() {
         Groovysh groovysh = new Groovysh(testio)
         groovysh.defaultResultHook(Object.fields)
-        assertTrue(mockOut.toString(), mockOut.toString().trim().endsWith("[] (class java.lang.reflect.Field)"))
-        assertEquals("", mockErr.toString())
+        assert mockOut.toString().trim().endsWith("[]")
+        assert "" == mockErr.toString()
     }
 
     void testDefaultResultPrimitive() {
@@ -121,6 +121,44 @@ class GroovyshTest extends GroovyTestCase {
         groovysh.defaultResultHook([])
         assertTrue(mockOut.toString(), mockOut.toString().trim().endsWith("[]"))
         assertEquals("", mockErr.toString())
+    }
+
+    void testDefaultResultSet() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.defaultResultHook([42] as Set)
+        assert mockOut.toString(), mockOut.toString().trim().endsWith("[]")
+        assert "" == mockErr.toString()
+    }
+
+    void testDefaultResultArray() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.defaultResultHook([42] as int[])
+        assert mockOut.toString().trim().endsWith("[42]")
+        assert "" == mockErr.toString()
+    }
+
+    void testDefaultResultMapEmpty() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.defaultResultHook([:])
+        assert  mockOut.toString().trim().endsWith("[:]")
+        assert "" == mockErr.toString()
+    }
+
+    void testDefaultResultMap() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.defaultResultHook(['class': 'foo'])
+        assert mockOut.toString().trim().endsWith("[class:foo]")
+        assert "" == mockErr.toString()
+    }
+
+    void testDefaultResultConfigObject() {
+        // ConfigObject are like maps
+        Groovysh groovysh = new Groovysh(testio)
+        ConfigObject co = new ConfigObject()
+        co.put("class", "foo")
+        groovysh.defaultResultHook(co)
+        assert mockOut.toString().trim().endsWith("[class:foo]")
+        assert "" == mockErr.toString()
     }
 
     void testFindCommandDuplicate() {

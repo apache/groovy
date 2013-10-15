@@ -20,6 +20,7 @@ import antlr.TokenStreamException
 import jline.Terminal
 import jline.TerminalFactory
 import jline.console.history.FileHistory
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
@@ -346,25 +347,12 @@ class Groovysh extends Shell {
     // Hooks
     //
 
-    final Closure defaultResultHook = { result ->
+    final Closure defaultResultHook = {Object result ->
         boolean showLastResult = !io.quiet && (io.verbose || Preferences.showLastResult)
         if (showLastResult) {
-            // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-
-            if (result != null && result.getClass() && result.getClass().isArray()) {
-                Class typeClass = result.getClass().getComponentType()
-                StringBuilder output = new StringBuilder()
-                if (result.length > 0) {
-                    output.append(String.valueOf(Arrays.toString(result)))
-                } else {
-                    output.append("[]")
-                }
-                output.append(" ($typeClass)")
-
-                io.out.println("@|bold ===>|@ $output")
-            } else {
-                io.out.println("@|bold ===>|@ ${String.valueOf(result)}")
-            }
+            // avoid String.valueOf here because it bypasses pretty-printing of Collections,
+            // e.g. String.valueOf( ['a': 42] ) != ['a': 42].toString()
+            io.out.println("@|bold ===>|@ ${InvokerHelper.toString(result)}")
         }
     }
 
