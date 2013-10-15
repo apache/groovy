@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 
@@ -59,8 +60,7 @@ class RecordCommand
         // result maybe null
 
         if (isRecording()) {
-            // Using String.valueOf() to prevent crazy exceptions
-            writer.println("// RESULT: ${String.valueOf(result)}")
+            writer.println("// RESULT: ${InvokerHelper.toString(result)}")
             writer.flush()
         }
     }
