@@ -202,7 +202,16 @@ Single quoted strings are a series of characters surounded by single quotes:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
 ----
 
-NOTE: Single quoted strings are plain +java.lang+String+ and don't support interpolation.
+NOTE: Single quoted strings are plain +java.lang.String+ and don't support interpolation.
+
+=== String concatenation
+
+All the Groovy strings can be concatenated with the `+` operator:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_plus,indent=0]
+----
 
 === Triple single quoted string
 
@@ -213,7 +222,7 @@ Triple single quoted strings are a series of characters surrounded by single quo
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_1,indent=0]
 ----
 
-NOTE: Triple single quoted strings are plain +java.lang+String+ and don't support interpolation.
+NOTE: Triple single quoted strings are plain +java.lang.String+ and don't support interpolation.
 
 Triple single quoted strings are multiline.
 You can span the content of the string across line boundaries without the need to split the string in several pieces, without contatenation or newline escape characters:
@@ -375,10 +384,57 @@ Triple double quoted strings behave like double quoted strings, with the additio
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_double_1,indent=0]
 ----
 
-NOTE: Neither double quote nor single quotes need be escaped in triple double quoted strings.
+NOTE: Neither double quotes nor single quotes need be escaped in triple double quoted strings.
 
 === Slashy string
+
+Beyond the usual quoted strings, Groovy offers slashy strings, which use +/+ as delimiters.
+Slashy strings are particularly useful for defining regular expressions and patterns, 
+as there is no need to escape backslashes.
+
+Example of a slashy string:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_1,indent=0]
+----
+
+Only forward slashes need to be escaped with a backslash:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_2,indent=0]
+----
+
+Slashy strings are multiline:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_3,indent=0]
+----
+
+Slashy strings can also be interpolated (ie. a GString):
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_4,indent=0]
+----
+
+There are a few gotchas to be aware of.
+
+An empty slashy string cannot be represented with a double forward slash, as it's understood by the Groovy parser as a line comment. 
+That's why the following assert would actually not compile as it would look like a non-terminated statement:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_5,indent=0]
+----
+
+
+
 === Dollar slashy string
+
+
 
 === String summary table
 
