@@ -64,7 +64,7 @@ class ComplexCommandSupportTest
         }
     }
 
-    void testCreateCompletors() {
+    void testCreateCompleters() {
         ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar", "baz"]) {}
         List<Completer> completors = com.createCompleters()
         assertEquals(2, completors.size())
