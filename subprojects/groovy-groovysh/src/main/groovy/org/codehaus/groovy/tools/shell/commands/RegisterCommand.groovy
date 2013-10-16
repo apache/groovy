@@ -71,7 +71,7 @@ class RegisterCommand
         command = shell << command
 
         if (shell.runner) {
-            shell.runner.completer << command
+            shell.runner.completer.add(command)
         }
     }
 }

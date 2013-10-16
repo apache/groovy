@@ -63,7 +63,7 @@ abstract class CompletorTestSupport extends GroovyTestCase {
         groovyshMocker.demand.getIo(0..2) { testio }
         for (i in 1..19) {
             groovyshMocker.demand.getIo(0..1) { testio }
-            groovyshMocker.demand.leftShift(0..1) {}
+            groovyshMocker.demand.add(0..1) {}
             groovyshMocker.demand.getIo(0..1) { testio }
         }
         groovyshMocker.demand.getRegistry(0..1) { registry }

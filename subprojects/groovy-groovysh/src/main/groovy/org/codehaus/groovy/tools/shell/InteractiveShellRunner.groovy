@@ -67,7 +67,7 @@ class InteractiveShellRunner
     
     void run() {
         for (command in shell.registry) {
-            completer << command
+            completer.add(command)
         }
 
         // Force things to become clean
@@ -152,7 +152,7 @@ class CommandsMultiCompleter
     
     private boolean dirty = false
     
-    def leftShift(final Command command) {
+    def add(final Command command) {
         assert command
         
         //

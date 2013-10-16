@@ -56,7 +56,7 @@ extends GroovyTestCase {
         // adding number of commands from xml file
         for (i in 1..19) {
             shellMocker.demand.getIo(0..1) { testio }
-            shellMocker.demand.leftShift(0..1) { testio }
+            shellMocker.demand.add(0..1) { testio }
             shellMocker.demand.getIo(0..1) { testio }
         }
 
