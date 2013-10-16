@@ -16,16 +16,21 @@
 package org.codehaus.groovy.classgen.asm;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.TreeMap;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -635,29 +640,12 @@ public class InvocationWriter {
         // to select the constructor we need also the number of
         // available constructors and the class we want to make
         // the call on
-        BytecodeHelper.pushConstant(mv, constructors.size());
+        BytecodeHelper.pushConstant(mv, -1);
         controller.getAcg().visitClassExpression(new ClassExpression(callNode));
         operandStack.remove(1);
         // removes one Object[] leaves the int containing the
         // call flags and the constructor number
         selectConstructorAndTransformArguments.call(mv);
-        // Object[],int -> int,Object[],int
-        // we need to examine the flags and maybe change the
-        // Object[] later, so this reordering will do the job
-        mv.visitInsn(DUP_X1);
-        // test if rewrap flag is set
-        mv.visitInsn(ICONST_1);
-        mv.visitInsn(IAND);
-        Label afterIf = new Label();
-        mv.visitJumpInsn(IFEQ, afterIf);
-        // true part, so rewrap using the first argument
-        mv.visitInsn(ICONST_0);
-        mv.visitInsn(AALOAD);
-        mv.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;");
-        mv.visitLabel(afterIf);
-        // here the stack is int,Object[], but we need the
-        // the int for our table, so swap it
-        mv.visitInsn(SWAP);
         //load "this"
         if (controller.isConstructor()) {
             mv.visitVarInsn(ALOAD, 0);
@@ -665,15 +653,25 @@ public class InvocationWriter {
             mv.visitTypeInsn(NEW, BytecodeHelper.getClassInternalName(callNode));
         }
         mv.visitInsn(SWAP);
-        //prepare switch with >>8
-        mv.visitIntInsn(BIPUSH, 8);
-        mv.visitInsn(ISHR);
+        TreeMap<Integer,ConstructorNode> sortedConstructors = new TreeMap<Integer, ConstructorNode>();
+        for (ConstructorNode constructor : constructors) {
+            String typeDescriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, constructor.getParameters());
+            int hash = BytecodeHelper.hashCode(typeDescriptor);
+            ConstructorNode sameHashNode = sortedConstructors.put(hash, constructor);
+            if (sameHashNode!=null) {
+                controller.getSourceUnit().addError(
+                        new SyntaxException("Unable to compile class "+controller.getClassNode().getName() + " due to hash collision in constructors", call.getLineNumber(), call.getColumnNumber()));
+            }
+        }
         Label[] targets = new Label[constructors.size()];
         int[] indices = new int[constructors.size()];
+        Iterator<Integer> hashIt = sortedConstructors.keySet().iterator();
+        Iterator<ConstructorNode> constructorIt = sortedConstructors.values().iterator();
         for (int i = 0; i < targets.length; i++) {
             targets[i] = new Label();
-            indices[i] = i;
+            indices[i] = hashIt.next();
         }
+
         // create switch targets
         Label defaultLabel = new Label();
         Label afterSwitch = new Label();
@@ -704,7 +702,7 @@ public class InvocationWriter {
                 mv.visitInsn(POP);
             }
 
-            ConstructorNode cn = constructors.get(i);
+            ConstructorNode cn = constructorIt.next();
             String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
             // unwrap the Object[] and make transformations if needed
             // that means, to duplicate the Object[], make a cast with possible
@@ -731,7 +729,7 @@ public class InvocationWriter {
         // this part should never be reached!
         mv.visitTypeInsn(NEW, "java/lang/IllegalArgumentException");
         mv.visitInsn(DUP);
-        mv.visitLdcInsn("illegal constructor number");
+        mv.visitLdcInsn("This class has been compiled with a super class which is binary incompatible with the current super class found on classpath. You should recompile this class with the new version.");
         mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "(Ljava/lang/String;)V");
         mv.visitInsn(ATHROW);
         mv.visitLabel(afterSwitch);

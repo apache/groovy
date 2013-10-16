@@ -16,6 +16,7 @@
 package groovy.lang;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -1405,6 +1406,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public int selectConstructorAndTransformArguments(int numberOfConstructors, Object[] arguments) {
+        if (numberOfConstructors==-1) {
+            return selectConstructorAndTransformArguments1(arguments);
+        } else {
+            // falling back to pre 2.1.9 selection algorithm
+            // in practice this branch will only be reached if the class calling this code is a Groovy class
+            // compiled with an earlier version of the Groovy compiler
+            return selectConstructorAndTransformArguments0(numberOfConstructors, arguments);
+        }
+
+
+    }
+
+    private int selectConstructorAndTransformArguments0(final int numberOfConstructors, Object[] arguments) {
         //TODO: that is just a quick prototype, not the real thing!
         if (numberOfConstructors != constructors.size()) {
             throw new IncompatibleClassChangeError("the number of constructors during runtime and compile time for " +
@@ -1444,6 +1458,46 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // NOTE: must be changed to "1 |" if constructor was vargs
         return 0 | (found << 8);
     }
+
+    /**
+     * Constructor selection algorithm for Groovy 2.1.9+.
+     * This selection algorithm was introduced as a workaround for GROOVY-6080. Instead of generating an index between
+     * 0 and N where N is the number of super constructors at the time the class is compiled, this algorithm uses
+     * a hash of the constructor descriptor instead.
+     *
+     * This has the advantage of letting the super class add new constructors while being binary compatible. But there
+     * are still problems with this approach:
+     * <ul>
+     *     <li>There's a risk of hash collision, even if it's very low (two constructors of the same class must have the same hash)</li>
+     *     <li>If the super class adds a new constructor which takes as an argument a superclass of an existing constructor parameter and
+     *     that this new constructor is selected at runtime, it would not find it.</li>
+     * </ul>
+     *
+     * Hopefully in the last case, the error message is much nicer now since it explains that it's a binary incompatible change.
+     *
+     * @param arguments the actual constructor call arguments
+     * @return a hash used to identify the constructor to be called
+     * @since 2.1.9
+     */
+    private int selectConstructorAndTransformArguments1(Object[] arguments) {
+        if (arguments == null) arguments = EMPTY_ARGUMENTS;
+        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+        MetaClassHelper.unwrap(arguments);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
+        if (constructor == null) {
+            constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
+        }
+        if (constructor == null) {
+            throw new GroovyRuntimeException(
+                    "Could not find matching constructor for: "
+                            + theClass.getName()
+                            + "(" + InvokerHelper.toTypeString(arguments) + ")");
+        }
+        final String methodDescriptor = BytecodeHelper.getMethodDescriptor(Void.TYPE, constructor.getNativeParameterTypes());
+        // keeping 3 bits for additional information such as vargs
+        return BytecodeHelper.hashCode(methodDescriptor);
+    }
+
 
     /**
      * checks if the initialisation of the class id complete.
