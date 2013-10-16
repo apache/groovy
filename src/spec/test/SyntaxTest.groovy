@@ -325,6 +325,10 @@ class SyntaxTest extends CompilableTestSupport {
             println "$number.toString()"
         }
         // end::gstring_5[]
+
+        // tag::gstring_6[]
+        assert '${name}' == "\${name}"
+        // end::gstring_6[]
     }
 
     void testTripleSingleQuotedString() {
@@ -379,7 +383,7 @@ class SyntaxTest extends CompilableTestSupport {
         // tag::slashy_2[]
         def escapeSlash = /The character \/ is a forward slash/
         assert escapeSlash == 'The character / is a forward slash'
-        // tag::slashy_2[]
+        // end::slashy_2[]
 
         // tag::slashy_3[]
         def multilineSlashy = /one
@@ -401,5 +405,36 @@ class SyntaxTest extends CompilableTestSupport {
             assert '' == //
             // end::slashy_5[]
         '''
+    }
+
+    void testDollarSlashyString() {
+        // tag::dollar_slashy_1[]
+        def name = "Guillaume"
+        def date = "April, 1st"
+
+        def dollarSlashy = $/
+            Hello $name,
+            today we're ${date}.
+
+            $ dollar sign
+            $$ escaped dollar sign
+            \ backslash
+            / forward slash
+            $/ escaped forward slash
+            $/$ escaped dollar slashy string delimiter
+        /$
+
+        assert [
+            'Guillaume',
+            'April, 1st',
+            '$ dollar sign',
+            '$ escaped dollar sign',
+            '\\ backslash',
+            '/ forward slash',
+                '$/ escaped forward slash',
+                '/$ escaped dollar slashy string delimiter'
+
+                ].each { dollarSlashy.contains(it) }
+        // end::dollar_slashy_1[]
     }
 }

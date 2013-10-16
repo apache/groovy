@@ -375,6 +375,14 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_5,indent=0]
 
 NOTE: You can think of +"$number.toString()"+ as being interpreted by the parser as +"${number.toString}()"+.
 
+If you need to escape the +$+ or +${}+ placeholders in a GString so they appear as is without interpolation, 
+you just need to use a +\+ backslash character to escape the dollar sign:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_6,indent=0]
+----
+
 === Triple double quoted string
 
 Triple double quoted strings behave like double quoted strings, with the addition that they are multiline, like the triple single quoted strings.
@@ -430,15 +438,65 @@ That's why the following assert would actually not compile as it would look like
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_5,indent=0]
 ----
 
-
-
 === Dollar slashy string
 
+Dollar slashy strings are multiline GStrings delimited with an opening +$/+ and and a closing +/$+.
+The escaping character is the dollar sign, and it can escape another dollar, or a forward slash.
+But both dollar and forward slashes don't need to be escaped, except to escape the dollar of a string subsequence that would start like a GString placeholder sequence, or if you need to escape a sequence that would start like a closing dollar slashy string delimiter.
 
+Here's an example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=dollar_slashy_1,indent=0]
+----
 
 === String summary table
 
+[cols="5*", ptions="header"]
+|====
+|String name
+|String syntax
+|Interpolated
+|Multiline
+|Escape character
 
+|Single quoted
+|+\'...'+
+|icon:check-empty[]
+|icon:check-empty[]
+|+\+
+
+|Triple single quoted
+|+\'''...\'''+
+|icon:check-empty[]
+|icon:check[]
+|+\+
+
+|Double quoted
+|+"..."+
+|icon:check[]
+|icon:check-empty[]
+|+\+
+
+|Triple double quoted
+|+"""..."""+
+|icon:check[]
+|icon:check[]
+|+\+
+
+|Slashy
+|+/.../+
+|icon:check[]
+|icon:check[]
+|+\+
+
+|Dollar slashy
+|+$/.../$+
+|icon:check[]
+|icon:check[]
+|+$+
+|====
 
 === Characters
 
@@ -455,8 +513,6 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=char,indent=0]
 
 NOTE: The first option (&#x278A;) is interesting when the character is held in a variable,
 while the other two (&#x278B; and &#x278C;) are more interesting when a char value must be passed as argument of a method call.
-
-=== Useful extension methods on Strings and GStrings
 
 == Numbers
 
