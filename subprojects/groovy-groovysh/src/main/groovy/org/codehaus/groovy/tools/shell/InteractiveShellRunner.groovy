@@ -66,7 +66,7 @@ class InteractiveShellRunner
     }
     
     void run() {
-        for (command in shell.registry) {
+        for (Command command in shell.registry.commands()) {
             completer.add(command)
         }
 

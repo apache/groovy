@@ -49,7 +49,7 @@ extends GroovyTestCase {
         // when run with compileStatic
         shellMocker.demand.getClass(0..1) {Groovysh}
         shellMocker.demand.getIo(2) { testio }
-        shellMocker.demand.getRegistry(1) {[]}
+        shellMocker.demand.getRegistry(1) {new Object() {def commands() {[]} }}
         shellMocker.demand.getHistory(1) {new Serializable(){def size() {0}; def getMaxSize() {1}}}
         shellMocker.demand.setHistoryFull(1) {}
         shellMocker.demand.getHistoryFull(1) {false}
