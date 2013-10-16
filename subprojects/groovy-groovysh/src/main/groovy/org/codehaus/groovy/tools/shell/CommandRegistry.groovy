@@ -57,17 +57,13 @@ class CommandRegistry
         }
 
         // Add any standard aliases for the command if any
-        command.aliases?.each {Command it -> this << it }
+        command.aliases?.each {Command it -> this.register(it) }
         
         if (log.debugEnabled) {
             log.debug("Registered command: $command.name")
         }
         
         return command
-    }
-
-    def leftShift(final Command command) {
-        return register(command)
     }
     
     Command find(final String name) {

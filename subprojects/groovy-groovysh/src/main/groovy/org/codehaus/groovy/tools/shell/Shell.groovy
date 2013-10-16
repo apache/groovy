@@ -111,7 +111,7 @@ class Shell
     }
     
     Command register(final Command command) {
-        return (registry << command) as Command
+        return registry.register(command)
     }
 
     /**

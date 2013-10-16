@@ -184,7 +184,7 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             // import command prevents reflection completion
-            registry << new ImportCommand(groovyshMock)
+            registry.register(new ImportCommand(groovyshMock))
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "import foo"
