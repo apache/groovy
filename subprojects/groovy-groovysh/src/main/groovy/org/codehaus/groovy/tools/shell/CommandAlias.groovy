@@ -46,12 +46,16 @@ class CommandAlias
         return command
     }
     
-    protected List<Completer> createCompletors() {
+    protected List<Completer> createCompleters() {
         try {
-            // TODO: Use interface with createCompletors()
-            return target.createCompletors()
+            // TODO: Use interface with createCompleters()
+            if (target instanceof CommandSupport) {
+                CommandSupport support = (CommandSupport) target;
+                return support.createCompleters()
+            }
+
         } catch (MissingMethodException) {
-            log.warn("Aliased Command without createCompletors Method")
+            log.warn("Aliased Command without createCompleters Method")
         }
     }
     
