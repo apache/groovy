@@ -35,7 +35,7 @@ class HistoryCommand
         super(shell, 'history', '\\H', [ 'show', 'clear', 'flush', 'recall' ], 'show')
     }
 
-    protected List createCompletors() {
+    protected List createCompleters() {
         def loader = {
             def list = []
 

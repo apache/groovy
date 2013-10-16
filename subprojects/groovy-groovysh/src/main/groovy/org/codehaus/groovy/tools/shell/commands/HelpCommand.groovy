@@ -38,7 +38,7 @@ class HelpCommand
         alias('?', '\\?')
     }
 
-    protected List createCompletors() {
+    protected List createCompleters() {
         return [
             new HelpCommandCompletor(registry),
             null

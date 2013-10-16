@@ -42,7 +42,7 @@ class InspectCommand
     def lafInitialized = false
     def headless
     
-    protected List createCompletors() {
+    protected List createCompleters() {
         return [
             new InspectCommandCompletor(binding),
             null

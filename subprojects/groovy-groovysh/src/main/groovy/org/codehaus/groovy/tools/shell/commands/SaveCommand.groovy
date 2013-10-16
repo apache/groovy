@@ -33,7 +33,7 @@ class SaveCommand
         super(shell, 'save', '\\s')
     }
 
-    protected List createCompletors() {
+    protected List createCompleters() {
         return [
             new FileNameCompleter(),
             null
