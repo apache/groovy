@@ -27,8 +27,6 @@ import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.Preferences
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
-import org.fusesource.jansi.Ansi
-import org.fusesource.jansi.AnsiConsole
 import org.fusesource.jansi.AnsiRenderer
 
 /**
@@ -38,13 +36,6 @@ import org.fusesource.jansi.AnsiRenderer
  */
 class Groovysh extends Shell {
 
-    static {
-        // Install the system adapters
-        AnsiConsole.systemInstall()
-
-        // Register jline ansi detector
-        Ansi.setDetector(new AnsiDetector())
-    }
 
     private static final MessageSource messages = new MessageSource(Groovysh)
 
