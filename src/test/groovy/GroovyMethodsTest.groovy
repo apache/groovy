@@ -577,13 +577,13 @@ class GroovyMethodsTest extends GroovyTestCase {
         def interruptor = new groovy.TestInterruptor(Thread.currentThread())
         new Thread(interruptor).start()
         long start = System.currentTimeMillis()
-        long sleeptime = 750
+        long sleeptime = 1000
         sleep(sleeptime) {
             log += it.toString()
             false // continue sleeping
         }
         long slept = System.currentTimeMillis() - start
-        short allowedError = 15 // ms
+        short allowedError = 20 // ms
         assert slept + allowedError >= sleeptime, "should have slept for at least $sleeptime ms but only slept for $slept ms"
         assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
     }
