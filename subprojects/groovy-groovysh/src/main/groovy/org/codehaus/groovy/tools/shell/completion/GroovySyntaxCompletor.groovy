@@ -39,11 +39,13 @@ class GroovySyntaxCompletor implements Completer {
     private final Groovysh shell
     private final List<IdentifierCompletor> identifierCompletors
     private final ReflectionCompletor reflectionCompletor
+    private final InfixKeywordSyntaxCompletor infixCompletor
     private final Completer filenameCompletor
     protected String[] classes
     protected final static Logger log = Logger.create(GroovySyntaxCompletor)
 
     static final enum CompletionCase {
+        SECOND_IDENT,
         NO_COMPLETION,
         DOT_LAST,
         PREFIX_AFTER_DOT,
@@ -56,6 +58,7 @@ class GroovySyntaxCompletor implements Completer {
                           Completer filenameCompletor) {
         this.shell = shell
         this.identifierCompletors = identifierCompletors
+        infixCompletor = new InfixKeywordSyntaxCompletor()
         this.reflectionCompletor = reflectionCompletor
         this.filenameCompletor = filenameCompletor
     }
@@ -87,6 +90,13 @@ class GroovySyntaxCompletor implements Completer {
         if (completionCase == CompletionCase.NO_COMPLETION) {
             return -1
         }
+        if (completionCase == CompletionCase.SECOND_IDENT) {
+            if (infixCompletor.complete(tokens, candidates)) {
+                return tokens.last().getColumn() - 1
+            }
+            return -1
+        }
+
 
         int result
         switch (completionCase) {
@@ -152,7 +162,7 @@ class GroovySyntaxCompletor implements Completer {
                     case IDENT:
                         // identifiers following each other could mean Declaration (no completion) or closure invocation
                         // closure invocation too complex for now to complete
-                        return CompletionCase.NO_COMPLETION
+                        return CompletionCase.SECOND_IDENT
                     default:
                         return CompletionCase.NO_DOT_PREFIX
                 }

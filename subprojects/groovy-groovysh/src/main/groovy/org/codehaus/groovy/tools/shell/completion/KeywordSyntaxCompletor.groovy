@@ -19,7 +19,7 @@ package org.codehaus.groovy.tools.shell.completion
 import org.codehaus.groovy.antlr.GroovySourceToken
 
 /**
- * Completor completing variable and method names from known variables in the shell
+ * Completor completing Groovy keywords and special functions
  */
 public class KeywordSyntaxCompletor implements IdentifierCompletor {
 
@@ -33,16 +33,16 @@ public class KeywordSyntaxCompletor implements IdentifierCompletor {
             "default",
             "do",
             "double",
-            "else", "enum", "extends",
+            "else", "enum",
+
             //"false",// value
             "final",
             //"finally {", // special
             "float",
             //"for (", // special
             //"if (", // special
-            //"import",
-            "in",
-            "instanceof",
+            //"import", // command anyway
+
             "int", // short, but keeping for consistency, all primitives
             "interface",
             "long",
