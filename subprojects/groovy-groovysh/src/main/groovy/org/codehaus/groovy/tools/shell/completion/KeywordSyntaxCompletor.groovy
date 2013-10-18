@@ -19,7 +19,7 @@ package org.codehaus.groovy.tools.shell.completion
 import org.codehaus.groovy.antlr.GroovySourceToken
 
 /**
- * Completor completing variable and method names from known variables in the shell
+ * Completor completing Groovy keywords and special functions
  */
 public class KeywordSyntaxCompletor implements IdentifierCompletor {
 
@@ -33,16 +33,16 @@ public class KeywordSyntaxCompletor implements IdentifierCompletor {
             "default",
             "do",
             "double",
-            "else", "enum", "extends",
+            "else", "enum",
+
             //"false",// value
             "final",
             //"finally {", // special
             "float",
             //"for (", // special
             //"if (", // special
-            //"import",
-            "in",
-            "instanceof",
+            //"import", // command anyway
+
             "int", // short, but keeping for consistency, all primitives
             "interface",
             "long",
@@ -82,6 +82,14 @@ public class KeywordSyntaxCompletor implements IdentifierCompletor {
             "try {",
             "while ("]
 
+    private static final String[] DEFAULT_METHODS = [
+            "use (",
+            "print ",
+            "println ",
+            "printf ",
+            "sprintf ",
+    ]
+
     @Override
     public boolean complete(final List<GroovySourceToken> tokens, List candidates) {
         String prefix = tokens.last().getText()
@@ -104,6 +112,13 @@ public class KeywordSyntaxCompletor implements IdentifierCompletor {
                 foundMatch = true
             }
         }
+        for (String varName in DEFAULT_METHODS) {
+            if (varName.startsWith(prefix)) {
+                candidates << varName
+                foundMatch = true
+            }
+        }
+
         return foundMatch
     }
 }
