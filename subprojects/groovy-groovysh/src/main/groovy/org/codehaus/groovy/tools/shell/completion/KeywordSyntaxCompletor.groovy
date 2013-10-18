@@ -82,6 +82,14 @@ public class KeywordSyntaxCompletor implements IdentifierCompletor {
             "try {",
             "while ("]
 
+    private static final String[] DEFAULT_METHODS = [
+            "use (",
+            "print ",
+            "println ",
+            "printf ",
+            "sprintf ",
+    ]
+
     @Override
     public boolean complete(final List<GroovySourceToken> tokens, List candidates) {
         String prefix = tokens.last().getText()
@@ -104,6 +112,13 @@ public class KeywordSyntaxCompletor implements IdentifierCompletor {
                 foundMatch = true
             }
         }
+        for (String varName in DEFAULT_METHODS) {
+            if (varName.startsWith(prefix)) {
+                candidates << varName
+                foundMatch = true
+            }
+        }
+
         return foundMatch
     }
 }
