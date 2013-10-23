@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
  * @author Alex Tkachman
  */
 @java.lang.annotation.Documented
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.ast.MixinASTTransformation")
 public @interface Mixin {
