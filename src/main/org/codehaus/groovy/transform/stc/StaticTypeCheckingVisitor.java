@@ -98,16 +98,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (typeCheckingContext.getEnclosingClosure()!=null) {
                 addClosureReturnType(getType(returnStatement.getExpression()));
             } else if (typeCheckingContext.getEnclosingMethod() != null) {
-                /*MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
-                ClassNode mrt = enclosingMethod.getReturnType();
-                if (!returnType.implementsInterface(mrt) && !returnType.isDerivedFrom(mrt)) {
-                    // there's an implicit type conversion, like Object -> String
-                    // so we'll use the method return type instead
-                    returnType = mrt;
-                }
-                ClassNode previousType = getInferredReturnType(enclosingMethod);
-                ClassNode inferred = previousType == null ? returnType : lowestUpperBound(returnType, previousType);
-                storeInferredReturnType(enclosingMethod, inferred);*/
             } else {
                 throw new GroovyBugError("Unexpected return statement at "
                         + returnStatement.getLineNumber()+":"+returnStatement.getColumnNumber()
@@ -2577,9 +2567,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void storeType(Expression exp, ClassNode cn) {
-        if (exp instanceof DeclarationExpression && CLOSURE_TYPE.equals(cn)) {
-            System.out.println("exp = " + exp.getText());
-        }
         if (exp instanceof VariableExpression && ((VariableExpression) exp).isClosureSharedVariable() && isPrimitiveType(cn)) {
             cn = getWrapper(cn);
         } else if (exp instanceof MethodCallExpression && ((MethodCallExpression) exp).isSafe() && isPrimitiveType(cn)) {
@@ -3166,6 +3153,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         if (exp instanceof Parameter) {
             return ((Parameter) exp).getOriginType();
+        }
+        if (exp instanceof FieldNode) {
+            return ((FieldNode) exp).getOriginType();
+        }
+        if (exp instanceof PropertyNode) {
+            return ((PropertyNode) exp).getOriginType();
         }
         return exp instanceof VariableExpression ? ((VariableExpression) exp).getOriginType() : ((Expression) exp).getType();
     }
