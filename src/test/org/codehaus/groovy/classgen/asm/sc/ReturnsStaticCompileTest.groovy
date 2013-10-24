@@ -31,5 +31,46 @@ class ReturnsStaticCompileTest extends ReturnsSTCTest {
         extraSetup()
     }
 
+    void testReturnTypeInferenceWithInheritance() {
+        assertScript '''
+interface Greeter {
+   public void sayHello()
+}
+
+class HelloGreeter implements Greeter {
+   public void sayHello() {
+       println "Hello world!"
+   }
+}
+
+class A {
+   Greeter createGreeter() {
+       new HelloGreeter()
+   }
+
+   void sayHello() {
+      // also fails: def greeter = createGreeter()
+      // successfull: def greeter = (Greeter)createGreeter()
+      Greeter greeter = createGreeter()
+      greeter.sayHello()
+   }
+}
+
+class HelloThereGreeter implements Greeter {
+   public void sayHello() {
+       println "Hello there!"
+   }
+}
+
+class B extends A {
+   Greeter createGreeter() {
+       new HelloThereGreeter()
+   }
+}
+
+
+new B().sayHello()'''
+    }
+
 }
 

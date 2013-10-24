@@ -385,9 +385,6 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         extension = null
         assertScript '''
         @groovy.transform.stc.MyType(String)
-        @ASTTest(phase=INSTRUCTION_SELECTION,value={
-            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == int_TYPE
-        })
         int foo() { 1 }
         '''
 
