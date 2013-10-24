@@ -117,7 +117,7 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
 
     void testPlusStaticMethodCall() {
         assertScript '''
-            static foo() { 1 }
+            static int foo() { 1 }
             assert 1+foo() == 2
         '''
     }

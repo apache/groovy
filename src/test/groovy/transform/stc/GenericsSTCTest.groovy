@@ -422,7 +422,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new Test()
-        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+        ''', 'Cannot find matching method java.lang.Object#getAt(int)'
     }
 
     void testAssignmentOfNewInstance() {
