@@ -10,7 +10,6 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         ''')
         assert bytecode.hasStrictSequence(
                 ['public m()V',
-                        '@Lgroovy/transform/TypeChecked$TypeCheckingInfo',
                         'L0',
                         'RETURN']
         )

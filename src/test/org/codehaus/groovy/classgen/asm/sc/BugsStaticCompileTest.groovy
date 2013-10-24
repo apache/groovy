@@ -891,7 +891,7 @@ import groovy.transform.TypeCheckingMode
                 assert x == Closure.DELEGATE_FIRST
             '''
         } finally {
-            println astTrees
+//            println astTrees
         }
     }
 
