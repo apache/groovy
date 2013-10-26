@@ -53,7 +53,7 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
             "(?ms:\"{3}.*?(?:\"{3}|\\z))|(?:\"{1}.*?(?:\"|\\Z))";
 
     public static final String SINGLE_QUOTES =
-            "(?ms:'{3}(?!'{1,3}).*?(?:'{3}|\\z))|(?:'[^'].*?(?:'|\\z))";
+            "(?ms:'{3}(?!'{1,3}).*?(?:'{3}|\\z))|(?:'{1}.*?(?:'|\\z))";
 
     public static final String SLASHY_QUOTES = "(?:/[^/*].*?/|(?ms:\\$/.*?(?:/\\$|\\z)))";
 
