@@ -117,4 +117,16 @@ class GroovyFilterTests extends GroovyTestCase {
         assert '"""test""' ==~ GroovyFilter.QUOTES
         assert '""""""' ==~ GroovyFilter.QUOTES
     }
+
+    void testSingleQuotes() {
+
+        assert "''" ==~ GroovyFilter.SINGLE_QUOTES
+        assert "'a'" ==~ GroovyFilter.SINGLE_QUOTES
+
+        assert "'''a'''" ==~ GroovyFilter.SINGLE_QUOTES
+        String multilineTripleSingleQuotes =  """'''
+        a
+        '''"""
+        assert multilineTripleSingleQuotes ==~ GroovyFilter.SINGLE_QUOTES
+    }
 }
