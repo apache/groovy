@@ -138,8 +138,9 @@ public class ConsoleTextEditor extends JScrollPane {
      * Creates a new instance of ConsoleTextEditor
      */
     public ConsoleTextEditor() {
-        textEditor.setFont(new Font(defaultFamily, Font.PLAIN, Preferences.userNodeForPackage(Console.class).getInt("fontSize", 12)));
-        
+        textEditor.setFont(new Font(defaultFamily, Font.PLAIN,
+		        Preferences.userNodeForPackage(Console.class).getInt("fontSize", 12)));
+
         setViewportView(new JPanel(new BorderLayout()) {{
             add(numbersPanel, BorderLayout.WEST);
             add(textEditor, BorderLayout.CENTER);
