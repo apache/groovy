@@ -365,9 +365,24 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
         }
     }
     
-    public Boolean isSet(Object value) {
-        if (delegateMap.containsKey(value)) {
-            Object entry = delegateMap.get(value);
+    /**
+     * Checks if a config option is set. Example usage:
+     * <pre>
+     * def config = new ConfigSlurper().parse("foo { password='' }")
+     * assert config.foo.isSet('password')
+     * assert config.foo.isSet('username') == false
+     * </pre>
+     * 
+     * The check works <b>only</v> for options <b>one</b> block below the current block.
+     * E.g. <code>config.isSet('foo.password')</code> will always return false.
+     *
+     * @param option The name of the option
+     * @return <code>true</code> if the option is set <code>false</code> otherwise
+     * @since 2.3.0
+     */
+    public Boolean isSet(String option) {
+        if (delegateMap.containsKey(option)) {
+            Object entry = delegateMap.get(option);
             if (!(entry instanceof ConfigObject) || !((ConfigObject) entry).isEmpty()) {
                 return Boolean.TRUE; 
             } 
