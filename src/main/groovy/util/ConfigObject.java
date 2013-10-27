@@ -364,4 +364,14 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
             throw new AssertionError();
         }
     }
+    
+    public Boolean isSet(Object value) {
+        if (delegateMap.containsKey(value)) {
+            Object entry = delegateMap.get(value);
+            if (!(entry instanceof ConfigObject) || !((ConfigObject) entry).isEmpty()) {
+                return Boolean.TRUE; 
+            } 
+        }
+        return Boolean.FALSE; 
+    }
 }
