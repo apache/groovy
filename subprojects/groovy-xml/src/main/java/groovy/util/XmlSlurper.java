@@ -33,6 +33,7 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Stack;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -98,9 +99,15 @@ public class XmlSlurper extends DefaultHandler {
     }
 
     public XmlSlurper(final boolean validating, final boolean namespaceAware) throws ParserConfigurationException, SAXException {
+        this(validating, namespaceAware, false);
+    }
+
+    public XmlSlurper(final boolean validating, final boolean namespaceAware, boolean allowDocTypeDeclaration) throws ParserConfigurationException, SAXException {
         SAXParserFactory factory = FactorySupport.createSaxParserFactory();
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
+        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         reader = factory.newSAXParser().getXMLReader();
     }
 
