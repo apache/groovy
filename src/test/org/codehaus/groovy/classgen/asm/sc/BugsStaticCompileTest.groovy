@@ -1038,5 +1038,85 @@ assert it.next() == 1G
             assert !astTrees.TwoException.contains('selectConstructorAndTransformArguments')
         }
     }
+
+    void testNullSafeOperatorShouldNotCallMethodTwice() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public Long getNext() {
+                return sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.next?.longValue()
+            }
+            assert seq.next == 5
+'''
+    }
+
+    void testNullSafeOperatorShouldNotCallMethodTwiceWithPrimitive() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public long getNext() {
+                sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.next?.longValue()
+            }
+            assert seq.next == 5
+'''
+    }
+
+    void testNullSafeOperatorShouldNotCallMethodTwice1Arg() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public Long getNext(int factor) {
+                factor*sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.getNext(2)?.longValue()
+            }
+            assert seq.getNext(2) == 10
+'''
+    }
+
+    void testNullSafeOperatorShouldNotCallMethodTwiceWithPrimitive1Arg() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public long getNext(int factor) {
+                factor*sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.getNext(2)?.longValue()
+            }
+            assert seq.getNext(2) == 10
+'''
+    }
 }
 
