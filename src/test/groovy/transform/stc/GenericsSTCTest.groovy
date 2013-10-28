@@ -1314,6 +1314,30 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Runner.main(null);
         """
     }
+
+    void testReturnTypeInferenceRemovalWithGenerics() {
+        assertScript '''
+            class SynchronousPromise<T> {
+                Closure<T> callable
+                Object value
+
+                SynchronousPromise(Closure<T> callable) {
+                    this.callable = callable
+                }
+
+                T get() throws Throwable {
+                    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                        assert node.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
+                    })
+                    value=callable.call()
+                    return value
+                }
+            }
+
+            def promise = new SynchronousPromise({ "Hello" })
+            promise.get()
+        '''
+    }
     
     static class MyList extends LinkedList<String> {}
 
