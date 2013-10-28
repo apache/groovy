@@ -429,7 +429,9 @@ public class StaticInvocationWriter extends InvocationWriter {
             OperandStack operandStack = controller.getOperandStack();
             int counter = labelCounter.incrementAndGet();
             // if (receiver != null)
-            receiver.visit(controller.getAcg());
+            ExpressionAsVariableSlot slot = new ExpressionAsVariableSlot(controller, receiver);
+            slot.visit(controller.getAcg());
+            operandStack.box();
             Label ifnull = compileStack.createLocalLabel("ifnull_" + counter);
             mv.visitJumpInsn(IFNULL, ifnull);
             operandStack.remove(1); // receiver consumed by if()
@@ -437,7 +439,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             mv.visitLabel(nonull);
             MethodCallExpression origMCE = (MethodCallExpression) origin;
             MethodCallExpression newMCE = new MethodCallExpression(
-                    origMCE.getObjectExpression(),
+                    new VariableSlotLoader(slot.getType(), slot.getIndex(), controller.getOperandStack()),
                     origMCE.getMethodAsString(),
                     origMCE.getArguments()
             );
@@ -447,6 +449,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             newMCE.setImplicitThis(origMCE.isImplicitThis());
             newMCE.setSourcePosition(origMCE);
             newMCE.visit(controller.getAcg());
+            compileStack.removeVar(slot.getIndex());
             ClassNode returnType = operandStack.getTopOperand();
             if (ClassHelper.isPrimitiveType(returnType) && !ClassHelper.VOID_TYPE.equals(returnType)) {
                 operandStack.box();
