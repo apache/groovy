@@ -2118,12 +2118,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         ClassNode type = getType(((ASTNode) variable));
                         if (type!=null && type.equals(CLOSURE_TYPE)) {
                             GenericsType[] genericsTypes = type.getGenericsTypes();
+                            type = OBJECT_TYPE;
                             if (genericsTypes != null) {
                                 if (!genericsTypes[0].isPlaceholder()) {
                                     type = genericsTypes[0].getType();
                                 }
-                            } else {
-                                type = OBJECT_TYPE;
                             }
                         }
                         if (type != null) {
