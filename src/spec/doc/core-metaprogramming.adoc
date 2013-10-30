@@ -561,17 +561,109 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=sin
 ===== @groovy.transform.Mixin
 
 ==== Logging improvements
-[[xform-Commons]]
-===== @groovy.util.logging.Commons
+
+Groovy provides AST transformation that helps integrating with the most widely used logging frameworks. It's worth noting
+that annotating a class with one of those annotations doesn't prevent you from adding the appropriate logging framework
+on classpath.
+
+All transformations work in a similar way:
+
+* add static final `log` field corresponding to the logger
+* wrap all calls to `log.level()` into the appropriate `log.isLevelEnabled` guard, depending on the underlying framework
+
+Those transformations support two parameters:
+
+* `value` (default `log`) corresponds to the name of the logger field
+* `category` (defaults to the class name) is the name of the logger category
 
 [[xform-Log]]
 ===== @groovy.util.logging.Log
 
+The first logging AST transformation available is the `@Log` annotation which relies on the JDK logging framework. Writing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags=log_spec,indent=0]
+----
+
+is equivalent to writing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags=log_equiv,indent=0]
+----
+
+[[xform-Commons]]
+===== @groovy.util.logging.Commons
+
+Groovy supports the http://commons.apache.org/proper/commons-logging/[Apache Commons Logging] framework using to the
+`@Commons` annotation. Writing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags=commons_spec,indent=0]
+----
+
+is equivalent to writing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags=commons_equiv,indent=0]
+----
+
 [[xform-Log4j]]
 ===== @groovy.util.logging.Log4j
 
+Groovy supports the http://logging.apache.org/log4j/1.2/[Apache Log4j 1.x] framework using to the
+`@Log4j` annotation. Writing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags=log4j_spec,indent=0]
+----
+
+is equivalent to writing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags=log4j_equiv,indent=0]
+----
+
+[[xform-Log4j2]]
+===== @groovy.util.logging.Log4j2
+
+Groovy supports the http://logging.apache.org/log4j/2.x/[Apache Log4j 2.x] framework using to the
+`@Log4j2` annotation. Writing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags=log4j2_spec,indent=0]
+----
+
+is equivalent to writing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags=log4j2_equiv,indent=0]
+----
+
 [[xform-Slf4j]]
 ===== @groovy.util.logging.Slf4j
+
+Groovy supports the http://www.slf4j.org/[Simple Logging Facade for Java (SLF4J)] framework using to the
+`@Slf4j` annotation. Writing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags=slf4j_spec,indent=0]
+----
+
+is equivalent to writing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags=slf4j_equiv,indent=0]
+----
 
 ==== Declarative concurrency
 [[xform-Synchronized]]
