@@ -158,7 +158,6 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
 
     public static class LabelFinder extends ClassCodeVisitorSupport {
 
-
         public static List<Statement> lookup(MethodNode node, String label) {
             LabelFinder finder = new LabelFinder(label, null)
             node.code.visit(finder)
@@ -177,7 +176,7 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
         private final String label
         private final SourceUnit unit
 
-        private List<Statement> targets = new LinkedList<Statement>();
+        private final List<Statement> targets = new LinkedList<Statement>();
 
         LabelFinder(final String label, final SourceUnit unit) {
             this.label = label

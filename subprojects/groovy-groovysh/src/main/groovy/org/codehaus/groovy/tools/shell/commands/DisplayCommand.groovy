@@ -18,7 +18,6 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'display' command.
@@ -33,7 +32,7 @@ class DisplayCommand
         super(shell, 'display', '\\d')
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assertNoArguments(args)
         
         if (buffer.isEmpty()) {

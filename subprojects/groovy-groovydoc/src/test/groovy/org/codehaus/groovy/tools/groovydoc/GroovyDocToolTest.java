@@ -17,9 +17,6 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import groovy.util.GroovyTestCase;
-import groovy.util.HeadlessTestSupport;
-import org.codehaus.groovy.groovydoc.*;
-import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -27,6 +24,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
+import org.codehaus.groovy.groovydoc.GroovyRootDoc;
+import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
 /**
  * @author Jeremy Rayner
@@ -44,15 +46,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
     public void setUp() {
         plainTool = new GroovyDocTool(new String[]{"src/test/groovy"});
 
-        // TODO messy coupling of subprojects for legacy reasons, refactor and remove
         xmlTool = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
                 new String[] {"src/main/java", "../../src/main", // source file dirs
-                		"src/test/groovy",
-                        "../../subprojects/groovy-swing/src/main/groovy",
-                        "../../subprojects/groovy-swing/src/main/java",
-                        "../../subprojects/groovy-console/src/main/groovy",
-                        "../../subprojects/groovy-sql/src/main/java"},
+                        "src/test/groovy"},
                 new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/classLevel/classDocStructuredData.xml"},
@@ -114,14 +111,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testGroovyDocTheCategoryMethodClass() throws Exception {
-        if (HeadlessTestSupport.isHeadless()) {
-            return;
-        }
         List<String> srcList = new ArrayList<String>();
         srcList.add("groovy/util/CliBuilder.groovy");
         srcList.add("groovy/lang/GroovyLogTestCase.groovy");
         srcList.add("groovy/mock/interceptor/StrictExpectation.groovy");
-        srcList.add("groovy/ui/Console.groovy");
         srcList.add("org/codehaus/groovy/runtime/GroovyCategorySupport.java");
         srcList.add("org/codehaus/groovy/runtime/ConvertedMap.java");
         xmlTool.add(srcList);
@@ -149,19 +142,16 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testConstructors() throws Exception {
-        if (HeadlessTestSupport.isHeadless()) {
-            return;
-        }
         List<String> srcList = new ArrayList<String>();
-        String base = "groovy/ui/Console";
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/TestConstructors";
         srcList.add(base + ".groovy");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        String consoleDoc = output.getText(MOCK_DIR + "/" + base + ".html");
-        assertNotNull("No GroovyDoc found for " + base, consoleDoc);
-        assertTrue(consoleDoc.indexOf("<constructor modifiers=\"public \" name=\"Console\">") > 0);
-        assertTrue(consoleDoc.indexOf("<parameter type=\"java.lang.ClassLoader\" name=\"parent\" />") > 0);
+        String constructorDoc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for " + base, constructorDoc);
+        assertTrue(constructorDoc.indexOf("<constructor modifiers=\"public \" name=\"TestConstructors\">") > 0);
+        assertTrue(constructorDoc.indexOf("<parameter type=\"java.lang.ClassLoader\" name=\"parent\" />") > 0);
     }
 
     public void testClassComment() throws Exception {
@@ -178,12 +168,12 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testMethodComment() throws Exception {
         List<String> srcList = new ArrayList<String>();
-        srcList.add("groovy/model/DefaultTableColumn.java");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/ClassWithMethodComment.java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        String defTabColDoc = output.getText(MOCK_DIR + "/groovy/model/DefaultTableColumn.html");
-        assertTrue(defTabColDoc.contains("Evaluates the value of a cell"));
+        String defTabColDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/ClassWithMethodComment.html");
+        assertTrue(defTabColDoc.contains("This is a method comment"));
     }
 
     public void testPackageName() throws Exception {
@@ -295,43 +285,39 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testStaticModifier() throws Exception {
-        if (HeadlessTestSupport.isHeadless()) {
-            return;
-        }
         List<String> srcList = new ArrayList<String>();
-        String base = "groovy/swing/binding/AbstractButtonProperties";
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/StaticModifier";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        String abstractButtonPropertiesDoc = output.getText(MOCK_DIR + "/" + base + ".html");
-        assertNotNull("No GroovyDoc found for " + base, abstractButtonPropertiesDoc);
-        assertTrue("static not found in: \"" + abstractButtonPropertiesDoc + "\"", abstractButtonPropertiesDoc.contains("static"));
+        String staticModifierDoc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for " + base, staticModifierDoc);
+        assertTrue("static not found in: \"" + staticModifierDoc + "\"", staticModifierDoc.contains("static"));
     }
 
     public void testAnonymousInnerClassMethodsNotIncluded() throws Exception {
-        if (HeadlessTestSupport.isHeadless()) {
-            return;
-        }
         List<String> srcList = new ArrayList<String>();
-        String base = "groovy/swing/binding/AbstractButtonProperties";
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/ClassWithAnonymousInnerClass";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        String abstractButtonPropertiesDoc = output.getText(MOCK_DIR + "/" + base + ".html");
-        assertNotNull("No GroovyDoc found for " + base, abstractButtonPropertiesDoc);
-        assertTrue("createBinding found in: \"" + abstractButtonPropertiesDoc + "\"", !abstractButtonPropertiesDoc.contains("createBinding"));
+        String classWithAnonymousInnerClassDoc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for " + base, classWithAnonymousInnerClassDoc);
+        assertTrue("innerClassMethod found in: \"" + classWithAnonymousInnerClassDoc + "\"", !classWithAnonymousInnerClassDoc.contains("innerClassMethod"));
     }
 
-    public void testMultipleConstructorError() throws Exception {
+    public void testMultipleConstructorErrorBug() throws Exception {
         List<String> srcList = new ArrayList<String>();
-        srcList.add("groovy/sql/Sql.java");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/MultipleConstructorErrorBug.java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        String sqlDoc = output.getText(MOCK_DIR + "/groovy/sql/Sql.html");
-        assertTrue(sqlDoc.indexOf("<method modifiers=\"public static \" returns=\"InParameter\" name=\"VARBINARY\">") > 0); // VARBINARY() and other methods in Sql.java were assumed to be Constructors, make sure they aren't anymore...
+        String sqlDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/MultipleConstructorErrorBug.html");
+        System.out.println(sqlDoc);
+        // VARBINARY() and other methods were assumed to be Constructors, make sure they aren't anymore...
+        assertTrue(sqlDoc.indexOf("<method modifiers=\"public static \" returns=\"java.lang.String\" name=\"VARBINARY\">") > 0);
     }
 
     public void testReturnTypeResolution() throws Exception {

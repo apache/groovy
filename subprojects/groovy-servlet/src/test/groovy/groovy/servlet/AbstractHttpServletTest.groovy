@@ -169,7 +169,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
                 getRealPath: { arg -> "realPath" + arg},
                 getResource: {arg ->
                     if (arg == "/someresource") return urlStub
-                    else return null
+                    return null
                 }] as ServletContext
 
         def servletConfig = [
@@ -193,7 +193,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
                 getRealPath: { arg -> "realPath" + arg},
                 getResource: {arg ->
                     if (arg == "/WEB-INF/groovy/someresource") return urlStub
-                    else return null
+                    return null
                 }] as ServletContext
 
         def servletConfig = [
@@ -227,7 +227,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
                     if (arg == "resource.name.regex") return "foo"
                     else if (arg == "resource.name.replacement") return "bar"
                     else if (arg == "resource.name.replace.all") return "false"
-                    else return null
+                    return null
                 }] as ServletConfig
 
         def request = [
@@ -264,7 +264,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
                     if (arg == "resource.name.regex") return "foo"
                     else if (arg == "resource.name.replacement") return "bar"
                     else if (arg == "resource.name.replace.all") return "true"
-                    else return null
+                    return null
                 }] as ServletConfig
 
         def request = [

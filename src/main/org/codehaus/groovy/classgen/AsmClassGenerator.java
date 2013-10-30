@@ -81,9 +81,6 @@ public class AsmClassGenerator extends ClassGenerator {
     static final MethodCaller createPojoWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createPojoWrapper");
     static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
 
-    // constructor calls with this() and super()
-    static final MethodCaller selectConstructorAndTransformArguments = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "selectConstructorAndTransformArguments");
-
     // exception blocks list
     private Map<String,ClassNode> referencedClasses = new HashMap<String,ClassNode>();
     private boolean passingParams;
@@ -136,7 +133,7 @@ public class AsmClassGenerator extends ClassGenerator {
         try {
             cv.visit(
                     controller.getBytecodeVersion(),
-                    adjustedClassModifiers(classNode.getModifiers()),
+                    adjustedClassModifiersForClassWriting(classNode),
                     controller.getInternalClassName(),
                     BytecodeHelper.getGenericsSignature(classNode),
                     controller.getInternalBaseClassName(),
@@ -217,7 +214,9 @@ public class AsmClassGenerator extends ClassGenerator {
             outerClassName = null;
             innerClassName = null;
         }
-        int mods = innerClass.getModifiers();
+        int mods = adjustedClassModifiersForInnerClassTable(cn);
+
+
         cv.visitInnerClass(
                 innerClassInternalName,
                 outerClassName,
@@ -227,12 +226,49 @@ public class AsmClassGenerator extends ClassGenerator {
 
     /*
      * Classes but not interfaces should have ACC_SUPER set
+     * See http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7.6-300-D.2-5
+     * for what flags are allowed depending on the fact we are writing the inner class table
+     * or the class itself
      */
-    private int adjustedClassModifiers(int modifiers) {
-        boolean needsSuper = (modifiers & ACC_INTERFACE) == 0;
-        modifiers = needsSuper ? modifiers | ACC_SUPER : modifiers;
+    private int adjustedClassModifiersForInnerClassTable(ClassNode classNode) {
+        int modifiers = classNode.getModifiers();
+        modifiers = modifiers & ~ACC_SUPER;
+        // (JLS §9.1.1.1). Such a class file must not have its ACC_FINAL, ACC_SUPER or ACC_ENUM flags set.
+        if (classNode.isInterface()) {
+            modifiers = modifiers & ~ACC_ENUM;
+            modifiers = modifiers & ~ACC_FINAL;
+        }
+        return modifiers;
+    }
+
+    /*
+     * Classes but not interfaces should have ACC_SUPER set
+     * See http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7.6-300-D.2-5
+     * for what flags are allowed depending on the fact we are writing the inner class table
+     * or the class itself
+     */
+    private int adjustedClassModifiersForClassWriting(ClassNode classNode) {
+        int modifiers = classNode.getModifiers();
+        boolean needsSuper = !classNode.isInterface();
+        modifiers = needsSuper ? modifiers | ACC_SUPER : modifiers & ~ACC_SUPER;
         // eliminate static
         modifiers = modifiers & ~ACC_STATIC;
+        // on the inner class node itself, private/protected are not allowed
+        if (classNode instanceof InnerClassNode) {
+            if (Modifier.isPrivate(modifiers)) {
+                // GROOVY-6357 : The JVM does not allow private modifier on inner classes: should be package private
+                modifiers = modifiers & ~Modifier.PRIVATE;
+            }
+            if (Modifier.isProtected(modifiers)) {
+                // GROOVY-6357 : Following Java's behavior for protected modifier on inner classes: should be public
+                modifiers = (modifiers & ~Modifier.PROTECTED) | Modifier.PUBLIC;
+            }
+        }
+        // (JLS §9.1.1.1). Such a class file must not have its ACC_FINAL, ACC_SUPER or ACC_ENUM flags set.
+        if (classNode.isInterface()) {
+            modifiers = modifiers & ~ACC_ENUM;
+            modifiers = modifiers & ~ACC_FINAL;
+        }
         return modifiers;
     }
 
@@ -687,225 +723,15 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getAssertionWriter().record(call);
     }
 
-    private void visitSpecialConstructorCall(ConstructorCallExpression call) {
-        if (controller.getClosureWriter().addGeneratedClosureConstructorCall(call)) return;
-
-        ClassNode callNode = controller.getClassNode();
-        if (call.isSuperCall()) callNode = callNode.getSuperClass();
-        List<ConstructorNode> constructors = sortConstructors(call, callNode);
-        if (!makeDirectConstructorCall(constructors, call, callNode)) {
-            makeMOPBasedConstructorCall(constructors, call, callNode);
-        }
-    }
-
-    // we match only on the number of arguments, not anything else
-    private static ConstructorNode getMatchingConstructor(List<ConstructorNode> constructors, List<Expression> argumentList) {
-        ConstructorNode lastMatch = null;
-        for (int i=0; i<constructors.size(); i++) {
-            ConstructorNode cn = constructors.get(i);
-            Parameter[] params = cn.getParameters();
-            // if number of parameters does not match we have no match
-            if (argumentList.size()!=params.length) continue;
-            if (lastMatch==null) {
-                lastMatch = cn;
-            } else {
-                // we already had a match so we don't make a direct call at all
-                return null;
-            }
-        }
-        return lastMatch;
-    }
-
-    private boolean makeDirectConstructorCall(List<ConstructorNode> constructors, ConstructorCallExpression call, ClassNode callNode) {
-        if (!controller.isConstructor()) return false;
-
-        Expression arguments = call.getArguments();
-        List<Expression> argumentList;
-        if (arguments instanceof TupleExpression) {
-            argumentList = ((TupleExpression) arguments).getExpressions();
-        } else {
-            argumentList = new ArrayList();
-            argumentList.add(arguments);
-        }
-        for (Expression expression : argumentList) {
-            if (expression instanceof SpreadExpression) return false;
-        }
-
-        ConstructorNode cn = getMatchingConstructor(constructors, argumentList);
-        if (cn==null) return false;
-        MethodVisitor mv = controller.getMethodVisitor();
-        OperandStack operandStack = controller.getOperandStack();
-        Parameter[] params = cn.getParameters();
-
-        mv.visitVarInsn(ALOAD, 0);
-        for (int i=0; i<params.length; i++) {
-            Expression expression = argumentList.get(i);
-            expression.visit(this);
-            if (!isNullConstant(expression)) {
-                operandStack.doGroovyCast(params[i].getType());
-            }
-            operandStack.remove(1);
-        }
-        String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
-        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor);
-
-        return true;
-    }
-     
-    private static boolean isNullConstant(Expression expr) {
+    public static boolean isNullConstant(Expression expr) {
         return expr instanceof ConstantExpression && ((ConstantExpression) expr).getValue()==null;
-    }
-
-    private void makeMOPBasedConstructorCall(List<ConstructorNode> constructors, ConstructorCallExpression call, ClassNode callNode) {
-        MethodVisitor mv = controller.getMethodVisitor();
-        OperandStack operandStack = controller.getOperandStack();
-
-        call.getArguments().visit(this);
-        // keep Object[] on stack
-        mv.visitInsn(DUP);
-        // to select the constructor we need also the number of
-        // available constructors and the class we want to make
-        // the call on
-        BytecodeHelper.pushConstant(mv, constructors.size());
-        visitClassExpression(new ClassExpression(callNode));
-        operandStack.remove(1);
-        // removes one Object[] leaves the int containing the
-        // call flags and the constructor number
-        selectConstructorAndTransformArguments.call(mv);
-        // Object[],int -> int,Object[],int
-        // we need to examine the flags and maybe change the
-        // Object[] later, so this reordering will do the job
-        mv.visitInsn(DUP_X1);
-        // test if rewrap flag is set
-        mv.visitInsn(ICONST_1);
-        mv.visitInsn(IAND);
-        Label afterIf = new Label();
-        mv.visitJumpInsn(IFEQ, afterIf);
-        // true part, so rewrap using the first argument
-        mv.visitInsn(ICONST_0);
-        mv.visitInsn(AALOAD);
-        mv.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;");
-        mv.visitLabel(afterIf);
-        // here the stack is int,Object[], but we need the
-        // the int for our table, so swap it
-        mv.visitInsn(SWAP);
-        //load "this"
-        if (controller.isConstructor()) {
-            mv.visitVarInsn(ALOAD, 0);
-        } else {
-            mv.visitTypeInsn(NEW, BytecodeHelper.getClassInternalName(callNode));
-        }
-        mv.visitInsn(SWAP);
-        //prepare switch with >>8
-        mv.visitIntInsn(BIPUSH, 8);
-        mv.visitInsn(ISHR);
-        Label[] targets = new Label[constructors.size()];
-        int[] indices = new int[constructors.size()];
-        for (int i = 0; i < targets.length; i++) {
-            targets[i] = new Label();
-            indices[i] = i;
-        }
-        // create switch targets
-        Label defaultLabel = new Label();
-        Label afterSwitch = new Label();
-        mv.visitLookupSwitchInsn(defaultLabel, indices, targets);
-        for (int i = 0; i < targets.length; i++) {
-            mv.visitLabel(targets[i]);
-            // to keep the stack height, we need to leave
-            // one Object[] on the stack as last element. At the
-            // same time, we need the Object[] on top of the stack
-            // to extract the parameters.
-            if (controller.isConstructor()) {
-                // in this case we need one "this", so a SWAP will exchange
-                // "this" and Object[], a DUP_X1 will then copy the Object[]
-                /// to the last place in the stack:
-                //     Object[],this -SWAP-> this,Object[]
-                //     this,Object[] -DUP_X1-> Object[],this,Object[]
-                mv.visitInsn(SWAP);
-                mv.visitInsn(DUP_X1);
-            } else {
-                // in this case we need two "this" in between and the Object[]
-                // at the bottom of the stack as well as on top for our invokeSpecial
-                // So we do DUP_X1, DUP2_X1, POP
-                //     Object[],this -DUP_X1-> this,Object[],this
-                //     this,Object[],this -DUP2_X1-> Object[],this,this,Object[],this
-                //     Object[],this,this,Object[],this -POP->  Object[],this,this,Object[]
-                mv.visitInsn(DUP_X1);
-                mv.visitInsn(DUP2_X1);
-                mv.visitInsn(POP);
-            }
-
-            ConstructorNode cn = constructors.get(i);
-            String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
-            // unwrap the Object[] and make transformations if needed
-            // that means, to duplicate the Object[], make a cast with possible
-            // unboxing and then swap it with the Object[] for each parameter
-            Parameter[] parameters = cn.getParameters();
-            for (int p = 0; p < parameters.length; p++) {
-                operandStack.push(ClassHelper.OBJECT_TYPE);
-                mv.visitInsn(DUP);
-                BytecodeHelper.pushConstant(mv, p);
-                mv.visitInsn(AALOAD);
-                operandStack.push(ClassHelper.OBJECT_TYPE);
-                ClassNode type = parameters[p].getType();
-                operandStack.doGroovyCast(type);
-                operandStack.swap();
-                operandStack.remove(2);
-            }
-            // at the end we remove the Object[]
-            mv.visitInsn(POP);
-            // make the constructor call
-            mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor);
-            mv.visitJumpInsn(GOTO, afterSwitch);
-        }
-        mv.visitLabel(defaultLabel);
-        // this part should never be reached!
-        mv.visitTypeInsn(NEW, "java/lang/IllegalArgumentException");
-        mv.visitInsn(DUP);
-        mv.visitLdcInsn("illegal constructor number");
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "(Ljava/lang/String;)V");
-        mv.visitInsn(ATHROW);
-        mv.visitLabel(afterSwitch);
-
-        // For a special constructor call inside a constructor we don't need
-        // any result object on the stack, for outside the constructor we do.
-        // to keep the stack height for the able we kept one object as dummy
-        // result on the stack, which we can remove now if inside a constructor.
-        if (!controller.isConstructor()) {
-            // in case we are not in a constructor we have an additional
-            // object on the stack, the result of our constructor call
-            // which we want to keep, so we swap with the dummy object and
-            // do normal removal of it. In the end, the call result will be
-            // on the stack then
-            mv.visitInsn(SWAP);
-            operandStack.push(callNode); // for call result
-        }
-        mv.visitInsn(POP);
-    }
-
-    private List<ConstructorNode> sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
-        // sort in a new list to prevent side effects
-        List<ConstructorNode> constructors = new ArrayList<ConstructorNode>(callNode.getDeclaredConstructors());
-        Comparator comp = new Comparator() {
-            public int compare(Object arg0, Object arg1) {
-                ConstructorNode c0 = (ConstructorNode) arg0;
-                ConstructorNode c1 = (ConstructorNode) arg1;
-                String descriptor0 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c0.getParameters());
-                String descriptor1 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c1.getParameters());
-                return descriptor0.compareTo(descriptor1);
-            }
-        };
-        Collections.sort(constructors, comp);
-        return constructors;
     }
 
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         onLineNumber(call, "visitConstructorCallExpression: \"" + call.getType().getName() + "\":");
 
         if (call.isSpecialCall()) {
-            controller.getCompileStack().pushInSpecialConstructorCall();
-            visitSpecialConstructorCall(call);
-            controller.getCompileStack().pop();
+            controller.getInvocationWriter().writeSpecialConstructorCall(call);
             return;
         }
         controller.getInvocationWriter().writeInvokeConstructor(call);

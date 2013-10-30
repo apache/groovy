@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
     MBeanServerConnection server
 
     void setUp() {
+        super.setUp()
         builder = new JmxBuilder()
         server = builder.getMBeanServer()
     }
@@ -64,7 +65,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         def object = new MockManagedObject()
         def objName = "jmx.builder:type=ExportedObject,name=${object.class.canonicalName}@${object.hashCode()}"
 
-        def beans = builder.export {
+        builder.export {
             bean(object)
         }
 
@@ -555,6 +556,5 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         assert bean.info().getOperation("doTwoThings")
         assert bean.info().getOperation("doThreeThings")
         assert bean.info().getOperation("doThreeThings").signature.size() == 3
-
     }
 }

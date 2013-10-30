@@ -49,22 +49,23 @@ class ImportCommand
         Completer asCompleter = new StringsCompleter('as')
         PackageHelper packageHelper = shell.packageHelper
         Interpreter interp = shell.interp
-        return new AggregateCompleter([
-                new ArgumentCompleter([
+        Collection<Completer> argCompleters = [
+                (Completer) new ArgumentCompleter([
                         impCompleter,
                         new ImportCompleter(packageHelper, interp, false),
                         asCompleter,
                         null]),
-                new ArgumentCompleter([
+                (Completer) new ArgumentCompleter([
                         impCompleter,
                         new StringsCompleter('static'),
                         new ImportCompleter(packageHelper, interp, true),
                         asCompleter,
-                        null])])
+                        null])]
+        return new AggregateCompleter(argCompleters)
 
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assert args != null
 
         if (args.isEmpty()) {
@@ -96,7 +97,7 @@ class ImportCommand
         }
         finally {
             // Remove the class generated while testing the import syntax
-            classLoader.classCache.remove(type?.name)
+            classLoader.removeClassCacheEntry(type?.name)
         }
     }
 }
@@ -105,7 +106,7 @@ class ImportCompleter implements Completer {
 
     PackageHelper packageHelper
     Groovysh shell
-    protected final Logger log = Logger.create(ImportCompleter.class)
+    protected final Logger log = Logger.create(ImportCompleter)
     /*
      * The following rules do not need to work for all thinkable situations,just for all reasonable situations.
      * In particular the underscore and dollar signs in Class or method names usually indicate something internal,

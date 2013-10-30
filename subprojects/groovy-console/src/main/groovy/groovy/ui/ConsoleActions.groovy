@@ -25,7 +25,7 @@ newFileAction = action(
     closure: controller.&fileNewFile,
     mnemonic: 'N',
     accelerator: shortcut('N'),
-    smallIcon: imageIcon(resource:"icons/page.png", class:this),
+    smallIcon: imageIcon(resource:'icons/page.png', class:this),
     shortDescription: 'New Groovy Script'
 )
 
@@ -41,7 +41,7 @@ openAction = action(
     closure: controller.&fileOpen,
     mnemonic: 'O',
     accelerator: shortcut('O'),
-    smallIcon: imageIcon(resource:"icons/folder_page.png", class:this),
+    smallIcon: imageIcon(resource:'icons/folder_page.png', class:this),
     shortDescription: 'Open Groovy Script'
 )
 
@@ -50,7 +50,7 @@ saveAction = action(
     closure: controller.&fileSave,
     mnemonic: 'S',
     accelerator: shortcut('S'),
-    smallIcon: imageIcon(resource:"icons/disk.png", class:this),
+    smallIcon: imageIcon(resource:'icons/disk.png', class:this),
     shortDescription: 'Save Groovy Script',
     enabled: false // controller will enable as needed
 )
@@ -83,7 +83,7 @@ undoAction = action(
     closure: controller.&undo,
     mnemonic: 'U',
     accelerator: shortcut('Z'),
-    smallIcon: imageIcon(resource:"icons/arrow_undo.png", class:this),
+    smallIcon: imageIcon(resource:'icons/arrow_undo.png', class:this),
     shortDescription: 'Undo'
 )
 
@@ -92,7 +92,7 @@ redoAction = action(
     closure: controller.&redo,
     mnemonic: 'R',
     accelerator: shortcut('shift Z'), // is control-shift-Z or control-Y more common?
-    smallIcon: imageIcon(resource:"icons/arrow_redo.png", class:this),
+    smallIcon: imageIcon(resource:'icons/arrow_redo.png', class:this),
     shortDescription: 'Redo'
 )
 
@@ -101,7 +101,7 @@ findAction = action(
     closure: controller.&find,
     mnemonic: 'F',
     accelerator: shortcut('F'),
-    smallIcon: imageIcon(resource:"icons/find.png", class:this),
+    smallIcon: imageIcon(resource:'icons/find.png', class:this),
     shortDescription: 'Find'
 )
 
@@ -124,7 +124,7 @@ replaceAction = action(
     closure: controller.&replace,
     mnemonic: 'E',
     accelerator: shortcut('H'),
-    smallIcon: imageIcon(resource:"icons/text_replace.png", class:this),
+    smallIcon: imageIcon(resource:'icons/text_replace.png', class:this),
     shortDescription: 'Replace'
 )
 
@@ -133,7 +133,7 @@ cutAction = action(
     closure: controller.&cut,
     mnemonic: 'T',
     accelerator: shortcut('X'),
-    smallIcon: imageIcon(resource:"icons/cut.png", class:this),
+    smallIcon: imageIcon(resource:'icons/cut.png', class:this),
     shortDescription: 'Cut'
 )
 
@@ -142,7 +142,7 @@ copyAction = action(
     closure: controller.&copy,
     mnemonic: 'C',
     accelerator: shortcut('C'),
-    smallIcon: imageIcon(resource:"icons/page_copy.png", class:this),
+    smallIcon: imageIcon(resource:'icons/page_copy.png', class:this),
     shortDescription: 'Copy'
 )
 
@@ -151,7 +151,7 @@ pasteAction = action(
     closure: controller.&paste,
     mnemonic: 'P',
     accelerator: shortcut('V'),
-    smallIcon: imageIcon(resource:"icons/page_paste.png", class:this),
+    smallIcon: imageIcon(resource:'icons/page_paste.png', class:this),
     shortDescription: 'Paste'
 )
 
@@ -167,7 +167,7 @@ historyPrevAction = action(
     closure: controller.&historyPrev,
     mnemonic: 'P',
     accelerator: shortcut(KeyEvent.VK_COMMA),
-    smallIcon: imageIcon(resource:"icons/book_previous.png", class:this),
+    smallIcon: imageIcon(resource:'icons/book_previous.png', class:this),
     shortDescription: 'Previous Groovy Script',
     enabled: false // controller will enable as needed
 )
@@ -177,7 +177,7 @@ historyNextAction = action(
     closure: controller.&historyNext,
     mnemonic: 'N',
     accelerator: shortcut(KeyEvent.VK_PERIOD),
-    smallIcon: imageIcon(resource:"icons/book_next.png", class:this),
+    smallIcon: imageIcon(resource:'icons/book_next.png', class:this),
     shortDescription: 'Next Groovy Script',
     enabled: false // controller will enable as needed
 )
@@ -195,7 +195,7 @@ runAction = action(
     mnemonic: 'R',
     keyStroke: shortcut('ENTER'),
     accelerator: shortcut('R'),
-    smallIcon: imageIcon(resource:"icons/script_go.png", class:this),
+    smallIcon: imageIcon(resource:'icons/script_go.png', class:this),
     shortDescription: 'Execute Groovy Script'
 )
 
@@ -355,7 +355,7 @@ interruptAction = action(
     name: 'Interrupt',
     closure: controller.&doInterrupt,
     mnemonic: 'T',
-    smallIcon: imageIcon(resource:"icons/cross.png", class:this),
+    smallIcon: imageIcon(resource:'icons/cross.png', class:this),
     shortDescription: 'Interrupt Running Script',
     enabled: false // controller will enable as needed
 )

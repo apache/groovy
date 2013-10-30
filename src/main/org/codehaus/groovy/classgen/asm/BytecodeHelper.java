@@ -662,4 +662,19 @@ public class BytecodeHelper implements Opcodes {
         CompileUnit cu2 = b.getCompileUnit();
         return cu1 !=null && cu2 !=null && cu1==cu2;
     }
+
+    /**
+     * Computes a hash code for a string. The purpose of this hashcode is to be constant independently of
+     * the JDK being used.
+     * @param str the string for which to compute the hashcode
+     * @return hashcode of the string
+     */
+    public static int hashCode(String str) {
+        final char[] chars = str.toCharArray();
+        int h = 0;
+        for (int i = 0; i < chars.length; i++) {
+            h = 31 * h + chars[i];
+        }
+        return h;
+    }
 }

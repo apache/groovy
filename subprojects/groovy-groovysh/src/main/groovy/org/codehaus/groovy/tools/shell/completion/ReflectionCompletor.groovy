@@ -104,7 +104,7 @@ class ReflectionCompletor {
             try {
                 String instanceRefExpression = tokenListToEvalString(invokerTokens)
                 instanceRefExpression = instanceRefExpression.replace('\n', '')
-                Object instance = shell.interp.evaluate(shell.imports + ['true'] + instanceRefExpression)
+                Object instance = shell.interp.evaluate(shell.imports + ['true'] + [instanceRefExpression])
                 return instance
             } catch (MissingPropertyException |
                     MissingMethodException |
@@ -273,11 +273,7 @@ class ReflectionCompletor {
      */
     static Collection<String> getPublicFieldsAndMethods(Object instance, String prefix) {
         Set<String> rv = new HashSet<String>()
-        Set.getInterfaces()
-        Class clazz = instance.class
-        if (clazz == null) {
-            clazz = instance.getClass()
-        }
+        Class clazz = instance.getClass()
         if (clazz == null) {
             return rv;
         }

@@ -54,7 +54,6 @@ class RangeTest extends GroovyTestCase {
     void testIntStep() {
         assertStep(0..9, 3, [0, 3, 6, 9])
         assertStep(0..<10, 3, [0, 3, 6, 9])
-        
         assertStep(9..0, 3, [9, 6, 3, 0])
         assertStep(9..<0, 3, [9, 6, 3])
     }
@@ -62,7 +61,6 @@ class RangeTest extends GroovyTestCase {
     void testObjectStep() {
         assertStep('a'..'f', 2, ['a', 'c', 'e'])
         assertStep('a'..<'e', 2, ['a', 'c'])
-        
         assertStep('z'..'v', 2, ['z', 'x', 'v'])
         assertStep('z'..<'v', 2, ['z', 'x'])
     }
@@ -131,14 +129,14 @@ class RangeTest extends GroovyTestCase {
         assertToString(0..10, "0..10")
         assertToString([1, 4..10, 9], "[1, 4..10, 9]")
 
-        assertToString(0..<11, "0..10")
-        assertToString([1, 4..<11, 9], "[1, 4..10, 9]")
+        assertToString(0..<11, "0..<11")
+        assertToString([1, 4..<11, 9], "[1, 4..<11, 9]")
 
         assertToString(10..0, "10..0")
         assertToString([1, 10..4, 9], "[1, 10..4, 9]")
 
-        assertToString(11..<0, "11..1")
-        assertToString([1, 11..<4, 9], "[1, 11..5, 9]")
+        assertToString(11..<0, "11..<0")
+        assertToString([1, 11..<4, 9], "[1, 11..<4, 9]")
     }
     
     void testObjectRangeToString() {

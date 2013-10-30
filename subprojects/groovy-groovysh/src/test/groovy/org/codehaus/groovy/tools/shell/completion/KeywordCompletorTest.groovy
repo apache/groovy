@@ -12,6 +12,18 @@ class KeywordCompletorTest extends GroovyTestCase {
         assertEquals(['public '], candidates)
     }
 
+    void testInfixKeywordNotCompleted() {
+        // extends, implements, instanceof are not to kbe completed when at start of line
+        KeywordSyntaxCompletor completor = new KeywordSyntaxCompletor()
+        def candidates = []
+        String buffer = "ext"
+        assertEquals(false, completor.complete(tokenList(buffer), candidates))
+        buffer = "imple"
+        assertEquals(false, completor.complete(tokenList(buffer), candidates))
+        buffer = "inst"
+        assertEquals(false, completor.complete(tokenList(buffer), candidates))
+    }
+
     void testKeywordModifierSecond() {
         KeywordSyntaxCompletor completor = new KeywordSyntaxCompletor()
         def candidates = []

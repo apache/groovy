@@ -46,6 +46,11 @@ Please note that the following Gradle tasks generate both indy and non indy vari
 * install
 * uploadArchives
 
+Continuous Integration
+---
+
+The official CI server runs [here](https://bamboo-ci.codehaus.org/browse/GROOVY).
+
 License
 ---
 

@@ -154,7 +154,7 @@ public final class ListWithDefault<T> implements List<T> {
         final int size = size();
         int normalisedIndex = normaliseIndex(index, size);
         if (normalisedIndex < 0) {
-            throw new ArrayIndexOutOfBoundsException("Negative array index [" + normalisedIndex + "] too large for array size " + size);
+            throw new IndexOutOfBoundsException("Negative index [" + normalisedIndex + "] too large for list size " + size);
         }
 
         // either index >= size or the normalised index is negative

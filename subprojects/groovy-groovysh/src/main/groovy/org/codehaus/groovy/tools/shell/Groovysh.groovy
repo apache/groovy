@@ -20,33 +20,24 @@ import antlr.TokenStreamException
 import jline.Terminal
 import jline.TerminalFactory
 import jline.console.history.FileHistory
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.Preferences
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
-import org.fusesource.jansi.Ansi
-import org.fusesource.jansi.AnsiConsole
 import org.fusesource.jansi.AnsiRenderer
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class Groovysh extends Shell {
 
-    static {
-        // Install the system adapters
-        AnsiConsole.systemInstall()
 
-        // Register jline ansi detector
-        Ansi.setDetector(new AnsiDetector())
-    }
-
-    private static final MessageSource messages = new MessageSource(Groovysh.class)
+    private static final MessageSource messages = new MessageSource(Groovysh)
 
     final BufferManager buffers = new BufferManager()
 
@@ -81,7 +72,6 @@ class Groovysh extends Shell {
         registrar.call(this)
 
         this.packageHelper = new PackageHelper(classLoader)
-
     }
 
     private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
@@ -199,7 +189,7 @@ class Groovysh extends Shell {
     // Prompt
     //
 
-    private AnsiRenderer prompt = new AnsiRenderer()
+    private final AnsiRenderer prompt = new AnsiRenderer()
 
     /*
         Builds the command prompt name in 1 of 3 ways:
@@ -213,13 +203,13 @@ class Groovysh extends Shell {
     private String buildPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
 
-        def GROOVYSHELL_PROPERTY = System.getProperty("groovysh.prompt")
-        if (GROOVYSHELL_PROPERTY) {
-            return  "@|bold ${GROOVYSHELL_PROPERTY}:|@${lineNum}@|bold >|@ "
+        def groovyshellProperty = System.getProperty("groovysh.prompt")
+        if (groovyshellProperty) {
+            return  "@|bold ${groovyshellProperty}:|@${lineNum}@|bold >|@ "
         }
-        def GROOVYSHELL_ENV = System.getenv("GROOVYSH_PROMPT")
-        if (GROOVYSHELL_ENV) {
-            return  "@|bold ${GROOVYSHELL_ENV}:|@${lineNum}@|bold >|@ "
+        def groovyshellEnv = System.getenv("GROOVYSH_PROMPT")
+        if (groovyshellEnv) {
+            return  "@|bold ${groovyshellEnv}:|@${lineNum}@|bold >|@ "
         }
         return "@|bold groovy:|@${lineNum}@|bold >|@ "
 
@@ -346,25 +336,12 @@ class Groovysh extends Shell {
     // Hooks
     //
 
-    final Closure defaultResultHook = { result ->
+    final Closure defaultResultHook = {Object result ->
         boolean showLastResult = !io.quiet && (io.verbose || Preferences.showLastResult)
         if (showLastResult) {
-            // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-
-            if (result != null && result.getClass() && result.getClass().isArray()) {
-                Class typeClass = result.getClass().getComponentType()
-                StringBuilder output = new StringBuilder()
-                if (result.length > 0) {
-                    output.append(String.valueOf(Arrays.toString(result)))
-                } else {
-                    output.append("[]")
-                }
-                output.append(" ($typeClass)")
-
-                io.out.println("@|bold ===>|@ $output")
-            } else {
-                io.out.println("@|bold ===>|@ ${String.valueOf(result)}")
-            }
+            // avoid String.valueOf here because it bypasses pretty-printing of Collections,
+            // e.g. String.valueOf( ['a': 42] ) != ['a': 42].toString()
+            io.out.println("@|bold ===>|@ ${InvokerHelper.toString(result)}")
         }
     }
 
@@ -380,10 +357,6 @@ class Groovysh extends Shell {
         interp.context['_'] = result
 
         maybeRecordResult(result)
-    }
-
-    private Object getLastResult() {
-        return interp.context['_']
     }
 
     final Closure defaultErrorHook = { Throwable cause ->

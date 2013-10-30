@@ -326,4 +326,64 @@ public class TypeCheckingExtension {
         }
         return result;
     }
+
+    /**
+     * Builds a parametrized class node for List, to represent List&lt;X&gt;
+     * @param componentType the classnode for the component type of the list
+     * @return a classnode representing List&lt;componentType&gt;
+     * @since 2.2.0
+     */
+    public ClassNode buildListType(ClassNode componentType) {
+        return parameterizedType(ClassHelper.LIST_TYPE, componentType);
+    }
+
+    /**
+     * Builds a parametrized class node representing the Map&lt;keyType,valueType&gt; type.
+     * @param keyType the classnode type of the key
+     * @param valueType the classnode type of the value
+     * @return a class node for Map&lt;keyType,valueType&gt;
+     * @since 2.2.0
+     */
+    public ClassNode buildMapType(ClassNode keyType, ClassNode valueType) {
+        return parameterizedType(ClassHelper.MAP_TYPE, keyType, valueType);
+    }
+
+    /**
+     * Given a method call, first checks that it's a static method call, and if it is, returns the
+     * class node for the receiver. For example, with the following code:
+     * <code></code>Person.findAll { ... }</code>, it would return the class node for <i>Person</i>.
+     * If it's not a static method call, returns null.
+     * @param call a method call
+     * @return null if it's not a static method call, or the class node for the receiver instead.
+     */
+    public ClassNode extractStaticReceiver(MethodCall call) {
+        if (call instanceof StaticMethodCallExpression) {
+            return ((StaticMethodCallExpression) call).getOwnerType();
+        } else if (call instanceof MethodCallExpression) {
+            Expression objectExpr = ((MethodCallExpression) call).getObjectExpression();
+            if (objectExpr instanceof ClassExpression && ClassHelper.CLASS_Type.equals(objectExpr.getType())) {
+                GenericsType[] genericsTypes = objectExpr.getType().getGenericsTypes();
+                if (genericsTypes!=null && genericsTypes.length==1) {
+                    return genericsTypes[0].getType();
+                }
+            }
+            if (objectExpr instanceof ClassExpression) {
+                return objectExpr.getType();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Given a method call, checks if it's a static method call and if it is, tells if the receiver matches
+     * the one supplied as an argument.
+     * @param call a method call
+     * @param receiver a class node
+     * @return true if the method call is a static method call on the receiver
+     */
+    public boolean isStaticMethodCallOnClass(MethodCall call, ClassNode receiver) {
+        ClassNode staticReceiver = extractStaticReceiver(call);
+        return staticReceiver!=null && staticReceiver.equals(receiver);
+    }
+
 }

@@ -534,5 +534,13 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             Map<String, Integer> immutableMap = [foo: 123, bar: 456].asImmutable()
         """
     }
+    
+    // GROOVY-6350
+    void testListPlusList() {
+        assertScript """
+            def foo = [] + []
+            assert foo==[]
+        """
+    }
 }
 

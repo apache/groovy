@@ -891,7 +891,7 @@ import groovy.transform.TypeCheckingMode
                 assert x == Closure.DELEGATE_FIRST
             '''
         } finally {
-            println astTrees
+//            println astTrees
         }
     }
 
@@ -1018,6 +1018,105 @@ assert it.next() == 1G
             }
             assert foo([(1):null,(2):null,(3):null],2)==2
         """
+    }
+
+    void testSuperCallShouldBeDirect() {
+        try {
+            assertScript '''
+                class TwoException extends Exception {
+                    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                        def superCall = node.code.statements[0].expression
+                        assert superCall.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)!=null
+                    })
+                    public TwoException(Throwable t) {
+                        super(t)
+                    }
+                }
+                def e = new TwoException(null) // will not throw an exception
+            '''
+        } finally {
+            assert !astTrees.TwoException.contains('selectConstructorAndTransformArguments')
+        }
+    }
+
+    void testNullSafeOperatorShouldNotCallMethodTwice() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public Long getNext() {
+                return sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.next?.longValue()
+            }
+            assert seq.next == 5
+'''
+    }
+
+    void testNullSafeOperatorShouldNotCallMethodTwiceWithPrimitive() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public long getNext() {
+                sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.next?.longValue()
+            }
+            assert seq.next == 5
+'''
+    }
+
+    void testNullSafeOperatorShouldNotCallMethodTwice1Arg() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public Long getNext(int factor) {
+                factor*sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.getNext(2)?.longValue()
+            }
+            assert seq.getNext(2) == 10
+'''
+    }
+
+    void testNullSafeOperatorShouldNotCallMethodTwiceWithPrimitive1Arg() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public long getNext(int factor) {
+                factor*sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.getNext(2)?.longValue()
+            }
+            assert seq.getNext(2) == 10
+'''
     }
 }
 

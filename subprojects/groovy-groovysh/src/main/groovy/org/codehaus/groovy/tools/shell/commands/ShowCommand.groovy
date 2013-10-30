@@ -16,11 +16,11 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.MethodClosure
 
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
@@ -52,8 +52,7 @@ class ShowCommand
                     value = "method ${value.method}()"
                 }
 
-                // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-                io.out.println("  $key = ${String.valueOf(value)}")
+                io.out.println("  $key = ${InvokerHelper.toString(value)}")
             }
         }
     }
@@ -93,13 +92,11 @@ class ShowCommand
             io.out.println('No preferences are set')
             return
         }
-        else {
-            io.out.println('Preferences:')
 
-            keys.each { String key ->
-                def value = Preferences.get(key, null)
-                println("    $key=$value")
-            }
+        io.out.println('Preferences:')
+        keys.each { String key ->
+            def value = Preferences.get(key, null)
+            println("    $key=$value")
         }
         return
     }

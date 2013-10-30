@@ -182,15 +182,6 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testMethodReturnTypeInferenceShouldWorkBecauseInSameSourceUnit() {
-        assertScript '''
-            class A {
-                static def foo() { '123' }
-            }
-            A.foo().toInteger()
-        '''
-    }
-
     void testMethodReturnTypeInferenceShouldNotWorkBecauseNotSameSourceUnit() {
         shouldFailWithMessages '''
             import groovy.transform.stc.MiscSTCTest.MiscSTCTestSupport as A

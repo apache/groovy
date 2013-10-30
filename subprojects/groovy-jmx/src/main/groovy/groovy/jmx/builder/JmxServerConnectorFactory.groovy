@@ -49,7 +49,8 @@ import javax.rmi.ssl.SslRMIServerSocketFactory
  * @see <a href="http://java.sun.com/j2se/1.5.0/docs/api/javax/management/remote/JMXConnector.html">JMXConnector</a>
  */
 class JmxServerConnectorFactory extends AbstractFactory {
-    private static List SUPPORTED_PROTOCOLS = ["rmi", "jrmp", "iiop", "jmxmp"]
+
+    private static final List SUPPORTED_PROTOCOLS = ["rmi", "jrmp", "iiop", "jmxmp"]
 
     public Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeArgs, Map nodeAttribs) {
         if (nodeArgs) {

@@ -26,8 +26,9 @@ import javax.management.ObjectName
  * @author Vladimir Vivien
  */
 class JmxMetaMapBuilder {
-    private static def ATTRIB_EXCEPTION_LIST = ["class", "descriptor", "jmx", "metaClass"]
-    private static def OPS_EXCEPTION_LIST = [
+
+    private static final ATTRIB_EXCEPTION_LIST = ["class", "descriptor", "jmx", "metaClass"]
+    private static final OPS_EXCEPTION_LIST = [
             "clone",
             "equals",
             "finalize",

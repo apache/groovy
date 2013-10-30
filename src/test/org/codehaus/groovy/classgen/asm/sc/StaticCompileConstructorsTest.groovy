@@ -53,5 +53,16 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest {
         WTF.main()
         '''
     }
+    
+    void testMixedDynamicStaticConstructor() {
+        shouldFailWithMessages("""
+            class A{}
+            class B {
+                A a = new A();
+                @groovy.transform.CompileStatic
+                B(){}
+            }
+        """, "Cannot statically compile constructor implicitly including non static elements from object initializers, properties or fields")
+    }
 }
 

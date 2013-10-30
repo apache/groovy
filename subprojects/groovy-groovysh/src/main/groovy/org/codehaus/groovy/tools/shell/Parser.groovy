@@ -30,7 +30,7 @@ import antlr.TokenStreamException
 
 
 interface Parsing {
-    ParseStatus parse(final List<String> buffer);
+    ParseStatus parse(final Collection<String> buffer);
 }
 
 /**
@@ -42,7 +42,7 @@ class Parser
 {
     static final String NEWLINE = System.getProperty('line.separator')
 
-    private static final Logger log = Logger.create(Parser.class)
+    private static final Logger log = Logger.create(Parser)
 
     private final Parsing delegate
 
@@ -67,7 +67,7 @@ class Parser
         }
     }
     
-    ParseStatus parse(final List<String> buffer) {
+    ParseStatus parse(final Collection<String> buffer) {
         return delegate.parse(buffer)
     }
 }
@@ -83,7 +83,7 @@ final class RelaxedParser implements Parsing
 
     private String[] tokenNames
 
-    ParseStatus parse(final List buffer) {
+    ParseStatus parse(final Collection<String> buffer) {
         assert buffer
 
         sourceBuffer = new SourceBuffer()
@@ -100,15 +100,15 @@ final class RelaxedParser implements Parsing
             return new ParseStatus(ParseCode.COMPLETE)
         }
         catch (e) {
-            switch (e.class) {
+            switch (e.getClass()) {
                 case TokenStreamException:
                 case RecognitionException:
-                    log.debug("Parse incomplete: $e (${e.class.name})")
+                    log.debug("Parse incomplete: $e (${e.getClass().getName()})")
     
                     return new ParseStatus(ParseCode.INCOMPLETE)
 
                 default:
-                    log.debug("Parse error: $e (${e.class.name})")
+                    log.debug("Parse error: $e (${e.getClass().getName()})")
 
                     return new ParseStatus(e)
             }
@@ -137,7 +137,7 @@ final class RigidParser implements Parsing
 
     private final Logger log = Logger.create(this.class)
 
-    ParseStatus parse(final List<String> buffer) {
+    ParseStatus parse(final Collection<String> buffer) {
         assert buffer
 
         String source = buffer.join(Parser.NEWLINE)
@@ -184,11 +184,8 @@ final class RigidParser implements Parsing
 
             return new ParseStatus(error)
         }
-        else {
-            log.debug('Parse incomplete')
-
-            return new ParseStatus(ParseCode.INCOMPLETE)
-        }
+        log.debug('Parse incomplete')
+        return new ParseStatus(ParseCode.INCOMPLETE)
     }
     
     private boolean ignoreSyntaxErrorForLineEnding(String line) {
@@ -244,3 +241,4 @@ final class ParseStatus
         this(ParseCode.ERROR, cause)
     }
 }
+

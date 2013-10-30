@@ -29,7 +29,7 @@ class SqlHelperTestCase extends GroovyTestCase {
     }
 
     protected props = null
-    static def counter = 1
+    static counter = 1
 
     static Sql makeSql() {
         def foo = new SqlHelperTestCase()

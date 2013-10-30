@@ -22,7 +22,7 @@ public class WindowFactory extends RootPaneContainerFactory {
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         JWindow window;
-        if (FactoryBuilderSupport.checkValueIsType(value, name, JWindow.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, JWindow)) {
             window = value
         } else {
             LinkedList containingWindows = builder.containingWindows;

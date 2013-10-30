@@ -38,7 +38,7 @@ class ObjectBrowser {
     def swing, frame, fieldTable, methodTable, itemTable, mapTable
 
     static void main(args) {
-        inspect("some String")
+        inspect('some String')
     }
     static void inspect(objectUnderInspection){
         def browser = new ObjectBrowser()
@@ -56,12 +56,12 @@ class ObjectBrowser {
                 
             menuBar {
                 menu(text:'Help') {
-                    menuItem() {action(name:'About', closure: this.&showAbout)}
+                    menuItem {action(name:'About', closure: this.&showAbout)}
                 }
             }
-            panel() {
+            panel {
                 borderLayout()
-                panel(  name:"Class Info",
+                panel(  name:'Class Info',
                         border: emptyBorder([5,10,5,10]),
                         constraints:NORTH) {
                     flowLayout(alignment:FlowLayout.LEFT)
@@ -72,7 +72,7 @@ class ObjectBrowser {
                 tabbedPane(constraints:CENTER){
                     if (inspector.object instanceof Collection) {
                         scrollPane(name: ' Collection data ') {
-                            itemTable = table() {
+                            itemTable = table {
                                 int i = 0
                                 def data = inspector.object.collect { val -> [i++, val] }
                                 tableModel(list:data) {
@@ -84,7 +84,7 @@ class ObjectBrowser {
                     }
                     if (inspector.object instanceof Map) {
                         scrollPane(name: ' Map data ') {
-                            itemTable = table() {
+                            itemTable = table {
                                 int i = 0
                                 def data = inspector.object.collect { key, val -> [i++, key, val] }
                                 tableModel(list:data) {
@@ -96,7 +96,7 @@ class ObjectBrowser {
                         }
                     }
                     scrollPane(name: ' Public Fields and Properties ') {
-                        fieldTable = table() {
+                        fieldTable = table {
                             def data = Inspector.sort(inspector.publicFields.toList())
                             data.addAll(Inspector.sort(inspector.propertyInfo.toList()))
                             tableModel(list:data) {
@@ -110,7 +110,7 @@ class ObjectBrowser {
                         }
                     }
                     scrollPane(name:' (Meta) Methods ' ) {
-                        methodTable = table() {
+                        methodTable = table {
                             def data = Inspector.sort(inspector.methods.toList())
                             data.addAll(Inspector.sort(inspector.metaMethods.toList()))
 

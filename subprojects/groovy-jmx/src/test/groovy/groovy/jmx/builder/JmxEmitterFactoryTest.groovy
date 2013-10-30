@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class JmxEmitterFactoryTest extends GroovyTestCase {
             eventTrap = eventTrap + 1
         })
 
-        def seq = emitter.send("Hello World")
+        emitter.send("Hello World")
         Thread.currentThread().sleep(300)
 
         assert eventTrap == 1
@@ -79,7 +79,7 @@ public class JmxEmitterFactoryTest extends GroovyTestCase {
         }
         assert beans[0]
 
-        long seq = emitter.send("Hello|World")
+        emitter.send("Hello|World")
         Thread.currentThread().sleep(300)
 
         assert count == 1

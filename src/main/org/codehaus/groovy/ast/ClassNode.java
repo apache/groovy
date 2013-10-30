@@ -1125,7 +1125,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             return componentType.toString(showRedirect)+"[]";
         }
         String ret = getName();
-        if (genericsTypes != null) {
+        if (placeholder) ret = getUnresolvedName();
+        if (!placeholder && genericsTypes != null) {
             ret += " <";
             for (int i = 0; i < genericsTypes.length; i++) {
                 if (i != 0) ret += ", ";

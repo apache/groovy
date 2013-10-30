@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -39,7 +38,6 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -47,7 +45,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
 import static org.objectweb.asm.Opcodes.*;
 
@@ -93,7 +90,7 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     @Override
     public void writeInvokeConstructor(final ConstructorCallExpression call) {
-        MethodNode mn = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        MethodNode mn = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         if (mn == null) {
             super.writeInvokeConstructor(call);
             return;
@@ -115,7 +112,35 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     @Override
+    public void writeSpecialConstructorCall(final ConstructorCallExpression call) {
+        MethodNode mn = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        if (mn==null) {
+            super.writeSpecialConstructorCall(call);
+            return;
+        }
+        ConstructorNode cn;
+        if (mn instanceof ConstructorNode) {
+            cn = (ConstructorNode) mn;
+        } else {
+            cn = new ConstructorNode(mn.getModifiers(), mn.getParameters(), mn.getExceptions(), mn.getCode());
+            cn.setDeclaringClass(mn.getDeclaringClass());
+        }
+        // load "this"
+        controller.getMethodVisitor().visitVarInsn(ALOAD, 0);
+        String ownerDescriptor = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
+        TupleExpression args = makeArgumentList(call.getArguments());
+        int before = controller.getOperandStack().getStackLength();
+        loadArguments(args.getExpressions(), cn.getParameters());
+        finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength() - before);
+        // on a special call, there's no object on stack
+        controller.getOperandStack().remove(1);
+    }
+
+
+    @Override
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
+        if (target==null) return false;
+
         if (target instanceof ExtensionMethodNode) {
             ExtensionMethodNode emn = (ExtensionMethodNode) target;
             MethodNode node = emn.getExtensionMethodNode();
@@ -154,8 +179,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 return super.writeDirectMethodCall(target, implicitThis, receiver, new ArgumentListExpression(arr));
             }
             ClassNode classNode = controller.getClassNode();
-            if (target != null
-                    && classNode.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
+            if (classNode.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
                     && controller.isInClosure()
                     && !(target.isPublic() || target.isProtected())
                     && target.getDeclaringClass() != classNode) {
@@ -177,7 +201,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 mce.visit(controller.getAcg());
                 return true;
             }
-            if (target != null && target.isPrivate()) {
+            if (target.isPrivate()) {
                 ClassNode declaringClass = target.getDeclaringClass();
                 if ((isPrivateBridgeMethodsCallAllowed(declaringClass, classNode) || isPrivateBridgeMethodsCallAllowed(classNode, declaringClass))
                         && declaringClass.getNodeMetaData(PRIVATE_BRIDGE_METHODS) != null
@@ -198,7 +222,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                                                         declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false), receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
                 }
             }
-            if (target != null && receiver != null) {
+            if (receiver != null) {
                 if (!(receiver instanceof VariableExpression) || !((VariableExpression) receiver).isSuperExpression()) {
                     // in order to avoid calls to castToType, which is the dynamic behaviour, we make sure that we call CHECKCAST instead
                     // then replace the top operand type
@@ -322,6 +346,17 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     @Override
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
+        ClassNode dynamicCallReturnType = origin.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
+        if (dynamicCallReturnType !=null) {
+            StaticTypesWriterController staticController = (StaticTypesWriterController) controller;
+            if (origin instanceof MethodCallExpression) {
+                ((MethodCallExpression) origin).setMethodTarget(null);
+            }
+            InvocationWriter dynamicInvocationWriter = staticController.getRegularInvocationWriter();
+            dynamicInvocationWriter.
+                    makeCall(origin, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
+            return;
+        }
         Object implicitReceiver = origin.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         if (implicitReceiver !=null && implicitThis) {
             String[] propertyPath = ((String) implicitReceiver).split("\\.");
@@ -403,7 +438,9 @@ public class StaticInvocationWriter extends InvocationWriter {
             OperandStack operandStack = controller.getOperandStack();
             int counter = labelCounter.incrementAndGet();
             // if (receiver != null)
-            receiver.visit(controller.getAcg());
+            ExpressionAsVariableSlot slot = new ExpressionAsVariableSlot(controller, receiver);
+            slot.visit(controller.getAcg());
+            operandStack.box();
             Label ifnull = compileStack.createLocalLabel("ifnull_" + counter);
             mv.visitJumpInsn(IFNULL, ifnull);
             operandStack.remove(1); // receiver consumed by if()
@@ -411,7 +448,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             mv.visitLabel(nonull);
             MethodCallExpression origMCE = (MethodCallExpression) origin;
             MethodCallExpression newMCE = new MethodCallExpression(
-                    origMCE.getObjectExpression(),
+                    new VariableSlotLoader(slot.getType(), slot.getIndex(), controller.getOperandStack()),
                     origMCE.getMethodAsString(),
                     origMCE.getArguments()
             );
@@ -421,6 +458,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             newMCE.setImplicitThis(origMCE.isImplicitThis());
             newMCE.setSourcePosition(origMCE);
             newMCE.visit(controller.getAcg());
+            compileStack.removeVar(slot.getIndex());
             ClassNode returnType = operandStack.getTopOperand();
             if (ClassHelper.isPrimitiveType(returnType) && !ClassHelper.VOID_TYPE.equals(returnType)) {
                 operandStack.box();

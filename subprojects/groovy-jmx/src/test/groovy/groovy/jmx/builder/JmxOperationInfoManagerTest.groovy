@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,8 @@ import javax.management.modelmbean.ModelMBeanConstructorInfo
 import javax.management.modelmbean.ModelMBeanOperationInfo
 
 class JmxOperationInfoManagerTest extends GroovyTestCase {
-    def setup() {
 
-    }
-
-    public void TODO_testGetConstructorInfoFromMap() {
+    void testGetConstructorInfoFromMap() {
         def object = new MockManagedObject()
         def maps = JmxMetaMapBuilder.buildConstructorMapFrom(object);
         assert maps
@@ -33,7 +30,7 @@ class JmxOperationInfoManagerTest extends GroovyTestCase {
         Map m = getCtorMapByParamSize(maps, 0)
         ModelMBeanConstructorInfo info0 = JmxOperationInfoManager.getConstructorInfoFromMap(m)
         assert info0
-        assert info0.name == "groovy.jmx.builder.test.MockManagedObject"
+        assert info0.name == "groovy.jmx.builder.MockManagedObject"
         assert info0.signature.size() == 0
         Descriptor desc = info0.descriptor
         assert desc
@@ -83,7 +80,6 @@ class JmxOperationInfoManagerTest extends GroovyTestCase {
         assert infos
         assert infos.size() == 3
     }
-
 
     void testGetOperationInfoFromMap() {
         def object = new MockManagedObject()
@@ -156,7 +152,6 @@ class JmxOperationInfoManagerTest extends GroovyTestCase {
         assert desc.getFieldValue(JmxBuilderTools.DESC_KEY_NAME) == "dynamicMethod"
         assert desc.getFieldValue(JmxBuilderTools.DESC_KEY_TYPE) == "operation"
         assert desc.getFieldValue(JmxBuilderTools.DESC_KEY_TYPE) == "operation"
-
     }
 
     void testCreateGetterOperationInfoFromProperty() {
@@ -179,15 +174,6 @@ class JmxOperationInfoManagerTest extends GroovyTestCase {
         assert op.signature.size() == 1
     }
 
-    private Map getMetaMapByName(List<Map> maps, String name) {
-        for (Map m in maps) {
-            if (m.name == name) {
-                return m
-            }
-        }
-        return null
-    }
-
     private Map getCtorMapByParamSize(Map maps, int size) {
         for (m in maps) {
             if (!m.value.params && size == 0) {
@@ -196,6 +182,5 @@ class JmxOperationInfoManagerTest extends GroovyTestCase {
                 return m.value
             }
         }
-        return null
     }
 }

@@ -26,7 +26,7 @@ import org.codehaus.groovy.tools.shell.util.Logger
  */
 class CommandRegistry
 {
-    protected final Logger log = Logger.create(CommandRegistry.class)
+    protected final Logger log = Logger.create(CommandRegistry)
     
     //
     // TODO: Hook up support so one can for (command in registry) { }
@@ -52,20 +52,18 @@ class CommandRegistry
         commands << command
         
         // Hookup context for alias commands
-        command.registry = this
+        if (command instanceof CommandSupport) {
+            ((CommandSupport) command).registry = this
+        }
 
         // Add any standard aliases for the command if any
-        command.aliases?.each {Command it -> this << it }
+        command.aliases?.each {Command it -> this.register(it) }
         
         if (log.debugEnabled) {
             log.debug("Registered command: $command.name")
         }
         
         return command
-    }
-
-    def leftShift(final Command command) {
-        return register(command)
     }
     
     Command find(final String name) {
@@ -96,8 +94,8 @@ class CommandRegistry
     List<Command> commands() {
         return commands
     }
-    
-    def getProperty(final String name) {
+
+    Command getProperty(final String name) {
         return find(name)
     }
     

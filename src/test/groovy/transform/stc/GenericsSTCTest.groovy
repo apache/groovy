@@ -422,7 +422,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new Test()
-        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+        ''', 'Cannot find matching method java.lang.Object#getAt(int)'
     }
 
     void testAssignmentOfNewInstance() {
@@ -861,7 +861,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 println arg1 == arg2
             }
             printEqual(1, 'foo')
-        ''', '#printEqual(java.lang.Object <T>, java.lang.Object <T>) with arguments [int, java.lang.String]'
+        ''', '#printEqual(T, T) with arguments [int, java.lang.String]'
     }
     void testIncompatibleGenericsForTwoArgumentsUsingEmbeddedPlaceholder() {
         shouldFailWithMessages '''
@@ -869,7 +869,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 println arg1 == arg2
             }
             printEqual(1, ['foo'])
-        ''', '#printEqual(java.lang.Object <T>, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
+        ''', '#printEqual(T, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
     }
 
     void testGroovy5748() {
@@ -1313,6 +1313,30 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             Runner.main(null);
         """
+    }
+
+    void testReturnTypeInferenceRemovalWithGenerics() {
+        assertScript '''
+            class SynchronousPromise<T> {
+                Closure<T> callable
+                Object value
+
+                SynchronousPromise(Closure<T> callable) {
+                    this.callable = callable
+                }
+
+                T get() throws Throwable {
+                    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                        assert node.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
+                    })
+                    value=callable.call()
+                    return value
+                }
+            }
+
+            def promise = new SynchronousPromise({ "Hello" })
+            promise.get()
+        '''
     }
     
     static class MyList extends LinkedList<String> {}

@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.tools.shell
 
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.runtime.MethodClosure
 import java.lang.reflect.Method
@@ -49,7 +50,7 @@ class Interpreter
         return shell.getClassLoader()
     }
 
-    def evaluate(final List buffer) {
+    def evaluate(final Collection<String> buffer) {
         assert buffer
 
         def source = buffer.join(Parser.NEWLINE)
@@ -68,7 +69,7 @@ class Interpreter
             }
 
             // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-            log.debug("Evaluation result: ${String.valueOf(result)} (${result?.getClass()})")
+            log.debug("Evaluation result: ${InvokerHelper.toString(result)} (${result?.getClass()})")
 
             // Keep only the methods that have been defined in the script
             type.declaredMethods.each { Method m ->
@@ -80,13 +81,11 @@ class Interpreter
             }
         }
         finally {
-            def cache = classLoader.classCache
-
             // Remove the script class generated
-            cache.remove(type?.name)
+            classLoader.removeClassCacheEntry(type?.name)
 
             // Remove the inline closures from the cache as well
-            cache.remove('$_run_closure')
+            classLoader.removeClassCacheEntry('$_run_closure')
         }
 
         return result

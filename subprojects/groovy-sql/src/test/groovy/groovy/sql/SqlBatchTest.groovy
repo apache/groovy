@@ -26,7 +26,7 @@ import static groovy.sql.SqlTestConstants.*
  */
 class SqlBatchTest extends GroovyTestCase {
     Sql sql
-    private others = ['Jean':'Gabin', 'Lino':'Ventura']
+    private final others = ['Jean':'Gabin', 'Lino':'Ventura']
 
     void setUp() {
         DataSource ds = DB_DATASOURCE.newInstance(

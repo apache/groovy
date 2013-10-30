@@ -33,14 +33,14 @@ class SaveCommand
         super(shell, 'save', '\\s')
     }
 
-    protected List createCompletors() {
+    protected List createCompleters() {
         return [
             new FileNameCompleter(),
             null
         ]
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assert args != null
         
         if (args.size() != 1) {

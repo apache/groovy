@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ class JmxBeanFactoryTest extends GroovyTestCase {
     MBeanServerConnection server
 
     void setUp() {
+        super.setUp()
         builder = new JmxBuilder()
         server = builder.getMBeanServer()
         builder.registerFactory("bean", new JmxBeanFactory())
@@ -40,9 +41,11 @@ class JmxBeanFactoryTest extends GroovyTestCase {
     void testImplicitMetaMap() {
         def object = new MockManagedObject()
         def objName = "jmx.builder:type=ExportedObject,name=${object.class.canonicalName}@${object.hashCode()}"
+
         def map = builder.bean(object)
 
         assert map
+        assert map.jmxName.toString() == objName
     }
 
     void testEmbeddedBeanGeneration() {
@@ -84,5 +87,4 @@ class JmxBeanFactoryTest extends GroovyTestCase {
         assert map.constructors
         assert !map.operations
     }
-
 }

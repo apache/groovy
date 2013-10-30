@@ -16,14 +16,14 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.Command
 
 /**
  * The 'register' command.
+ * Registers a class as a new groovysh command.
+ * Requires the command to have matching constructors (shell) or (shell, name, alias).
  *
  * @version $Id$
  * @author <a href="mailto:chris@wensel.net">Chris K Wensel</a>
@@ -35,7 +35,7 @@ class RegisterCommand
         super(shell, "register", "\\rc")
     }
 
-    public Object execute(List args) {
+    public Object execute(List<String> args) {
         assert args != null
 
         if (args.size() < 1) {
@@ -71,7 +71,7 @@ class RegisterCommand
         command = shell << command
 
         if (shell.runner) {
-            shell.runner.completor << command
+            shell.runner.completer.add(command)
         }
     }
 }

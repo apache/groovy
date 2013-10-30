@@ -47,7 +47,7 @@ class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest {
         try {
             super.testShouldNotThrowIncompatibleArgToFunVerifyError()
         } finally {
-            println astTrees
+//            println astTrees
         }
     }
 

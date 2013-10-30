@@ -37,20 +37,20 @@ import org.codehaus.groovy.classgen.Verifier
  *
  * @author Hamlet D'Arcy
  */
-public class AstNodeToScriptAdapter  {
+class AstNodeToScriptAdapter  {
 
     /**
      * Run this class as a script to compile a groovy file and print out the resulting source.
      * @param args
      *      a filename to compile and a CompilePhase to run to
      */
-    public static void main(args) {
+    static void main(args) {
 
         if (!args || args.length < 2) {
-            println """
+            println '''
 Usage: java groovy.inspect.swingui.AstNodeToScriptAdapter [filename] [compilephase]
 where [filename] is a Groovy script
-and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompilePhase"""
+and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompilePhase'''
         } else {
             def file = new File((String) args[0])
             def phase = CompilePhase.fromPhaseNumber(args[1] as int)
@@ -79,30 +79,30 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
     *    Whether or not to show the Script class from the source code
     * @returns the source code from the AST state
     */
-    public String compileToScript(String script, int compilePhase, ClassLoader classLoader = null, boolean showScriptFreeForm = true, boolean showScriptClass = true) {
+    String compileToScript(String script, int compilePhase, ClassLoader classLoader = null, boolean showScriptFreeForm = true, boolean showScriptClass = true) {
 
         def writer = new StringWriter()
 
         classLoader = classLoader ?: new GroovyClassLoader(getClass().classLoader)
 
-        def scriptName = "script" + System.currentTimeMillis() + ".groovy"
-        GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, "/groovy/script")
+        def scriptName = 'script' + System.currentTimeMillis() + '.groovy'
+        GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, '/groovy/script')
         CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
         cu.addPhaseOperation(new AstNodeToScriptVisitor(writer, showScriptFreeForm, showScriptClass), compilePhase)
-        cu.addSource(codeSource.getName(), script);
+        cu.addSource(codeSource.getName(), script)
         try {
             cu.compile(compilePhase)
         } catch (CompilationFailedException cfe) {
 
-            writer.println "Unable to produce AST for this phase due to earlier compilation error:"
+            writer.println 'Unable to produce AST for this phase due to earlier compilation error:'
             cfe.message.eachLine {
                 writer.println it
             }
-            writer.println "Fix the above error(s) and then press Refresh"
+            writer.println 'Fix the above error(s) and then press Refresh'
         } catch (Throwable t) {
-            writer.println "Unable to produce AST for this phase due to an error:"
+            writer.println 'Unable to produce AST for this phase due to an error:'
             writer.println t.getMessage()
-            writer.println "Fix the above error(s) and then press Refresh"
+            writer.println 'Fix the above error(s) and then press Refresh'
         }
         return writer.toString()
     }
@@ -115,16 +115,16 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
  */
 class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements GroovyCodeVisitor, GroovyClassVisitor {
 
-    private Writer _out
-    Stack<String> classNameStack = new Stack<String>();
-    String _indent = ""
+    private final Writer _out
+    Stack<String> classNameStack = new Stack<String>()
+    String _indent = ''
     boolean readyToIndent = true
     boolean showScriptFreeForm
     boolean showScriptClass
     boolean scriptHasBeenVisited
 
     def AstNodeToScriptVisitor(Writer writer, boolean showScriptFreeForm = true, boolean showScriptClass = true) {
-        this._out = writer;
+        this._out = writer
         this.showScriptFreeForm = showScriptFreeForm
         this.showScriptClass = showScriptClass
         this.scriptHasBeenVisited = false
@@ -200,7 +200,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     def indented(Closure block) {
         String startingIndent = _indent
-        _indent = _indent + "    "
+        _indent = _indent + '    '
         block()
         _indent = startingIndent
     }
@@ -233,7 +233,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
                 printLineBreak()
             }
 
-            if (packageNode.text.endsWith(".")) {
+            if (packageNode.text.endsWith('.')) {
                 print packageNode.text[0..-2]
             } else {
                 print packageNode.text
@@ -254,7 +254,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitClass(ClassNode node) {
+    void visitClass(ClassNode node) {
 
         classNameStack.push(node.name)
 
@@ -278,7 +278,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         }
         print ' extends '
         visitType node.superClass
-        print " { "
+        print ' { '
         printDoubleBreak()
 
         indented {
@@ -327,7 +327,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitConstructor(ConstructorNode node) {
+    void visitConstructor(ConstructorNode node) {
         visitMethod(node)
     }
 
@@ -356,7 +356,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitMethod(MethodNode node) {
+    void visitMethod(MethodNode node) {
         node?.annotations?.each {
             visitAnnotationNode(it)
             printLineBreak()
@@ -366,7 +366,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         if (node.name == '<init>') {
             print "${classNameStack.peek()}("
             visitParameters(node.parameters)
-            print ") {"
+            print ') {'
             printLineBreak()
         } else if (node.name == '<clinit>') {
             print '{ ' // will already have 'static' from modifiers
@@ -375,7 +375,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
             visitType node.returnType
             print " $node.name("
             visitParameters(node.parameters)
-            print ")"
+            print ')'
             if (node.exceptions) {
                 boolean first = true
                 print ' throws '
@@ -387,7 +387,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
                     visitType it
                 }
             }
-            print " {"
+            print ' {'
             printLineBreak()
         }
 
@@ -436,7 +436,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitField(FieldNode node) {
+    void visitField(FieldNode node) {
         node?.annotations?.each {
             visitAnnotationNode(it)
             printLineBreak()
@@ -453,7 +453,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
                 && type == node.type
                 && ClassHelper.isStaticConstantInitializerType(type)) {
             // GROOVY-5150: final constants may be initialized directly
-            print " = "
+            print ' = '
             if (ClassHelper.STRING_TYPE == type) {
                 print "'"+node.initialValueExpression.text.replaceAll("'", "\\\\'")+"'"
             } else if (ClassHelper.char_TYPE == type) {
@@ -465,7 +465,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         printLineBreak()
     }
 
-    public void visitAnnotationNode(AnnotationNode node) {
+    void visitAnnotationNode(AnnotationNode node) {
         print '@' + node?.classNode?.name
         if (node?.members) {
             print '('
@@ -485,14 +485,14 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitProperty(PropertyNode node) {
+    void visitProperty(PropertyNode node) {
         // is a FieldNode, avoid double dispatch
     }
 
     @Override
-    public void visitBlockStatement(BlockStatement block) {
+    void visitBlockStatement(BlockStatement block) {
         block?.statements?.each {
-            it.visit(this);
+            it.visit(this)
             printLineBreak()
         }
         if (!_out.toString().endsWith('\n')) {
@@ -501,7 +501,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitForLoop(ForStatement statement) {
+    void visitForLoop(ForStatement statement) {
 
         print 'for ('
         if (statement?.variable != ForStatement.FOR_LOOP_DUMMY) {
@@ -524,7 +524,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitIfElse(IfStatement ifElse) {
+    void visitIfElse(IfStatement ifElse) {
         print 'if ('
         ifElse?.booleanExpression?.visit this
         print ') {'
@@ -534,7 +534,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         }
         printLineBreak()
         if (ifElse?.elseBlock && !(ifElse.elseBlock instanceof EmptyStatement)) {
-            print "} else {"
+            print '} else {'
             printLineBreak()
             indented {
                 ifElse?.elseBlock?.visit this
@@ -546,20 +546,20 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitExpressionStatement(ExpressionStatement statement) {
+    void visitExpressionStatement(ExpressionStatement statement) {
         statement.expression.visit this
     }
 
     @Override
-    public void visitReturnStatement(ReturnStatement statement) {
+    void visitReturnStatement(ReturnStatement statement) {
         printLineBreak()
-        print "return "
-        statement.getExpression().visit(this);
+        print 'return '
+        statement.getExpression().visit(this)
         printLineBreak()
     }
 
     @Override
-    public void visitSwitch(SwitchStatement statement) {
+    void visitSwitch(SwitchStatement statement) {
         print 'switch ('
         statement?.expression?.visit this
         print ') {'
@@ -579,7 +579,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitCaseStatement(CaseStatement statement) {
+    void visitCaseStatement(CaseStatement statement) {
         print 'case '
         statement?.expression?.visit this
         print ':'
@@ -590,25 +590,25 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitBreakStatement(BreakStatement statement) {
+    void visitBreakStatement(BreakStatement statement) {
         print 'break'
         printLineBreak()
     }
 
     @Override
-    public void visitContinueStatement(ContinueStatement statement) {
+    void visitContinueStatement(ContinueStatement statement) {
         print 'continue'
         printLineBreak()
     }
 
     @Override
-    public void visitMethodCallExpression(MethodCallExpression expression) {
+    void visitMethodCallExpression(MethodCallExpression expression) {
 
         Expression objectExp = expression.getObjectExpression()
         if (objectExp instanceof VariableExpression) {
             visitVariableExpression(objectExp, false)
         } else {
-            objectExp.visit(this);
+            objectExp.visit(this)
         }
         if (expression.spreadSafe) {
             print '*'
@@ -621,14 +621,14 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         if (method instanceof ConstantExpression) {
             visitConstantExpression(method, true)
         } else {
-            method.visit(this);
+            method.visit(this)
         }
         expression.getArguments().visit(this)
     }
 
     @Override
-    public void visitStaticMethodCallExpression(StaticMethodCallExpression expression) {
-        print expression?.ownerType?.name + "." + expression?.method
+    void visitStaticMethodCallExpression(StaticMethodCallExpression expression) {
+        print expression?.ownerType?.name + '.' + expression?.method
         if (expression?.arguments instanceof VariableExpression || expression?.arguments instanceof MethodCallExpression) {
             print '('
             expression?.arguments?.visit this
@@ -639,7 +639,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitConstructorCallExpression(ConstructorCallExpression expression) {
+    void visitConstructorCallExpression(ConstructorCallExpression expression) {
         if (expression?.isSuperCall()) {
             print 'super'
         } else if (expression?.isThisCall()) {
@@ -652,7 +652,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitBinaryExpression(BinaryExpression expression) {
+    void visitBinaryExpression(BinaryExpression expression) {
         expression?.leftExpression?.visit this
         print " $expression.operation.text "
         expression.rightExpression.visit this
@@ -663,7 +663,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitPostfixExpression(PostfixExpression expression) {
+    void visitPostfixExpression(PostfixExpression expression) {
         print '('
         expression?.expression?.visit this
         print ')'
@@ -671,7 +671,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitPrefixExpression(PrefixExpression expression) {
+    void visitPrefixExpression(PrefixExpression expression) {
         print expression?.operation?.text
         print '('
         expression?.expression?.visit this
@@ -680,7 +680,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
 
     @Override
-    public void visitClosureExpression(ClosureExpression expression) {
+    void visitClosureExpression(ClosureExpression expression) {
         print '{ '
         if (expression?.parameters) {
             visitParameters(expression?.parameters)
@@ -694,14 +694,14 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitTupleExpression(TupleExpression expression) {
+    void visitTupleExpression(TupleExpression expression) {
         print '('
         visitExpressionsAndCommaSeparate(expression?.expressions)
         print ')'
     }
 
     @Override
-    public void visitRangeExpression(RangeExpression expression) {
+    void visitRangeExpression(RangeExpression expression) {
         print '('
         expression?.from?.visit this
         print '..'
@@ -710,7 +710,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitPropertyExpression(PropertyExpression expression) {
+    void visitPropertyExpression(PropertyExpression expression) {
         expression?.objectExpression?.visit this
         if (expression?.spreadSafe) {
             print '*'
@@ -726,16 +726,16 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitAttributeExpression(AttributeExpression attributeExpression) {
+    void visitAttributeExpression(AttributeExpression attributeExpression) {
         visitPropertyExpression attributeExpression
     }
 
     @Override
-    public void visitFieldExpression(FieldExpression expression) {
+    void visitFieldExpression(FieldExpression expression) {
         print expression?.field?.name
     }
 
-    public void visitConstantExpression(ConstantExpression expression, boolean unwrapQuotes = false) {
+    void visitConstantExpression(ConstantExpression expression, boolean unwrapQuotes = false) {
         if (expression.value instanceof String && !unwrapQuotes) {
             // string reverse escaping is very naive
             def escaped = ((String) expression.value).replaceAll('\n', '\\\\n').replaceAll("'", "\\\\'")
@@ -746,11 +746,11 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitClassExpression(ClassExpression expression) {
+    void visitClassExpression(ClassExpression expression) {
         print expression.text
     }
 
-    public void visitVariableExpression(VariableExpression expression, boolean spacePad = true) {
+    void visitVariableExpression(VariableExpression expression, boolean spacePad = true) {
 
         if (spacePad) {
             print ' ' + expression.name + ' '
@@ -760,7 +760,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitDeclarationExpression(DeclarationExpression expression) {
+    void visitDeclarationExpression(DeclarationExpression expression) {
         // handle multiple assignment expressions
         if (expression?.leftExpression instanceof ArgumentListExpression) {
             print 'def '
@@ -778,39 +778,39 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitGStringExpression(GStringExpression expression) {
+    void visitGStringExpression(GStringExpression expression) {
         print '"' + expression.text + '"'
     }
 
     @Override
-    public void visitSpreadExpression(SpreadExpression expression) {
+    void visitSpreadExpression(SpreadExpression expression) {
         print '*'
         expression?.expression?.visit this
     }
 
     @Override
-    public void visitNotExpression(NotExpression expression) {
+    void visitNotExpression(NotExpression expression) {
         print '!('
         expression?.expression?.visit this
         print ')'
     }
 
     @Override
-    public void visitUnaryMinusExpression(UnaryMinusExpression expression) {
+    void visitUnaryMinusExpression(UnaryMinusExpression expression) {
         print '-('
         expression?.expression?.visit this
         print ')'
     }
 
     @Override
-    public void visitUnaryPlusExpression(UnaryPlusExpression expression) {
+    void visitUnaryPlusExpression(UnaryPlusExpression expression) {
         print '+('
         expression?.expression?.visit this
         print ')'
     }
 
     @Override
-    public void visitCastExpression(CastExpression expression) {
+    void visitCastExpression(CastExpression expression) {
         print '(('
         expression?.expression?.visit this
         print ') as '
@@ -824,9 +824,9 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
      * @param classNode
      *      classnode
      */
-    public void visitType(ClassNode classNode) {
+    void visitType(ClassNode classNode) {
         def name = classNode.name
-        if (name =~ /^\[+L/ && name.endsWith(";")) {
+        if (name =~ /^\[+L/ && name.endsWith(';')) {
             int numDimensions = name.indexOf('L')
             print "${classNode.name[(numDimensions + 1)..-2]}" + ('[]' * numDimensions)
         } else {
@@ -835,7 +835,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         visitGenerics classNode?.genericsTypes
     }
 
-    public void visitArgumentlistExpression(ArgumentListExpression expression, boolean showTypes = false) {
+    void visitArgumentlistExpression(ArgumentListExpression expression, boolean showTypes = false) {
         print '('
         int count = expression?.expressions?.size()
         expression.expressions.each {
@@ -857,15 +857,15 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitBytecodeExpression(BytecodeExpression expression) {
-        print "/*BytecodeExpression*/"
+    void visitBytecodeExpression(BytecodeExpression expression) {
+        print '/*BytecodeExpression*/'
         printLineBreak()
     }
 
 
 
     @Override
-    public void visitMapExpression(MapExpression expression) {
+    void visitMapExpression(MapExpression expression) {
         print '['
         if (expression?.mapEntryExpressions?.size() == 0) {
             print ':'
@@ -876,7 +876,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitMapEntryExpression(MapEntryExpression expression) {
+    void visitMapEntryExpression(MapEntryExpression expression) {
         if (expression?.keyExpression instanceof SpreadMapExpression) {
             print '*'            // is this correct? 
         } else {
@@ -887,14 +887,14 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitListExpression(ListExpression expression) {
+    void visitListExpression(ListExpression expression) {
         print '['
         visitExpressionsAndCommaSeparate(expression?.expressions)
         print ']'
     }
 
     @Override
-    public void visitTryCatchFinally(TryCatchStatement statement) {
+    void visitTryCatchFinally(TryCatchStatement statement) {
         print 'try {'
         printLineBreak()
         indented {
@@ -916,14 +916,14 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitThrowStatement(ThrowStatement statement) {
+    void visitThrowStatement(ThrowStatement statement) {
         print 'throw '
         statement?.expression?.visit this
         printLineBreak()
     }
 
     @Override
-    public void visitSynchronizedStatement(SynchronizedStatement statement) {
+    void visitSynchronizedStatement(SynchronizedStatement statement) {
         print 'synchronized ('
         statement?.expression?.visit this
         print ') {'
@@ -935,7 +935,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitTernaryExpression(TernaryExpression expression) {
+    void visitTernaryExpression(TernaryExpression expression) {
         expression?.booleanExpression?.visit this
         print ' ? '
         expression?.trueExpression?.visit this
@@ -944,17 +944,17 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitShortTernaryExpression(ElvisOperatorExpression expression) {
+    void visitShortTernaryExpression(ElvisOperatorExpression expression) {
         visitTernaryExpression(expression)
     }
 
     @Override
-    public void visitBooleanExpression(BooleanExpression expression) {
+    void visitBooleanExpression(BooleanExpression expression) {
         expression?.expression?.visit this
     }
 
     @Override
-    public void visitWhileLoop(WhileStatement statement) {
+    void visitWhileLoop(WhileStatement statement) {
         print 'while ('
         statement?.booleanExpression?.visit this
         print ') {'
@@ -968,7 +968,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitDoWhileLoop(DoWhileStatement statement) {
+    void visitDoWhileLoop(DoWhileStatement statement) {
         print 'do {'
         printLineBreak()
         indented {
@@ -981,7 +981,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitCatchStatement(CatchStatement statement) {
+    void visitCatchStatement(CatchStatement statement) {
         print 'catch ('
         visitParameters([statement.variable])
         print ') {'
@@ -994,15 +994,14 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
+    void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
         print '~('
         expression?.expression?.visit this
         print ') '
     }
 
-
     @Override
-    public void visitAssertStatement(AssertStatement statement) {
+    void visitAssertStatement(AssertStatement statement) {
         print 'assert '
         statement?.booleanExpression?.visit this
         print ' : '
@@ -1010,7 +1009,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitClosureListExpression(ClosureListExpression expression) {
+    void visitClosureListExpression(ClosureListExpression expression) {
         boolean first = true
         expression?.expressions?.each {
             if (!first) {
@@ -1022,14 +1021,14 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitMethodPointerExpression(MethodPointerExpression expression) {
+    void visitMethodPointerExpression(MethodPointerExpression expression) {
         expression?.expression?.visit this
         print '.&'
         expression?.methodName?.visit this
     }
 
     @Override
-    public void visitArrayExpression(ArrayExpression expression) {
+    void visitArrayExpression(ArrayExpression expression) {
         print 'new '
         visitType expression?.elementType
         print '['
@@ -1049,7 +1048,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
-    public void visitSpreadMapExpression(SpreadMapExpression expression) {
+    void visitSpreadMapExpression(SpreadMapExpression expression) {
         print '*:'
         expression?.expression?.visit this
     }

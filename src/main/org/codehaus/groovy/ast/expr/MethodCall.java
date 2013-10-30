@@ -27,4 +27,5 @@ public interface MethodCall {
     ASTNode getReceiver();
     String getMethodAsString();
     Expression getArguments();
+    String getText();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.EmptyRange;
+import groovy.lang.IntRange;
 import groovy.lang.Range;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -34,6 +35,9 @@ public class DefaultGroovyMethodsSupport {
 
     // helper method for getAt and putAt
     protected static RangeInfo subListBorders(int size, Range range) {
+        if (range instanceof IntRange) {
+            return ((IntRange)range).subListBorders(size);
+        }
         int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
         int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), size);
         boolean reverse = range.isReverse();
@@ -98,18 +102,6 @@ public class DefaultGroovyMethodsSupport {
             } catch (IOException e) {
                 /* ignore */
             }
-        }
-    }
-
-    protected static class RangeInfo {
-        public final int from;
-        public final int to;
-        public final boolean reverse;
-
-        public RangeInfo(int from, int to, boolean reverse) {
-            this.from = from;
-            this.to = to;
-            this.reverse = reverse;
         }
     }
 

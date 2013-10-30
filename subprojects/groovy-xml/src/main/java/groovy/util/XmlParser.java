@@ -19,6 +19,7 @@ import groovy.xml.FactorySupport;
 import groovy.xml.QName;
 import org.xml.sax.*;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -66,10 +67,16 @@ public class XmlParser implements ContentHandler {
     }
 
     public XmlParser(boolean validating, boolean namespaceAware) throws ParserConfigurationException, SAXException {
+        this(validating, namespaceAware, false);
+    }
+
+    public XmlParser(boolean validating, boolean namespaceAware, boolean allowDocTypeDeclaration) throws ParserConfigurationException, SAXException {
         SAXParserFactory factory = FactorySupport.createSaxParserFactory();
         factory.setNamespaceAware(namespaceAware);
         this.namespaceAware = namespaceAware;
         factory.setValidating(validating);
+        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         reader = factory.newSAXParser().getXMLReader();
     }
 

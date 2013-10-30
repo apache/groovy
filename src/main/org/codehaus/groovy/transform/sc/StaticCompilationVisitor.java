@@ -112,12 +112,37 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         classNode = oldCN;
     }
 
+    /**
+     * If we are in a constructor, that is static compiled, but in a class, that
+     * is not, it may happen that init code from object initializers, fields
+     * or properties is added into the constructor code. The backend assumes
+     * a purely static contructor, so it may fail if it encounters dynamic
+     * code here. Thus we make this kind of code fail
+     */
+    private void checkForConstructorWithCSButClassWithout(MethodNode node) {
+        if (!(node instanceof ConstructorNode)) return;
+        Object meta = node.getNodeMetaData(STATIC_COMPILE_NODE);
+        if (!Boolean.TRUE.equals(meta)) return;
+        ClassNode clz = typeCheckingContext.getEnclosingClassNode();
+        meta = clz.getNodeMetaData(STATIC_COMPILE_NODE);
+        if (Boolean.TRUE.equals(meta)) return;
+        if (    clz.getObjectInitializerStatements().isEmpty() &&
+                clz.getFields().isEmpty() &&
+                clz.getProperties().isEmpty())
+        {
+            return;
+        }
+
+        addStaticTypeError("Cannot statically compile constructor implicitly including non static elements from object initializers, properties or fields.",node);
+    }
+
     @Override
     public void visitMethod(final MethodNode node) {
         if (isSkipMode(node)) {
             node.putNodeMetaData(STATIC_COMPILE_NODE, false);
         }
         super.visitMethod(node);
+        checkForConstructorWithCSButClassWithout(node);
     }
 
     /**

@@ -63,6 +63,7 @@ public class IndentPrinter {
     private String indent;
     private Writer out;
     private final boolean addNewlines;
+    private boolean autoIndent;
 
     /**
      * Creates an IndentPrinter backed by a PrintWriter pointing to System.out, with an indent of two spaces.
@@ -104,12 +105,24 @@ public class IndentPrinter {
      * @param addNewlines set to false to gobble all new lines (default true)
      */
     public IndentPrinter(Writer out, String indent, boolean addNewlines) {
+       this(out, indent, addNewlines, false);
+    }
+
+    /**
+     * Create an IndentPrinter to the given PrintWriter
+     * @param out Writer to output to
+     * @param indent character(s) used to indent each line
+     * @param addNewlines set to false to gobble all new lines (default true)
+     * @param autoIndent set to true to make println() prepend the indent automatically (default false)
+     */
+    public IndentPrinter(Writer out, String indent, boolean addNewlines, boolean autoIndent) {
         this.addNewlines = addNewlines;
         if (out == null) {
             throw new IllegalArgumentException("Must specify a Writer");
         }
         this.out = out;
         this.indent = indent;
+        this.autoIndent = autoIndent;
     }
 
     /**
@@ -119,6 +132,7 @@ public class IndentPrinter {
      */
     public void println(String text) {
         try {
+            if(autoIndent) printIndent();
             out.write(text);
             println();
         } catch(IOException ioe) {
@@ -197,6 +211,14 @@ public class IndentPrinter {
 
     public void setIndentLevel(int indentLevel) {
         this.indentLevel = indentLevel;
+    }
+
+    public boolean getAutoIndent(){
+        return this.autoIndent;
+    }
+
+    public void setAutoIndent(boolean autoIndent){
+        this.autoIndent = autoIndent;
     }
 
     public void flush() {

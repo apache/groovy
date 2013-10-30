@@ -140,6 +140,20 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         }
     }
 
+    void testInfixKeyword() {
+        IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
+        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
+            def candidates = []
+            String buffer = "class Foo ext"
+            assertEquals(10, completor.complete(buffer, buffer.length(), candidates))
+            assertEquals(['extends'], candidates)
+        }
+    }
+
+
     void testAfterSemi() {
         // evaluation of all is dangerous, but the reflectionCompletor has to deal with this
         reflectionCompletorMocker.demand.complete(1) { tokens, candidates ->
@@ -184,7 +198,7 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             // import command prevents reflection completion
-            registry << new ImportCommand(groovyshMock)
+            registry.register(new ImportCommand(groovyshMock))
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "import foo"

@@ -130,6 +130,7 @@ set _ARGS=%*
 if not defined _ARGS goto execute
 set _ARGS=%_ARGS:-=-d%
 set _ARGS=%_ARGS:"=-q%
+set _ARGS=%_ARGS:?=-n%
 rem Windowz will try to match * with files so we escape it here
 rem but it is also a meta char for env var string substitution
 rem so it can't be first char here, hack just for common cases.
@@ -186,6 +187,7 @@ rem now unescape -q, -s, -d
 set _ARG=%_ARG:-s=*%
 set _ARG=%_ARG:-q="%
 set _ARG=%_ARG:-d=-%
+set _ARG=%_ARG:-n=?%
 
 set CMD_LINE_ARGS=%CMD_LINE_ARGS% %_ARG%
 set _ARG=

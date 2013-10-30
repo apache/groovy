@@ -74,7 +74,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
 
                 5.times {
                     @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                        assert node.getNodeMetaData(DECLARATION_INFERRED_TYPE) == long_TYPE
+                        assert node.getNodeMetaData(INFERRED_TYPE) == Long_TYPE
                     })
                     def t0 = curr()
                     100000.times {
@@ -88,7 +88,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     void testGroovy5487ReturnNull() {
         assertScript '''
         @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == make(List)
+            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
         })
         List getList() {
             null
@@ -99,7 +99,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     void testGroovy5487ReturnNullWithExplicitReturn() {
         assertScript '''
         @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == make(List)
+            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
         })
         List getList() {
             return null
@@ -110,7 +110,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     void testGroovy5487ReturnNullWithEmptyBody() {
         assertScript '''
         @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == make(List)
+            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
         })
         List getList() {
         }

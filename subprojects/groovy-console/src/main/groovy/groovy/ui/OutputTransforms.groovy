@@ -21,11 +21,11 @@ import javax.swing.Icon
 import javax.swing.ImageIcon
 import org.codehaus.groovy.runtime.InvokerHelper
 
-public class OutputTransforms {
+class OutputTransforms {
 
-    @Lazy static def localTransforms = loadOutputTransforms()
+    @Lazy static localTransforms = loadOutputTransforms()
 
-    static def loadOutputTransforms() {
+    static loadOutputTransforms() {
         def transforms = []
 
         //
@@ -82,7 +82,7 @@ public class OutputTransforms {
         return transforms
     }
 
-    static def transformResult(def base, def transforms = localTransforms) {
+    static transformResult(base, transforms = localTransforms) {
         for (Closure c : transforms) {
             def result = c(base as Object)
             if (result != null)  {

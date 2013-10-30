@@ -24,7 +24,7 @@ public class DialogFactory extends groovy.swing.factory.RootPaneContainerFactory
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         JDialog dialog
-        if (FactoryBuilderSupport.checkValueIsType(value, name, JDialog.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, JDialog)) {
             dialog = value
         } else {
             Object owner = attributes.remove("owner")
@@ -46,6 +46,5 @@ public class DialogFactory extends groovy.swing.factory.RootPaneContainerFactory
 
         return dialog
     }
-
 
 }

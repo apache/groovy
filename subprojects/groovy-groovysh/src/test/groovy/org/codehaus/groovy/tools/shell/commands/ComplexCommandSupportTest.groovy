@@ -57,14 +57,14 @@ class ComplexCommandSupportTest
 
     void testNewFunctionsBadDefault() {
         try {
-            ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar"], "foo") {}
+            new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar"], "foo") {}
             fail()
         } catch (AssertionError e) {
             // pass
         }
     }
 
-    void testCreateCompletors() {
+    void testCreateCompleters() {
         ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar", "baz"]) {}
         List<Completer> completors = com.createCompleters()
         assertEquals(2, completors.size())

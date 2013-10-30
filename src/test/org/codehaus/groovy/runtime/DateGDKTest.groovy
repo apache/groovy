@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat
 
 /**
  * @author tnichols
+ * @author Paul King
  */
 class DateGDKTest extends GroovyTestCase {
 
@@ -30,9 +31,6 @@ class DateGDKTest extends GroovyTestCase {
         Locale.setDefault locale // set this otherwise the test will fail if your locale isn't the same
         TimeZone.setDefault TimeZone.getTimeZone('Etc/GMT')
         Date d = new Date(0)
-//        println d.dateString
-//        println d.timeString
-//        println d.dateTimeString
         assertEquals '1970-01-01', d.format('yyyy-MM-dd')
         assertEquals '01/Jan/1970', d.format('dd/MMM/yyyy', TimeZone.getTimeZone('GMT'))
         assertEquals DateFormat.getDateInstance(DateFormat.SHORT, locale).format(d), d.dateString
@@ -76,8 +74,6 @@ class DateGDKTest extends GroovyTestCase {
         def offset = 8
         def notLocalTZ = TimeZone.getTimeZone("GMT-$offset")
         Calendar cal = Calendar.getInstance(notLocalTZ)
-//        println cal.time.format( 'MM/dd/yyyy HH:mm:ss' )
-//        println cal.format( 'MM/dd/yyyy HH:mm:ss' )
         def offsetHr = cal.format('HH') as int
         def hr = cal.time.format('HH') as int
 
@@ -235,5 +231,15 @@ class DateGDKTest extends GroovyTestCase {
         shouldFail(GroovyRuntimeException) {
             startDate.downto(toDate){}
         }
+    }
+
+    void testCopyWith() {
+        Date febOne1970 = new Date(70, 1, 1)
+        Date aprilSix = febOne1970.copyWith(dayOfMonth: 6, month: Calendar.APRIL)
+        assertEquals '1970-04-06', aprilSix.format('yyyy-MM-dd')
+        Map updates = [:]
+        updates[Calendar.DAY_OF_MONTH] = 4
+        Date aprilFour = aprilSix.copyWith(updates)
+        assertEquals '1970-04-04', aprilFour.format('yyyy-MM-dd')
     }
 }

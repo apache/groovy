@@ -104,7 +104,7 @@ import java.lang.annotation.Target;
  * <pre>
  * {@code @Lazy} static FieldType field
  * {@code @Lazy} static Date date1
- * {@code @Lazy} static Date date2 = { new Date().updated(year: 2000) }()
+ * {@code @Lazy} static Date date2 = { new Date().copyWith(year: 2000) }()
  * {@code @Lazy} static Date date3 = new GregorianCalendar(2009, Calendar.JANUARY, 1).time
  * </pre>
  * becomes these methods and inners classes within the class containing the above definitions:
@@ -118,7 +118,7 @@ import java.lang.annotation.Target;
  * }
  *
  * private static class DateHolder_date2 {
- *     private static final Date INSTANCE = { new Date().updated(year: 2000) }()
+ *     private static final Date INSTANCE = { new Date().copyWith(year: 2000) }()
  * }
  *
  * private static class DateHolder_date3 {

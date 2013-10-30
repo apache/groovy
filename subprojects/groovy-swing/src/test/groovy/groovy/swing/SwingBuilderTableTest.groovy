@@ -44,7 +44,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
             assert msg.contains('propertyColumn must be a child of a tableModel')
             msg = shouldFail {
                 swing.table {
-                    tableModel() {
+                    tableModel {
                         propertyColumn()
                     }
                 }
@@ -81,7 +81,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
             assert msg.contains('closureColumn must be a child of a tableModel')
             msg = shouldFail {
                 swing.table {
-                    tableModel() {
+                    tableModel {
                         closureColumn()
                     }
                 }
@@ -90,14 +90,14 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
                "Instead found message: " + msg
             def closure = { x -> x }
             def table = swing.table {
-                tableModel() {
+                tableModel {
                     closureColumn(read: closure, write: closure, header: 'header')
                 }
                 tableModel(model: new groovy.model.ValueHolder('foo')) {
-                    closureColumn(read: closure, type: String.class)
+                    closureColumn(read: closure, type: String)
                 }
                 tableModel(list: ['a', 'b']) {
-                    closureColumn(read: closure, type: String.class)
+                    closureColumn(read: closure, type: String)
                 }
             }
 
@@ -134,7 +134,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
 
             SwingBuilder swing = new SwingBuilder()
 
-            swing.frame() {
+            swing.frame {
                 scrollPane {
                     table(id: 'table01') {
                         tableModel(list: tableData, id: 'tableModel01') {
@@ -198,7 +198,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
         }
     }
 
-    public void testTableSyntheticProperties() {
+    void testTableSyntheticProperties() {
         testInEDT {
 
             SwingBuilder swing = new SwingBuilder()
@@ -215,7 +215,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
             ]
 
 
-            swing.frame() {
+            swing.frame {
                 scrollPane {
                     table(id: 'table01') {
                         tableModel(list: tableData, id: 'tableModel01') {
@@ -228,7 +228,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
                 }
                 scrollPane {
                     table(id: 'table02', model: new javax.swing.table.DefaultTableModel(
-                            new Vector(vectorData.collect() { new Vector(it) }),
+                            new Vector(vectorData.collect { new Vector(it) }),
                             new Vector(['Athlete ID', 'First Name', 'Last Name', 'Date Of Birth']))
 
                     )
@@ -269,7 +269,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
         }
     }
 
-    public void testTableBindSyntheticProperties() {
+    void testTableBindSyntheticProperties() {
         testInEDT {
 
             SwingBuilder swing = new SwingBuilder()
@@ -286,7 +286,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
             ]
 
 
-            swing.frame() {
+            swing.frame {
                 scrollPane {
                     table(id: 'table01') {
                         tableModel(list: tableData, id: 'tableModel01') {
@@ -299,7 +299,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
                 }
                 scrollPane {
                     table(id: 'table02', model: new javax.swing.table.DefaultTableModel(
-                            new Vector(vectorData.collect() { new Vector(it) }),
+                            new Vector(vectorData.collect { new Vector(it) }),
                             new Vector(['Athlete ID', 'First Name', 'Last Name', 'Date Of Birth']))
 
                     )

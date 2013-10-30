@@ -319,6 +319,9 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         assertScript """
             interface SAM { def foo(); }
 
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).name == 'SAM'
+            })
             SAM s = {1}
             assert s.foo() == 1
             def t = (SAM) {2}
