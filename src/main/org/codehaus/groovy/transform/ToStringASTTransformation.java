@@ -145,8 +145,8 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            String getterName = "get" + Verifier.capitalize(pNode.getName());
-            Expression getter = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, MethodCallExpression.NO_ARGUMENTS);
+            Expression getter = new StaticMethodCallExpression(INVOKER_TYPE, "getProperty",
+                    new TupleExpression(new VariableExpression("this"), new ConstantExpression(pNode.getName())));
             appendValue(body, result, first, getter, pNode.getName(), includeNames, ignoreNulls);
         }
 
