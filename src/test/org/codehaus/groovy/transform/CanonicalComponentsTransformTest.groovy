@@ -21,7 +21,6 @@ import groovy.transform.EqualsAndHashCode
 import groovy.transform.TupleConstructor
 import static groovy.transform.AutoCloneStyle.*
 import groovy.transform.ToString
-//import groovy.transform.InheritConstructors
 import groovy.transform.Canonical
 
 /**
@@ -37,6 +36,25 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
                 String symbol
             }
             assert Operator.PLUS.next() == Operator.MINUS
+        """
+    }
+
+    void testBooleanPropertyGROOVY6407() {
+        assertScript """
+            @groovy.transform.EqualsAndHashCode
+            @groovy.transform.ToString
+            class Demo {
+                boolean myBooleanProperty
+
+                boolean isMyBooleanProperty() {
+                    false
+                }
+
+                static main(args) {
+                    assert new Demo().hashCode() == 5174
+                    assert new Demo(myBooleanProperty: true).toString() == 'Demo(false)'
+                }
+            }
         """
     }
 
