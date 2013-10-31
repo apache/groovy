@@ -45,6 +45,12 @@ allprojects {
         asciidoctor {
             logDocuments = true
             sourceDir = project.file('src/spec/doc')
+            options = [
+                    attributes: [
+                            'source-highlighter': 'prettify',
+                            'groovyversion': groovyVersion
+                    ]
+            ]
         }
 
         // skip the asciidoctor task if there's no directory with asciidoc files
