@@ -554,7 +554,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
         // we had problems with the ast transform passing a VariableExpression as StaticMethodCallExpression arguments
-        assert result.contains('_result.append(org.codehaus.groovy.runtime.InvokerHelper.toString(this.getWhen()))')
+        assert result.contains("_result.append(org.codehaus.groovy.runtime.InvokerHelper.toStringorg.codehaus.groovy.runtime.InvokerHelper.getProperty( this , 'when'))")
     }
 
     public void testAtImmutableClassWithProperties() {
@@ -574,12 +574,12 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         // assert hashCode
         assert result.contains('public int hashCode()')
         assert result.contains('java.lang.Object _result = org.codehaus.groovy.util.HashCodeHelper.initHash()')
-        assert result.contains('_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , this.getTitle())')
-        assert result.contains('_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , this.getWhen())')
-        assert result.contains('_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , this.getColor())')
+        assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , org.codehaus.groovy.runtime.InvokerHelper.getProperty( this , 'title'))")
+        assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , org.codehaus.groovy.runtime.InvokerHelper.getProperty( this , 'when'))")
+        assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , org.codehaus.groovy.runtime.InvokerHelper.getProperty( this , 'color'))")
 
         // assert clones
-        assert result.contains('((org.codehaus.groovy.runtime.ReflectionMethodInvoker.invoke(when, \'clone\', new java.lang.Object[][])) as java.util.Date)')
+        assert result.contains("((org.codehaus.groovy.runtime.ReflectionMethodInvoker.invoke(when, 'clone', new java.lang.Object[][])) as java.util.Date)")
     }
 
     public void testAnonymousInnerClass() {
