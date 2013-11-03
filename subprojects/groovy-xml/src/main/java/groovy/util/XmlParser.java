@@ -62,21 +62,46 @@ public class XmlParser implements ContentHandler {
     private boolean trimWhitespace = true;
     private boolean namespaceAware;
 
+    /**
+     * Creates a non-validating and non-namespace-aware <code>XmlParser</code> which does not allow DOCTYPE declarations in documents.
+     *
+     * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
+     * @throws SAXException for SAX errors.
+     */
     public XmlParser() throws ParserConfigurationException, SAXException {
         this(false, true);
     }
 
+    /**
+     * Creates a <code>XmlParser</code> which does not allow DOCTYPE declarations in documents.
+     * 
+     * @param validating <code>true</code> if the parser should validate documents as they are parsed; false otherwise.
+     * @param namespaceAware <code>true</code> if the parser should provide support for XML namespaces; <code>false</code> otherwise.
+     *
+     * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
+     * @throws SAXException for SAX errors.
+     */
     public XmlParser(boolean validating, boolean namespaceAware) throws ParserConfigurationException, SAXException {
         this(validating, namespaceAware, false);
     }
 
+    /**
+     * Creates a <code>XmlParser</code>.
+     * 
+     * @param validating <code>true</code> if the parser should validate documents as they are parsed; false otherwise.
+     * @param namespaceAware <code>true</code> if the parser should provide support for XML namespaces; <code>false</code> otherwise.
+     * @param allowDocTypeDeclaration <code>true</code> if the parser should provide support for DOCTYPE declarations; <code>false</code> otherwise.
+     *
+     * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
+     * @throws SAXException for SAX errors.
+     */
     public XmlParser(boolean validating, boolean namespaceAware, boolean allowDocTypeDeclaration) throws ParserConfigurationException, SAXException {
         SAXParserFactory factory = FactorySupport.createSaxParserFactory();
         factory.setNamespaceAware(namespaceAware);
         this.namespaceAware = namespaceAware;
         factory.setValidating(validating);
-        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
+        setQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        setQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         reader = factory.newSAXParser().getXMLReader();
     }
 
@@ -86,6 +111,15 @@ public class XmlParser implements ContentHandler {
 
     public XmlParser(SAXParser parser) throws SAXException {
         reader = parser.getXMLReader();
+    }
+    
+    private void setQuietly(SAXParserFactory factory, String feature, boolean value) {
+        try {
+            factory.setFeature(feature, value);
+        }
+        catch (ParserConfigurationException ignored) { }
+        catch (SAXNotRecognizedException ignored) { }
+        catch (SAXNotSupportedException ignored) { }
     }
 
     /**
