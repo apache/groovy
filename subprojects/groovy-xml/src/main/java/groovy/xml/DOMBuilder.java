@@ -17,20 +17,23 @@
 package groovy.xml;
 
 import groovy.util.BuilderSupport;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.Map;
+
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * A helper class for creating a W3C DOM tree
@@ -56,7 +59,7 @@ public class DOMBuilder extends BuilderSupport {
 
     /**
      * Creates a DocumentBuilder and uses it to parse the XML text read from the given reader.
-     * A non-validating, namespace aware parser is used.
+     * A non-validating, namespace aware parser which does not allow DOCTYPE declarations is used.
      *
      * @param reader the reader to read the XML text from
      * @return the root node of the parsed tree of Nodes
@@ -73,7 +76,8 @@ public class DOMBuilder extends BuilderSupport {
 
     /**
      * Creates a DocumentBuilder and uses it to parse the XML text read from the given reader, allowing
-     * parser validation and namespace awareness to be controlled.
+     * parser validation and namespace awareness to be controlled. Documents are not allowed to contain 
+     * DOCYTYPE declarations.
      *
      * @param reader         the reader to read the XML text from
      * @param validating     whether to validate the XML
@@ -87,11 +91,40 @@ public class DOMBuilder extends BuilderSupport {
      */
     public static Document parse(Reader reader, boolean validating, boolean namespaceAware)
             throws SAXException, IOException, ParserConfigurationException {
+        return parse(reader, validating, namespaceAware, false);
+    }
+    
+    /**
+     * Creates a DocumentBuilder and uses it to parse the XML text read from the given reader, allowing
+     * parser validation, namespace awareness and permission of DOCTYPE declarations to be controlled.
+     *
+     * @param reader                  the reader to read the XML text from
+     * @param validating              whether to validate the XML
+     * @param namespaceAware          whether the parser should be namespace aware
+     * @param allowDocTypeDeclaration whether the parser should allow DOCTYPE declarations
+     * @return the root node of the parsed tree of Nodes
+     * @throws SAXException                 Any SAX exception, possibly wrapping another exception.
+     * @throws IOException                  An IO exception from the parser, possibly from a byte
+     *                                      stream or character stream supplied by the application.
+     * @throws ParserConfigurationException if a DocumentBuilder cannot be created which satisfies
+     *                                      the configuration requested.
+     */
+    public static Document parse(Reader reader, boolean validating, boolean namespaceAware, boolean allowDocTypeDeclaration)
+            throws SAXException, IOException, ParserConfigurationException {
         DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory();
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
+        setQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        setQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         DocumentBuilder documentBuilder = factory.newDocumentBuilder();
         return documentBuilder.parse(new InputSource(reader));
+    }
+    
+    private static void setQuietly(DocumentBuilderFactory factory, String feature, boolean value) {
+        try {
+            factory.setFeature(feature, value);
+        }
+        catch (ParserConfigurationException ignored) { }
     }
 
     /**
