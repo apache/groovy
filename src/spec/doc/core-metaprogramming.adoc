@@ -666,14 +666,63 @@ include::{projectdir}/src/spec/test/LogImprovementsASTTransformsTest.groovy[tags
 ----
 
 ==== Declarative concurrency
+
+The Groovy language provides a set of annotations aimed at simplifying common concurrency patterns in a declarative
+approach.
+
 [[xform-Synchronized]]
 ===== @groovy.transform.Synchronized
 
-[[xform-WithReadLock]]
-===== @groovy.transform.WithReadLock
+The `@Synchronized` AST transformations works in a similar way to the `synchronized` keyword but locks on different
+objects for safer concurrency. It can be applied on any method or static method:
 
-[[xform-WithWriteLock]]
-===== @groovy.transform.WithWriteLock
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DeclarativeConcurrencyASTTransformsTest.groovy[tags=example_synchronized,indent=0]
+----
+
+Writing this is equivalent to creating a lock object and wrapping the whole method into a synchronized block:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DeclarativeConcurrencyASTTransformsTest.groovy[tags=example_synchronized_equiv,indent=0]
+----
+
+By default, `@Synchronized` creates a field named `$lock` (or `$LOCK` for a static method) but you can make it use any
+field you want by specifying the value attribute, like in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DeclarativeConcurrencyASTTransformsTest.groovy[tags=example_synchronized_customlock,indent=0]
+----
+
+[[xform-WithReadLock]]
+===== @groovy.transform.WithReadLock and @groovy.transform.WithWriteLock
+
+The `@WithReadLock` AST transformation works in conjunction with the `@WithWriteLock` transformation
+to provide read/write synchronization using the `ReentrantReadWriteLock` facility that the JDK provides. The annotation
+can be added to a method or a static method. It will transparently create a `$reentrantLock` final field (or
+`$REENTRANTLOCK` for a static method) and proper synchronization code will be added. For example, the following code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DeclarativeConcurrencyASTTransformsTest.groovy[tags=example_rwlock,indent=0]
+----
+
+is equivalent to this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DeclarativeConcurrencyASTTransformsTest.groovy[tags=example_rwlock_equiv,indent=0]
+----
+
+Both `@WithReadLock` and `@WithWriteLock` support specifying an alternative lock object. In that case, the referenced
+ field must be declared by the user, like in the following alternative:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DeclarativeConcurrencyASTTransformsTest.groovy[tags=example_rwlock_alter,indent=0]
+----
 
 ==== Easier cloning and externalizing
 [[xform-AutoClone]]
