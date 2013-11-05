@@ -23,8 +23,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Note: This annotation is currently experimental! Use at your own risk!
- * <p>
  * Class annotation used to assist in the creation of {@code Externalizable} classes.
  * The {@code @AutoExternalize} annotation instructs the compiler to execute an
  * AST transformation which adds {@code writeExternal()} and {@code readExternal()} methods
