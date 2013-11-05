@@ -1,14 +1,4 @@
 = Getting started
-:toc:
-:icons: font
-:linkcss!:
-:groovy-major-version: 2
-:groovy-minor-version: 2
-:groovy-patch-version: 0
-
-:groovy-full-version: {groovy-major-version}.{groovy-minor-version}.{groovy-patch-version}
-:groovy-short-version: {groovy-major-version}.{groovy-minor-version}
-
 
 == Download
 

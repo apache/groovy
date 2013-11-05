@@ -1,7 +1,4 @@
 = Syntax
-:toc:
-:icons: font
-:linkcss!:
 
 This chapter covers the syntax of the Groovy programming language.
 The grammar of the language derives from the Java grammar,

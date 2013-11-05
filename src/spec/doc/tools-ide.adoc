@@ -1,7 +1,5 @@
 = IDE integration
-:toc:
-:icons: font
-:linkcss!:
+
 
 The Groovy language is supported by lots of IDEs and text editors.
 

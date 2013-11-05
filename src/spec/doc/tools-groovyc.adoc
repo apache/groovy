@@ -1,7 +1,5 @@
 = Compiling Groovy
-:toc:
-:icons: font
-:linkcss!:
+
 
 == groovyc, the Groovy compiler
 
@@ -380,7 +378,7 @@ So it may be used as a complement to <<section-groovyeclipse,the Groovy Eclipse 
 
 :leveloffset: 3
 
-include::tools-groovyeclipse.adoc[]
+include::{specfolder}/tools-groovyeclipse.adoc[]
 
 :leveloffset: 1
 

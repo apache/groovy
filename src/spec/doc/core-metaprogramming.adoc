@@ -1,7 +1,4 @@
 = Metaprogramming
-:toc:
-:icons: font
-:linkcss!:
 
 The Groovy language supports two flavors of metaprogramming: runtime metaprogramming and compile-time metaprogramming.
 The first one allows altering the class model and the behavior of a program at runtime, while the second only occurs
@@ -725,6 +722,10 @@ include::{projectdir}/src/spec/test/DeclarativeConcurrencyASTTransformsTest.groo
 ----
 
 ==== Easier cloning and externalizing
+
+Groovy provides two annotations aimed at facilitating the implementation of `Clonable` and `Externalizable` interfaces,
+respectively named `@AutoClone` and `@AutoExternalize`.
+
 [[xform-AutoClone]]
 ===== @groovy.transform.AutoClone
 

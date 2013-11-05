@@ -1,7 +1,5 @@
 = Pimp my Library Pattern
-:toc:
-:icons: font
-:linkcss!:
+
 
 The http://www.artima.com/weblogs/viewpost.jsp?thread=179766[Pimp my Library] Pattern suggests an approach for extending a library that nearly does everything that you need but just needs a little more. It assumes that you do not have source code for the library of interest.
 

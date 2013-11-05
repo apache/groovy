@@ -1,7 +1,5 @@
 = Loan my Resource Pattern
-:toc:
-:icons: font
-:linkcss!:
+
 
 The https://wiki.scala-lang.org/display/SYGN/Loan[Loan my Resource] pattern ensures that a resource is deterministically disposed of once it goes out of scope.
 

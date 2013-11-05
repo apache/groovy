@@ -1,7 +1,4 @@
 = Introduction
-:toc:
-:icons: font
-:linkcss!:
 
 Groovy...
 

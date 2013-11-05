@@ -1,7 +1,4 @@
 = Decorator Pattern
-:toc:
-:icons: font
-:linkcss!:
 
 The http://en.wikipedia.org/wiki/Decorator_pattern[Decorator Pattern] provides a mechanism to embellish the behaviour of an object without changing its essential interface. A decorated object should be able to be substituted wherever the original (non-decorated) object was expected. Decoration typically does not involve modifying the source code of the original object and decorators should be able to be combined in flexible ways to produce objects with several embellishments.
 

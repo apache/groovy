@@ -43,12 +43,24 @@ allprojects {
         apply plugin: 'asciidoctor'
 
         asciidoctor {
+            def (full, major, minor, patch, flavor) = (groovyVersion =~ /(\d+)\.(\d++)\.(\d+)-?(.+)/)[0]
             logDocuments = true
             sourceDir = project.file('src/spec/doc')
             options = [
                     attributes: [
                             'source-highlighter': 'prettify',
-                            'groovyversion': groovyVersion
+                            groovyversion: groovyVersion,
+                            'groovy-major-version': major,
+                            'groovy-minor-version': minor,
+                            'groovy-patch-version': patch,
+                            'groovy-full-version': groovyVersion,
+                            'groovy-short-version': "${major}.${minor}",
+                            doctype: 'book',
+                            revnumber : groovyVersion,
+                            icons : 'font',
+                            toc2: '',
+                            subprojroot: 'subprojects/groovy-',
+                            specfolder: 'src/spec/doc',
                     ]
             ]
         }

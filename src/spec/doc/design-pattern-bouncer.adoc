@@ -1,7 +1,4 @@
 = Bouncer Pattern
-:toc:
-:icons: font
-:linkcss!:
 
 The http://www.c2.com/cgi/wiki?BouncerPattern[Bouncer Pattern] describes usage of a method whose sole purpose is to either throw an exception (when particular conditions hold) or do nothing. Such methods are often used to defensively guard pre-conditions of a method.
 

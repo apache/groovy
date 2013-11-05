@@ -1,7 +1,5 @@
 = Iterator Pattern
-:toc:
-:icons: font
-:linkcss!:
+
 
 The http://en.wikipedia.org/wiki/Iterator_pattern[Iterator Pattern] allows sequential access to the elements of an aggregate object without exposing its underlying representation.
 

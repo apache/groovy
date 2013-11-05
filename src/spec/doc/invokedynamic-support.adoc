@@ -1,7 +1,5 @@
 = InvokeDynamic support
-:toc:
-:icons: font
-:linkcss!:
+
 
 == Foreword
 

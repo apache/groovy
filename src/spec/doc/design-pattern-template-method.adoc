@@ -1,7 +1,5 @@
 = Template Method Pattern
-:toc:
-:icons: font
-:linkcss!:
+
 
 The http://en.wikipedia.org/wiki/Template_method_pattern[Template Method Pattern] abstracts away the details of several algorithms. The generic part of an algorithm is contained within a base class. Particular implementation details are captured within base classes. The generic pattern of classes involved looks like this:
 

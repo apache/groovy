@@ -1,7 +1,5 @@
 = Singleton Pattern
-:toc:
-:icons: font
-:linkcss!:
+
 
 The http://en.wikipedia.org/wiki/Singleton_pattern[Singleton Pattern] is used to make sure only one object of a particular class is ever created. This can be useful when when exactly one object is needed to coordinate actions across a system; perhaps for efficiency where creating lots of identical objects would be wasteful, perhaps because a particular algorithm needing a single point of control is required or perhaps when an object is used to interact with a non-shareable resource.
 

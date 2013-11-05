@@ -1,7 +1,4 @@
 = Abstract Factory Pattern
-:toc:
-:icons: font
-:linkcss!:
 
 The http://en.wikipedia.org/wiki/Abstract_factory_pattern[Abstract Factory Pattern] provides a way to encapsulate a group of individual factories that have a common theme. It embodies the intent of a normal factory, i.e. remove the need for code using an interface to know the concrete implementation behind the interface, but applies to a set of interfaces and selects an entire family of concrete classes which implement those interfaces.
 

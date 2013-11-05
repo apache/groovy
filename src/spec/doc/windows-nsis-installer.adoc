@@ -1,7 +1,5 @@
 = Windows NSIS-Installer
-:toc:
-:icons: font
-:linkcss!:
+
 
 == A Windows-specific installation script
 

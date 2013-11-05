@@ -1,13 +1,8 @@
 = Groovy Language Documentation
-:toc:
 :toclevels: 10
-:icons: font
-:linkcss!:
 :numbered:
-:subprojroot: ../../../subprojects/groovy-
-:specfolder: /src/spec/doc/
 
-include::core-introduction.adoc[]
+include::{projectdir}/src/spec/doc/core-introduction.adoc[]
 
 == Groovy Language Specification
 
@@ -53,7 +48,7 @@ include::{projectdir}/src/spec/doc/core-metaprogramming.adoc[]
 === Testing guide
 === Interacting with a SQL database
 :leveloffset: 2
-include::{subprojroot}json{specfolder}json-userguide.adoc[]
+include::{subprojroot}json/{specfolder}/json-userguide.adoc[]
 :leveloffset: 0
 === Processing XML
 === Scripting Ant tasks

@@ -1,7 +1,4 @@
 = Object orientation
-:toc:
-:icons: font
-:linkcss!:
 
 This chapter covers the object orientation of the Groovy programming language.
 

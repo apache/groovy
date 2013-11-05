@@ -1,7 +1,5 @@
 = Design patterns in Groovy
-:toc:
-:icons: font
-:linkcss!:
+
 
 Using http://en.wikipedia.org/wiki/Design_pattern_%28computer_science%29[design patterns] with Java is a well-established topic. Design patterns also apply to Groovy:
 
@@ -13,41 +11,41 @@ Using http://en.wikipedia.org/wiki/Design_pattern_%28computer_science%29[design 
 
 :leveloffset: 4
 
-include::design-pattern-abstract-factory.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-abstract-factory.adoc[]
 
-include::design-pattern-adapter.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-adapter.adoc[]
 
-include::design-pattern-bouncer.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-bouncer.adoc[]
 
-include::design-pattern-chain-of-responsibility.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-chain-of-responsibility.adoc[]
 
-include::design-pattern-composite.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-composite.adoc[]
 
-include::design-pattern-decorator.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-decorator.adoc[]
 
-include::design-pattern-delegation.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-delegation.adoc[]
 
-include::design-pattern-flyweight.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-flyweight.adoc[]
 
-include::design-pattern-iterator.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-iterator.adoc[]
 
-include::design-pattern-loan-my-resource.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-loan-my-resource.adoc[]
 
-include::design-pattern-null-object.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-null-object.adoc[]
 
-include::design-pattern-pimp-my-library.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-pimp-my-library.adoc[]
 
-include::design-pattern-proxy.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-proxy.adoc[]
 
-include::design-pattern-singleton.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-singleton.adoc[]
 
-include::design-pattern-state.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-state.adoc[]
 
-include::design-pattern-strategy.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-strategy.adoc[]
 
-include::design-pattern-template-method.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-template-method.adoc[]
 
-include::design-pattern-visitor.adoc[]
+include::{projectdir}/{specfolder}/design-pattern-visitor.adoc[]
 
 :leveloffset: 2
 

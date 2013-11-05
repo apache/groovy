@@ -1,7 +1,5 @@
 = Version Scheme
-:toc:
-:icons: font
-:linkcss!:
+
 
 == The Groovy Version Scheme
 

@@ -1,7 +1,5 @@
 = Strategy Pattern
-:toc:
-:icons: font
-:linkcss!:
+
 
 The http://en.wikipedia.org/wiki/Strategy_pattern[Strategy Pattern] allows you to abstract away particular algorithms from their usage. This allows you to easily swap the algorithm being used without having to change the calling code. The general form of the pattern is:
 

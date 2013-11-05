@@ -1,7 +1,4 @@
 = Chain of Responsibility Pattern
-:toc:
-:icons: font
-:linkcss!:
 
 In the Chain of Responsibility Pattern, objects using and implementing an interface (one or more methods) are intentionally loosely coupled. A set of objects that __implement__ the interface are organised in a list (or in rare cases a tree). Objects using the interface make requests from the first __implementor__ object. It will decide whether to perform any action itself and whether to pass the request further down the line in the list (or tree). Sometimes a default implementation for some request is also coded into the pattern if none of the implementors respond to the request.
 

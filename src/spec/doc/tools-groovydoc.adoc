@@ -1,7 +1,4 @@
 = groovydoc, the Groovy & Java documentation generator
-:toc:
-:icons:
-:linkcss!:
 
 GroovyDoc is a tool responsible for generating documentation from your code. It acts like the Javadoc tool in the
 Java world but is capable of handling both `groovy` and `java` files. The distribution comes with two ways of generating

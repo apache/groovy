@@ -1,7 +1,4 @@
 = Program structure
-:toc:
-:icons: font
-:linkcss!:
 
 This chapter covers the program structure of the Groovy programming language.
 

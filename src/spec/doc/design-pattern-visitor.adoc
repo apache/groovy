@@ -1,7 +1,5 @@
 = Visitor Pattern
-:toc:
-:icons: font
-:linkcss!:
+
 
 The http://en.wikipedia.org/wiki/Visitor_pattern[Visitor Pattern] is one of those well-known but not often used patterns. I think this is strange, as it is really a nice thing.
 

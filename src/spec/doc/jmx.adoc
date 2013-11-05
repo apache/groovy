@@ -1,7 +1,5 @@
 = Working with JMX
-:toc:
-:icons: font
-:linkcss!:
+
 
 == Introduction
 

@@ -1,7 +1,5 @@
 = Contributors
-:toc:
-:icons: font
-:linkcss!:
+
 
 The Groovy team would like to thank the contributors of this documentation (by alphabetical order):
 

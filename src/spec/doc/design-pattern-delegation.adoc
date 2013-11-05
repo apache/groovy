@@ -1,7 +1,4 @@
 = Delegation Pattern
-:toc:
-:icons: font
-:linkcss!:
 
 The http://en.wikipedia.org/wiki/Delegation_pattern[Delegation Pattern] is a technique where an object's behavior (public methods) is implemented by delegating responsibility to one or more associated objects.
 

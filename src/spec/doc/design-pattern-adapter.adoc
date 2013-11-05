@@ -1,7 +1,4 @@
 = Adapter Pattern
-:toc:
-:icons: font
-:linkcss!:
 
 The http://en.wikipedia.org/wiki/Adapter_pattern[Adapter Pattern] (sometimes called the wrapper pattern) allows objects satisfying one interface to be used where another type of interface is expected. There are two typical flavours of the pattern: the __delegation__ flavour and the __inheritance__ flavour.
 

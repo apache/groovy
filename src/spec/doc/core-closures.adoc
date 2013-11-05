@@ -1,7 +1,4 @@
 = Closures
-:toc:
-:icons: font
-:linkcss!:
 
 This chapter covers Groovy Closures.
 

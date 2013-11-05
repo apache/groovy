@@ -1,7 +1,5 @@
 = The Groovy Eclipse Maven plugin
-:toc:
-:icons: font
-:linkcss!:
+
 
 Groovy-Eclipse provides a compiler plugin for Maven. Using the compiler
 plugin, it is possible to compile your maven projects using the

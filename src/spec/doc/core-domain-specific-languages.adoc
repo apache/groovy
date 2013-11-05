@@ -1,7 +1,4 @@
 = Domain-Specific Languages
-:toc:
-:icons: font
-:linkcss!:
 
 == Command chains
 == Operator overloading
