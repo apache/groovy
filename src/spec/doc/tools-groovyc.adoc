@@ -378,7 +378,7 @@ So it may be used as a complement to <<section-groovyeclipse,the Groovy Eclipse 
 
 :leveloffset: 3
 
-include::{specfolder}/tools-groovyeclipse.adoc[]
+include::{projectdir}/{specfolder}/tools-groovyeclipse.adoc[]
 
 :leveloffset: 1
 
