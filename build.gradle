@@ -177,9 +177,6 @@ dependencies {
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compilerCompile("jline:jline:$jlineVersion") {
-        exclude(group: 'junit', module: 'junit')
-    }
     compilerCompile "org.fusesource.jansi:jansi:$jansiVersion"
     compilerCompile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
@@ -199,9 +196,6 @@ dependencies {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
-    }
-    compile("jline:jline:$jlineVersion") {
-        exclude(group: 'junit', module: 'junit')
     }
     compile "org.fusesource.jansi:jansi:$jansiVersion"
     compile("org.apache.ivy:ivy:$ivyVersion") {
