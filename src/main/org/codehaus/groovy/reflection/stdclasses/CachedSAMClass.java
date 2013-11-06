@@ -18,7 +18,11 @@ package org.codehaus.groovy.reflection.stdclasses;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import groovy.lang.Closure;
@@ -32,6 +36,9 @@ import org.codehaus.groovy.runtime.ConvertedClosure;
 
 public class CachedSAMClass extends CachedClass {
 
+    private static final int ABSTRACT_STATIC_PRIVATE = 
+            Modifier.ABSTRACT|Modifier.PRIVATE|Modifier.STATIC;
+    private static final int VISIBILITY = 5; // public|protected
     private final Method method;
 
     public CachedSAMClass(Class klazz, ClassInfo classInfo) {
@@ -71,6 +78,46 @@ public class CachedSAMClass extends CachedClass {
         }
     }
 
+    private static void getAbstractMethods(Class c, List<Method> current) {
+        if (c==null || !Modifier.isAbstract(c.getModifiers())) return;
+        getAbstractMethods(c.getSuperclass(), current);
+        for (Class ci : c.getInterfaces()) {
+            getAbstractMethods(ci, current);
+        }
+        for (Method m : c.getDeclaredMethods()) {
+            if (Modifier.isPrivate(m.getModifiers())) continue;
+            if (Modifier.isAbstract(m.getModifiers())) current.add(m);
+        }
+    }
+
+    private static boolean hasUsableImplementation(Class c, Method m) {
+        if (c==m.getDeclaringClass()) return false;
+        Method found;
+        try {
+            found = c.getMethod(m.getName(), m.getParameterTypes());
+            int asp = found.getModifiers() & ABSTRACT_STATIC_PRIVATE;
+            int visible = found.getModifiers() & VISIBILITY;
+            if (visible !=0 && asp == 0) return true;
+        } catch (NoSuchMethodException e) {/*ignore*/}
+        if (c==Object.class) return false;
+        return hasUsableImplementation(c.getSuperclass(), m);
+    }
+
+    private static Method getSingleNonDuplicateMethod(List<Method> current) {
+        if (current.isEmpty()) return null;
+        if (current.size()==1) return current.get(0);
+        Method m = current.remove(0);
+        for (Method m2 : current) {
+            if (m.getName().equals(m2.getName()) && 
+                Arrays.equals(m.getParameterTypes(), m2.getParameterTypes()))
+            {
+                continue;
+            }
+            return null;
+        }
+        return m;
+    }
+
     /**
      * returns the abstract method from a SAM type, if it is a SAM type.
      * @param c the SAM class
@@ -80,17 +127,35 @@ public class CachedSAMClass extends CachedClass {
         // SAM = single public abstract method
         // if the class is not abstract there is no abstract method
         if (!Modifier.isAbstract(c.getModifiers())) return null;
-        Method[] methods = c.getMethods();
-        // res stores the first found abstract method
-        Method res = null;
-        for (Method mi:methods) {
-            // ignore methods, that are not abstract
-            if (!Modifier.isAbstract(mi.getModifiers())) continue;
-            // if we did already find one, then this is no SAM
-            if (res!=null) return null;
-            res = mi;
+        if (c.isInterface()) {
+            Method[] methods = c.getMethods();
+            // res stores the first found abstract method
+            Method res = null;
+            for (Method mi : methods) {
+                // ignore methods, that are not abstract and from Object
+                if (!Modifier.isAbstract(mi.getModifiers())) continue;
+                try {
+                    Object.class.getMethod(mi.getName(), mi.getParameterTypes());
+                    continue;
+                } catch (NoSuchMethodException e) {/*ignore*/}
+
+                // we have two methods, so no SAM
+                if (res!=null) return null;
+                res = mi;
+            }
+            return res;
+
+        } else {
+
+            LinkedList<Method> methods = new LinkedList();
+            getAbstractMethods(c, methods);
+            if (methods.isEmpty()) return null;
+            ListIterator<Method> it = methods.listIterator();
+            while (it.hasNext()) {
+                Method m = it.next();
+                if (hasUsableImplementation(c, m)) it.remove();
+            }
+            return getSingleNonDuplicateMethod(methods);
         }
-        // res!=null here means we found a single public abstract method
-        return res;
     }
 }
