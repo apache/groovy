@@ -147,7 +147,6 @@ dependencies {
     def ivyVersion = '2.3.0'
     def jansiVersion = '1.10'
     def jarjarVersion = '1.3'
-    def jlineVersion = '2.10'
     def jmockVersion = '1.2.0'
     def logbackVersion = '0.9.21'
     def log4jVersion = '1.2.16'

@@ -1,4 +1,5 @@
 dependencies {
+    def jlineVersion = '2.10'
     compile project(':')
     groovy project(':')
     compile project(':groovy-console')
