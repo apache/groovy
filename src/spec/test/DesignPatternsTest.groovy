@@ -1799,7 +1799,7 @@ class DesignPatternsTest extends CompilableTestSupport {
             class Line extends Shape {
                 def x1, y1, x2, y2
                 def bounds() {
-                    new Rectangle(x:x1, y:y1, w:x2-y1, h:x2-y2)
+                    new Rectangle(x:[x1, x2].min(), y:[y1, y2].min(), w:(x2 - x1).abs(), h:(y2 - y1).abs())
                 }
             }
 
