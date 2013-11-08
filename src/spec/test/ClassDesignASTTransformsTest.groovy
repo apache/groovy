@@ -253,6 +253,29 @@ try {
     println 'ReadOnly property'
 }
 '''
+
+        assertScript '''
+// tag::immutable_example_copyWith[]
+import groovy.transform.Immutable
+
+@Immutable( copyWith=true )
+class User {
+    String  name
+    Integer age
+}
+
+def bob   = new User( 'bob', 43 )
+def alice = bob.copyWith( name:'alice' )
+assert alice.name == 'alice'
+assert alice.age  == 43
+// end::immutable_example_copyWith[]
+
+try {
+    bob.name = 'alice'
+} catch (ReadOnlyPropertyException rope) {
+    println 'ReadOnly property'
+}
+'''
     }
 
     void testMemoized() {
