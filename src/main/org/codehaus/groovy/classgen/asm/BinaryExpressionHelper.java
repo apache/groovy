@@ -269,7 +269,14 @@ public class BinaryExpressionHelper {
         // return value of assignment
         rhsValueLoader.visit(controller.getAcg());
     }
-    
+
+    private static boolean isNull(Expression exp) {
+        if (exp instanceof ConstantExpression){
+            return ((ConstantExpression) exp).getValue()==null;
+        } else {
+            return false;
+        }
+    }
 
     public void evaluateEqual(BinaryExpression expression, boolean defineVariable) {
         AsmClassGenerator acg = controller.getAcg();
@@ -277,7 +284,7 @@ public class BinaryExpressionHelper {
         OperandStack operandStack = controller.getOperandStack();
         Expression rightExpression = expression.getRightExpression();
         Expression leftExpression = expression.getLeftExpression();
-        
+
         if (    defineVariable && 
                 rightExpression instanceof EmptyExpression && 
                 !(leftExpression instanceof TupleExpression) )
@@ -287,7 +294,7 @@ public class BinaryExpressionHelper {
             operandStack.loadOrStoreVariable(var, false);
             return;
         }
-        
+
         // let's evaluate the RHS and store the result
         ClassNode rhsType;
         if (rightExpression instanceof EmptyExpression) {
@@ -295,24 +302,26 @@ public class BinaryExpressionHelper {
             loadInitValue(rhsType);
         } else {
             rightExpression.visit(acg);
-            //rhsType = getCastType(rightExpression);
-            rhsType = controller.getOperandStack().getTopOperand();
         }
+        rhsType = operandStack.getTopOperand();
+
         boolean directAssignment = defineVariable && !(leftExpression instanceof TupleExpression);
         int rhsValueId;
         if (directAssignment) {
             VariableExpression var = (VariableExpression) leftExpression;
-            rhsType = controller.getTypeChooser().resolveType(var, controller.getClassNode());
             if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(rhsType)) {
                 // GROOVY-5570: if a closure shared variable is a primitive type, it must be boxed
                 rhsType = ClassHelper.getWrapper(rhsType);
+                operandStack.box();
             }
-            if (!(rightExpression instanceof ConstantExpression) || (((ConstantExpression) rightExpression).getValue()!=null)) {
-                operandStack.doGroovyCast(rhsType);
+            ClassNode lhsType = controller.getTypeChooser().resolveType(var, controller.getClassNode());
+            if (!ClassHelper.isPrimitiveType(lhsType) && isNull(rightExpression)) {
+                operandStack.replace(lhsType);
             } else {
-                operandStack.replace(rhsType);
+                operandStack.doGroovyCast(lhsType);
             }
-            rhsValueId = compileStack.defineVariable(var, rhsType, true).getIndex();
+            rhsType = lhsType;
+            rhsValueId = compileStack.defineVariable(var, lhsType, true).getIndex();
         } else {
             rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
         }
