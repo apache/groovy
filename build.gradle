@@ -68,6 +68,18 @@ allprojects {
 
         // skip the asciidoctor task if there's no directory with asciidoc files
         asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
+
+        asciidoctor.doLast {
+            outputDir.eachFileMatch(~'.*html') { File file ->
+                def text = file.getText('UTF-8')
+                text = text.replaceAll(/gapi::([a-zA-Z0-9$.]+)/) { m->
+                    def cName = m[1]
+                    def cPath = m[1].replace('.','/')
+                    "<a href='http://groovy.codehaus.org/gapi/index.html?${cPath}.html' target='_blank'><code>$cName</code></a>"
+                }
+                file.write(text,'UTF-8')
+            }
+        }
     }
 
     // don't fail build on CodeNarc tasks

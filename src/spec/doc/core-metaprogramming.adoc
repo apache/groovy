@@ -721,6 +721,11 @@ Both `@WithReadLock` and `@WithWriteLock` support specifying an alternative lock
 include::{projectdir}/src/spec/test/DeclarativeConcurrencyASTTransformsTest.groovy[tags=example_rwlock_alter,indent=0]
 ----
 
+For details
+
+* See Javadoc for gapi::groovy.transform.WithReadLock
+* See Javadoc for gapi::groovy.transform.WithWriteLock
+
 ==== Easier cloning and externalizing
 
 Groovy provides two annotations aimed at facilitating the implementation of `Clonable` and `Externalizable` interfaces,
