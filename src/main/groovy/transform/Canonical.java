@@ -41,12 +41,15 @@ import java.lang.annotation.Target;
  * assert c1 == c2
  * </pre>
  *
- * If you set the autoDefaults flag to true, you don't need to provide all arguments in constructors calls,
- * in this case all properties not present are initialized to the default value, e.g.:
+ * You don't need to provide all arguments in constructor calls. If using named parameters, any property names not
+ * referenced will be given their default value (as per Java's default unless an explicit initialization constant is
+ * provided when defining the property). If using a tuple constructor, parameters are supplied in the order in which
+ * the properties are defined. Supplied parameters fill the tuple from the left. Any parameters missing on the right
+ * are given their default value.
  * <pre>
  * def c3 = new Customer(last: 'Jones', age: 21)
  * def c4 = new Customer('Tom', 'Jones')
- * 
+ *
  * assert null == c3.since
  * assert 0 == c4.age
  * assert c3.favItems == ['Food'] && c4.favItems == ['Food']

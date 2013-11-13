@@ -207,9 +207,12 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
                 zipfileset(dir: "$owner.ext.metaInfDir", prefix: 'META-INF', excludes: 'META-INF')
                 zipfileset(
                         src: jar.archivePath,
-                        excludes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
+                        excludes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class')
                 moduleJars().each {
-                    zipfileset(src: it, excludes: '**/org.codehaus.groovy.runtime.ExtensionModule')
+                    // HelpFormatter only found in groovy-groovysh but no harm for other modules
+                    zipfileset(
+                        src: it,
+                        excludes: '**/org.codehaus.groovy.runtime.ExtensionModule,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
                 }
                 configurations.runtime.files.findAll { file ->
                     ['antlr', 'asm', 'commons-cli'].any { file.name.startsWith(it) } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
@@ -238,7 +241,11 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
             jar(destfile: archivePath, update:true, manifest: manifestPath) {
                 zipfileset(
                         src: jar.archivePath,
-                        includes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
+                        includes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class')
+                moduleJars().each {
+                    // HelpFormatter only found in groovy-groovysh but have left all modules here to allow future expansion
+                    zipfileset(src: it, includes: 'org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
+                }
             }
         }
     }

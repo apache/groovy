@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,25 +23,23 @@ import java.util.Iterator;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
- * Represents a spreadable map which extends java.util.HashMap.
+ * Helper to turn a list with an even number of elements into a Map.
  * 
  * @author Pilho Kim
+ * @author Tim Tiemens
  */
 public class SpreadMap extends HashMap {
-
-    private Map mapData;
     private int hashCode;
 
     public SpreadMap(Object[] values) {
-        mapData = new HashMap(values.length / 2);
         int i = 0;
         while (i < values.length) {
-           mapData.put(values[i++], values[i++]);
+            super.put(values[i++], values[i++]);
         }
     }
 
     public SpreadMap(Map map) {
-        this.mapData = map;
+        super(map);
     }
 
     /**
@@ -50,10 +48,6 @@ public class SpreadMap extends HashMap {
      */
     public SpreadMap(List list) {
         this(list.toArray());
-    }
-
-    public Object get(Object obj) {
-        return mapData.get(obj);
     }
 
     public Object put(Object key, Object value) {
@@ -71,10 +65,6 @@ public class SpreadMap extends HashMap {
                                    + t + ") cannot be put in this spreadMap.");
     }
 
-    public int size() {
-        return mapData.keySet().size();
-    }
-
     public boolean equals(Object that) {
         if (that instanceof SpreadMap) {
             return equals((SpreadMap) that);
@@ -86,10 +76,8 @@ public class SpreadMap extends HashMap {
         if (that == null) return false;        
 
         if (size() == that.size()) {
-            Iterator iter = mapData.keySet().iterator();
-            for (; iter.hasNext(); ) {
-                Object key = iter.next();
-                if (! DefaultTypeTransformation.compareEqual(get(key), that.get(key)) ) {
+            for (Object key : keySet()) {
+                if (!DefaultTypeTransformation.compareEqual(get(key), that.get(key))) {
                     return false;
                 }
             }
@@ -98,12 +86,9 @@ public class SpreadMap extends HashMap {
         return false;
     }
 
-
     public int hashCode() {
         if (hashCode == 0) {
-            Iterator iter = mapData.keySet().iterator();
-            for (; iter.hasNext(); ) {
-                Object key = iter.next();
+            for (Object key : keySet()) {
                 int hash = (key != null) ? key.hashCode() : 0xbabe;
                 hashCode ^= hash;
             }
@@ -115,18 +100,18 @@ public class SpreadMap extends HashMap {
      * @return the string expression of <code>this</code>
      */
     public String toString() {
-        if (mapData.isEmpty()) {
+        if (isEmpty()) {
             return "*:[:]";
         }
-        StringBuffer buff = new StringBuffer("*:[");
-        Iterator iter = mapData.keySet().iterator();
-        for (; iter.hasNext(); ) {
+        StringBuilder sb = new StringBuilder("*:[");
+        Iterator iter = keySet().iterator();
+        while (iter.hasNext()) {
             Object key = iter.next();
-            buff.append(key + ":" + mapData.get(key));
+            sb.append(key).append(":").append(get(key));
             if (iter.hasNext())
-                buff.append(", ");
+                sb.append(", ");
         }
-        buff.append("]");
-        return buff.toString();
+        sb.append("]");
+        return sb.toString();
     }
 }

@@ -19,6 +19,7 @@ package groovy.transform.stc
  * Unit tests for static type checking : closures.
  *
  * @author Cedric Champeau
+ * @author Jochen Theodorou
  */
 class ClosuresSTCTest extends StaticTypeCheckingTestCase {
 
@@ -419,6 +420,48 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 println 'foo'
             }
         ''', 'Reference to method is ambiguous. Cannot choose between'
+    }
+    
+    void testSAMType() {
+        assertScript """
+            interface Foo {int foo()}
+            Foo f = {1}
+            assert f.foo() == 1
+            abstract class Bar implements Foo {}
+            Bar b = {2}
+            assert b.foo() == 2
+        """
+        shouldFailWithMessages """
+            interface Foo2 {
+                String toString()
+            }
+            Foo2 f2 = {int i->"hi"}
+        """, "Cannot assign"
+        shouldFailWithMessages """
+            interface Foo2 {
+                String toString()
+            }
+            abstract class Bar2 implements Foo2 {}
+            Bar2 b2 = {"there"}
+        """, "Cannot assign"
+        assertScript """
+            interface Foo3 {
+                boolean equals(Object)
+                int f()
+            }
+            Foo3 f3 = {1}
+            assert f3.f() == 1
+        """
+        shouldFailWithMessages """
+            interface Foo3 {
+                boolean equals(Object)
+                int f()
+            }
+            abstract class Bar3 implements Foo3 {
+                int f(){2}
+            }
+            Bar3 b3 = {2}
+        """, "Cannot assign"
     }
 
     // GROOVY-6238

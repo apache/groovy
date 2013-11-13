@@ -115,6 +115,10 @@ public class ClassHelper {
         GROOVY_OBJECT_TYPE, GROOVY_INTERCEPTABLE_TYPE, Enum_Type, Annotation_TYPE
     };
 
+    private static final int ABSTRACT_STATIC_PRIVATE = 
+            Modifier.ABSTRACT|Modifier.PRIVATE|Modifier.STATIC;
+    private static final int VISIBILITY = 5; // public|protected
+    
     protected static final ClassNode[] EMPTY_TYPE_ARRAY = {};
     
     public static final String OBJECT = "java.lang.Object";
@@ -379,6 +383,45 @@ public class ClassHelper {
     
     public static boolean isSAMType(ClassNode type) {
         if (!Modifier.isAbstract(type.getModifiers())) return false;
-        return type.getMethods().size()==1;
+        if (type.isInterface()) {
+            List<MethodNode> methods = type.getMethods();
+            boolean found=false;
+            for (MethodNode mi : methods) {
+                // ignore methods, that are not abstract and from Object
+                if (!Modifier.isAbstract(mi.getModifiers())) continue;
+                if (mi.getDeclaringClass().equals(OBJECT_TYPE)) continue;
+                if (OBJECT_TYPE.getDeclaredMethod(mi.getName(), mi.getParameters())!=null) continue;
+
+                // we have two methods, so no SAM
+                if (found) return false;
+                found = true;
+            }
+            return found;
+
+        } else {
+
+            List<MethodNode> methods = type.getAbstractMethods();
+            boolean found = false;
+            if (methods!=null) {
+                for (MethodNode mi : methods) {
+                    if (!hasUsableImplementation(type, mi)) {
+                        if (found) return false;
+                        found = true;
+                    }
+                }
+            }
+            return found;
+        }
+    }
+    
+    private static boolean hasUsableImplementation(ClassNode c, MethodNode m) {
+        if (c==m.getDeclaringClass()) return false;
+        MethodNode found = c.getDeclaredMethod(m.getName(), m.getParameters());
+        if (found==null) return false;
+        int asp = found.getModifiers() & ABSTRACT_STATIC_PRIVATE;
+        int visible = found.getModifiers() & VISIBILITY;
+        if (visible !=0 && asp == 0) return true;
+        if (c.equals(OBJECT_TYPE)) return false;
+        return hasUsableImplementation(c.getSuperClass(), m);
     }
 }
