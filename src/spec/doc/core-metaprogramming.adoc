@@ -734,6 +734,48 @@ respectively named `@AutoClone` and `@AutoExternalize`.
 [[xform-AutoClone]]
 ===== @groovy.transform.AutoClone
 
+The `@AutoClone` annotation is aimed at implementing the `@java.lang.Cloneable` interface using various strategies, thanks to the `style` parameter:
+
+* the default `AutoCloneStyle.CLONE` strategy calls `super.clone()` first then `clone()` on each cloneable property (and
+just copies non `Cloneable` properties)
+* the `AutoCloneStyle.SIMPLE` strategy uses a regular constructor call and copies properties from the source to the clone
+* the `AutoCloneStyle.COPY_CONSTRUCTOR` strategy creates and uses a copy constructor
+* the `AutoCloneStyle.SERIALIZATION` strategy uses serialization (or externalization) to clone the object
+
+Each of those strategies have pros and cons which are discussed in the Javadoc for gapi::groovy.transform.AutoClone and gapi::groovy.transform.AutoCloneStyle .
+
+For example, the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoclone,indent=0]
+----
+
+is equivalent to this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoclone_equiv,indent=0]
+----
+
+In addition to cloning styles, `@AutoClone` supports multiple options:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|excludes|Empty list|A list of property or field names that need to be excluded from cloning. A string consisting of a comma-separated field/property names is also allowed.
+See gapi::groovy.transform.AutoClone#excludes for details|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoclone_excludes,indent=0]
+----
+|includeFields|false|By default, only properties are cloned. Setting this flag to true will also clone fields.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoclone_includeFields,indent=0]
+----
+|=======================================================================
+
 [[xform-AutoExternalize]]
 ===== @groovy.transform.AutoExternalize
 

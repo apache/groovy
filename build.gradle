@@ -72,10 +72,17 @@ allprojects {
         asciidoctor.doLast {
             outputDir.eachFileMatch(~'.*html') { File file ->
                 def text = file.getText('UTF-8')
-                text = text.replaceAll(/gapi::([a-zA-Z0-9$.]+)/) { m->
+                text = text.replaceAll(/gapi::([a-zA-Z0-9$.#]+)/) { m->
                     def cName = m[1]
                     def cPath = m[1].replace('.','/')
-                    "<a href='http://groovy.codehaus.org/gapi/index.html?${cPath}.html' target='_blank'><code>$cName</code></a>"
+                    def anchor = ''
+                    int anchorIdx = cPath.indexOf('#')
+                    if (anchorIdx>0) {
+                        anchor = cPath.substring(anchorIdx)
+                        cPath = cPath.substring(0, anchorIdx)
+                    }
+
+                    "<a href='http://groovy.codehaus.org/gapi/index.html?${cPath}.html${anchor}' target='_blank'><code>$cName</code></a>"
                 }
                 file.write(text,'UTF-8')
             }
