@@ -103,4 +103,150 @@ assert clone.authors == book.authors
 assert clone.publicationDate==book.publicationDate
 '''
     }
+
+    void testAutoExternalize() {
+        assertScript '''
+// tag::example_autoext[]
+import groovy.transform.AutoExternalize
+
+@AutoExternalize
+class Book {
+    String isbn
+    String title
+    float price
+}
+// end::example_autoext[]
+/*
+// tag::example_autoext_equiv[]
+class Book implements java.io.Externalizable {
+    String isbn
+    String title
+    float price
+
+    void writeExternal(ObjectOutput out) throws IOException {
+        out.writeObject(isbn)
+        out.writeObject(title)
+        out.writeFloat( price )
+    }
+
+    public void readExternal(ObjectInput oin) {
+        isbn = oin.readObject()
+        title = oin.readObject()
+        price = oin.readFloat()
+    }
+
+}
+// end::example_autoext_equiv[]
+*/
+def book = new Book(isbn: 'xxx', title:'Auto externalization for dummies', price: 15)
+def str = ''
+ObjectOutput o = {
+   str = "$str$it/"
+} as ObjectOutput
+book.writeExternal(o)
+assert str == "xxx/Auto externalization for dummies/15.0/"
+int idx = 0
+ObjectInput i = {
+    switch (idx++) {
+        case 0:
+            'xxx'
+            break
+        case 1:
+            'Auto externalization for dummies'
+            break
+        case 2:
+            1.5f
+            break
+    }
+} as ObjectInput
+book = new Book()
+book.readExternal(i)
+assert book.isbn == 'xxx'
+assert book.title == 'Auto externalization for dummies'
+assert book.price == 1.5
+'''
+    }
+
+    void testAutoExternalizeWithExcludes() {
+        assertScript '''
+// tag::example_autoext_excludes[]
+import groovy.transform.AutoExternalize
+
+@AutoExternalize(excludes='price')
+class Book {
+    String isbn
+    String title
+    float price
+}
+// end::example_autoext_excludes[]
+
+def book = new Book(isbn: 'xxx', title:'Auto externalization for dummies', price: 15)
+def str = ''
+ObjectOutput o = {
+   str = "$str$it/"
+} as ObjectOutput
+book.writeExternal(o)
+assert str == "xxx/Auto externalization for dummies/"
+int idx = 0
+ObjectInput i = {
+    switch (idx++) {
+        case 0:
+            'xxx'
+            break
+        case 1:
+            'Auto externalization for dummies'
+            break
+        case 2:
+            1.5f
+            break
+    }
+} as ObjectInput
+book = new Book()
+book.readExternal(i)
+assert book.isbn == 'xxx'
+assert book.title == 'Auto externalization for dummies'
+assert book.price == 0 // because price is excluded
+'''
+    }
+    void testAutoExternalizeWithIncludeFields() {
+        assertScript '''
+// tag::example_autoext_includeFields[]
+import groovy.transform.AutoExternalize
+
+@AutoExternalize(includeFields=true)
+class Book {
+    String isbn
+    String title
+    protected float price
+}
+// end::example_autoext_includeFields[]
+
+def book = new Book(isbn: 'xxx', title:'Auto externalization for dummies', price: 15)
+def str = ''
+ObjectOutput o = {
+   str = "$str$it/"
+} as ObjectOutput
+book.writeExternal(o)
+assert str == "xxx/Auto externalization for dummies/15.0/"
+int idx = 0
+ObjectInput i = {
+    switch (idx++) {
+        case 0:
+            'xxx'
+            break
+        case 1:
+            'Auto externalization for dummies'
+            break
+        case 2:
+            1.5f
+            break
+    }
+} as ObjectInput
+book = new Book()
+book.readExternal(i)
+assert book.isbn == 'xxx'
+assert book.title == 'Auto externalization for dummies'
+assert book.price == 1.5f
+'''
+    }
 }

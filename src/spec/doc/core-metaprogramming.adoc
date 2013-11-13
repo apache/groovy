@@ -779,6 +779,41 @@ include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example
 [[xform-AutoExternalize]]
 ===== @groovy.transform.AutoExternalize
 
+The `@AutoExternalize` AST transformation will assist in the creation of `java.io.Externalizable` classes. It will
+automatically add the interface to the class and generate the `writeExternal` and `readExternal` methods. For example, this
+code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoext,indent=0]
+----
+
+will be converted into:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoext_equiv,indent=0]
+----
+
+The `@AutoExternalize` annotation supports two parameters which will let you slightly customize its behavior:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|excludes|Empty list|A list of property or field names that need to be excluded from externalizing. A string consisting of a comma-separated field/property names is also allowed.
+See gapi::groovy.transform.AutoExternalize#excludes for details|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoext_excludes,indent=0]
+----
+|includeFields|false|By default, only properties are externalized. Setting this flag to true will also clone fields.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoext_includeFields,indent=0]
+----
+|=======================================================================
+
+
 ==== Safer scripting
 [[xform-ConditionalInterrupt]]
 ===== @groovy.transform.ConditionalInterrupt
