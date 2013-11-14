@@ -815,14 +815,249 @@ include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example
 
 
 ==== Safer scripting
-[[xform-ConditionalInterrupt]]
-===== @groovy.transform.ConditionalInterrupt
+
+The Groovy language makes it easy to execute user scripts at runtime (for example using gapi::groovy.lang.GroovyShell),
+but how do you make sure that a script won't eat all CPU (infinite loops) or that concurrent scripts won't slowly consume
+all available threads of a thread pool? Groovy provides several annotations which are aimed towards safer scripting,
+generating code which will for example allow you to interrupt execution automatically.
 
 [[xform-ThreadInterrupt]]
 ===== @groovy.transform.ThreadInterrupt
 
+One complicated situation in the JVM world is when a thread can't be stopped. The `Thread#stop` method exists but is
+deprecated (and isn't reliable) so your only chance relies in `Thread#interrupt`. Calling the latter will set the
+`interrupt` flag on the thread, but it will *not* stop the execution of the thread. This is problematic because it's the
+responsability of the code executing in the thread to check the interrupt flag and properly exit. This makes sense when
+you, as a developer, know that the code you are executing is meant to be run in an independent thread, but in general,
+you don't know it. It's even worse with user scripts, who might not even know what a thread is (think of DSLs).
+
+`@ThreadInterrupt` simplifies this by adding thread interruption checks at critical places in the code:
+
+* loops (for, while)
+* first instruction of a method
+* first instruction of a closure body
+
+Let's imagine the following user script:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=threadinterrupt_infiniteloop,indent=0]
+----
+
+This is an obvious infinite loop. If this code executes in its own thread, interrupting wouldn't help: if you `join` on
+the thread, then the calling code would be able to continue, but the thread would still be alive, running in background
+without any ability for you to stop it, slowly causing thread starvation.
+
+One possibility to work around this is to setup your shell this way:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=threadinterrupt_shell_setup,indent=0]
+----
+
+The shell is then configured to automatically apply the `@ThreadInterrupt` AST transformations on all scripts. This allows
+you to execute user scripts this way:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=threadinterrupt_control,indent=0]
+----
+
+The transformation automatically modified user code like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=threadinterrupt_infiniteloop_equiv,indent=0]
+----
+
+The check which is introduced inside the loop guarantees that if the `interrupt` flag is set on the current thread, an
+exception will be thrown, interrupting the execution of the thread.
+
+`@ThreadInterrupt` supports multiple options that will let you further customize the behavior of the transformation:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|thrown|`java.lang.InterruptedException`|Specifies the type of exception which is thrown if the thread is interrupted.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=threadinterrupt_thrown,indent=0]
+----
+|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi::groovy.transform.ThreadInterrupt for details.|
+[source,groovy]
+----
+@ThreadInterrupt(checkOnMethodStart=false)
+----
+|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi::groovy.transform.ThreadInterrupt for details.|
+[source,groovy]
+----
+@ThreadInterrupt(applyToAllClasses=false)
+class A { ... } // interrupt checks added
+class B { ... } // no interrupt checks
+----
+|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi::groovy.transform.ThreadInterrupt for details.|
+[source,groovy]
+----
+class A {
+    @ThreadInterrupt(applyToAllMembers=false)
+    void method1() { ... } // interrupt checked added
+    void method2() { ... } // no interrupt checks
+}
+----
+|=======================================================================
+
 [[xform-TimedInterrupt]]
 ===== @groovy.transform.TimedInterrupt
+
+The `@TimedInterrupt` AST transformation tries to solve a slightly different problem from <<xform-ThreadInterrupt>>: instead of checking the `interrupt` flag of the thread, it will automatically
+throw an exception if the thread has been running for too long.
+
+NOTE: This annotation does *not* spawn a monitoring thread. Instead, it works in a similar manner as `@ThreadInterrupt` by placing checks at appropriate places in the code. This means that if you
+have a thread blocked by I/O, it will *not* be interrupted.
+
+Imagine the following user code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=timedinterrupt_fib,indent=0]
+----
+
+The implementation of the famous Fibonacci number computation here is far from optimized. If it is called with a high `n` value, it can take minutes to answer. With `@TimedInterrupt`, you can
+choose how long a script is allowed to run. The following setup code will allow the user script to run for 1 second at max:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=timedinterrupt_shell_setup,indent=0]
+----
+
+This code is equivalent to annotating a class with `@TimedInterrupt` like this:
+
+[source,groovy]
+----
+@TimedInterrup(value=1, unit=TimeUnit.SECONDS)
+class MyClass {
+    def fib(int n) {
+        n<2?n:fib(n-1)+fib(n-2)
+    }
+}
+----
+
+`@TimedInterrupt` supports multiple options that will let you further customize the behavior of the transformation:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|value|Long.MAX_VALUE|Used in combination with `unit` to specify after how long execution times out.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=timedinterrupt_duration,indent=0]
+----
+|unit|TimeUnit.SECONDS|Used in combination with `value` to specify after how long execution times out.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=timedinterrupt_duration,indent=0]
+----
+|thrown|`java.util.concurrent.TimeoutException`|Specifies the type of exception which is thrown if timeout is reached.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=timedinterrupt_thrown,indent=0]
+----
+|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi::groovy.transform.TimedInterrupt for details.|
+[source,groovy]
+----
+@TimedInterrupt(checkOnMethodStart=false)
+----
+|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi::groovy.transform.TimedInterrupt for details.|
+[source,groovy]
+----
+@TimedInterrupt(applyToAllClasses=false)
+class A { ... } // interrupt checks added
+class B { ... } // no interrupt checks
+----
+|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi::groovy.transform.TimedInterrupt for details.|
+[source,groovy]
+----
+class A {
+    @TimedInterrupt(applyToAllMembers=false)
+    void method1() { ... } // interrupt checked added
+    void method2() { ... } // no interrupt checks
+}
+----
+|=======================================================================
+
+WARNING: `@TimedInterrupt` is currently not compatible with static methods!
+
+[[xform-ConditionalInterrupt]]
+===== @groovy.transform.ConditionalInterrupt
+
+The last annotation for safer scripting is the base annotation when you want to interrupt a script using a custom strategy. In particular, this is the annotation of choice if you
+want to use resource management (limit the number of calls to an API, ...). In the following example, user code is using an infinite loop, but `@ConditionalInterrupt` will allow us
+to check a quota manager and interrupt automatically the script:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=conditionalinterrupt,indent=0]
+----
+
+The quota checking is very basic here, but it can be any code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=conditionalinterrupt_quotaclass,indent=0]
+----
+
+We can make sure `@ConditionalInterrupt` works properly using this test code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=conditionalinterrupt_assert,indent=0]
+----
+
+Of course, in practice, it is unlikely that `@ConditionalInterrupt` will be itself added by hand on user code. It can be injected in a similar manner as the example shown in the
+<<xform-ThreadInterrupt,ThreadInterrupt>> section, using the gapi::org.codehaus.groovy.control.customizers.ASTTransformationCustomizer :
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=conditionalinterrupt_injected,indent=0]
+----
+
+`@ConditionalInterrupt` supports multiple options that will let you further customize the behavior of the transformation:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|value||The closure which will be called to check if execution is allowed. If the closure returns false, execution is allowed. If it returns true, then an exception will be thrown.|
+[source,groovy]
+----
+@ConditionalInterrupt({ ... })
+----
+|thrown|`java.lang.InterruptedException`|Specifies the type of exception which is thrown if execution should be aborted.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=conditionalinterrupt_thrown,indent=0]
+----
+|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi::groovy.transform.ConditionalInterrupt for details.|
+[source,groovy]
+----
+@ConditionalInterrupt(checkOnMethodStart=false)
+----
+|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi::groovy.transform.ConditionalInterrupt for details.|
+[source,groovy]
+----
+@ConditionalInterrupt(applyToAllClasses=false)
+class A { ... } // interrupt checks added
+class B { ... } // no interrupt checks
+----
+|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi::groovy.transform.ConditionalInterrupt for details.|
+[source,groovy]
+----
+class A {
+    @ConditionalInterrupt(applyToAllMembers=false)
+    void method1() { ... } // interrupt checked added
+    void method2() { ... } // no interrupt checks
+}
+----
+|=======================================================================
 
 ==== Compiler directives
 [[xform-Field]]
