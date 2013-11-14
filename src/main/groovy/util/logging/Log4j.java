@@ -27,6 +27,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Locale;
 
 /**
  * This local transform adds a logging ability to your program using
@@ -94,7 +95,7 @@ public @interface Log4j {
                 // log4j api is inconsistent, so trace requires special handling
                 condition = new MethodCallExpression(
                         logVariable,
-                        "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
+                        "is" + methodName.substring(0, 1).toUpperCase(Locale.ENGLISH) + methodName.substring(1, methodName.length()) + "Enabled",
                         ArgumentListExpression.EMPTY_ARGUMENTS);
             }
 
