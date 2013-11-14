@@ -63,15 +63,16 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
             ClassNode classNode = (ClassNode) parent;
             String propertyName = getMemberStringValue(node, "property", "instance");
             boolean isLazy = memberHasValue(node, "lazy", true);
-            createField(classNode, propertyName, isLazy);
+            boolean isStrict = !memberHasValue(node, "strict", false);
+            createField(classNode, propertyName, isLazy, isStrict);
         }
     }
 
-    private void createField(ClassNode classNode, String propertyName, boolean isLazy) {
+    private void createField(ClassNode classNode, String propertyName, boolean isLazy, boolean isStrict) {
         int modifiers = isLazy ? ACC_PRIVATE | ACC_STATIC | ACC_VOLATILE : ACC_PUBLIC | ACC_FINAL | ACC_STATIC;
         Expression initialValue = isLazy ? null : new ConstructorCallExpression(classNode, new ArgumentListExpression());
         final FieldNode fieldNode = classNode.addField(propertyName, modifiers, classNode.getPlainNodeReference(), initialValue);
-        createConstructor(classNode, fieldNode, propertyName);
+        createConstructor(classNode, fieldNode, propertyName, isStrict);
         final BlockStatement body = new BlockStatement();
         body.addStatement(isLazy ? lazyBody(classNode, fieldNode) : nonLazyBody(fieldNode));
         classNode.addMethod(getGetterName(propertyName), ACC_STATIC | ACC_PUBLIC, classNode.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
@@ -101,7 +102,7 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
         return "get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
     }
 
-    private void createConstructor(ClassNode classNode, FieldNode field, String propertyName) {
+    private void createConstructor(ClassNode classNode, FieldNode field, String propertyName, boolean isStrict) {
         final List<ConstructorNode> cNodes = classNode.getDeclaredConstructors();
         ConstructorNode foundNoArg = null;
         for (ConstructorNode cNode : cNodes) {
@@ -109,6 +110,12 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
             if (parameters == null || parameters.length == 0) {
                 foundNoArg = cNode;
                 break;
+            }
+        }
+
+        if (isStrict && cNodes.size() != 0) {
+            for (ConstructorNode cNode : cNodes) {
+                addError("@Singleton didn't expect to find one or more additional constructors: remove constructor(s) or set strict=false", cNode);
             }
         }
 
