@@ -355,7 +355,7 @@ class Person6 { String first, last; Date since }
 @TupleConstructor(includeSuperProperties=true, callSuper=true)
 @AutoClone(style=SIMPLE)
 @EqualsAndHashCode
-class Customer6 extends Person6 { List favItems }
+class Customer6 extends Person6 { List<String> favItems }
 
 // GROOVY-4786
 @EqualsAndHashCode(excludes="y")
