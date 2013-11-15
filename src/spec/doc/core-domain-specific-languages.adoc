@@ -4,6 +4,7 @@
 == Operator overloading
 == Script base classes
 == Adding properties to numbers
+[[section-delegatesto]]
 == @DelegatesTo
 
 [[TheDelegatesToannotation-DSLsmadeeasy]]

@@ -1060,26 +1060,89 @@ class A {
 |=======================================================================
 
 ==== Compiler directives
+
+This category of AST transformations groups annotations which have a direct impact on the semantics of the code, rather
+than focusing on code generation. With that regards, they can be seen as compiler directives that either change the
+behavior of a program at compile time or runtime.
+
 [[xform-Field]]
 ===== @groovy.transform.Field
+
+The `@Field` annotation only makes sense in the context of a script and aims at solving a common scoping error with
+scripts. The following example will for example fail at runtime:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=field_missing_property,indent=0]
+----
+
+The error that is thrown may be difficult to interpret: +groovy.lang.MissingPropertyException: No such property: x+. The reason is that scripts are compiled
+to classes and the script body is itself compiled as a single _run()_ method. Methods which are defined in the scripts are independent, so the code above is
+equivalent to this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=field_missing_property_equiv,indent=0]
+----
+
+So `def x` is effectiveley interpreted as a local variable, outside of the scope of the `line` method. The `@Field` AST transformation aims at fixing this
+by changing the scope of the variable to a field of the enclosing script:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=field_fixed,indent=0]
+----
+
+The resulting, equivalent, code is now:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=field_fixed_equiv,indent=0]
+----
 
 [[xform-PackageScope]]
 ===== @groovy.transform.PackageScope
 
+By default, Groovy visibility rules imply that if you create a field without specifying a modifier, then the field is interpreted as a property:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=packagescope_property,indent=0]
+----
+
+Should you want to create a package private field instead of a property (private field+getter/setter), then annotate your field with `@PackageScope`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=packagescope_property_javalike,indent=0]
+----
+
 [[xform-AnnotationCollector]]
 ===== @groovy.transform.AnnotationCollector
 
-[[xform-DelegatesTo]]
-===== @groovy.lang.DelegatesTo
+`@AnnotationCollector` allows the creation of meta-annotation, which are described in a <<meta-annotations,dedicated section>>.
 
 [[xform-TypeChecked]]
 ===== @groovy.transform.TypeChecked
 
+`@TypeChecked` activates compile-time type checking on your Groovy code. See <<section-typechecked,section on type checking>> for details.
+
 [[xform-CompileStatic]]
 ===== @groovy.transform.CompileStatic
 
+`@CompileStatic` activates static compilation on your Groovy code. See <<section-typechecked,section on type checking>> for details.
+
 [[xform-CompileDynamic]]
 ===== @groovy.transform.CompileDynamic
+
+`@CompileDynamic` disables static compilation on parts of your Groovy code. See <<section-typechecked,section on type checking>> for details.
+
+[[xform-DelegatesTo]]
+===== @groovy.lang.DelegatesTo
+
+`@DelegatesTo` is not, technically speaking, an AST transformation. It is aimed at documenting code and helping the compiler in case you are
+using <<xform-TypeChecked,type checking>> or <<xform-CompileStatic, static compilation>>. The annotation is described throughfully in the
+<<section-delegatesto,DSL section>> of this guide.
 
 ==== Swing patterns
 [[xform-Bindable]]
