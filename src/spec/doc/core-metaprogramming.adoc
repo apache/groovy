@@ -1234,8 +1234,69 @@ include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=vetoable_
 [[xform-NotYetImplemented]]
 ===== @groovy.lang.NotYetImplemented
 
+`@NotYetImplemented` is used to invert the result of a JUnit 3/4 test case. It is in particular useful if a feature is not yet implemented but the test is. In that case, it is expected
+that the test fails. Marking it with `@NotYetImplemented` will inverse the result of the test, like in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=notyetimplemented,indent=0]
+----
+
+Another advantage of using this technique is that you can write test cases for bugs before knowing how to fix them. If some time in the future, a modification in the code fixes a bug by side effect,
+you'll be notified because a test which was expected to fail passed.
+
 [[xform-ASTTest]]
 ===== @groovy.transform.ASTTest
+
+`@ASTTest` is a special AST transformation meant to help debugging other AST transformations or the Groovy compiler itself. It will let the developer "explore" the AST during compilation and
+perform assertions on the AST rather than on the result of compilation. This means that this AST transformations gives access to the AST before the bytecode is produced. `@ASTTest` can be
+placed on any annotable node and requires two parameters:
+
+* _phase_: sets at which phase at which `@ASTTest` will be triggered. The test code will work on the AST tree at the end of this phase.
+* _value_: the code which will be executed once the phase is reached, on the annotated node
+
+TIP: Compile phase has to be chosen from one of gapi::org.codehaus.groovy.control.CompilePhase . However, since it is not possible to annotate a node twice with the same annotation, you will
+not be able to use `@ASTTest` on the same node at two distinct compile phases.
+
+`value` is a closure expression which has access to a special variable `node` corresponding to the annotated node, and a helper `lookup` method which will be discussed <<asttest-lookup,here>>.
+For example, you can annotate a class node like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=asttest_basic,indent=0]
+----
+<1> we're checking the state of the Abstract Syntax Tree after the CONVERSION phase
+<2> node refers to the AST node which is annotated by @ASTTest
+<3> it can be used to perform assertions at compile time
+
+One interesting feature of `@ASTTest` is that if an assertion fails, then *compilation will fail*. Now imagine that we want to check the behavior of an AST transformation at compile time.
+We will take `@PackageScope` here, and we will want to verify that a property annotated with `@PackageScope` becomes a package private field. For this, we have to know at which phase the
+transform runs, which can be found in gapi::org.codehaus.groovy.transform.PackageScopeASTTransformation : semantic analysis. Then a test can be written like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=asttest_packagescope,indent=0]
+----
+
+[[asttest-lookup]]
+The `@ASTTest` annotation can only be placed wherever the grammar allows it. Sometimes, you would like to test the contents of an AST node which is not annotable. In this case,
+`@ASTTest` provides a convenient `lookup` method which will search the AST for nodes which are labelled with a special token:
+
+[source,groovy]
+----
+def list = lookup('anchor') <1>
+Statement stmt = list[0] <2>
+----
+<1> returns the list of AST nodes which label is 'anchor'
+<2> it is always necessary to choose which element to process since lookup always returns a list
+
+Imagine, for example, that you want to test the declared type of a for loop variable. Then you can do it like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=asttest_forloop,indent=0]
+----
+
 
 ==== Grape handling
 [[xform-Grab]]
