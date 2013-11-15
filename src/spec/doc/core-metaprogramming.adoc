@@ -1145,14 +1145,90 @@ using <<xform-TypeChecked,type checking>> or <<xform-CompileStatic, static compi
 <<section-delegatesto,DSL section>> of this guide.
 
 ==== Swing patterns
+
 [[xform-Bindable]]
 ===== @groovy.beans.Bindable
+
+`@Bindable` is an AST transformation that transforms a regular property into a bound property (according to the http://download.oracle.com/otndocs/jcp/7224-javabeans-1.01-fr-spec-oth-JSpec/[JavaBeans specification]).
+The `@Bindable` annotation can be placed on a property or a class. To convert all properties of a class into bound properties, on can annotate the class like in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=bindable_on_class,indent=0]
+----
+
+This is equivalent to writing this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=bindable_on_class_equiv,indent=0]
+----
+
+`@Bindable` therefore removes a lot of boilerplate from your class, dramatically increasing readability. If the annotation is put on a single property, only that property is bound:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=bindable_single_property,indent=0]
+----
+
 [[xform-ListenerList]]
 ===== @groovy.beans.ListenerList
+
+The `@ListenerList` AST transformation generates code for adding, removing and getting the list of listeners to a class, just by annotating a collection property:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=listenerlist_simple,indent=0]
+----
+
+The transform will generate the appropriate add/remove methods based on the generic type of the list. In addition, it will also create `fireXXX` methods based on the public methods declared on the class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=listenerlist_simple_equiv,indent=0]
+----
+
+`@Bindable` supports multiple options that will let you further customize the behavior of the transformation:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|name|Generic type name|By default, the suffix which will be appended to add/remove/... methods is the simple class name of the generic type of the list.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=listenerlist_name,indent=0]
+----
+|synchronize|false|If set to true, generated methods will be synchronized|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=listenerlist_synchronized,indent=0]
+----
+|=======================================================================
 
 [[xform-Vetoable]]
 ===== @groovy.beans.Vetoable
 
+The `@Vetoable` annotation works in a similar manner to `@Bindable` but generates constrained property according to the JavaBeans specification, instead of bound properties. The annotation
+can be placed on a class, meaning that all properties will be converted to constrained properties, or on a single property. For example, annotating this class with `@Vetoable`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=vetoable_on_class,indent=0]
+----
+
+is equivalent to writing this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=vetoable_on_class_equiv,indent=0]
+----
+
+If the annotation is put on a single property, only that property is made vetoable:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=vetoable_single_property,indent=0]
+----
 
 ==== Test assistance
 [[xform-NotYetImplemented]]
