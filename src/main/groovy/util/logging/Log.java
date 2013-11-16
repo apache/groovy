@@ -29,6 +29,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Locale;
 
 /**
  * This local transform adds a logging ability to your program using
@@ -96,7 +97,7 @@ public @interface Log {
         public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
             AttributeExpression logLevelExpression = new AttributeExpression(
                     new ClassExpression(LEVEL_CLASSNODE),
-                    new ConstantExpression(methodName.toUpperCase()));
+                    new ConstantExpression(methodName.toUpperCase(Locale.ENGLISH)));
 
             ArgumentListExpression args = new ArgumentListExpression();
             args.addExpression(logLevelExpression);

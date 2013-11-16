@@ -86,7 +86,7 @@ public @interface Log4j {
             if (!"trace".equals(methodName)) {
                 AttributeExpression logLevelExpression = new AttributeExpression(
                         new ClassExpression(classNode(PRIORITY_NAME)),
-                        new ConstantExpression(methodName.toUpperCase()));
+                        new ConstantExpression(methodName.toUpperCase(Locale.ENGLISH)));
                 ArgumentListExpression args = new ArgumentListExpression();
                 args.addExpression(logLevelExpression);
                 condition = new MethodCallExpression(logVariable, "isEnabledFor", args);
