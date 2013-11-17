@@ -104,6 +104,21 @@ class NewifyTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testNewificationClosureExpression_GROOVY6434() {
+        evaluate """
+            @Newify([String])
+            String test1() {
+                return String("ABC")
+            }
+            @Newify([String])
+            String test2() {
+                return { -> String("ABC") }.call()
+            }
+            assert "ABC"==test1()
+            assert "ABC"==test2()
+        """
+    }
+
     void testNewificationUsingClassesWithinScript() {
         evaluate """
             import groovy.transform.Immutable
