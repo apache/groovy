@@ -148,6 +148,9 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
             MethodCallExpression transformed = new MethodCallExpression(object, method, args);
             transformed.setSourcePosition(mce);
             return transformed;
+        } else if (expr instanceof ClosureExpression) {
+            ClosureExpression ce = (ClosureExpression) expr;
+            ce.getCode().visit(this);
         } else if (expr instanceof DeclarationExpression) {
             DeclarationExpression de = (DeclarationExpression) expr;
             if (de == candidate || auto) {
