@@ -150,7 +150,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
             return transformed;
         } else if (expr instanceof DeclarationExpression) {
             DeclarationExpression de = (DeclarationExpression) expr;
-            if (de == candidate) {
+            if (de == candidate || auto) {
                 candidate = null;
                 Expression left = de.getLeftExpression();
                 Expression right = transform(de.getRightExpression());

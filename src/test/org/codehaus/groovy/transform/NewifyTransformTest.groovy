@@ -94,6 +94,16 @@ class NewifyTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testNewificationLocalVariables_GROOVY6421() {
+        evaluate """
+            @Newify foo() {
+                def x = Integer.new(42)
+                x
+            }
+            assert foo() == 42
+        """
+    }
+
     void testNewificationUsingClassesWithinScript() {
         evaluate """
             import groovy.transform.Immutable
