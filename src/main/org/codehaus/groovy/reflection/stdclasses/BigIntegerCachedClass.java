@@ -41,6 +41,7 @@ public class BigIntegerCachedClass extends NumberCachedClass {
             || classToTransformFrom == Integer.TYPE
             || classToTransformFrom == Short.TYPE
             || classToTransformFrom == Byte.TYPE
-            || classToTransformFrom == Long.TYPE;
+            || classToTransformFrom == Long.TYPE
+            || BigInteger.class.isAssignableFrom(classToTransformFrom);
     }
 }
