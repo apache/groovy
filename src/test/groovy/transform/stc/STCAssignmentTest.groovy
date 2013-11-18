@@ -655,6 +655,21 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
     
+    //GROOVY-6435
+    void testBigDecAndBigIntSubclass() {
+        assertScript '''
+            class MyDecimal extends BigDecimal {
+              public MyDecimal(String s) {super(s)}
+            }
+            class MyInteger extends BigInteger {
+              public MyInteger(String s) {super(s)}
+            }
+
+            BigDecimal d = new MyDecimal("3.0")
+            BigInteger i = new MyInteger("3")
+        '''
+    }
+
     void testPostfixOnInt() {
         assertScript '''
             int i = 0
