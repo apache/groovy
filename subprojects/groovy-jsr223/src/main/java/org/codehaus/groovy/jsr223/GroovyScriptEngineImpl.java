@@ -52,7 +52,6 @@ import groovy.lang.Tuple;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.util.ManagedConcurrentMap;
 import org.codehaus.groovy.util.ManagedConcurrentValueMap;
 import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -93,7 +92,7 @@ public class GroovyScriptEngineImpl
     private static boolean debug = false;
 
     // script-string-to-generated Class map
-    private ManagedConcurrentMap<String, Class> classMap = new ManagedConcurrentMap<String, Class>(ReferenceBundle.getSoftBundle());
+    private ManagedConcurrentValueMap<String, Class> classMap = new ManagedConcurrentValueMap<String, Class>(ReferenceBundle.getSoftBundle());
     // global closures map - this is used to simulate a single
     // global functions namespace 
     private ManagedConcurrentValueMap<String, Closure> globalClosures = new ManagedConcurrentValueMap<String, Closure>(ReferenceBundle.getHardBundle());
