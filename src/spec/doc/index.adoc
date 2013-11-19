@@ -45,6 +45,9 @@ include::{projectdir}/src/spec/doc/core-getting-started.adoc[]
 :leveloffset: 2
 include::{projectdir}/src/spec/doc/core-metaprogramming.adoc[]
 :leveloffset: 0
+:leveloffset: 2
+include::{projectdir}/src/spec/doc/grape.adoc[]
+:leveloffset: 0
 === Testing guide
 === Interacting with a SQL database
 :leveloffset: 2

@@ -7,6 +7,7 @@ The Groovy team would like to thank the contributors of this documentation (by a
 * https://github.com/jeffbrown[Jeff Scott Brown]
 * http://twitter.com/CedricChampeau[Cédric Champeau]
 * http://twitter.com/werdnagreb[Andrew Eisenberg]
+* http://twitter.com/paulk_asert[Paul King]
 * http://twitter.com/glaforge[Guillaume Laforge]
 * https://github.com/PascalSchumacher[Pascal Schumacher]
 

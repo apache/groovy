@@ -1310,6 +1310,9 @@ include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=asttest
 [[xform-Grapes]]
 ===== @groovy.lang.Grapes
 
+`Grape` is a dependency management engine embedded into Groovy, relying on several annotations which are described
+throughfully in this <<section-grape,section of the guide>>.
+
 [[developing-ast-xforms]]
 === Developing AST transformations
 ==== Compilation phases guide
