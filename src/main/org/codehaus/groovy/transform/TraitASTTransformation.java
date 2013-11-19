@@ -102,7 +102,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 STATIC_INIT_METHOD,
                 ACC_STATIC | ACC_PUBLIC | ACC_SYNTHETIC,
                 ClassHelper.VOID_TYPE,
-                new Parameter[]{new Parameter(cNode, THIS_OBJECT)},
+                new Parameter[]{new Parameter(cNode.getPlainNodeReference(), THIS_OBJECT)},
                 ClassNode.EMPTY_ARRAY,
                 new BlockStatement()
         );
@@ -297,7 +297,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
     private MethodNode processMethod(final ClassNode traitClass, final MethodNode methodNode) {
         Parameter[] initialParams = methodNode.getParameters();
         Parameter[] newParams = new Parameter[initialParams.length + 1];
-        newParams[0] = new Parameter(traitClass, THIS_OBJECT);
+        newParams[0] = new Parameter(traitClass.getPlainNodeReference(), THIS_OBJECT);
         System.arraycopy(initialParams, 0, newParams, 1, initialParams.length);
         MethodNode mNode = new MethodNode(
                 methodNode.getName(),
