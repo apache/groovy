@@ -367,7 +367,11 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 }
                 Expression leftTransform = super.transform(leftExpression);
                 Expression rightTransform = super.transform(rightExpression);
-                Expression ret = new BinaryExpression(leftTransform, operation, rightTransform);
+                Expression ret =
+                        exp instanceof DeclarationExpression?new DeclarationExpression(
+                                leftTransform, operation, rightTransform
+                        ):
+                        new BinaryExpression(leftTransform, operation, rightTransform);
                 ret.setSourcePosition(exp);
                 ret.copyNodeMetaData(exp);
                 return ret;
