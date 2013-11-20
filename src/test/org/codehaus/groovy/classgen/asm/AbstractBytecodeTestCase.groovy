@@ -57,7 +57,8 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
      * @param scriptText the script to compile
      * @return the decompiled <code>InstructionSequence</code>
      */
-    InstructionSequence compile(Map options=[method:"run"], String scriptText) {
+    InstructionSequence compile(Map options=[:], String scriptText) {
+        options = [method:"run", classNamePattern:'.*script', *:options]
         sequence = null
         clazz = null
         def cu = new CompilationUnit()
@@ -69,7 +70,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         cu.compile(Phases.CLASS_GENERATION)
 
         cu.classes.each {
-            if (it.name==~'.*script') {
+            if (it.name ==~ (options.classNamePattern)) {
                 sequence = extractSequence(it.bytes, options)
             }
         }

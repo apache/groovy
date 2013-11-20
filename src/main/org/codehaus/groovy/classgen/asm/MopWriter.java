@@ -82,7 +82,9 @@ public class MopWriter {
         LinkedList<MethodNode> mopCalls = new LinkedList<MethodNode>();
         for (Object method : methods) {
             MethodNode mn = (MethodNode) method;
-            if ((mn.getModifiers() & ACC_ABSTRACT) != 0) continue;
+            // mop methods are helper for this and super calls and do direct calls
+            // to the target methods. Such a method cannot be abstract or a bridge
+            if ((mn.getModifiers() & (ACC_ABSTRACT | ACC_BRIDGE)) != 0) continue;
             if (mn.isStatic()) continue;
             // no this$ methods for non-private isThis=true
             // super$ method for non-private isThis=false
