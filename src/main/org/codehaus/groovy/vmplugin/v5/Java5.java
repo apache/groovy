@@ -260,9 +260,13 @@ public class Java5 implements VMPlugin {
                         new ClassExpression(ClassHelper.ELEMENT_TYPE_TYPE), element.name()));
             }
             node.setMember("value", elementExprs);
-        }
-        else {
-            Method[] declaredMethods = type.getDeclaredMethods();
+        } else {
+            Method[] declaredMethods;
+            try {
+                declaredMethods = type.getDeclaredMethods();
+            } catch (SecurityException se) {
+                declaredMethods = new Method[0];
+            }
             for (Method declaredMethod : declaredMethods) {
                 try {
                     Object value = declaredMethod.invoke(annotation);
