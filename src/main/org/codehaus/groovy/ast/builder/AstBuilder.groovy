@@ -134,7 +134,7 @@ Are you sure you are using it correctly?
      * @param specification
      *      the contents to create
      */
-    List<ASTNode> buildFromSpec(Closure specification) {
+    List<ASTNode> buildFromSpec(@DelegatesTo(AstSpecificationCompiler) Closure specification) {
         if (specification == null) throw new IllegalArgumentException('Null: specification')
         def properties = new AstSpecificationCompiler(specification)
         return properties.expression
