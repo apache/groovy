@@ -54,14 +54,18 @@ public class CachedSAMClass extends CachedClass {
                 ReflectionCache.isAssignableFrom(getTheClass(), argument);
     }
 
+    @SuppressWarnings("unchecked")
     public static Object coerceToSAM(Closure argument, Method method, Class clazz, boolean isInterface) {
+        if (argument!=null && clazz.isAssignableFrom(argument.getClass())) {
+            return argument;
+        }
         if (isInterface) {
             return Proxy.newProxyInstance(
                     clazz.getClassLoader(),
                     new Class[]{clazz},
-                    new ConvertedClosure((Closure) argument));
+                    new ConvertedClosure(argument));
         } else {
-            Map<String, Object> m = new HashMap();
+            Map<String, Object> m = new HashMap<String,Object>();
             m.put(method.getName(), argument);
             return ProxyGenerator.INSTANCE.
                     instantiateAggregateFromBaseClass(m, clazz);
