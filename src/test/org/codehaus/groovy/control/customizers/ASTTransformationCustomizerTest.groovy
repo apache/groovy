@@ -16,8 +16,14 @@
 
 package org.codehaus.groovy.control.customizers
 
+import groovy.transform.TimedInterrupt
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.expr.ClassExpression
+import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.control.CompilerConfiguration
 import groovy.util.logging.Log
+
+import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
@@ -155,6 +161,25 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
             Integer(11) + Long(31)
         '''
         assert result == 42
+    }
+
+    void testAnyExpressionAsParameterValue() {
+        customizer = new ASTTransformationCustomizer(value:100, unit: new PropertyExpression(new ClassExpression(ClassHelper.make(TimeUnit)),'MILLISECONDS'), TimedInterrupt)
+        configuration.addCompilationCustomizers(customizer)
+        def shell = new GroovyShell(configuration)
+        def result = shell.evaluate '''import java.util.concurrent.TimeoutException
+
+boolean interrupted = false
+try {
+    10.times {
+        Thread.sleep(100)
+    }
+} catch (TimeoutException e) {
+    interrupted = true
+}
+
+interrupted'''
+        assert result
     }
 
     @GroovyASTTransformation(phase=CompilePhase.CONVERSION)
