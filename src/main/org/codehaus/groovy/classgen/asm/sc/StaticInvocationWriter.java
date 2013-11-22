@@ -198,7 +198,25 @@ public class StaticInvocationWriter extends InvocationWriter {
                     && controller.isInClosure()
                     && !(target.isPublic() || target.isProtected())
                     && target.getDeclaringClass() != classNode) {
-                return tryBridgeMethod(target, receiver, implicitThis, args);
+                if (!tryBridgeMethod(target, receiver, implicitThis, args)) {
+                    // replace call with an invoker helper call
+                    ArrayExpression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
+                    MethodCallExpression mce = new MethodCallExpression(
+                            INVOKERHELER_RECEIVER,
+                            target.isStatic() ? "invokeStaticMethod" : "invokeMethodSafe",
+                            new ArgumentListExpression(
+                                    target.isStatic() ?
+                                            new ClassExpression(target.getDeclaringClass()) :
+                                            receiver,
+                                    new ConstantExpression(target.getName()),
+                                    arr
+                            )
+                    );
+                    mce.setMethodTarget(target.isStatic() ? INVOKERHELPER_INVOKESTATICMETHOD : INVOKERHELPER_INVOKEMETHOD);
+                    mce.visit(controller.getAcg());
+                    return true;
+                }
+                return true;
             }
             if (target.isPrivate()) {
                 ClassNode declaringClass = target.getDeclaringClass();
