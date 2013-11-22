@@ -331,6 +331,60 @@ class SyntaxTest extends CompilableTestSupport {
         // end::gstring_6[]
     }
 
+    void testInterpolatingClosuresInGstrings() {
+        // tag::closure_in_gstring_1[]
+        def sParameterLessClosure = "1 + 2 == ${-> 3}" // <1>
+        assert sParameterLessClosure == '1 + 2 == 3'
+
+        def sOneParamClosure = "1 + 2 == ${ w -> w << 3}" // <2>
+        assert sOneParamClosure == '1 + 2 == 3'
+        // end::closure_in_gstring_1[]
+
+        // tag::closure_in_gstring_2[]
+        def number = 1 // <1>
+        def eagerGString = "value == ${number}"
+        def lazyGString = "value == ${ -> number }"
+
+        assert eagerGString == "value == 1" // <2>
+        assert lazyGString ==  "value == 1" // <3>
+
+        number = 2 // <4>
+        assert eagerGString == "value == 1" // <5>
+        assert lazyGString ==  "value == 2" // <6>
+        // end::closure_in_gstring_2[]
+    }
+
+    void testGStringCoercerdToStringInMethodCallExpectingString() {
+        assertScript '''
+        // tag::java_gstring_interop_1[]
+        String takeString(String message) {         // <4>
+            assert message instanceof String        // <5>
+            return message
+        }
+
+        def message = "The message is ${'hello'}"   // <1>
+        assert message instanceof GString           // <2>
+
+        def result = takeString(message)            // <3>
+        assert result instanceof String
+        assert result == 'The message is hello'
+        // end::java_gstring_interop_1[]
+        '''
+    }
+
+    void testStringGStringHashCode() {
+        // tag::gstring_hashcode_1[]
+        assert "one: ${1}".hashCode() != "one: 1".hashCode()
+        // end::gstring_hashcode_1[]
+
+        // tag::gstring_hashcode_2[]
+        def key = "a"
+        def m = ["${key}": "letter ${key}"]     // <1>
+
+        assert m["a"] == null                   // <2>
+        // end::gstring_hashcode_2[]
+    }
+
     void testTripleSingleQuotedString() {
         // tag::triple_single_1[]
         def aMultilineString = '''line one

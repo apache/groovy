@@ -380,6 +380,79 @@ you just need to use a +\+ backslash character to escape the dollar sign:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_6,indent=0]
 ----
 
+==== Special case of interpolating closure expressions
+
+So far, we've seen we could interpolate arbitrary expressions inside the +${}+ placeholder, but there is a special case and notation for closure expressions. When the placeholder contains an arrow, +${->}+, the expression is actually a closure expression -- you can think of it as a closure with a dollar prepended in front of it:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=closure_in_gstring_1,indent=0]
+----
+<1> The closure is a parameterless closure which doesn't take arguments.
+<2> Here, the closure takes a single +java.io.StringWriter+ argument, to which you can append content  with the +<<+ leftShift operator.
+In either case, both placeholders are embedded closures.
+
+In appearance, it looks like a more verbose way of defining expressions to be interpolated,
+but closure have an interesting advantage over mere expressions: lazy evaluation.
+
+Let's consider the following sample:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=closure_in_gstring_2,indent=0]
+----
+<1> We define a +number+ variable containing +1+ that we then interpolate within two GStrings, 
+as an expression in +eagerGString+ and as a closure in +lazyGString+.
+<2> We expect the resulting string to contain the same string value of 1 for +eagerGString+.
+<3> Similarily for +lazyGString+
+<4> Then we change the value of the variable to a new number
+<5> With a plain interpolated expression, the value was actually bound at the time of creation of the GString.
+<6> But with a closure expression, the closure is called upon each coercion of the GString into String,
+resulting in an updated string containing the new number value.
+
+[NOTE]
+An embedded closure expression taking more than one parameter will generate an exception at runtime.
+Only closures with zero or one paramaters are allowed.
+
+==== Inteoperability with Java
+
+When a method (whether implemented in Java or Groovy) expects a +java.lang.String+, 
+but we pass a +groovy.lang.GString+ instance, 
+the +toString()+ method of the GString is automatically and transparently called.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=java_gstring_interop_1,indent=0]
+----
+<1> We create a GString variable
+<2> We double check it's an instance of the GString
+<3> We then pass that GString to a method taking a String as parameter
+<4> The signature of the +takeString()+ method explicitly says its sole parameter is a String
+<5> We also verify that the parameter is indeed a String and not a GString.
+
+==== GString and String hashCodes
+
+Although interpolated strings can be used in lieu of plain Java strings,
+they differ with strings in a particular way: their hashCodes are different.
+Plain Java strings are immutable, whereas the resulting String representation of a GString can vary,
+depending on its interpolated values.
+Even for the same resulting string, GStrings and Strings don't have the same hashCode.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_hashcode_1,indent=0]
+----
+
+GString and Strings having different hashCode values, using GString as Map keys should be avoided,
+especially if we try to retrieve an associated value with a String instead of a GString.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_hashcode_2,indent=0]
+----
+<1> The map is created with an initial pair whose key is a GString
+<2> When we try to fetch the value with a String key, we will not find it, as Strings and GString have different hashCode values
+
 === Triple double quoted string
 
 Triple double quoted strings behave like double quoted strings, with the addition that they are multiline, like the triple single quoted strings.
