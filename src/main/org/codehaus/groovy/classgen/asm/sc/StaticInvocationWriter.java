@@ -136,6 +136,21 @@ public class StaticInvocationWriter extends InvocationWriter {
         controller.getOperandStack().remove(1);
     }
 
+    /**
+     * Attempts to make a direct method call on a bridge method, if it exists.
+     */
+    protected boolean tryBridgeMethod(MethodNode target, Expression receiver, boolean implicitThis, TupleExpression args) {
+        Map<MethodNode, MethodNode> bridges = target.getDeclaringClass().redirect().getNodeMetaData(PRIVATE_BRIDGE_METHODS);
+        MethodNode bridge = bridges.get(target);
+        if (bridge != null) {
+            ArgumentListExpression newArgs = new ArgumentListExpression(target.isStatic()?new ConstantExpression(null):receiver);
+            for (Expression expression : args.getExpressions()) {
+                newArgs.addExpression(expression);
+            }
+            return writeDirectMethodCall(bridge, implicitThis, receiver, newArgs);
+        }
+        return false;
+    }
 
     @Override
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
@@ -183,38 +198,18 @@ public class StaticInvocationWriter extends InvocationWriter {
                     && controller.isInClosure()
                     && !(target.isPublic() || target.isProtected())
                     && target.getDeclaringClass() != classNode) {
-                // replace call with an invoker helper call
-                // todo: use MOP generated methods instead
-                ArrayExpression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
-                MethodCallExpression mce = new MethodCallExpression(
-                        INVOKERHELER_RECEIVER,
-                        target.isStatic() ? "invokeStaticMethod" : "invokeMethodSafe",
-                        new ArgumentListExpression(
-                                target.isStatic() ? 
-                                        new ClassExpression(target.getDeclaringClass()) :
-                                        receiver,
-                                new ConstantExpression(target.getName()),
-                                arr
-                        )
-                );
-                mce.setMethodTarget(target.isStatic() ? INVOKERHELPER_INVOKESTATICMETHOD : INVOKERHELPER_INVOKEMETHOD);
-                mce.visit(controller.getAcg());
-                return true;
+                return tryBridgeMethod(target, receiver, implicitThis, args);
             }
             if (target.isPrivate()) {
                 ClassNode declaringClass = target.getDeclaringClass();
                 if ((isPrivateBridgeMethodsCallAllowed(declaringClass, classNode) || isPrivateBridgeMethodsCallAllowed(classNode, declaringClass))
                         && declaringClass.getNodeMetaData(PRIVATE_BRIDGE_METHODS) != null
                         && !declaringClass.equals(classNode)) {
-                    @SuppressWarnings("unchecked")
-                    Map<MethodNode, MethodNode> bridges = (Map<MethodNode, MethodNode>) declaringClass.redirect().getNodeMetaData(PRIVATE_BRIDGE_METHODS);
-                    MethodNode bridge = bridges.get(target);
-                    if (bridge != null) {
-                        ArgumentListExpression newArgs = new ArgumentListExpression(target.isStatic()?new ConstantExpression(null):receiver);
-                        for (Expression expression : args.getExpressions()) {
-                            newArgs.addExpression(expression);
-                        }
-                        return writeDirectMethodCall(bridge, implicitThis, receiver, newArgs);
+                    if (tryBridgeMethod(target, receiver, implicitThis, args)) {
+                        return true;
+                    } else if (declaringClass != classNode) {
+                        controller.getSourceUnit().addError(new SyntaxException("Cannot call private method " + (target.isStatic() ? "static " : "") +
+                                declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false), receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
                     }
                 }
                 if (declaringClass != classNode) {
