@@ -83,4 +83,20 @@ public class GroovyCastTest extends gls.CompilableTestSupport {
             }
         """
     }
+
+    void testClosureShouldNotBeCoercedToRunnable() {
+        assertScript '''
+Class foo(Runnable r) {
+    // please do not remove wrapping inside a closure
+    // because that's precisely what this test is supposed to check!
+    { -> bar(r) }()
+}
+
+Class bar(Runnable r) {
+   r.class
+}
+
+assert Closure.isAssignableFrom(foo { 'Hello' })
+'''
+    }
 }
