@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.control.customizers
 
+import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.transform.GroovyASTTransformation
@@ -204,7 +205,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
             if (value instanceof Closure) {
                 throw new IllegalArgumentException("Direct usage of closure is not supported by the AST " +
                 "compilation customizer. Please use ClosureExpression instead.")
-            } else if (value instanceof ClosureExpression) {
+            } else if (value instanceof Expression) {
                 // avoid NPEs due to missing source code
                 value.setLineNumber(0)
                 value.setLastLineNumber(0)
