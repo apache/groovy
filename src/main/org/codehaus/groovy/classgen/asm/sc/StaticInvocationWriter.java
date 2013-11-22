@@ -144,7 +144,7 @@ public class StaticInvocationWriter extends InvocationWriter {
      */
     protected boolean tryBridgeMethod(MethodNode target, Expression receiver, boolean implicitThis, TupleExpression args) {
         Map<MethodNode, MethodNode> bridges = target.getDeclaringClass().redirect().getNodeMetaData(PRIVATE_BRIDGE_METHODS);
-        MethodNode bridge = bridges.get(target);
+        MethodNode bridge = bridges==null?null:bridges.get(target);
         if (bridge != null) {
             ArgumentListExpression newArgs = new ArgumentListExpression(target.isStatic()?new ConstantExpression(null):receiver);
             for (Expression expression : args.getExpressions()) {
