@@ -49,6 +49,11 @@ import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -249,6 +254,20 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                             grabResolverMap.put(s, ((ConstantExpression) member).getValue());
                         }
                     }
+
+                    // If no scheme is specified for the repository root,
+                    // then turn it into a URL relative to that of the source file.
+                    String root = (String) grabResolverMap.get("root");
+                    if (root != null && !root.contains(":")) {
+                        try {
+                            URL sourceURL = getSourceURL();
+                            URL rootURL = new URL(sourceURL, root);
+                            grabResolverMap.put("root", rootURL.toExternalForm());
+                        } catch (MalformedURLException e) {
+                            addError("Attribute \"root\" has value '" + root + "' which can't be turned into a valid URL relative to it's source '" + getSourceUnit().getName() + "' @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
+                        }
+                    }
+
                     Grape.addResolver(grabResolverMap);
                     addGrabResolverAsStaticInitIfNeeded(grapeClassNode, node, grabResolverInitializers, grabResolverMap);
                 }
@@ -331,6 +350,23 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 source.addException(re);
             }
         }
+    }
+
+    /**
+     * Get the URL for the sourceUnit.  This belongs in org.codehaus.groovy.control.SourceUnit.
+     * @return URL URL for the sourceUnit.
+     */
+    private URL getSourceURL() throws MalformedURLException {
+        String sourceName = getSourceUnit().getName();
+        // If the source already has a scheme, then SourceUnit(URL, ...) was used.
+        if (!sourceName.contains(":")) {
+            // But if not then either SourceUnit(File, ...) or SourceUnit(String, ...) was used.
+            // When SourceUnit(File, ...) is used then name is set to the File.path.
+            File sourceFile = new File(sourceName);
+            sourceName = sourceFile.toURI().toURL().toExternalForm();
+        }
+
+        return new URL(sourceName);
     }
 
     private void callGrabAsStaticInitIfNeeded(ClassNode classNode, ClassNode grapeClassNode, AnnotationNode node, List<Map<String, Object>> grabExcludeMaps) {
