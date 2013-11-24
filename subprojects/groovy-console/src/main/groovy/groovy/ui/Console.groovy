@@ -1123,6 +1123,48 @@ options:
     void replace(EventObject evt = null) {
         FindReplaceUtility.showDialog(true)
     }
+    
+    void comment(EventObject evt = null) {
+	def rootElement = inputArea.document.defaultRootElement
+	def cursorPos = inputArea.getCaretPosition()
+	int startRow = rootElement.getElementIndex(cursorPos)
+	int endRow = startRow
+	
+	if (inputArea.getSelectedText()) {
+	    def selectionStart = inputArea.getSelectionStart()
+	    startRow = rootElement.getElementIndex(selectionStart)
+	    def selectionEnd = inputArea.getSelectionEnd()
+	    endRow = rootElement.getElementIndex(selectionEnd)
+	}
+	
+	// If multiple commented lines intermix with uncommented lines, consider them uncommented 
+	def allCommented = true
+	startRow.upto(endRow) { rowIndex ->
+	    def rowElement = rootElement.getElement(rowIndex)
+	    int startOffset = rowElement.getStartOffset()
+	    int endOffset = rowElement.getEndOffset()
+	    String rowText = inputArea.document.getText(startOffset, endOffset - startOffset)
+	    if (rowText.trim().length() < 2 || !rowText.trim().substring(0, 2).equals("//")) {
+	    	allCommented = false
+	    }
+	}
+	
+	startRow.upto(endRow) { rowIndex ->
+	    def rowElement = rootElement.getElement(rowIndex)
+	    int startOffset = rowElement.getStartOffset()
+	    int endOffset = rowElement.getEndOffset()
+	    String rowText = inputArea.document.getText(startOffset, endOffset - startOffset)
+	    if (allCommented) {
+		// Uncomment this line if it is already commented
+		int slashOffset = rowText.indexOf("//")
+		inputArea.document.remove(slashOffset + startOffset, 2)
+	    } else {
+	    	// Add comment string in front of this line
+	    	inputArea.document.insertString(startOffset, "//", new SimpleAttributeSet())
+	    }
+	}
+	
+    }
 
     void showMessage(String message) {
         statusLabel.text = message

@@ -16,9 +16,14 @@
 
 package groovy.ui
 
+import groovy.swing.factory.ActionFactory;
+
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
+
 import javax.swing.KeyStroke
+
+import java.awt.Toolkit
 
 newFileAction = action(
     name: 'New File',
@@ -366,4 +371,13 @@ compileAction = action(
     mnemonic: 'L',
     accelerator: shortcut('L'),
     shortDescription: 'Compile Groovy Script'
+)
+
+commentAction = action(
+    name: 'Comment',
+    closure: controller.&comment,
+    mnemonic: 'C',
+    // Ctrl or Command + /
+    accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_SLASH, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()),
+    shortDescription: 'Comment/Uncomment Selected Script'
 )
