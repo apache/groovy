@@ -489,6 +489,12 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=imm
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=immutable_example_knownimmutables,indent=0]
 ----
+----
+|copyWith|false|A boolean whether to generate a `copyWith( Map )` method.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=immutable_example_copyWith,indent=0]
+----
 |=======================================================================
 
 [[xform-Memoized]]
