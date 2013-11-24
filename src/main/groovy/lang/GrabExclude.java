@@ -38,7 +38,7 @@ public @interface GrabExclude {
     /**
      * The organisation or group, e.g.: "org.apache.ant"
      */
-    String group() default "";
+    String group();
 
     /**
      * The module or artifact, e.g.: "ant-junit"
