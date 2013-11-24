@@ -283,7 +283,7 @@ class StreamingJsonBuilder {
             }
             StreamingJsonDelegate.cloneDelegateAndGetContent( writer, args[1], !args[0].size() )
             writer.write '}}'
-        } else if (args?.size() == 2 && args[0] instanceof Collection && args[1] instanceof Closure) {
+        } else if (isCollectionWithClosure( args )) {
             writer.write "{${JsonOutput.toJson( name )}:"
             call( args[0], args[1] )
             writer.write '}'
@@ -291,6 +291,10 @@ class StreamingJsonBuilder {
         else {
             throw new JsonException("Expected no arguments, a single map, a single closure, or a map and closure as arguments.")
         }
+    }
+
+    private static boolean isCollectionWithClosure (Object[] args) {
+        args?.size() == 2 && args[0] instanceof Collection && args[1] instanceof Closure
     }
 }
 
@@ -313,7 +317,7 @@ class StreamingJsonDelegate {
 
             if (args.size() == 1) {
                 writer.write JsonOutput.toJson( args[0] )
-            } else if (args.size() == 2 && args[0] instanceof Collection && args[1] instanceof Closure ) {
+            } else if (isCollectionWithClosure( args )) {
                 writer.write '['
                 args[0].eachWithIndex { it, idx ->
                     if (idx > 0) {
@@ -331,6 +335,10 @@ class StreamingJsonDelegate {
 
             first = false
         }
+    }
+
+    private static boolean isCollectionWithClosure (Object[] args) {
+        args?.size() == 2 && args[0] instanceof Collection && args[1] instanceof Closure
     }
 
     static cloneDelegateAndGetContent(Writer w, Closure c, boolean first=true ) {
