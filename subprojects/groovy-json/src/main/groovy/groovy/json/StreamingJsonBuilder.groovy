@@ -284,16 +284,9 @@ class StreamingJsonBuilder {
             StreamingJsonDelegate.cloneDelegateAndGetContent( writer, args[1], !args[0].size() )
             writer.write '}}'
         } else if (args?.size() == 2 && args[0] instanceof Collection && args[1] instanceof Closure) {
-            writer.write "{${JsonOutput.toJson( name )}:["
-            args[0].eachWithIndex { it, idx ->
-                if( idx > 0 ) {
-                    writer.write ','
-                }
-                writer.write ( '{' )
-                StreamingJsonDelegate.curryDelegateAndGetContent ( writer, args[1], it)
-                writer.write ( '}' )
-            }
-            writer.write ']}'
+            writer.write "{${JsonOutput.toJson( name )}:"
+            call( args[0], args[1] )
+            writer.write '}'
         }
         else {
             throw new JsonException("Expected no arguments, a single map, a single closure, or a map and closure as arguments.")
