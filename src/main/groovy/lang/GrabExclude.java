@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 /**
  * Used to exclude an indirectly referenced artifact (a transitive dependency) from the classpath.
  * <p>
- * Examples:
+ * Examples:<br>
  * {@code @GrabExclude(group='mysql', module='mysql-connector-java')}<br>
  * {@code @GrabExclude('mysql:mysql-connector-java')}<br>
  * <p>
@@ -41,12 +41,12 @@ import java.lang.annotation.Target;
 public @interface GrabExclude {
     
     /**
-     * The organisation or group, e.g.: "org.apache.ant". Required unless the default value compact form is used.
+     * The organisation or group, e.g.: "org.apache.ant"; required unless the default value compact form is used.
      */
     String group();
 
     /**
-     * The module or artifact, e.g.: "ant-junit". Required unless the default value compact form is used.
+     * The module or artifact, e.g.: "ant-junit"; required unless the default value compact form is used.
      */
     String module();
     
