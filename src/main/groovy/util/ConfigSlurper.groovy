@@ -44,7 +44,6 @@ class ConfigSlurper {
     GroovyClassLoader classLoader = new GroovyClassLoader()
     private Map bindingVars = [:]
 
-    private Stack<String> currentConditionalBlock = new Stack<String>()
     private final Map<String, String> conditionValues = [:]
     private final Stack<Map<String, ConfigObject>> conditionalBlocks = new Stack<Map<String,ConfigObject>>()
 
@@ -178,6 +177,7 @@ class ConfigSlurper {
      * @return The ConfigObject instance
      */
     ConfigObject parse(Script script, URL location) {
+        Stack<String> currentConditionalBlock = new Stack<String>()
         def config = location ? new ConfigObject(location) : new ConfigObject()
         GroovySystem.metaClassRegistry.removeMetaClass(script.class)
         def mc = script.class.metaClass
