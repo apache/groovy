@@ -22,4 +22,11 @@ public class DeclarationTest extends CompilableTestSupport {
           Integer x = null
       """
   }
+  
+  public void testNullAssignmentToPrimitiveForSharedVariable() {
+      shouldFail(org.codehaus.groovy.runtime.typehandling.GroovyCastException, """
+          int i = null
+          def c = {i}
+      """)
+  }
 }
