@@ -20,6 +20,7 @@ import org.codehaus.groovy.ast.expr.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -70,6 +71,28 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         MethodNode oldCurrentMethod = currentMethod;
         currentMethod = node;
         super.visitConstructorOrMethod(node, isConstructor);
+        if (isConstructor) {
+            final HashSet<String> exceptions = new HashSet<String>();
+            for (Parameter param : node.getParameters()) {
+                exceptions.add(param.getName());
+                if (param.hasInitialExpression()) {
+                    param.getInitialExpression().visit(new CodeVisitorSupport() {
+                        @Override
+                        public void visitVariableExpression(VariableExpression ve) {
+                            if (exceptions.contains(ve.getName())) return;
+                            Variable av = ve.getAccessedVariable();
+                            if (av instanceof DynamicVariable || !av.isInStaticContext()) {
+                                addVariableError(ve);
+                            }
+                        }
+                        @Override
+                        public void visitClosureExpression(ClosureExpression expression) {
+                            //skip contents, because of dynamic scope
+                        }
+                    });
+                }
+            }
+        }
         currentMethod = oldCurrentMethod;
     }
 
@@ -111,6 +134,10 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
             if (fieldNode != null && fieldNode.isStatic()) return;
         }
         if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
+        addVariableError(ve);
+    }
+
+    private void addVariableError(VariableExpression ve) {
         addError("Apparent variable '" + ve.getName() + "' was found in a static scope but doesn't refer" +
                 " to a local variable, static field or class. Possible causes:\n" +
                 "You attempted to reference a variable in the binding or an instance variable from a static context.\n" +
