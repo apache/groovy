@@ -224,5 +224,23 @@ public class StaticScopeTest extends CompilableTestSupport {
             static foo(){this.class}
             assert foo() == Class
         """
-    }    
+    }
+    
+    public void testConstructorParameterDefault() {
+        shouldNotCompile """
+            class Child {
+                Child(nr=map.B) {super(nr)}
+            }
+        """
+        shouldNotCompile """
+            class Parent {
+                def map = [A:1, B:2, C:3]
+                def nr
+                Parent(nr) {this.nr = nr}
+            }
+            class Child extends Parent {
+                Child(nr=map.B) {super(nr)}
+            }
+        """
+    }
 }
