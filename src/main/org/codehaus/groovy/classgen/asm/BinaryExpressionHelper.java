@@ -314,7 +314,19 @@ public class BinaryExpressionHelper {
                 rhsType = ClassHelper.getWrapper(rhsType);
                 operandStack.box();
             }
+            
             ClassNode lhsType = controller.getTypeChooser().resolveType(var, controller.getClassNode());
+            // ensure we try to unbox null to cause a runtime NPE in case we assign 
+            // null to a primitive typed variable, even if it is used only in boxed 
+            // form as it is closure shared
+            if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(var.getOriginType()) && isNull(rightExpression)) {
+                operandStack.doGroovyCast(var.getOriginType());
+                // these two are never reached in bytecode and only there 
+                // to avoid verifyerrors and compiler infrastructure hazzle
+                operandStack.box(); 
+                operandStack.doGroovyCast(lhsType);
+            }
+            // normal type transformation 
             if (!ClassHelper.isPrimitiveType(lhsType) && isNull(rightExpression)) {
                 operandStack.replace(lhsType);
             } else {
