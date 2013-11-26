@@ -586,17 +586,47 @@ while the other two (&#x278B; and &#x278C;) are more interesting when a char val
 
 == Numbers
 
-=== Integer literal
+Groovy supports different types of integral literals and decimal literals.
+
+=== Integral literals
+
+The integral literal types are the same as in Java:
+
+* +byte+
+* +char+
+* +short+
+* +int+
+* +long+
+* +java.lang.BigInteger+
+
+You can create integral numbers of those types with the following declarations:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=int_decl,indent=0]
+----
+
+If you use optional typing by using the +def+ keyword, the type of the integral number will vary:
+it'll adapt to the capacity of the type that can hold that number.
+
+For positive numbers:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=wide_int_positive,indent=0]
+----
+
+As well as for negative numbers:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=wide_int_negative,indent=0]
+----
 
 
+==== Alternative on-base 10 representations
 
-=== Floating point literal
-
-
-
-NOTE: Decimal numbers can't be represented using a binary, octal or hexadecimal representation.
-
-=== Binary literal
+===== Binary literal
 
 In Java 6 and before, as well as in Groovy, numbers could be represented in decimal, octal and hexadecimal bases, and with Java 7 and Groovy 2, you can use a binary notation with the ++0b++ prefix:
 
@@ -605,7 +635,7 @@ In Java 6 and before, as well as in Groovy, numbers could be represented in deci
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=binary_literal_example,indent=0]
 ----
 
-=== Octal literal
+===== Octal literal
 
 Octal numbers are specified in the typical format of ++0++ followed by octal digits.
 
@@ -614,7 +644,7 @@ Octal numbers are specified in the typical format of ++0++ followed by octal dig
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=octal_literal_example,indent=0]
 ----
 
-=== Hexadecimal literal
+===== Hexadecimal literal
 
 Hexadecimal numbers are specified in the typical format of ++0x++ followed by hex digits.
 
@@ -623,7 +653,29 @@ Hexadecimal numbers are specified in the typical format of ++0x++ followed by he
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=hexadecimal_literal_example,indent=0]
 ----
 
-=== Underscore in literal
+=== Decimal literals
+
+The decimal literal types are the same as in Java:
+
+* +float+
+* +double+
+* +java.lang.BigDecimal+
+
+You can create decimal numbers of those types with the following declarations:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=float_decl,indent=0]
+----
+
+Conveniently for exact decimal number calculations, Groovy choses +java.lang.BigDecimal+ as its decimal number type.
+In addition, both +float+ and +double+ are supported, but require an explicit type declaration, type coercion or suffix.
+Even if +BigDecimal+ is the default for decimal numbers, such literals are accepted in methods or closures taking +float+ or +double+ as parameter types.
+
+NOTE: Decimal numbers can't be represented using a binary, octal or hexadecimal representation.
+
+
+=== Underscore in literals
 
 When writing long literal numbers, it’s harder on the eye to figure out how some numbers are grouped together, for example with groups of thousands, of words, etc. By allowing you to place underscore in number literals, it’s easier to spot those groups:
 
@@ -634,7 +686,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=underscore_in_number_
 
 === Number type suffixes
 
-We can force an number (including binary, octals and hexadecimals) to have a specific type by giving a suffix (see table bellow), either uppercase or lowercase.
+We can force a number (including binary, octals and hexadecimals) to have a specific type by giving a suffix (see table bellow), either uppercase or lowercase.
 
 [cols="1,2" options="header"]
 |====
@@ -642,22 +694,22 @@ We can force an number (including binary, octals and hexadecimals) to have a spe
 |Suffix
 
 |BigInteger
-|G
+|+G+ or +g+
 
 |Long
-|L
+|+L+ or +l+
 
 |Integer
-|I
+|+I+ or +i+
 
 |BigDecimal
-|G
+|+G+ or +g+
 
 |Double
-|D
+|+D+ or +d+
 
 |Float
-|F
+|+F+ or +f+
 |====
 
 Examples:
