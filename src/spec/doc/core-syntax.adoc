@@ -586,7 +586,7 @@ while the other two (&#x278B; and &#x278C;) are more interesting when a char val
 
 == Numbers
 
-Groovy supports different types of integral literals and decimal literals.
+Groovy supports different kinds of integral literals and decimal literals, backed by the usual +Number+ types of Java.
 
 === Integral literals
 
@@ -623,8 +623,7 @@ As well as for negative numbers:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=wide_int_negative,indent=0]
 ----
 
-
-==== Alternative on-base 10 representations
+==== Alternative non-base 10 representations
 
 ===== Binary literal
 
@@ -668,12 +667,19 @@ You can create decimal numbers of those types with the following declarations:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=float_decl,indent=0]
 ----
 
+Decimals can use exponents, with the +e+ or +E+ exponent letter, followed by an optional sign,
+and a integral number representing the exponent:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=float_exp,indent=0]
+----
+
 Conveniently for exact decimal number calculations, Groovy choses +java.lang.BigDecimal+ as its decimal number type.
 In addition, both +float+ and +double+ are supported, but require an explicit type declaration, type coercion or suffix.
 Even if +BigDecimal+ is the default for decimal numbers, such literals are accepted in methods or closures taking +float+ or +double+ as parameter types.
 
 NOTE: Decimal numbers can't be represented using a binary, octal or hexadecimal representation.
-
 
 === Underscore in literals
 
@@ -718,6 +724,136 @@ Examples:
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=number_type_suffixes_example,indent=0]
 ----
+
+=== Math operations
+
+Although <<_operators,operators>> are covered later on, it's important to discuss the behavior of math operations
+and what their resulting types are.
+
+Division aside (covered below),
+* binary operations between +byte+, +char+, +short+ and +int+ result in +int+
+* binary operations involving +long+ with +byte+, +char+, +short+ and +int+ result in +long+
+* binary operations involving +BigInteger+ and any other integral type result in +BigInteger+
+* binary operations between +float+, +double+ and +BigDecimal+ result in +double+
+* binary operations between two +BigDecimal+ result in +BigDecimal+
+
+The following table summarizes those rules:
+
+[cols="10" options="header"]
+|====
+|
+| byte
+| char
+| short
+| int
+| long
+| BigInteger
+| float
+| double
+| BigDecimal
+
+| *byte*
+| int
+| int
+| int
+| int
+| long
+| BigInteger
+| double
+| double
+| double
+
+| *char*
+| 
+| int
+| int
+| int
+| long
+| BigInteger
+| double
+| double
+| double
+
+| *short*
+| 
+| 
+| int
+| int
+| long
+| BigInteger
+| double
+| double
+| double
+
+| *int*
+| 
+| 
+| 
+| int
+| long
+| BigInteger
+| double
+| double
+| double
+
+| *long*
+| 
+| 
+| 
+| 
+| long
+| BigInteger
+| double
+| double
+| double
+
+| *BigInteger*
+| 
+| 
+| 
+| 
+| 
+| BigInteger
+| double
+| double
+| double
+
+| *float*
+| 
+| 
+| 
+| 
+| 
+| 
+| double
+| double
+| double
+
+| *double*
+| 
+| 
+| 
+| 
+| 
+| 
+| 
+| double
+| double
+
+| *BigDecimal*
+| 
+| 
+| 
+| 
+| 
+| 
+| 
+| 
+| BigDecimal
+|====
+
+==== The case of division
+
 
 == Booleans
 
