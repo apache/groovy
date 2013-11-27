@@ -18,7 +18,7 @@ task htmlPush {
         def sardine = SardineFactory.begin(System.getProperty('groovy.deploy.username'), System.getProperty('groovy.deploy.password'))
         def serverBase = "https://dav.codehaus.org/groovy/"
         //sardine.list(serverBase).each {println it}
-        def copyConf = [/*"gapi":file("$buildDir/allgroovydoc"),*/ "api":file("$buildDir/alljavadoc")]
+        def copyConf = ["gapi":file("$buildDir/allgroovydoc"), "api":file("$buildDir/alljavadoc")]
 
         copyConf.each { targetDirPart, base ->
             def basePath = base.canonicalPath
