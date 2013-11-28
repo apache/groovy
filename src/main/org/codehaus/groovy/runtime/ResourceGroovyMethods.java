@@ -1296,9 +1296,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         if (files == null) return;
         BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
         for (final File currentFile : files) {
-            if ((fileType != FileType.FILES && currentFile.isDirectory()) ||
-                (fileType != FileType.DIRECTORIES && currentFile.isFile())) 
-            {
+            if (fileType == FileType.ANY ||
+                    (fileType != FileType.FILES && currentFile.isDirectory()) ||
+                    (fileType != FileType.DIRECTORIES && currentFile.isFile())) {
                 if (bmi.invoke(nameFilter, currentFile.getName()))
                     closure.call(currentFile);
             }
