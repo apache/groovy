@@ -61,7 +61,8 @@ allprojects {
                             toc2: '',
                             subprojroot: 'subprojects/groovy-',
                             specfolder: 'src/spec/doc',
-                            'linkcss!': ''
+                            'linkcss!': '',
+                            encoding: 'utf-8'
                     ]
             ]
         }
