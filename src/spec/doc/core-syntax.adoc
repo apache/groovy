@@ -730,7 +730,8 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=number_type_suffixes_
 Although <<_operators,operators>> are covered later on, it's important to discuss the behavior of math operations
 and what their resulting types are.
 
-Division aside (covered below),
+Division and power binary operations aside (covered below),
+
 * binary operations between +byte+, +char+, +short+ and +int+ result in +int+
 * binary operations involving +long+ with +byte+, +char+, +short+ and +int+ result in +long+
 * binary operations involving +BigInteger+ and any other integral type result in +BigInteger+
@@ -852,7 +853,29 @@ The following table summarizes those rules:
 | BigDecimal
 |====
 
-==== The case of division
+[NOTE]
+Thanks Groovy's operator overloading, the usual arithmetic operators work as well with +BigInteger+ and +BigDecimal+,
+unlike in Java where you have to use explict methods for operating on those numbers.
+
+==== The case of the division operator
+
+The division operators +/+ (and +/=+ for division and assignment) produce a +double+ result 
+if either operand is a +float+ or +double+, and a +BigDecimal+ result otherwise 
+(when both operands are any combination of an integral type +short+, +char+, +byte+, +int+, +long+,
++BigInteger+ or +BigDecimal+).
+
++BigDecimal+ division is performed with the +divide()+ method if the division is exact
+(ie. yielding a result that can be represented within the bounds of the same precision and scale),
+or using a +MathContext+ with a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#precision()[precision] 
+of the maximum of the two operands' precision plus an extra precision of 10,
+and a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#scale()[scale] 
+of the maximum of 10 and the maximum of the operands' scale.
+
+[NOTE]
+For integer division like in Java, you should use the +intdiv()+ method,
+as Groovy doesn't provide a dedicated integer division operator symbol.
+
+==== The case of the power operator
 
 
 == Booleans

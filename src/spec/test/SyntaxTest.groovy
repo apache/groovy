@@ -581,4 +581,10 @@ class SyntaxTest extends CompilableTestSupport {
         assert ne instanceof BigInteger
         // end::wide_int_negative[]
     }
+
+    void testNumberDivision() {
+        // tag::number_division[]
+
+        // end::number_division[]
+    }
 }
