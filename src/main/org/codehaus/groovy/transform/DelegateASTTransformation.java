@@ -233,7 +233,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
                     candidate.getExceptions(),
                     new ExpressionStatement(
                             new MethodCallExpression(
-                                    new VariableExpression(fieldNode),
+                                    new VariableExpression(fieldNode.getName(),nonGeneric(fieldNode.getOriginType())),
                                     candidate.getName(),
                                     args)));
             newMethod.setGenericsTypes(candidate.getGenericsTypes());
