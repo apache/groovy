@@ -339,23 +339,6 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         }
     }
 
-    /**
-     * Get the URL for the sourceUnit.  This belongs in org.codehaus.groovy.control.SourceUnit.
-     * @return URL URL for the sourceUnit.
-     */
-    private URL getSourceURL() throws MalformedURLException {
-        String sourceName = getSourceUnit().getName();
-        // If the source already has a scheme, then SourceUnit(URL, ...) was used.
-        if (!sourceName.contains(":")) {
-            // But if not then either SourceUnit(File, ...) or SourceUnit(String, ...) was used.
-            // When SourceUnit(File, ...) is used then name is set to the File.path.
-            File sourceFile = new File(sourceName);
-            sourceName = sourceFile.toURI().toURL().toExternalForm();
-        }
-
-        return new URL(sourceName);
-    }
-
     private void callGrabAsStaticInitIfNeeded(ClassNode classNode, ClassNode grapeClassNode, List<Map<String,Object>> grabMapsInit, List<Map<String, Object>> grabExcludeMaps) {
         List<Statement> grabInitializers = new ArrayList<Statement>();
         MapExpression basicArgs = new MapExpression();
