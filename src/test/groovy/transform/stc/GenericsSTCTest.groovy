@@ -1339,6 +1339,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
     
+    // GROOVY-6455
+    void testDelegateWithGenerics() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class IntList {
+                @Delegate List<Integer> delegate = new ArrayList<Integer>()
+            }
+            def l = new IntList()
+            assert l == []
+        '''
+    }
+    
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
