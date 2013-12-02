@@ -45,7 +45,7 @@ import javax.servlet.http.HttpServletRequest;
  * {@link java.util.regex.Matcher} for details.
  * The servlet init parameter names are:
  * <pre>
- * resource.name.regex = empty - defaults to null
+ * {@value #INIT_PARAM_RESOURCE_NAME_REGEX} = empty - defaults to null
  * resource.name.replacement = empty - defaults to null
  * resource.name.replace.all = true (default) | false means replaceFirst()
  * </pre>
@@ -82,6 +82,10 @@ import javax.servlet.http.HttpServletRequest;
  */
 public abstract class AbstractHttpServlet extends HttpServlet implements ResourceConnector {
 
+    public static final String INIT_PARAM_RESOURCE_NAME_REGEX = "resource.name.regex";
+
+    public static final String INIT_PARAM_RESOURCE_NAME_REGEX_FLAGS = "resource.name.regex.flags";
+
     /**
      * Content type of the HTTP response.
      */
@@ -108,10 +112,10 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
     protected ServletContext servletContext;
 
     /**
-     * Either <code>null</code> or a compiled pattern matcher read from "{@code resource.name.regex}"
+     * Either <code>null</code> or a compiled pattern read from "{@value #INIT_PARAM_RESOURCE_NAME_REGEX}"
      * and used in {@link AbstractHttpServlet#getScriptUri(HttpServletRequest)}.
      */
-    protected Matcher resourceNameMatcher;
+    protected Pattern resourceNamePattern;
 
     /**
      * The replacement used by the resource name matcher.
@@ -153,7 +157,6 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      */
     public AbstractHttpServlet() {
         this.servletContext = null;
-        this.resourceNameMatcher = null;
         this.resourceNameReplacement = null;
         this.resourceNameReplaceAll = true;
         this.verbose = false;
@@ -162,10 +165,14 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
     }
 
     private String removeNamePrefix(String name) throws ResourceException {
-        URI uri = new File(servletContext.getRealPath("/")).toURI();
+        URI uri = null;
         try {
-            String basePath = uri.toURL().toExternalForm();
-            if (name.startsWith(basePath)) return name.substring(basePath.length());
+            String realPath = servletContext.getRealPath("/");
+            if (realPath != null) {
+              uri = new File(realPath).toURI();
+              String basePath = uri.toURL().toExternalForm();
+              if (name.startsWith(basePath)) { return name.substring(basePath.length());}
+            }
         } catch (MalformedURLException e) {
             throw new ResourceException("Malformed URL for base path '"+ uri + "'", e);
         }
@@ -193,9 +200,8 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
     /**
      * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
      */
-    public URLConnection getResourceConnection(String name) throws ResourceException {
-        name = removeNamePrefix(name);
-        name = name.replaceAll("\\\\", "/");
+    public URLConnection getResourceConnection (String name) throws ResourceException {
+        name = removeNamePrefix(name).replace('\\', '/');
 
         //remove the leading / as we are trying with a leading / now
         if (name.startsWith("/")) name = name.substring(1);
@@ -204,10 +210,8 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         * Try to locate the resource and return an opened connection to it.
         */
         try {
-            String tryScriptName = "/" + name;
-            URL url = servletContext.getResource(tryScriptName);
+            URL url = servletContext.getResource('/' + name);
             if (url == null) {
-                tryScriptName = "/WEB-INF/groovy/" + name;
                 url = servletContext.getResource("/WEB-INF/groovy/" + name);
             }
             if (url == null) {
@@ -290,14 +294,10 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         return applyResourceNameMatcher(uri);
     }
 
-    private String applyResourceNameMatcher(final String aUri) {
-        /*
-         * mangle resource name with the compiled pattern.
-         */
-        String uri = aUri;
-        Matcher matcher = resourceNameMatcher;
-        if (matcher != null) {
-            matcher.reset(uri);
+    protected String applyResourceNameMatcher (String uri) {
+        if (resourceNamePattern != null) {// mangle resource name with the compiled pattern.
+            Matcher matcher = resourceNamePattern.matcher(uri);
+
             String replaced;
             if (resourceNameReplaceAll) {
                 replaced = matcher.replaceAll(resourceNameReplacement);
@@ -308,7 +308,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
                 if (verbose) {
                     log("Replaced resource name \"" + uri + "\" with \"" + replaced + "\".");
                 }
-                uri = replaced;
+                return replaced;
             }
         }
         return uri;
@@ -368,7 +368,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
             log("Parsing init parameters...");
         }
 
-        String regex = config.getInitParameter("resource.name.regex");
+        String regex = config.getInitParameter(INIT_PARAM_RESOURCE_NAME_REGEX);
         if (regex != null) {
             String replacement = config.getInitParameter("resource.name.replacement");
             if (replacement == null) {
@@ -376,13 +376,19 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
                 String message = "Init-param 'resource.name.replacement' not specified!";
                 log(message, npex);
                 throw new ServletException(message, npex);
+            } else if ("EMPTY_STRING".equals(replacement)) {//<param-value></param-value> is prohibited
+                replacement = "";
             }
-            int flags = 0; // TODO : Parse pattern compile flags.
-            this.resourceNameMatcher = Pattern.compile(regex, flags).matcher("");
+            int flags = 0; // TODO : Parse pattern compile flags (literal names).
+            String flagsStr = config.getInitParameter(INIT_PARAM_RESOURCE_NAME_REGEX_FLAGS);
+            if (flagsStr != null && flagsStr.length() > 0) {
+              flags = Integer.decode(flagsStr.trim());//throws NumberFormatException
+            }
+            resourceNamePattern = Pattern.compile(regex, flags);
             this.resourceNameReplacement = replacement;
             String all = config.getInitParameter("resource.name.replace.all");
             if (all != null) {
-                this.resourceNameReplaceAll = Boolean.valueOf(all);
+                this.resourceNameReplaceAll = Boolean.valueOf(all.trim());
             }
         }
 
@@ -400,10 +406,10 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
             log("verbose = " + verbose); // this *is* verbose! ;)
             log("reflection = " + reflection);
             log("logGROOVY861 = " + logGROOVY861);
-            if (resourceNameMatcher != null) {
-                log("resource.name.regex = " + resourceNameMatcher.pattern().pattern());
+            if (resourceNamePattern != null) {
+                log(INIT_PARAM_RESOURCE_NAME_REGEX + " = " + resourceNamePattern.pattern());
             } else {
-                log("resource.name.regex = null");
+                log(INIT_PARAM_RESOURCE_NAME_REGEX + " = null");
             }
             log("resource.name.replacement = " + resourceNameReplacement);
         }
