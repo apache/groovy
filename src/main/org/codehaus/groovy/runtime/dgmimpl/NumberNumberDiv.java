@@ -98,8 +98,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Integer) receiver).doubleValue() / ((Float) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return ((Integer) receiver).doubleValue() / ((Float) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -115,8 +115,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Integer) receiver).intValue() / ((Double) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return ((Integer) receiver).intValue() / ((Double) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -132,8 +132,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Long) receiver).doubleValue() / ((Float) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return ((Long) receiver).doubleValue() / ((Float) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -149,8 +149,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Long) receiver).doubleValue() / ((Double) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return ((Long) receiver).doubleValue() / ((Double) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -166,8 +166,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Float) receiver).doubleValue() / ((Integer) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return ((Float) receiver).doubleValue() / ((Integer) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -183,8 +183,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Float) receiver).doubleValue() / ((Long) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return ((Float) receiver).doubleValue() / ((Long) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -200,8 +200,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Float) receiver).doubleValue() / ((Float) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return ((Float) receiver).doubleValue() / ((Float) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -210,11 +210,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
         }
 
         public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Float) receiver).doubleValue() / ((Float) args[0]).doubleValue());
+            return ((Float) receiver).doubleValue() / ((Float) args[0]).doubleValue();
         }
 
         public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Float) receiver).doubleValue() / ((Float) arg).doubleValue());
+            return ((Float) receiver).doubleValue() / ((Float) arg).doubleValue();
         }
     }
 
@@ -225,8 +225,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Float) receiver).doubleValue() / ((Double) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return ((Float) receiver).doubleValue() / (Double) arg;
                 }
             }
             catch (ClassCastException e) {//
@@ -242,8 +242,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Double) receiver).doubleValue() / ((Integer) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return (Double) receiver / ((Integer) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -252,11 +252,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
         }
 
         public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Double) receiver).doubleValue() / ((Integer) args[0]).doubleValue());
+            return (Double) receiver / ((Integer) args[0]).doubleValue();
         }
 
         public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Double) receiver).doubleValue() / ((Integer) arg).doubleValue());
+            return (Double) receiver / ((Integer) arg).doubleValue();
         }
     }
 
@@ -267,8 +267,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Double) receiver).doubleValue() / ((Long) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return (Double) receiver / ((Long) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -284,8 +284,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Double) receiver).doubleValue() / ((Float) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return (Double) receiver / ((Float) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -301,8 +301,8 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
-                if (checkCall(receiver)) {
-                    return new Double(((Double) receiver).doubleValue() / ((Double) arg).doubleValue());
+                if (checkCall(receiver, arg)) {
+                    return (Double) receiver / (Double) arg;
                 }
             }
             catch (ClassCastException e) {//
