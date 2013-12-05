@@ -352,17 +352,17 @@ class GrapeIvy implements GrapeEngine {
         addExcludesIfNeeded(args, md)
 
         for (IvyGrabRecord grabRecord : grabRecords) {
-            DefaultDependencyDescriptor dd = new DefaultDependencyDescriptor(md,
-                    grabRecord.mrid, grabRecord.force, grabRecord.changing, grabRecord.transitive)
             def conf = grabRecord.conf ?: ['*']
-            conf.each {dd.addDependencyConfiguration('default', it)}
-            if (grabRecord.classifier || grabRecord.ext) {
-                def dad = new DefaultDependencyArtifactDescriptor(dd,
-                      grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, grabRecord.classifier ? [classifier:grabRecord.classifier] : null)
-                conf.each { dad.addConfiguration(it) }
-                dd.addDependencyArtifact('default', dad)
+            DefaultDependencyDescriptor dd = md.dependencies.find {it.dependencyRevisionId.equals(grabRecord.mrid)}
+            if (dd) {
+                createAndAddDependencyArtifactDescriptor(dd, grabRecord, conf)
+            } else {
+                dd = new DefaultDependencyDescriptor(md, grabRecord.mrid, grabRecord.force,
+                        grabRecord.changing, grabRecord.transitive)
+                conf.each {dd.addDependencyConfiguration('default', it)}
+                createAndAddDependencyArtifactDescriptor(dd, grabRecord, conf)
+                md.addDependency(dd)
             }
-            md.addDependency(dd)
         }
 
        // resolve grab and dependencies
@@ -430,6 +430,15 @@ class GrapeIvy implements GrapeEngine {
         }
 
         return report
+    }
+
+    private void createAndAddDependencyArtifactDescriptor(DefaultDependencyDescriptor dd, IvyGrabRecord grabRecord, List<String> conf) {
+        if (conf[0]!="optional" || grabRecord.classifier) {  // for some unknown reason optional dependencies should not have an artifactDescriptor
+            def dad = new DefaultDependencyArtifactDescriptor(dd,
+                    grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, grabRecord.classifier ? [classifier: grabRecord.classifier] : null)
+            conf.each { dad.addConfiguration(it) }
+            dd.addDependencyArtifact('default', dad)
+        }
     }
 
     public void uninstallArtifact(String group, String module, String rev) {
@@ -665,4 +674,5 @@ class IvyGrabRecord {
             && (ext == o.ext)
             && (type == o.type))
     }
+
 }
