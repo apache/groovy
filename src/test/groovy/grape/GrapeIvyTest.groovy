@@ -302,6 +302,7 @@ class GrapeIvyTest extends CompilableTestSupport {
         assert jars == coreJars + optionalJars
     }
 
+    
     void testTransitiveShorthandControl() {
         // BeanUtils is a transitive dependency for Digester
         assertScript '''
@@ -357,4 +358,31 @@ class GrapeIvyTest extends CompilableTestSupport {
 
         assert Grape.getInstance().ivyInstance.settings.defaultResolver.name == 'downloadGrapes'
     }
+
+    /**
+     * there are some artifacts deployed without *and* with
+     */
+    public void testClassieferAndNonclassifierOnSameArtifact() {
+        GroovyClassLoader loader = new GroovyClassLoader()
+        Grape.grab(groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1', classLoader:loader)
+        Grape.grab(groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1', classifier:'tests', classLoader:loader)
+
+        //Grape.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.7', classLoader:loader)
+        def jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]}
+        // because poi asks for log4j 1.2.13, but we already have 1.1.3 so it won't be loaded
+        assert jars.contains ("neo4j-kernel-2.0.0-RC1.jar")
+        assert jars.contains ("neo4j-kernel-2.0.0-RC1-tests.jar")
+
+        // different ordering of deps
+        loader = new GroovyClassLoader()
+        Grape.grab(groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1', classifier:'tests', classLoader:loader)
+        Grape.grab(groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1', classLoader:loader)
+
+        //Grape.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.7', classLoader:loader)
+        jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]}
+        // because poi asks for log4j 1.2.13, but we already have 1.1.3 so it won't be loaded
+        assert jars.contains ("neo4j-kernel-2.0.0-RC1.jar")
+        assert jars.contains ("neo4j-kernel-2.0.0-RC1-tests.jar")
+    }
+
 }
