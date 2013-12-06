@@ -324,6 +324,14 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 assignStatement(new VariableExpression("args"), new MapExpression()),
                 EmptyStatement.INSTANCE));
         createConstructorMapCommon(cNode, body);
+        if (list.size() > 0) {
+            createNoArgConstructor(cNode);
+        }
+    }
+
+    private void createNoArgConstructor(ClassNode cNode) {
+        Statement body = new ExpressionStatement(new ConstructorCallExpression(ClassNode.THIS, new ArgumentListExpression(new MapExpression())));
+        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
     private void createConstructorMapCommon(ClassNode cNode, BlockStatement body) {
