@@ -222,9 +222,9 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assertScript """
             import groovy.transform.Immutable
             @Immutable class Y { Collection c = []; int foo = 1 }
-            def y = new Y(foo: 3).c
-            assert y.class.name.contains('Unmodifiable')
-            assert y == []
+            def y_c = new Y(foo: 3).c
+            assert y_c.class.name.contains('Unmodifiable')
+            assert y_c == []
         """
     }
 
