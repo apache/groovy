@@ -152,10 +152,13 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      */
     private boolean logGROOVY861;
 
+    /** a.fink: it was in {@link #removeNamePrefix}, but was extracted to var for optimization*/
+    protected String namePrefix;
+
     /**
      * Initializes all fields with default values.
      */
-    public AbstractHttpServlet() {
+    public AbstractHttpServlet () {
         this.servletContext = null;
         this.resourceNameReplacement = null;
         this.resourceNameReplaceAll = true;
@@ -164,36 +167,39 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         this.logGROOVY861 = false;
     }
 
-    private String removeNamePrefix(String name) throws ResourceException {
+
+    protected void generateNamePrefixOnce () {
         URI uri = null;
+
+        String realPath = servletContext.getRealPath("/");
+        if (realPath != null) { uri = new File(realPath).toURI();}//prevent NPE if in .war
+
         try {
-            String realPath = servletContext.getRealPath("/");
-            if (realPath != null) {
-              uri = new File(realPath).toURI();
-              String basePath = uri.toURL().toExternalForm();
-              if (name.startsWith(basePath)) { return name.substring(basePath.length());}
-            }
-        } catch (MalformedURLException e) {
-            throw new ResourceException("Malformed URL for base path '"+ uri + "'", e);
-        }
-        
-        try {
-            URL res = servletContext.getResource("/"); 
-            if (res!=null) uri = res.toURI();
-        } catch (MalformedURLException e) {
-            // ignore
-        } catch (URISyntaxException e) {
-            // ignore
+            URL res = servletContext.getResource("/");
+            if (res != null) { uri = res.toURI();}
+        } catch (MalformedURLException ignore) {
+        } catch (URISyntaxException ignore) {
         }
 
-        if (uri!=null) {
+        if (uri != null) {
             try {
-                String basePath = uri.toURL().toExternalForm();
-                if (name.startsWith(basePath)) return name.substring(basePath.length());
+                namePrefix = uri.toURL().toExternalForm();
+                return;
             } catch (MalformedURLException e) {
-                throw new ResourceException("Malformed URL for base path '"+ uri + "'", e);
+                log("generateNamePrefixOnce [ERROR] Malformed URL for base path / == '"+ uri +'\'', e);
             }
         }
+
+        namePrefix = "";
+    }
+
+    protected String removeNamePrefix(String name) throws ResourceException {
+        if (namePrefix == null) {
+          generateNamePrefixOnce();
+        }
+        if (name.startsWith(namePrefix)) {//usualy name has text
+          return name.substring(namePrefix.length());
+        }//i else
         return name;
     }
     
@@ -204,7 +210,8 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         name = removeNamePrefix(name).replace('\\', '/');
 
         //remove the leading / as we are trying with a leading / now
-        if (name.startsWith("/")) name = name.substring(1);
+        if (name.startsWith("WEB-INF/groovy/")) { name = name.substring(15);//just for uniformity
+        } else if (name.startsWith("/")) { name = name.substring(1);}
 
         /*
         * Try to locate the resource and return an opened connection to it.
@@ -288,7 +295,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
         /*
          * TODO : Enable auto ".groovy" extension replacing here!
-         * http://cvs.groovy.codehaus.org/viewrep/groovy/groovy/groovy-core/src/main/groovy/servlet/GroovyServlet.java?r=1.10#l259 
+         * http://cvs.groovy.codehaus.org/viewrep/groovy/groovy/groovy-core/src/main/groovy/servlet/GroovyServlet.java?r=1.10#l259
          */
 
         return applyResourceNameMatcher(uri);
@@ -406,11 +413,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
             log("verbose = " + verbose); // this *is* verbose! ;)
             log("reflection = " + reflection);
             log("logGROOVY861 = " + logGROOVY861);
-            if (resourceNamePattern != null) {
-                log(INIT_PARAM_RESOURCE_NAME_REGEX + " = " + resourceNamePattern.pattern());
-            } else {
-                log(INIT_PARAM_RESOURCE_NAME_REGEX + " = null");
-            }
+            log(INIT_PARAM_RESOURCE_NAME_REGEX + " = " + resourceNamePattern);//toString == pattern
             log("resource.name.replacement = " + resourceNameReplacement);
         }
     }
