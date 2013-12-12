@@ -2894,7 +2894,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a Collection
      * @param closure a closure condition
-     * @return the first Object found
+     * @return the first Object found, in the order of the collections iterator, or null if no element matches
      * @since 1.0
      */
     public static <T> T find(Collection<T> self, Closure closure) {
