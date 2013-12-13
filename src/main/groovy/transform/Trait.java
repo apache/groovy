@@ -30,6 +30,6 @@ import java.lang.annotation.Target;
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.TraitASTTransformation")
+@GroovyASTTransformationClass("org.codehaus.groovy.transform.trait.TraitASTTransformation")
 public @interface Trait {
 }

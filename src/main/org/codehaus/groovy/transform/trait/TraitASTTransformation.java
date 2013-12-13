@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.transform;
+package org.codehaus.groovy.transform.trait;
 
 import groovy.transform.CompileStatic;
 import groovy.transform.Trait;
@@ -26,8 +26,12 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.ExceptionUtils;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.AbstractASTTransformation;
+import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -42,16 +46,15 @@ import java.util.*;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class TraitASTTransformation extends AbstractASTTransformation {
 
-
     static final Class MY_CLASS = Trait.class;
     static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     static final String TRAIT_HELPER = "$Trait$Helper";
     static final String FIELD_HELPER = "$Trait$FieldHelper";
 
-    private static final String DIRECT_SETTER_SUFFIX = "$set";
-    private static final String DIRECT_GETTER_SUFFIX = "$get";
-    private static final String STATIC_INIT_METHOD = "$init$";
+    static final String DIRECT_SETTER_SUFFIX = "$set";
+    static final String DIRECT_GETTER_SUFFIX = "$get";
+    static final String STATIC_INIT_METHOD = "$init$";
 
     /**
      * This comparator is used to make sure that generated direct getters appear first in the list of method
@@ -63,7 +66,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             return 1;
         }
     };
-    private static final String THIS_OBJECT = "$this";
+    private static final String THIS_OBJECT = "$self";
 
     private SourceUnit unit;
 
@@ -111,15 +114,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         // apply the verifier to have the property nodes generated
         generatePropertyMethods(cNode);
 
-        // add methods
-        Map<String, MethodNode> methods = cNode.getDeclaredMethodsMap();
-        for (MethodNode methodNode : methods.values()) {
-            if (methodNode.getDeclaringClass() == cNode) {
-                helper.addMethod(processMethod(cNode, methodNode));
-            }
-        }
-
-        // add fields
+        // prepare fields
         List<FieldNode> fields = new ArrayList<FieldNode>();
         for (FieldNode field : cNode.getFields()) {
             if (!"metaClass".equals(field.getName()) && (!field.isSynthetic() || field.getName().indexOf('$') < 0)) {
@@ -135,6 +130,21 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                     ClassHelper.OBJECT_TYPE
             );
         }
+
+        // add methods
+        List<MethodNode> methods = cNode.getMethods();
+        for (final MethodNode methodNode : methods) {
+            if (methodNode.isPrivate() || methodNode.isProtected()) {
+                ExceptionUtils.sneakyThrow(new SyntaxException("Cannot have " + (methodNode.isPrivate() ? "private" : "protected") + " method in a trait",
+                        methodNode.getLineNumber(), methodNode.getColumnNumber()));
+            }
+            if (methodNode.getDeclaringClass() == cNode) {
+                helper.addMethod(processMethod(cNode, methodNode, fieldHelper));
+            }
+
+        }
+
+        // add fields
         for (FieldNode field : fields) {
             processField(field, initializer, fieldHelper);
         }
@@ -157,6 +167,10 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         for (PropertyNode node : cNode.getProperties()) {
             processProperty(cNode, node);
         }
+    }
+
+    static String remappedFieldName(final ClassNode traitNode, final String name) {
+        return traitNode.getName().replace('.','_')+"__"+name;
     }
 
     /**
@@ -286,15 +300,15 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         );
     }
 
-    private String helperGetterName(final FieldNode field) {
+    static String helperGetterName(final FieldNode field) {
         return field.getName() + DIRECT_GETTER_SUFFIX;
     }
 
-    private String helperSetterName(final FieldNode field) {
+    static String helperSetterName(final FieldNode field) {
         return field.getName() + DIRECT_SETTER_SUFFIX;
     }
 
-    private MethodNode processMethod(final ClassNode traitClass, final MethodNode methodNode) {
+    private MethodNode processMethod(final ClassNode traitClass, final MethodNode methodNode, final ClassNode fieldHelper) {
         Parameter[] initialParams = methodNode.getParameters();
         Parameter[] newParams = new Parameter[initialParams.length + 1];
         newParams[0] = new Parameter(traitClass.getPlainNodeReference(), THIS_OBJECT);
@@ -305,7 +319,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 methodNode.getReturnType(),
                 newParams,
                 methodNode.getExceptions(),
-                processBody(new VariableExpression(newParams[0]), methodNode.getCode())
+                processBody(new VariableExpression(newParams[0]), methodNode.getCode(), fieldHelper)
         );
 
         if (methodNode.isAbstract()) {
@@ -317,125 +331,11 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         return mNode;
     }
 
-    private Statement processBody(final VariableExpression thisObject, final Statement code) {
+    private Statement processBody(VariableExpression thisObject, Statement code, ClassNode fieldHelper) {
         if (code == null) return null;
-        ReceiverTransformer trn = new ReceiverTransformer(thisObject);
+        TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, unit, fieldHelper);
         code.visit(trn);
         return code;
-    }
-
-    private class ReceiverTransformer extends ClassCodeExpressionTransformer {
-
-        private final VariableExpression weaved;
-
-
-        public ReceiverTransformer(final VariableExpression thisObject) {
-            weaved = thisObject;
-        }
-
-        @Override
-        protected SourceUnit getSourceUnit() {
-            return unit;
-        }
-
-        @Override
-        public Expression transform(final Expression exp) {
-            if (exp instanceof BinaryExpression) {
-                Expression leftExpression = ((BinaryExpression) exp).getLeftExpression();
-                Expression rightExpression = ((BinaryExpression) exp).getRightExpression();
-                Token operation = ((BinaryExpression) exp).getOperation();
-                if (operation.getText().equals("=")) {
-                    String leftFieldName = null;
-                    // it's an assignment
-                    if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).getAccessedVariable() instanceof FieldNode) {
-                        leftFieldName = ((VariableExpression) leftExpression).getAccessedVariable().getName();
-                    } else if (leftExpression instanceof FieldExpression) {
-                        leftFieldName = ((FieldExpression) leftExpression).getFieldName();
-                    } else if (leftExpression instanceof PropertyExpression
-                            && (((PropertyExpression) leftExpression).isImplicitThis() || "this".equals(((PropertyExpression) leftExpression).getObjectExpression().getText()))) {
-                        leftFieldName = ((PropertyExpression) leftExpression).getPropertyAsString();
-                    }
-                    if (leftFieldName!=null) {
-                        MethodCallExpression mce = new MethodCallExpression(
-                                weaved,
-                                leftFieldName+ DIRECT_SETTER_SUFFIX,
-                                new ArgumentListExpression(super.transform(rightExpression))
-                        );
-                        mce.setSourcePosition(exp);
-                        return mce;
-                    }
-                }
-                Expression leftTransform = super.transform(leftExpression);
-                Expression rightTransform = super.transform(rightExpression);
-                Expression ret =
-                        exp instanceof DeclarationExpression?new DeclarationExpression(
-                                leftTransform, operation, rightTransform
-                        ):
-                        new BinaryExpression(leftTransform, operation, rightTransform);
-                ret.setSourcePosition(exp);
-                ret.copyNodeMetaData(exp);
-                return ret;
-            } else if (exp instanceof MethodCallExpression) {
-                MethodCallExpression call = (MethodCallExpression) exp;
-                Expression obj = call.getObjectExpression();
-                if (call.isImplicitThis() || obj.getText().equals("this")) {
-                    MethodCallExpression transformed = new MethodCallExpression(
-                            weaved,
-                            call.getMethod(),
-                            super.transform(call.getArguments())
-                    );
-                    transformed.setSourcePosition(call);
-                    transformed.setSafe(call.isSafe());
-                    transformed.setSpreadSafe(call.isSpreadSafe());
-                    return transformed;
-                }
-            } else if (exp instanceof FieldExpression) {
-                MethodCallExpression mce = new MethodCallExpression(
-                        weaved,
-                        helperGetterName(((FieldExpression) exp).getField()),
-                        ArgumentListExpression.EMPTY_ARGUMENTS
-                );
-                mce.setSourcePosition(exp);
-                return mce;
-            } else if (exp instanceof VariableExpression) {
-                VariableExpression vexp = (VariableExpression) exp;
-                if (vexp.getAccessedVariable() instanceof FieldNode) {
-                    MethodCallExpression mce = new MethodCallExpression(
-                            weaved,
-                            helperGetterName((FieldNode) vexp.getAccessedVariable()),
-                            ArgumentListExpression.EMPTY_ARGUMENTS
-                    );
-                    mce.setSourcePosition(exp);
-                    return mce;
-                }
-            } else if (exp instanceof PropertyExpression) {
-                if (((PropertyExpression) exp).isImplicitThis() || "this".equals(((PropertyExpression) exp).getObjectExpression().getText())) {
-                    MethodCallExpression mce = new MethodCallExpression(
-                            weaved,
-                            ((PropertyExpression) exp).getPropertyAsString() + DIRECT_GETTER_SUFFIX,
-                            ArgumentListExpression.EMPTY_ARGUMENTS
-                    );
-                    mce.setSourcePosition(exp);
-                    return mce;
-                }
-            } else if (exp instanceof ClosureExpression) {
-                MethodCallExpression mce = new MethodCallExpression(
-                        exp,
-                        "rehydrate",
-                        new ArgumentListExpression(
-                                new VariableExpression(weaved),
-                                new VariableExpression(weaved),
-                                new VariableExpression(weaved)
-                        )
-                );
-                mce.setImplicitThis(false);
-                mce.setSourcePosition(exp);
-                return mce;
-            }
-
-            // todo: unary expressions (field++, field+=, ...)
-            return super.transform(exp);
-        }
     }
 
     public static void doExtendTraits(final ClassNode cNode, SourceUnit unit) {
@@ -456,7 +356,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                             helperClassNode = icn;
                         }
                     }
-                    applyTrait(cNode, helperClassNode, fieldHelperClassNode);
+                    applyTrait(trait, cNode, helperClassNode, fieldHelperClassNode);
                 } else {
                     applyPrecompiledTrait(trait, cNode);
                 }
@@ -476,13 +376,13 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 fieldHelperClassNode = null;
             }
 
-            applyTrait(cNode, helperClassNode, fieldHelperClassNode);
+            applyTrait(trait, cNode, helperClassNode, fieldHelperClassNode);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 
-    private static void applyTrait(final ClassNode cNode, final ClassNode helperClassNode, final ClassNode fieldHelperClassNode) {
+    private static void applyTrait(final ClassNode trait, final ClassNode cNode, final ClassNode helperClassNode, final ClassNode fieldHelperClassNode) {
         for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
             String name = methodNode.getName();
             int access = methodNode.getModifiers();
@@ -544,11 +444,11 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                     boolean getter = "get".equals(operation);
                     if (getter) {
                         // add field
-                        cNode.addField(fieldName, ACC_PRIVATE, methodNode.getReturnType(), null);
+                        cNode.addField(remappedFieldName(trait, fieldName), ACC_PRIVATE, methodNode.getReturnType(), null);
                     }
                     Parameter[] newParams = getter ? Parameter.EMPTY_ARRAY :
                             new Parameter[]{new Parameter(methodNode.getParameters()[0].getOriginType(), "val")};
-                    Expression fieldExpr = new VariableExpression(cNode.getField(fieldName));
+                    Expression fieldExpr = new VariableExpression(cNode.getField(remappedFieldName(trait, fieldName)));
                     Statement body =
                             getter ? new ReturnStatement(fieldExpr) :
                                     new ExpressionStatement(

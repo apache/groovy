@@ -158,7 +158,6 @@ class TraitASTTransformationTest extends GroovyTestCase {
         }
         def foo = new Foo()
         assert foo.message == 'Hello'
-        assert foo.@message == 'Hello'
         assert foo.blah() == 'Hello'
         assert foo.meow() == /Meow! I'm a cat/
         '''
@@ -173,7 +172,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
                 void setLabel(String val) { name = val }
                 void setLabel2(String val) { this.name = val }
                 void setLabel3(String val) { this.@name = val }
-                void getName() { name }
+                String getName() { name }
             }
 
             class Person implements Named {}
@@ -190,7 +189,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testTraitWithProperty() {
-        assertScript '''import groovy.transform.Trait
+        assertScript '''
 
             trait Named {
                 String name
@@ -221,6 +220,46 @@ class TraitASTTransformationTest extends GroovyTestCase {
         assert greeter() == 'Welcome!'
 
         '''
+    }
+
+    void testPrivateFieldInTraitShouldBeRemapped() {
+        assertScript '''import groovy.transform.ASTTest
+import org.codehaus.groovy.control.CompilePhase
+
+trait Foo {
+    private int i = 0
+    int sum(int x) { x+i }
+    void setIndex(int index) { this.i = index }
+}
+@ASTTest(phase=CompilePhase.INSTRUCTION_SELECTION, value={
+    assert node.fields.any { it.name == 'Foo__i' }
+})
+class Bob implements Foo {
+}
+def b = new Bob()
+assert b.sum(1) == 1
+b.index = 5
+assert b.sum(1) == 6
+'''
+    }
+
+    void testStaticallyCompiledTrait() {
+        assertScript '''
+import groovy.transform.CompileStatic
+
+@CompileStatic
+trait Foo {
+   private String msg = 'foo'
+   abstract String bar()
+   public String foo() { bar()+msg }
+
+}
+
+@CompileStatic
+class A implements Foo { String bar() {'bar'}}
+
+assert new A().foo() == 'barfoo'
+'''
     }
 
     static trait TestTrait {
