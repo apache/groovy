@@ -65,6 +65,7 @@ public class RangeExpressionTransformer {
             ConstructorCallExpression cce = new ConstructorCallExpression(INTRANGE_TYPE, bounds);
             cce.setSourcePosition(range);
             cce.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, INTRANGE_CTOR);
+            cce.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, INTRANGE_TYPE);
             return transformer.transform(cce);
         }
         return transformer.superTransform(range);
