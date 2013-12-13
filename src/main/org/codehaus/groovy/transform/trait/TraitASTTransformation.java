@@ -27,6 +27,7 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ExceptionUtils;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -400,7 +401,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                     argList.addExpression(new VariableExpression(params[i - 1]));
                 }
                 MethodNode existingMethod = cNode.getDeclaredMethod(name, params);
-                if (existingMethod != null) {
+                if (existingMethod != null || isExistingProperty(name, cNode, params)) {
                     // override exists in the weaved class
                     continue;
                 }
@@ -471,5 +472,30 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 }
             }
         }
+    }
+
+    private static boolean isExistingProperty(final String methodName, final ClassNode cNode, final Parameter[] params) {
+        String propertyName = methodName;
+        boolean getter = false;
+        if (methodName.startsWith("get")) {
+            propertyName = propertyName.substring(3);
+            getter = true;
+        } else if (methodName.startsWith("is")) {
+            propertyName = propertyName.substring(2);
+            getter = true;
+        } else if (methodName.startsWith("set")) {
+            propertyName = propertyName.substring(3);
+        } else {
+            return false;
+        }
+        if (getter && params.length>0) {
+            return false;
+        }
+        if (!getter && params.length!=1) {
+            return false;
+        }
+        propertyName = MetaClassHelper.convertPropertyName(propertyName);
+        PropertyNode pNode = cNode.getProperty(propertyName);
+        return pNode != null;
     }
 }

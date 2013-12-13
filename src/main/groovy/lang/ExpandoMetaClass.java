@@ -1243,19 +1243,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
         if (getterName.startsWith("get")) {
             String prop = getterName.substring(3);
-            return convertPropertyName(prop);
+            return MetaClassHelper.convertPropertyName(prop);
         } else if (getterName.startsWith("is")) {
             String prop = getterName.substring(2);
-            return convertPropertyName(prop);
+            return MetaClassHelper.convertPropertyName(prop);
         }
         return null;
-    }
-
-    private String convertPropertyName(String prop) {
-        if (Character.isDigit(prop.charAt(0))) {
-            return prop;
-        }
-        return java.beans.Introspector.decapitalize(prop);
     }
 
     /**
@@ -1269,7 +1262,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
         if (setterName.startsWith("set")) {
             String prop = setterName.substring(3);
-            return convertPropertyName(prop);
+            return MetaClassHelper.convertPropertyName(prop);
         }
         return null;
     }

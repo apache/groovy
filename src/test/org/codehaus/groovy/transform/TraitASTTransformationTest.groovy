@@ -262,6 +262,35 @@ assert new A().foo() == 'barfoo'
 '''
     }
 
+    void testOverridePropertyDefinedInTrait() {
+        assertScript '''
+trait Id {
+    Long id = 123L
+}
+
+class Foo implements Id {
+    Long id = 456L
+}
+def f = new Foo()
+assert f.id == 456L
+'''
+    }
+
+
+    void testOverridePropertyGetterDefinedInTrait() {
+        assertScript '''
+trait Id {
+    Long id = 123L
+}
+
+class Foo implements Id {
+    Long getId() { 456L }
+}
+def f = new Foo()
+assert f.id == 456L
+'''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }
