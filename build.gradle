@@ -516,7 +516,7 @@ allprojects {
 }
 
 wrapper {
-    gradleVersion = '1.9'
+    gradleVersion = '1.10'
 }
 
 // produce warning if running on 1.5 or 1.6
