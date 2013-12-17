@@ -18,6 +18,9 @@ package org.codehaus.groovy.runtime;
 import groovy.io.FileType;
 import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.MapEntryOrKeyValue;
+import groovy.transform.stc.FirstArg;
 import groovy.util.ClosureComparator;
 import groovy.util.GroovyCollections;
 import groovy.util.MapEntry;
@@ -1318,6 +1321,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return self;
     }
 
+    public static <T> Iterable<T> each(Iterable<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure closure) {
+        each(self.iterator(), closure);
+        return self;
+    }
+
     private static <T> Iterator<T> each(Iterator<T> iter, Closure closure) {
         while (iter.hasNext()) {
             Object arg = iter.next();
@@ -1348,7 +1356,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return returns the self parameter
      * @since 1.5.0
      */
-    public static <K, V> Map<K, V> each(Map<K, V> self, Closure closure) {
+    public static <K, V> Map<K, V> each(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure closure) {
         for (Map.Entry entry : self.entrySet()) {
             callClosureForMapEntry(closure, entry);
         }
@@ -1825,7 +1833,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the number of occurrences
      * @since 1.8.0
      */
-    public static Number count(Map self, Closure<?> closure) {
+    public static <K,V> Number count(Map<K,V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
         long answer = 0;
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Object entry : self.entrySet()) {
@@ -2185,7 +2193,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the transformed values
      * @since 1.0
      */
-    public static <T> List<T> collect(Collection<?> self, Closure<T> transform) {
+    public static <S,T> List<T> collect(Collection<S> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<T> transform) {
         return (List<T>) collect(self, new ArrayList<T>(self.size()), transform);
     }
 
@@ -2214,7 +2222,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 1.0
      */
-    public static <T> Collection<T> collect(Collection<?> self, Collection<T> collector, Closure<? extends T> transform) {
+    public static <T> Collection<T> collect(Collection<?> self, Collection<T> collector, @ClosureParams(FirstArg.FirstGenericType.class) Closure<? extends T> transform) {
         for (Object item : self) {
             collector.add(transform.call(item));
             if (transform.getDirective() == Closure.DONE) {
@@ -2432,7 +2440,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with the projected collections concatenated (flattened) to it
      * @since 1.8.8
      */
-    public static <T> Collection<T> collectMany(Map<?, ?> self, Closure<Collection<? extends T>> projection) {
+    public static <T,K,V> Collection<T> collectMany(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<Collection<? extends T>> projection) {
         return collectMany(self, new ArrayList<T>(), projection);
     }
 
@@ -2486,7 +2494,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 1.0
      */
-    public static <T> Collection<T> collect(Map<?, ?> self, Collection<T> collector, Closure<? extends T> transform) {
+    public static <T> Collection<T> collect(Map<?, ?> self, Collection<T> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends T> transform) {
         for (Map.Entry<?, ?> entry : self.entrySet()) {
             collector.add(callClosureForMapEntry(transform, entry));
         }
@@ -2504,7 +2512,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resultant list of transformed values
      * @since 1.0
      */
-    public static <T> List<T> collect(Map self, Closure<T> transform) {
+    public static <T> List<T> collect(Map self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> transform) {
         return (List<T>) collect(self, new ArrayList<T>(self.size()), transform);
     }
 
