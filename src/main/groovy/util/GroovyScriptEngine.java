@@ -265,7 +265,13 @@ public class GroovyScriptEngine implements ResourceConnector {
                 if (entryNames.contains(entryName)) continue;
                 entryNames.add(entryName);
                 Set<String> value = convertToPaths(entry.getValue(), localData.precompiledEntries);
-                ScriptCacheEntry cacheEntry = new ScriptCacheEntry(clazz, time, time, value, false);
+                long lastModified;
+                try {
+                    lastModified = getLastModified(entryName);
+                } catch (ResourceException e) {
+                    lastModified = time;
+                }
+                ScriptCacheEntry cacheEntry = new ScriptCacheEntry(clazz, lastModified, time, value, false);
                 scriptCache.put(entryName, cacheEntry);
             }
             cache.clear();
