@@ -45,6 +45,13 @@ class IntRangeTest extends GroovyTestCase {
         }
     }
 
+    void testSizeEdgeCases() {
+        assert new IntRange(false, 0, 0).size() == 0
+        assert new IntRange(true, 0, 0).size() == 1
+        assert new IntRange(false, 0, 1).size() == 1
+        assert new IntRange(true, 0, 1).size() == 2
+    }
+
     /**
      * Tests getting the to and from values as <code>int</code>s.
      */
@@ -86,6 +93,8 @@ class IntRangeTest extends GroovyTestCase {
         assert a[1..<-1] == [2, 3]
         assert a[-2..<1] == [3]
         assert a[-2..<-3] == [3]
+        assert a[5..<5] == []
+        assert a[-5..<-5] == []
     }
 
     void testInclusiveRangesWithNegativesAndPositivesStrings() {
@@ -95,6 +104,8 @@ class IntRangeTest extends GroovyTestCase {
         assert items[-3..<-2] == 'c'
         assert items[-2..-4]  == 'dcb'
         assert items[-2..<-4] == 'dc'
+        assert items[2..<2] == ''
+        assert items[-2..<-2] == ''
     }
 
     void testInclusiveRangesWithNegativesAndPositivesPrimBoolArray() {

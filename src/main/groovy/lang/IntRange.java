@@ -71,15 +71,15 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
          * {@inheritDoc}
          */
         public Integer next() {
+            if (!hasNext()) {
+                // TODO instead of returning null, do this: throw new NoSuchElementException();
+                return null;
+            }
             if (index++ > 0) {
-                if (index > size) {
-                    return null;
+                if (isReverse()) {
+                    --value;
                 } else {
-                    if (isReverse()) {
-                        --value;
-                    } else {
-                        ++value;
-                    }
+                    ++value;
                 }
             }
             return value;
@@ -250,7 +250,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      */
     public Integer getTo() {
         if (inclusive == null) return to;
-        if (from < to) return inclusive ? to : to - 1;
+        if (from <= to) return inclusive ? to : to - 1;
         return from;
     }
 
