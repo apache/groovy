@@ -18,27 +18,64 @@ package groovy.transform.stc;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 
+/**
+ * <p>A hint used to instruct the type checker to pick the first parameter type. For example:</p>
+ * <code>public &lt;T&gt; def doWith(T src, @ClosureParams(FirstArg.class) Closure c) { c.call(src); }</code>
+ *
+ * <p>This class has several inner classes that also helps picking generic argument types instead of the parameter type.</p>
+ *
+ * @author Cédric Champeau
+ * @since 2.3.0
+ */
 public class FirstArg extends PickAnyArgumentHint {
     public FirstArg() {
         super(0,-1);
     }
 
+    /**
+     * <p>A hint used to instruct the type checker to pick the first generic type of the first parameter type. For example:</p>
+     * <code>void &lt;T&gt; doWithElements(List&lt;T&gt; src, @ClosureParams(FirstArg.FirstGenericType.class) Closure c) { src.each { c.call(it) } }</code>
+     *
+     * @author Cédric Champeau
+     * @since 2.3.0
+     */
     public static class FirstGenericType extends PickAnyArgumentHint {
         public FirstGenericType() {
             super(0,0);
         }
     }
+
+    /**
+     * <p>A hint used to instruct the type checker to pick the second generic type of the first parameter type. For example:</p>
+     * <code>void &lt;T,U&gt; doWithElements(Tuple&lt;T,U&gt; src, @ClosureParams(FirstArg.SecondGenericType.class) Closure c) { src.each { c.call(it) } }</code>
+     *
+     * @author Cédric Champeau
+     * @since 2.3.0
+     */
     public static class SecondGenericType extends PickAnyArgumentHint {
         public SecondGenericType() {
             super(0,1);
         }
     }
+
+    /**
+     * <p>A hint used to instruct the type checker to pick the third generic type of the first parameter type. For example:</p>
+     * <code>void &lt;T,U,V&gt; doWithElements(Triple&lt;T,U,V&gt; src, @ClosureParams(FirstArg.ThirdGenericType.class) Closure c) { src.each { c.call(it) } }</code>
+     *
+     * @author Cédric Champeau
+     * @since 2.3.0
+     */
     public static class ThirdGenericType extends PickAnyArgumentHint {
         public ThirdGenericType() {
             super(0,2);
         }
     }
 
+    /**
+     * <p>A hint used to instruct the type checker to pick the type of the component of the first parameter type, which is therefore
+     * expected to be an array, like in this example:</p>
+     * <code>void &lt;T&gt; doWithArray(T[] array, @ClosureParams(FirstArg.Component.class) Closure c) { array.each { c.call(it)} }</code>
+     */
     public static class Component extends FirstArg {
         @Override
         public ClassNode[] getParameterTypes(final MethodNode node, final String[] options) {

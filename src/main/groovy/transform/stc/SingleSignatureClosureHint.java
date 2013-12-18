@@ -21,7 +21,14 @@ import org.codehaus.groovy.ast.MethodNode;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class AbstractSingleClosureSignatureHint extends ClosureSignatureHint {
+/**
+ * A simplified version of a {@link groovy.transform.stc.ClosureSignatureHint} which is suitable
+ * for monomorphic closures, that is to say closures which only respond to a single signature.
+ *
+ * @author Cédric Champeau
+ * @since 2.3.0
+ */
+public abstract class SingleSignatureClosureHint extends ClosureSignatureHint {
 
     public abstract ClassNode[] getParameterTypes(final MethodNode node, final String[] options);
 

@@ -19,7 +19,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 
-public class SimpleType extends AbstractSingleClosureSignatureHint {
+public class SimpleType extends SingleSignatureClosureHint {
     @Override
     public ClassNode[] getParameterTypes(final MethodNode node, final String[] options) {
         ClassNode[] result = new ClassNode[options.length];
