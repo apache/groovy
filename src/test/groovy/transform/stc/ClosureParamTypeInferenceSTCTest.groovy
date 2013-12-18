@@ -181,5 +181,46 @@ def items = []
 '''
     }
 
+    void testInferenceForDGM_collectManyOnIterable() {
+        assertScript '''
+            assert (0..5).collectMany { [it, 2*it ]} == [0,0,1,2,2,4,3,6,4,8,5,10]
+'''
+    }
+
+    void testInferenceForDGM_collectManyOnIterator() {
+        assertScript '''
+            assert (0..5).iterator().collectMany { [it, 2*it ]} == [0,0,1,2,2,4,3,6,4,8,5,10]
+'''
+    }
+
+    void testInferenceForDGM_collectManyOnIterableWithCollector() {
+        assertScript '''
+            assert (0..5).collectMany([]) { [it, 2*it ]} == [0,0,1,2,2,4,3,6,4,8,5,10]
+'''
+    }
+
+    void testInferenceForDGM_collectManyOnMap() {
+        assertScript '''
+            assert [a:0,b:1,c:2].collectMany { k,v -> [v, 2*v ]} == [0,0,1,2,2,4]
+            assert [a:0,b:1,c:2].collectMany { e -> [e.value, 2*e.value ]} == [0,0,1,2,2,4]
+            assert [a:0,b:1,c:2].collectMany { [it.value, 2*it.value ]} == [0,0,1,2,2,4]
+'''
+    }
+
+    void testInferenceForDGM_collectManyOnMapWithCollector() {
+        assertScript '''
+            assert [a:0,b:1,c:2].collectMany([]) { k,v -> [v, 2*v ]} == [0,0,1,2,2,4]
+            assert [a:0,b:1,c:2].collectMany([]) { e -> [e.value, 2*e.value ]} == [0,0,1,2,2,4]
+            assert [a:0,b:1,c:2].collectMany([]) { [it.value, 2*it.value ]} == [0,0,1,2,2,4]
+'''
+    }
+
+    void testInferenceForDGM_collectManyOnArray() {
+        assertScript '''
+            Integer[] arr = (0..5)
+            assert arr.collectMany { [it, 2*it ]} == [0,0,1,2,2,4,3,6,4,8,5,10]
+'''
+    }
+
 }
 

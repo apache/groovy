@@ -2333,7 +2333,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     @Deprecated
-    public static <T> List<T> collectMany(Collection self, Closure<Collection<? extends T>> projection) {
+    public static <T,E> List<T> collectMany(Collection<E> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<Collection<? extends T>> projection) {
         return collectMany((Iterable)self, projection);
     }
 
@@ -2343,7 +2343,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.5
      */
     @Deprecated
-    public static <T> Collection<T> collectMany(Collection self, Collection<T> collector, Closure<Collection<? extends T>> projection) {
+    public static <T,E> Collection<T> collectMany(Collection<E> self, Collection<T> collector, @ClosureParams(FirstArg.FirstGenericType.class) Closure<Collection<? extends T>> projection) {
         return collectMany((Iterable)self, collector, projection);
     }
 
@@ -2371,7 +2371,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sum(java.util.Collection, groovy.lang.Closure)
      * @since 2.2.0
      */
-    public static <T> List<T> collectMany(Iterable self, Closure<Collection<? extends T>> projection) {
+    public static <T,E> List<T> collectMany(Iterable<E> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<Collection<? extends T>> projection) {
         return (List<T>) collectMany(self, new ArrayList<T>(), projection);
     }
 
@@ -2395,8 +2395,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with the projected collections concatenated (flattened) into it
      * @since 2.2.0
      */
-    public static <T> Collection<T> collectMany(Iterable self, Collection<T> collector, Closure<Collection<? extends T>> projection) {
-        for (Object next : self) {
+    public static <T,E> Collection<T> collectMany(Iterable<E> self, Collection<T> collector, @ClosureParams(FirstArg.FirstGenericType.class) Closure<Collection<? extends T>> projection) {
+        for (E next : self) {
             collector.addAll(projection.call(next));
         }
         return collector;
@@ -2418,7 +2418,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with the projected collections concatenated (flattened) to it
      * @since 1.8.8
      */
-    public static <T> Collection<T> collectMany(Map<?, ?> self, Collection<T> collector, Closure<Collection<? extends T>> projection) {
+    public static <T,K,V> Collection<T> collectMany(Map<K, V> self, Collection<T> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<Collection<? extends T>> projection) {
         for (Map.Entry<?, ?> entry : self.entrySet()) {
             collector.addAll(callClosureForMapEntry(projection, entry));
         }
@@ -2459,8 +2459,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sum(Object[], groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T> List<T> collectMany(Object[] self, Closure<Collection<? extends T>> projection) {
-        return collectMany(toList(self), projection);
+    @SuppressWarnings("unchecked")
+    public static <T,E> List<T> collectMany(E[] self, @ClosureParams(FirstArg.Component.class) Closure<Collection<? extends T>> projection) {
+        return collectMany((Iterable<E>)toList(self), projection);
     }
 
     /**
@@ -2478,8 +2479,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sum(Iterator, groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T> List<T> collectMany(Iterator<?> self, Closure<Collection<? extends T>> projection) {
-        return collectMany(toList(self), projection);
+    @SuppressWarnings("unchecked")
+    public static <T,E> List<T> collectMany(Iterator<E> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<Collection<? extends T>> projection) {
+        return collectMany((Iterable)toList(self), projection);
     }
 
     /**

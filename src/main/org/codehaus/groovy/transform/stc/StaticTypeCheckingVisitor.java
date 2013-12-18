@@ -3291,7 +3291,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected ClassNode getType(ASTNode exp) {
-        ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        ClassNode cn = exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (cn != null) return cn;
         if (exp instanceof ClassExpression) {
             ClassNode node = CLASS_Type.getPlainNodeReference();
@@ -3313,6 +3313,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (variable instanceof Parameter) {
                 Parameter parameter = (Parameter) variable;
                 ClassNode type = typeCheckingContext.controlStructureVariables.get(parameter);
+                TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
+                if (type==null && enclosingClosure !=null && "it".equals(variable.getName())) {
+                    final Parameter[] parameters = enclosingClosure.getClosureExpression().getParameters();
+                    if (parameters.length==0 && getTemporaryTypesForExpression(vexp)==null) {
+                        type = typeCheckingContext.lastImplicitItType;
+                    }
+                }
                 if (type != null) {
                     storeType((VariableExpression)exp, type);
                     return type;
