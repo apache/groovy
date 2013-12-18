@@ -400,22 +400,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             final Expression leftExpression = expression.getLeftExpression();
             final Expression rightExpression = expression.getRightExpression();
             int op = expression.getOperation().getType();
-            leftExpression.visit(this);
-            SetterInfo setterInfo = removeSetterInfo(leftExpression);
-            if (setterInfo!=null && rightExpression instanceof ClosureExpression) {
-                // for expressions like foo = { ... }
-                // we know that the RHS type is a closure
-                // but we must check if the binary expression is an assignment
-                // because we need to check if a setter uses @DelegatesTo
-                VariableExpression ve = new VariableExpression("%", setterInfo.receiverType);
-                MethodCallExpression call = new MethodCallExpression(
-                        ve,
-                        setterInfo.setter.getName(),
-                        rightExpression
-                );
-                visitMethodCallExpression(call);
+            if (rightExpression instanceof ClosureExpression) {
+                leftExpression.visit(this);
+                SetterInfo setterInfo = removeSetterInfo(leftExpression);
+                if (setterInfo != null) {
+                    // for expressions like foo = { ... }
+                    // we know that the RHS type is a closure
+                    // but we must check if the binary expression is an assignment
+                    // because we need to check if a setter uses @DelegatesTo
+                    VariableExpression ve = new VariableExpression("%", setterInfo.receiverType);
+                    MethodCallExpression call = new MethodCallExpression(
+                            ve,
+                            setterInfo.setter.getName(),
+                            rightExpression
+                    );
+                    visitMethodCallExpression(call);
+                } else {
+                    rightExpression.visit(this);
+                }
             } else {
                 rightExpression.visit(this);
+                leftExpression.visit(this);
             }
             ClassNode lType = getType(leftExpression);
             ClassNode rType = getType(rightExpression);
@@ -2016,11 +2021,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                         }
                     } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
+                        throw new GroovyBugError(e);
                     } catch (InstantiationException e) {
-                        e.printStackTrace();
+                        throw new GroovyBugError(e);
                     } catch (IllegalAccessException e) {
-                        e.printStackTrace();
+                        throw new GroovyBugError(e);
                     }
                 }
             }

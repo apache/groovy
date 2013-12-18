@@ -763,7 +763,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             })
             Map<Date, Date> map = new HashMap<>()
             map[new Date()] = 'foo'
-        ''', 'Cannot assign value of type java.lang.String to variable of type java.util.Date'
+        ''', 'Cannot assign value of type java.lang.String to variable of type java.util.Date', 'Cannot call org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt'
     }
 
     void testCallMethodWithParameterizedArrayList() {

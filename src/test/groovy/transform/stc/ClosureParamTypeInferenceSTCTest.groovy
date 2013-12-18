@@ -53,10 +53,9 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented
     void testInferenceForDGM_CollectUsingImplicitItAndLUB() {
         assertScript '''
-            assert [1234, 3.14].collect { it.intValue() } == [1234,3.14]
+            assert [1234, 3.14].collect { it.intValue() } == [1234,3]
         '''
     }
 
