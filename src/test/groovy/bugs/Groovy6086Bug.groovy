@@ -47,7 +47,7 @@ class Groovy6086Bug extends GroovyTestCase {
                     Boo[] locations = (Boo[]) cache.a
                     if (locations == null) {
                         if (true) {
-                            locations = [].collect { File it -> it }
+                            locations = [].collect { it }
                         }
                         else {
                             locations = [] as Boo[]

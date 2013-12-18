@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.ErrorCollector;
@@ -1995,7 +1996,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 ClassNode[] inferred = new ClassNode[classNode.getGenericsTypes().length];
                                 for (int i = 0; i < classNode.getGenericsTypes().length; i++) {
                                     GenericsType genericsType = classNode.getGenericsTypes()[i];
-                                    inferred[i] = genericsType.getType();
+                                    ClassNode value = createUsableClassNodeFromGenericsType(genericsType);
+                                    inferred[i] = value;
                                 }
                                 candidates.add(inferred);
                             }
@@ -2030,6 +2032,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         }
+    }
+
+    /**
+     * Given a GenericsType instance, returns a ClassNode which can be used as an inferred type.
+     * @param genericsType a {@link org.codehaus.groovy.ast.GenericsType} representing either a type, a placeholder or a wildcard
+     * @return a class node usable as an inferred type
+     */
+    private static ClassNode createUsableClassNodeFromGenericsType(final GenericsType genericsType) {
+        ClassNode value = genericsType.getType();
+        if (genericsType.isPlaceholder()) {
+            value = OBJECT_TYPE;
+        } else if (genericsType.isWildcard()) {
+            if (genericsType.getLowerBound()!=null) {
+                value = genericsType.getLowerBound();
+            } else if (genericsType.getUpperBounds()!=null) {
+                value = WideningCategories.lowestUpperBound(Arrays.asList(genericsType.getUpperBounds()));
+            }
+        }
+        return value;
     }
 
     private static String[] convertToStringArray(final Expression options) {
