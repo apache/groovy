@@ -16,6 +16,9 @@
 
 package groovy.transform.stc;
 
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+
 public class SecondArg extends PickAnyArgumentHint {
     public SecondArg() {
         super(1,-1);
@@ -34,6 +37,15 @@ public class SecondArg extends PickAnyArgumentHint {
     public static class ThirdGenericType extends PickAnyArgumentHint {
         public ThirdGenericType() {
             super(1,2);
+        }
+    }
+
+    public static class Component extends SecondArg {
+        @Override
+        public ClassNode[] getParameterTypes(final MethodNode node, final String[] options) {
+            final ClassNode[] parameterTypes = super.getParameterTypes(node, options);
+            parameterTypes[0] = parameterTypes[0].getComponentType();
+            return parameterTypes;
         }
     }
 }

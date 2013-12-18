@@ -103,5 +103,83 @@ def result = map.collectMany{ it.key.startsWith('b') ? it.key.toList() : [] }
 assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
 '''
     }
+
+    void testInferenceForDGM_Collect2() {
+        assertScript '''
+def items = []
+['a','b','c'].collect(items) { it.toUpperCase() }
+'''
+    }
+
+    void testInferenceForDGM_CollectMap() {
+        assertScript '''
+        assert [a: 'foo',b:'bar'].collect { k,v -> k+v } == ['afoo','bbar']
+        assert [a: 'foo',b:'bar'].collect { e -> e.key+e.value } == ['afoo','bbar']
+        assert [a: 'foo',b:'bar'].collect { it.key+it.value } == ['afoo','bbar']
+'''
+    }
+
+    void testInferenceForDGM_CollectMapWithCollection() {
+        assertScript '''
+        assert [a: 'foo',b:'bar'].collect([]) { k,v -> k+v } == ['afoo','bbar']
+        assert [a: 'foo',b:'bar'].collect([]) { e -> e.key+e.value } == ['afoo','bbar']
+        assert [a: 'foo',b:'bar'].collect([]) { it.key+it.value } == ['afoo','bbar']
+'''
+    }
+
+    void testInferenceForDGM_collectEntries() {
+        assertScript '''
+            assert ['a','b','c'].collectEntries { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
+'''
+    }
+
+    void testInferenceForDGM_collectEntriesWithCollector() {
+        assertScript '''
+            assert ['a','b','c'].collectEntries([:]) { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
+'''
+    }
+
+    void testInferenceForDGM_collectEntriesIterator() {
+        assertScript '''
+            assert ['a','b','c'].iterator().collectEntries { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
+'''
+    }
+
+    void testInferenceForDGM_collectEntriesIteratorWithCollector() {
+        assertScript '''
+            assert ['a','b','c'].iterator().collectEntries([:]) { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
+'''
+    }
+
+    void testInferenceForDGM_collectEntriesOnMap() {
+        assertScript '''
+            assert [a:'a',b:'b',c:'c'].collectEntries { k,v -> [k+k, v.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
+            assert [a:'a',b:'b',c:'c'].collectEntries { e -> [e.key+e.key, e.value.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
+            assert [a:'a',b:'b',c:'c'].collectEntries { [it.key+it.key, it.value.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
+'''
+    }
+
+    void testInferenceForDGM_collectEntriesOnMapWithCollector() {
+        assertScript '''
+            assert [a:'a',b:'b',c:'c'].collectEntries([:]) { k,v -> [k+k, v.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
+            assert [a:'a',b:'b',c:'c'].collectEntries([:]) { e -> [e.key+e.key, e.value.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
+            assert [a:'a',b:'b',c:'c'].collectEntries([:]) { [it.key+it.key, it.value.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
+'''
+    }
+
+    void testInferenceForDGM_collectEntriesOnArray() {
+        assertScript '''
+            String[] array = ['a','b','c']
+            assert array.collectEntries { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
+'''
+    }
+
+    void testInferenceForDGM_collectEntriesOnArrayWithCollector() {
+        assertScript '''
+            String[] array = ['a','b','c']
+            assert array.collectEntries([:]) { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
+'''
+    }
+
 }
 

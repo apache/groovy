@@ -2222,7 +2222,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 1.0
      */
-    public static <T> Collection<T> collect(Collection<?> self, Collection<T> collector, @ClosureParams(FirstArg.FirstGenericType.class) Closure<? extends T> transform) {
+    public static <T,E> Collection<T> collect(Collection<E> self, Collection<T> collector, @ClosureParams(FirstArg.FirstGenericType.class) Closure<? extends T> transform) {
         for (Object item : self) {
             collector.add(transform.call(item));
             if (transform.getDirective() == Closure.DONE) {
@@ -2494,8 +2494,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 1.0
      */
-    public static <T> Collection<T> collect(Map<?, ?> self, Collection<T> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends T> transform) {
-        for (Map.Entry<?, ?> entry : self.entrySet()) {
+    public static <T,K,V> Collection<T> collect(Map<K, V> self, Collection<T> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends T> transform) {
+        for (Map.Entry<K, V> entry : self.entrySet()) {
             collector.add(callClosureForMapEntry(transform, entry));
         }
         return collector;
@@ -2512,7 +2512,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resultant list of transformed values
      * @since 1.0
      */
-    public static <T> List<T> collect(Map self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> transform) {
+    public static <T,K,V> List<T> collect(Map<K,V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> transform) {
         return (List<T>) collect(self, new ArrayList<T>(self.size()), transform);
     }
 
@@ -2533,8 +2533,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.7.9
      */
-    public static <K, V> Map<K, V> collectEntries(Map<?, ?> self, Map<K, V> collector, Closure<?> transform) {
-        for (Map.Entry<?, ?> entry : self.entrySet()) {
+    public static <K, V, S, T> Map<K, V> collectEntries(Map<S, T> self, Map<K, V> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> transform) {
+        for (Map.Entry<S, T> entry : self.entrySet()) {
             addEntry(collector, callClosureForMapEntry(transform, entry));
         }
         return collector;
@@ -2556,7 +2556,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.7.9
      */
-    public static Map<?, ?> collectEntries(Map<?, ?> self, Closure<?> transform) {
+    public static <K,V> Map<?, ?> collectEntries(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> transform) {
         return collectEntries(self, createSimilarMap(self), transform);
     }
 
@@ -2580,7 +2580,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collectEntries(Collection, Closure)
      * @since 1.8.7
      */
-    public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Closure<?> transform) {
+    public static <K, V, E> Map<K, V> collectEntries(Iterator<E> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<?> transform) {
         return collectEntries(self, new LinkedHashMap<K, V>(), transform);
     }
 
@@ -2602,7 +2602,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collectEntries(Iterator, Closure)
      * @since 1.8.7
      */
-    public static <K, V> Map<K, V> collectEntries(Iterable<?> self, Closure<?> transform) {
+    public static <K,V,E> Map<K, V> collectEntries(Iterable<E> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<?> transform) {
         return collectEntries(self.iterator(), transform);
     }
 
@@ -2668,7 +2668,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 1.8.7
      */
-    public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Map<K, V> collector, Closure<?> transform) {
+    public static <K, V, E> Map<K, V> collectEntries(Iterator<E> self, Map<K, V> collector, @ClosureParams(FirstArg.FirstGenericType.class) Closure<?> transform) {
         while (self.hasNext()) {
             Object next = self.next();
             addEntry(collector, transform.call(next));
@@ -2695,7 +2695,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collectEntries(Iterator, Map, Closure)
      * @since 1.8.7
      */
-    public static <K, V> Map<K, V> collectEntries(Iterable<?> self, Map<K, V> collector, Closure<?> transform) {
+    public static <K, V, E> Map<K, V> collectEntries(Iterable<E> self, Map<K, V> collector, @ClosureParams(FirstArg.FirstGenericType.class) Closure<?> transform) {
         return collectEntries(self.iterator(), collector, transform);
     }
 
@@ -2757,7 +2757,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.7.9
      */
-    public static <K, V> Map<K, V> collectEntries(Object[] self, Map<K, V> collector, Closure<?> transform) {
+    @SuppressWarnings("unchecked")
+    public static <K, V, E> Map<K, V> collectEntries(E[] self, Map<K, V> collector, @ClosureParams(FirstArg.Component.class) Closure<?> transform) {
         return collectEntries((Iterable)toList(self), collector, transform);
     }
 
@@ -2793,7 +2794,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collectEntries(Collection, Map, Closure)
      * @since 1.7.9
      */
-    public static <K, V> Map<K, V> collectEntries(Object[] self, Closure<?> transform) {
+    public static <K, V, E> Map<K, V> collectEntries(E[] self, @ClosureParams(FirstArg.Component.class) Closure<?> transform) {
         return collectEntries((Iterable)toList(self), new LinkedHashMap<K, V>(), transform);
     }
 

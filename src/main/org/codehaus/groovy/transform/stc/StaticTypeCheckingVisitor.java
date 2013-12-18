@@ -1978,6 +1978,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                         EmptyStatement.INSTANCE
                                 );
                                 dummyMN.setDeclaringClass(selectedMethod.getDeclaringClass());
+                                dummyMN.setGenericsTypes(selectedMethod.getGenericsTypes());
                                 if (selectedMethod instanceof ExtensionMethodNode) {
                                     ExtensionMethodNode orig = (ExtensionMethodNode) selectedMethod;
                                     dummyMN = new ExtensionMethodNode(
@@ -1991,6 +1992,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                             orig.isStaticExtension()
                                     );
                                     dummyMN.setDeclaringClass(orig.getDeclaringClass());
+                                    dummyMN.setGenericsTypes(orig.getGenericsTypes());
                                 }
                                 ClassNode classNode = inferReturnTypeGenerics(receiver, dummyMN, arguments);
                                 ClassNode[] inferred = new ClassNode[classNode.getGenericsTypes().length];
