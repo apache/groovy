@@ -373,4 +373,17 @@ import groovy.transform.stc.ClosureParams
 '''
     }
 
+    void testStringGroovyMethodsFindMethodWithVargs() {
+        assertScript '''
+            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { all, zip, city -> println all.toUpperCase() }
+'''
+
+        assertScript '''
+            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { String all, String zip, String city -> println all.toUpperCase() }
+'''
+        shouldFailWithMessages '''
+            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { String all, Date zip, String city -> println all.toUpperCase() }
+''', 'Expected parameter of type java.lang.String but got java.util.Date'
+    }
+
 }

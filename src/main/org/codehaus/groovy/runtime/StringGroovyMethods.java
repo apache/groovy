@@ -21,6 +21,8 @@ import groovy.lang.GString;
 import groovy.lang.IntRange;
 import groovy.lang.Range;
 
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -988,7 +990,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a String containing the result of the closure, or null if the regex pattern doesn't match
      * @since 1.6.1
      */
-    public static String find(String self, Pattern pattern, Closure closure) {
+    public static String find(String self, Pattern pattern, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure closure) {
         Matcher matcher = pattern.matcher(self);
         if (matcher.find()) {
             if (hasGroup(matcher)) {
@@ -1087,7 +1089,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a String containing the result of the closure, or null if the regex pattern doesn't match
      * @since 1.6.1
      */
-    public static String find(String self, String regex, Closure closure) {
+    public static String find(String self, String regex, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure closure) {
         return find(self, Pattern.compile(regex), closure);
     }
 
