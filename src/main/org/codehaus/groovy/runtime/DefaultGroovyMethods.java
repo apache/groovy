@@ -1757,7 +1757,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the number of occurrences
      * @since 1.8.0
      */
-    public static Number count(Iterator self, Closure closure) {
+    public static <T> Number count(Iterator<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure closure) {
         long answer = 0;
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         while (self.hasNext()) {
@@ -1816,7 +1816,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the number of occurrences
      * @since 2.2.0
      */
-    public static Number count(Iterable self, Closure closure) {
+    public static <T> Number count(Iterable<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure closure) {
         return count(self.iterator(), closure);
     }
 
@@ -1869,7 +1869,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the number of occurrences
      * @since 1.8.0
      */
-    public static Number count(Object[] self, Closure closure) {
+    public static <T> Number count(T[] self, @ClosureParams(FirstArg.Component.class) Closure closure) {
         return count((Iterable)Arrays.asList(self), closure);
     }
 
@@ -3888,7 +3888,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys with frequency counts
      * @since 2.2.0
      */
-    public static <K> Map<K, Integer> countBy(Iterable self, Closure<K> closure) {
+    public static <K,E> Map<K, Integer> countBy(Iterable<E> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<K> closure) {
         return countBy(self.iterator(), closure);
     }
 
@@ -3908,8 +3908,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #countBy(Collection, Closure)
      * @since 1.8.0
      */
-    public static <K> Map<K, Integer> countBy(Object[] self, Closure<K> closure) {
-        return countBy(Arrays.asList(self), closure);
+    public static <K,E> Map<K, Integer> countBy(E[] self, @ClosureParams(FirstArg.Component.class) Closure<K> closure) {
+        return countBy((Iterable)Arrays.asList(self), closure);
     }
 
     /**
@@ -3928,7 +3928,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #countBy(Collection, Closure)
      * @since 1.8.0
      */
-    public static <K> Map<K, Integer> countBy(Iterator self, Closure<K> closure) {
+    public static <K,E> Map<K, Integer> countBy(Iterator<E> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<K> closure) {
         Map<K, Integer> answer = new LinkedHashMap<K, Integer>();
         while (self.hasNext()) {
             K value = closure.call(self.next());
@@ -4085,7 +4085,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys with frequency counts
      * @since 1.8.0
      */
-    public static <K> Map<K, Integer> countBy(Map self, Closure<K> closure) {
+    public static <K,U,V> Map<K, Integer> countBy(Map<U,V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<K> closure) {
         Map<K, Integer> answer = new LinkedHashMap<K, Integer>();
         for (Object entry : self.entrySet()) {
             countAnswer(answer, callClosureForMapEntry(closure, (Map.Entry) entry));

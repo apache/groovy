@@ -386,4 +386,49 @@ import groovy.transform.stc.ClosureParams
 ''', 'Expected parameter of type java.lang.String but got java.util.Date'
     }
 
+    void testInferenceForDGM_countIterableOrIterator() {
+        assertScript '''
+            assert ['Groovy','Java'].count { it.length() > 4 } == 1
+        '''
+        assertScript '''
+            assert ['Groovy','Java'].iterator().count { it.length() > 4 } == 1
+        '''
+    }
+
+    void testInferenceForDGM_countMap() {
+        assertScript '''
+            assert [G:'Groovy',J:'Java'].count { k,v -> v.length() > 4 } == 1
+            assert [G:'Groovy',J:'Java'].count { e -> e.value.length() > 4 } == 1
+            assert [G:'Groovy',J:'Java'].count { it.value.length() > 4 } == 1
+        '''
+    }
+
+    void testInferenceForDGM_countArray() {
+        assertScript '''
+            String[] array = ['Groovy','Java']
+            assert array.count { it.length() > 4 } == 1
+        '''
+    }
+
+    void testInferenceForDGM_countBy() {
+        assertScript '''
+            assert ['Groovy','yvoorG'].countBy { it.length() } == [6:2]
+        '''
+        assertScript '''
+            assert ['Groovy','yvoorG'].iterator().countBy { it.length() } == [6:2]
+        '''
+    }
+    void testInferenceForDGM_countByArray() {
+        assertScript '''
+            String[] array = ['Groovy','yvoorG']
+            assert array.countBy { it.length() } == [6:2]
+        '''
+    }
+    void testInferenceForDGM_countByMap() {
+        assertScript '''
+            assert [langs:['Groovy','Java']].countBy { k,v -> k.length() } == [5:1]
+            assert [langs:['Groovy','Java']].countBy { e -> e.key.length() } == [5:1]
+            assert [langs:['Groovy','Java']].countBy { it.key.length() } == [5:1]
+        '''
+    }
 }
