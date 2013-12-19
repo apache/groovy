@@ -222,5 +222,155 @@ def items = []
 '''
     }
 
-}
+    void testInferenceOnNonExtensionMethod() {
+        assertScript '''import groovy.transform.stc.ClosureParams
+            import groovy.transform.stc.FirstArg
+            public <T> T foo(T arg, @ClosureParams(FirstArg) Closure c) { c.call(arg) }
+            assert foo('a') { it.toUpperCase() } == 'A'
+'''
+    }
 
+    void testFromStringWithSimpleType() {
+        assertScript '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+void foo(@ClosureParams(value=FromString,options="java.lang.String") Closure cl) { cl.call('foo') }
+foo { String str -> println str.toUpperCase()}
+'''
+
+        shouldFailWithMessages '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+void foo(@ClosureParams(value=FromString,options="java.lang.String") Closure cl) { cl.call('foo') }
+foo { Date str -> println str}
+''', 'Expected parameter of type java.lang.String but got java.util.Date'
+    }
+
+    void testFromStringWithGenericType() {
+        assertScript '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+void foo(@ClosureParams(value=FromString,options="java.util.List<java.lang.String>") Closure cl) { cl.call(['foo']) }
+foo { List<String> str -> str.each { println it.toUpperCase() } }
+'''
+
+        shouldFailWithMessages '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+void foo(@ClosureParams(value=FromString,options="java.util.List<java.lang.String>") Closure cl) { cl.call(['foo']) }
+foo { List<Date> d -> d.each { println it } }
+''', 'Expected parameter of type java.util.List <java.lang.String> but got java.util.List <Date>'
+    }
+
+    void testFromStringWithDirectGenericPlaceholder() {
+
+        assertScript '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+public <T> void foo(T t, @ClosureParams(value=FromString,options="T") Closure cl) { cl.call(t) }
+foo('hey') { println it.toUpperCase() }
+'''
+
+    }
+
+    void testFromStringWithGenericPlaceholder() {
+        assertScript '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+public <T> void foo(T t, @ClosureParams(value=FromString,options="java.util.List<T>") Closure cl) { cl.call([t,t]) }
+foo('hey') { List<String> str -> str.each { println it.toUpperCase() } }
+'''
+
+    }
+
+    void testFromStringWithGenericPlaceholderFromClass() {
+        assertScript '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+    class Foo<T> {
+        public void foo(@ClosureParams(value=FromString,options="java.util.List<T>") Closure cl) { cl.call(['hey','ya']) }
+    }
+    def foo = new Foo<String>()
+
+    foo.foo { List<String> str -> str.each { println it.toUpperCase() } }
+'''
+    }
+
+    void testFromStringWithGenericPlaceholderFromClassWithTwoGenerics() {
+        assertScript '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+    class Foo<T,U> {
+        public void foo(@ClosureParams(value=FromString,options="java.util.List<U>") Closure cl) { cl.call(['hey','ya']) }
+    }
+    def foo = new Foo<Integer,String>()
+
+    foo.foo { List<String> str -> str.each { println it.toUpperCase() } }
+'''
+    }
+
+    void testFromStringWithGenericPlaceholderFromClassWithTwoGenericsAndNoExplicitSignature() {
+        assertScript '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+    class Foo<T,U> {
+        public void foo(@ClosureParams(value=FromString,options="java.util.List<U>") Closure cl) { cl.call(['hey','ya']) }
+    }
+    def foo = new Foo<Integer,String>()
+
+    foo.foo { it.each { println it.toUpperCase() } }
+'''
+    }
+
+    void testFromStringWithGenericPlaceholderFromClassWithTwoGenericsAndNoExplicitSignatureAndNoFQN() {
+        assertScript '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+    class Foo<T,U> {
+        public void foo(@ClosureParams(value=FromString,options="List<U>") Closure cl) { cl.call(['hey','ya']) }
+    }
+    def foo = new Foo<Integer,String>()
+
+    foo.foo { it.each { println it.toUpperCase() } }
+'''
+    }
+
+    void testFromStringWithGenericPlaceholderFromClassWithTwoGenericsAndNoExplicitSignatureAndNoFQNAndReferenceToSameUnitClass() {
+        assertScript '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+    class Foo {
+        void bar() {
+            println 'Haha!'
+        }
+    }
+
+    class Tor<D,U> {
+        public void foo(@ClosureParams(value=FromString,options="List<U>") Closure cl) { cl.call([new Foo(), new Foo()]) }
+    }
+    def tor = new Tor<Integer,Foo>()
+
+    tor.foo { it.each { it.bar() } }
+'''
+    }
+
+    void testFromStringWithGenericPlaceholderFromClassWithTwoGenericsAndNoExplicitSignatureAndNoFQNAndReferenceToSameUnitClassAndTwoArgs() {
+        assertScript '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+    class Foo {
+        void bar() {
+            println 'Haha!'
+        }
+    }
+
+    class Tor<D,U> {
+        public void foo(@ClosureParams(value=FromString,options=["D","List<U>"]) Closure cl) { cl.call(3, [new Foo(), new Foo()]) }
+    }
+    def tor = new Tor<Integer,Foo>()
+
+    tor.foo { r, e -> r.times { e.each { it.bar() } } }
+'''
+    }
+
+}

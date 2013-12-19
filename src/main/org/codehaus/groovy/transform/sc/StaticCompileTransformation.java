@@ -53,6 +53,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
         if (node instanceof ClassNode) {
             ClassNode classNode = (ClassNode) node;
             visitor = newVisitor(source, classNode);
+            visitor.setCompilationUnit(compilationUnit);
             addTypeCheckingExtensions(visitor, extensions);
             classNode.putNodeMetaData(WriterControllerFactory.class, factory);
             node.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(node));
@@ -62,6 +63,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             MethodNode methodNode = (MethodNode) node;
             ClassNode declaringClass = methodNode.getDeclaringClass();
             visitor = newVisitor(source, declaringClass);
+            visitor.setCompilationUnit(compilationUnit);
             addTypeCheckingExtensions(visitor, extensions);
             methodNode.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(node));
             if (declaringClass.getNodeMetaData(WriterControllerFactory.class) == null) {

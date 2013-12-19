@@ -20,6 +20,8 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.List;
 
@@ -28,12 +30,12 @@ import java.util.List;
  * called at compile time (or may be used by IDEs) to infer the types of the parameters of a {@link groovy.lang.Closure}.</p>
 
  * <p>A closure hint class is responsible for generating the list of arguments that a closure accepts. Since closures
- * may accept several signatures, {@link #getClosureSignatures(org.codehaus.groovy.ast.MethodNode, String[])} should
+ * may accept several signatures, {@link #getClosureSignatures(org.codehaus.groovy.ast.MethodNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.control.CompilationUnit, String[])} should
  * return a list.</p>
  *
  * <p>Whenever the type checker encounters a method call that targets a method accepting a closure, it will search
  * for the {@link ClosureParams} annotation on the {@link groovy.lang.Closure} argument. If it is found, then it
- * creates an instance of the hint class and calls the {@link #getClosureSignatures(org.codehaus.groovy.ast.MethodNode, String[])}
+ * creates an instance of the hint class and calls the {@link #getClosureSignatures(org.codehaus.groovy.ast.MethodNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.control.CompilationUnit, String[])}
  * method, which will in turn return the list of signatures.</p>
  *
  * <p><i>Note that the signature concept here is used only to describe the parameter types, not the result type, which
@@ -104,10 +106,12 @@ public abstract class ClosureSignatureHint {
      *
      * <p>Subclasses are therefore expected to return the signatures according to the available context, which is only the target method and the potential options.</p>
      *
+     *
      * @param node the method node for which a {@link groovy.lang.Closure} parameter was annotated with
      *             {@link groovy.transform.stc.ClosureParams}
-     * @param options the options, corresponding to the {@link groovy.transform.stc.ClosureParams#options()} found on the annotation
-     * @return a non-null list of signature, where a signature corresponds to an array of class nodes, each of them matching a parameter.
+     * @param sourceUnit the source unit of the file being compiled
+     * @param compilationUnit the compilation unit of the file being compiled
+     * @param options the options, corresponding to the {@link groovy.transform.stc.ClosureParams#options()} found on the annotation  @return a non-null list of signature, where a signature corresponds to an array of class nodes, each of them matching a parameter.
      */
-    public abstract List<ClassNode[]> getClosureSignatures(MethodNode node, final String[] options);
+    public abstract List<ClassNode[]> getClosureSignatures(MethodNode node, SourceUnit sourceUnit, CompilationUnit compilationUnit, String[] options);
 }

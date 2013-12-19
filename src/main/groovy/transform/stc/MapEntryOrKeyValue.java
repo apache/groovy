@@ -20,6 +20,8 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.Arrays;
 import java.util.List;
@@ -42,7 +44,7 @@ import java.util.Map;
 public class MapEntryOrKeyValue extends ClosureSignatureHint {
     private final static ClassNode MAPENTRY_TYPE = ClassHelper.make(Map.Entry.class);
 
-    public List<ClassNode[]> getClosureSignatures(final MethodNode node, final String[] options) {
+    public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options) {
         int index = 0;
         if (options!=null && options.length>0) {
             index = Integer.valueOf(options[0]);

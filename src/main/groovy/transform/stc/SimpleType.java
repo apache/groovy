@@ -18,10 +18,12 @@ package groovy.transform.stc;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.SourceUnit;
 
 public class SimpleType extends SingleSignatureClosureHint {
     @Override
-    public ClassNode[] getParameterTypes(final MethodNode node, final String[] options) {
+    public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit) {
         ClassNode[] result = new ClassNode[options.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = ClassHelper.make(options[i]);

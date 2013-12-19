@@ -17,6 +17,8 @@ package groovy.transform.stc;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.SourceUnit;
 
 /**
  * <p>A hint used to instruct the type checker to pick the first parameter type. For example:</p>
@@ -78,8 +80,8 @@ public class FirstArg extends PickAnyArgumentHint {
      */
     public static class Component extends FirstArg {
         @Override
-        public ClassNode[] getParameterTypes(final MethodNode node, final String[] options) {
-            final ClassNode[] parameterTypes = super.getParameterTypes(node, options);
+        public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit) {
+            final ClassNode[] parameterTypes = super.getParameterTypes(node, options, sourceUnit, unit);
             parameterTypes[0] = parameterTypes[0].getComponentType();
             return parameterTypes;
         }

@@ -17,6 +17,8 @@ package groovy.transform.stc;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.SourceUnit;
 
 /**
  * <p>Base class for hints which use the type of a parameter of the annotated method as the signature.
@@ -59,7 +61,7 @@ public class PickAnyArgumentHint extends SingleSignatureClosureHint {
     }
 
     @Override
-    public ClassNode[] getParameterTypes(final MethodNode node, final String[] options) {
+    public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit) {
         ClassNode type = node.getParameters()[parameterIndex].getOriginType();
         if (genericTypeIndex>=0) {
             type = pickGenericType(type, genericTypeIndex);

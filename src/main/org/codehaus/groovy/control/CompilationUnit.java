@@ -18,6 +18,7 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 
+import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.classgen.*;
@@ -221,6 +222,9 @@ public class CompilationUnit extends ProcessingUnit {
         if (configuration != null) {
             final List<CompilationCustomizer> customizers = configuration.getCompilationCustomizers();
             for (CompilationCustomizer customizer : customizers) {
+                if (customizer instanceof CompilationUnitAware) {
+                    ((CompilationUnitAware) customizer).setCompilationUnit(this);
+                }
                 addPhaseOperation(customizer, customizer.getPhase().getPhaseNumber());
             }
         }

@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -145,6 +146,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     public void addTypeCheckingExtension(TypeCheckingExtension extension) {
         this.extension.addHandler(extension);
+    }
+
+    public void setCompilationUnit(CompilationUnit cu) {
+        typeCheckingContext.setCompilationUnit(cu);
     }
 
     @Override
@@ -1949,7 +1954,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         @SuppressWarnings("unchecked")
                         Class<? extends ClosureSignatureHint> hint = (Class<? extends ClosureSignatureHint>) getSourceUnit().getClassLoader().loadClass(hintClass.getText());
                         ClosureSignatureHint hintInstance = hint.newInstance();
-                        List<ClassNode[]> closureSignatures = hintInstance.getClosureSignatures(selectedMethod instanceof ExtensionMethodNode?((ExtensionMethodNode) selectedMethod).getExtensionMethodNode():selectedMethod, convertToStringArray(options));
+                        List<ClassNode[]> closureSignatures = hintInstance.getClosureSignatures(
+                                selectedMethod instanceof ExtensionMethodNode?((ExtensionMethodNode) selectedMethod).getExtensionMethodNode():selectedMethod,
+                                typeCheckingContext.source,
+                                typeCheckingContext.compilationUnit,
+                                convertToStringArray(options));
                         List<ClassNode[]> candidates = new LinkedList<ClassNode[]>();
                         for (ClassNode[] signature : closureSignatures) {
                             if (signature.length==closureParams.length // same number of arguments
