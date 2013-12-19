@@ -104,10 +104,15 @@ class SyntaxTest extends CompilableTestSupport {
 
     void testVariableStoreBooleanValue() {
         shouldCompile '''
-            def myBooleanVariable
+            @groovy.transform.Field boolean booleanField
+
             // tag::variable_store_boolean_value[]
-            myBooleanVariable = true
+            def myBooleanVariable = true
+            boolean untypedBooleanVar = false
+            booleanField = true
             // end::variable_store_boolean_value[]
+
+            assert myBooleanVariable && !untypedBooleanVar && booleanField
         '''
     }
 
