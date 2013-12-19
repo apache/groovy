@@ -1958,7 +1958,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 selectedMethod instanceof ExtensionMethodNode?((ExtensionMethodNode) selectedMethod).getExtensionMethodNode():selectedMethod,
                                 typeCheckingContext.source,
                                 typeCheckingContext.compilationUnit,
-                                convertToStringArray(options));
+                                convertToStringArray(options), expression);
                         List<ClassNode[]> candidates = new LinkedList<ClassNode[]>();
                         for (ClassNode[] signature : closureSignatures) {
                             if (signature.length==closureParams.length // same number of arguments

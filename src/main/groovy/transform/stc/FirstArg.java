@@ -15,6 +15,7 @@
  */
 package groovy.transform.stc;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -80,8 +81,8 @@ public class FirstArg extends PickAnyArgumentHint {
      */
     public static class Component extends FirstArg {
         @Override
-        public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit) {
-            final ClassNode[] parameterTypes = super.getParameterTypes(node, options, sourceUnit, unit);
+        public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit, final ASTNode usage) {
+            final ClassNode[] parameterTypes = super.getParameterTypes(node, options, sourceUnit, unit, usage);
             parameterTypes[0] = parameterTypes[0].getComponentType();
             return parameterTypes;
         }

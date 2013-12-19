@@ -15,20 +15,15 @@
  */
 package groovy.transform.stc;
 
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.SyntaxException;
 
-public class SimpleType extends SingleSignatureClosureHint {
-    @Override
-    public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit, final ASTNode usage) {
-        ClassNode[] result = new ClassNode[options.length];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = ClassHelper.make(options[i]);
-        }
-        return result;
+public class IncorrectTypeHintException extends SyntaxException {
+    public IncorrectTypeHintException(final MethodNode mn, final Throwable e, int line, int column) {
+        super("Incorrect type hint in @ClosureParams in class "+mn.getDeclaringClass().getName()+" method "+mn.getTypeDescriptor()+" : "+e.getMessage(), e, line, column);
+    }
+
+    public IncorrectTypeHintException(final MethodNode mn, final String msg, final int line, final int column) {
+        super("Incorrect type hint in @ClosureParams in class "+mn.getDeclaringClass().getName()+" method "+mn.getTypeDescriptor()+" : "+msg, line, column);
     }
 }

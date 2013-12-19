@@ -20,6 +20,7 @@ import antlr.TokenStreamException;
 import org.codehaus.groovy.antlr.AntlrParserPlugin;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -54,11 +55,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class FromString extends SingleSignatureClosureHint {
 
     @Override
-    public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit compilationUnit) {
+    public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final ASTNode usage) {
         ClassNode[] result = new ClassNode[options.length];
         for (int i = 0; i < options.length; i++) {
             String option = options[i];
-            result[i] = parseOption(option, sourceUnit, compilationUnit, node);
+            result[i] = parseOption(option, sourceUnit, compilationUnit, node, usage);
         }
         return result;
     }
@@ -68,13 +69,15 @@ public class FromString extends SingleSignatureClosureHint {
      * For example, <i>"List&lt;T&gt;"</i> must be converted into the appropriate ClassNode
      * for which <i>T</i> matches the appropriate placeholder.
      *
+     *
      * @param option a string representing a type
-     * @param mn the method node
      * @param sourceUnit the source unit (of the file beeing compiled)
      * @param compilationUnit the compilation unit (of the file being compiled)
+     * @param mn the method node
+     * @param usage
      * @return a class node if it could be parsed and resolved, null otherwise
      */
-    private ClassNode parseOption(String option, SourceUnit sourceUnit, CompilationUnit compilationUnit, MethodNode mn) {
+    private ClassNode parseOption(final String option, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final MethodNode mn, final ASTNode usage) {
         GroovyLexer lexer = new GroovyLexer(new StringReader(option));
         final GroovyRecognizer rn = GroovyRecognizer.make(lexer);
         try {
@@ -102,15 +105,20 @@ public class FromString extends SingleSignatureClosureHint {
             );
             dummyMN.setGenericsTypes(mn.getGenericsTypes());
             dummyClass.addMethod(dummyMN);
-            ResolveVisitor visitor = new ResolveVisitor(compilationUnit);
+            ResolveVisitor visitor = new ResolveVisitor(compilationUnit) {
+                @Override
+                protected void addError(final String msg, final ASTNode expr) {
+                    sourceUnit.addError(new IncorrectTypeHintException(mn, msg, usage.getLineNumber(), usage.getColumnNumber()));
+                }
+            };
             visitor.startResolving(dummyClass, sourceUnit);
             return dummyMN.getReturnType();
         } catch (RecognitionException e) {
-            sourceUnit.addException(e);
+            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
         } catch (TokenStreamException e) {
-            sourceUnit.addException(e);
+            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
         } catch (ParserException e) {
-            sourceUnit.addException(e);
+            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
         }
         return null;
     }

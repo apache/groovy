@@ -15,6 +15,7 @@
  */
 package groovy.transform.stc;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -32,9 +33,9 @@ import java.util.List;
  */
 public abstract class SingleSignatureClosureHint extends ClosureSignatureHint {
 
-    public abstract ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit);
+    public abstract ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit, final ASTNode usage);
 
-    public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options) {
-        return Collections.singletonList(getParameterTypes(node, options, sourceUnit, compilationUnit));
+    public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options, final ASTNode usage) {
+        return Collections.singletonList(getParameterTypes(node, options, sourceUnit, compilationUnit, usage));
     }
 }

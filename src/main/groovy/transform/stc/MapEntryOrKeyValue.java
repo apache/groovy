@@ -16,6 +16,7 @@
 
 package groovy.transform.stc;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
@@ -44,7 +45,7 @@ import java.util.Map;
 public class MapEntryOrKeyValue extends ClosureSignatureHint {
     private final static ClassNode MAPENTRY_TYPE = ClassHelper.make(Map.Entry.class);
 
-    public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options) {
+    public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options, final ASTNode usage) {
         int index = 0;
         if (options!=null && options.length>0) {
             index = Integer.valueOf(options[0]);
