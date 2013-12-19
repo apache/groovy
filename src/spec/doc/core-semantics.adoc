@@ -136,7 +136,7 @@ coercion of a map into an `Iterator`:
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=coerce_map_to_iterator,indent=0]
 ----
 
-Of course this example rather contrived example, but illustrates the concept. You only need to implement those methods
+Of course this is a rather contrived example, but illustrates the concept. You only need to implement those methods
 that are actually called, but if a method is called that doesn't exist in the map a `MissingMethodException` or an
 `UnsupportedOperationException` is thrown, depending on the arguments passed to the call,
 as in the following example:
