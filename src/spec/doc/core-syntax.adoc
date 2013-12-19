@@ -877,6 +877,30 @@ as Groovy doesn't provide a dedicated integer division operator symbol.
 
 ==== The case of the power operator
 
+The power operation is represented by the +**+ operator, with two parameters: the base and the exponent.
+The result of the power operation depends on its operands, and the result of the operation
+(in particular if the result can be represented as an integral value).
+
+The following rules are used by Groovy's power operation to determine the resulting type:
+
+* If the exponent is a decimal value
+** if the result can be represented as an +Integer+, then return an +Integer+
+** else if the result can be represented as a +Long+, then return a +Long+
+** otherwise return a +Double+
+* If the exponent is an integral value
+** if the exponent is strictly negative, then return an +Integer+, +Long+ or +Double+ if the result value fits in that type
+** if the exponent is positive or zero
+*** if the base is a +BigDecimal+, then return a +BigDecimal+ result value
+*** if the base is a +BigInteger+, then return a +BigInteger+ result value
+*** if the base is an +Integer+, then return an +Integer+ if the result value fits in it, otherwise a +BigInteger+
+*** if the base is a +Long+, then return a +Long+ if the result value fits in it, otherwise a +BigInteger+
+
+We can illustrate those rules with a few examples:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=number_power,indent=0]
+----
 
 == Booleans
 
