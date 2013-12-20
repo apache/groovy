@@ -648,4 +648,27 @@ import groovy.transform.stc.ClosureParams
             ['1','2','3'].iterator().eachWithIndex { e,i -> assert e.toUpperCase() == String.valueOf(1+i) }
         '''
     }
+
+    void testInferenceForDGM_everyOnMap() {
+        assertScript '''
+            assert [a:'A',b:'B',cc:'CC'].every { String k, String v -> k == v.toLowerCase() }
+            assert [a:'A',b:'B',cc:'CC'].every { k, v -> k == v.toLowerCase() }
+            assert [a:'A',b:'B',cc:'CC'].every { e -> e.key == e.value.toLowerCase() }
+            assert [a:'A',b:'B',cc:'CC'].every { it.key == it.value.toLowerCase() }
+        '''
+    }
+    void testInferenceForDGM_everyOnIterable() {
+        assertScript '''
+            assert ['foo','bar','baz'].every { String it -> it.length() == 3 }
+            assert ['foo','bar','baz'].every { it -> it.length() == 3 }
+            assert ['foo','bar','baz'].every { it.length() == 3 }
+        '''
+    }
+    void testInferenceForDGM_everyOnIterator() {
+        assertScript '''
+            assert ['foo','bar','baz'].iterator().every { String it -> it.length() == 3 }
+            assert ['foo','bar','baz'].iterator().every { it -> it.length() == 3 }
+            assert ['foo','bar','baz'].iterator().every { it.length() == 3 }
+        '''
+    }
 }

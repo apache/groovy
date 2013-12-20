@@ -1501,6 +1501,46 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Used to determine if the given predicate closure is valid (i.e.&nsbp;returns
+     * <code>true</code> for all items in this iterator).
+     * A simple example for a list:
+     * <pre>def list = [3,4,5]
+     * def greaterThanTwo = list.iterator().every { it > 2 }
+     * </pre>
+     *
+     * @param self    the iterator over which we iterate
+     * @param closure the closure predicate used for matching
+     * @return true if every iteration of the object matches the closure predicate
+     * @since 2.3.0
+     */
+    public static <T> boolean every(Iterator<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+        while (self.hasNext()) {
+            if (!bcw.call(self.next())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Used to determine if the given predicate closure is valid (i.e.&nsbp;returns
+     * <code>true</code> for all items in this iterable).
+     * A simple example for a list:
+     * <pre>def list = [3,4,5]
+     * def greaterThanTwo = list.every { it > 2 }
+     * </pre>
+     *
+     * @param self    the iterable over which we iterate
+     * @param closure the closure predicate used for matching
+     * @return true if every iteration of the object matches the closure predicate
+     * @since 2.3.0
+     */
+    public static <T> boolean every(Iterable<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure closure) {
+        return every(self.iterator(), closure);
+    }
+
+    /**
      * Iterates over the entries of a map, and checks whether a predicate is
      * valid for all entries. If the
      * closure takes one parameter then it will be passed the Map.Entry
@@ -1515,7 +1555,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return true if every entry of the map matches the closure predicate
      * @since 1.5.0
      */
-    public static <K, V> boolean every(Map<K, V> self, Closure closure) {
+    public static <K, V> boolean every(Map<K, V> self, @ClosureParams(value=MapEntryOrKeyValue.class) Closure closure) {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Map.Entry<K, V> entry : self.entrySet()) {
             if (!bcw.callForMap(entry)) {
