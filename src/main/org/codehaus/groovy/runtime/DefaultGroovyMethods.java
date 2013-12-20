@@ -2985,7 +2985,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the first Object found, in the order of the collections iterator, or null if no element matches
      * @since 1.0
      */
-    public static <T> T find(Collection<T> self, Closure closure) {
+    public static <T> T find(Collection<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure closure) {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (T value : self) {
             if (bcw.call(value)) {
@@ -3009,7 +3009,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the first element from the array that matches the condition or null if no element matches
      * @since 2.0
      */
-    public static <T> T find(T[] self, Closure condition) {
+    public static <T> T find(T[] self, @ClosureParams(FirstArg.Component.class) Closure condition) {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         for (T element : self) {
             if (bcw.call(element)) {
@@ -3054,7 +3054,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the first non-null result from calling the closure, or the defaultValue
      * @since 1.7.5
      */
-    public static <T, U extends T, V extends T> T findResult(Collection<?> self, U defaultResult, Closure<V> closure) {
+    public static <T, U extends T, V extends T,E> T findResult(Collection<E> self, U defaultResult, @ClosureParams(FirstArg.FirstGenericType.class) Closure<V> closure) {
         T result = findResult(self, closure);
         if (result == null) return defaultResult;
         return result;
@@ -3075,7 +3075,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the first non-null result from calling the closure, or null
      * @since 1.7.5
      */
-    public static <T> T findResult(Collection<?> self, Closure<T> closure) {
+    public static <T,U> T findResult(Collection<U> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<T> closure) {
         for (Object value : self) {
             T result = closure.call(value);
             if (result != null) {
@@ -3091,7 +3091,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     @Deprecated
-    public static <T> Collection<T> findResults(Collection<?> self, Closure<T> filteringTransform) {
+    public static <T,U> Collection<T> findResults(Collection<U> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<T> filteringTransform) {
         return findResults((Iterable<?>)self, filteringTransform);
     }
 
@@ -3111,7 +3111,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the list of non-null transformed values
      * @since 2.2.0
      */
-    public static <T> Collection<T> findResults(Iterable<?> self, Closure<T> filteringTransform) {
+    public static <T,U> Collection<T> findResults(Iterable<U> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<T> filteringTransform) {
         List<T> result = new ArrayList<T>();
         for (Object value : self) {
             T transformed = filteringTransform.call(value);
@@ -3140,7 +3140,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the list of non-null transformed values
      * @since 1.8.1
      */
-    public static <T> Collection<T> findResults(Map<?, ?> self, Closure<T> filteringTransform) {
+    public static <T,K,V> Collection<T> findResults(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> filteringTransform) {
         List<T> result = new ArrayList<T>();
         for (Map.Entry<?, ?> entry : self.entrySet()) {
             T transformed = callClosureForMapEntry(filteringTransform, entry);
@@ -3162,7 +3162,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the first Object found
      * @since 1.0
      */
-    public static <K, V> Map.Entry<K, V> find(Map<K, V> self, Closure<?> closure) {
+    public static <K, V> Map.Entry<K, V> find(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Map.Entry<K, V> entry : self.entrySet()) {
             if (bcw.callForMap(entry)) {
@@ -3188,7 +3188,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the first non-null result collected by calling the closure, or the defaultResult if no such result was found
      * @since 1.7.5
      */
-    public static <T, U extends T, V extends T> T findResult(Map<?, ?> self, U defaultResult, Closure<V> closure) {
+    public static <T, U extends T, V extends T,A,B> T findResult(Map<A, B> self, U defaultResult, @ClosureParams(MapEntryOrKeyValue.class) Closure<V> closure) {
         T result = findResult(self, closure);
         if (result == null) return defaultResult;
         return result;
@@ -3209,7 +3209,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the first non-null result collected by calling the closure, or null if no such result was found
      * @since 1.7.5
      */
-    public static <T> T findResult(Map<?, ?> self, Closure<T> closure) {
+    public static <T,K,V> T findResult(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> closure) {
         for (Map.Entry<?, ?> entry : self.entrySet()) {
             T result = callClosureForMapEntry(closure, entry);
             if (result != null) {
@@ -3228,7 +3228,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Collection of matching values
      * @since 1.5.6
      */
-    public static <T> Collection<T> findAll(Collection<T> self, Closure closure) {
+    public static <T> Collection<T> findAll(Collection<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure closure) {
         Collection<T> answer = createSimilarCollection(self);
         Iterator<T> iter = self.iterator();
         return findAll(closure, answer, iter);
@@ -3246,7 +3246,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a list of matching values
      * @since 2.0
      */
-    public static <T> Collection<T> findAll(T[] self, Closure condition) {
+    public static <T> Collection<T> findAll(T[] self, @ClosureParams(FirstArg.Component.class) Closure condition) {
         Collection<T> answer = new ArrayList<T>();
         return findAll(condition, answer, new ArrayIterator<T>(self));
     }
@@ -3710,7 +3710,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new subMap
      * @since 1.0
      */
-    public static <K, V> Map<K, V> findAll(Map<K, V> self, Closure closure) {
+    public static <K, V> Map<K, V> findAll(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class)  Closure closure) {
         Map<K, V> answer = createSimilarMap(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Map.Entry<K, V> entry : self.entrySet()) {

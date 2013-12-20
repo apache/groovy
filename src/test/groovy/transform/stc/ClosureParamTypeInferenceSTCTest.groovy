@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2013 the original author or authors.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apaarraylisstringsicense");
+ * you may not use this file except in comparraylistOfStringsicense.
+ * Ystringshe License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     arraylistOfStringse.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
+ * Unless required by apstrings in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
@@ -669,6 +669,101 @@ import groovy.transform.stc.ClosureParams
             assert ['foo','bar','baz'].iterator().every { String it -> it.length() == 3 }
             assert ['foo','bar','baz'].iterator().every { it -> it.length() == 3 }
             assert ['foo','bar','baz'].iterator().every { it.length() == 3 }
+        '''
+    }
+
+    void testInferenceForDGM_findOnCollection() {
+        assertScript '''
+            assert ['a','bbb','ccc'].find { String it -> it.length() == 3 } == 'bbb'
+            assert ['a','bbb','ccc'].find { it -> it.length() == 3 } == 'bbb'
+            assert ['a','bbb','ccc'].find { it.length() == 3 } == 'bbb'
+        '''
+    }
+    void testInferenceForDGM_findOnArray() {
+        assertScript '''
+            String[] arraylistOfStrings = ['a','bbb','ccc']
+            assert arraylistOfStrings.find { String it -> it.length() == 3 } == 'bbb'
+            assert arraylistOfStrings.find { it -> it.length() == 3 } == 'bbb'
+            assert arraylistOfStrings.find { it.length() == 3 } == 'bbb'
+        '''
+    }
+    void testInferenceForDGM_findOnMap() {
+        assertScript '''
+            assert [a:2,b:4,c:6].find { String k, int v -> k.toUpperCase()=='C' && 2*v==12 } instanceof Map.Entry
+            assert [a:2,b:4,c:6].find { k, v -> k.toUpperCase()=='C' && 2*v==12 } instanceof Map.Entry
+            assert [a:2,b:4,c:6].find { e -> e.key.toUpperCase()=='C' && 2*e.value==12 } instanceof Map.Entry
+            assert [a:2,b:4,c:6].find { it.key.toUpperCase()=='C' && 2*it.value==12 } instanceof Map.Entry
+        '''
+    }
+
+    void testInferenceForDGM_findAllOnCollection() {
+        assertScript '''
+            assert ['a','bbb','ccc'].findAll { String it -> it.length() == 3 } == ['bbb','ccc']
+            assert ['a','bbb','ccc'].findAll { it -> it.length() == 3 } == ['bbb','ccc']
+            assert ['a','bbb','ccc'].findAll { it.length() == 3 } == ['bbb','ccc']
+        '''
+    }
+    void testInferenceForDGM_findAllOnArray() {
+        assertScript '''
+            String[] arraylistOfStrings = ['a','bbb','ccc']
+            assert arraylistOfStrings.findAll { String it -> it.length() == 3 } == ['bbb','ccc']
+            assert arraylistOfStrings.findAll { it -> it.length() == 3 } == ['bbb','ccc']
+            assert arraylistOfStrings.findAll { it.length() == 3 } == ['bbb','ccc']
+        '''
+    }
+    void testInferenceForDGM_findAllOnMap() {
+        assertScript '''
+            assert [a:2,b:4,c:6].findAll { String k, int v -> k.toUpperCase()=='C' && 2*v==12 } == [c:6]
+            assert [a:2,b:4,c:6].findAll { k, v -> k.toUpperCase()=='C' && 2*v==12 } == [c:6]
+            assert [a:2,b:4,c:6].findAll { e -> e.key.toUpperCase()=='C' && 2*e.value==12 } == [c:6]
+            assert [a:2,b:4,c:6].findAll { it.key.toUpperCase()=='C' && 2*it.value==12 } == [c:6]
+        '''
+    }
+
+    void testInferenceForDGM_findResultOnCollection() {
+        assertScript '''
+            assert ['barbar','barbaz','foo'].findResult { it.length() == 3?it.toUpperCase():null } == 'FOO'
+            assert ['barbar','barbaz','foo'].findResult { String it -> it.length() == 3?it.toUpperCase():null } == 'FOO'
+            assert ['barbar','barbaz','foo'].findResult { it -> it.length() == 3?it.toUpperCase():null } == 'FOO'
+            assert ['barbar','barbaz','foo'].findResult(-1) { it.length() == 4?it.toUpperCase():null } == -1
+            assert ['barbar','barbaz','foo'].findResult(-1) { String it -> it.length() == 4?it.toUpperCase():null } == -1
+            assert ['barbar','barbaz','foo'].findResult(-1) { it -> it.length() == 4?it.toUpperCase():null } == -1
+        '''
+    }
+    void testInferenceForDGM_findResultOnIterable() {
+        assertScript '''
+            assert (0..10).findResult { it== 3?2*it:null } == 6
+            assert (0..10).findResult { int it -> it==3?2*it:null } == 6
+            assert (0..10).findResult { it -> it==3?2*it:null } == 6
+        '''
+    }
+    void testInferenceForDGM_findResultOnMap() {
+        assertScript '''
+            assert [a:1, b:2, c:3].findResult { String k, int v -> "${k.toUpperCase()}$v"=='C3'?2*v:null } == 6
+            assert [a:1, b:2, c:3].findResult { k, v -> "${k.toUpperCase()}$v"=='C3'?2*v:null } == 6
+            assert [a:1, b:2, c:3].findResult { e -> "${e.key.toUpperCase()}$e.value"=='C3'?2*e.value:null } == 6
+            assert [a:1, b:2, c:3].findResult { "${it.key.toUpperCase()}$it.value"=='C3'?2*it.value:null } == 6
+
+            assert [a:1, b:2, c:3].findResult('a') { String k, int v -> "${k.toUpperCase()}$v"=='C4'?2*v:null } == 'a'
+            assert [a:1, b:2, c:3].findResult('a') { k, v -> "${k.toUpperCase()}$v"=='C4'?2*v:null } == 'a'
+            assert [a:1, b:2, c:3].findResult('a') { e -> "${e.key.toUpperCase()}$e.value"=='C4'?2*e.value:null } == 'a'
+            assert [a:1, b:2, c:3].findResult('a') { "${it.key.toUpperCase()}$it.value"=='C4'?2*it.value:null } == 'a'
+        '''
+    }
+
+    void testInferenceForDGM_findResultsOnIterable() {
+        assertScript '''
+            assert (0..10).findResults { it<3?2*it:null } == [0,2,4]
+            assert (0..10).findResults { int it -> it<3?2*it:null } == [0,2,4]
+            assert (0..10).findResults { it -> it<3?2*it:null } == [0,2,4]
+        '''
+    }
+    void testInferenceForDGM_findResultsOnMap() {
+        assertScript '''
+            assert [a:1, b:2, c:3].findResults { String k, int v -> "${k.toUpperCase()}$v"=='C3'?2*v:null } == [6]
+            assert [a:1, b:2, c:3].findResults { k, v -> "${k.toUpperCase()}$v"=='C3'?2*v:null } == [6]
+            assert [a:1, b:2, c:3].findResults { e -> "${e.key.toUpperCase()}$e.value"=='C3'?2*e.value:null } == [6]
+            assert [a:1, b:2, c:3].findResults { "${it.key.toUpperCase()}$it.value"=='C3'?2*it.value:null } == [6]
         '''
     }
 }
