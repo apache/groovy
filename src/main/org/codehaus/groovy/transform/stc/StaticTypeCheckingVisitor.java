@@ -3760,6 +3760,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         Map<String, GenericsType> resolvedPlaceholders = null;
+        if (isPrimitiveType(receiver) && !isPrimitiveType(declaringClass)) {
+            receiver = getWrapper(receiver);
+        }
         ClassNode current = receiver;
         while (true) {
             //extract the place holders
