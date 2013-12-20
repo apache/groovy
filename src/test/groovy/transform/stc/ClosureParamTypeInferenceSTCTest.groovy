@@ -457,4 +457,70 @@ import groovy.transform.stc.ClosureParams
             assert [langs:['Groovy','Java']].countBy { it.key.length() } == [5:1]
         '''
     }
+
+    void testInferenceForDGM_downto() {
+        assertScript '''
+            BigDecimal sum = 0
+            10.0.downto(0) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            BigInteger sum = 0
+            10G.downto(0) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            double sum = 0
+            10d.downto(0) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            Double sum = 0
+            new Double(10).downto(0) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            float sum = 0
+            10f.downto(0) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            Float sum = 0
+            new Float(10).downto(0) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            long sum = 0
+            10L.downto(0) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            Long sum = 0
+            new Long(10).downto(0) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            def sum = 0
+            new Byte((byte)10).downto(0) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+    }
 }

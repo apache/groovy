@@ -11490,7 +11490,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to call
      * @since 1.0
      */
-    public static void downto(Number self, Number to, Closure closure) {
+    public static void downto(Number self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         int self1 = self.intValue();
         int to1 = to.intValue();
         if (self1 >= to1) {
@@ -11511,7 +11511,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void downto(long self, Number to, Closure closure) {
+    public static void downto(long self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         long to1 = to.longValue();
         if (self >= to1) {
             for (long i = self; i >= to1; i--) {
@@ -11531,7 +11531,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void downto(Long self, Number to, Closure closure) {
+    public static void downto(Long self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         long to1 = to.longValue();
         if (self >= to1) {
             for (long i = self; i >= to1; i--) {
@@ -11551,7 +11551,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void downto(float self, Number to, Closure closure) {
+    public static void downto(float self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         float to1 = to.floatValue();
         if (self >= to1) {
             for (float i = self; i >= to1; i--) {
@@ -11570,7 +11570,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void downto(Float self, Number to, Closure closure) {
+    public static void downto(Float self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         float to1 = to.floatValue();
         if (self >= to1) {
             for (float i = self; i >= to1; i--) {
@@ -11589,7 +11589,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void downto(double self, Number to, Closure closure) {
+    public static void downto(double self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         double to1 = to.doubleValue();
         if (self >= to1) {
             for (double i = self; i >= to1; i--) {
@@ -11608,7 +11608,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void downto(Double self, Number to, Closure closure) {
+    public static void downto(Double self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         double to1 = to.doubleValue();
         if (self >= to1) {
             for (double i = self; i >= to1; i--) {
@@ -11627,7 +11627,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void downto(BigInteger self, Number to, Closure closure) {
+    public static void downto(BigInteger self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         if (to instanceof BigDecimal) {
             final BigDecimal one = BigDecimal.valueOf(10, 1);  // That's what you get for "1.0".
             final BigDecimal to1 = (BigDecimal) to;
@@ -11673,7 +11673,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void downto(BigDecimal self, Number to, Closure closure) {
+    public static void downto(BigDecimal self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         final BigDecimal one = BigDecimal.valueOf(10, 1);  // Quick way to get "1.0".
         if (to instanceof BigDecimal) {
             BigDecimal to1 = (BigDecimal) to;
