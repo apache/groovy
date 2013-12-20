@@ -523,4 +523,129 @@ import groovy.transform.stc.ClosureParams
             assert sum == 110
         '''
     }
+    
+    void testInferenceForDGM_upto() {
+        assertScript '''
+            BigDecimal sum = 0
+            0.0.upto(10) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            BigInteger sum = 0
+            0G.upto(10) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            double sum = 0
+            0d.upto(10) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            Double sum = 0
+            new Double(0).upto(10) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            float sum = 0
+            0f.upto(10) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            Float sum = 0
+            new Float(0).upto(10) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            long sum = 0
+            0L.upto(10) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            Long sum = 0
+            new Long(0).upto(10) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+        assertScript '''
+            def sum = 0
+            new Byte((byte)0).upto(10) {
+                sum += 2*it
+            }
+            assert sum == 110
+        '''
+    }
+
+    void testInferenceForDGM_dropWhileOnIterable() {
+        assertScript '''
+        assert (0..10).dropWhile { it<5 } == (5..10)
+        assert (0..10).dropWhile { int i -> i<5 } == (5..10)
+        '''
+    }
+
+    void testInferenceForDGM_dropWhileOnList() {
+        assertScript '''
+        assert [0,1,2,3,4,5,6,7,8,9,10].dropWhile { it<5 } == [5,6,7,8,9,10]
+        assert [0,1,2,3,4,5,6,7,8,9,10].dropWhile { int i -> i<5 } == [5,6,7,8,9,10]
+        '''
+    }
+
+    void testInferenceForDGM_dropWhileOnIterator() {
+        assertScript '''
+        assert [0,1,2,3,4,5,6,7,8,9,10].iterator().dropWhile { it<5 } as List == [5,6,7,8,9,10]
+        assert [0,1,2,3,4,5,6,7,8,9,10].iterator().dropWhile { int i -> i<5 } as List == [5,6,7,8,9,10]
+        '''
+    }
+
+    void testInferenceForDGM_dropWhileOnArray() {
+        assertScript '''
+        Integer[] array = [0,1,2,3,4,5,6,7,8,9,10]
+        assert array.iterator().dropWhile { it<5 } as List == [5,6,7,8,9,10]
+        assert array.iterator().dropWhile { int i -> i<5 } as List == [5,6,7,8,9,10]
+        '''
+    }
+
+    void testInferenceForDGM_eachByte() {
+        assertScript '''
+            byte[] array = new byte[0]
+            array.eachByte { byte b -> b.intValue() }
+            array.eachByte { it.intValue() }
+        '''
+        assertScript '''
+            Byte[] array = new Byte[0]
+            array.eachByte { Byte b -> b.intValue() }
+            array.eachByte { it.intValue() }
+        '''
+    }
+
+    void testInferenceForEachWithIndexOnMap() {
+        assertScript '''
+            [a:'A',bb:'B',ccc:'C'].eachWithIndex { k,v,i -> assert k.toUpperCase() == v*(1+i) }
+            [a:'A',bb:'B',ccc:'C'].eachWithIndex { e,i -> assert e.key.toUpperCase() == e.value*(1+i) }
+        '''
+    }
+    void testInferenceForEachWithIndexOnIterable() {
+        assertScript '''
+            ['1','2','3'].eachWithIndex { e,i -> assert e.toUpperCase() == String.valueOf(1+i) }
+        '''
+    }
+    void testInferenceForEachWithIndexOnIterator() {
+        assertScript '''
+            ['1','2','3'].iterator().eachWithIndex { e,i -> assert e.toUpperCase() == String.valueOf(1+i) }
+        '''
+    }
 }

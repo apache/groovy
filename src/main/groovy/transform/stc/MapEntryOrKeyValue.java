@@ -25,6 +25,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -39,18 +40,27 @@ import java.util.Map;
  *     <li><code>{ ...}</code> where <i>it</i> is an implicit {@link java.util.Map.Entry map entry}</li>
  * </ul>
  * <p>This hint handles all those cases by picking the generics from the first argument of the method (by default).</p>
- * <p>If options is not empty, then you can specify another index for the parameter:</p>
+ * <p>The options array is used to modify the behavior of this hint. Each string in the option array consists of
+ * a key=value pair.</p>
+ * <ul>
+ *     <li><i>argNum=index</i> of the parameter representing the map (by default, 0)</li>
+ *     <li><i>index=true or false</i>, by default false. If true, then an additional "int" parameter is added,
+ *     for "withIndex" variants</li>
+ * </ul>
  * <code>void doSomething(String str, Map&lt;K,&gt;V map, @ClosureParams(value=MapEntryOrKeyValue.class,options="1") Closure c) { ... }</code>
  */
 public class MapEntryOrKeyValue extends ClosureSignatureHint {
     private final static ClassNode MAPENTRY_TYPE = ClassHelper.make(Map.Entry.class);
 
     public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options, final ASTNode usage) {
-        int index = 0;
-        if (options!=null && options.length>0) {
-            index = Integer.valueOf(options[0]);
+        Options opt;
+        try {
+            opt = Options.parse(node, usage, options);
+        } catch (IncorrectTypeHintException e) {
+            sourceUnit.addError(e);
+            return Collections.emptyList();
         }
-        GenericsType[] genericsTypes = node.getParameters()[index].getOriginType().getGenericsTypes();
+        GenericsType[] genericsTypes = node.getParameters()[opt.parameterIndex].getOriginType().getGenericsTypes();
         if (genericsTypes==null) {
             // would happen if you have a raw Map type for example
             genericsTypes = new GenericsType[] {
@@ -58,10 +68,50 @@ public class MapEntryOrKeyValue extends ClosureSignatureHint {
                 new GenericsType(ClassHelper.OBJECT_TYPE)
             };
         }
-        ClassNode[] firstSig = {genericsTypes[0].getType(), genericsTypes[1].getType()};
+        ClassNode[] firstSig;
+        ClassNode[] secondSig;
         ClassNode mapEntry = MAPENTRY_TYPE.getPlainNodeReference();
         mapEntry.setGenericsTypes(genericsTypes);
-        ClassNode[] secondSig = {mapEntry};
+        if (opt.generateIndex) {
+            firstSig = new ClassNode[] {genericsTypes[0].getType(), genericsTypes[1].getType(), ClassHelper.int_TYPE};
+            secondSig = new ClassNode[] {mapEntry, ClassHelper.int_TYPE};
+
+        } else {
+            firstSig = new ClassNode[] {genericsTypes[0].getType(), genericsTypes[1].getType()};
+            secondSig = new ClassNode[] {mapEntry};
+        }
         return Arrays.asList(firstSig, secondSig);
     }
+    
+    private static class Options {
+        final int parameterIndex;
+        final boolean generateIndex;
+
+        private Options(final int parameterIndex, final boolean generateIndex) {
+            this.parameterIndex = parameterIndex;
+            this.generateIndex = generateIndex;
+        }
+        
+        static Options parse(MethodNode mn, ASTNode source, String[] options) throws IncorrectTypeHintException {
+            int pIndex = 0;
+            boolean generateIndex = false;
+            for (String option : options) {
+                String[] keyValue = option.split("=");
+                if (keyValue.length==2) {
+                    String key = keyValue[0];
+                    String value = keyValue[1];
+                    if ("argNum".equals(key)) {
+                        pIndex = Integer.valueOf(value);
+                    } else if ("index".equals(key)) {
+                        generateIndex = Boolean.valueOf(value);
+                    } else {
+                        throw new IncorrectTypeHintException(mn, "Unrecognized option: "+key, source.getLineNumber(), source.getColumnNumber());
+                    }
+                } else {
+                    throw new IncorrectTypeHintException(mn, "Incorrect option format. Should be argNum=<num> or index=<boolean> ", source.getLineNumber(), source.getColumnNumber());
+                }
+            }
+            return new Options(pIndex, generateIndex);
+        }
+    } 
 }

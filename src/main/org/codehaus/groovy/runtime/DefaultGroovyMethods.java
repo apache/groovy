@@ -19,6 +19,7 @@ import groovy.io.FileType;
 import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
 import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FromString;
 import groovy.transform.stc.MapEntryOrKeyValue;
 import groovy.transform.stc.FirstArg;
 import groovy.util.ClosureComparator;
@@ -1321,6 +1322,42 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return self;
     }
 
+    /**
+     * Iterates through an iterable type,
+     * passing each item and the item's index (a counter starting at
+     * zero) to the given closure.
+     *
+     * @param self    an Iterable
+     * @param closure a Closure to operate on each item
+     * @return the self Iterable
+     * @since 2.3.0
+     */
+    public static <T> Iterable<T> eachWithIndex(Iterable<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
+        eachWithIndex(self.iterator(), closure);
+        return self;
+    }
+
+    /**
+     * Iterates through an iterator type,
+     * passing each item and the item's index (a counter starting at
+     * zero) to the given closure.
+     *
+     * @param self    an Iterable
+     * @param closure a Closure to operate on each item
+     * @return the self Iterable
+     * @since 2.3.0
+     */
+    public static <T> Iterator<T> eachWithIndex(Iterator<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
+        final Object[] args = new Object[2];
+        int counter = 0;
+        while (self.hasNext()) {
+            args[0] = self.next();
+            args[1] = counter++;
+            closure.call(args);
+        }
+        return self;
+    }
+
     public static <T> Iterable<T> each(Iterable<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure closure) {
         each(self.iterator(), closure);
         return self;
@@ -1403,7 +1440,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Object
      * @since 1.5.0
      */
-    public static <K, V> Map<K, V> eachWithIndex(Map<K, V> self, Closure closure) {
+    public static <K, V> Map<K, V> eachWithIndex(Map<K, V> self, @ClosureParams(value=MapEntryOrKeyValue.class, options="index=true") Closure closure) {
         int counter = 0;
         for (Map.Entry entry : self.entrySet()) {
             callClosureForMapEntryAndCounter(closure, entry, counter++);
@@ -7525,7 +7562,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         evaluates to true for each element dropped from the front of the List
      * @since 1.8.7
      */
-    public static <T> List<T> dropWhile(List<T> self, Closure<?> condition) {
+    public static <T> List<T> dropWhile(List<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<?> condition) {
         int num = 0;
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         for (T value : self) {
@@ -7556,7 +7593,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         evaluates to true for each element dropped from the front of the Iterable
      * @since 1.8.7
      */
-    public static <T> List<T> dropWhile(Iterable<T> self, Closure<?> condition) {
+    public static <T> List<T> dropWhile(Iterable<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<?> condition) {
         return toList(dropWhile(self.iterator(), condition));
     }
 
@@ -7580,7 +7617,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         evaluates to true for each element dropped from the front of the Map
      * @since 1.8.7
      */
-    public static <K, V> Map<K, V> dropWhile(Map<K, V> self, Closure<?> condition) {
+    public static <K, V> Map<K, V> dropWhile(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> condition) {
         if (self.isEmpty()) {
             return createSimilarMap(self);
         }
@@ -7613,7 +7650,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         evaluates to true for each element dropped from the front of the array
      * @since 1.8.7
      */
-    public static <T> T[] dropWhile(T[] self, Closure<?> condition) {
+    public static <T> T[] dropWhile(T[] self, @ClosureParams(FirstArg.Component.class) Closure<?> condition) {
         int num = 0;
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         while (num < self.length) {
@@ -7644,7 +7681,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         evaluates to true for each element dropped from the front of the Iterator
      * @since 1.8.7
      */
-    public static <T> Iterator<T> dropWhile(Iterator<T> self, Closure<?> condition) {
+    public static <T> Iterator<T> dropWhile(Iterator<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<?> condition) {
         return new DropWhileIterator<T>(self, condition);
     }
 
@@ -11256,7 +11293,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to call
      * @since 1.0
      */
-    public static void upto(Number self, Number to, Closure closure) {
+    public static void upto(Number self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         int self1 = self.intValue();
         int to1 = to.intValue();
         if (self1 <= to1) {
@@ -11277,7 +11314,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void upto(long self, Number to, Closure closure) {
+    public static void upto(long self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         long to1 = to.longValue();
         if (self <= to1) {
             for (long i = self; i <= to1; i++) {
@@ -11297,7 +11334,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void upto(Long self, Number to, Closure closure) {
+    public static void upto(Long self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         long to1 = to.longValue();
         if (self <= to1) {
             for (long i = self; i <= to1; i++) {
@@ -11317,7 +11354,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void upto(float self, Number to, Closure closure) {
+    public static void upto(float self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         float to1 = to.floatValue();
         if (self <= to1) {
             for (float i = self; i <= to1; i++) {
@@ -11337,7 +11374,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void upto(Float self, Number to, Closure closure) {
+    public static void upto(Float self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         float to1 = to.floatValue();
         if (self <= to1) {
             for (float i = self; i <= to1; i++) {
@@ -11357,7 +11394,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void upto(double self, Number to, Closure closure) {
+    public static void upto(double self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         double to1 = to.doubleValue();
         if (self <= to1) {
             for (double i = self; i <= to1; i++) {
@@ -11377,7 +11414,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void upto(Double self, Number to, Closure closure) {
+    public static void upto(Double self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         double to1 = to.doubleValue();
         if (self <= to1) {
             for (double i = self; i <= to1; i++) {
@@ -11401,7 +11438,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void upto(BigInteger self, Number to, Closure closure) {
+    public static void upto(BigInteger self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         if (to instanceof BigDecimal) {
             final BigDecimal one = BigDecimal.valueOf(10, 1);
             BigDecimal self1 = new BigDecimal(self);
@@ -11449,7 +11486,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
-    public static void upto(BigDecimal self, Number to, Closure closure) {
+    public static void upto(BigDecimal self, Number to, @ClosureParams(FirstArg.class) Closure closure) {
         final BigDecimal one = BigDecimal.valueOf(10, 1);  // That's what you get for "1.0".
         if (to instanceof BigDecimal) {
             BigDecimal to1 = (BigDecimal) to;
@@ -12225,7 +12262,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #each(java.lang.Object, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static void eachByte(Byte[] self, Closure closure) {
+    public static void eachByte(Byte[] self, @ClosureParams(FirstArg.Component.class) Closure closure) {
         each(self, closure);
     }
 
@@ -12237,7 +12274,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #each(java.lang.Object, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static void eachByte(byte[] self, Closure closure) {
+    public static void eachByte(byte[] self, @ClosureParams(FirstArg.Component.class) Closure closure) {
         each(self, closure);
     }
 
