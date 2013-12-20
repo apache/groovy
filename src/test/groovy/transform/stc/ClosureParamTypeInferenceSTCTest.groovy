@@ -766,4 +766,32 @@ import groovy.transform.stc.ClosureParams
             assert [a:1, b:2, c:3].findResults { "${it.key.toUpperCase()}$it.value"=='C3'?2*it.value:null } == [6]
         '''
     }
+
+    void testInferenceForDGM_groupByIterable() {
+        assertScript '''
+            assert ['a','bb','cc','d','eee'].groupBy { it.length() } == [1:['a','d'],2:['bb','cc'],3:['eee']]
+        '''
+    }
+    void testInferenceForDGM_groupByArray() {
+        assertScript '''
+            String[] array = ['a','bb','cc','d','eee']
+            assert array.groupBy { it.length() } == [1:['a','d'],2:['bb','cc'],3:['eee']]
+        '''
+    }
+    void testInferenceForDGM_groupByMap() {
+        assertScript '''
+            assert [a:'1',b:'2',c:'C'].groupBy { e -> e.key.toUpperCase()==e.value?1:0 } == [0:[a:'1',b:'2'], 1:[c:'C']]
+            assert [a:'1',b:'2',c:'C'].groupBy { k, v -> k.toUpperCase()==v?1:0 } == [0:[a:'1',b:'2'], 1:[c:'C']]
+            assert [a:'1',b:'2',c:'C'].groupBy { it.key.toUpperCase()==it.value?1:0 } == [0:[a:'1',b:'2'], 1:[c:'C']]
+        '''
+    }
+    void testInferenceForDGM_groupEntriesBy() {
+        assertScript '''
+            def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupEntriesBy { k,v -> v % 2 }
+            result = [a:1,b:2,c:3,d:4,e:5,f:6].groupEntriesBy { it.value % 2 }
+            result = [a:1,b:2,c:3,d:4,e:5,f:6].groupEntriesBy { e -> e.value % 2 }
+            assert result[0]*.key == ["b", "d", "f"]
+            assert result[1]*.value == [1, 3, 5]
+     '''
+    }
 }

@@ -3747,7 +3747,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys
      * @since 2.2.0
      */
-    public static <K, T> Map<K, List<T>> groupBy(Iterable<T> self, Closure<K> closure) {
+    public static <K, T> Map<K, List<T>> groupBy(Iterable<T> self, @ClosureParams(FirstArg.FirstGenericType.class) Closure<K> closure) {
         Map<K, List<T>> answer = new LinkedHashMap<K, List<T>>();
         for (T element : self) {
             K value = closure.call(element);
@@ -3774,7 +3774,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #groupBy(Iterable, Closure)
      * @since 2.2.0
      */
-    public static <K, T> Map<K, List<T>> groupBy(T[] self, Closure<K> closure) {
+    public static <K, T> Map<K, List<T>> groupBy(T[] self, @ClosureParams(FirstArg.Component.class) Closure<K> closure) {
         return groupBy((Iterable<T>)Arrays.asList(self), closure);
     }
 
@@ -4032,7 +4032,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys
      * @since 1.5.2
      */
-    public static <G, K, V> Map<G, List<Map.Entry<K, V>>> groupEntriesBy(Map<K, V> self, Closure<G> closure) {
+    public static <G, K, V> Map<G, List<Map.Entry<K, V>>> groupEntriesBy(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<G> closure) {
         final Map<G, List<Map.Entry<K, V>>> answer = new LinkedHashMap<G, List<Map.Entry<K, V>>>();
         for (Map.Entry<K, V> entry : self.entrySet()) {
             G value = callClosureForMapEntry(closure, entry);
@@ -4062,7 +4062,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys
      * @since 1.0
      */
-    public static <G, K, V> Map<G, Map<K, V>> groupBy(Map<K, V> self, Closure<G> closure) {
+    public static <G, K, V> Map<G, Map<K, V>> groupBy(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<G> closure) {
         final Map<G, List<Map.Entry<K, V>>> initial = groupEntriesBy(self, closure);
         final Map<G, Map<K, V>> answer = new LinkedHashMap<G, Map<K, V>>();
         for (Map.Entry<G, List<Map.Entry<K, V>>> outer : initial.entrySet()) {
