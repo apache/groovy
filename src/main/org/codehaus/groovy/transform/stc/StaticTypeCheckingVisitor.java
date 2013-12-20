@@ -3712,8 +3712,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 receiver.getGenericsTypes().length>0 &&
                 !OBJECT_TYPE.equals(receiver.getGenericsTypes()[0].getType()))
         {
-            resolvedPlaceholders = new HashMap<String, GenericsType>();
-            GenericsUtils.extractPlaceholders(receiver.getGenericsTypes()[0].getType(), resolvedPlaceholders);
+            return resolvePlaceHoldersFromDeclaration(receiver.getGenericsTypes()[0].getType(), declaration, method, isStaticTarget);
         } else {
             resolvedPlaceholders = extractPlaceHolders(method, receiver, declaration);
         }
