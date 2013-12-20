@@ -365,11 +365,37 @@ import groovy.transform.stc.ClosureParams
     }
 
     class Tor<D,U> {
-        public void foo(@ClosureParams(value=FromString,options=["D","List<U>"]) Closure cl) { cl.call(3, [new Foo(), new Foo()]) }
+        public void foo(@ClosureParams(value=FromString,options=["D,List<U>"]) Closure cl) { cl.call(3, [new Foo(), new Foo()]) }
     }
     def tor = new Tor<Integer,Foo>()
 
     tor.foo { r, e -> r.times { e.each { it.bar() } } }
+'''
+    }
+
+    void testFromStringWithGenericPlaceholderFromClassWithTwoGenericsAndPolymorphicSignature() {
+        assertScript '''import groovy.transform.stc.FromString
+import groovy.transform.stc.ClosureParams
+
+    class Foo {
+        void bar() {
+            println 'Haha!'
+        }
+    }
+
+    class Tor<D,U> {
+        public void foo(@ClosureParams(value=FromString,options=["D,List<U>", "D"]) Closure cl) {
+            if (cl.maximumNumberOfParameters==2) {
+                cl.call(3, [new Foo(), new Foo()])
+            } else {
+                cl.call(3)
+            }
+        }
+    }
+    def tor = new Tor<Integer,Foo>()
+
+    tor.foo { r, e -> r.times { e.each { it.bar() } } }
+    tor.foo { it.times { println 'polymorphic' } }
 '''
     }
 

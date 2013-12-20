@@ -23,9 +23,11 @@ import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ResolveVisitor;
@@ -34,16 +36,23 @@ import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.Reduction;
 
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
  * <p>A closure parameter hint class that is convenient if you want to use a String representation
  * of the signature. It makes use of the {@link ClosureParams#options() option strings}, where
- * each string corresponds to a single argument.</p>
+ * each string corresponds to a single signature.</p>
  *
- * <p>The resulting signature has as many parameters as there are options. The closure is expected
- * to be monomorphic (supports a single signature).</p>
+ * <p>The following example describes a closure as accepting a single signature (List&lt;T&gt; list -&gt;):</p>
+ *
+ * <code>public &lt;T&gt; T apply(T src, @ClosureParams(value=FromString.class, options="List&lt;T&gt;" Closure&lt;T&gt; cl)</code>
+ *
+ * <p>The next example describes a closure as accepting two signatures (List&lt;T&gt; list -&gt;) and (T t -&gt;):</p>
+ *
+ * <code>public &lt;T&gt; T apply(T src, @ClosureParams(value=FromString.class, options={"List&lt;T&gt;","T"} Closure&lt;T&gt; cl)</code>
  *
  * <p>It is advisable not to use this hint as a replacement for the various {@link FirstArg}, {@link SimpleType},
  * ... hints because it is actually much slower. Using this hint should therefore be limited
@@ -52,16 +61,15 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Cédric Champeau
  * @since 2.3.0
  */
-public class FromString extends SingleSignatureClosureHint {
+public class FromString extends ClosureSignatureHint {
 
     @Override
-    public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final ASTNode usage) {
-        ClassNode[] result = new ClassNode[options.length];
-        for (int i = 0; i < options.length; i++) {
-            String option = options[i];
-            result[i] = parseOption(option, sourceUnit, compilationUnit, node, usage);
+    public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options, final ASTNode usage) {
+        List<ClassNode[]> list = new ArrayList<ClassNode[]>(options.length);
+        for (String option : options) {
+            list.add(parseOption(option, sourceUnit, compilationUnit, node, usage));
         }
-        return result;
+        return list;
     }
 
     /**
@@ -77,8 +85,8 @@ public class FromString extends SingleSignatureClosureHint {
      * @param usage
      * @return a class node if it could be parsed and resolved, null otherwise
      */
-    private ClassNode parseOption(final String option, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final MethodNode mn, final ASTNode usage) {
-        GroovyLexer lexer = new GroovyLexer(new StringReader(option));
+    private ClassNode[] parseOption(final String option, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final MethodNode mn, final ASTNode usage) {
+        GroovyLexer lexer = new GroovyLexer(new StringReader("DummyNode<"+option+">"));
         final GroovyRecognizer rn = GroovyRecognizer.make(lexer);
         try {
             rn.classOrInterfaceType(true);
@@ -92,27 +100,17 @@ public class FromString extends SingleSignatureClosureHint {
             };
             plugin.buildAST(null, null, null);
             ClassNode parsedNode = ref.get();
-            ClassNode dummyClass = new ClassNode("dummy",0, ClassHelper.OBJECT_TYPE);
-            dummyClass.setModule(new ModuleNode(sourceUnit));
-            dummyClass.setGenericsTypes(mn.getDeclaringClass().getGenericsTypes());
-            MethodNode dummyMN = new MethodNode(
-                    "dummy",
-                    0,
-                    parsedNode,
-                    Parameter.EMPTY_ARRAY,
-                    ClassNode.EMPTY_ARRAY,
-                    EmptyStatement.INSTANCE
-            );
-            dummyMN.setGenericsTypes(mn.getGenericsTypes());
-            dummyClass.addMethod(dummyMN);
-            ResolveVisitor visitor = new ResolveVisitor(compilationUnit) {
-                @Override
-                protected void addError(final String msg, final ASTNode expr) {
-                    sourceUnit.addError(new IncorrectTypeHintException(mn, msg, usage.getLineNumber(), usage.getColumnNumber()));
-                }
-            };
-            visitor.startResolving(dummyClass, sourceUnit);
-            return dummyMN.getReturnType();
+            // the returned node is DummyNode<Param1, Param2, Param3, ...)
+            GenericsType[] parsedNodeGenericsTypes = parsedNode.getGenericsTypes();
+            if (parsedNodeGenericsTypes==null) {
+                return null;
+            }
+            ClassNode[] signature = new ClassNode[parsedNodeGenericsTypes.length];
+            for (int i = 0; i < parsedNodeGenericsTypes.length; i++) {
+                final GenericsType genericsType = parsedNodeGenericsTypes[i];
+                signature[i] = resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
+            }
+            return signature;
         } catch (RecognitionException e) {
             sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
         } catch (TokenStreamException e) {
@@ -122,4 +120,29 @@ public class FromString extends SingleSignatureClosureHint {
         }
         return null;
     }
+
+    private ClassNode resolveClassNode(final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final MethodNode mn, final ASTNode usage, final ClassNode parsedNode) {
+        ClassNode dummyClass = new ClassNode("dummy",0, ClassHelper.OBJECT_TYPE);
+        dummyClass.setModule(new ModuleNode(sourceUnit));
+        dummyClass.setGenericsTypes(mn.getDeclaringClass().getGenericsTypes());
+        MethodNode dummyMN = new MethodNode(
+                "dummy",
+                0,
+                parsedNode,
+                Parameter.EMPTY_ARRAY,
+                ClassNode.EMPTY_ARRAY,
+                EmptyStatement.INSTANCE
+        );
+        dummyMN.setGenericsTypes(mn.getGenericsTypes());
+        dummyClass.addMethod(dummyMN);
+        ResolveVisitor visitor = new ResolveVisitor(compilationUnit) {
+            @Override
+            protected void addError(final String msg, final ASTNode expr) {
+                sourceUnit.addError(new IncorrectTypeHintException(mn, msg, usage.getLineNumber(), usage.getColumnNumber()));
+            }
+        };
+        visitor.startResolving(dummyClass, sourceUnit);
+        return dummyMN.getReturnType();
+    }
+
 }
