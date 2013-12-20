@@ -224,8 +224,8 @@ def items = []
 
     void testInferenceOnNonExtensionMethod() {
         assertScript '''import groovy.transform.stc.ClosureParams
-            import groovy.transform.stc.FirstArg
-            public <T> T foo(T arg, @ClosureParams(FirstArg) Closure c) { c.call(arg) }
+            import groovy.transform.stc.FirstParam
+            public <T> T foo(T arg, @ClosureParams(FirstParam) Closure c) { c.call(arg) }
             assert foo('a') { it.toUpperCase() } == 'A'
 '''
     }

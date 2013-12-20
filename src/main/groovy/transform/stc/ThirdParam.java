@@ -23,64 +23,65 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 
 /**
- * <p>A hint used to instruct the type checker to pick the second parameter type. For example:</p>
- * <code>public &lt;T,U&gt; def doWith(T first, U second, @ClosureParams(SecondArg.class) Closure c) { c.call(src); }</code>
+ * <p>A hint used to instruct the type checker to pick the third parameter type. For example:</p>
+ * <code>public &lt;T,U,V&gt; def doWith(T first, U second, V third, @ClosureParams(ThirdParam.class) Closure c) { ... }</code>
  *
  * <p>This class has several inner classes that also helps picking generic argument types instead of the parameter type.</p>
  *
  * @author Cédric Champeau
  * @since 2.3.0
  */
-public class SecondArg extends PickAnyArgumentHint {
-    public SecondArg() {
-        super(1,-1);
+public class ThirdParam extends PickAnyArgumentHint {
+    public ThirdParam() {
+        super(2,-1);
     }
 
     /**
-     * <p>A hint used to instruct the type checker to pick the first generic type of the second parameter type. For example:</p>
-     * <code>void &lt;T&gt; doWithElements(String base, List&lt;T&gt; src, @ClosureParams(SecondArg.FirstGenericType.class) Closure c) { ... } }</code>
+     * <p>A hint used to instruct the type checker to pick the first generic type of the third parameter type. For example:</p>
+     * <code>void &lt;T&gt; doWithElements(String first, Integer second, List&lt;T&gt; third, @ClosureParams(SecondParam.FirstGenericType.class) Closure c) { ... } }</code>
      *
      * @author Cédric Champeau
      * @since 2.3.0
      */
     public static class FirstGenericType extends PickAnyArgumentHint {
         public FirstGenericType() {
-            super(1,0);
+            super(2,0);
         }
     }
 
+
     /**
-     * <p>A hint used to instruct the type checker to pick the second generic type of the second parameter type. For example:</p>
-     * <code>void &lt;T,U&gt; doWithElements(String base, Tuple&lt;T,U&gt; src, @ClosureParams(SecondArg.SecondGenericType.class) Closure c) { ... }</code>
+     * <p>A hint used to instruct the type checker to pick the second generic type of the third parameter type. For example:</p>
+     * <code>void &lt;T,U&gt; doWithElements(String first, Integer second, Tuple&lt;T,U&gt; third, @ClosureParams(SecondParam.SecondGenericType.class) Closure c) { ... }</code>
      *
      * @author Cédric Champeau
      * @since 2.3.0
      */
     public static class SecondGenericType extends PickAnyArgumentHint {
         public SecondGenericType() {
-            super(1,1);
+            super(2,1);
         }
     }
 
     /**
-     * <p>A hint used to instruct the type checker to pick the second generic type of the second parameter type. For example:</p>
-     * <code>void &lt;T,U,V&gt; doWithElements(String base, Triple&lt;T,U,V&gt; src, @ClosureParams(SecondArg.ThirdGenericType.class) Closure c) { ... }</code>
+     * <p>A hint used to instruct the type checker to pick the second generic type of the third parameter type. For example:</p>
+     * <code>void &lt;T,U,V&gt; doWithElements(String first, Integer second, Triple&lt;T,U,V&gt; src, @ClosureParams(SecondParam.ThirdGenericType.class) Closure c) { ... }</code>
      *
      * @author Cédric Champeau
      * @since 2.3.0
      */
     public static class ThirdGenericType extends PickAnyArgumentHint {
         public ThirdGenericType() {
-            super(1,2);
+            super(2,2);
         }
     }
 
     /**
-     * <p>A hint used to instruct the type checker to pick the type of the component of the second parameter type, which is therefore
+     * <p>A hint used to instruct the type checker to pick the type of the component of the third parameter type, which is therefore
      * expected to be an array, like in this example:</p>
-     * <code>void &lt;T&gt; doWithArray(String first, T[] array, @ClosureParams(FirstArg.Component.class) Closure c) { ... }</code>
+     * <code>void &lt;T&gt; doWithArray(String first, int second, T[] third, @ClosureParams(FirstParam.Component.class) Closure c) { ... }</code>
      */
-    public static class Component extends SecondArg {
+    public static class Component extends ThirdParam {
         @Override
         public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit, final ASTNode usage) {
             final ClassNode[] parameterTypes = super.getParameterTypes(node, options, sourceUnit, unit, usage);

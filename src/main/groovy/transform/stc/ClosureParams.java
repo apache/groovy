@@ -46,8 +46,8 @@ import java.lang.annotation.Target;
  * </ul>
  * </p>
  * <p>As a result, the previous signature can be written like this:</p>
- * <code>public &lt;T,R&gt; List&lt;R&gt; doSomething(List&lt;T&gt; source, @ClosureParams(FirstArg.FirstGenericType.class) Closure&lt;R&gt; consumer)</code>
- * <p>Which uses the {@link groovy.transform.stc.FirstArg.FirstGenericType} first generic type of the first argument</p> hint to tell that the only expected
+ * <code>public &lt;T,R&gt; List&lt;R&gt; doSomething(List&lt;T&gt; source, @ClosureParams(FirstParam.FirstGenericType.class) Closure&lt;R&gt; consumer)</code>
+ * <p>Which uses the {@link FirstParam.FirstGenericType} first generic type of the first argument</p> hint to tell that the only expected
  * argument type corresponds to the type of the first generic argument type of the first method parameter.
  *
  * @author Cédric Champeau

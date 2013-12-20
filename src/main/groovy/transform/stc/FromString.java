@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ResolveVisitor;
@@ -54,7 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * <code>public &lt;T&gt; T apply(T src, @ClosureParams(value=FromString.class, options={"List&lt;T&gt;","T"} Closure&lt;T&gt; cl)</code>
  *
- * <p>It is advisable not to use this hint as a replacement for the various {@link FirstArg}, {@link SimpleType},
+ * <p>It is advisable not to use this hint as a replacement for the various {@link FirstParam}, {@link SimpleType},
  * ... hints because it is actually much slower. Using this hint should therefore be limited
  * to cases where it's not possible to express the signature using the existing hints.</p>
  *
