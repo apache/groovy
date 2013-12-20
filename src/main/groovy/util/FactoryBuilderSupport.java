@@ -1279,6 +1279,10 @@ public abstract class FactoryBuilderSupport extends Binding {
         disposalClosures.add(closure);
     }
 
+    public List<Closure> getDisposalClosures() {
+        return Collections.unmodifiableList(disposalClosures);
+    }
+
     public void dispose() {
         for (int i = disposalClosures.size() - 1; i >= 0; i--) {
             disposalClosures.get(i).call();
