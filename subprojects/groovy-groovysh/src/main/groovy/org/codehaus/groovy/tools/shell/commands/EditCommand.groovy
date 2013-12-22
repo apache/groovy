@@ -30,7 +30,7 @@ class EditCommand
     extends CommandSupport
 {
     EditCommand(final Groovysh shell) {
-        super(shell, 'edit', '\\e')
+        super(shell, '\\edit', '\\e')
     }
 
     ProcessBuilder getEditorProcessBuilder(String editCommand, String tempFilename) {

@@ -65,7 +65,7 @@ class DocCommand extends CommandSupport {
     }
 
     DocCommand(final Groovysh shell) {
-        super(shell, 'doc', '\\D')
+        super(shell, '\\doc', '\\D')
     }
 
     @Override

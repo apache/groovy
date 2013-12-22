@@ -29,7 +29,7 @@ class ClearCommand
     extends CommandSupport
 {
     ClearCommand(final Groovysh shell) {
-        super(shell, 'clear', '\\c')
+        super(shell, '\\clear', '\\c')
     }
     
     Object execute(final List<String> args) {

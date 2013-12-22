@@ -31,7 +31,7 @@ class HistoryCommand
     extends ComplexCommandSupport
 {
     HistoryCommand(final Groovysh shell) {
-        super(shell, 'history', '\\H', [ 'show', 'clear', 'flush', 'recall' ], 'show')
+        super(shell, '\\history', '\\H', [ 'show', 'clear', 'flush', 'recall' ], 'show')
     }
 
     protected List createCompleters() {

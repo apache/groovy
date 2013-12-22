@@ -32,7 +32,7 @@ class SetCommand
     extends CommandSupport
 {
     SetCommand(final Groovysh shell) {
-        super(shell, 'set', '\\=')
+        super(shell, '\\set', '\\=')
     }
 
     protected List createCompleters() {

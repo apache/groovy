@@ -30,7 +30,7 @@ class LoadCommand
     extends CommandSupport
 {
     LoadCommand(final Groovysh shell) {
-        super(shell, 'load', '\\l')
+        super(shell, '\\load', '\\l')
 
         alias('.', '\\.')
     }

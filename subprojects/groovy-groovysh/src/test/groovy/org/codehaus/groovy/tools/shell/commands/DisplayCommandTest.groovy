@@ -25,10 +25,10 @@ class DisplayCommandTest
     extends CommandTestSupport
 {
     void testDisplay() {
-        shell << 'display'
+        shell << '\\display'
     }
 
     void testDisplayWithArgs() {
-        shell << 'display foo'
+        shell << '\\display foo'
     }
 }

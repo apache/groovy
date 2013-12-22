@@ -25,22 +25,22 @@ class PurgeCommandTest
     extends CommandTestSupport
 {
     void testPurgeVariables() {
-        shell << 'purge variables'
+        shell << '\\purge variables'
     }
 
     void testPurgeClasses() {
-        shell << 'purge classes'
+        shell << '\\purge classes'
     }
 
     void testPurgeImports() {
-        shell << 'purge imports'
+        shell << '\\purge imports'
     }
 
     void testPurgePreferences() {
-        shell << 'purge preferences'
+        shell << '\\purge preferences'
     }
 
     void testPurgeAll() {
-        shell << 'purge all'
+        shell << '\\purge all'
     }
 }

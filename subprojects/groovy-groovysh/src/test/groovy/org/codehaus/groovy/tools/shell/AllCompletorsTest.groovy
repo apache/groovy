@@ -94,33 +94,33 @@ class AllCompletorsTest extends GroovyTestCase {
 
     void testEmpty() {
         def result = complete("", 0)
-        assertTrue('help' in result[0])
-        assertTrue('exit' in result[0])
+        assertTrue('\\help' in result[0])
+        assertTrue('\\exit' in result[0])
         assertTrue('import' in result[0])
-        assertTrue('show' in result[0])
-        assertTrue('set' in result[0])
-        assertTrue('inspect' in result[0])
-        assertTrue('doc' in result[0])
-        assertEquals(0, result[1])
+        assertTrue('\\show' in result[0])
+        assertTrue('\\set' in result[0])
+        assertTrue('\\inspect' in result[0])
+        assertTrue('\\doc' in result[0])
+        assert 0 == result[1]
     }
 
     void testExitEdit() {
-        assertEquals([["exit ", "edit "], 0], complete("e", 0))
+        assert [["\\exit ", "\\e", "\\edit"], 0] == complete("\\e", 0)
     }
 
     void testShow() {
-        String prompt = "show "
-        assertEquals([["all", "classes", "imports", "preferences", "variables"], prompt.length()], complete(prompt, prompt.length()))
+        String prompt = "\\show "
+        assert [["all", "classes", "imports", "preferences", "variables"], prompt.length()] == complete(prompt, prompt.length())
     }
 
     void testShowV() {
-        String prompt = "show v"
-        assertEquals([["variables "], prompt.length() - 1], complete(prompt, prompt.length()))
+        String prompt = "\\show v"
+        assert [["variables "], prompt.length() - 1] == complete(prompt, prompt.length())
     }
 
     void testShowVariables() {
-        String prompt = "show variables "
-        assertEquals(null, complete(prompt, prompt.length()))
+        String prompt = "\\show variables "
+        assertNull(complete(prompt, prompt.length()))
     }
 
     void testImportJava() {
@@ -135,23 +135,23 @@ class AllCompletorsTest extends GroovyTestCase {
     void testShowVariablesJava() {
         // tests against interaction with ReflectionCompleter
         String prompt = "show variables java"
-        assertEquals(null, complete(prompt, prompt.length()))
+        assertNull(complete(prompt, prompt.length()))
     }
 
     void testKeyword() {
         // tests against interaction with ReflectionCompleter
         String prompt = "pub"
-        assertEquals([["public "], 0], complete(prompt, prompt.length()))
+        assert [["public "], 0] == complete(prompt, prompt.length())
     }
 
     void testCommandAndKeyword() {
         // tests against interaction with ReflectionCompleter
-        String prompt = "pu" // purge, public
-        assertEquals([["purge "], 0], complete(prompt, prompt.length()))
+        String prompt = "\\pu" // purge, public
+        assert [["\\purge "], 0] == complete(prompt, prompt.length())
     }
 
     void testDoc() {
-        String prompt = "doc j"
+        String prompt = "\\doc j"
         def result = complete(prompt, prompt.length())
         assert result
         assert prompt.length() - 1 == result[1]
