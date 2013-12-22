@@ -111,7 +111,7 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
         }
 
         if (buffer.size() != 0) {
-            return DefaultGroovyMethods.join(buffer, ", ");
+            return DefaultGroovyMethods.join(buffer.iterator(), ", ");
         } else {
             return "0";
         }
