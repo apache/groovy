@@ -19,6 +19,7 @@ import groovy.lang.*;
 
 import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.SoftReference;
@@ -71,6 +72,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
     public void incVersion() {
         version++;
+        VMPluginFactory.getPlugin().invalidateCallSites();
     }
 
     public ExpandoMetaClass getModifiedExpando() {
