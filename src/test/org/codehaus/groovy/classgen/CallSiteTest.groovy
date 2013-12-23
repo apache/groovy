@@ -16,6 +16,20 @@
 package org.codehaus.groovy.classgen
 
 class CallSiteTest extends GroovyTestCase {
+    
+    void testChangeMetaClass2() {
+        assertScript '''
+            def a = new Dummy()
+            Closure cl = {a.foo()}
+
+            a.metaClass.foo {1}
+            assert cl(1.5G) == 1
+
+            a.metaClass.foo {2}
+            assert cl(1.5G) == 2
+            class Dummy {}
+        '''
+    }
 
     void testChangeMetaClass () {
         def obj = new OBJ()
