@@ -992,6 +992,8 @@ public abstract class StaticTypeCheckingSupport {
         for (MethodNode candidateNode : choicesLeft) {
             ClassNode declaringClass = candidateNode.getDeclaringClass();
             ClassNode actualReceiver = receiver!=null?receiver: declaringClass;
+            final ClassNode declaringClassForDistance = declaringClass;
+            final ClassNode actualReceiverForDistance = actualReceiver;
             MethodNode safeNode = candidateNode;
             ClassNode[] safeArgs = args;
             if (candidateNode instanceof ExtensionMethodNode) {
@@ -1029,7 +1031,7 @@ public abstract class StaticTypeCheckingSupport {
                     lastArgMatch += 256-params.length; // ensure exact matches are preferred over vargs
                 }
                 int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
-                if (dist>=0 && !actualReceiver.equals(declaringClass)) dist+=getDistance(actualReceiver, declaringClass);
+                if (dist>=0 && !actualReceiverForDistance.equals(declaringClassForDistance)) dist+=getDistance(actualReceiverForDistance, declaringClassForDistance);
                 if (dist>=0 && dist<bestDist) {
                     bestChoices.clear();
                     bestChoices.add(candidateNode);
@@ -1066,7 +1068,7 @@ public abstract class StaticTypeCheckingSupport {
                         //      that case is handled above already
                         // (3) there is more than one argument for the vargs array
                         dist += excessArgumentsMatchesVargsParameter(params, safeArgs);
-                        if (dist >= 0 && !actualReceiver.equals(declaringClass)) dist+=getDistance(actualReceiver, declaringClass);
+                        if (dist >= 0 && !actualReceiverForDistance.equals(declaringClassForDistance)) dist+=getDistance(actualReceiverForDistance, declaringClassForDistance);
                         // varargs methods must not be preferred to methods without varargs
                         // for example :
                         // int sum(int x) should be preferred to int sum(int x, int... y)

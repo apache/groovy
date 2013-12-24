@@ -1118,5 +1118,32 @@ assert it.next() == 1G
             assert seq.getNext(2) == 10
 '''
     }
+
+    void testShouldAllowSubscriptOperatorOnSet() {
+        assertScript '''
+            def map = new LinkedHashMap<>([a:1,b:2])
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def ift = node.getNodeMetaData(INFERRED_TYPE)
+                assert ift == make(Set)
+                assert ift.isUsingGenerics()
+                assert ift.genericsTypes[0].type==STRING_TYPE
+            })
+            def set = map.keySet()
+            def key = set[0]
+            assert key=='a'
+        '''
+        assertScript '''
+            def map = new LinkedHashMap([a:1,b:2])
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def ift = node.getNodeMetaData(INFERRED_TYPE)
+                assert ift == make(Set)
+                assert ift.isUsingGenerics()
+                assert ift.genericsTypes[0].name=='K'
+            })
+            def set = map.keySet()
+            def key = set[0]
+            assert key=='a'
+        '''
+    }
 }
 
