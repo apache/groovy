@@ -69,10 +69,14 @@ public class GenericsType extends ASTNode {
         if (placeholder) visited.add(name);
         String ret = wildcard?"?":((type == null || placeholder) ? name : genericsBounds(type, visited));
         if (upperBounds != null) {
-            ret += " extends ";
-            for (int i = 0; i < upperBounds.length; i++) {
-                ret += genericsBounds(upperBounds[i], visited);
-                if (i + 1 < upperBounds.length) ret += " & ";
+            if (placeholder && upperBounds.length==1 && !upperBounds[0].isGenericsPlaceHolder() && upperBounds[0].getName().equals("java.lang.Object")) {
+                // T extends Object should just be printed as T
+            } else {
+                ret += " extends ";
+                for (int i = 0; i < upperBounds.length; i++) {
+                    ret += genericsBounds(upperBounds[i], visited);
+                    if (i + 1 < upperBounds.length) ret += " & ";
+                }
             }
         } else if (lowerBound != null) {
             ret += " super " + genericsBounds(lowerBound, visited);
@@ -297,7 +301,7 @@ public class GenericsType extends ASTNode {
          */
         private boolean compareGenericsWithBound(final ClassNode classNode, final ClassNode bound) {
             if (classNode==null) return false;
-            if (!bound.isUsingGenerics()) {
+            if (!bound.isUsingGenerics() || (classNode.getGenericsTypes()==null && classNode.redirect().getGenericsTypes()!=null)) {
                 // if the bound is not using generics, there's nothing to compare with
                 return true;
             }
