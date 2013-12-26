@@ -496,4 +496,18 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testConstructorNewInstance() {
+        assertScript '''import java.lang.reflect.Constructor
+
+class Person {
+    String name
+    Person(String name) { this.name = name }
+}
+
+Constructor<Person> ctor = Person.getConstructor(String)
+def p = ctor.newInstance('Bob')
+assert p.name == 'Bob'
+'''
+    }
+
 }
