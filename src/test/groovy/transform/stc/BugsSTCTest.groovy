@@ -488,4 +488,12 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testListToSet() {
+        assertScript '''
+            Set foo(List set) {
+                set.collect { Map.Entry entry -> entry.key }.toSet()
+            }
+        '''
+    }
+
 }
