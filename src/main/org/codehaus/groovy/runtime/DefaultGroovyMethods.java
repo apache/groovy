@@ -4919,7 +4919,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the minimum value
      * @since 1.0
      */
-    public static <T> T min(Iterable<T> self, Closure closure) {
+    public static <T> T min(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         int params = closure.getMaximumNumberOfParameters();
         if (params != 1) {
             return min(self, new ClosureComparator<T>(closure));
@@ -4970,7 +4970,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the Map.Entry having the minimum value as determined by the closure
      * @since 1.7.6
      */
-    public static <K, V> Map.Entry<K, V> min(Map<K, V> self, Closure closure) {
+    public static <K, V> Map.Entry<K, V> min(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure closure) {
         return min(self.entrySet(), closure);
     }
 
@@ -5008,7 +5008,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the Map.Entry having the maximum value as determined by the closure
      * @since 1.7.6
      */
-    public static <K, V> Map.Entry<K, V> max(Map<K, V> self, Closure closure) {
+    public static <K, V> Map.Entry<K, V> max(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure closure) {
         return max((Iterable<Map.Entry<K, V>>)self.entrySet(), closure);
     }
 
@@ -5033,7 +5033,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #min(java.util.Collection, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static <T> T min(Iterator<T> self, Closure closure) {
+    public static <T> T min(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return min((Iterable<T>)toList(self), closure);
     }
 
@@ -5056,7 +5056,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #min(java.util.Collection, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static <T> T min(T[] self, Closure closure) {
+    public static <T> T min(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
         return min((Iterable<T>)toList(self), closure);
     }
 
@@ -5147,7 +5147,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the maximum value
      * @since 2.2.0
      */
-    public static <T> T max(Iterable<T> self, Closure closure) {
+    public static <T> T max(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         int params = closure.getMaximumNumberOfParameters();
         if (params != 1) {
             return max(self, new ClosureComparator<T>(closure));
@@ -5184,7 +5184,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #max(java.util.Collection, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static <T> T max(Iterator<T> self, Closure closure) {
+    public static <T> T max(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return max((Iterable<T>)toList(self), closure);
     }
 
@@ -5207,7 +5207,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #max(java.util.Collection, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static <T> T max(T[] self, Closure closure) {
+    public static <T> T max(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
         return max((Iterable<T>)toList(self), closure);
     }
 

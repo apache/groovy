@@ -846,4 +846,67 @@ import groovy.transform.stc.ClosureParams
         '''
     }
 
+    void testDGM_max() {
+        assertScript '''
+            assert ['a','abc', 'defg','hi'].max { it.length() } == 'defg'
+            assert ['a','abc', 'defg','hi'].iterator().max { it.length() } == 'defg'
+            assert (['a','abc', 'defg','hi'] as String[]).max { it.length() } == 'defg'
+        '''
+    }
+
+    @NotYetImplemented // DGM#max seems to be broken here
+    void testDGM_maxOnMap() {
+        assertScript '''
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].max { k,v -> v.length() }
+            assert result.key == 'c'
+            assert result.value == 'defg'
+        '''
+        assertScript '''
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].max { String k, String v -> v.length() }
+            assert result.key == 'c'
+            assert result.value == 'defg'
+        '''
+        assertScript '''
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].max { e -> e.value.length() }
+            assert result.key == 'c'
+            assert result.value == 'defg'
+        '''
+        assertScript '''
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].max { it.value.length() }
+            assert result.key == 'c'
+            assert result.value == 'defg'
+        '''
+    }
+
+    void testDGM_min() {
+        assertScript '''
+            assert ['a','abc', 'defg','hi'].min { it.length() } == 'a'
+            assert ['a','abc', 'defg','hi'].iterator().min { it.length() } == 'a'
+            assert (['a','abc', 'defg','hi'] as String[]).min { it.length() } == 'a'
+        '''
+    }
+
+    @NotYetImplemented // DGM#min seems to be broken here
+    void testDGM_maxOnMin() {
+        assertScript '''
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].min { k,v -> v.length() }
+            assert result.key == 'a'
+            assert result.value == 'a'
+        '''
+        assertScript '''
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].min { String k, String v -> v.length() }
+            assert result.key == 'a'
+            assert result.value == 'a'
+        '''
+        assertScript '''
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].min { e -> e.value.length() }
+            assert result.key == 'a'
+            assert result.value == 'a'
+        '''
+        assertScript '''
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].min { it.value.length() }
+            assert result.key == 'a'
+            assert result.value == 'a'
+        '''
+    }
 }

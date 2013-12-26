@@ -1661,6 +1661,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // restore original metadata
         restoreVariableExpressionMetadata(typesBeforeVisit);
         typeCheckingContext.isInStaticContext = oldStaticContext;
+        Parameter[] parameters = expression.getParameters();
+        if (parameters!=null) {
+            for (Parameter parameter : parameters) {
+                typeCheckingContext.controlStructureVariables.remove(parameter);
+            }
+        }
     }
 
     private ClassNode wrapClosureType(final ClassNode returnType) {
@@ -2049,8 +2055,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (candidates.size()==1) {
                             ClassNode[] inferred = candidates.get(0);
                             if (closureParams.length==0 && inferred.length==1) {
-                                // implicit "it"
-                                typeCheckingContext.lastImplicitItType = inferred[0];
+                                expression.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, inferred);
                             } else {
                                 final int length = closureParams.length;
                                 for (int i = 0; i < length; i++) {
@@ -3367,10 +3372,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Parameter parameter = (Parameter) variable;
                 ClassNode type = typeCheckingContext.controlStructureVariables.get(parameter);
                 TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
-                if (type==null && enclosingClosure !=null && "it".equals(variable.getName())) {
+                ClassNode[] closureParamTypes = (ClassNode[])(enclosingClosure!=null?enclosingClosure.getClosureExpression().getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS):null);
+                if (type==null && enclosingClosure !=null && "it".equals(variable.getName()) && closureParamTypes!=null) {
                     final Parameter[] parameters = enclosingClosure.getClosureExpression().getParameters();
                     if (parameters.length==0 && getTemporaryTypesForExpression(vexp)==null) {
-                        type = typeCheckingContext.lastImplicitItType;
+                        type = closureParamTypes[0];
                     }
                 }
                 if (type != null) {
