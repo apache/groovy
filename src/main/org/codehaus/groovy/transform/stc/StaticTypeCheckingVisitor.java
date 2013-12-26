@@ -3840,7 +3840,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected static String formatArgumentList(ClassNode[] nodes) {
-        if (nodes == null) return "[]";
+        if (nodes == null || nodes.length==0) return "[]";
         StringBuilder sb = new StringBuilder(24 * nodes.length);
         sb.append("[");
         for (ClassNode node : nodes) {

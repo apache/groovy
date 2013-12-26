@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.transform.stc;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 
 public class Receiver<T> {
@@ -23,7 +24,7 @@ public class Receiver<T> {
     private final T data;
 
     public static <T> Receiver<T> make(final ClassNode type) {
-        return new Receiver<T>(type);
+        return new Receiver<T>(type==null?ClassHelper.OBJECT_TYPE:type);
     }
 
     public Receiver(final ClassNode type) {
