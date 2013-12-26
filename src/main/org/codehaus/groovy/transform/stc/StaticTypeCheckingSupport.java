@@ -921,7 +921,8 @@ public abstract class StaticTypeCheckingSupport {
     public static List<MethodNode> chooseBestMethod(final ClassNode receiver, Collection<MethodNode> methods, ClassNode... args) {
         if (methods.isEmpty()) return Collections.emptyList();
         if (isUsingUncheckedGenerics(receiver)) {
-            return chooseBestMethod(receiver.getPlainNodeReference(), methods, args);
+            ClassNode raw = makeRawType(receiver);
+            return chooseBestMethod(raw, methods, args);
         }
         List<MethodNode> bestChoices = new LinkedList<MethodNode>();
         int bestDist = Integer.MAX_VALUE;
@@ -1024,6 +1025,16 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
         return bestChoices;
+    }
+
+    private static ClassNode makeRawType(final ClassNode receiver) {
+        if (receiver.isArray()) {
+            return makeRawType(receiver.getComponentType()).makeArray();
+        }
+        ClassNode raw = receiver.getPlainNodeReference();
+        raw.setUsingGenerics(false);
+        raw.setGenericsTypes(null);
+        return raw;
     }
 
     private static Collection<MethodNode> removeCovariants(Collection<MethodNode> collection) {
