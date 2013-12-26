@@ -1123,7 +1123,9 @@ public abstract class StaticTypeCheckingSupport {
 
     private static Parameter buildParameter(final GenericsType[] redirectReceiverTypes, final GenericsType[] receiverParameterizedTypes, final Parameter methodParameter, final ClassNode paramType) {
         if (paramType.isArray()) {
-            Parameter component = buildParameter(redirectReceiverTypes, receiverParameterizedTypes, methodParameter, paramType.getComponentType());
+            ClassNode componentType = paramType.getComponentType();
+            Parameter subMethodParameter = new Parameter(componentType, methodParameter.getName());
+            Parameter component = buildParameter(redirectReceiverTypes, receiverParameterizedTypes, subMethodParameter, componentType);
             return new Parameter(component.getType().makeArray(), component.getName());
         }
         final Parameter newParam;
