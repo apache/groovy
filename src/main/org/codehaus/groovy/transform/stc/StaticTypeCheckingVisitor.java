@@ -2095,11 +2095,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode value = genericsType.getType();
         if (genericsType.isPlaceholder()) {
             value = OBJECT_TYPE;
-        } else if (genericsType.isWildcard()) {
-            if (genericsType.getLowerBound()!=null) {
-                value = genericsType.getLowerBound();
-            } else if (genericsType.getUpperBounds()!=null) {
-                value = WideningCategories.lowestUpperBound(Arrays.asList(genericsType.getUpperBounds()));
+        }
+        ClassNode lowerBound = genericsType.getLowerBound();
+        if (lowerBound !=null) {
+            value = lowerBound;
+        } else {
+            ClassNode[] upperBounds = genericsType.getUpperBounds();
+            if (upperBounds !=null) {
+                value = WideningCategories.lowestUpperBound(Arrays.asList(upperBounds));
             }
         }
         return value;

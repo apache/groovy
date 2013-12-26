@@ -4241,7 +4241,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Collection, Object, Closure)
      * @since 1.8.7
      */
-    public static <T, V extends T> T inject(Collection<T> self, Closure<V> closure ) {
+    public static <T, V extends T> T inject(Collection<T> self, @ClosureParams(value=FromString.class,options="V,T") Closure<V> closure ) {
         if( self.isEmpty() ) {
             throw new NoSuchElementException( "Cannot call inject() on an empty collection without passing an initial value." ) ;
         }
@@ -4292,7 +4292,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the last closure call
      * @since 1.0
      */
-    public static <T, U extends T, V extends T> T inject(Collection self, U initialValue, Closure<V> closure) {
+    public static <E, T, U extends T, V extends T> T inject(Collection<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
         return (T) inject(self.iterator(), initialValue, closure);
     }
 
@@ -4318,7 +4318,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the last closure call
      * @since 1.8.1
      */
-    public static <T, U extends T, V extends T> T inject(Map<?, ?> self, U initialValue, Closure<V> closure) {
+    public static <Key,Value, T, U extends T, V extends T> T inject(Map<Key, Value> self, U initialValue, @ClosureParams(value=FromString.class,options={"U,Map.Entry<Key,Value>","U,Key,Value"})  Closure<V> closure) {
         T value = initialValue;
         for (Map.Entry<?, ?> entry : self.entrySet()) {
             if (closure.getMaximumNumberOfParameters() == 3) {
@@ -4345,7 +4345,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Collection, Object, Closure)
      * @since 1.5.0
      */
-    public static <T, U extends T, V extends T> T inject(Iterator self, U initialValue, Closure<V> closure) {
+    public static <E,T, U extends T, V extends T> T inject(Iterator<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
         T value = initialValue;
         Object[] params = new Object[2];
         while (self.hasNext()) {
@@ -4411,7 +4411,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Object[], Object, Closure)
      * @since 1.8.7
      */
-    public static <T, V extends T> T inject(Object[] self, Closure<V> closure) {
+    public static <E,T, V extends T> T inject(E[] self, @ClosureParams(value=FromString.class,options="E,E") Closure<V> closure) {
         return inject( (Object)self, closure ) ;
     }
 
@@ -4429,7 +4429,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Collection, Object, Closure)
      * @since 1.5.0
      */
-    public static <T, U extends T, V extends T> T inject(Object[] self, U initialValue, Closure<V> closure) {
+    public static <E, T, U extends T, V extends T> T inject(E[] self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
         Object[] params = new Object[2];
         T value = initialValue;
         for (Object next : self) {
