@@ -909,4 +909,190 @@ import groovy.transform.stc.ClosureParams
             assert result.value == 'a'
         '''
     }
+
+    void testDGM_removeAllOnCollection() {
+        assertScript '''
+            def list = ['abc','a','groovy','java']
+            list.removeAll { it.length() <4 }
+            assert list == ['groovy','java']
+        '''
+    }
+    void testDGM_retainAllOnCollection() {
+        assertScript '''
+            def list = ['abc','a','groovy','java']
+            list.retainAll { it.length()>3 }
+            assert list == ['groovy','java']
+        '''
+    }
+
+    void testReverseEachOnList() {
+        assertScript '''
+            ['a','b'].reverseEach { println it.toUpperCase() }
+        '''
+    }
+    void testReverseEachOnArray() {
+        assertScript '''
+            (['a','b'] as String[]).reverseEach { println it.toUpperCase() }
+        '''
+    }
+    void testReverseEachOnMap() {
+        assertScript '''
+            [a:1,b:2].reverseEach { k,v -> println ((k.toUpperCase())*v) }
+            [a:1,b:2].reverseEach { e -> println ((e.key.toUpperCase())*e.value) }
+            [a:1,b:2].reverseEach { println ((it.key.toUpperCase())*it.value) }
+        '''
+    }
+
+    void testDGM_sortOnCollection() {
+        assertScript '''
+            assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a,b -> a.length() <=> b.length() }
+            assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { str -> str.length() }
+            assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }
+        '''
+    }
+    void testDGM_sortOnArray() {
+        assertScript '''
+            String[] array = ["hello","hi","hey"]
+            assert ["hi","hey","hello"] == array.sort { a,b -> a.length() <=> b.length() }
+            assert ["hi","hey","hello"] == array.sort { str -> str.length() }
+            assert ["hi","hey","hello"] == array.sort { it.length() }
+        '''
+    }
+    void testDGM_sortOnIterator() {
+        assertScript '''
+            assert ["hi","hey","hello"] == ["hello","hi","hey"].iterator().sort { a,b -> a.length() <=> b.length() }.collect()
+            assert ["hi","hey","hello"] == ["hello","hi","hey"].iterator().sort { str -> str.length() }.collect()
+            assert ["hi","hey","hello"] == ["hello","hi","hey"].iterator().sort { it.length() }.collect()
+        '''
+    }
+    void testDGM_sortOnIterable() {
+        assertScript '''
+            def foo(Iterable<String> iterable) {
+                assert ["hi","hey","hello"] == iterable.sort { a,b -> a.length() <=> b.length() }
+                assert ["hi","hey","hello"] == iterable.sort { str -> str.length() }
+                assert ["hi","hey","hello"] == iterable.sort { it.length() }
+            }
+            foo(["hello","hi","hey"])
+        '''
+    }
+
+    void testDGM_sortOnMap() {
+        assertScript '''
+        def map = [a:5, b:3, c:6, d:4].sort { a, b -> a.value <=> b.value }
+        assert map == [b:3, d:4, a:5, c:6]
+        '''
+    }
+
+    void testDGM_slitOnCollection() {
+        assertScript '''
+            assert [[2,4],[1,3]] == [1,2,3,4].split { it % 2 == 0 }
+        '''
+    }
+
+    void testDGM_takeWhileOnIterable() {
+        assertScript '''
+        class AbcIterable implements Iterable<String>  {
+           Iterator<String>  iterator() { "abc".iterator() }
+       }
+       def abc = new AbcIterable()
+       assert abc.takeWhile{ it < 'b' } == ['a']
+       assert abc.takeWhile{ it <= 'b' } == ['a', 'b']
+'''
+    }
+    void testDGM_takeWhileOnIterator() {
+        assertScript '''
+        class AbcIterable implements Iterable<String>  {
+           Iterator<String>  iterator() { "abc".iterator() }
+       }
+       def abc = new AbcIterable()
+       assert abc.iterator().takeWhile{ it < 'b' }.collect() == ['a']
+       assert abc.iterator().takeWhile{ it <= 'b' }.collect() == ['a', 'b']
+'''
+    }
+    void testDGM_takeWhileOnList() {
+        assertScript '''
+       def abc = ['a','b','c']
+       assert abc.iterator().takeWhile{ it < 'b' }.collect() == ['a']
+       assert abc.iterator().takeWhile{ it <= 'b' }.collect() == ['a', 'b']'''
+    }
+    void testDGM_takeWhileOnArray() {
+        assertScript '''
+            String[] abc = ['a','b','c']
+            assert abc.iterator().takeWhile{ it < 'b' }.collect() == ['a']
+            assert abc.iterator().takeWhile{ it <= 'b' }.collect() == ['a', 'b']'''
+    }
+    void testDGM_takeWhileOnMap() {
+        assertScript '''
+            def shopping = [milk:1, bread:2, chocolate:3]
+            assert shopping.takeWhile{ it.key.size() < 6 } == [milk:1, bread:2]
+            assert shopping.takeWhile{ it.value % 2 } == [milk:1]
+            assert shopping.takeWhile{ k, v -> k.size() + v <= 7 } == [milk:1, bread:2]'''
+    }
+
+    void testDGM_times() {
+        assertScript '''
+            String foo(int x) { "x"*x }
+            10.times {
+                println foo(it)
+            }
+        '''
+    }
+
+    void testDGM_unique() {
+        assertScript '''
+       def orig = [1, 3, 4, 5]
+       def uniq = orig.unique(false) { it % 2 }
+       assert orig == [1, 3, 4, 5]
+       assert uniq == [1, 4]'''
+
+       assertScript '''def orig = [2, 3, 3, 4]
+       def uniq = orig.unique(false) { a, b -> a <=> b }
+       assert orig == [2, 3, 3, 4]
+       assert uniq == [2, 3, 4]'''
+    }
+    void testDGM_uniqueOnCollection() {
+        assertScript '''
+       def orig = [1, 3, 4, 5]
+       def uniq = orig.unique { it % 2 }
+       assert uniq == [1, 4]'''
+
+       assertScript '''def orig = [2, 3, 3, 4]
+       def uniq = orig.unique { a, b -> a <=> b }
+       assert uniq == [2, 3, 4]'''
+    }
+    void testDGM_uniqueOnIterator() {
+        assertScript '''
+       def orig = [1, 3, 4, 5].iterator()
+       def uniq = orig.unique { it % 2 }.collect()
+       assert uniq == [1, 4]'''
+
+       assertScript '''def orig = [2, 3, 3, 4].iterator()
+       def uniq = orig.unique { a, b -> a <=> b }.collect()
+       assert uniq == [2, 3, 4]'''
+    }
+
+    void testDGM_anyOnMap() {
+        assertScript '''
+            assert [a:10, b:1].any { k,v -> k.length() == v.value }
+            assert [a:10, b:1].any { e -> e.key.length() == e.value }
+            assert [a:10, b:1].any {it.key.length() == it.value }
+        '''
+    }
+    void testDGM_anyOnIterable() {
+        assertScript '''
+            assert ['abc','de','f'].any { it.length() == 2 }
+        '''
+    }
+    void testDGM_anyOnIterator() {
+        assertScript '''
+            assert ['abc','de','f'].iterator().any { it.length() == 2 }
+        '''
+    }
+
+    void testDGM_mapWithDefault() {
+        assertScript '''
+            def map = [a:'A'].withDefault { it.toUpperCase() }
+            assert map.b=='B'
+        '''
+    }
 }

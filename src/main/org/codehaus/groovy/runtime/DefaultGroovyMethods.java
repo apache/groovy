@@ -22,6 +22,7 @@ import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.MapEntryOrKeyValue;
+import groovy.transform.stc.SimpleType;
 import groovy.util.ClosureComparator;
 import groovy.util.GroovyCollections;
 import groovy.util.MapEntry;
@@ -1083,7 +1084,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the modified Iterator
      * @since 1.5.5
      */
-    public static <T> Iterator<T> unique(Iterator<T> self, Closure closure) {
+    public static <T> Iterator<T> unique(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         return toList(unique(toList(self), closure)).listIterator();
     }
 
@@ -1107,7 +1108,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #unique(Collection, boolean, Closure)
      * @since 1.0
      */
-    public static <T> Collection<T> unique(Collection<T> self, Closure closure) {
+    public static <T> Collection<T> unique(Collection<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         return unique(self, true, closure);
     }
 
@@ -1141,7 +1142,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return self   without any duplicates
      * @since 1.8.1
      */
-    public static <T> Collection<T> unique(Collection<T> self, boolean mutate, Closure closure) {
+    public static <T> Collection<T> unique(Collection<T> self, boolean mutate, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         // use a comparator of one item or two
         int params = closure.getMaximumNumberOfParameters();
         if (params == 1) {
@@ -1414,7 +1415,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #each(Map, Closure)
      * @since 1.7.2
      */
-    public static <K, V> Map<K, V> reverseEach(Map<K, V> self, Closure closure) {
+    public static <K, V> Map<K, V> reverseEach(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure closure) {
         final Iterator<Map.Entry<K, V>> entries = reverse(self.entrySet().iterator());
         while (entries.hasNext()) {
             callClosureForMapEntry(closure, entries.next());
@@ -1459,7 +1460,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the original list
      * @since 1.5.0
      */
-    public static <T> List<T> reverseEach(List<T> self, Closure closure) {
+    public static <T> List<T> reverseEach(List<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         each(new ReverseListIterator<T>(self), closure);
         return self;
     }
@@ -1472,7 +1473,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the original array
      * @since 1.5.2
      */
-    public static <T> T[] reverseEach(T[] self, Closure closure) {
+    public static <T> T[] reverseEach(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
         each(new ReverseListIterator<T>(Arrays.asList(self)), closure);
         return self;
     }
@@ -1603,6 +1604,40 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates over the contents of an iterator, and checks whether a
+     * predicate is valid for at least one element.
+     *
+     * @param self    the iterator over which we iterate
+     * @param closure the closure predicate used for matching
+     * @return true   if any iteration for the object matches the closure predicate
+     * @since 1.0
+     */
+    public static <T> boolean any(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+        for (Iterator iter = self; iter.hasNext();) {
+            if (bcw.call(iter.next())) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Iterates over the contents of an iterable, and checks whether a
+     * predicate is valid for at least one element.
+     *
+     * @param self    the iterable over which we iterate
+     * @param closure the closure predicate used for matching
+     * @return true   if any iteration for the object matches the closure predicate
+     * @since 1.0
+     */
+    public static <T> boolean any(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+        for (Iterator<T> iter = self.iterator(); iter.hasNext();) {
+            if (bcw.call(iter.next())) return true;
+        }
+        return false;
+    }
+
+    /**
      * Iterates over the entries of a map, and checks whether a predicate is
      * valid for at least one entry. If the
      * closure takes one parameter then it will be passed the Map.Entry
@@ -1618,7 +1653,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return true if any entry in the map matches the closure predicate
      * @since 1.5.0
      */
-    public static <K, V> boolean any(Map<K, V> self, Closure<?> closure) {
+    public static <K, V> boolean any(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Map.Entry<K, V> entry : self.entrySet()) {
             if (bcw.callForMap(entry)) {
@@ -3398,7 +3433,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see    Iterator#remove()
      * @since 1.7.2
      */
-    public static boolean retainAll(Collection self, Closure condition) {
+    public static <T> boolean retainAll(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> condition) {
         Iterator iter = InvokerHelper.asIterator(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         boolean result = false;
@@ -3425,7 +3460,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see    Iterator#remove()
      * @since 1.7.2
      */
-    public static boolean removeAll(Collection self, Closure condition) {
+    public static <T> boolean removeAll(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
         Iterator iter = InvokerHelper.asIterator(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         boolean result = false;
@@ -3510,7 +3545,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List whose first item is the accepted values and whose second item is the rejected values
      * @since 1.6.0
      */
-    public static <T> Collection<Collection<T>> split(Collection<T> self, Closure closure) {
+    public static <T> Collection<Collection<T>> split(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         Collection<T> accept = createSimilarCollection(self);
         Collection<T> reject = createSimilarCollection(self);
         Iterator<T> iter = self.iterator();
@@ -6216,7 +6251,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the wrapped Map
      * @since 1.7.1
      */
-    public static <K, V> Map<K, V> withDefault(Map<K, V> self, Closure init) {
+    public static <K, V> Map<K, V> withDefault(Map<K, V> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure init) {
         return MapWithDefault.newInstance(self, init);
     }
 
@@ -6395,7 +6430,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the sorted map
      * @since 1.6.0
      */
-    public static <K, V> Map<K, V> sort(Map<K, V> self, Closure closure) {
+    public static <K, V> Map<K, V> sort(Map<K, V> self, @ClosureParams(value=FromString.class, options="Map.Entry<K,V>,Map.Entry<K,V>") Closure closure) {
         Map<K, V> result = new LinkedHashMap<K, V>();
         List<Map.Entry<K, V>> entries = asList(self.entrySet());
         sort(entries, closure);
@@ -6625,7 +6660,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the sorted items as an Iterator
      * @since 1.5.5
      */
-    public static <T> Iterator<T> sort(Iterator<T> self, Closure closure) {
+    public static <T> Iterator<T> sort(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         return sort(toList(self), closure).listIterator();
     }
 
@@ -6645,7 +6680,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     @SuppressWarnings("unchecked")
-    public static <T> T[] sort(T[] self, Closure closure) {
+    public static <T> T[] sort(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         return sort(self, false, closure);
     }
 
@@ -6675,7 +6710,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     @SuppressWarnings("unchecked")
-    public static <T> T[] sort(T[] self, boolean mutate, Closure closure) {
+    public static <T> T[] sort(T[] self, boolean mutate, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         T[] answer = (T[]) sort(toList(self), closure).toArray();
         if (mutate) {
             System.arraycopy(answer, 0, self, 0, answer.length);
@@ -6705,7 +6740,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sort(Collection, boolean, Closure)
      * @since 1.0
      */
-    public static <T> List<T> sort(Collection<T> self, Closure closure) {
+    public static <T> List<T> sort(Collection<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         return sort((Iterable<T>)self, closure);
     }
 
@@ -6731,7 +6766,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sort(Collection, boolean, Closure)
      * @since 2.2.0
      */
-    public static <T> List<T> sort(Iterable<T> self, Closure closure) {
+    public static <T> List<T> sort(Iterable<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         return sort(self, true, closure);
     }
 
@@ -7420,7 +7455,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         the given closure evaluates to true
      * @since 1.8.7
      */
-    public static <T> List<T> takeWhile(List<T> self, Closure condition) {
+    public static <T> List<T> takeWhile(List<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
         int num = 0;
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         for (T value : self) {
@@ -7452,7 +7487,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         each element passed to the given closure evaluates to true
      * @since 1.8.7
      */
-    public static <T> List<T> takeWhile(Iterable<T> self, Closure condition) {
+    public static <T> List<T> takeWhile(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
         return toList(takeWhile(self.iterator(), condition));
     }
 
@@ -7475,7 +7510,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         the given closure evaluates to true
      * @since 1.8.7
      */
-    public static <K, V> Map<K, V> takeWhile(Map<K, V> self, Closure<?> condition) {
+    public static <K, V> Map<K, V> takeWhile(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> condition) {
         if (self.isEmpty()) {
             return createSimilarMap(self);
         }
@@ -7505,7 +7540,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         the given closure evaluates to true
      * @since 1.8.7
      */
-    public static <T> T[] takeWhile(T[] self, Closure condition) {
+    public static <T> T[] takeWhile(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
         int num = 0;
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         while (num < self.length) {
@@ -7539,7 +7574,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         element passed to the given closure evaluates to true
      * @since 1.8.7
      */
-    public static <T> Iterator<T> takeWhile(Iterator<T> self, Closure condition) {
+    public static <T> Iterator<T> takeWhile(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
         return new TakeWhileIterator<T>(self, condition);
     }
 
@@ -11315,7 +11350,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to call a number of times
      * @since 1.0
      */
-    public static void times(Number self, Closure closure) {
+    public static void times(Number self, @ClosureParams(value=SimpleType.class,options="int")  Closure closure) {
         for (int i = 0, size = self.intValue(); i < size; i++) {
             closure.call(i);
             if (closure.getDirective() == Closure.DONE) {
