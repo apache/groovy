@@ -42,7 +42,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
         gStringValues.add(new VariableExpression(parameters[0]));
         block.addStatement(
                 new ReturnStatement(
-                        new AttributeExpression(
+                        new PropertyExpression(
                                 thiz,
                                 new GStringExpression("$name", gStringStrings, gStringValues)
                         )
@@ -59,7 +59,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
         block.addStatement(
                 new ExpressionStatement(
                         new BinaryExpression(
-                                new AttributeExpression(
+                                new PropertyExpression(
                                         thiz,
                                         new GStringExpression("$name", gStringStrings, gStringValues)
                                 ),
