@@ -66,8 +66,8 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
             }
 
             ClassNode ownerClassNode = methodNode.getDeclaringClass();
-            MethodNode privateMethod = buildPrivateDelegatingMethod(methodNode, ownerClassNode);
-            ownerClassNode.addMethod(privateMethod);
+            MethodNode delegatingMethod = buildDelegatingMethod(methodNode, ownerClassNode);
+            ownerClassNode.addMethod(delegatingMethod);
 
             int modifiers = FieldNode.ACC_PRIVATE | FieldNode.ACC_FINAL;
             if (methodNode.isStatic()) {
@@ -77,7 +77,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
             int protectedCacheSize = getIntMemberValue(annotationNode, PROTECTED_CACHE_SIZE_NAME);
             int maxCacheSize = getIntMemberValue(annotationNode, MAX_CACHE_SIZE_NAME);
             MethodCallExpression memoizeClosureCallExpression =
-                    buildMemoizeClosureCallExpression(privateMethod, protectedCacheSize, maxCacheSize);
+                    buildMemoizeClosureCallExpression(delegatingMethod, protectedCacheSize, maxCacheSize);
 
             String memoizedClosureFieldName = buildUniqueName(ownerClassNode, CLOSURE_LABEL, methodNode);
             FieldNode memoizedClosureField = new FieldNode(memoizedClosureFieldName, modifiers,
@@ -106,13 +106,13 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         return result;
     }
 
-    private MethodNode buildPrivateDelegatingMethod(final MethodNode annotatedMethod, final ClassNode ownerClassNode) {
+    private MethodNode buildDelegatingMethod(final MethodNode annotatedMethod, final ClassNode ownerClassNode) {
         Statement code = annotatedMethod.getCode();
-        int access = ACC_PRIVATE;
+        int access = ACC_PROTECTED;
         if (annotatedMethod.isStatic()) {
             access = ACC_PRIVATE | ACC_STATIC;
         }
-        MethodNode privateMethod = new MethodNode(
+        MethodNode method = new MethodNode(
                 buildUniqueName(ownerClassNode, METHOD_LABEL, annotatedMethod),
                 access,
                 annotatedMethod.getReturnType(),
@@ -121,8 +121,8 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
                 code
         );
         List<AnnotationNode> sourceAnnotations = annotatedMethod.getAnnotations();
-        privateMethod.addAnnotations(new ArrayList<AnnotationNode>(sourceAnnotations));
-        return privateMethod;
+        method.addAnnotations(new ArrayList<AnnotationNode>(sourceAnnotations));
+        return method;
     }
 
     private int getIntMemberValue(AnnotationNode node, String name) {
