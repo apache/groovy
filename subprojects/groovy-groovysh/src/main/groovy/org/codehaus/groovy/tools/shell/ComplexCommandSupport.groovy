@@ -90,7 +90,7 @@ abstract class ComplexCommandSupport
         assert name
         
         try {
-            return this."do_${name}"
+            return this.@"do_${name}"
         } catch (MissingFieldException e) {
             fail("Failed to load delegate function: $e")
         }
