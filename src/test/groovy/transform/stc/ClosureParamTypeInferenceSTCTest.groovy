@@ -1073,7 +1073,7 @@ import groovy.transform.stc.ClosureParams
 
     void testDGM_anyOnMap() {
         assertScript '''
-            assert [a:10, b:1].any { k,v -> k.length() == v.value }
+            assert [a:10, b:1].any { k,v -> k.length() == v }
             assert [a:10, b:1].any { e -> e.key.length() == e.value }
             assert [a:10, b:1].any {it.key.length() == it.value }
         '''

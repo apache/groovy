@@ -27,15 +27,19 @@ public class SimpleType extends SingleSignatureClosureHint {
     public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit, final ASTNode usage) {
         ClassNode[] result = new ClassNode[options.length];
         for (int i = 0; i < result.length; i++) {
-            result[i] = makeType(options[i]);
+            result[i] = makeType(options[i], sourceUnit.getClassLoader());
         }
         return result;
     }
 
-    private ClassNode makeType(final String option) {
+    private ClassNode makeType(final String option, ClassLoader loader) {
         if (option.endsWith("[]")) {
-            return makeType(option.substring(0,option.length()-2)).makeArray();
+            return makeType(option.substring(0,option.length()-2), loader).makeArray();
         }
-        return ClassHelper.make(option);
+        try {
+            return ClassHelper.make(loader.loadClass(option));
+        } catch (ClassNotFoundException e) {
+            return ClassHelper.make(option);
+        }
     }
 }
