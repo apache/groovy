@@ -299,7 +299,7 @@ int compareTo(Object) {0}; int priv; static int priv2; public int foo; public st
         IO testio = new IO()
         Groovysh groovysh = new Groovysh(new URLClassLoader(), new Binding(), testio)
         groovysh.run("import " + GroovyException.name)
-        ReflectionCompletor compl = new ReflectionCompletor(groovysh)
+        ReflectionCompletor compl = new ReflectionCompletor(groovysh, 0)
         def candidates = []
         compl.complete(TokenUtilTest.tokenList("GroovyException."), candidates)
         assert candidates.size() > 0

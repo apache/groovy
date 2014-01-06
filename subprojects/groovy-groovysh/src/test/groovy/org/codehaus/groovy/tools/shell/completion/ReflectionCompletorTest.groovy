@@ -28,9 +28,10 @@ class ReflectionCompletorTest extends GroovyTestCase {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(([] as String[]), "")
         assert 'length' in result
         assert 'clone()' in result
+        result = ReflectionCompletor.getMetaclassMethods(([] as String[]), "", true)
         assert 'size()' in result
         assert 'any()' in result
-        result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "size")
+        result = ReflectionCompletor.getMetaclassMethods([] as String[], "size", true)
         assert ["size()"] == result
         result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "le")
         assert ["length"] == result
@@ -54,14 +55,16 @@ class ReflectionCompletorTest extends GroovyTestCase {
     void testGetFieldsAndMethodsString() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods("foo", "")
         assert 'charAt(' in result
-        assert 'normalize()' in result
+        assert 'contains(' in result
         assert 'format(' in result
+        result = ReflectionCompletor.getMetaclassMethods("foo", "", true)
+        assert 'normalize()' in result
         int foo = 3
         result = ReflectionCompletor.getPublicFieldsAndMethods("$foo", "")
         assert 'build(' in result
-        result = ReflectionCompletor.getPublicFieldsAndMethods("foo", "tok")
+        result = ReflectionCompletor.getMetaclassMethods("foo", "tok", true)
         assert ["tokenize(", "tokenize()"] == result
-        result = ReflectionCompletor.getPublicFieldsAndMethods(String, "tok")
+        result = ReflectionCompletor.getMetaclassMethods(String, "tok", true)
         assert ["tokenize(", "tokenize()"] == result
     }
 
@@ -69,12 +72,13 @@ class ReflectionCompletorTest extends GroovyTestCase {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(3, "")
         assert "byteValue()" in result
         assert "MAX_VALUE" in result
-        assert "abs()" in result
-        assert "notify()" in result
+        assert "valueOf(" in result
         assert "bitCount(" in result
-        result = ReflectionCompletor.getPublicFieldsAndMethods(3, "una")
+        result = ReflectionCompletor.getMetaclassMethods(3, "", true)
+        assert "abs()" in result
+        result = ReflectionCompletor.getMetaclassMethods(3, "una", true)
         assert ["unaryMinus()", "unaryPlus()"] == result
-        result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "una")
+        result = ReflectionCompletor.getMetaclassMethods(Integer, "una", true)
         assert ["unaryMinus()", "unaryPlus()"] == result
         result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "MA")
         assert ["MAX_VALUE"] == result
@@ -125,12 +129,14 @@ class ReflectionCompletorTest extends GroovyTestCase {
     void testGetAbstractClassFields() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "")
         assert 'ABSTRACT' in result
-        assert 'isCase(' in result
         assert 'tracing' in result
+        result = ReflectionCompletor.getMetaclassMethods(GroovyLexer, "", true)
+        assert 'collect()' in result
         result = ReflectionCompletor.getPublicFieldsAndMethods(new GroovyLexer(new ByteArrayInputStream()), "")
         assert 'ABSTRACT' in result
-        assert 'isCase(' in result
         assert 'tracing' in result
+        result = ReflectionCompletor.getMetaclassMethods(new GroovyLexer(new ByteArrayInputStream()), "", true)
+        assert 'isCase(' in result
         result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "LITERAL_as")
         assert ["LITERAL_as", "LITERAL_assert"]== result
         GroovyLexer lexer = new GroovyLexer(new ByteArrayInputStream("".getBytes()))
@@ -147,6 +153,15 @@ class ReflectionCompletorTest extends GroovyTestCase {
         assert []== result
         result = ReflectionCompletor.getPublicFieldsAndMethods(new HashSet(), "toA")
         assert ["toArray(", "toArray()"]== result
+    }
+
+    void testSuppressMetaAndDefaultMethods() {
+        Collection<String> result = ReflectionCompletor.getMetaclassMethods("foo", "", true)
+        assert 'getMetaClass()' in result
+        assert 'asBoolean()' in result
+        result = ReflectionCompletor.getMetaclassMethods("foo", "", false)
+        assert ! ('getMetaClass()' in result)
+        assert ! ('asBoolean()' in result)
     }
 
     void testGetFieldsAndMethodsCustomClass() {
