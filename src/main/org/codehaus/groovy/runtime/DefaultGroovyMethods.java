@@ -5005,7 +5005,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the Map.Entry having the minimum value as determined by the closure
      * @since 1.7.6
      */
-    public static <K, V> Map.Entry<K, V> min(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure closure) {
+    public static <K, V> Map.Entry<K, V> min(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>", "Map.Entry<K,V>,Map.Entry<K,V>"}) Closure closure) {
         return min(self.entrySet(), closure);
     }
 
@@ -5043,7 +5043,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the Map.Entry having the maximum value as determined by the closure
      * @since 1.7.6
      */
-    public static <K, V> Map.Entry<K, V> max(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure closure) {
+    public static <K, V> Map.Entry<K, V> max(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>", "Map.Entry<K,V>,Map.Entry<K,V>"}) Closure closure) {
         return max((Iterable<Map.Entry<K, V>>)self.entrySet(), closure);
     }
 

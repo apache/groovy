@@ -854,15 +854,14 @@ import groovy.transform.stc.ClosureParams
         '''
     }
 
-    @NotYetImplemented // DGM#max seems to be broken here
     void testDGM_maxOnMap() {
         assertScript '''
-            def result = [a:'a',b:'abc', c:'defg',d:'hi'].max { k,v -> v.length() }
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].max { a,b -> a.value.length() <=> b.value.length() }
             assert result.key == 'c'
             assert result.value == 'defg'
         '''
         assertScript '''
-            def result = [a:'a',b:'abc', c:'defg',d:'hi'].max { String k, String v -> v.length() }
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].max { Map.Entry<String,String> a, Map.Entry<String,String> b -> a.value.length() <=> b.value.length() }
             assert result.key == 'c'
             assert result.value == 'defg'
         '''
@@ -886,15 +885,14 @@ import groovy.transform.stc.ClosureParams
         '''
     }
 
-    @NotYetImplemented // DGM#min seems to be broken here
     void testDGM_maxOnMin() {
         assertScript '''
-            def result = [a:'a',b:'abc', c:'defg',d:'hi'].min { k,v -> v.length() }
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].min { a,b -> a.value.length() <=> b.value.length() }
             assert result.key == 'a'
             assert result.value == 'a'
         '''
         assertScript '''
-            def result = [a:'a',b:'abc', c:'defg',d:'hi'].min { String k, String v -> v.length() }
+            def result = [a:'a',b:'abc', c:'defg',d:'hi'].min { Map.Entry<String,String> a, Map.Entry<String,String> b -> a.value.length() <=> b.value.length() }
             assert result.key == 'a'
             assert result.value == 'a'
         '''
