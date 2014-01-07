@@ -1093,4 +1093,23 @@ import groovy.transform.stc.ClosureParams
             assert map.b=='B'
         '''
     }
+
+    void testFromStringInSameSourceUnit() {
+        assertScript '''import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.FromString
+
+public <T> void doSomething(T val, @ClosureParams(value=FromString, options="T") Closure cl) {
+    cl(val)
+}
+
+doSomething('foo') {
+    println it.toUpperCase()
+}
+
+doSomething(new Date()) {
+    println it.time
+}
+'''
+
+    }
 }
