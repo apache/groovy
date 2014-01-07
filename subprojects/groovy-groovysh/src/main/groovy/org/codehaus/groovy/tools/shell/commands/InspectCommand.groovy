@@ -35,7 +35,7 @@ class InspectCommand
     extends CommandSupport
 {
     InspectCommand(final Groovysh shell) {
-        super(shell, '\\inspect', '\\n')
+        super(shell, ':inspect', ':n')
     }
     
     def lafInitialized = false

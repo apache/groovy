@@ -30,7 +30,7 @@ class AliasCommand
     extends CommandSupport
 {
     AliasCommand(final Groovysh shell) {
-        super(shell, '\\alias', '\\a')
+        super(shell, ':alias', ':a')
     }
 
     Object execute(final List args) {
@@ -83,7 +83,7 @@ class AliasTargetProxyCommand
     final List args
     
     AliasTargetProxyCommand(final Groovysh shell, final String name, final List args) {
-        super(shell, name, '\\a' + counter++)
+        super(shell, name, ':a' + counter++)
         
         assert args
         

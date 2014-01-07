@@ -32,7 +32,7 @@ class RegisterCommand
     extends CommandSupport
 {
     RegisterCommand(final Groovysh shell) {
-        super(shell, "\\register", "\\rc")
+        super(shell, ":register", ":rc")
     }
 
     public Object execute(List<String> args) {

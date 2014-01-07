@@ -30,9 +30,9 @@ class ExitCommand
     extends CommandSupport
 {
     ExitCommand(final Groovysh shell) {
-        super(shell, '\\exit', '\\x')
+        super(shell, ':exit', ':x')
 
-        alias('\\quit', '\\q')
+        alias(':quit', ':q')
     }
 
     Object execute(final List<String> args) {
