@@ -581,8 +581,8 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=char,indent=0]
 <2> by using type coercion with the +as+ operator
 <3> by using a cast to char operation
 
-NOTE: The first option (&#x278A;) is interesting when the character is held in a variable,
-while the other two (&#x278B; and &#x278C;) are more interesting when a char value must be passed as argument of a method call.
+NOTE: The first option [conum,data-value=1]_1_ is interesting when the character is held in a variable,
+while the other two ([conum,data-value=2]_2_ and [conum,data-value=3]_3_) are more interesting when a char value must be passed as argument of a method call.
 
 == Numbers
 
