@@ -311,7 +311,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
         assertScript '''
                 Closure c = { Integer x, Integer y -> x <=> y }
                 def list = [ 3,1,5,2,4 ]
-                assert list.sort(c) == [1,2,3,4,5]
+                assert ((Collection)list).sort(c) == [1,2,3,4,5]
             '''
     }
 

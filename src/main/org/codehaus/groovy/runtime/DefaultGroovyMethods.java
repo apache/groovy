@@ -6235,7 +6235,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * @deprecated Use the Iterable version of sort instead
-     * @see #sort(Iterable)
+     * @see #sort(Iterable,boolean)
      * @since 1.0
      */
     @Deprecated
@@ -6419,33 +6419,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * @deprecated Use the Iterable version of sort instead
-     * @see #sort(Iterable, Comparator)
+     * @see #sort(Iterable, boolean, Comparator)
      * @since 1.0
      */
     @Deprecated
     public static <T> List<T> sort(Collection<T> self, Comparator<T> comparator) {
-        return sort((Iterable<T>)self, comparator);
-    }
-
-    /**
-     * Sorts the Iterable using the given Comparator. If the Iterable is a List,
-     * it is sorted in place and returned. Otherwise, the elements are first placed
-     * into a new list which is then sorted and returned - leaving the original Iterable unchanged.
-     * <pre class="groovyTestCase">
-     * assert ["hi","hey","hello"] == ["hello","hi","hey"].sort( { a, b -> a.length() <=> b.length() } as Comparator )
-     * </pre>
-     * <pre class="groovyTestCase">
-     * assert ["hello","Hey","hi"] == ["hello","hi","Hey"].sort(String.CASE_INSENSITIVE_ORDER)
-     * </pre>
-     *
-     * @param self       the Iterable to be sorted
-     * @param comparator a Comparator used for the comparison
-     * @return a sorted List
-     * @see #sort(Collection, boolean, Comparator)
-     * @since 2.2.0
-     */
-    public static <T> List<T> sort(Iterable<T> self, Comparator<T> comparator) {
-        return sort(self, true, comparator);
+        return sort((Iterable<T>)self, true, comparator);
     }
 
     /**
