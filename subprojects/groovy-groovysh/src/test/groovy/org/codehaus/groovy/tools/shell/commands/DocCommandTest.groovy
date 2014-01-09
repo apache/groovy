@@ -44,7 +44,12 @@ class DocCommandTest extends CommandTestSupport
 
     void testUrlsForJavaOnlyClass() {
         def urlsToLookup = []
-        def command = new DocCommand(new Groovysh())
+        def command = new DocCommand(new Groovysh()) {
+            @Override
+            protected boolean sendHEADRequest(final URL url) {
+                !url.host.contains('groovy.codehaus.org')
+            }
+        }
 
         def urls = command.urlsFor('org.ietf.jgss.GSSContext')
 
