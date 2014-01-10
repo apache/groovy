@@ -1112,4 +1112,52 @@ doSomething(new Date()) {
 '''
 
     }
+
+    void testInferenceWithSAMTypeCoercion() {
+        assertScript '''import java.util.concurrent.Callable
+
+interface Action<T> {
+    void execute(T thing)
+}
+
+class Wrapper<T> {
+
+    private final T thing
+
+    Wrapper(T thing) {
+        this.thing = thing
+    }
+
+    void contravariantTake(Action<? super T> action) {
+        action.execute(thing)
+    }
+
+    void invariantTake(Action<T> action) {
+        action.execute(thing)
+    }
+
+}
+
+static <T> Wrapper<T> wrap(Callable<T> callable) {
+    new Wrapper(callable.call())
+}
+
+static Integer dub(Integer integer) {
+    integer * 2
+}
+
+wrap {
+    1
+} contravariantTake {
+    dub(it) // fails static compile, 'it' is not known to be Integer
+}
+
+wrap {
+    1
+} invariantTake {
+    dub(it) // passes static compile, 'it' is known to be Integer
+}
+
+'''
+    }
 }

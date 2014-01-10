@@ -116,4 +116,27 @@ public abstract class ClosureSignatureHint {
      * @param usage the AST node, in the compiled file, which triggered a call to this method. Normally only used for logging/error handling
      */
     public abstract List<ClassNode[]> getClosureSignatures(MethodNode node, SourceUnit sourceUnit, CompilationUnit compilationUnit, String[] options, ASTNode usage);
+
+    /**
+     * Finds a class node given a string representing the type. Performs a lookup in the compilation unit to check if it is done in the same source unit.
+     * @param sourceUnit source unit
+     * @param compilationUnit compilation unit
+     * @param className the name of the class we want to get a {@link org.codehaus.groovy.ast.ClassNode} for
+     * @return a ClassNode representing the type
+     */
+    protected ClassNode findClassNode(final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String className) {
+        if (className.endsWith("[]")) {
+            return findClassNode(sourceUnit, compilationUnit, className.substring(0, className.length() - 2)).makeArray();
+        }
+        ClassNode cn;
+        try {
+            cn = ClassHelper.make(Class.forName(className, false, sourceUnit.getClassLoader()));
+        } catch (ClassNotFoundException e) {
+            cn = compilationUnit.getClassNode(className);
+            if (cn==null) {
+                cn = ClassHelper.make(className);
+            }
+        }
+        return cn;
+    }
 }
