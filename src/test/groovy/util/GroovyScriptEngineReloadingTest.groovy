@@ -75,13 +75,14 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
     }
 
     public void testReloadWith2ScriptsDependentOnSameBeanAndReloadForSecond() {
-        gse.config.minimumRecompilationInterval = 1
+        gse.config.minimumRecompilationInterval = 1000
         writeBean(1)
         writeScript(1)
 
         def val1 = gse.run("script1.groovy", "")
         assert val1 =='1', "script1 should have returned 1"
 
+        sleep 1
         writeBean(2)
         writeScript(2)
         val1 = gse.run("script1.groovy", "")
@@ -105,14 +106,45 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         def val2 = gse.run("script1.groovy", "")
         assert val2 == '1', "script1 should have returned 1"
 
-        writeBean(2)
         sleep 10000
+        writeBean(2)
 
         def val3 = gse.run("script1.groovy", "")
         assert val3 == '2', "script1 should have returned 2 after bean was modified but returned $val3"
 
         def val4 = gse.run("script2.groovy", "")
         assert val4 == '2', "script2 should have returned 2 after bean was modified but returned $val4"
+    }
+    
+    private void writeClassBean() {
+        def s = """
+            class Bean {
+                def getVal(){this.class.hashCode()}
+            }
+        """
+        MapFileSystem.instance.modFile("Bean.groovy", s, gse.@time)
+    }
+    
+    void testDependencyReloadNotTooOften() {
+        gse.config.minimumRecompilationInterval = 1
+        writeClassBean()
+        writeScript(1)
+        writeScript(2)
+
+        def beanClass1 = gse.run("script2.groovy", "")
+        def beanClass2 = gse.run("script1.groovy", "")
+        assert beanClass1 == beanClass2, "bean class should have been compiled only once"
+        def oldBeanClass = beanClass1
+
+        sleep 10000
+        writeClassBean()
+        writeScript(1)
+        writeScript(2)
+
+        beanClass1 = gse.run("script2.groovy", "")
+        beanClass2 = gse.run("script1.groovy", "")
+        assert beanClass1 == beanClass2, "bean class should have been compiled only once"
+        assert beanClass1 != oldBeanClass, "bean class was not recompiled"
     }
 
     public void testReloadWhenModifyingAllScripts() {
@@ -138,8 +170,8 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         assert val2 == '1', "script1 should have returned 1"
 
         // Modify Bean to return new value
-        writeBean(2)
         sleep 10000
+        writeBean(2)
 
         def val3 = gse.run("script1.groovy", "")
         assert val3 == '2', "script1 should have returned 2 after bean was modified but returned $val3"
@@ -333,7 +365,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
 
    /** GROOVY-2811 and GROOVY-4286  */
    void testReloadingInterval() {
-       gse.config.minimumRecompilationInterval = 2000
+       gse.config.minimumRecompilationInterval = 1500
        def binding = new Binding([:])
        def scriptName = "gse.groovy"
 
