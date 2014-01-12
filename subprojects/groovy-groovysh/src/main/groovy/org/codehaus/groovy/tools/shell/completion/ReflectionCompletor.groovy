@@ -35,6 +35,7 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
 class ReflectionCompletor {
 
     Groovysh shell
+    static NavigablePropertiesCompleter propertiesCompleter = new NavigablePropertiesCompleter()
     int metaclass_completion_prefix_length
 
     ReflectionCompletor(Groovysh shell) {
@@ -312,9 +313,9 @@ class ReflectionCompletor {
         if (clazz == null) {
             return rv;
         }
-        boolean isClass = false
-        if (clazz == Class) {
-            isClass = true
+
+        boolean isClass = (clazz == Class)
+        if (isClass) {
             clazz = instance as Class
         }
 
@@ -331,6 +332,12 @@ class ReflectionCompletor {
                 }
             }
         }
+
+        // other completions that are commonly possible with properties
+        if (!isClass) {
+            propertiesCompleter.addCompletions(instance, prefix, rv)
+        }
+
         return rv.sort()
     }
 
@@ -347,6 +354,10 @@ class ReflectionCompletor {
             candidates.remove(defaultMethod)
         }
     }
+
+
+
+
 
     private static Collection<String> addClassFieldsAndMethods(final Class clazz, final boolean staticOnly, final String prefix, Collection rv) {
         Field[] fields = staticOnly ? clazz.fields : clazz.getDeclaredFields()
