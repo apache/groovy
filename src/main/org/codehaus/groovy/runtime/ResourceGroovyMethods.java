@@ -808,7 +808,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void write(File file, String text, String charset) throws IOException {
         Writer writer = null;
         try {
-            writer = new OutputStreamWriter(new FileOutputStream(file), charset);
+            FileOutputStream out = new FileOutputStream(file);
+            writeUTF16BomIfRequired(charset, out);
+            writer = new OutputStreamWriter(out, charset);
             writer.write(text);
             writer.flush();
 
@@ -935,7 +937,11 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void append(File file, Object text, String charset) throws IOException {
         Writer writer = null;
         try {
-            writer = new OutputStreamWriter(new FileOutputStream(file, true), charset); 
+            FileOutputStream out = new FileOutputStream(file, true);
+            if (!file.exists()) {
+                writeUTF16BomIfRequired(charset, out);
+            }
+            writer = new OutputStreamWriter(out, charset);
             InvokerHelper.write(writer, text);
             writer.flush();
 
@@ -1722,12 +1728,16 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         } else {
             // first write the Byte Order Mark for Unicode encodings
             FileOutputStream stream = new FileOutputStream(file);
-            if ("UTF-16BE".equals(charset)) {
-                writeUtf16Bom(stream, true);
-            } else if ("UTF-16LE".equals(charset)) {
-                writeUtf16Bom(stream, false);
-            }
+            writeUTF16BomIfRequired(charset, stream);
             return new EncodingAwareBufferedWriter(new OutputStreamWriter(stream, charset));
+        }
+    }
+
+    private static void writeUTF16BomIfRequired(final String charset, final OutputStream stream) throws IOException {
+        if ("UTF-16BE".equals(charset)) {
+            writeUtf16Bom(stream, true);
+        } else if ("UTF-16LE".equals(charset)) {
+            writeUtf16Bom(stream, false);
         }
     }
 
@@ -1753,7 +1763,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.0
      */
-    private static void writeUtf16Bom(FileOutputStream stream, boolean bigEndian) throws IOException {
+    private static void writeUtf16Bom(OutputStream stream, boolean bigEndian) throws IOException {
         if (bigEndian) {
             stream.write(-2);
             stream.write(-1);
