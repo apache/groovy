@@ -17,20 +17,22 @@ class NioGroovyMethodsTest extends Specification {
 
         when:
         def str = 'Hello world!'
-        Path path = Files.createTempFile('test-size',null)
+        Path path = Files.createTempFile('test-size', null)
         Files.copy( new ByteArrayInputStream(str.getBytes()), path, StandardCopyOption.REPLACE_EXISTING )
+
         then:
         path.size() == str.size()
+
         cleanup:
         Files.deleteIfExists(path)
     }
-
 
     def testNewObjectOutputStream() {
 
         setup:
         def str = 'Hello world!'
         Path path = Paths.get('new_obj_out_stream')
+
         when:
         def out = path.newObjectOutputStream()
         out.writeObject(str)
@@ -41,8 +43,8 @@ class NioGroovyMethodsTest extends Specification {
         stream.readObject() == str
 
         cleanup:
+        stream.close()
         Files.deleteIfExists(path)
-
     }
 
     def testNewObjectInputStream() {
@@ -56,11 +58,13 @@ class NioGroovyMethodsTest extends Specification {
 
         when:
         def obj = path.newObjectInputStream()
+
         then:
         obj.readObject() == str
-        cleanup:
-        Files.deleteIfExists(path)
 
+        cleanup:
+        obj.close()
+        Files.deleteIfExists(path)
     }
 
     def testEachObject() {
@@ -94,9 +98,11 @@ class NioGroovyMethodsTest extends Specification {
 
         setup:
         def file = new File('test_each_file')
-        file.text = 'alpha\nbeta\ndelta';
+        file.text = 'alpha\nbeta\ndelta'
+
         when:
         def lines = file.toPath().readLines()
+
         then:
         lines.size()==3
         lines[0]=='alpha'
@@ -113,16 +119,17 @@ class NioGroovyMethodsTest extends Specification {
         final str = 'Hello world!'
         def file = new File('test_new_reader')
         file.text = str
+
         when:
         def reader = file.toPath().newReader()
         def line = reader.readLine()
+
         then:
         line == str
         reader.readLine() == null
 
         cleanup:
         file?.delete()
-
     }
 
     def testGetBytes() {
@@ -131,80 +138,91 @@ class NioGroovyMethodsTest extends Specification {
         def file = new File('test_getBytes')
         file.text = 'Hello world!'
         def path = file.toPath()
+
         then:
         path.getBytes() == 'Hello world!'.getBytes()
 
         cleanup:
         file?.delete()
-
     }
 
     def testSetBytes() {
 
-
         when:
         def file = new File('test_setBytes')
-        file.toPath().setBytes( 'Ciao mundo!'.getBytes() )
+        file.toPath().setBytes('Ciao mundo!'.getBytes())
+
         then:
         file.text == 'Ciao mundo!'
+
         cleanup:
         file?.delete()
-
     }
 
     def testWrite( )  {
+
         when:
         String str = 'Hello there!'
-        def file = new File('test_write');
+        def file = new File('test_write')
         file.toPath().write(str)
+
         then:
         file.text == 'Hello there!'
+
         cleanup:
         file?.delete()
     }
-
 
     def testAppendObject() {
 
         setup:
         def file = new File('test_appendObject')
         file.text = 'alpha'
+
         when:
-        file.toPath().append( '-gamma' )
+        file.toPath().append('-gamma')
+
         then:
         file.text == 'alpha-gamma'
+
         cleanup:
         file.delete()
     }
 
     def testAppendBytes() {
+
         setup:
         def file = new File('test_appendBytes')
         file.text = 'alpha'
+
         when:
-        file.toPath().append( '-beta'.getBytes() )
+        file.toPath().append('-beta'.getBytes())
+
         then:
         file.text == 'alpha-beta'
+
         cleanup:
         file.delete()
     }
-
 
     def testAppendInputStream() {
 
         setup:
         def file = new File('test_appendStream')
         file.text = 'alpha'
+
         when:
         file.toPath().append( new ByteArrayInputStream('-delta'.getBytes()) )
+
         then:
         file.text == 'alpha-delta'
+
         cleanup:
         file.delete()
-
     }
 
     def testEachFile() {
+
         setup:
         def folder = Files.createTempDirectory('test')
         def file1 = Files.createTempFile(folder, 'file_1_', null)
@@ -221,42 +239,49 @@ class NioGroovyMethodsTest extends Specification {
         when:
         Set result = []
         folder.eachFile() { result << it }
+
         then:
         result == [file1, file2, file3, sub1] as Set
 
         when:
-        def result2 = []
+        Set result2 = []
         folder.eachFile(FileType.FILES) { result2 << it }
+
         then:
         result2 == [file1, file2, file3] as Set
 
         when:
-        def result3 = []
+        Set result3 = []
         folder.eachFile(FileType.DIRECTORIES) { result3 << it }
+
         then:
         result3 == [sub1]  as Set
 
         when:
-        def result4 = []
+        Set result4 = []
         folder.eachFileMatch(FileType.FILES, ~/file_\d_.*/) { result4 << it }
+
         then:
         result4 == [file1, file2] as Set
 
         when:
-        def result5 = []
+        Set result5 = []
         folder.eachFileMatch(FileType.DIRECTORIES, ~/sub\d_.*/) { result5 << it }
+
         then:
         result5 == [sub1] as Set
 
         when:
-        def result6 = []
+        Set result6 = []
         folder.eachFileRecurse(FileType.FILES) { result6 << it }
+
         then:
         result6 == [file1, file2, file3, file4, file5, file6] as Set
 
         when:
-        def result7 = []
+        Set result7 = []
         folder.eachFileRecurse(FileType.DIRECTORIES) { result7 << it }
+
         then:
         result7 == [sub1, sub2] as Set
 
@@ -264,7 +289,6 @@ class NioGroovyMethodsTest extends Specification {
         folder?.toFile()?.deleteDir()
     }
 
-    
     def testEachDir() {
 
         setup:
@@ -281,6 +305,7 @@ class NioGroovyMethodsTest extends Specification {
         when:
         def result = []
         folder.eachDir { result << it }
+
         then:
         result as Set == [ sub1, sub2, sub3 ] as Set
 
@@ -288,19 +313,18 @@ class NioGroovyMethodsTest extends Specification {
         when:
         def result2 = []
         folder.eachDirMatch( ~/sub_\d_.*+/ ) { result2 << it }
+
         then:
         result2 as Set == [ sub1, sub2 ] as Set
 
         when:
         def result3 = []
         folder.eachDirRecurse { result3 << it }
+
         then:
         result3 as Set == [ sub1, sub2, sub4, sub5, sub3 ] as Set
 
-
         cleanup:
         folder?.deleteDir()
-
     }
-
 }
