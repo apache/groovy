@@ -21,12 +21,8 @@ import jline.Terminal
 import jline.TerminalFactory
 import jline.console.history.FileHistory
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
-import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
-import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.codehaus.groovy.tools.shell.util.Preferences
-import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
+import org.codehaus.groovy.tools.shell.util.*
 import org.fusesource.jansi.AnsiRenderer
 
 /**
@@ -67,7 +63,7 @@ class Groovysh extends Shell {
         assert registrar
 
         parser = new Parser()
-        
+
         interp = new Interpreter(classLoader, binding)
 
         registrar.call(this)
@@ -76,9 +72,15 @@ class Groovysh extends Shell {
     }
 
     private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
-        return {Shell shell ->
-            def r = new XmlCommandRegistrar(shell, classLoader)
-            r.register(getClass().getResource('commands.xml'))
+
+        return {Groovysh shell ->
+            URL xmlCommandResource = getClass().getResource('commands.xml')
+            if (xmlCommandResource != null) {
+                def r = new XmlCommandRegistrar(shell, classLoader)
+                r.register(xmlCommandResource)
+            } else {
+                new DefaultCommandsRegistrar(shell).register()
+            }
         }
     }
 
