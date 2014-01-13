@@ -355,7 +355,7 @@ public class GroovyTestCase extends TestCase {
             return;
         if (expected != null && DefaultTypeTransformation.compareEqual(expected, actual))
             return;
-        failNotEquals(message, expected, actual);
+        TestCase.assertEquals(message, expected, actual);
     }
 
     public static void assertEquals(Object expected, Object actual) {

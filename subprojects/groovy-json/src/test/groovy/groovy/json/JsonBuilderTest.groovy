@@ -133,6 +133,45 @@ class JsonBuilderTest extends GroovyTestCase {
         assert json.toString() == '{"response":{"results":[1,{"a":2}]}}'
     }
 
+    private class Author {
+        String name
+    }
+
+    void testCollectionAndClosure() {
+        def authors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
+
+        def json = new JsonBuilder()
+        json authors, { Author author ->
+            name author.name
+        }
+
+        assert json.toString() == '[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]'
+    }
+
+    void testMethodWithCollectionAndClosure() {
+        def authors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
+
+        def json = new JsonBuilder()
+        json.authors authors, { Author author ->
+            name author.name
+        }
+
+        assert json.toString() == '{"authors":[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]}'
+    }
+
+    void testNestedMethodWithCollectionAndClosure() {
+        def theAuthors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
+
+        def json = new JsonBuilder()
+        json {
+            authors theAuthors, { Author author ->
+                name author.name
+            }
+        }
+
+        assert json.toString() == '{"authors":[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]}'
+    }
+
     void testComplexStructureFromTheGuardian() {
         def json = new JsonBuilder()
         json.response {

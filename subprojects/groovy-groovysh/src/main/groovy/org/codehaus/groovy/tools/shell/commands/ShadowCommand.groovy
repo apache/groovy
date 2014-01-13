@@ -31,7 +31,7 @@ class ShadowCommand
     extends ComplexCommandSupport
 {
     ShadowCommand(final Groovysh shell) {
-        super(shell, 'shadow', '\\&', [ 'debug', 'verbose', 'info', 'this' ])
+        super(shell, ':shadow', ':&', [ 'debug', 'verbose', 'info', 'this' ])
         
         this.hidden = true
     }

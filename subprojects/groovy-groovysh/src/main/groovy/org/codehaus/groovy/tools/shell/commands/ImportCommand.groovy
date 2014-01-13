@@ -39,7 +39,7 @@ class ImportCommand
     extends CommandSupport
 {
     ImportCommand(final Groovysh shell) {
-        super(shell, 'import', '\\i')
+        super(shell, 'import', ':i')
     }
 
     @Override

@@ -29,7 +29,7 @@ class DisplayCommand
     extends CommandSupport
 {
     DisplayCommand(final Groovysh shell) {
-        super(shell, 'display', '\\d')
+        super(shell, ':display', ':d')
     }
 
     Object execute(final List<String> args) {

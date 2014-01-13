@@ -14,31 +14,36 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell;
+package org.codehaus.groovy.tools.shell
+
+import groovy.transform.CompileStatic;
+import jline.console.completer.Completer;
+import java.util.List;
 
 /**
- * Thrown to indicate a problem with command execution.
+ * Provides the interface required for command extensions.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-public class CommandException
-    extends Exception
+@CompileStatic
+public interface Command
 {
+    public String getName();
 
-    private final Command command;
+    public String getShortcut();
 
-    public CommandException(final Command command, String msg) {
-        super(msg);
-        this.command = command;
-    }
+    public Completer getCompleter();
 
-    public CommandException(final Command command, String msg, Throwable cause) {
-        super(msg, cause);
-        this.command = command;
-    }
+    public String getDescription();
 
-    public Command getCommand() {
-        return command;
-    }
+    public String getUsage();
+
+    public String getHelp();
+
+    public List/*<CommandAlias>*/ getAliases();
+
+    public Object execute(List<String> args);
+
+    public boolean getHidden();
 }

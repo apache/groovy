@@ -624,7 +624,7 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains("@java.lang.SuppressWarnings(value = 'unchecked')")
-        assert result.contains('@groovy.lang.Delegate(deprecated = true, interfaces = false)')
+        assert result.contains('@groovy.lang.Delegate(deprecated = true, interfaces = false)') || result.contains('@groovy.lang.Delegate(interfaces = false, deprecated = true)')
         assert result.contains('private java.util.Date when ')
     }
 

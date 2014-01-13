@@ -34,7 +34,7 @@ class SortTest extends GroovyTestCase {
     void testSortWithOrderBy() {
         def list = getPeople()
         def order = new OrderBy( { it.cheese } )
-        list.sort(order)
+        list.sort(true,order)
         assert list[0].name == 'Joe'
         assert list[-1].name == 'Chris'
         assert list.name == ['Joe', 'Bob', 'James', 'Chris']

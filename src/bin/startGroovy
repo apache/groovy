@@ -93,7 +93,7 @@ if $cygwin ; then
     [ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
     [ -n "$CP" ] && CP=`cygpath --path --unix "$CP"`
 else
-    if [ -n "$GROOVY_HOME" -a `expr "$GROOVY_HOME":'\/$'` ] ; then
+    if [ -n "$GROOVY_HOME" -a "`expr "$GROOVY_HOME":'\/$'`" ] ; then
         GROOVY_HOME=`echo $GROOVY_HOME | sed -e 's/\/$//'`
     fi
 fi

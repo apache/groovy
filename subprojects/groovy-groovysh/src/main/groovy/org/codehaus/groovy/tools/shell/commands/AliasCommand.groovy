@@ -30,7 +30,7 @@ class AliasCommand
     extends CommandSupport
 {
     AliasCommand(final Groovysh shell) {
-        super(shell, 'alias', '\\a')
+        super(shell, ':alias', ':a')
     }
 
     Object execute(final List args) {
@@ -44,8 +44,11 @@ class AliasCommand
         List target = args[1..-1]
         
         Command command = registry.find(name)
-        
-        if (command) {
+
+        if (command == null) {
+            command = registry.find(name)
+        }
+        if (command != null) {
             if (command instanceof AliasTargetProxyCommand) {
                 log.debug("Rebinding alias: $name")
                 
@@ -80,7 +83,7 @@ class AliasTargetProxyCommand
     final List args
     
     AliasTargetProxyCommand(final Groovysh shell, final String name, final List args) {
-        super(shell, name, '\\a' + counter++)
+        super(shell, name, ':a' + counter++)
         
         assert args
         
