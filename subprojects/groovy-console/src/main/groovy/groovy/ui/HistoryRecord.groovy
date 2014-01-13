@@ -26,7 +26,12 @@ class HistoryRecord {
 
     public String getTextToRun(boolean useSelection) {
         if (useSelection && selectionStart != selectionEnd) {
-            return allText[selectionStart ..< selectionEnd]
+            // Retrieve all the imports included in the script before the current selection
+            def before = allText[0 ..< selectionStart].split("\n")
+            def importLines = before.findAll { it.trim().startsWith("import") }
+            def imports = importLines.join("\n")
+            def code = imports + "\n" + allText[selectionStart ..< selectionEnd]
+            return code
         }
         return allText
     }
