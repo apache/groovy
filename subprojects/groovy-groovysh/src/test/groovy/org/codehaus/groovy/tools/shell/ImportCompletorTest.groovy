@@ -296,7 +296,7 @@ extends CompletorTestSupport {
             def candidates = []
             assertEquals(0, completer.complete("", 0, candidates))
             // order changed by sort
-            assertEquals(["\\i", "\\i", "import", "import"], candidates.sort())
+            assertEquals([":i", ":i", "import", "import"], candidates.sort())
         }
     }
 

@@ -25,6 +25,6 @@ class InspectCommandTest
     extends CommandTestSupport
 {
     void testInspect() {
-        shell << 'inspect'
+        shell << ':inspect'
     }
 }

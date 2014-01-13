@@ -32,9 +32,9 @@ class HelpCommand
     extends CommandSupport
 {
     HelpCommand(final Groovysh shell) {
-        super(shell, 'help', '\\h')
+        super(shell, ':help', ':h')
 
-        alias('?', '\\?')
+        alias('?', ':?')
     }
 
     protected List createCompleters() {
@@ -120,7 +120,7 @@ class HelpCommand
         
         io.out.println()
         io.out.println('For help on a specific command type:') // TODO: i18n
-        io.out.println('    help @|bold command|@ ')
+        io.out.println('    :help @|bold command|@ ')
         io.out.println()
     }
 }

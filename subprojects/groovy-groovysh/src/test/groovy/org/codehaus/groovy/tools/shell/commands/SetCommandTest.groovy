@@ -30,7 +30,7 @@ class SetCommandTest
     extends CommandTestSupport
 {
     void testSet() {
-        shell << 'set'
+        shell << ':set'
     }
 
     void testComplete() {
