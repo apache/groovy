@@ -48,6 +48,7 @@ class Groovysh extends Shell {
     final List<String> imports = []
 
     public static final String AUTOINDENT_PREFERENCE_KEY = "autoindent"
+    public static final String METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY = "metacompletionprefixlength"
     int indentSize = 2
     
     InteractiveShellRunner runner
@@ -473,7 +474,10 @@ class Groovysh extends Shell {
                 loadUserScript('groovysh.rc')
 
                 // Setup the interactive runner
-                runner = new InteractiveShellRunner(this, this.&renderPrompt as Closure)
+                runner = new InteractiveShellRunner(
+                        this,
+                        this.&renderPrompt as Closure,
+                        Integer.valueOf(Preferences.get(METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
 
                 // Setup the history
                 File histFile = new File(userStateDirectory, 'groovysh.history')

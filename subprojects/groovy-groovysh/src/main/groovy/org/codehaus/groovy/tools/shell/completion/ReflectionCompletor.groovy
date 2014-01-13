@@ -35,9 +35,20 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
 class ReflectionCompletor {
 
     Groovysh shell
+    int metaclass_completion_prefix_length
 
     ReflectionCompletor(Groovysh shell) {
+        this(shell, 0)
+    }
+
+    /**
+     *
+     * @param shell
+     * @param metaclass_completion_prefix_length how long the prefix must be to disaply candidates from metaclass
+     */
+    ReflectionCompletor(Groovysh shell, int metaclass_completion_prefix_length) {
         this.shell = shell
+        this.metaclass_completion_prefix_length = metaclass_completion_prefix_length
     }
 
     public int complete(final List<GroovySourceToken> tokens, List candidates) {
@@ -72,8 +83,19 @@ class ReflectionCompletor {
 
         // look for public methods/fields that match the prefix
         List myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
+        boolean showAllMethods = identifierPrefix.length() >= this.metaclass_completion_prefix_length
+        // Also add metaclass methods if prefix is long enough (user would usually not care about those)
+        myCandidates.addAll(getMetaclassMethods(
+                instance,
+                identifierPrefix,
+                showAllMethods))
+        if (!showAllMethods) {
+            // user probably does not care to see default Object / GroovyObject Methods,
+            // they obfuscate the business logic
+            removeDefaultMethods(myCandidates)
+        }
         if (myCandidates.size() > 0) {
-            candidates.addAll(myCandidates)
+            candidates.addAll(myCandidates.sort())
             int lastDot
             // dot could be on previous line
             if (currentElementToken && dotToken.getLine() != currentElementToken.getLine()) {
@@ -264,6 +286,19 @@ class ReflectionCompletor {
                 (!(name.contains('$')) && !name.startsWith("_"));
     }
 
+    static Collection<String> getMetaclassMethods(Object instance, String prefix, boolean includeMetaClassImplMethods) {
+        Set<String> rv = new HashSet<String>()
+        MetaClass metaclass = InvokerHelper.getMetaClass(instance)
+        if (includeMetaClassImplMethods || ! metaclass instanceof MetaClassImpl) {
+            metaclass.metaMethods.each { MetaMethod mmit ->
+                if (acceptName(mmit.name, prefix)) {
+                    rv << mmit.getName() + (mmit.parameterTypes.length == 0 ? "()" : "(")
+                }
+            }
+        }
+        return rv.sort()
+    }
+
     /**
      * Build a list of public fields and methods for an object
      * that match a given prefix.
@@ -283,14 +318,8 @@ class ReflectionCompletor {
             clazz = instance as Class
         }
 
-        InvokerHelper.getMetaClass(instance).metaMethods.each { MetaMethod mmit ->
-            if (acceptName(mmit.name, prefix)) {
-                rv << mmit.getName() + (mmit.parameterTypes.length == 0 ? "()" : "(")
-            }
-        }
-
         Class loopclazz = clazz
-        while (loopclazz != null) {
+        while (loopclazz != null && loopclazz != Object && loopclazz != GroovyObject) {
             addClassFieldsAndMethods(loopclazz, isClass, prefix, rv)
             loopclazz = loopclazz.superclass
         }
@@ -303,6 +332,20 @@ class ReflectionCompletor {
             }
         }
         return rv.sort()
+    }
+
+    /**
+     * removes candidates that, most of the times, a programmer does not want to see in completion
+     * @param candidates
+     */
+    static removeDefaultMethods(Collection candidates) {
+        for (String defaultMethod in [
+                'clone()', 'finalize()', 'getClass()',
+                'getMetaClass()', 'getProperty(',  'invokeMethod(', 'setMetaClass(', 'setProperty(',
+                'equals(', 'hashCode()', 'toString()',
+                'notify()', 'notifyAll()', 'wait(', 'wait()']) {
+            candidates.remove(defaultMethod)
+        }
     }
 
     private static Collection<String> addClassFieldsAndMethods(final Class clazz, final boolean staticOnly, final String prefix, Collection rv) {
