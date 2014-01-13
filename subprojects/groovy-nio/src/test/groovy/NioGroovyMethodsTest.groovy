@@ -219,46 +219,46 @@ class NioGroovyMethodsTest extends Specification {
         def file6  = Files.createTempFile(sub2, 'file_6_', null)
 
         when:
-        def result = []
+        Set result = []
         folder.eachFile() { result << it }
         then:
-        result == [file1, file2, file3, sub1]
+        result == [file1, file2, file3, sub1] as Set
 
         when:
         def result2 = []
         folder.eachFile(FileType.FILES) { result2 << it }
         then:
-        result2 == [file1, file2, file3]
+        result2 == [file1, file2, file3] as Set
 
         when:
         def result3 = []
         folder.eachFile(FileType.DIRECTORIES) { result3 << it }
         then:
-        result3 == [sub1]
+        result3 == [sub1]  as Set
 
         when:
         def result4 = []
         folder.eachFileMatch(FileType.FILES, ~/file_\d_.*/) { result4 << it }
         then:
-        result4 == [file1, file2]
+        result4 == [file1, file2] as Set
 
         when:
         def result5 = []
         folder.eachFileMatch(FileType.DIRECTORIES, ~/sub\d_.*/) { result5 << it }
         then:
-        result5 == [sub1]
+        result5 == [sub1] as Set
 
         when:
         def result6 = []
         folder.eachFileRecurse(FileType.FILES) { result6 << it }
         then:
-        result6 == [file1, file2, file3, file4, file5, file6]
+        result6 == [file1, file2, file3, file4, file5, file6] as Set
 
         when:
         def result7 = []
         folder.eachFileRecurse(FileType.DIRECTORIES) { result7 << it }
         then:
-        result7 == [sub1, sub2]
+        result7 == [sub1, sub2] as Set
 
         cleanup:
         folder?.toFile()?.deleteDir()
@@ -282,20 +282,20 @@ class NioGroovyMethodsTest extends Specification {
         def result = []
         folder.eachDir { result << it }
         then:
-        result.sort() == [ sub1, sub2, sub3 ]
+        result as Set == [ sub1, sub2, sub3 ] as Set
 
         // test *eachMatchDir*
         when:
         def result2 = []
         folder.eachDirMatch( ~/sub_\d_.*+/ ) { result2 << it }
         then:
-        result2.sort() == [ sub1, sub2 ]
+        result2 as Set == [ sub1, sub2 ] as Set
 
         when:
         def result3 = []
         folder.eachDirRecurse { result3 << it }
         then:
-        result3 == [ sub1, sub2, sub4, sub5, sub3 ]
+        result3 as Set == [ sub1, sub2, sub4, sub5, sub3 ] as Set
 
 
         cleanup:
