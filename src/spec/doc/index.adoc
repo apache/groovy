@@ -55,7 +55,13 @@ include::{subprojroot}json/{specfolder}/json-userguide.adoc[]
 :leveloffset: 0
 === Processing XML
 === Scripting Ant tasks
-=== Template engines
+
+:leveloffset: 2
+
+include::{projectdir}/src/spec/doc/template-engines.adoc[]
+
+:leveloffset: 0
+
 === Servlet support
 === Integrating Groovy in a Java application
 ==== Groovy integration mechanisms
