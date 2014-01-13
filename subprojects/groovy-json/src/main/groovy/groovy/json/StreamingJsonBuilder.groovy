@@ -137,6 +137,33 @@ class StreamingJsonBuilder {
     }
 
     /**
+     * A collection and closure passed to a JSON builder will create a root JSON array applying
+     * the closure to each object in the collection
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * class Author {
+     *      String name
+     * }
+     * def authors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
+     *
+     * new StringWriter().with { w ->
+     *     def json = new groovy.json.StreamingJsonBuilder( w )
+     *     json authors, { Author author ->
+     *         name author.name
+     *     }
+     *
+     *     assert w.toString() == '[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]'
+     * }
+     * </pre>
+     * @param coll a collection
+     * @param c a closure used to convert the objects of coll
+     */
+    def call (Collection coll, Closure c) {
+        StreamingJsonDelegate.writeCollectionWithClosure( writer, coll, c)
+    }
+
+    /**
      * A closure passed to a JSON builder will create a root JSON object
      * <p>
      * Example:
@@ -246,6 +273,10 @@ class StreamingJsonBuilder {
             }
             StreamingJsonDelegate.cloneDelegateAndGetContent( writer, args[1], !args[0].size() )
             writer.write '}}'
+        } else if (StreamingJsonDelegate.isCollectionWithClosure( args )) {
+            writer.write "{${JsonOutput.toJson( name )}:"
+            call( args[0], args[1] )
+            writer.write '}'
         }
         else {
             throw new JsonException("Expected no arguments, a single map, a single closure, or a map and closure as arguments.")
@@ -261,7 +292,7 @@ class StreamingJsonDelegate {
         this.writer = w
         this.first = first
     }
-    
+
     def invokeMethod(String name, Object args) {
         if (args) {
             if( !first ) {
@@ -269,9 +300,35 @@ class StreamingJsonDelegate {
             }
             writer.write JsonOutput.toJson( name )
             writer.write ':'
-            writer.write JsonOutput.toJson( args.size() == 1 ? args[0] : args.toList() )
+
+            if (args.size() == 1) {
+                writer.write JsonOutput.toJson( args[0] )
+            } else if (isCollectionWithClosure( args )) {
+                writeCollectionWithClosure ( writer, args[0], args[1] )
+            } else {
+                writer.write JsonOutput.toJson( args.toList() )
+            }
+
             first = false
         }
+    }
+
+    static boolean isCollectionWithClosure (Object[] args) {
+        args.size() == 2 && args[0] instanceof Collection && args[1] instanceof Closure
+    }
+
+    static def writeCollectionWithClosure (Writer writer, Collection coll, Closure closure) {
+        writer.write '['
+        coll.eachWithIndex { it, idx ->
+            if (idx > 0) {
+                writer.write ','
+            }
+
+            writer.write '{'
+            curryDelegateAndGetContent (writer, closure, it)
+            writer.write '}'
+        }
+        writer.write ']'
     }
 
     static cloneDelegateAndGetContent(Writer w, Closure c, boolean first=true ) {
@@ -280,5 +337,13 @@ class StreamingJsonDelegate {
         cloned.delegate = delegate
         cloned.resolveStrategy = Closure.DELEGATE_FIRST
         cloned()
+    }
+
+    static curryDelegateAndGetContent(Writer w, Closure c, Object o, boolean first=true) {
+        def delegate = new StreamingJsonDelegate( w, first )
+        Closure curried = c.curry (o)
+        curried.delegate = delegate
+        curried.resolveStrategy = Closure.DELEGATE_FIRST
+        curried()
     }
 }
