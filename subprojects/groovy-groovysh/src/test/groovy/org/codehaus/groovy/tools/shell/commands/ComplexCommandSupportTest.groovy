@@ -21,7 +21,7 @@ import org.codehaus.groovy.tools.shell.CommandException
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 
 /**
- * Tests for the {@link ClearCommand} class.
+ * Tests for the {@link ComplexCommandSupport} class.
  *
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */

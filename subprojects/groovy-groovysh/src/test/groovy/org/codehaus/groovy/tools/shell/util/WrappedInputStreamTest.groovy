@@ -17,9 +17,8 @@
 package org.codehaus.groovy.tools.shell.util
 
 /**
- * Unit tests for the {@link MessageSource} class.
+ * Unit tests for the {@link WrappedInputStream} class.
  *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class WrappedInputStreamTest
     extends GroovyTestCase
