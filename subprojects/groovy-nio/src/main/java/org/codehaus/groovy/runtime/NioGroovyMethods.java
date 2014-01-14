@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URI;
@@ -440,9 +441,9 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void write(Path self, String text) throws IOException {
-        BufferedWriter writer = null;
+        Writer writer = null;
         try {
-            writer = newWriter(self);
+            writer = new OutputStreamWriter(Files.newOutputStream(self, CREATE, APPEND), Charset.defaultCharset());
             writer.write(text);
             writer.flush();
 
@@ -541,9 +542,9 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void write(Path self, String text, String charset) throws IOException {
-        BufferedWriter writer = null;
+        Writer writer = null;
         try {
-            writer = newWriter(self, charset);
+            writer = new OutputStreamWriter(Files.newOutputStream(self, CREATE, APPEND), Charset.forName(charset));
             writer.write(text);
             writer.flush();
 
@@ -564,9 +565,9 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void append(Path self, Object text) throws IOException {
-        BufferedWriter writer = null;
+        Writer writer = null;
         try {
-            writer = newWriter(self, true);
+            writer = new OutputStreamWriter(Files.newOutputStream(self, CREATE, APPEND), Charset.defaultCharset());
             InvokerHelper.write(writer, text);
             writer.flush();
 
@@ -587,9 +588,9 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.1
      */
     public static void append(Path self, byte[] bytes) throws IOException {
-        BufferedOutputStream stream = null;
+        OutputStream stream = null;
         try {
-            stream = new BufferedOutputStream( Files.newOutputStream(self, CREATE, APPEND) );
+            stream = Files.newOutputStream(self, CREATE, APPEND);
             stream.write(bytes, 0, bytes.length);
             stream.flush();
 
@@ -629,9 +630,9 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void append(Path self, Object text, String charset) throws IOException {
-        BufferedWriter writer = null;
+        Writer writer = null;
         try {
-            writer = newWriter(self, charset, true);
+            writer = new OutputStreamWriter(Files.newOutputStream(self, CREATE, APPEND), Charset.forName(charset));
             InvokerHelper.write(writer, text);
             writer.flush();
 
