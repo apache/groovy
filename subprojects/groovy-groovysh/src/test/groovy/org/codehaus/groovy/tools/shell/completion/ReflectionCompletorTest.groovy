@@ -24,6 +24,33 @@ import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokensStr
 
 class ReflectionCompletorTest extends GroovyTestCase {
 
+    void testAddDefaultMethods() {
+        List<String> result = []
+        ReflectionCompletor.addDefaultMethods(3, '', result)
+        assert 'abs()' in result
+        assert 'times(' in result
+
+        result = []
+        ReflectionCompletor.addDefaultMethods([1, 2, 3], '', result)
+        assert 'any(' in result
+        assert 'count(' in result
+        assert 'take(' in result
+        assert 'unique()' in result
+
+        result = []
+        ReflectionCompletor.addDefaultMethods(new String[2], '', result)
+        assert 'any(' in result
+        assert 'collect(' in result
+        assert 'count(' in result
+        assert 'take(' in result
+
+        result = []
+        ReflectionCompletor.addDefaultMethods(['a': 1, 'b': 2], '', result)
+        assert 'any(' in result
+        assert 'spread()' in result
+    }
+
+
     void testGetFieldsAndMethodsArray() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(([] as String[]), "")
         assert 'length' in result
@@ -31,6 +58,7 @@ class ReflectionCompletorTest extends GroovyTestCase {
         result = ReflectionCompletor.getMetaclassMethods(([] as String[]), "", true)
         assert 'size()' in result
         assert 'any()' in result
+        assert 'take(' in result
         result = ReflectionCompletor.getMetaclassMethods([] as String[], "size", true)
         assert ["size()"] == result
         result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "le")
