@@ -113,6 +113,25 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
         assert result.distance == 1
     }
 
+    void testLocalTransformationWithClosureAnnotationParameter_notAnnotatedAsASTInterface() {
+        // add @Contract2({distance = 1 })
+        customizer = new ASTTransformationCustomizer(Contract2, "org.codehaus.groovy.control.customizers.ContractAnnotation")
+        final expression = new AstBuilder().buildFromCode(CompilePhase.CONVERSION) {->
+            distance = 1
+        }.expression[0]
+        customizer.annotationParameters = [value: expression]
+        configuration.addCompilationCustomizers(customizer)
+        def shell = new GroovyShell(configuration)
+        def result = shell.evaluate("""
+            class MyClass {
+                int distance
+                MyClass() {}
+            }
+            new MyClass()
+        """)
+        assert result.distance == 1
+    }
+
     void testLocalTransformationWithClassAnnotationParameter() {
         // add @ConditionalInterrupt(value={ true }, thrown=SecurityException)
         final expression = new AstBuilder().buildFromCode(CompilePhase.CONVERSION) {->
@@ -211,5 +230,10 @@ protected class ContractAnnotation implements ASTTransformation, Opcodes {
         def member = node.getMember("value")
         ((ClassNode)nodes[1]).getDeclaredConstructors()[0].code = member.code
     }
+}
 
+@Retention(RetentionPolicy.SOURCE)
+@Target([ElementType.TYPE])
+protected @interface Contract2 {
+    Class value();
 }

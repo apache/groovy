@@ -15,7 +15,7 @@ def subprojects = ['groovy-ant',
         'groovy-testng',
         'groovy-xml']
 
-if(!System.properties['java.version'].contains('1.5') && !System.properties['java.version'].contains('1.6')) {
+if(JavaVersion.current().isJava7Compatible()) {
     subprojects << 'groovy-nio'
 }
  
