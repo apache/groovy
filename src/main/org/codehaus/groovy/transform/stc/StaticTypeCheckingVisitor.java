@@ -1972,8 +1972,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression options) {
         try {
             Parameter[] closureParams = expression.getParameters();
+            CompilationUnit compilationUnit = typeCheckingContext.getCompilationUnit();
+            GroovyClassLoader transformLoader = compilationUnit!=null?compilationUnit.getTransformLoader():getSourceUnit().getClassLoader();
             @SuppressWarnings("unchecked")
-            Class<? extends ClosureSignatureHint> hint = (Class<? extends ClosureSignatureHint>) getSourceUnit().getClassLoader().loadClass(hintClass.getText());
+            Class<? extends ClosureSignatureHint> hint = (Class<? extends ClosureSignatureHint>) transformLoader.loadClass(hintClass.getText());
             ClosureSignatureHint hintInstance = hint.newInstance();
             List<ClassNode[]> closureSignatures = hintInstance.getClosureSignatures(
                     selectedMethod instanceof ExtensionMethodNode ?((ExtensionMethodNode) selectedMethod).getExtensionMethodNode():selectedMethod,
