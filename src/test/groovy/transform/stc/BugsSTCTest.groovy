@@ -490,7 +490,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
 
     void testListToSet() {
         assertScript '''
-            Set foo(List set) {
+            Set foo(List<Map.Entry> set) {
                 set.collect { Map.Entry entry -> entry.key }.toSet()
             }
         '''

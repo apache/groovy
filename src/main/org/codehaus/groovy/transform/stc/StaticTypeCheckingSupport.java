@@ -1234,6 +1234,8 @@ public abstract class StaticTypeCheckingSupport {
                 if (!isAssignableTo(argumentType, parameterType.getComponentType())) {
                     return false;
                 }
+            } else {
+                return false;
             }
         }
         if (parameterType.isUsingGenerics() && argumentType.isUsingGenerics()) {

@@ -434,7 +434,8 @@ public class GenericsType extends ASTNode {
                             match = redirectBoundType.isCompatibleWith(classNodeType.getType());
                         }
                     } else {
-                        match = classNodeType.isCompatibleWith(redirectBoundType.getType());
+                        // todo: the check for isWildcard should be replaced with a more complete check
+                        match = redirectBoundType.isWildcard() || classNodeType.isCompatibleWith(redirectBoundType.getType());
                     }
                 }
             }
