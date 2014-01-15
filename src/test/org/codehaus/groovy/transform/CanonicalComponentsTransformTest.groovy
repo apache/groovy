@@ -361,6 +361,23 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
     }
 
     // GROOVY-5864
+    void testAutoExternalizeWithoutNoArg() {
+        try {
+            new GroovyShell().parse """
+                @groovy.transform.AutoExternalize
+                class Person {
+                    Person(String first) {}
+                    String first
+                }
+            """
+            fail("The compilation should have failed as there is no no-arg constructor.")
+        } catch (MultipleCompilationErrorsException e) {
+            def syntaxError = e.errorCollector.getSyntaxError(0)
+            assert syntaxError.message.contains("An Externalizable class requires a no-arg constructor but none found")
+        }
+    }
+
+    // GROOVY-5864
     void testExternalizeVerifierWithNonExternalizableField() {
         try {
             new GroovyShell().parse """
