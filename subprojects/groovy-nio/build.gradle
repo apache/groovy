@@ -11,10 +11,13 @@ task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorT
     extensionClasses = 'org.codehaus.groovy.runtime.NioGroovyMethods'
 }
 
-compileJava {
-    dependsOn moduleDescriptor
-    doFirst {
+compileJava.dependsOn moduleDescriptor
+
+tasks.withType(Compile) {
         sourceCompatibility = 1.7
         targetCompatibility = 1.7
-    }
 }
+tasks.withType(Javadoc) {
+        options.source = "1.7"
+}
+
