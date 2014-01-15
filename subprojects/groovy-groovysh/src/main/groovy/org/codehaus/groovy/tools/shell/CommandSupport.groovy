@@ -16,11 +16,11 @@
 
 package org.codehaus.groovy.tools.shell
 
-import jline.console.completer.ArgumentCompleter
 import jline.console.completer.Completer
 import jline.console.completer.NullCompleter
 import jline.console.completer.StringsCompleter
 import jline.console.history.FileHistory
+import org.codehaus.groovy.tools.shell.completion.StricterArgumentCompleter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
 
@@ -124,7 +124,7 @@ abstract class CommandSupport
             list << new NullCompleter()
         }
 
-        return new ArgumentCompleter(list)
+        return new StricterArgumentCompleter(list)
     }
     
     //
