@@ -165,6 +165,10 @@ allprojects {
     }
 }
 
+if (JavaVersion.current().isJava7Compatible()) {
+    javadocAll.options.source = '1.7'
+}
+
 if (JavaVersion.current().isJava8Compatible()) {
     allprojects {
         tasks.withType(Javadoc) {
