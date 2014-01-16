@@ -50,7 +50,8 @@ test {
 }
 
 boolean isRunningOnCI() {
-    new File('.').absolutePath.contains('ci.codehaus.org')
+    def path = new File('.').absolutePath
+    path.contains('ci.codehaus.org') || path.contains('teamcity')
 }
 
 logger.lifecycle "Detected ${isRunningOnCI() ? 'Continuous Integration environment' : 'development environment'}"
