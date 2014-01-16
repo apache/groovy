@@ -17,8 +17,11 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.Command
+import org.codehaus.groovy.tools.shell.CommandRegistry
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
+import org.codehaus.groovy.tools.shell.completion.CommandNameCompleter
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'alias' command.
@@ -30,7 +33,14 @@ class AliasCommand
     extends CommandSupport
 {
     AliasCommand(final Groovysh shell) {
-        super(shell, ':alias', ':a')
+        super(shell, ':alias', ':a', )
+    }
+
+    protected List createCompleters() {
+        return [
+                new CommandNameCompleter(registry),
+                null
+        ]
     }
 
     Object execute(final List args) {

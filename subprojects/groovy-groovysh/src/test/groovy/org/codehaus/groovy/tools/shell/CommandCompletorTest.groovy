@@ -16,7 +16,10 @@
 
 package org.codehaus.groovy.tools.shell
 
+import groovy.mock.interceptor.MockFor
+import org.codehaus.groovy.tools.shell.commands.AliasCommand
 import org.codehaus.groovy.tools.shell.commands.ClearCommand
+import org.codehaus.groovy.tools.shell.commands.ImportCommand
 import org.codehaus.groovy.tools.shell.commands.SaveCommand
 import org.codehaus.groovy.tools.shell.commands.SetCommand
 import org.codehaus.groovy.tools.shell.commands.ShowCommand
@@ -30,6 +33,27 @@ extends CompletorTestSupport {
         assert -1 == completor.complete("", 0, [])
         assert -1 == completor.complete("i", 2, [])
         assert -1 == completor.complete("imp", 4, [])
+    }
+
+    void testAlias() {
+        CommandsMultiCompleter completor = new CommandsMultiCompleter()
+        def candidates = []
+        CommandRegistry registry = new CommandRegistry()
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            AliasCommand aliasCommand = new AliasCommand(groovyshMock)
+            registry.register(new SetCommand(groovyshMock))
+            registry.register(new ShowCommand(groovyshMock))
+            aliasCommand.registry = registry
+            completor.add(aliasCommand)
+            completor.refresh()
+
+            assert 0 == completor.complete(":a", ":a".length(), candidates)
+            assert [':a', ':alias'] == candidates
+            candidates = []
+            assert 3 == completor.complete(":a ", ":a ".length(), candidates)
+            assert [':=', ':S', ':set', ':show'] == candidates
+        }
     }
 
     void testSet() {
