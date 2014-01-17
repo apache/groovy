@@ -34,6 +34,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -580,6 +581,45 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Append the text supplied by the Writer at the end of the File.
+     *
+     * @param file a Path
+     * @param reader the Reader supplying the text to append at the end of the File
+     * @throws IOException if an IOException occurs.
+     * @since 2.3
+     */
+    public static void append(Path file, Reader reader) throws IOException {
+        appendBuffered(file, reader);
+    }
+
+    /**
+     * Append the text supplied by the Writer at the end of the File.
+     *
+     * @param file a File
+     * @param writer the Writer supplying the text to append at the end of the File
+     * @throws IOException if an IOException occurs.
+     * @since 2.3
+     */
+    public static void append(Path file, Writer writer) throws IOException {
+        appendBuffered(file, writer);
+    }
+
+    private static void appendBuffered(Path file, Object text) throws IOException {
+        BufferedWriter writer = null;
+        try {
+            writer = newWriter(file, true);
+            InvokerHelper.write(writer, text);
+            writer.flush();
+
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        } finally {
+            closeWithWarning(writer);
+        }
+    }
+
+    /**
      * Append bytes to the end of a Path.
      *
      * @param self  a Path
@@ -632,7 +672,49 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void append(Path self, Object text, String charset) throws IOException {
         Writer writer = null;
         try {
-            writer = new OutputStreamWriter(Files.newOutputStream(self, CREATE, APPEND), Charset.forName(charset));
+            OutputStream out = Files.newOutputStream(self, CREATE, APPEND);
+            writer = new OutputStreamWriter(out, Charset.forName(charset));
+            InvokerHelper.write(writer, text);
+            writer.flush();
+
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        } finally {
+            closeWithWarning(writer);
+        }
+    }
+
+    /**
+     * Append the text supplied by the Writer at the end of the File, using a specified encoding.
+     *
+     * @param file a File
+     * @param writer the Writer supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @throws IOException if an IOException occurs.
+     * @since 2.3
+     */
+    public static void append(Path file, Writer writer, String charset) throws IOException {
+        appendBuffered(file, writer, charset);
+    }
+
+    /**
+     * Append the text supplied by the Reader at the end of the File, using a specified encoding.
+     *
+     * @param file a File
+     * @param reader the Reader supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @throws IOException if an IOException occurs.
+     * @since 2.3
+     */
+    public static void append(Path file, Reader reader, String charset) throws IOException {
+        appendBuffered(file, reader, charset);
+    }
+
+    private static void appendBuffered(Path file, Object text, String charset) throws IOException {
+        BufferedWriter writer = null;
+        try {
+            writer = newWriter(file, charset, true);
             InvokerHelper.write(writer, text);
             writer.flush();
 
