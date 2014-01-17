@@ -934,7 +934,8 @@ public abstract class StaticTypeCheckingSupport {
             final ClassNode actualReceiverForDistance = actualReceiver;
             MethodNode safeNode = candidateNode;
             ClassNode[] safeArgs = args;
-            if (candidateNode instanceof ExtensionMethodNode) {
+            boolean isExtensionMethodNode = candidateNode instanceof ExtensionMethodNode;
+            if (isExtensionMethodNode) {
                 safeArgs = new ClassNode[args.length+1];
                 System.arraycopy(args, 0, safeArgs, 1, args.length);
                 safeArgs[0] = receiver;
@@ -970,6 +971,9 @@ public abstract class StaticTypeCheckingSupport {
                 }
                 int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
                 if (dist>=0 && !actualReceiverForDistance.equals(declaringClassForDistance)) dist+=getDistance(actualReceiverForDistance, declaringClassForDistance);
+                if (dist>=0 && !isExtensionMethodNode) {
+                    dist++;
+                }
                 if (dist>=0 && dist<bestDist) {
                     bestChoices.clear();
                     bestChoices.add(candidateNode);
@@ -1011,6 +1015,9 @@ public abstract class StaticTypeCheckingSupport {
                         // for example :
                         // int sum(int x) should be preferred to int sum(int x, int... y)
                         dist+=256-params.length;
+                        if (dist>=0 && !isExtensionMethodNode) {
+                            dist++;
+                        }
                         if (params.length < safeArgs.length && dist >= 0) {
                             if (dist >= 0 && dist < bestDist) {
                                 bestChoices.clear();

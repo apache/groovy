@@ -3295,6 +3295,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             collectAllInterfaceMethodsByName(receiver, name, methods);
         }
 
+        // lookup in DGM methods too
+        findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), receiver, name, args, methods);
         List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
         if (!chosen.isEmpty()) return chosen;
 
@@ -3309,13 +3311,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (receiver.equals(CLASS_Type) && receiver.getGenericsTypes() != null) {
             List<MethodNode> result = findMethod(receiver.getGenericsTypes()[0].getType(), name, args);
             if (!result.isEmpty()) return result;
-        }
-
-        // perform a lookup in DGM methods
-        methods.clear();
-        chosen = findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), receiver, name, args, methods);
-        if (!chosen.isEmpty()) {
-            return chosen;
         }
 
         if (ClassHelper.GSTRING_TYPE.equals(receiver)) return findMethod(ClassHelper.STRING_TYPE, name, args);
