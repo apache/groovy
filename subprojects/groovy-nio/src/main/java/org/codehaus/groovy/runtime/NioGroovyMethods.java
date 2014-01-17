@@ -58,9 +58,6 @@ import groovy.lang.Writable;
 import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-/**
- * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
- */
 
 /**
  * This class defines new groovy methods for Readers, Writers, InputStreams and
@@ -103,6 +100,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  * @author Cedric Champeau
  * @author Tim Yates
  * @author Dinko Srkoc
+ * @author Paolo Di Tommaso
  */
 
 public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
@@ -112,6 +110,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a {@code Path} object
      * @return the file's size (length)
+     * @since 2.3
      */
     public static long size(Path self) throws IOException {
         return Files.size(self);
@@ -123,6 +122,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a {@code Path} object
      * @return an object output stream
      * @throws java.io.IOException if an IOException occurs.
+     * @since 2.3
      */
     public static ObjectOutputStream newObjectOutputStream(Path self) throws IOException {
         return new ObjectOutputStream( Files.newOutputStream(self) );
@@ -138,6 +138,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see IOGroovyMethods#withStream(java.io.OutputStream, groovy.lang.Closure)
+     * @since 2.3
      */
     public static <T> T withObjectOutputStream(Path self, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newObjectOutputStream(self), closure);
@@ -149,6 +150,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a {@code Path} object
      * @return an object input stream
      * @throws java.io.IOException if an IOException occurs.
+     * @since 2.3
      */
     public static ObjectInputStream newObjectInputStream(Path self) throws IOException {
         return new ObjectInputStream( Files.newInputStream(self) );
@@ -161,6 +163,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param classLoader the class loader to use when loading the class
      * @return an object input stream
      * @throws java.io.IOException if an IOException occurs.
+     * @since 2.3
      */
     public static ObjectInputStream newObjectInputStream(Path self, final ClassLoader classLoader) throws IOException {
         return IOGroovyMethods.newObjectInputStream( Files.newInputStream(self), classLoader );
@@ -174,6 +177,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @throws ClassNotFoundException if the class  is not found.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachObject(java.io.ObjectInputStream, groovy.lang.Closure)
+     * @since 2.3
      */
     public static void eachObject(Path self, Closure closure) throws IOException, ClassNotFoundException {
         IOGroovyMethods.eachObject(newObjectInputStream(self), closure);
@@ -188,6 +192,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
+     * @since 2.3
      */
     public static <T> T withObjectInputStream(Path path, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newObjectInputStream(path), closure);
@@ -203,6 +208,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
+     * @since 2.3
      */
     public static <T> T withObjectInputStream(Path self, ClassLoader classLoader, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newObjectInputStream(self, classLoader), closure);
@@ -218,6 +224,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see #eachLine(Path, int, groovy.lang.Closure)
+     * @since 2.3
      */
     public static <T> T eachLine(Path self, Closure<T> closure) throws IOException {
         return eachLine(self, 1, closure);
@@ -234,6 +241,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see #eachLine(Path, String, int, groovy.lang.Closure)
+     * @since 2.3
      */
     public static <T> T eachLine(Path self, String charset, Closure<T> closure) throws IOException {
         return eachLine(self, charset, 1, closure);
@@ -250,6 +258,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachLine(java.io.Reader, int, groovy.lang.Closure)
+     * @since 2.3
      */
     public static <T> T eachLine(Path self, int firstLine, Closure<T> closure) throws IOException {
         return IOGroovyMethods.eachLine(newReader(self), firstLine, closure);
@@ -267,6 +276,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachLine(java.io.Reader, int, groovy.lang.Closure)
+     * @since 2.3
      */
     public static <T> T eachLine(Path self, String charset, int firstLine, Closure<T> closure) throws IOException {
         return IOGroovyMethods.eachLine(newReader(self, charset), firstLine, closure);
@@ -288,6 +298,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.util.regex.PatternSyntaxException
      *                     if the regular expression's syntax is invalid
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, String, groovy.lang.Closure)
+     * @since 2.3
      */
     public static <T> T splitEachLine(Path self, String regex, Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), regex, closure);
@@ -306,6 +317,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
+     * @since 2.3
      */
     public static <T> T splitEachLine(Path self, Pattern pattern, Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self), pattern, closure);
@@ -327,6 +339,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.util.regex.PatternSyntaxException
      *                     if the regular expression's syntax is invalid
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, String, groovy.lang.Closure)
+     * @since 2.3
      */
     public static <T> T splitEachLine(Path self, String regex, String charset, Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), regex, closure);
@@ -346,6 +359,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
+     * @since 2.3
      */
     public static <T> T splitEachLine(Path self, Pattern pattern, String charset, Closure<T> closure) throws IOException {
         return IOGroovyMethods.splitEachLine(newReader(self, charset), pattern, closure);
@@ -359,6 +373,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of lines
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#readLines(java.io.Reader)
+     * @since 2.3
      */
     public static List<String> readLines(Path self) throws IOException {
         return IOGroovyMethods.readLines(newReader(self));
@@ -372,7 +387,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of lines
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#readLines(java.io.Reader)
-     * @since 1.6.8
+     * @since 2.3
      */
     public static List<String> readLines(Path self, String charset) throws IOException {
         return IOGroovyMethods.readLines(newReader(self, charset));
@@ -388,7 +403,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param charset the charset used to read the content of the file
      * @return a String containing the content of the file
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static String getText(Path self, String charset) throws IOException {
         return IOGroovyMethods.getText(newReader(self, charset));
@@ -400,7 +415,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self the file whose content we want to read
      * @return a String containing the content of the file
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static String getText(Path self) throws IOException {
         return IOGroovyMethods.getText(newReader(self));
@@ -414,7 +429,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self the file whose content we want to read
      * @return a String containing the content of the file
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.7.1
+     * @since 2.3
      */
     public static byte[] getBytes(Path self) throws IOException {
         return IOGroovyMethods.getBytes( Files.newInputStream(self) );
@@ -427,7 +442,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the file to write to
      * @param bytes the byte[] to write to the file
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.7.1
+     * @since 2.3
      */
     public static void setBytes(Path self, byte[] bytes) throws IOException {
         IOGroovyMethods.setBytes( Files.newOutputStream(self), bytes);
@@ -439,7 +454,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Path
      * @param text the text to write to the Path
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static void write(Path self, String text) throws IOException {
         Writer writer = null;
@@ -463,7 +478,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param text the text to write to the Path
      * @throws java.io.IOException if an IOException occurs.
      * @see #write(Path, String)
-     * @since 1.5.1
+     * @since 2.3
      */
     public static void setText(Path self, String text) throws IOException {
         write(self, text);
@@ -485,7 +500,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param text    The text to write to the Path
      * @throws java.io.IOException if an IOException occurs.
      * @see #write(Path, String, String)
-     * @since 1.7.3
+     * @since 2.3
      */
     public static void setText(Path self, String text, String charset) throws IOException {
         write(self, text, charset);
@@ -498,7 +513,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param text the text to write to the Path
      * @return the original file
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static Path leftShift(Path self, Object text) throws IOException {
         append(self, text);
@@ -512,7 +527,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param bytes the byte array to append to the end of the Path
      * @return the original file
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.0
+     * @since 2.3
      */
     public static Path leftShift(Path self, byte[] bytes) throws IOException {
         append(self, bytes);
@@ -526,7 +541,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param data an InputStream of data to write to the file
      * @return the file
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.0
+     * @since 2.3
      */
     public static Path leftShift(Path path, InputStream data) throws IOException {
         append(path, data);
@@ -540,7 +555,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param text    the text to write to the Path
      * @param charset the charset used
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static void write(Path self, String text, String charset) throws IOException {
         Writer writer = null;
@@ -563,7 +578,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Path
      * @param text the text to append at the end of the Path
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static void append(Path self, Object text) throws IOException {
         Writer writer = null;
@@ -625,7 +640,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  a Path
      * @param bytes the byte array to append to the end of the Path
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.1
+     * @since 2.3
      */
     public static void append(Path self, byte[] bytes) throws IOException {
         OutputStream stream = null;
@@ -649,7 +664,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self   a Path
      * @param stream stream to read data from.
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.0
+     * @since 2.3
      */
     public static void append(Path self, InputStream stream) throws IOException {
         OutputStream out = Files.newOutputStream(self, CREATE, APPEND);
@@ -667,7 +682,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param text    the text to append at the end of the Path
      * @param charset the charset used
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static void append(Path self, Object text, String charset) throws IOException {
         Writer writer = null;
@@ -733,7 +748,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self The directory to check
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
-     * @since 1.0
+     * @since 2.3
      */
     private static void checkDir(Path self) throws FileNotFoundException, IllegalArgumentException {
         if (!Files.exists(self))
@@ -752,7 +767,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure  the closure to invoke
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
-     * @since 1.7.1
+     * @since 2.3
      */
     public static void eachFile(final Path self, final FileType fileType, final Closure closure) throws IOException {
             //throws FileNotFoundException, IllegalArgumentException {
@@ -780,7 +795,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @see #eachFile(Path, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.5.0
+     * @since 2.3
      */
     public static void eachFile(final Path self, final Closure closure) throws IOException { // throws FileNotFoundException, IllegalArgumentException {
         eachFile(self, FileType.ANY, closure);
@@ -795,7 +810,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @see #eachFile(Path, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.0
+     * @since 2.3
      */
     public static void eachDir(Path self, Closure closure) throws IOException { // throws FileNotFoundException, IllegalArgumentException {
         eachFile(self, FileType.DIRECTORIES, closure);
@@ -812,7 +827,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure  the closure to invoke on each file
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
-     * @since 1.7.1
+     * @since 2.3
      */
     public static void eachFileRecurse(final Path self, final FileType fileType, final Closure closure) throws IOException { // throws FileNotFoundException, IllegalArgumentException {
             // throws FileNotFoundException, IllegalArgumentException {
@@ -887,7 +902,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see DefaultGroovyMethods#sort(java.util.Collection, groovy.lang.Closure)
      * @see groovy.io.FileVisitResult
      * @see groovy.io.FileType
-     * @since 1.7.1
+     * @since 2.3
      */
     public static void traverse(final Path self, final Map<String, Object> options, final Closure closure)
             throws IOException {
@@ -966,7 +981,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @see #traverse(Path, java.util.Map, groovy.lang.Closure)
-     * @since 1.7.1
+     * @since 2.3
      */
     public static void traverse(final Path self, final Closure closure)
             throws IOException {
@@ -985,7 +1000,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory or illegal filter combinations are supplied
      * @see #traverse(Path, java.util.Map, groovy.lang.Closure)
-     * @since 1.7.1
+     * @since 2.3
      */
     public static void traverse(final Path self, final Map<String, Object> options)
             throws IOException {
@@ -1067,7 +1082,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @see #eachFileRecurse(Path, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.0
+     * @since 2.3
      */
     public static void eachFileRecurse(Path self, Closure closure) throws IOException { // throws FileNotFoundException, IllegalArgumentException {
         eachFileRecurse(self, FileType.ANY, closure);
@@ -1083,7 +1098,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @see #eachFileRecurse(Path, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.5.0
+     * @since 2.3
      */
     public static void eachDirRecurse(final Path self, final Closure closure) throws IOException { //throws FileNotFoundException, IllegalArgumentException {
         eachFileRecurse(self, FileType.DIRECTORIES, closure);
@@ -1115,7 +1130,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure    the closure to invoke
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
-     * @since 1.7.1
+     * @since 2.3
      */
     public static void eachFileMatch(final Path self, final FileType fileType, final Object nameFilter, final Closure closure) throws IOException {
             // throws FileNotFoundException, IllegalArgumentException {
@@ -1148,7 +1163,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @see #eachFileMatch(Path, groovy.io.FileType, Object, groovy.lang.Closure)
-     * @since 1.5.0
+     * @since 2.3
      */
     public static void eachFileMatch(final Path self, final Object nameFilter, final Closure closure) throws IOException {
             // throws FileNotFoundException, IllegalArgumentException {
@@ -1167,7 +1182,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided Path object does not represent a directory
      * @see #eachFileMatch(Path, groovy.io.FileType, Object, groovy.lang.Closure)
-     * @since 1.5.0
+     * @since 2.3
      */
     public static void eachDirMatch(final Path self, final Object nameFilter, final Closure closure) throws IOException {  // throws FileNotFoundException, IllegalArgumentException {
         eachFileMatch(self, FileType.DIRECTORIES, nameFilter, closure);
@@ -1186,7 +1201,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Path
      * @return true if the file doesn't exist or deletion was successful
-     * @since 1.6.0
+     * @since 2.3
      */
     public static boolean deleteDir(final Path self) {
         if (!Files.exists(self))
@@ -1222,13 +1237,13 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Renames the file.
+     * Renames a file.
      *
      * @param self        a Path
      * @param newPathName The new pathname for the named file
      * @return <code>true</code> if and only if the renaming succeeded;
      *         <code>false</code> otherwise
-     * @since 1.7.4
+     * @since 2.3
      */
     public static boolean renameTo(final Path self, String newPathName) {
         try {
@@ -1239,6 +1254,15 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    /**
+     * Renames a file.
+     *
+     * @param self        a Path
+     * @param newPathName The new target path specified as a URI object
+     * @return <code>true</code> if and only if the renaming succeeded;
+     *         <code>false</code> otherwise
+     * @since 2.3
+     */
     public static boolean renameTo(final Path self, URI newPathName) {
         try {
             Files.move(self, Paths.get(newPathName));
@@ -1253,7 +1277,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Path
      * @return a Path which wraps the input file and which implements Writable
-     * @since 1.0
+     * @since 2.3
      */
     public static Path asWritable(Path self) {
         return new WritablePath(self);
@@ -1266,7 +1290,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param path a Path
      * @param c the desired class
      * @return the converted object
-     * @since 1.0
+     * @since 2.3
      */
     @SuppressWarnings("unchecked")
     public static <T> T asType(Path path, Class<T> c) {
@@ -1283,7 +1307,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self     a Path
      * @param encoding the encoding to be used when reading the file's contents
      * @return Path which wraps the input file and which implements Writable
-     * @since 1.0
+     * @since 2.3
      */
     public static Path asWritable(Path self, String encoding) {
         return new WritablePath(self, encoding);
@@ -1295,6 +1319,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Path
      * @return a BufferedReader
      * @throws java.io.IOException if an IOException occurs.
+     * @since 2.3
      */
     public static BufferedReader newReader(Path self) throws IOException {
         return Files.newBufferedReader(self, Charset.defaultCharset());
@@ -1309,6 +1334,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a BufferedReader
      * @throws java.io.FileNotFoundException        if the Path was not found
      * @throws java.io.UnsupportedEncodingException if the encoding specified is not supported
+     * @since 2.3
      */
     public static BufferedReader newReader(Path self, String charset) throws IOException {
         return Files.newBufferedReader(self, Charset.forName(charset));
@@ -1323,7 +1349,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.2
+     * @since 2.3
      */
     public static <T> T withReader(Path self, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withReader(newReader(self), closure);
@@ -1339,7 +1365,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.6.0
+     * @since 2.3
      */
     public static <T> T withReader(Path self, String charset, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withReader(newReader(self, charset), closure);
@@ -1351,7 +1377,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a file object
      * @return the created OutputStream
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static BufferedOutputStream newOutputStream(Path self) throws IOException {
         return new BufferedOutputStream( Files.newOutputStream(self) );
@@ -1363,7 +1389,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a file object
      * @return the created DataOutputStream
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.0
+     * @since 2.3
      */
     public static DataOutputStream newDataOutputStream(Path self) throws IOException {
         return new DataOutputStream(Files.newOutputStream(self));
@@ -1378,7 +1404,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.OutputStream, groovy.lang.Closure)
-     * @since 1.5.2
+     * @since 2.3
      */
     public static Object withOutputStream(Path self, Closure closure) throws IOException {
         return IOGroovyMethods.withStream(newOutputStream(self), closure);
@@ -1393,7 +1419,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
+     * @since 2.3
      */
     public static Object withInputStream(Path self, Closure closure) throws IOException {
         return IOGroovyMethods.withStream(newInputStream(self), closure);
@@ -1409,7 +1435,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.OutputStream, groovy.lang.Closure)
-     * @since 1.5.2
+     * @since 2.3
      */
     public static <T> T withDataOutputStream(Path self, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newDataOutputStream(self), closure);
@@ -1424,7 +1450,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
+     * @since 2.3
      */
     public static <T> T withDataInputStream(Path self, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newDataInputStream(self), closure);
@@ -1436,7 +1462,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Path
      * @return a BufferedWriter
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static BufferedWriter newWriter(Path self) throws IOException {
         return Files.newBufferedWriter(self, Charset.defaultCharset());
@@ -1450,7 +1476,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param append true if data should be appended to the file
      * @return a BufferedWriter
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static BufferedWriter newWriter(Path self, boolean append) throws IOException {
         if( append ) {
@@ -1471,7 +1497,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param append  true if in append mode
      * @return a BufferedWriter
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static BufferedWriter newWriter(Path self, String charset, boolean append) throws IOException {
         if (append) {
@@ -1490,7 +1516,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param charset the name of the encoding used to write in this file
      * @return a BufferedWriter
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static BufferedWriter newWriter(Path self, String charset) throws IOException {
         return newWriter(self, charset, false);
@@ -1506,7 +1532,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.2
+     * @since 2.3
      */
     public static <T> T withWriter(Path self, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newWriter(self), closure);
@@ -1522,7 +1548,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.2
+     * @since 2.3
      */
     public static <T> T withWriter(Path self, String charset, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newWriter(self, charset), closure);
@@ -1538,7 +1564,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.2
+     * @since 2.3
      */
     public static <T> T withWriterAppend(Path self, String charset, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newWriter(self, charset, true), closure);
@@ -1552,7 +1578,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.2
+     * @since 2.3
      */
     public static <T> T withWriterAppend(Path self, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newWriter(self, true), closure);
@@ -1564,7 +1590,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Path
      * @return the created PrintWriter
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static PrintWriter newPrintWriter(Path self) throws IOException {
         return new GroovyPrintWriter(newWriter(self));
@@ -1578,7 +1604,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param charset the charset
      * @return a PrintWriter
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static PrintWriter newPrintWriter(Path self, String charset) throws IOException {
         return new GroovyPrintWriter(newWriter(self, charset));
@@ -1593,7 +1619,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to invoke with the PrintWriter
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.2
+     * @since 2.3
      */
     public static <T> T withPrintWriter(Path self, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newPrintWriter(self), closure);
@@ -1609,7 +1635,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to invoke with the PrintWriter
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.5.2
+     * @since 2.3
      */
     public static <T> T withPrintWriter(Path self, String charset, Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newPrintWriter(self, charset), closure);
@@ -1623,7 +1649,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Path
      * @return a BufferedInputStream of the file
      * @throws java.io.FileNotFoundException if the file is not found.
-     * @since 1.0
+     * @since 2.3
      */
     public static BufferedInputStream newInputStream(Path self) throws IOException { // throws FileNotFoundException {
         return new BufferedInputStream( Files.newInputStream(self) );
@@ -1637,7 +1663,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Path
      * @return a DataInputStream of the file
      * @throws java.io.FileNotFoundException if the file is not found.
-     * @since 1.5.0
+     * @since 2.3
      */
     public static DataInputStream newDataInputStream(Path self) throws IOException { // throws FileNotFoundException {
         return new DataInputStream( Files.newInputStream(self) );
@@ -1650,7 +1676,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachByte(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.0
+     * @since 2.3
      */
     public static void eachByte(Path self, Closure closure) throws IOException {
         BufferedInputStream is = newInputStream(self);
@@ -1665,7 +1691,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
      * @throws java.io.IOException if an IOException occurs.
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachByte(java.io.InputStream, int, groovy.lang.Closure)
-     * @since 1.7.4
+     * @since 2.3
      */
     public static void eachByte(Path self, int bufferLen, Closure closure) throws IOException {
         BufferedInputStream is = newInputStream(self);
@@ -1684,7 +1710,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Writable closure
      * @throws java.io.IOException if <code>self</code> is not readable
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.0
+     * @since 2.3
      */
     public static Writable filterLine(Path self, Closure closure) throws IOException {
         return IOGroovyMethods.filterLine(newReader(self), closure);
@@ -1701,7 +1727,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Writable closure
      * @throws java.io.IOException if an IOException occurs
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.6.8
+     * @since 2.3
      */
     public static Writable filterLine(Path self, String charset, Closure closure) throws IOException {
         return IOGroovyMethods.filterLine(newReader(self, charset), closure);
@@ -1717,7 +1743,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      *                <code>true</code> if the line should be written to this writer.
      * @throws java.io.IOException if <code>self</code> is not readable
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.0
+     * @since 2.3
      */
     public static void filterLine(Path self, Writer writer, Closure closure) throws IOException {
         IOGroovyMethods.filterLine(newReader(self), writer, closure);
@@ -1734,7 +1760,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      *                <code>true</code> if the line should be written to this writer.
      * @throws java.io.IOException if an IO error occurs
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.6.8
+     * @since 2.3
      */
     public static void filterLine(Path self, Writer writer, String charset, Closure closure) throws IOException {
         IOGroovyMethods.filterLine(newReader(self, charset), writer, closure);
@@ -1746,7 +1772,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Path
      * @return a byte array with the contents of the file.
      * @throws java.io.IOException if an IOException occurs.
-     * @since 1.0
+     * @since 2.3
      */
     public static byte[] readBytes(Path self) throws IOException {
         return Files.readAllBytes(self);
