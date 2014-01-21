@@ -7,7 +7,7 @@ class IndyUsageTest extends GroovyTestCase {
       try {
         foo()
       } catch (Exception e) {
-        assert e.stackTrace[1].className == "org.codehaus.groovy.vmplugin.v7.IndyInterface"
+        assert e.stackTrace.find { it.className == "org.codehaus.groovy.vmplugin.v7.IndyInterface" }
       }
     """
   }
