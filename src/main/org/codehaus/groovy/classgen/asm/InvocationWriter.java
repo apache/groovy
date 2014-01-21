@@ -417,7 +417,9 @@ public class InvocationWriter {
         // are we a local variable?
         // it should not be an explicitly "this" qualified method call
         // and the current class should have a possible method
-        ClassNode classNode = controller.getClassNode();
+
+        // GROOVY-6522
+        ClassNode classNode = controller.isInClosure() ? controller.getOutermostClass() : controller.getClassNode();
         String methodName = call.getMethodAsString();
         if (methodName==null) return false;
         if (!call.isImplicitThis()) return false;
