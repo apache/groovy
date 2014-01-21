@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,18 +22,20 @@ package groovy.transform.stc
  * @author Cedric Champeau
  */
 class IOGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
-     void testEachByteOnInputStream() {
+
+    void testEachByteOnInputStream() {
         assertScript '''
             byte[] array = 'Groovy'.getBytes('utf-8')
             new ByteArrayInputStream(array).eachByte { b -> assert b > ((byte) 70) && b < ((byte)122) }
         '''
-     }
-     void testEachByteOnInputStreamWithBufferLen() {
+    }
+
+    void testEachByteOnInputStreamWithBufferLen() {
         assertScript '''
             byte[] array = 'Groovy'.getBytes('utf-8')
             new ByteArrayInputStream(array).eachByte(4) { buf,len -> assert buf.length==4 }
         '''
-     }
+    }
 
     void testEachLineOnInputStream() {
         assertScript '''
@@ -123,37 +125,43 @@ baz"""
 
     void testFilterLineOnInputStream() {
         assertScript '''
+            def ls = String.format('%n')
             def is = new ByteArrayInputStream("foo\\nbar\\nbaz".bytes)
             String res = is.filterLine { line -> line.contains('ba') }
-            assert res == "bar\\nbaz\\n"
+            assert res == "bar" + ls + "baz" + ls
         '''
         assertScript '''
+            def ls = String.format('%n')
             def is = new ByteArrayInputStream("foo\\nbar\\nbaz".getBytes('utf-8'))
             String res = is.filterLine('utf-8') { line -> line.contains('ba') }
-            assert res == "bar\\nbaz\\n"
+            assert res == "bar" + ls + "baz" + ls
         '''
         assertScript '''
+            def ls = String.format('%n')
             def wrt = new StringWriter()
             def is = new ByteArrayInputStream("foo\\nbar\\nbaz".bytes)
             is.filterLine(wrt) { line -> line.contains('ba') }
-            assert wrt.toString() == "bar\\nbaz\\n"
+            assert wrt.toString() == "bar" + ls + "baz" + ls
         '''
         assertScript '''
+            def ls = String.format('%n')
             def wrt = new StringWriter()
             def is = new ByteArrayInputStream("foo\\nbar\\nbaz".getBytes('utf-8'))
             is.filterLine(wrt,'utf-8') { line -> line.contains('ba') }
-            assert wrt.toString() == "bar\\nbaz\\n"
+            assert wrt.toString() == "bar" + ls + "baz" + ls
         '''
         assertScript '''
+            def ls = String.format('%n')
             def is = new ByteArrayInputStream("foo\\nbar\\nbaz".bytes)
             String res = is.newReader().filterLine { line -> line.contains('ba') }
-            assert res == "bar\\nbaz\\n"
+            assert res == "bar" + ls + "baz" + ls
         '''
         assertScript '''
+            def ls = String.format('%n')
             def wrt = new StringWriter()
             def is = new ByteArrayInputStream("foo\\nbar\\nbaz".bytes)
             is.newReader().filterLine(wrt) { line -> line.contains('ba') }
-            assert wrt.toString() == "bar\\nbaz\\n"
+            assert wrt.toString() == "bar" + ls + "baz" + ls
         '''
     }
 
@@ -201,13 +209,14 @@ d,e,f""".bytes).newReader()
 
     void testTransformLineWithReader() {
         assertScript '''
+            def ls = String.format('%n')
             def reader = new ByteArrayInputStream("Groovy".bytes).newReader()
             def writer = new StringWriter()
             reader.transformLine(writer) { line ->
                 assert line.length() == 6
                 line.toUpperCase()
             }
-            assert writer.toString() == 'GROOVY\\n'
+            assert writer.toString() == "GROOVY" + ls
 '''
     }
 
