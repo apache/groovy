@@ -2553,8 +2553,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, VOID_TYPE, new Parameter[]{new Parameter(args[0],"arg")}, null, null);
             node.setDeclaringClass(receiver.redirect());
             methods.add(node);
-        } else {
-            return;
         }
     }
 
@@ -3598,6 +3596,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (!type.isUsingGenerics() && type.isArray()) type = type.getComponentType();
                 if (type.isUsingGenerics()) {
                     ClassNode actualType = getType(expressions.get(i));
+                    if (implementsInterfaceOrIsSubclassOf(actualType, CLOSURE_TYPE) && !implementsInterfaceOrIsSubclassOf(type, CLOSURE_TYPE)) {
+                        // implicit closure coercion in action!
+                        Map<String,GenericsType> pholders = new HashMap<String, GenericsType>(resolvedPlaceholders);
+                        actualType = convertClosureTypeToSAMType(expressions.get(i), actualType, type, pholders);
+                    }
                     if (isVargs && lastArg && actualType.isArray()) {
                         actualType = actualType.getComponentType();
                     }
@@ -3641,6 +3644,95 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return resolveGenericsWithContext(resolvedPlaceholders, returnType);
     }
 
+    /**
+     * This method will convert a closure type to the appropriate SAM type, which will be used
+     * to infer return type generics.
+     *
+     * @param closureType the inferred type of a closure (Closure&lt;ClosureReturnType&gt;)
+     * @param samType the type into which the closure is coerced into
+     * @param receiver
+     * @return same SAM type, but completed with information from the closure node
+     */
+    private static ClassNode convertClosureTypeToSAMType(final Expression expression, final ClassNode closureType, final ClassNode samType, final Map<String,GenericsType> placeholders) {
+        if (!samType.isUsingGenerics()) return samType;
+        MethodNode sam = findSAM(samType);
+        if (sam==null) {
+            // should never happen
+            return samType;
+        }
+
+        // the return type of the SAM method exactly corresponds to the inferred return type
+        ClassNode samReturnType = sam.getReturnType();
+
+        // now we can play!
+        // imagine that a closure returns an Integer, like in { -> 1 }
+        // and a SAM type defined like this: interface<T> SAM { T apply() }
+        // then if the closure is coerced to SAM, we can infer that we have a SAM<Integer>
+        // we can also have interface<T> SAM { void apply(T t) }
+        // so we build a list of couples(actualType, expectedType) to test
+        List<ClassNode[]> itemsToCheck = new LinkedList<ClassNode[]>();
+
+        if (closureType.isUsingGenerics()) {
+            ClassNode closureReturnType = closureType.getGenericsTypes()[0].getType();
+            itemsToCheck.add(new ClassNode[]{closureReturnType, samReturnType});
+        }
+        if (expression instanceof ClosureExpression) {
+            Parameter[] closureParams = ((ClosureExpression) expression).getParameters();
+            ClassNode[] closureParamTypes = extractTypesFromParameters(closureParams);
+            if (expression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS)!=null) {
+                closureParamTypes = expression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+            }
+            final Parameter[] parameters = sam.getParameters();
+            for (int i = 0; i < parameters.length; i++) {
+                final Parameter parameter = parameters[i];
+                if (closureParamTypes.length>i) {
+                    itemsToCheck.add(new ClassNode[]{closureParamTypes[i], parameter.getOriginType()});
+                }
+            }
+        }
+        for (ClassNode[] classNodes : itemsToCheck) {
+            ClassNode found = classNodes[0];
+            ClassNode expected = classNodes[1];
+            if (!isAssignableTo(found, expected)) {
+                // probably facing a type mismatch
+                continue;
+            }
+            ClassNode generifiedReturnType = GenericsUtils.parameterizeType(found, expected);
+            while (expected.isArray()) {
+                expected = expected.getComponentType();
+                generifiedReturnType = generifiedReturnType.getComponentType();
+            }
+            if (expected.isGenericsPlaceHolder()) {
+                placeholders.put(expected.getGenericsTypes()[0].getName(), new GenericsType(generifiedReturnType));
+            } else {
+                GenericsType[] samReturnTypeGenericsTypes = expected.getGenericsTypes();
+                GenericsType[] generifiedReturnTypeGenericsTypes = generifiedReturnType.getGenericsTypes();
+
+                for (int i = 0; i < samReturnTypeGenericsTypes.length; i++) {
+                    final GenericsType type = samReturnTypeGenericsTypes[i];
+                    if (type.isPlaceholder()) {
+                        String name = type.getName();
+                        placeholders.put(name, generifiedReturnTypeGenericsTypes[i]);
+                    }
+                }
+            }
+        }
+
+        ClassNode result = samType.getPlainNodeReference();
+        GenericsType[] genericsTypes = samType.redirect().getGenericsTypes();
+        GenericsType[] copy = new GenericsType[genericsTypes.length];
+        for (int i = 0; i < genericsTypes.length; i++) {
+            GenericsType genericsType = genericsTypes[i];
+            if (genericsType.isPlaceholder() && placeholders.containsKey(genericsType.getName())) {
+                copy[i] = placeholders.get(genericsType.getName());
+            } else {
+                copy[i] = genericsType;
+            }
+        }
+        result.setGenericsTypes(copy);
+        return result;
+    }
+
     private ClassNode resolveGenericsWithContext(Map<String, GenericsType> resolvedPlaceholders, ClassNode currentType) {
         Map<String, GenericsType> placeholdersFromContext = getGenericsParameterMapOfThis(typeCheckingContext.getEnclosingMethod());
         applyContextGenerics(resolvedPlaceholders,placeholdersFromContext);
@@ -3655,7 +3747,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         GenericsType[] returnTypeGenerics = getGenericsWithoutArray(currentType);
-        if (returnTypeGenerics==null) return currentType;
+        if (returnTypeGenerics==null || returnTypeGenerics.length==0) return currentType;
         GenericsType[] copy = new GenericsType[returnTypeGenerics.length];
         for (int i = 0; i < copy.length; i++) {
             GenericsType returnTypeGeneric = returnTypeGenerics[i];
