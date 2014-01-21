@@ -283,6 +283,23 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert ts3 != ts4 // no caching
     }
 
+    // GROOVY-6337
+    void testCanonicalWithLazy() {
+        def result = new GroovyShell().evaluate('''
+            @groovy.transform.Canonical
+            class Person {
+              @Lazy first = missing()
+              @Lazy last = 'Smith'
+              int age
+            }
+            def p = new Person(21)
+            // $first setter is an implementation detail
+            p.$first = 'Mary'
+            "$p.first $p.last ${p.toString()}"
+        ''')
+        assert result == 'Mary Smith Person(21)'
+    }
+
     // GROOVY-5901
     void testSimpleCloning() {
       def p1 = new Person6(first:'John', last:'Smith', since:new Date())

@@ -59,7 +59,7 @@ import static org.codehaus.groovy.transform.AbstractASTTransformUtil.notNullExpr
  * @author Alex Tkachman
  * @author Paul King
  */
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
     private static final ClassNode SOFT_REF = ClassHelper.makeWithoutCaching(SoftReference.class, false);
@@ -76,25 +76,29 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
         if (parent instanceof FieldNode) {
             final FieldNode fieldNode = (FieldNode) parent;
-            final Expression soft = node.getMember("soft");
-            final Expression init = getInitExpr(fieldNode);
+            visitField(node, fieldNode);
+        }
+    }
 
-            fieldNode.rename("$" + fieldNode.getName());
-            fieldNode.setModifiers(ACC_PRIVATE | (fieldNode.getModifiers() & (~(ACC_PUBLIC | ACC_PROTECTED))));
+    static void visitField(AnnotationNode node, FieldNode fieldNode) {
+        final Expression soft = node.getMember("soft");
+        final Expression init = getInitExpr(fieldNode);
 
-            if (soft instanceof ConstantExpression && ((ConstantExpression) soft).getValue().equals(true)) {
-                createSoft(fieldNode, init);
-            } else {
-                create(fieldNode, init);
-                // @Lazy not meaningful with primitive so convert to wrapper if needed
-                if (ClassHelper.isPrimitiveType(fieldNode.getType())) {
-                    fieldNode.setType(ClassHelper.getWrapper(fieldNode.getType()));
-                }
+        fieldNode.rename("$" + fieldNode.getName());
+        fieldNode.setModifiers(ACC_PRIVATE | (fieldNode.getModifiers() & (~(ACC_PUBLIC | ACC_PROTECTED))));
+
+        if (soft instanceof ConstantExpression && ((ConstantExpression) soft).getValue().equals(true)) {
+            createSoft(fieldNode, init);
+        } else {
+            create(fieldNode, init);
+            // @Lazy not meaningful with primitive so convert to wrapper if needed
+            if (ClassHelper.isPrimitiveType(fieldNode.getType())) {
+                fieldNode.setType(ClassHelper.getWrapper(fieldNode.getType()));
             }
         }
     }
 
-    private void create(FieldNode fieldNode, final Expression initExpr) {
+    private static void create(FieldNode fieldNode, final Expression initExpr) {
         final BlockStatement body = new BlockStatement();
         if (fieldNode.isStatic()) {
             addHolderClassIdiomBody(body, fieldNode, initExpr);
@@ -106,7 +110,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         addMethod(fieldNode, body, fieldNode.getType());
     }
 
-    private void addHolderClassIdiomBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
+    private static void addHolderClassIdiomBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
         final ClassNode declaringClass = fieldNode.getDeclaringClass();
         final ClassNode fieldType = fieldNode.getType();
         final int visibility = ACC_PRIVATE | ACC_STATIC;
@@ -119,7 +123,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         body.addStatement(new ReturnStatement(innerField));
     }
 
-    private void addDoubleCheckedLockingBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
+    private static void addDoubleCheckedLockingBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
         final Expression fieldExpr = new VariableExpression(fieldNode);
         final VariableExpression localVar = new VariableExpression(fieldNode.getName() + "_local");
         body.addStatement(declStatement(localVar, fieldExpr));
@@ -137,7 +141,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         ));
     }
 
-    private void addNonThreadSafeBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
+    private static void addNonThreadSafeBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
         final Expression fieldExpr = new VariableExpression(fieldNode);
         body.addStatement(new IfStatement(
                 notNullExpr(fieldExpr),
@@ -146,21 +150,21 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         ));
     }
 
-    private void addMethod(FieldNode fieldNode, BlockStatement body, ClassNode type) {
+    private static void addMethod(FieldNode fieldNode, BlockStatement body, ClassNode type) {
         int visibility = ACC_PUBLIC;
         if (fieldNode.isStatic()) visibility |= ACC_STATIC;
         final String name = "get" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
         fieldNode.getDeclaringClass().addMethod(name, visibility, type, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
-    private void createSoft(FieldNode fieldNode, Expression initExpr) {
+    private static void createSoft(FieldNode fieldNode, Expression initExpr) {
         final ClassNode type = fieldNode.getType();
         fieldNode.setType(SOFT_REF);
         createSoftGetter(fieldNode, initExpr, type);
         createSoftSetter(fieldNode, type);
     }
 
-    private void createSoftGetter(FieldNode fieldNode, Expression initExpr, ClassNode type) {
+    private static void createSoftGetter(FieldNode fieldNode, Expression initExpr, ClassNode type) {
         final BlockStatement body = new BlockStatement();
         final Expression fieldExpr = new VariableExpression(fieldNode);
         final Expression resExpr = new VariableExpression("res", type);
@@ -190,7 +194,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         addMethod(fieldNode, body, type);
     }
 
-    private void createSoftSetter(FieldNode fieldNode, ClassNode type) {
+    private static void createSoftSetter(FieldNode fieldNode, ClassNode type) {
         final BlockStatement body = new BlockStatement();
         final Expression fieldExpr = new VariableExpression(fieldNode);
         final String name = "set" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
@@ -206,11 +210,11 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         fieldNode.getDeclaringClass().addMethod(name, visibility, ClassHelper.VOID_TYPE, new Parameter[]{parameter}, ClassNode.EMPTY_ARRAY, body);
     }
 
-    private Expression syncTarget(FieldNode fieldNode) {
+    private static Expression syncTarget(FieldNode fieldNode) {
         return fieldNode.isStatic() ? new ClassExpression(fieldNode.getDeclaringClass()) : VariableExpression.THIS_EXPRESSION;
     }
 
-    private Expression getInitExpr(FieldNode fieldNode) {
+    private static Expression getInitExpr(FieldNode fieldNode) {
         Expression initExpr = fieldNode.getInitialValueExpression();
         fieldNode.setInitialValueExpression(null);
 
