@@ -37,14 +37,21 @@ import static org.codehaus.groovy.vmplugin.v7.TypeHelper.*;
 public class IndyMath {
     
     private static final MethodType 
-        II  = MethodType.methodType(Void.TYPE, int.class, int.class),
-        III = MethodType.methodType(int.class, int.class, int.class),
-        LL  = MethodType.methodType(Void.TYPE, long.class, long.class),
-        LLL = MethodType.methodType(long.class, long.class, long.class),
-        DD  = MethodType.methodType(Void.TYPE, double.class, double.class),
-        DDD = MethodType.methodType(double.class, double.class, double.class),
-        GG  = MethodType.methodType(Void.TYPE, BigDecimal.class, BigDecimal.class),
-        OO  = MethodType.methodType(Void.TYPE, Object.class, Object.class);
+        IV   = MethodType.methodType(Void.TYPE, int.class),
+        II   = MethodType.methodType(int.class, int.class),
+        IIV  = MethodType.methodType(Void.TYPE, int.class, int.class),
+        III  = MethodType.methodType(int.class, int.class, int.class),
+        LV   = MethodType.methodType(Void.TYPE, long.class),
+        LL   = MethodType.methodType(long.class, long.class),
+        LLV  = MethodType.methodType(Void.TYPE, long.class, long.class),
+        LLL  = MethodType.methodType(long.class, long.class, long.class),
+        DV   = MethodType.methodType(Void.TYPE, double.class),
+        DD   = MethodType.methodType(double.class, double.class),
+        DDV  = MethodType.methodType(Void.TYPE, double.class, double.class),
+        DDD  = MethodType.methodType(double.class, double.class, double.class),
+        GV  = MethodType.methodType(Void.TYPE, BigDecimal.class),
+        GGV  = MethodType.methodType(Void.TYPE, BigDecimal.class, BigDecimal.class),
+        OOV  = MethodType.methodType(Void.TYPE, Object.class, Object.class);
 
     private static void makeMapEntry(String method, MethodType[] keys, MethodType[] values) throws NoSuchMethodException, IllegalAccessException {
         Map<MethodType,MethodHandle> xMap = new HashMap();
@@ -58,13 +65,22 @@ public class IndyMath {
     static {
         try {
             
-            MethodType[] keys = new MethodType[]{II,LL,DD};
+            MethodType[] keys = new MethodType[]{IIV,LLV,DDV};
             MethodType[] values = new MethodType[]{III,LLL,DDD};
             makeMapEntry("minus",keys,values);
             makeMapEntry("plus",keys,values);
             makeMapEntry("multiply",keys,values);
-
-            keys = new MethodType[]{II,LL};
+            
+            keys = new MethodType[]{DDV};
+            values = new MethodType[]{DDD};
+            makeMapEntry("div",keys,values);
+            
+            keys = new MethodType[]{IV,LV,DV};
+            values = new MethodType[]{II,LL,DD};
+            makeMapEntry("next",keys,values);
+            makeMapEntry("previous",keys,values);
+            
+            keys = new MethodType[]{IIV,LLV};
             values = new MethodType[]{III,LLL};
             makeMapEntry("mod",keys,values);
             makeMapEntry("or",keys,values);
@@ -105,15 +121,24 @@ public class IndyMath {
      * parameters in the MethodType will have the same type. 
      */
     private static MethodType widenOperators(MethodType mt) {
-        Class leftType = mt.parameterType(0);
-        Class rightType = mt.parameterType(1);
-        
-        if (isIntCategory(leftType) && isIntCategory(rightType)) return II;
-        if (isLongCategory(leftType) && isLongCategory(rightType)) return LL;
-        if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) return GG;
-        if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) return DD;
-        
-        return OO;
+        if (mt.parameterCount()==2) {
+            Class leftType = mt.parameterType(0);
+            Class rightType = mt.parameterType(1);
+            
+            if (isIntCategory(leftType) && isIntCategory(rightType)) return IIV;
+            if (isLongCategory(leftType) && isLongCategory(rightType)) return LLV;
+            if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) return GGV;
+            if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) return DDV;
+            
+            return OOV;
+        } else if (mt.parameterCount()==1) {
+            Class leftType = mt.parameterType(0);
+            if (isIntCategory(leftType)) return IV;
+            if (isLongCategory(leftType)) return LV;
+            if (isBigDecCategory(leftType)) return GV;
+            if (isDoubleCategory(leftType)) return DV;
+        }
+        return mt;
     }
     
     // math methods used by indy
@@ -144,8 +169,16 @@ public class IndyMath {
     public static double plus(double a, double b) {return a+b;}
     public static double minus(double a, double b) {return a-b;}
     public static double multiply(double a, double b) {return a*b;}
+    public static double div(double a, double b){return a/b;}
     
-    
+    // next & previous
+    public static int next(int i) {return i+1;}
+    public static long next(long l) {return l+1;}
+    public static double next(double d) {return d+1;}
+    public static int previous(int i) {return i-1;}
+    public static long previous(long l) {return l-1;}
+    public static double previous(double d) {return d-1;}
+
     /*
      further operations to be handled here maybe:
     a / b a.div(b) (if one is double, return double, otherwise BD)
