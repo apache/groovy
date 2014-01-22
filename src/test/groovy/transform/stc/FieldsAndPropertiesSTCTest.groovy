@@ -513,6 +513,59 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6489
+    void testShouldNotThrowUnmatchedGenericsError() {
+        assertScript '''public class Foo {
+
+    private List<String> names;
+
+    public List<String> getNames() {
+        return names;
+    }
+
+    public void setNames(List<String> names) {
+        this.names = names;
+    }
+}
+
+class FooWorker {
+
+    public void doSomething() {
+        new Foo().with {
+            names = new ArrayList()
+        }
+    }
+}
+
+new FooWorker().doSomething()'''
+    }
+
+    void testShouldFailWithIncompatibleGenericTypes() {
+        shouldFailWithMessages '''public class Foo {
+
+    private List<String> names;
+
+    public List<String> getNames() {
+        return names;
+    }
+
+    public void setNames(List<String> names) {
+        this.names = names;
+    }
+}
+
+class FooWorker {
+
+    public void doSomething() {
+        new Foo().with {
+            names = new ArrayList<Integer>()
+        }
+    }
+}
+
+new FooWorker().doSomething()''', 'Incompatible generic argument types. Cannot assign java.util.ArrayList <Integer> to: java.util.List <java.lang.String>'
+    }
+
     public static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
     }
