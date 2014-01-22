@@ -320,7 +320,18 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         // check for missing properties
         Expression checkArgs = new ArgumentListExpression(new VariableExpression("this"), new VariableExpression("args"));
         body.addStatement(new ExpressionStatement(new StaticMethodCallExpression(SELF_TYPE, "checkPropNames", checkArgs)));
+        body.addStatement(new IfStatement(equalsNullExpr(new VariableExpression("args")),
+                assignStatement(new VariableExpression("args"), new MapExpression()),
+                EmptyStatement.INSTANCE));
         createConstructorMapCommon(cNode, body);
+        if (list.size() > 0) {
+            createNoArgConstructor(cNode);
+        }
+    }
+
+    private void createNoArgConstructor(ClassNode cNode) {
+        Statement body = new ExpressionStatement(new ConstructorCallExpression(ClassNode.THIS, new ArgumentListExpression(new MapExpression())));
+        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
     private void createConstructorMapCommon(ClassNode cNode, BlockStatement body) {
@@ -335,10 +346,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             body.addStatement(createConstructorStatementDefault(fNode));
         }
         final Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
-        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
-                equalsNullExpr(new VariableExpression("args")),
-                EmptyStatement.INSTANCE,
-                body)));
+        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, body));
     }
 
     private Statement checkFinalArgNotOverridden(ClassNode cNode, FieldNode fNode) {

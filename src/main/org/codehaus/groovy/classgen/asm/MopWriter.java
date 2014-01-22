@@ -82,7 +82,9 @@ public class MopWriter {
         LinkedList<MethodNode> mopCalls = new LinkedList<MethodNode>();
         for (Object method : methods) {
             MethodNode mn = (MethodNode) method;
-            if ((mn.getModifiers() & ACC_ABSTRACT) != 0) continue;
+            // mop methods are helper for this and super calls and do direct calls
+            // to the target methods. Such a method cannot be abstract or a bridge
+            if ((mn.getModifiers() & (ACC_ABSTRACT | ACC_BRIDGE)) != 0) continue;
             if (mn.isStatic()) continue;
             // no this$ methods for non-private isThis=true
             // super$ method for non-private isThis=false
@@ -160,7 +162,11 @@ public class MopWriter {
                 if (type == ClassHelper.double_TYPE || type == ClassHelper.long_TYPE) newRegister++;
             }
             operandStack.remove(parameters.length);
-            mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(method.getDeclaringClass()), method.getName(), methodDescriptor);
+            ClassNode declaringClass = method.getDeclaringClass();
+            // JDK 8 support for default methods in interfaces
+            // this should probably be strenghtened when we support the A.super.foo() syntax
+            int opcode = declaringClass.isInterface()?INVOKEINTERFACE:INVOKESPECIAL;
+            mv.visitMethodInsn(opcode, BytecodeHelper.getClassInternalName(declaringClass), method.getName(), methodDescriptor);
             BytecodeHelper.doReturn(mv, method.getReturnType());
             mv.visitMaxs(0, 0);
             mv.visitEnd();

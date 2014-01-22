@@ -72,7 +72,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = []
             list << 1
-        ''', 'Cannot find matching method java.util.List#leftShift(int)'
+        ''', 'Cannot call <T> java.util.List <String>#leftShift(T) with arguments [int]'
     }
 
     void testAddOnList2UsingLeftShift() {
@@ -119,7 +119,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list << 'Hello'
-        ''', 'Cannot find matching method java.util.LinkedList#leftShift(java.lang.String)'
+        ''', 'Cannot call <T> java.util.LinkedList <java.lang.Integer>#leftShift(T) with arguments [java.lang.String]'
     }
 
     void testAddOnListWithDiamondAndNullUsingLeftShift() {
@@ -484,7 +484,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<String> list = ['a','b','c']
             Collection<Integer> e = (Collection<Integer>) [1,2,3]
             boolean r = list.addAll(e)
-        ''', 'Cannot call org.codehaus.groovy.runtime.DefaultGroovyMethods#addAll(java.util.Collection <java.lang.String>, java.lang.String[]) with arguments [java.util.List <java.lang.String>, java.util.Collection <Integer>]'
+        ''', 'Cannot call <T> java.util.List <java.lang.String>#addAll(T[]) with arguments [java.util.Collection <Integer>]'
     }
 
     // GROOVY-5528
@@ -725,7 +725,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             })
             Map<Date, Date> map = new HashMap<>()
             map['foo'] = new Date()
-        ''', 'Cannot call org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map <java.util.Date, java.util.Date>, java.util.Date, java.util.Date) with arguments [java.util.HashMap <java.util.Date, java.util.Date>, java.lang.String, java.util.Date]'
+        ''', 'Cannot call <K,V> java.util.HashMap <java.util.Date, java.util.Date>#putAt(java.util.Date, java.util.Date) with arguments [java.lang.String, java.util.Date]'
     }
     void testInferDiamondForAssignmentWithDatesAndIllegalValueUsingPut() {
         shouldFailWithMessages '''
@@ -763,7 +763,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             })
             Map<Date, Date> map = new HashMap<>()
             map[new Date()] = 'foo'
-        ''', 'Cannot assign value of type java.lang.String to variable of type java.util.Date'
+        ''', 'Cannot call <K,V> java.util.HashMap <java.util.Date, java.util.Date>#putAt(java.util.Date, java.util.Date) with arguments [java.util.Date, java.lang.String]'
     }
 
     void testCallMethodWithParameterizedArrayList() {
@@ -1278,8 +1278,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class Blah {}
             class MyList extends LinkedList<Object> {}
             List<Blah> o = new MyList()
-        ''',
-        'Incompatible generic argument types. Cannot assign MyList to: java.util.List <Blah>'
+        ''','Incompatible generic argument types. Cannot assign MyList to: java.util.List <Blah>'
         
         // Groovy-5873
         assertScript """
@@ -1339,6 +1338,46 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
     
+    // GROOVY-6455
+    void testDelegateWithGenerics() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class IntList {
+                @Delegate List<Integer> delegate = new ArrayList<Integer>()
+            }
+            def l = new IntList()
+            assert l == []
+        '''
+    }
+
+    // GROOVY-6504
+    void testInjectMethodWithInitialValueChoosesTheCollectionVersion() {
+        assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def method = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert method.name == 'inject'
+                assert method instanceof ExtensionMethodNode
+                method = method.extensionMethodNode
+                assert method.parameters[0].type == make(Collection)
+            })
+            def result = ['a','bb','ccc'].inject(0) { int acc, String str -> acc += str.length(); acc }
+            assert  result == 6
+        '''
+    }
+
+    // GROOVY-6504
+    void testInjectMethodWithInitialValueChoosesTheCollectionVersionUsingDGM() {
+        assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def method = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert method.name == 'inject'
+                assert method.parameters[0].type == make(Collection)
+            })
+            def result = DefaultGroovyMethods.inject(['a','bb','ccc'],0, { int acc, String str -> acc += str.length(); acc })
+            assert  result == 6
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {

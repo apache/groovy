@@ -382,10 +382,19 @@ public class ClassHelper {
     }
     
     public static boolean isSAMType(ClassNode type) {
-        if (!Modifier.isAbstract(type.getModifiers())) return false;
+        return findSAM(type) != null;
+    }
+
+    /**
+     * Returns the single abstract method of a class node, if it is a SAM type, or null otherwise.
+     * @param type a type for which to search for a single abstract method
+     * @return the method node if type is a SAM type, null otherwise
+     */
+    public static MethodNode findSAM(ClassNode type) {
+        if (!Modifier.isAbstract(type.getModifiers())) return null;
         if (type.isInterface()) {
             List<MethodNode> methods = type.getMethods();
-            boolean found=false;
+            MethodNode found=null;
             for (MethodNode mi : methods) {
                 // ignore methods, that are not abstract and from Object
                 if (!Modifier.isAbstract(mi.getModifiers())) continue;
@@ -393,27 +402,27 @@ public class ClassHelper {
                 if (OBJECT_TYPE.getDeclaredMethod(mi.getName(), mi.getParameters())!=null) continue;
 
                 // we have two methods, so no SAM
-                if (found) return false;
-                found = true;
+                if (found!=null) return null;
+                found = mi;
             }
             return found;
 
         } else {
 
             List<MethodNode> methods = type.getAbstractMethods();
-            boolean found = false;
+            MethodNode found = null;
             if (methods!=null) {
                 for (MethodNode mi : methods) {
                     if (!hasUsableImplementation(type, mi)) {
-                        if (found) return false;
-                        found = true;
+                        if (found!=null) return null;
+                        found = mi;
                     }
                 }
             }
             return found;
         }
     }
-    
+
     private static boolean hasUsableImplementation(ClassNode c, MethodNode m) {
         if (c==m.getDeclaringClass()) return false;
         MethodNode found = c.getDeclaredMethod(m.getName(), m.getParameters());

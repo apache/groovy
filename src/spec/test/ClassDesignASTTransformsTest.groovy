@@ -319,19 +319,10 @@ assert x!=z
     void testSingleton() {
         assertScript '''
 // tag::singleton_simple[]
-class Collaborator {
-    public static boolean init = false
-}
 @Singleton
 class GreetingService {
-    static void init() {}
-    GreetingService() {
-        Collaborator.init = true
-    }
     String greeting(String name) { "Hello, $name!" }
 }
-GreetingService.init() // make sure class is initialized
-assert Collaborator.init == true // make sure singleton is eager
 assert GreetingService.instance.greeting('Bob') == 'Hello, Bob!'
 // end::singleton_simple[]
 '''
@@ -352,7 +343,7 @@ assert GreetingService.theOne.greeting('Bob') == 'Hello, Bob!'
 class Collaborator {
     public static boolean init = false
 }
-@Singleton(lazy=true)
+@Singleton(lazy=true,strict=false)
 class GreetingService {
     static void init() {}
     GreetingService() {

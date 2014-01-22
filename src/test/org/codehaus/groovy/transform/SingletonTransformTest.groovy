@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,25 @@
  */
 package org.codehaus.groovy.transform
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+
 import java.lang.reflect.Modifier
 
 /**
  * @author Alex Tkachman
+ * @author Paul King
  */
 class SingletonTransformTest extends GroovyShellTestCase {
 
     void testSingleton() {
         def res = evaluate("""
-              @Singleton
-              class X {
-                 def getHello () {
-                   "Hello, World!"
-                 }
-              }
-
-              X.instance.hello
+            @Singleton
+            class X {
+                def getHello () {
+                    "Hello, World!"
+                }
+            }
+            X.instance.hello
         """)
 
         assert "Hello, World!" == res
@@ -39,16 +41,14 @@ class SingletonTransformTest extends GroovyShellTestCase {
 
     void testLazySingleton() {
         def res = evaluate("""
-              @Singleton(lazy=true)
-              class X {
-                 def getHello () {
-                   "Hello, World!"
-                 }
-              }
-
-              assert X.@instance == null
-
-              X.instance.hello
+            @Singleton(lazy=true)
+            class X {
+                def getHello () {
+                    "Hello, World!"
+                }
+            }
+            assert X.@instance == null
+            X.instance.hello
         """)
 
         assert "Hello, World!" == res
@@ -57,35 +57,56 @@ class SingletonTransformTest extends GroovyShellTestCase {
     void testSingletonInstantiationFails() {
         shouldFail {
             evaluate("""
-                  @Singleton
-                  class X {
-                     def getHello () {
-                       "Hello, World!"
-                     }
-                  }
-
-                  new X ()
+                @Singleton
+                class X {
+                    def getHello () {
+                        "Hello, World!"
+                    }
+                }
+                new X ()
             """)
         }
     }
 
-    void testSingletonOverrideConstructorFails() {
-            def res = evaluate("""
-                  @Singleton
-                  class X {
-                     static hello = "Bye-bye world"
+    void testSingletonOverrideConstructor() {
+        def res = evaluate("""
+            @Singleton(strict=false)
+            class X {
+                static hello = "Bye-bye world"
+                X () {
+                    hello = "Hello, World!"
+                }
+            }
+            X.instance.hello
+        """)
 
-                     X () {
-                        hello = "Hello, World!"
-                     }
-                  }
-
-                  X.instance.hello
-            """)
-
-            assert "Hello, World!" == res
+        assert "Hello, World!" == res
     }
-    
+
+    void testSingletonOverrideConstructorFails() {
+        def msg = shouldFail(MultipleCompilationErrorsException) {
+            evaluate("""
+                @Singleton
+                class X {
+                    X() { }
+                }
+            """)
+        }
+        assert msg.contains("@Singleton didn't expect to find one or more additional constructors: remove constructor(s) or set strict=false")
+    }
+
+    void testSingletonAdditionalConstructorFails() {
+        def msg = shouldFail(MultipleCompilationErrorsException) {
+            evaluate("""
+                @Singleton
+                class X {
+                    X(String ignored) { }
+                }
+            """)
+        }
+        assert msg.contains("@Singleton didn't expect to find one or more additional constructors: remove constructor(s) or set strict=false")
+    }
+
     void testSingletonCustomPropertyName() {
         def propertyName = 'myProp'
         def getterName = 'getMyProp'
@@ -108,7 +129,7 @@ class SingletonTransformTest extends GroovyShellTestCase {
         try {
             clazz.newInstance() //should throw exception here
             fail() //shouldn't get here
-        } catch (RuntimeException e) {//for tests run in Groovy (which can access privates)
+        } catch (RuntimeException e) { //for tests run in Groovy (which can access privates)
             assert e.message.contains(propertyName)
         }
         try {

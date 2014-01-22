@@ -311,7 +311,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
         assertScript '''
                 Closure c = { Integer x, Integer y -> x <=> y }
                 def list = [ 3,1,5,2,4 ]
-                assert list.sort(c) == [1,2,3,4,5]
+                assert ((Collection)list).sort(c) == [1,2,3,4,5]
             '''
     }
 
@@ -1117,6 +1117,33 @@ assert it.next() == 1G
             }
             assert seq.getNext(2) == 10
 '''
+    }
+
+    void testShouldAllowSubscriptOperatorOnSet() {
+        assertScript '''
+            def map = new LinkedHashMap<>([a:1,b:2])
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def ift = node.getNodeMetaData(INFERRED_TYPE)
+                assert ift == make(Set)
+                assert ift.isUsingGenerics()
+                assert ift.genericsTypes[0].type==STRING_TYPE
+            })
+            def set = map.keySet()
+            def key = set[0]
+            assert key=='a'
+        '''
+        assertScript '''
+            def map = new LinkedHashMap([a:1,b:2])
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def ift = node.getNodeMetaData(INFERRED_TYPE)
+                assert ift == make(Set)
+                assert ift.isUsingGenerics()
+                assert ift.genericsTypes[0].name=='K'
+            })
+            def set = map.keySet()
+            def key = set[0]
+            assert key=='a'
+        '''
     }
 }
 

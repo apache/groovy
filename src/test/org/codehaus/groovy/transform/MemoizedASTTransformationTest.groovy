@@ -139,6 +139,11 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
         assertEquals(ins.counter, 2)
     }
 
+    void testInheritedMemoizedMethod() {
+        def ins = new SubClassOfMemoizedTestClass()
+        assertEquals(ins.methodWithoutParams(), 123)
+    }
+
     // -- static methods -- //
 
     void testStaticMethodWithoutParams() {
@@ -198,6 +203,9 @@ class MemoizedTestClass2 {
         counter++
         name + "_value"
     }
+}
+
+class SubClassOfMemoizedTestClass extends MemoizedTestClass {
 }
 
 class MemoizedTestClass {

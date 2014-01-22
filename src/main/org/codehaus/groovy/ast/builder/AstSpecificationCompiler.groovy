@@ -108,7 +108,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates the DSL compiler.
      */
 
-    AstSpecificationCompiler(Closure spec) {
+    AstSpecificationCompiler(@DelegatesTo(AstSpecificationCompiler) Closure spec) {
         spec.delegate = this
         spec()
     }
@@ -162,7 +162,7 @@ import org.codehaus.groovy.ast.ClassHelper
     * @param constructorStatement
     *       the type specific construction code that will be run
     */ 
-    private void captureAndCreateNode(String name, Closure argBlock, Closure constructorStatement) {
+    private void captureAndCreateNode(String name, @DelegatesTo(AstSpecificationCompiler) Closure argBlock, Closure constructorStatement) {
         if (!argBlock) throw new IllegalArgumentException("nodes of type $name require arguments to be specified")
 
         def oldProps = new ArrayList(expression)
@@ -186,7 +186,7 @@ import org.codehaus.groovy.ast.ClassHelper
     * @param argBlock   
     *       the single closure argument used during invocation
     */ 
-    private void makeNode(Class target, String typeAlias, List<Class<? super ASTNode>> ctorArgs, Closure argBlock) {
+    private void makeNode(Class target, String typeAlias, List<Class<? super ASTNode>> ctorArgs, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode(target.class.simpleName, argBlock) {
             target.newInstance(
                     * enforceConstraints(typeAlias, ctorArgs)
@@ -204,7 +204,7 @@ import org.codehaus.groovy.ast.ClassHelper
     * @param argBlock   
     *       the single closure argument used during invocation
     */ 
-    private void makeNodeFromList(Class target, Closure argBlock) {
+    private void makeNodeFromList(Class target, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         //todo: add better error handling?
         captureAndCreateNode(target.simpleName, argBlock) {
             target.newInstance(new ArrayList(expression))
@@ -220,7 +220,7 @@ import org.codehaus.groovy.ast.ClassHelper
     * @param input   
     *       the single String argument used during invocation
     */ 
-    private void makeListOfNodes(Closure argBlock, String input) {
+    private void makeListOfNodes(@DelegatesTo(AstSpecificationCompiler) Closure argBlock, String input) {
         captureAndCreateNode(input, argBlock) {
             new ArrayList(expression)
         }
@@ -235,7 +235,7 @@ import org.codehaus.groovy.ast.ClassHelper
     * @param target   
     *       the target type
     */ 
-    private void makeArrayOfNodes(Object target, Closure argBlock) {
+    private void makeArrayOfNodes(Object target, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode(target.class.simpleName, argBlock) {
             expression.toArray(target)
         }
@@ -256,7 +256,7 @@ import org.codehaus.groovy.ast.ClassHelper
     * @param type 
     *       a type parameter
     */ 
-    private void makeNodeWithClassParameter(Class target, String alias, List<Class> spec, Closure argBlock, Class type) {
+    private void makeNodeWithClassParameter(Class target, String alias, List<Class> spec, @DelegatesTo(AstSpecificationCompiler) Closure argBlock, Class type) {
         captureAndCreateNode(target.class.simpleName, argBlock) {
             expression.add(0, ClassHelper.make(type))
             target.newInstance(
@@ -265,7 +265,7 @@ import org.codehaus.groovy.ast.ClassHelper
         }
     }
 
-    private void makeNodeWithStringParameter(Class target, String alias, List<Class> spec, Closure argBlock, String text) {
+    private void makeNodeWithStringParameter(Class target, String alias, List<Class> spec, @DelegatesTo(AstSpecificationCompiler) Closure argBlock, String text) {
         captureAndCreateNode(target.class.simpleName, argBlock) {
             expression.add(0, text)
             target.newInstance(
@@ -279,7 +279,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a CastExpression.
      */
 
-    private void cast(Class type, Closure argBlock) {
+    private void cast(Class type, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNodeWithClassParameter(CastExpression, 'cast', [ClassNode, Expression], argBlock, type)
     }
 
@@ -288,7 +288,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates an ConstructorCallExpression.
      */
 
-    private void constructorCall(Class type, Closure argBlock) {
+    private void constructorCall(Class type, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNodeWithClassParameter(ConstructorCallExpression, 'constructorCall', [ClassNode, Expression], argBlock, type)
     }
 
@@ -297,7 +297,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a MethodCallExpression.
      */
 
-    private void methodCall(Closure argBlock) {
+    private void methodCall(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(MethodCallExpression, 'methodCall', [Expression, Expression, Expression], argBlock)
     }
 
@@ -306,7 +306,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates an AnnotationConstantExpression.
      */
 
-    private void annotationConstant(Closure argBlock) {
+    private void annotationConstant(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(AnnotationConstantExpression, 'annotationConstant', [AnnotationNode], argBlock)
     }
 
@@ -315,7 +315,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a PostfixExpression.
      */
 
-    private void postfix(Closure argBlock) {
+    private void postfix(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(PostfixExpression, 'postfix', [Expression, Token], argBlock)
     }
 
@@ -324,7 +324,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a FieldExpression.
      */
 
-    private void field(Closure argBlock) {
+    private void field(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(FieldExpression, 'field', [FieldNode], argBlock)
     }
 
@@ -333,7 +333,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a MapExpression.
      */
 
-    private void map(Closure argBlock) {
+    private void map(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNodeFromList(MapExpression, argBlock)
     }
 
@@ -342,7 +342,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a TupleExpression.
      */
 
-    private void tuple(Closure argBlock) {
+    private void tuple(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNodeFromList(TupleExpression, argBlock)
     }
 
@@ -351,7 +351,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a MapEntryExpression.
      */
 
-    private void mapEntry(Closure argBlock) {
+    private void mapEntry(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(MapEntryExpression, 'mapEntry', [Expression, Expression], argBlock)
     }
 
@@ -360,7 +360,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a gString.
      */
 
-    private void gString(String verbatimText, Closure argBlock) {
+    private void gString(String verbatimText, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNodeWithStringParameter(GStringExpression, 'gString', [String, List, List], argBlock, verbatimText)
     }
 
@@ -369,7 +369,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a methodPointer.
      */
 
-    private void methodPointer(Closure argBlock) {
+    private void methodPointer(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(MethodPointerExpression, 'methodPointer', [Expression, Expression], argBlock)
     }
 
@@ -378,7 +378,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a property.
      */
 
-    private void property(Closure argBlock) {
+    private void property(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(PropertyExpression, 'property', [Expression, Expression], argBlock)
     }
 
@@ -387,7 +387,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a RangeExpression.
      */
 
-    private void range(Closure argBlock) {
+    private void range(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(RangeExpression, 'range', [Expression, Expression, Boolean], argBlock)
     }
 
@@ -423,7 +423,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a CatchStatement.
      */
 
-    private void catchStatement(Closure argBlock) {
+    private void catchStatement(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(CatchStatement, 'catchStatement', [Parameter, Statement], argBlock)
     }
 
@@ -432,7 +432,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a ThrowStatement.
      */
 
-    private void throwStatement(Closure argBlock) {
+    private void throwStatement(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(ThrowStatement, 'throwStatement', [Expression], argBlock)
     }
 
@@ -441,7 +441,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a SynchronizedStatement.
      */
 
-    private void synchronizedStatement(Closure argBlock) {
+    private void synchronizedStatement(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(SynchronizedStatement, 'synchronizedStatement', [Expression, Statement], argBlock)
     }
 
@@ -450,7 +450,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a ReturnStatement.
      */
 
-    private void returnStatement(Closure argBlock) {
+    private void returnStatement(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(ReturnStatement, 'returnStatement', [Expression], argBlock)
     }
 
@@ -459,7 +459,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a TernaryExpression.
      */
 
-    private void ternary(Closure argBlock) {
+    private void ternary(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(TernaryExpression, 'ternary', [BooleanExpression, Expression, Expression], argBlock)
     }
 
@@ -468,7 +468,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates an ElvisOperatorExpression.
      */
 
-    private void elvisOperator(Closure argBlock) {
+    private void elvisOperator(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(ElvisOperatorExpression, 'elvisOperator', [Expression, Expression], argBlock)
     }
 
@@ -490,7 +490,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a ContinueStatement.
      */
 
-    private void continueStatement(Closure argBlock = null) {
+    private void continueStatement(@DelegatesTo(AstSpecificationCompiler) Closure argBlock = null) {
         if (!argBlock) {
             expression << new ContinueStatement()
         } else {
@@ -503,7 +503,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Create a CaseStatement.
      */
 
-    private void caseStatement(Closure argBlock) {
+    private void caseStatement(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(CaseStatement, 'caseStatement', [Expression, Statement], argBlock)
     }
 
@@ -512,7 +512,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a BlockStatement.
      */
 
-    private void defaultCase(Closure argBlock) {
+    private void defaultCase(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         block(argBlock) // same as arg block
     }
 
@@ -521,7 +521,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a PrefixExpression.
      */
 
-    private void prefix(Closure argBlock) {
+    private void prefix(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(PrefixExpression, 'prefix', [Token, Expression], argBlock)
     }
 
@@ -530,7 +530,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a NotExpression.
      */
 
-    private void not(Closure argBlock) {
+    private void not(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(NotExpression, 'not', [Expression], argBlock)
     }
 
@@ -548,7 +548,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a ClassNode[].
      */
 
-    private void exceptions(Closure argBlock) {
+    private void exceptions(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeArrayOfNodes([] as ClassNode[], argBlock)
     }
 
@@ -557,7 +557,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Designates a list of AnnotationNodes.
      */
 
-    private void annotations(Closure argBlock) {
+    private void annotations(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeListOfNodes(argBlock, "List<AnnotationNode>")
     }
 
@@ -565,7 +565,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Designates a list of ConstantExpressions.
      */
 
-    private void strings(Closure argBlock) {
+    private void strings(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeListOfNodes(argBlock, "List<ConstantExpression>")
     }
 
@@ -573,7 +573,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Designates a list of Expressions.
      */
 
-    private void values(Closure argBlock) {
+    private void values(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeListOfNodes(argBlock, "List<Expression>")
     }
 
@@ -600,7 +600,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates an IfStatement.
      */
 
-    private void ifStatement(Closure argBlock) {
+    private void ifStatement(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(IfStatement, 'ifStatement', [BooleanExpression, Statement, Statement], argBlock)
     }
 
@@ -609,7 +609,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a SpreadExpression.
      */
 
-    private void spread(Closure argBlock) {
+    private void spread(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(SpreadExpression, 'spread', [Expression], argBlock)
     }
 
@@ -618,7 +618,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a SpreadMapExpression.
      */
 
-    private void spreadMap(Closure argBlock) {
+    private void spreadMap(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(SpreadMapExpression, 'spreadMap', [Expression], argBlock)
     }
 
@@ -627,7 +627,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a WhileStatement.
      */
 
-    private void whileStatement(Closure argBlock) {
+    private void whileStatement(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(WhileStatement, 'whileStatement', [BooleanExpression, Statement], argBlock)
     }
 
@@ -636,7 +636,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Create a ForStatement.
      */
 
-    private void forStatement(Closure argBlock) {
+    private void forStatement(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(ForStatement, 'forStatement', [Parameter, Expression, Statement], argBlock)
     }
 
@@ -645,7 +645,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a ClosureListExpression.
      */
 
-    private void closureList(Closure argBlock) {
+    private void closureList(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNodeFromList(ClosureListExpression, argBlock)
     }
 
@@ -654,7 +654,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a DeclarationExpression.
      */
 
-    private void declaration(Closure argBlock) {
+    private void declaration(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(DeclarationExpression, 'declaration', [Expression, Token, Expression], argBlock)
     }
 
@@ -663,7 +663,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a ListExpression.
      */
 
-    private void list(Closure argBlock) {
+    private void list(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNodeFromList(ListExpression, argBlock)
     }
 
@@ -672,7 +672,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a BitwiseNegationExpression.
      */
 
-    private void bitwiseNegation(Closure argBlock) {
+    private void bitwiseNegation(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(BitwiseNegationExpression, 'bitwiseNegation', [Expression], argBlock)
     }
 
@@ -681,7 +681,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a ClosureExpression.
      */
 
-    private void closure(Closure argBlock) {
+    private void closure(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(ClosureExpression, 'closure', [Parameter[], Statement], argBlock)
     }
 
@@ -690,7 +690,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a BooleanExpression.
      */
 
-    private void booleanExpression(Closure argBlock) {
+    private void booleanExpression(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(BooleanExpression, 'booleanExpression', [Expression], argBlock)
     }
 
@@ -699,7 +699,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a BinaryExpression.
      */
 
-    private void binary(Closure argBlock) {
+    private void binary(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(BinaryExpression, 'binary', [Expression, Token, Expression], argBlock)
     }
 
@@ -708,7 +708,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a UnaryPlusExpression.
      */
 
-    private void unaryPlus(Closure argBlock) {
+    private void unaryPlus(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(UnaryPlusExpression, 'unaryPlus', [Expression], argBlock)
     }
 
@@ -726,7 +726,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a UnaryMinusExpression
      */
 
-    private void unaryMinus(Closure argBlock) {
+    private void unaryMinus(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(UnaryMinusExpression, 'unaryMinus', [Expression], argBlock)
     }
 
@@ -735,7 +735,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates an AttributeExpression.
      */
 
-    private void attribute(Closure argBlock) {
+    private void attribute(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(AttributeExpression, 'attribute', [Expression, Expression], argBlock)
     }
 
@@ -744,7 +744,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates an ExpressionStatement.
      */
 
-    private void expression(Closure argBlock) {
+    private void expression(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNode(ExpressionStatement, 'expression', [Expression], argBlock)
     }
 
@@ -753,7 +753,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a NamedArgumentListExpression.
      */
 
-    private void namedArgumentList(Closure argBlock) {
+    private void namedArgumentList(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeNodeFromList(NamedArgumentListExpression, argBlock)
     }
 
@@ -762,7 +762,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a ClassNode[].
      */
 
-    private void interfaces(Closure argBlock) {
+    private void interfaces(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeListOfNodes(argBlock, "List<ClassNode>")
     }
 
@@ -771,7 +771,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a MixinNode[].
      */
 
-    private void mixins(Closure argBlock) {
+    private void mixins(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeListOfNodes(argBlock, "List<MixinNode>")
     }
 
@@ -780,7 +780,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a GenericsTypes[].
      */
 
-    private void genericsTypes(Closure argBlock) {
+    private void genericsTypes(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeListOfNodes(argBlock, "List<GenericsTypes>")
     }
 
@@ -798,7 +798,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a Parameter[].
      */
 
-    private void parameters(Closure argBlock) {
+    private void parameters(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeArrayOfNodes([] as Parameter[], argBlock)
     }
 
@@ -807,7 +807,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a BlockStatement.
      */
 
-    private void block(Closure argBlock) {
+    private void block(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("BlockStatement", argBlock) {
             return new BlockStatement(new ArrayList(expression), new VariableScope())
         }
@@ -818,7 +818,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a Parameter.
      */
 
-    private void parameter(Map<String, Class> args, Closure argBlock = null) {
+    private void parameter(Map<String, Class> args, @DelegatesTo(AstSpecificationCompiler) Closure argBlock = null) {
         if (!args) throw new IllegalArgumentException()
         if (args.size() > 1) throw new IllegalArgumentException()
 
@@ -841,7 +841,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates an ArrayExpression.
      */
 
-    private void array(Class type, Closure argBlock) {
+    private void array(Class type, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("ArrayExpression", argBlock) {
             new ArrayExpression(ClassHelper.make(type), new ArrayList(expression))
         }
@@ -853,7 +853,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a GenericsType.
      */
 
-    private void genericsType(Class type, Closure argBlock = null) {
+    private void genericsType(Class type, @DelegatesTo(AstSpecificationCompiler) Closure argBlock = null) {
         if (argBlock) {
             captureAndCreateNode("GenericsType", argBlock) {
                 new GenericsType(ClassHelper.make(type), expression[0] as ClassNode[], expression[1])
@@ -866,7 +866,7 @@ import org.codehaus.groovy.ast.ClassHelper
     /**
      * Creates a list of ClassNodes.
      */
-    private void upperBound(Closure argBlock) {
+    private void upperBound(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         makeListOfNodes(argBlock, 'List<ClassNode>')
     }
 
@@ -881,7 +881,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a 2 element list of name and Annotation. Used with Annotation Members.
      */
 
-    private void member(String name, Closure argBlock) {
+    private void member(String name, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("Annotation Member", argBlock) {
             [name, expression[0]]
         }
@@ -892,7 +892,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates an ArgumentListExpression.
      */
 
-    private void argumentList(Closure argBlock) {
+    private void argumentList(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         if (!argBlock) {
             expression << new ArgumentListExpression()
         } else {
@@ -905,7 +905,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates an AnnotationNode.
      */
 
-    private void annotation(Class target, Closure argBlock = null) {
+    private void annotation(Class target, @DelegatesTo(AstSpecificationCompiler) Closure argBlock = null) {
         if (argBlock) {
             //todo: add better error handling
             captureAndCreateNode("ArgumentListExpression", argBlock) {
@@ -925,7 +925,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a MixinNode.
      */
 
-    private void mixin(String name, int modifiers, Closure argBlock) {
+    private void mixin(String name, int modifiers, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("AttributeExpression", argBlock) {
             if (expression.size() > 1) {
                 new MixinNode(name, modifiers, expression[0], new ArrayList(expression[1]) as ClassNode[])
@@ -941,7 +941,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a ClassNode
      */
 
-    private void classNode(String name, int modifiers, Closure argBlock) {
+    private void classNode(String name, int modifiers, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("ClassNode", argBlock) {
             def result = new ClassNode(name, modifiers,
                     expression[0],
@@ -960,7 +960,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates an AssertStatement.
      */
 
-    private void assertStatement(Closure argBlock) {
+    private void assertStatement(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("AssertStatement", argBlock) {
             if (expression.size() < 2) {
                 new AssertStatement(
@@ -979,7 +979,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a TryCatchStatement.
      */
 
-    private void tryCatch(Closure argBlock) {
+    private void tryCatch(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("TryCatchStatement", argBlock) {
             def result = new TryCatchStatement(expression[0], expression[1])
             def catchStatements = expression.tail().tail()
@@ -1002,7 +1002,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a MethodNode.
      */
 
-    private void method(String name, int modifiers, Class returnType, Closure argBlock) {
+    private void method(String name, int modifiers, Class returnType, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("MethodNode", argBlock) {
             //todo: enforce contract
             def result = new MethodNode(
@@ -1051,7 +1051,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a SwitchStatement.
      */
 
-    private void switchStatement(Closure argBlock) {
+    private void switchStatement(@DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("SwitchStatement", argBlock) {
             def switchExpression = expression.head()
             def caseStatements = expression.tail().tail()
@@ -1082,7 +1082,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a FieldNode.
      */
 
-    private void fieldNode(String name, int modifiers, Class type, Class owner, Closure argBlock) {
+    private void fieldNode(String name, int modifiers, Class type, Class owner, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("FieldNode", argBlock) {
             expression.add(0, ClassHelper.make(owner))
             expression.add(0, ClassHelper.make(type))
@@ -1099,7 +1099,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a property.
      */
 
-    private void innerClass(String name, int modifiers, Closure argBlock) {
+    private void innerClass(String name, int modifiers, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("InnerClassNode", argBlock) {
             //todo: enforce contract
             new InnerClassNode(
@@ -1117,7 +1117,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a PropertyNode.
      */
 
-    private void propertyNode(String name, int modifiers, Class type, Class owner, Closure argBlock) {
+    private void propertyNode(String name, int modifiers, Class type, Class owner, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         //todo: improve error handling?
         captureAndCreateNode("PropertyNode", argBlock) {
             new PropertyNode(name, modifiers, ClassHelper.make(type), ClassHelper.make(owner),
@@ -1133,7 +1133,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a StaticMethodCallExpression.
      */
 
-    private void staticMethodCall(Class target, String name, Closure argBlock) {
+    private void staticMethodCall(Class target, String name, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("StaticMethodCallExpression", argBlock) {
             expression.add(0, name)
             expression.add(0, ClassHelper.make(target))
@@ -1148,7 +1148,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a StaticMethodCallExpression.
      */
 
-    private void staticMethodCall(MethodClosure target, Closure argBlock) {
+    private void staticMethodCall(MethodClosure target, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("StaticMethodCallExpression", argBlock) {
             expression.add(0, target.method)
             expression.add(0, ClassHelper.makeWithoutCaching(target.owner.class, false))
@@ -1163,7 +1163,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a ConstructorNode.
      */
 
-    private void constructor(int modifiers, Closure argBlock) {
+    private void constructor(int modifiers, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("ConstructorNode", argBlock) {
             expression.add(0, modifiers)
             new ConstructorNode(

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -226,8 +226,8 @@ import java.lang.annotation.Target;
  * </ul>
  *
  * @author Paul King
- * @see groovy.transform.AutoCloneStyle
- * @see groovy.transform.AutoExternalize
+ * @see AutoCloneStyle
+ * @see ExternalizeMethods
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
@@ -272,5 +272,5 @@ public @interface AutoClone {
     /**
      * Style to use when cloning.
      */
-    groovy.transform.AutoCloneStyle style() default AutoCloneStyle.CLONE;
+    AutoCloneStyle style() default AutoCloneStyle.CLONE;
 }

@@ -127,6 +127,33 @@ class JsonBuilder implements Writable {
     }
 
     /**
+     * A collection and closure passed to a JSON builder will create a root JSON array applying
+     * the closure to each object in the collection
+     * <p>
+     * Example:
+     * <pre><code>
+     * class Author {
+     *      String name
+     * }
+     * def authors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
+     *
+     * def json = new JsonBuilder()
+     * json authors, { Author author ->
+     *      name author.name
+     * }
+     *
+     * assert json.toString() == '[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]'
+     * </code></pre>
+     * @param coll a collection
+     * @param c a closure used to convert the objects of coll
+     * @return a list of values
+     */
+    def call(Collection coll, Closure c) {
+        this.content = coll.collect {JsonDelegate.curryDelegateAndGetContent(c, it)}
+        return content
+    }
+
+    /**
      * A closure passed to a JSON builder will create a root JSON object
      * <p>
      * Example:
@@ -217,11 +244,15 @@ class JsonBuilder implements Writable {
                 this.content = [(name): args[0]]
                 return content
             }
-        } else if (args?.size() == 2 && args[0] instanceof Map && args[1] instanceof Closure) {
-            this.content = [(name): [*:args[0], *:JsonDelegate.cloneDelegateAndGetContent(args[1])]]
-            return content
+        } else if (args?.size() == 2) {
+            if (args[0] instanceof Map && args[1] instanceof Closure) {
+                this.content = [(name): [*:args[0], *:JsonDelegate.cloneDelegateAndGetContent(args[1])]]
+                return content
+            } else if (args[0] instanceof Collection && args[1] instanceof Closure) {
+                this.content = [(name): args[0].collect {JsonDelegate.curryDelegateAndGetContent(args[1],it)}]
+                return content
+            }
         }
-
         throw new JsonException("Expected no arguments, a single map, a single closure, or a map and closure as arguments.")
     }
 

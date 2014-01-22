@@ -1,4 +1,4 @@
-include 'groovy-ant',
+def subprojects = ['groovy-ant',
         'groovy-bsf',
         'groovy-console',
         'groovy-docgenerator',
@@ -13,7 +13,13 @@ include 'groovy-ant',
         'groovy-templates',
         'groovy-test',
         'groovy-testng',
-        'groovy-xml'
+        'groovy-xml']
+
+if(JavaVersion.current().isJava7Compatible()) {
+    subprojects << 'groovy-nio'
+}
+ 
+include(subprojects as String[])
         
 rootProject.children.each { prj ->
     prj.projectDir = new File("$rootDir/subprojects/$prj.name")

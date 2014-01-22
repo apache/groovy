@@ -405,6 +405,28 @@ public class MethodSelectionTest extends CompilableTestSupport {
           """
       }
   }
+  
+  // GROOVY-6431
+  void testBigDecAndBigIntSubClass() {
+      assertScript'''
+          class MyDecimal extends BigDecimal {
+              public MyDecimal(String s) {super(s)}
+          }
+          class MyInteger extends BigInteger {
+              public MyInteger(String s) {super(s)}
+          }
+          class Expression {
+              public int takeNumber(Number a) {return 1}
+              public int takeBigDecimal(BigDecimal a) {return 2}
+              public int takeBigInteger(BigInteger a) {return 3}
+          }
+
+          Expression exp = new Expression();
+          assert 1 == exp.takeNumber(new MyInteger("3"))
+          assert 2 == exp.takeBigDecimal(new MyDecimal("3.0"))
+          assert 3 == exp.takeBigInteger(new MyInteger("3"))
+      '''
+  }
 }
 
 class Foo3977 {

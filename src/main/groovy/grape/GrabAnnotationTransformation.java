@@ -49,6 +49,11 @@ import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -179,6 +184,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         }
 
         List<Map<String,Object>> grabMaps = new ArrayList<Map<String,Object>>();
+        List<Map<String,Object>> grabMapsInit = new ArrayList<Map<String,Object>>();
         List<Map<String,Object>> grabExcludeMaps = new ArrayList<Map<String,Object>>();
 
         for (ClassNode classNode : sourceUnit.getAST().getClasses()) {
@@ -249,6 +255,20 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                             grabResolverMap.put(s, ((ConstantExpression) member).getValue());
                         }
                     }
+
+                    // If no scheme is specified for the repository root,
+                    // then turn it into a URL relative to that of the source file.
+                    String root = (String) grabResolverMap.get("root");
+                    if (root != null && !root.contains(":")) {
+                        try {
+                            URL sourceURL = getSourceURL();
+                            URL rootURL = new URL(sourceURL, root);
+                            grabResolverMap.put("root", rootURL.toExternalForm());
+                        } catch (MalformedURLException e) {
+                            addError("Attribute \"root\" has value '" + root + "' which can't be turned into a valid URL relative to it's source '" + getSourceUnit().getName() + "' @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
+                        }
+                    }
+
                     Grape.addResolver(grabResolverMap);
                     addGrabResolverAsStaticInitIfNeeded(grapeClassNode, node, grabResolverInitializers, grabResolverMap);
                 }
@@ -298,12 +318,17 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                             addError("Attribute \"" + s + "\" has value " + member.getText() + " but should be an inline constant in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
                             continue grabAnnotationLoop;
                         }
-                        if (node.getMember(s) != null)
+                        if (node.getMember(s) != null) {
                             grabMap.put(s, ((ConstantExpression)member).getValue());
+                        }
                     }
                     grabMaps.add(grabMap);
-                    callGrabAsStaticInitIfNeeded(classNode, grapeClassNode, node, grabExcludeMaps);
+                    if ((node.getMember("initClass") == null)
+                            || (node.getMember("initClass") == ConstantExpression.TRUE)) {
+                        grabMapsInit.add(grabMap);
+                    }
                 }
+                callGrabAsStaticInitIfNeeded(classNode, grapeClassNode, grabMapsInit, grabExcludeMaps);
             }
 
             if (!grabResolverInitializers.isEmpty()) {
@@ -333,55 +358,66 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         }
     }
 
-    private void callGrabAsStaticInitIfNeeded(ClassNode classNode, ClassNode grapeClassNode, AnnotationNode node, List<Map<String, Object>> grabExcludeMaps) {
-        if ((node.getMember("initClass") == null)
-            || (node.getMember("initClass") == ConstantExpression.TRUE))
-        {
-            List<Statement> grabInitializers = new ArrayList<Statement>();
+    /**
+     * Get the URL for the sourceUnit.  This belongs in org.codehaus.groovy.control.SourceUnit.
+     * @return URL URL for the sourceUnit.
+     */
+    private URL getSourceURL() throws MalformedURLException {
+        String sourceName = getSourceUnit().getName();
+        // If the source already has a scheme, then SourceUnit(URL, ...) was used.
+        if (!sourceName.contains(":")) {
+            // But if not then either SourceUnit(File, ...) or SourceUnit(String, ...) was used.
+            // When SourceUnit(File, ...) is used then name is set to the File.path.
+            File sourceFile = new File(sourceName);
+            sourceName = sourceFile.toURI().toURL().toExternalForm();
+        }
 
+        return new URL(sourceName);
+    }
+
+    private void callGrabAsStaticInitIfNeeded(ClassNode classNode, ClassNode grapeClassNode, List<Map<String,Object>> grabMapsInit, List<Map<String, Object>> grabExcludeMaps) {
+        List<Statement> grabInitializers = new ArrayList<Statement>();
+        MapExpression basicArgs = new MapExpression();
+        if (autoDownload != null)  {
+            basicArgs.addMapEntryExpression(new ConstantExpression(AUTO_DOWNLOAD_SETTING), new ConstantExpression(autoDownload));
+        }
+
+        if (disableChecksums != null)  {
+            basicArgs.addMapEntryExpression(new ConstantExpression(DISABLE_CHECKSUMS_SETTING), new ConstantExpression(disableChecksums));
+        }
+        if (!grabExcludeMaps.isEmpty()) {
+            ListExpression list = new ListExpression();
+            for (Map<String, Object> map : grabExcludeMaps) {
+                Set<Map.Entry<String, Object>> entries = map.entrySet();
+                MapExpression inner = new MapExpression();
+                for (Map.Entry<String, Object> entry : entries) {
+                    inner.addMapEntryExpression(new ConstantExpression(entry.getKey()), new ConstantExpression(entry.getValue()));
+                }
+                list.addExpression(inner);
+            }
+            basicArgs.addMapEntryExpression(new ConstantExpression("excludes"), list);
+        }
+
+        List<Expression> argList = new ArrayList<Expression>();
+        argList.add(basicArgs);
+        for (Map<String, Object> grabMap : grabMapsInit) {
             // add Grape.grab(excludeArgs, [group:group, module:module, version:version, classifier:classifier])
             // or Grape.grab([group:group, module:module, version:version, classifier:classifier])
-            MapExpression me = new MapExpression();
+            MapExpression dependencyArg = new MapExpression();
             for (String s : GRAB_REQUIRED) {
-                me.addMapEntryExpression(new ConstantExpression(s),node.getMember(s));
+                dependencyArg.addMapEntryExpression(new ConstantExpression(s), new ConstantExpression(grabMap.get(s)));
             }
-
             for (String s : GRAB_OPTIONAL) {
-                if (node.getMember(s) != null)
-                    me.addMapEntryExpression(new ConstantExpression(s),node.getMember(s));
+                if (grabMap.containsKey(s))
+                    dependencyArg.addMapEntryExpression(new ConstantExpression(s), new ConstantExpression(grabMap.get(s)));
             }
-
-            if (autoDownload != null)  {
-                me.addMapEntryExpression(new ConstantExpression(AUTO_DOWNLOAD_SETTING), new ConstantExpression(autoDownload));
-            }
-
-            if (disableChecksums != null)  {
-                me.addMapEntryExpression(new ConstantExpression(DISABLE_CHECKSUMS_SETTING), new ConstantExpression(disableChecksums));
-            }
-
-            ArgumentListExpression grabArgs;
-            if (grabExcludeMaps.isEmpty()) {
-                grabArgs = new ArgumentListExpression(me);
-            } else {
-                MapExpression args = new MapExpression();
-                ListExpression list = new ListExpression();
-                for (Map<String, Object> map : grabExcludeMaps) {
-                    Set<Map.Entry<String, Object>> entries = map.entrySet();
-                    MapExpression inner = new MapExpression();
-                    for (Map.Entry<String, Object> entry : entries) {
-                        inner.addMapEntryExpression(new ConstantExpression(entry.getKey()), new ConstantExpression(entry.getValue()));
-                    }
-                    list.addExpression(inner);
-                }
-                args.addMapEntryExpression(new ConstantExpression("excludes"), list);
-                grabArgs = new ArgumentListExpression(args, me);
-            }
-            grabInitializers.add(new ExpressionStatement(
-                    new StaticMethodCallExpression(grapeClassNode, "grab", grabArgs)));
-
-            // insert at beginning so we have the classloader set up before the class is called
-            classNode.addStaticInitializerStatements(grabInitializers, true);
+            argList.add(dependencyArg);
         }
+        ArgumentListExpression grabArgs = new ArgumentListExpression(argList);
+        grabInitializers.add(new ExpressionStatement(new StaticMethodCallExpression(grapeClassNode, "grab", grabArgs)));
+
+        // insert at beginning so we have the classloader set up before the class is called
+        classNode.addStaticInitializerStatements(grabInitializers, true);
     }
 
     private void addGrabResolverAsStaticInitIfNeeded(ClassNode grapeClassNode, AnnotationNode node,

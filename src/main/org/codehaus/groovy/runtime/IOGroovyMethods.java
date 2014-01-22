@@ -20,6 +20,9 @@ import groovy.lang.Closure;
 import groovy.lang.StringWriterIOException;
 import groovy.lang.Writable;
 
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FromString;
+import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 
 import java.io.*;
@@ -120,7 +123,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the Appendable on which this operation was invoked
      * @since 2.1.0
      */
-    public static Appendable withFormatter(Appendable self, Closure closure) {
+    public static Appendable withFormatter(Appendable self, @ClosureParams(value=SimpleType.class, options="java.util.Formatter") Closure closure) {
         Formatter formatter = new Formatter(self);
         callWithFormatter(closure, formatter);
         return self;
@@ -138,7 +141,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the Appendable on which this operation was invoked
      * @since 2.1.0
      */
-    public static Appendable withFormatter(Appendable self, Locale locale, Closure closure) {
+    public static Appendable withFormatter(Appendable self, Locale locale, @ClosureParams(value=SimpleType.class, options="java.util.Formatter") Closure closure) {
         Formatter formatter = new Formatter(self, locale);
         callWithFormatter(closure, formatter);
         return self;
@@ -258,7 +261,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
-    public static <T> T withObjectOutputStream(OutputStream outputStream, Closure<T> closure) throws IOException {
+    public static <T> T withObjectOutputStream(OutputStream outputStream, @ClosureParams(value=SimpleType.class, options="java.io.ObjectOutputStream") Closure<T> closure) throws IOException {
         return withStream(newObjectOutputStream(outputStream), closure);
     }
 
@@ -332,7 +335,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
-    public static <T> T withObjectInputStream(InputStream inputStream, Closure<T> closure) throws IOException {
+    public static <T> T withObjectInputStream(InputStream inputStream, @ClosureParams(value=SimpleType.class, options="java.io.ObjectInputStream") Closure<T> closure) throws IOException {
         return withStream(newObjectInputStream(inputStream), closure);
     }
 
@@ -348,7 +351,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
-    public static <T> T withObjectInputStream(InputStream inputStream, ClassLoader classLoader, Closure<T> closure) throws IOException {
+    public static <T> T withObjectInputStream(InputStream inputStream, ClassLoader classLoader, @ClosureParams(value=SimpleType.class, options="java.io.ObjectInputStream") Closure<T> closure) throws IOException {
         return withStream(newObjectInputStream(inputStream, classLoader), closure);
     }
 
@@ -364,7 +367,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.InputStream, java.lang.String, int, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static <T> T eachLine(InputStream stream, String charset, Closure<T> closure) throws IOException {
+    public static <T> T eachLine(InputStream stream, String charset, @ClosureParams(value=FromString.class,options={"String","String,Integer"}) Closure<T> closure) throws IOException {
         return eachLine(stream, charset, 1, closure);
     }
 
@@ -381,7 +384,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 1.5.7
      */
-    public static <T> T eachLine(InputStream stream, String charset, int firstLine, Closure<T> closure) throws IOException {
+    public static <T> T eachLine(InputStream stream, String charset, int firstLine, @ClosureParams(value=FromString.class,options={"String","String,Integer"}) Closure<T> closure) throws IOException {
         return eachLine(new InputStreamReader(stream, charset), firstLine, closure);
     }
 
@@ -396,7 +399,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.InputStream, int, groovy.lang.Closure)
      * @since 1.5.6
      */
-    public static <T> T eachLine(InputStream stream, Closure<T> closure) throws IOException {
+    public static <T> T eachLine(InputStream stream, @ClosureParams(value=FromString.class,options={"String","String,Integer"}) Closure<T> closure) throws IOException {
         return eachLine(stream, 1, closure);
     }
 
@@ -412,7 +415,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 1.5.7
      */
-    public static <T> T eachLine(InputStream stream, int firstLine, Closure<T> closure) throws IOException {
+    public static <T> T eachLine(InputStream stream, int firstLine, @ClosureParams(value=FromString.class,options={"String","String,Integer"}) Closure<T> closure) throws IOException {
         return eachLine(new InputStreamReader(stream), firstLine, closure);
     }
 
@@ -428,7 +431,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 1.5.6
      */
-    public static <T> T eachLine(Reader self, Closure<T> closure) throws IOException {
+    public static <T> T eachLine(Reader self, @ClosureParams(value=FromString.class,options={"String","String,Integer"}) Closure<T> closure) throws IOException {
         return eachLine(self, 1, closure);
     }
 
@@ -444,7 +447,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.7
      */
-    public static <T> T eachLine(Reader self, int firstLine, Closure<T> closure) throws IOException {
+    public static <T> T eachLine(Reader self, int firstLine, @ClosureParams(value=FromString.class,options={"String","String,Integer"}) Closure<T> closure) throws IOException {
         BufferedReader br;
         int count = firstLine;
         T result = null;
@@ -500,7 +503,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.lang.String#split(java.lang.String)
      * @since 1.5.5
      */
-    public static <T> T splitEachLine(Reader self, String regex, Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(Reader self, String regex, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
         return splitEachLine(self, Pattern.compile(regex), closure);
     }
 
@@ -530,7 +533,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.lang.String#split(java.lang.String)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(Reader self, Pattern pattern, Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(Reader self, Pattern pattern, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
         BufferedReader br;
         T result = null;
 
@@ -576,7 +579,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static <T> T splitEachLine(InputStream stream, String regex, String charset, Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, String regex, String charset, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), regex, closure);
     }
 
@@ -595,7 +598,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(InputStream stream, Pattern pattern, String charset, Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, String charset, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), pattern, closure);
     }
 
@@ -614,7 +617,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.6
      */
-    public static <T> T splitEachLine(InputStream stream, String regex, Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, String regex, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream)), regex, closure);
     }
 
@@ -631,7 +634,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static <T> T splitEachLine(InputStream stream, Pattern pattern, Closure<T> closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, @ClosureParams(value=FromString.class,options="List<String>") Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream)), pattern, closure);
     }
 
@@ -1098,7 +1101,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.6.0
      */
-    public static <T> T withPrintWriter(Writer writer, Closure<T> closure) throws IOException {
+    public static <T> T withPrintWriter(Writer writer, @ClosureParams(value=SimpleType.class, options="java.io.PrintWriter") Closure<T> closure) throws IOException {
         return withWriter(newPrintWriter(writer), closure);
     }
 
@@ -1112,7 +1115,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 2.2.0
      */
-    public static <T> T withPrintWriter(OutputStream stream, Closure<T> closure) throws IOException {
+    public static <T> T withPrintWriter(OutputStream stream, @ClosureParams(value=SimpleType.class, options="java.io.PrintWriter") Closure<T> closure) throws IOException {
         return withWriter(newPrintWriter(stream), closure);
     }
 
@@ -1126,7 +1129,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withWriter(Writer writer, Closure<T> closure) throws IOException {
+    public static <T> T withWriter(Writer writer, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
         try {
             T result = closure.call(writer);
 
@@ -1154,7 +1157,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withReader(Reader reader, Closure<T> closure) throws IOException {
+    public static <T> T withReader(Reader reader, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
         try {
             T result = closure.call(reader);
 
@@ -1178,7 +1181,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withStream(InputStream stream, Closure<T> closure) throws IOException {
+    public static <T> T withStream(InputStream stream, @ClosureParams(value=SimpleType.class, options="java.io.InputStream") Closure<T> closure) throws IOException {
         try {
             T result = closure.call(stream);
 
@@ -1204,7 +1207,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.io.InputStreamReader
      * @since 1.5.2
      */
-    public static <T> T withReader(InputStream in, Closure<T> closure) throws IOException {
+    public static <T> T withReader(InputStream in, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
         return withReader(new InputStreamReader(in), closure);
     }
 
@@ -1221,7 +1224,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.io.InputStreamReader
      * @since 1.5.6
      */
-    public static <T> T withReader(InputStream in, String charset, Closure<T> closure) throws IOException {
+    public static <T> T withReader(InputStream in, String charset, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
         return withReader(new InputStreamReader(in, charset), closure);
     }
 
@@ -1236,7 +1239,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withWriter(java.io.Writer, groovy.lang.Closure)
      * @since 1.5.2
      */
-    public static <T> T withWriter(OutputStream stream, Closure<T> closure) throws IOException {
+    public static <T> T withWriter(OutputStream stream, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
         return withWriter(new OutputStreamWriter(stream), closure);
     }
 
@@ -1263,7 +1266,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withWriter(java.io.Writer, groovy.lang.Closure)
      * @since 1.5.2
      */
-    public static <T> T withWriter(OutputStream stream, String charset, Closure<T> closure) throws IOException {
+    public static <T> T withWriter(OutputStream stream, String charset, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
         return withWriter(new OutputStreamWriter(stream, charset), closure);
     }
 
@@ -1290,7 +1293,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withStream(OutputStream os, Closure<T> closure) throws IOException {
+    public static <T> T withStream(OutputStream os, @ClosureParams(value=SimpleType.class, options="java.io.OutputStream") Closure<T> closure) throws IOException {
         try {
             T result = closure.call(os);
             os.flush();
@@ -1314,7 +1317,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.0
      */
-    public static void eachByte(InputStream is, Closure closure) throws IOException {
+    public static void eachByte(InputStream is, @ClosureParams(value=SimpleType.class, options="byte") Closure closure) throws IOException {
         try {
             while (true) {
                 int b = is.read();
@@ -1343,7 +1346,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.8
      */
-    public static void eachByte(InputStream is, int bufferLen, Closure closure) throws IOException {
+    public static void eachByte(InputStream is, int bufferLen, @ClosureParams(value=FromString.class, options="byte[],Integer") Closure closure) throws IOException {
         byte[] buffer = new byte[bufferLen];
         int bytesRead;
         try {
@@ -1371,7 +1374,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.0
      */
-    public static void transformChar(Reader self, Writer writer, Closure closure) throws IOException {
+    public static void transformChar(Reader self, Writer writer, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure closure) throws IOException {
         int c;
         try {
             char[] chars = new char[1];
@@ -1405,7 +1408,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.0
      */
-    public static void transformLine(Reader reader, Writer writer, Closure closure) throws IOException {
+    public static void transformLine(Reader reader, Writer writer, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure closure) throws IOException {
         BufferedReader br = new BufferedReader(reader);
         BufferedWriter bw = new BufferedWriter(writer);
         String line;
@@ -1444,7 +1447,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.0
      */
-    public static void filterLine(Reader reader, Writer writer, Closure closure) throws IOException {
+    public static void filterLine(Reader reader, Writer writer, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure closure) throws IOException {
         BufferedReader br = new BufferedReader(reader);
         BufferedWriter bw = new BufferedWriter(writer);
         String line;
@@ -1484,7 +1487,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      *         from the reader when the Writable#writeTo(Writer) is called.
      * @since 1.0
      */
-    public static Writable filterLine(Reader reader, final Closure closure) {
+    public static Writable filterLine(Reader reader, final @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure closure) {
         final BufferedReader br = new BufferedReader(reader);
         return new Writable() {
             public Writer writeTo(Writer out) throws IOException {
@@ -1524,7 +1527,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #filterLine(java.io.Reader, groovy.lang.Closure)
      * @since 1.0
      */
-    public static Writable filterLine(InputStream self, Closure predicate) {
+    public static Writable filterLine(InputStream self, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure predicate) {
         return filterLine(newReader(self), predicate);
     }
 
@@ -1541,7 +1544,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #filterLine(java.io.Reader, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Writable filterLine(InputStream self, String charset, Closure predicate)
+    public static Writable filterLine(InputStream self, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure predicate)
             throws UnsupportedEncodingException {
         return filterLine(newReader(self, charset), predicate);
     }
@@ -1559,7 +1562,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
      * @since 1.0
      */
-    public static void filterLine(InputStream self, Writer writer, Closure predicate)
+    public static void filterLine(InputStream self, Writer writer, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure predicate)
             throws IOException {
         filterLine(newReader(self), writer, predicate);
     }
@@ -1578,7 +1581,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static void filterLine(InputStream self, Writer writer, String charset, Closure predicate)
+    public static void filterLine(InputStream self, Writer writer, String charset, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure predicate)
             throws IOException {
         filterLine(newReader(self, charset), writer, predicate);
     }

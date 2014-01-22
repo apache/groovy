@@ -1,11 +1,11 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,50 +13,72 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package groovy.util
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
-* <p>
-* ConfigSlurper is a utility class for reading configuration files defined in the form of Groovy
-* scripts. Configuration settings can be defined using dot notation or scoped using closures
-*
-* <pre><code>
-*   grails.webflow.stateless = true
-*    smtp {
-*        mail.host = 'smtp.myisp.com'
-*        mail.auth.user = 'server'
-*    }
-*    resources.URL = "http://localhost:80/resources"
-* </pre></code>
-*
-* <p>Settings can either be bound into nested maps or onto a specified JavaBean instance. In the case
-* of the latter an error will be thrown if a property cannot be bound.
-*
-* @author Graeme Rocher
-* @since 1.5
-*/
-
-class ConfigSlurper { 
-
-    private static final ENV_METHOD = "environments"
-    static final ENV_SETTINGS = '__env_settings__'
-    //private BeanInfo bean
-    //private instance
+ * <p>
+ * ConfigSlurper is a utility class for reading configuration files defined in the form of Groovy
+ * scripts. Configuration settings can be defined using dot notation or scoped using closures
+ *
+ * <pre><code>
+ *   grails.webflow.stateless = true
+ *    smtp {
+ *        mail.host = 'smtp.myisp.com'
+ *        mail.auth.user = 'server'
+ *    }
+ *    resources.URL = "http://localhost:80/resources"
+ * </pre></code>
+ *
+ * <p>Settings can either be bound into nested maps or onto a specified JavaBean instance. In the case
+ * of the latter an error will be thrown if a property cannot be bound.
+ *
+ * @author Graeme Rocher
+ * @author Andres Almiray
+ * @since 1.5
+ */
+class ConfigSlurper {
+    private static final ENVIRONMENTS_METHOD = 'environments'
     GroovyClassLoader classLoader = new GroovyClassLoader()
-    String environment
-    private envMode = false
-    private Map bindingVars
+    private Map bindingVars = [:]
 
-    ConfigSlurper() { }
+    private final Map<String, String> conditionValues = [:]
+    private final Stack<Map<String, ConfigObject>> conditionalBlocks = new Stack<Map<String,ConfigObject>>()
+
+    ConfigSlurper() {
+        this('')
+    }
 
     /**
      * Constructs a new ConfigSlurper instance using the given environment
      * @param env The Environment to use
      */
     ConfigSlurper(String env) {
-        this.environment = env
+        conditionValues[ENVIRONMENTS_METHOD] = env
+    }
+
+    void registerConditionalBlock(String blockName, String blockValue) {
+        if (blockName) {
+            if (!blockValue) {
+                conditionValues.remove(blockName)
+            } else {
+                conditionValues[blockName] = blockValue
+            }
+        }
+    }
+
+    Map<String, String> getConditionalBlockValues() {
+        Collections.unmodifiableMap(conditionValues)
+    }
+
+    String getEnvironment() {
+        return conditionValues[ENVIRONMENTS_METHOD]
+    }
+
+    void setEnvironment(String environment) {
+        conditionValues[ENVIRONMENTS_METHOD] = environment
     }
 
     /**
@@ -70,16 +92,16 @@ class ConfigSlurper {
      * Parses a ConfigObject instances from an instance of java.util.Properties
      * @param The java.util.Properties instance
      */
-    ConfigObject parse(Properties properties) {   
+    ConfigObject parse(Properties properties) {
         ConfigObject config = new ConfigObject()
-        for(key in properties.keySet()) {
+        for (key in properties.keySet()) {
             def tokens = key.split(/\./)
-            
+
             def current = config
             def last
             def lastToken
             def foundBase = false
-            for(token in tokens) {
+            for (token in tokens) {
                 if (foundBase) {
                     // handle not properly nested tokens by ignoring
                     // hierarchy below this point
@@ -89,18 +111,18 @@ class ConfigSlurper {
                     last = current
                     lastToken = token
                     current = current."${token}"
-                    if(!(current instanceof ConfigObject)) foundBase = true
+                    if (!(current instanceof ConfigObject)) foundBase = true
                 }
             }
 
-            if(current instanceof ConfigObject) {
-                if(last[lastToken]) {
+            if (current instanceof ConfigObject) {
+                if (last[lastToken]) {
                     def flattened = last.flatten()
                     last.clear()
                     flattened.each { k2, v2 -> last[k2] = v2 }
                     last[lastToken] = properties.get(key)
                 }
-                else {                    
+                else {
                     last[lastToken] = properties.get(key)
                 }
             }
@@ -133,7 +155,7 @@ class ConfigSlurper {
      * @return A Map of maps that can be navigating with dot de-referencing syntax to obtain configuration entries
      */
     ConfigObject parse(Script script) {
-         return parse(script, null)
+        return parse(script, null)
     }
 
     /**
@@ -155,59 +177,67 @@ class ConfigSlurper {
      * @return The ConfigObject instance
      */
     ConfigObject parse(Script script, URL location) {
+        Stack<String> currentConditionalBlock = new Stack<String>()
         def config = location ? new ConfigObject(location) : new ConfigObject()
         GroovySystem.metaClassRegistry.removeMetaClass(script.class)
         def mc = script.class.metaClass
         def prefix = ""
         LinkedList stack = new LinkedList()
-        stack << [config:config,scope:[:]]
+        stack << [config: config, scope: [:]]
         def pushStack = { co ->
-            stack << [config:co,scope:stack.last.scope.clone()]
+            stack << [config: co, scope: stack.last.scope.clone()]
         }
         def assignName = { name, co ->
             def current = stack.last
             current.config[name] = co
             current.scope[name] = co
         }
-        def getPropertyClosure = { String name ->
+        mc.getProperty = { String name ->
             def current = stack.last
             def result
-            if(current.config.get(name)) {
+            if (current.config.get(name)) {
                 result = current.config.get(name)
-            } else if(current.scope[name]) {
+            } else if (current.scope[name]) {
                 result = current.scope[name]
             } else {
                 try {
-                    result = InvokerHelper.getProperty(this, name);
+                    result = InvokerHelper.getProperty(this, name)
                 } catch (GroovyRuntimeException e) {
                     result = new ConfigObject()
-                    assignName.call(name,result)
+                    assignName.call(name, result)
                 }
             }
             result
         }
-        mc.getProperty = getPropertyClosure
+
+        ConfigObject overrides = new ConfigObject()
         mc.invokeMethod = { String name, args ->
             def result
-            if(args.length == 1 && args[0] instanceof Closure) {
-                if(name == ENV_METHOD) {
+            if (args.length == 1 && args[0] instanceof Closure) {
+                if (name in conditionValues.keySet()) {
                     try {
-                        envMode = true
+                        currentConditionalBlock.push(name)
+                        conditionalBlocks.push([:])
                         args[0].call()
                     } finally {
-                        envMode = false
+                        currentConditionalBlock.pop()
+                        for (entry in conditionalBlocks.pop().entrySet()) {
+                            def c = stack.last.config
+                            (c != config? c : overrides).merge(entry.value)
+                        }
                     }
-                } else if (envMode) {
-                    if(name == environment) {
-                        def co = stack.last.config[ENV_SETTINGS] ?: new ConfigObject()
-                        stack.last.config[ENV_SETTINGS] = co
+                } else if (currentConditionalBlock.size() > 0) {
+                    String conditionalBlockKey = currentConditionalBlock.peek()
+                    if (name == conditionValues[conditionalBlockKey]) {
+                        def co = new ConfigObject()
+                        conditionalBlocks.peek()[conditionalBlockKey] = co
 
                         pushStack.call(co)
                         try {
-                            envMode = false
+                            currentConditionalBlock.pop()
                             args[0].call()
                         } finally {
-                            envMode = true
+                            currentConditionalBlock.push(conditionalBlockKey)
                         }
                         stack.pop()
                     }
@@ -226,13 +256,13 @@ class ConfigSlurper {
                 }
             } else if (args.length == 2 && args[1] instanceof Closure) {
                 try {
-                   prefix = name +'.'
-                   assignName.call(name, args[0])
-                   args[1].call()
-                }  finally { prefix = "" }
+                    prefix = name + '.'
+                    assignName.call(name, args[0])
+                    args[1].call()
+                } finally { prefix = "" }
             } else {
                 MetaMethod mm = mc.getMetaMethod(name, args)
-                if(mm) {
+                if (mm) {
                     result = mm.invoke(delegate, args)
                 } else {
                     throw new MissingMethodException(name, getClass(), args)
@@ -243,35 +273,22 @@ class ConfigSlurper {
         script.metaClass = mc
 
         def setProperty = { String name, value ->
-            assignName.call(prefix+name, value)
-        }                
+            assignName.call(prefix + name, value)
+        }
         def binding = new ConfigBinding(setProperty)
-        if(this.bindingVars) {
+        if (this.bindingVars) {
             binding.getVariables().putAll(this.bindingVars)
         }
         script.binding = binding
 
-
         script.run()
 
-        mergeEnvironmentSettings(config)
+        config.merge(overrides)
 
         return config
     }
-
-    private def mergeEnvironmentSettings(ConfigObject config) {
-        // recursively merge environments
-        config.each{k,v ->
-            if (v instanceof ConfigObject)
-                mergeEnvironmentSettings(v)
-        }
-        def envSettings = config.remove(ENV_SETTINGS)
-        if(envSettings) {
-            config.merge(envSettings)
-        }
-    }
-
 }
+
 /**
  * Since Groovy Script doesn't support overriding setProperty, we have to using a trick with the Binding to provide this
  * functionality

@@ -488,4 +488,26 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testListToSet() {
+        assertScript '''
+            Set foo(List<Map.Entry> set) {
+                set.collect { Map.Entry entry -> entry.key }.toSet()
+            }
+        '''
+    }
+
+    void testConstructorNewInstance() {
+        assertScript '''import java.lang.reflect.Constructor
+
+class Person {
+    String name
+    Person(String name) { this.name = name }
+}
+
+Constructor<Person> ctor = Person.getConstructor(String)
+def p = ctor.newInstance('Bob')
+assert p.name == 'Bob'
+'''
+    }
+
 }

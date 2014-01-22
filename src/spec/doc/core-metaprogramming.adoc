@@ -560,6 +560,8 @@ And it is also possible to make initialization lazy using the `lazy` parameter:
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=singleton_example_lazy,indent=0]
 ----
 
+In this example, we also set the `strict` parameter to false, which allows us to define our own constructor.
+
 [[xform-Mixin]]
 ===== @groovy.transform.Mixin
 

@@ -4,8 +4,14 @@ apply from: 'gradle/indy.gradle'
 buildscript {
     repositories {
         mavenCentral()
-        mavenRepo name: 'Bintray Asciidoctor repo', url: 'http://dl.bintray.com/content/aalmiray/asciidoctor'
-        mavenRepo name: 'Bintray JCenter', url: 'http://jcenter.bintray.com'
+        maven { 
+            name 'Bintray Asciidoctor repo'
+            url 'http://dl.bintray.com/content/aalmiray/asciidoctor' 
+        }
+        maven {
+            name 'Bintray JCenter'
+            url 'http://jcenter.bintray.com'
+        }
     }
 
     dependencies {
@@ -552,7 +558,7 @@ allprojects {
 }
 
 wrapper {
-    gradleVersion = '1.7'
+    gradleVersion = '1.10'
 }
 
 // produce warning if running on 1.5 or 1.6

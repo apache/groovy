@@ -3,9 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * You may obtain a copy of thearresSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -670,6 +668,79 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert pp.class == ${dest}
             """
         }
+    }
+
+    // GROOVY-6522
+    void testInferenceWithImplicitClosureCoercion() {
+        assertScript '''
+interface CustomCallable<T> {
+    T call()
+}
+
+class Thing {
+    static <T> T customType(CustomCallable<T> callable) {
+        callable.call()
+    }
+
+    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+        lookup('test').each {
+            def call = it.expression
+            def irt = call.getNodeMetaData(INFERRED_TYPE)
+            assert irt == LIST_TYPE
+        }
+    })
+    static void run() {
+        test: customType { [] } // return type is not inferred - fails compile
+    }
+}
+
+Thing.run()
+'''
+    }
+
+    void testInferenceWithImplicitClosureCoercionAndArrayReturn() {
+        assertScript '''
+            interface ArrayFactory<T> { T[] array() }
+
+            public <T> T[] intArray(ArrayFactory<T> f) {
+                f.array()
+            }
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE.makeArray()
+            })
+            def array = intArray { new Integer[8] }
+            assert array.length == 8
+        '''
+    }
+
+    void testInferenceWithImplicitClosureCoercionAndListReturn() {
+        assertScript '''
+            interface ListFactory<T> { List<T> list() }
+
+            public <T> List<T> list(ListFactory<T> f) {
+                f.list()
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def irt = node.getNodeMetaData(INFERRED_TYPE)
+                assert irt == LIST_TYPE
+                assert irt.genericsTypes[0].type == Integer_TYPE
+            })
+            def res = list { new LinkedList<Integer>() }
+            assert res.size() == 0
+        '''
+    }
+
+    void testInferenceWithImplicitClosureCoercionAndGenericTypeAsParameter() {
+        assertScript '''
+            interface Action<T> { void execute(T t) }
+
+            public <T> void exec(T t, Action<T> f) {
+                f.execute(t)
+            }
+
+            exec('foo') { println it.toUpperCase() }
+        '''
     }
 }
 

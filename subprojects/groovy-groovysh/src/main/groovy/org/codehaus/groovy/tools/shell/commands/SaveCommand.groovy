@@ -30,7 +30,7 @@ class SaveCommand
     extends CommandSupport
 {
     SaveCommand(final Groovysh shell) {
-        super(shell, 'save', '\\s')
+        super(shell, ':save', ':s')
     }
 
     protected List createCompleters() {

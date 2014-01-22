@@ -170,12 +170,12 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
         return result;
     }
 
-    public static Statement assignStatement(Expression fieldExpr, Expression value) {
-        return new ExpressionStatement(assignExpr(fieldExpr, value));
+    public static Statement assignStatement(Expression target, Expression value) {
+        return new ExpressionStatement(assignExpr(target, value));
     }
 
-    private static Expression assignExpr(Expression expression, Expression value) {
-        return new BinaryExpression(expression, ASSIGN, value);
+    private static Expression assignExpr(Expression target, Expression value) {
+        return new BinaryExpression(target, ASSIGN, value);
     }
 
     public static ExpressionStatement declStatement(Expression result, Expression init) {
@@ -265,6 +265,7 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
         final Expression fieldExpr = new PropertyExpression(new VariableExpression("this"), name);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = new ConstantExpression(null);
+        fNode.setInitialValueExpression(null);
         Expression value = findArg(name);
         return new IfStatement(
                 equalsNullExpr(value),

@@ -164,3 +164,16 @@ allprojects {
         }
     }
 }
+
+if (JavaVersion.current().isJava7Compatible()) {
+    javadocAll.options.source = '1.7'
+}
+
+if (JavaVersion.current().isJava8Compatible()) {
+    allprojects {
+        tasks.withType(Javadoc) {
+            // disable the crazy super-strict doclint tool in Java 8
+            options.addStringOption('Xdoclint:none', '-quiet')
+        }
+    }
+}

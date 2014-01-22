@@ -218,6 +218,28 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testDefaultValuesAreImmutable_groovy6293() {
+        assertScript """
+            import groovy.transform.Immutable
+            @Immutable class Y { Collection c = []; int foo = 1 }
+            def y = new Y(foo: 3)
+            assert y.c.class.name.contains('Unmodifiable')
+            assert y.c == []
+            assert y.foo == 3
+        """
+    }
+
+    void testNoArgConstructor_groovy6473() {
+        assertScript """
+            import groovy.transform.Immutable
+            @Immutable class Y { Collection c = []; int foo = 1 }
+            def y = new Y()
+            assert y.c.class.name.contains('Unmodifiable')
+            assert y.c == []
+            assert y.foo == 1
+        """
+    }
+
     void testImmutableEquals() {
         assertScript """
             import groovy.transform.Immutable

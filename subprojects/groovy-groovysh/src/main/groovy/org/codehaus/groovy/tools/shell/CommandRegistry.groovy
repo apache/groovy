@@ -73,6 +73,9 @@ class CommandRegistry
             if (name in [ c.name, c.shortcut ]) {
                 return c
             }
+            if (name.equals(':' + c.name)) {
+                return c
+            }
         }
         
         return null

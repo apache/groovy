@@ -380,7 +380,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             String[] arr = ['abc']
             arr.putAt(0, new Object())
-        ''', 'Cannot find matching method [Ljava.lang.String;#putAt(int, java.lang.Object)'
+        ''', 'Cannot call <T,U extends T> java.lang.String[]#putAt(int, U) with arguments [int, java.lang.Object]'
     }
 
     void testStringArrayPutWithSubType() {
@@ -401,7 +401,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Serializable[] arr = ['abc']
             arr.putAt(0, new XmlSlurper())
-        ''', 'Cannot find matching method [Ljava.io.Serializable;#putAt(int, groovy.util.XmlSlurper)'
+        ''', 'Cannot call <T,U extends T> java.io.Serializable[]#putAt(int, U) with arguments [int, groovy.util.XmlSlurper]'
     }
 
     void testArrayGetOnPrimitiveArray() {

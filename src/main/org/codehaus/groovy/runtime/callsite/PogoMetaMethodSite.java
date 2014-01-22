@@ -33,8 +33,12 @@ import java.lang.reflect.Method;
  *   method - cached
 */
 public class PogoMetaMethodSite extends MetaMethodSite {
+    private final int version;
+    private final boolean skipVersionCheck;
     public PogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
         super(site, metaClass, metaMethod, params);
+        version = metaClass.getVersion();
+        skipVersionCheck = metaClass.getClass()==MetaClassImpl.class;
     }
 
     public Object invoke(Object receiver, Object[] args) throws Throwable {
@@ -70,117 +74,48 @@ public class PogoMetaMethodSite extends MetaMethodSite {
         }
     }
 
-    protected boolean checkCall(Object receiver, Object[] args) {
+    private boolean nonParamCheck(Object receiver) {
         try {
             return !GroovyCategorySupport.hasCategoryInCurrentThread()
-               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
-               && MetaClassHelper.sameClasses(params, args);
-        }
-        catch (NullPointerException e) {
-            if (receiver == null)
-              return false;
+                    && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
+                    && (skipVersionCheck || ((MetaClassImpl) metaClass).getVersion() == version);
+        } catch (NullPointerException e) {
+            if (receiver == null) return false;
+            throw e;
+        } catch (ClassCastException e) {
+            if (!(receiver instanceof GroovyObject)) return false;
             throw e;
         }
-        catch (ClassCastException e) {
-            if (!(receiver instanceof GroovyObject))
-              return false;
-            throw e;
-        }
+    }
+
+    protected boolean checkCall(Object receiver, Object[] args) {
+        return nonParamCheck(receiver)
+                && MetaClassHelper.sameClasses(params, args);
     }
 
     protected boolean checkCall(Object receiver) {
-        try {
-            return !GroovyCategorySupport.hasCategoryInCurrentThread()
-               && receiver instanceof GroovyObject
-               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
-               && MetaClassHelper.sameClasses(params);
-        }
-        catch (NullPointerException e) {
-            if (receiver == null)
-              return false;
-            throw e;
-        }
-        catch (ClassCastException e) {
-            if (!(receiver instanceof GroovyObject))
-              return false;
-            throw e;
-        }
+        return nonParamCheck(receiver)
+                && MetaClassHelper.sameClasses(params);
     }
 
     protected boolean checkCall(Object receiver, Object arg1) {
-        try {
-            return !GroovyCategorySupport.hasCategoryInCurrentThread()
-               && receiver instanceof GroovyObject
-               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
-               && MetaClassHelper.sameClasses(params, arg1);
-        }
-        catch (NullPointerException e) {
-            if (receiver == null)
-              return false;
-            throw e;
-        }
-        catch (ClassCastException e) {
-            if (!(receiver instanceof GroovyObject))
-              return false;
-            throw e;
-        }
+        return nonParamCheck(receiver)
+                && MetaClassHelper.sameClasses(params, arg1);
     }
 
     protected boolean checkCall(Object receiver, Object arg1, Object arg2) {
-        try {
-            return !GroovyCategorySupport.hasCategoryInCurrentThread()
-               && receiver instanceof GroovyObject
-               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
-               && MetaClassHelper.sameClasses(params, arg1, arg2);
-        }
-        catch (NullPointerException e) {
-            if (receiver == null)
-              return false;
-            throw e;
-        }
-        catch (ClassCastException e) {
-            if (!(receiver instanceof GroovyObject))
-              return false;
-            throw e;
-        }
+        return nonParamCheck(receiver)
+                && MetaClassHelper.sameClasses(params, arg1, arg2);
     }
 
     protected boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3) {
-        try {
-            return !GroovyCategorySupport.hasCategoryInCurrentThread()
-               && receiver instanceof GroovyObject
-               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
-               && MetaClassHelper.sameClasses(params, arg1, arg2, arg3);
-        }
-        catch (NullPointerException e) {
-            if (receiver == null)
-              return false;
-            throw e;
-        }
-        catch (ClassCastException e) {
-            if (!(receiver instanceof GroovyObject))
-              return false;
-            throw e;
-        }
+        return nonParamCheck(receiver)
+                && MetaClassHelper.sameClasses(params, arg1, arg2, arg3);
     }
 
     protected boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) {
-        try {
-            return !GroovyCategorySupport.hasCategoryInCurrentThread()
-               && receiver instanceof GroovyObject
-               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
-               && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
-        }
-        catch (NullPointerException e) {
-            if (receiver == null)
-              return false;
-            throw e;
-        }
-        catch (ClassCastException e) {
-            if (!(receiver instanceof GroovyObject))
-              return false;
-            throw e;
-        }
+        return nonParamCheck(receiver)
+                && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
     }
 
     public static CallSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {

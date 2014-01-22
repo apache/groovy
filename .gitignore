@@ -15,10 +15,6 @@ user.gradle
 *.classpath
 *.project
 
-/subprojects/groovy-all-tests/bin
-/subprojects/groovy-all-tests/.project
-/subprojects/groovy-all-tests/.settings
-/subprojects/groovy-all-tests/.classpath
 /subprojects/groovy-ant/bin
 /subprojects/groovy-ant/.project
 /subprojects/groovy-ant/.settings

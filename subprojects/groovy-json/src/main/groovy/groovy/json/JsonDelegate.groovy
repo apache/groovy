@@ -32,7 +32,13 @@ class JsonDelegate {
      */
     def invokeMethod(String name, Object args) {
         if (args) {
-            content[name] = args.size() == 1 ? args[0] : args.toList()
+            if (args.size () == 1) {
+                content[name] = args[0]
+            } else if (args.size () == 2 && args[0] instanceof Collection && args[1] instanceof Closure) {
+                content[name] = args[0].collect {curryDelegateAndGetContent (args[1],it)}
+            } else {
+                content[name] = args.toList ()
+            }
         }
     }
 
@@ -48,6 +54,23 @@ class JsonDelegate {
         cloned.delegate = delegate
         cloned.resolveStrategy = Closure.DELEGATE_FIRST
         cloned()
+        return delegate.content
+    }
+
+    /**
+     * Factory method for creating <code>JsonDelegate</code>s from closures currying an object
+     * argument.
+     *
+     * @param c closure representing JSON objects
+     * @param o an object curried to the closure
+     * @return an instance of <code>JsonDelegate</code>
+     */
+    static curryDelegateAndGetContent(Closure c, Object o) {
+        def delegate = new JsonDelegate()
+        Closure curried = c.curry (o)
+        curried.delegate = delegate
+        curried.resolveStrategy = Closure.DELEGATE_FIRST
+        curried()
         return delegate.content
     }
 }

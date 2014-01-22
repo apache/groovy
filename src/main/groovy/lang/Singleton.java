@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,23 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Class annotation to make class singleton.
+ * Class annotation to make a singleton class. The singleton is obtained through normal property access using the singleton property (defaults to "instance").
  *
- * Singleton can be initialized in static initialization of the class or lazily (on first access)
- * To make singleton lazy it is enough to use {@code @Singleton(lazy=true)}
- * Lazy singletons implemented with double check locking and volatile field
+ * Such classes can be initialized during normal static initialization of the class or lazily (on first access).
+ * To make the singleton lazy use {@code @Singleton(lazy=true)}.
+ * Lazy singletons are implemented with double-checked locking and a volatile backing field.
+ * By default, no explicit constructors are allowed. To create one or more explicit constructors
+ * use {@code @Singleton(strict=false)}.
+ * This could be used to:
+ * <ul>
+ * <li>provide your own custom initialization logic in your own no-arg constructor - you
+ * will be responsible for the entire code (the {@code @Singleton} annotation becomes merely documentation)</li>
+ * <li>provide one or more constructors with arguments for a quasi-singleton - these constructors will be used
+ * to create instances that are independent of the singleton instance returned by the singleton property</li>
+ * </ul>
  *
  * @author Alex Tkachman
+ * @author Paul King
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
@@ -40,8 +50,12 @@ public @interface Singleton {
     /**
      * @return if this singleton should be lazy
      */
-    boolean lazy () default false;
+    boolean lazy() default false;
 
+    /**
+     * @return if this singleton should have strict semantics
+     */
+    boolean strict() default true;
 
     /**
      * @return the singleton property name

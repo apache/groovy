@@ -17,6 +17,8 @@ package org.codehaus.groovy.gradle
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.OutputFile
 
 /**
  * A Gradle task for modules which generate the module descritor file.
@@ -25,14 +27,19 @@ import org.gradle.api.tasks.TaskAction
  */
 class WriteExtensionDescriptorTask extends DefaultTask {
     String description = 'Generates the org.codehaus.groovy.runtime.ExtensionModule descriptor file of a module'
-    String extensionClasses = ''
-    String staticExtensionClasses = ''
+    @Input String extensionClasses = ''
+    @Input String staticExtensionClasses = ''
+    @OutputFile File descriptor = computeDescriptorFile()
+
+
+    private File computeDescriptorFile() {
+        def metaInfDir = new File("${project.buildDir}/classes/main/META-INF/services")
+        return new File(metaInfDir, "org.codehaus.groovy.runtime.ExtensionModule")
+    }
 
     @TaskAction
     def writeDescriptor() {
-        def metaInfDir = new File("${project.buildDir}/classes/main/META-INF/services")
-        metaInfDir.mkdirs()
-        def descriptor = new File(metaInfDir, "org.codehaus.groovy.runtime.ExtensionModule")
+        descriptor.parentFile.mkdirs()
         descriptor.withWriter {
             it << """moduleName=${project.name}
 moduleVersion=${project.version}
