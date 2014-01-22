@@ -84,9 +84,8 @@ public class TypeHelper {
     }
 
     protected static boolean isIntCategory(Class x) {
-        return  x==Integer.class    ||  x==int.class    ||
+        return x==Integer.class    ||  x==int.class    ||
                 x==Byte.class       ||  x==byte.class   ||
-                x==Character.class  ||  x==char.class   ||
                 x==Short.class      ||  x==short.class;
     }
 
