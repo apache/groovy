@@ -49,7 +49,7 @@ public class TypeTransformers {
     static {
         try {
             TO_STRING   = LOOKUP.findVirtual(Object.class, "toString",      MethodType.methodType(String.class));
-            TO_BYTE	    = LOOKUP.findVirtual(Number.class, "byteValue",     MethodType.methodType(Byte.TYPE));
+            TO_BYTE     = LOOKUP.findVirtual(Number.class, "byteValue",     MethodType.methodType(Byte.TYPE));
             TO_SHORT    = LOOKUP.findVirtual(Number.class, "shortValue",    MethodType.methodType(Short.TYPE));
             TO_INT      = LOOKUP.findVirtual(Number.class, "intValue",      MethodType.methodType(Integer.TYPE));
             TO_LONG     = LOOKUP.findVirtual(Number.class, "longValue",     MethodType.methodType(Long.TYPE));
@@ -102,8 +102,8 @@ public class TypeTransformers {
      */
     protected static MethodHandle addTransformer(MethodHandle handle, int pos, Object arg, Class parameter) {
         MethodHandle transformer=null;
-    	if (arg instanceof GString) {
-    		transformer = TO_STRING;
+        if (arg instanceof GString) {
+            transformer = TO_STRING;
         } else if (arg instanceof Closure) {
             transformer = createSAMTransform(arg, parameter);
         } else if (Number.class.isAssignableFrom(parameter)) {
@@ -174,6 +174,7 @@ public class TypeTransformers {
      */
     private static MethodHandle selectNumberTransformer(Class param, Object arg) {
         param = TypeHelper.getWrapperClass(param);
+
         if (param == Byte.class) {
             return TO_BYTE;
         } else if (param == Character.class || param == Integer.class) {
