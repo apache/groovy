@@ -1,6 +1,9 @@
 apply from: 'gradle/filter.gradle'
 apply from: "gradle/indy.gradle"
 
+File javaHome = new File(System.getProperty('java.home'))
+logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
+
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
