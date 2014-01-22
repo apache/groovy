@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime;
 import java.util.Collections;
 import java.util.Iterator;
 
+import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 
 public class NullObject extends GroovyObjectSupport {
@@ -54,6 +55,16 @@ public class NullObject extends GroovyObjectSupport {
      */
     public Object getProperty(String property) {
         throw new NullPointerException("Cannot get property '" + property + "' on null object");
+    }
+
+    /**
+     * Allows the closure to be called for NullObject
+     *
+     * @param closure the closure to call on the object
+     * @return result of calling the closure
+     */
+    public <T> T with( Closure<T> closure ) {
+        return DefaultGroovyMethods.with( null, closure ) ;
     }
 
     /**
