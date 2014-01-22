@@ -971,7 +971,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                     boolean isThisExpression = objectExpression instanceof VariableExpression && 
                                                 ((VariableExpression)objectExpression).isThisExpression();
-                    if (storeField(field, isThisExpression, pexp, objectExpressionType, visitor, receiver.getData())) return true;
+                    if (storeField(field, isThisExpression, pexp, receiver.getType(), visitor, receiver.getData())) return true;
 
                     MethodNode getter = current.getGetterMethod("get" + capName);
                     getter = allowStaticAccessToMember(getter, staticOnly);
