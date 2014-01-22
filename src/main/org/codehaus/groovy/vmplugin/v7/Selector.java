@@ -42,6 +42,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
@@ -53,7 +54,6 @@ import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
-
 import org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES;
 
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
@@ -428,10 +428,13 @@ public abstract class Selector {
             MetaMethod metaMethod = method;
             isCategoryMethod = method instanceof CategoryMethod;
 
-            if (metaMethod instanceof NumberNumberMetaMethod) {
+            if (
+                    metaMethod instanceof NumberNumberMetaMethod ||
+                    (method instanceof GeneratedMetaMethod && (name.equals("next") || name.equals("previous")))
+            ) {
                 if (LOG_ENABLED) LOG.info("meta method is number method");
-                catchException = false;
                 if (IndyMath.chooseMathMethod(this, metaMethod)) {
+                    catchException = false;
                     if (LOG_ENABLED) LOG.info("indy math successfull");
                     return;
                 }
