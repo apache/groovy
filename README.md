@@ -2,13 +2,14 @@
 ===
 
 ![Groovy Logo](http://groovy.codehaus.org/images/groovy-logo.png)
+
 [Groovy][Groovy] is an agile and dynamic language for the Java Virtual Machine. It builds upon the strengths of Java, but has additional power features inspired by languages like Python, Ruby and Smalltalk. Groovy makes modern programming features available to Java developers with almost-zero learning curve as well as supports Domain-Specific Languages and other compact syntax so your code becomes easy to read and maintain. Groovy makes writing shell and build scripts easy with its powerful processing primitives, OO abilities and an Ant DSL. It also increases developer productivity by reducing scaffolding code when developing web, GUI, database or console applications. Groovy simplifies testing by supporting unit testing and mocking out-of-the-box. Groovy also seamlessly integrates with all existing Java classes and libraries and compiles straight to Java bytecode so you can use it anywhere you can use Java.
 [Groovy]: http://groovy.codehaus.org/
 
 Building
 ---
 
-Build is ![build status](http://ci.groovy-lang.org:8111/app/rest/builds/buildType:(id:Groovy_Jdk7Build)/statusIcon)
+Build is ![build status](http://ci.groovy-lang.org:8111/app/rest/builds/buildType:(id:Groovy_Jdk7Build\)/statusIcon)
 
 To build you will need:
 
