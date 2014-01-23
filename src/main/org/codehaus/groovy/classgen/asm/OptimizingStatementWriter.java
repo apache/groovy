@@ -98,6 +98,7 @@ public class OptimizingStatementWriter extends StatementWriter {
     
     private FastPathData writeGuards(StatementMeta meta, Statement statement) {
         if (notEnableFastPath(meta)) return null;
+        controller.getAcg().onLineNumber(statement, null);
         MethodVisitor mv = controller.getMethodVisitor();
         FastPathData fastPathData = new FastPathData();
         Label slowPath = new Label();
