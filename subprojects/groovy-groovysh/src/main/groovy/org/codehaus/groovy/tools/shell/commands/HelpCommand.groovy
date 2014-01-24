@@ -20,6 +20,7 @@ import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Command
 import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.CommandRegistry
+import org.codehaus.groovy.tools.shell.completion.CommandNameCompleter
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
@@ -39,7 +40,7 @@ class HelpCommand
 
     protected List createCompleters() {
         return [
-            new HelpCommandCompletor(registry),
+            new CommandNameCompleter(registry),
             null
         ]
     }
@@ -125,35 +126,3 @@ class HelpCommand
     }
 }
 
-/**
- * Completor for the 'help' command.
- *
- * @version $Id$
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- */
-class HelpCommandCompletor
-    extends SimpleCompletor
-{
-    private final CommandRegistry registry
-
-    HelpCommandCompletor(final CommandRegistry registry) {
-        assert registry
-
-        this.registry = registry
-    }
-
-    SortedSet getCandidates() {
-        def set = new TreeSet()
-
-        for (Command command in registry.commands()) {
-            if (command.hidden) {
-                continue
-            }
-            
-            set << command.name
-            set << command.shortcut
-        }
-
-        return set
-    }
-}
