@@ -83,7 +83,7 @@ class ReflectionCompletor {
         }
 
         // look for public methods/fields that match the prefix
-        List myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
+        Collection<String> myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
         boolean showAllMethods = identifierPrefix.length() >= this.metaclass_completion_prefix_length
         // Also add metaclass methods if prefix is long enough (user would usually not care about those)
         myCandidates.addAll(getMetaclassMethods(
@@ -93,8 +93,11 @@ class ReflectionCompletor {
         if (!showAllMethods) {
             // user probably does not care to see default Object / GroovyObject Methods,
             // they obfuscate the business logic
-            removeDefaultMethods(myCandidates)
+            removeStandardMethods(myCandidates)
         }
+        // specific DefaultGroovyMethods only suggested for suitable instances
+        addDefaultMethods(instance, identifierPrefix, myCandidates)
+
         if (myCandidates.size() > 0) {
             candidates.addAll(myCandidates.sort())
             int lastDot
@@ -345,13 +348,102 @@ class ReflectionCompletor {
      * removes candidates that, most of the times, a programmer does not want to see in completion
      * @param candidates
      */
-    static removeDefaultMethods(Collection candidates) {
+    static removeStandardMethods(Collection<String> candidates) {
         for (String defaultMethod in [
                 'clone()', 'finalize()', 'getClass()',
                 'getMetaClass()', 'getProperty(',  'invokeMethod(', 'setMetaClass(', 'setProperty(',
                 'equals(', 'hashCode()', 'toString()',
                 'notify()', 'notifyAll()', 'wait(', 'wait()']) {
             candidates.remove(defaultMethod)
+        }
+    }
+
+    /**
+     * Offering all DefaultGroovyMethods on any object is too verbose, hiding all
+     * removes user-friendlyness. So here util methods will be added to candidates
+     * if the instance is of a suitable type.
+     * This does not need to be strictly complete, only the most useful functions may appear.
+     */
+    static addDefaultMethods(Object instance, String prefix, Collection<String> candidates) {
+        if (instance instanceof Iterable) {
+            [
+                    'any()', 'any(',
+                    'collect()', 'collect(',
+                    'combinations()',
+                    'count(',
+                    'countBy(',
+                    'drop(',
+                    'dropWhile(',
+                    'each()', 'each(',
+                    'eachPermutation(',
+                    'every()', 'every(',
+                    'find(', 'findResult(', 'findResults(',
+                    'flatten()',
+                    'inject(',
+                    'intersect(',
+                    'join(',
+                    'max()', 'min()',
+                    'reverse()',
+                    'size()',
+                    'sort()',
+                    'split(',
+                    'take(', 'takeWhile(',
+                    'toSet()',
+                    'retainAll(', 'removeAll(',
+                    'unique()', 'unique('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            if (instance instanceof List) {
+                [
+                        'collate(',
+                        'pop()',
+                        'transpose()'
+                ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            }
+        }
+        if (instance instanceof Map) {
+            [
+                    'any(',
+                    'drop(',
+                    'each(',
+                    'find(', 'findAll(', 'findResult(', 'findResults(',
+                    'groupEntriesBy(', 'groupBy(',
+                    'inject(', 'intersect(',
+                    'spread()',
+                    'subMap(',
+                    'take(', 'takeWhile('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+        }
+        if (instance instanceof Number) {
+            [
+                    'abs()',
+                    'downto(',
+                    'times(',
+                    'power(',
+                    'upto('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+        }
+        Class clazz = instance.getClass()
+        if (clazz != null && clazz != Class && clazz.isArray()) {
+            [
+                    'any()', 'any(',
+                    'collect()', 'collect(',
+                    'count(',
+                    'countBy(',
+                    'drop(',
+                    'dropWhile(',
+                    'each()', 'each(',
+                    'every()', 'every(',
+                    'find(', 'findResult(',
+                    'flatten()',
+                    'inject(',
+                    'join(',
+                    'max()', 'min()',
+                    'reverse()',
+                    'size()',
+                    'sort()',
+                    'split(',
+                    'take(', 'takeWhile('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
         }
     }
 
