@@ -173,7 +173,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     
     private static InnerLoader createInnerLoader(final ClassLoader parent) {
         return AccessController.doPrivileged(new PrivilegedAction<InnerLoader>() {
-            @Override
             public InnerLoader run() {
                 return new InnerLoader(parent);
             }
