@@ -296,9 +296,109 @@ the example above, that means that the delegate type is resolved against `List<T
 
 NOTE: We're using a `genericTypeIndex` instead of a placeholder (`T`) because of JVM limitations.
 
-== Compilation customizers (TBD)
-=== Import customizer (TBD)
-=== AST customizer (TBD)
+== Compilation customizers
+=== Introduction
+
+Whether you are using `groovyc` to compile classes or a `GroovyShell`,
+for example, to execute scripts, under the hood, a _compiler configuration_ is used. This configuration holds information
+like the source encoding or the classpath but it can also be used to perform more operations like adding imports by
+default, applying AST transformations transparently or disabling global AST transformations.
+
+The goal of compilation customizers is to make those common tasks easy to implement. For that, the `CompilerConfiguration`
+class is the entry point. The general schema will always be based on the following code:
+
+[source,groovy]
+--------------------------------------------------------
+import org.codehaus.groovy.control.CompilerConfiguration
+// create a configuration
+def config = new CompilerConfiguration()
+// tweak the configuration
+config.addCompilationCustomizers(...)
+// run your script
+def shell = new GroovyShell(config)
+shell.evaluate(script)
+--------------------------------------------------------
+
+Compilation customizers must extend the _org.codehaus.groovy.control.customizers.CompilationCustomizer_ class. A customizer works:
+
+* on a specific compilation phase
+* on _every_ class node being compiled
+
+You can implement your own compilation customizer but Groovy includes some of the most common operations.
+
+=== Import customizer
+
+Using this compilation customizer, your code will have imports added
+transparently. This is in particular useful for scripts implementing a
+DSL where you want to avoid users from having to write imports. The
+import customizer will let you add all the variants of imports the
+Groovy language allows, that is:
+
+* class imports, optionally aliased
+* star imports
+* static imports, optionally aliased
+* static star imports
+
+[source,groovy]
+-----------------------------------------------------------------------------------------------------
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=import_cz,indent=0]
+-----------------------------------------------------------------------------------------------------
+
+A detailed description of all shortcuts can be found in gapi::org.codehaus.groovy.control.customizers.ImportCustomizer
+
+=== AST transformation customizer
+
+The AST transformation customizer is meant to apply AST transformations
+transparently. Unlike global AST transformations that apply on every
+class beeing compiled as long as the transform is found on classpath
+(which has drawbacks like increasing the compilation time or side
+effects due to transformations applied where they should not), the
+customizer will allow you to selectively apply a transform only for
+specific scripts or classes.
+
+As an example, let’s say you want to be able to use `@Log` in a script.
+The problem is that `@Log` is normally applied on a class node and a
+script, by definition, doesn’t require one. But implementation wise,
+scripts are classes, it’s just that you cannot annotate this implicit
+class node with `@Log`. Using the AST customizer, you have a workaround
+to do it:
+
+[source,groovy]
+--------------------------------------------------------------------------
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import groovy.util.logging.Log
+
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_simple,indent=0]
+--------------------------------------------------------------------------
+
+That’s all! Internally, the `@Log` AST transformation is applied to
+every class node in the compilation unit. This means that it will be
+applied to the script, but also to classes defined within the script.
+
+If the AST transformation that you are using accepts parameters, you can
+use parameters in the constructor too:
+
+[source,groovy]
+-----------------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_customname,indent=0]
+-----------------------------------------------------------------------------------------------------------------
+
+As the AST transformation customizers works with objects instead of AST
+nodes, not all values can be converted to AST transformation parameters.
+For example, primitive types are converted to `ConstantExpression` (that
+is `LOGGER' is converted to `new ConstantExpression(’LOGGER’)`, but if
+your AST transformation takes a closure as an argument, then you have to
+give it a `ClosureExpression`, like in the following example:
+
+[source,groovy]
+--------------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_closure,indent=0]
+--------------------------------------------------------------------------------------------------------------
+
+For a complete list of options, please refer to gapi::org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+
 === Secure AST customizer (TBD)
 === Source aware customizer (TBD)
 === Customizer builder (TBD)
