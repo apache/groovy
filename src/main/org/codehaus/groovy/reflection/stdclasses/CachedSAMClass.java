@@ -86,7 +86,6 @@ public class CachedSAMClass extends CachedClass {
 
     private static Method[] getDeclaredMethods(final Class c) {
         Method[] methods = AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
-            @Override
             public Method[] run() {
                 return c.getDeclaredMethods();
             }
