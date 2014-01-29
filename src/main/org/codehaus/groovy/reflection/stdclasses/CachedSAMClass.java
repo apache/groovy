@@ -18,6 +18,8 @@ package org.codehaus.groovy.reflection.stdclasses;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -82,13 +84,24 @@ public class CachedSAMClass extends CachedClass {
         }
     }
 
+    private static Method[] getDeclaredMethods(final Class c) {
+        Method[] methods = AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+            @Override
+            public Method[] run() {
+                return c.getDeclaredMethods();
+            }
+        });
+        if (methods==null) return new Method[0];
+        return methods;
+    }
+
     private static void getAbstractMethods(Class c, List<Method> current) {
         if (c==null || !Modifier.isAbstract(c.getModifiers())) return;
         getAbstractMethods(c.getSuperclass(), current);
         for (Class ci : c.getInterfaces()) {
             getAbstractMethods(ci, current);
         }
-        for (Method m : c.getDeclaredMethods()) {
+        for (Method m : getDeclaredMethods(c)) {
             if (Modifier.isPrivate(m.getModifiers())) continue;
             if (Modifier.isAbstract(m.getModifiers())) current.add(m);
         }
