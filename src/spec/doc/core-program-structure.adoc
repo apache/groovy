@@ -2,21 +2,21 @@
 
 This chapter covers the program structure of the Groovy programming language.
 
-== Package name
+== Package name (TBD)
 
-== Imports
+== Imports (TBD)
 
-=== Default imports
-=== Simple import
-=== Star import
-=== Static import
-=== Static star import
-=== Import aliasing
+=== Default imports (TBD)
+=== Simple import (TBD)
+=== Star import (TBD)
+=== Static import (TBD)
+=== Static star import (TBD)
+=== Import aliasing (TBD)
 
-== Scripts versus classes
+== Scripts versus classes (TBD)
 
-== Initializers
+== Initializers (TBD)
 
-=== Static initializers
-=== Instance initializers
+=== Static initializers (TBD)
+=== Instance initializers (TBD)
 

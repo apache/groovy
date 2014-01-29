@@ -1,9 +1,9 @@
 = Domain-Specific Languages
 
-== Command chains
-== Operator overloading
-== Script base classes
-== Adding properties to numbers
+== Command chains (TBD)
+== Operator overloading (TBD)
+== Script base classes (TBD)
+== Adding properties to numbers (TBD)
 [[section-delegatesto]]
 == @DelegatesTo
 
@@ -296,29 +296,29 @@ the example above, that means that the delegate type is resolved against `List<T
 
 NOTE: We're using a `genericTypeIndex` instead of a placeholder (`T`) because of JVM limitations.
 
-== Compilation customizers
-=== Import customizer
-=== AST customizer
-=== Secure AST customizer
-=== Source aware customizer
-=== Customizer builder
-=== Config script flag
-=== AST transformations
-== Custom type checking extensions
-== Builders
-=== Creating a builder
-==== BuilderSupport
-==== FactoryBuilderSupport
-=== Existing builders
-==== MarkupBuilder
-==== StreamingMarkupBuilder
-==== SaxBuilder
-==== StaxBuilder
-==== DomBuilder
-==== NodeBuilder
-==== JsonBuilder
-==== StreamingJsonBuilder
-==== SwingBuilder
-==== AntBuilder
-==== CliBuilder
-==== ObjectGraphBuilder
+== Compilation customizers (TBD)
+=== Import customizer (TBD)
+=== AST customizer (TBD)
+=== Secure AST customizer (TBD)
+=== Source aware customizer (TBD)
+=== Customizer builder (TBD)
+=== Config script flag (TBD)
+=== AST transformations (TBD)
+== Custom type checking extensions (TBD)
+== Builders (TBD)
+=== Creating a builder (TBD)
+==== BuilderSupport (TBD)
+==== FactoryBuilderSupport (TBD)
+=== Existing builders (TBD)
+==== MarkupBuilder (TBD)
+==== StreamingMarkupBuilder (TBD)
+==== SaxBuilder (TBD)
+==== StaxBuilder (TBD)
+==== DomBuilder (TBD)
+==== NodeBuilder (TBD)
+==== JsonBuilder (TBD)
+==== StreamingJsonBuilder (TBD)
+==== SwingBuilder (TBD)
+==== AntBuilder (TBD)
+==== CliBuilder (TBD)
+==== ObjectGraphBuilder (TBD)

@@ -920,11 +920,11 @@ But more complex boolean expressions can be represented using <<_bitwise_and_log
 In addition, Groovy has <<_the_groovy_truth,special rules>> (often referred to as _Groovy Truth_)
 for coercing non-boolean objects to a boolean value.
 
-== Arrays
+== Arrays (TBD)
 
-== Lists
+== Lists (TBD)
 
-== Maps
+== Maps (TBD)
 
-=== String keys
-=== Parenthesized keys
+=== String keys (TBD)
+=== Parenthesized keys (TBD)

@@ -4,38 +4,38 @@ The Groovy language supports two flavors of metaprogramming: runtime metaprogram
 The first one allows altering the class model and the behavior of a program at runtime, while the second only occurs
 at compile-time. Both have pros and cons, that we will detail in this section.
 
-== Runtime metaprogramming
+== Runtime metaprogramming (TBD)
 
-=== GroovyObject interface
-==== invokeMethod
-==== get/setProperty
-==== get/setMetaClass
+=== GroovyObject interface (TBD)
+==== invokeMethod (TBD)
+==== get/setProperty (TBD)
+==== get/setMetaClass (TBD)
 
-=== get/setAttribute
-=== propertyMissing
-=== methodMissing
-=== GroovyInterceptable
-=== Categories
+=== get/setAttribute (TBD)
+=== propertyMissing (TBD)
+=== methodMissing (TBD)
+=== GroovyInterceptable (TBD)
+=== Categories (TBD)
 
-=== Metaclasses
-==== Custom metaclasses
-===== Delegating metaclass
-===== Magic package
-==== Per instance metaclass
-==== ExpandoMetaClass
-===== Constructors
-===== Borrowing methods
-===== Dynamic method names
-===== GroovyObject methods
-===== Overriding static invokeMethod
-===== Properties
-===== Runtime discovery
-===== Static methods
+=== Metaclasses (TBD)
+==== Custom metaclasses (TBD)
+===== Delegating metaclass (TBD)
+===== Magic package (TBD)
+==== Per instance metaclass (TBD)
+==== ExpandoMetaClass (TBD)
+===== Constructors (TBD)
+===== Borrowing methods (TBD)
+===== Dynamic method names (TBD)
+===== GroovyObject methods (TBD)
+===== Overriding static invokeMethod (TBD)
+===== Properties (TBD)
+===== Runtime discovery (TBD)
+===== Static methods (TBD)
 
-=== Extension modules
-==== Module descriptor
-==== Instance methods
-==== Static methods
+=== Extension modules (TBD)
+==== Module descriptor (TBD)
+==== Instance methods (TBD)
+==== Static methods (TBD)
 
 == Compile-time metaprogramming
 
@@ -1322,9 +1322,9 @@ include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=asttest
 throughfully in this <<section-grape,section of the guide>>.
 
 [[developing-ast-xforms]]
-=== Developing AST transformations
-==== Compilation phases guide
-==== Local transformations
-==== Global transformations
-==== AST API guide
-==== Testing AST transformations
+=== Developing AST transformations (TBD)
+==== Compilation phases guide (TBD)
+==== Local transformations (TBD)
+==== Global transformations (TBD)
+==== AST API guide (TBD)
+==== Testing AST transformations (TBD)

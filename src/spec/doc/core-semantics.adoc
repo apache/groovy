@@ -2,32 +2,32 @@
 
 This chapter covers the semantic of the Groovy programming language.
 
-== Statements
+== Statements (TBD)
 
-=== Variable definition
-=== Variable assignment
-==== Multiple assignment
-=== Control structures
-==== Conditional structures
-===== if / else
-===== switch / case
-==== Looping structures
-===== Classic for loop
-===== for in loop
-===== while loop
-==== Exception handling
-==== try / catch / finally
-==== Multi-catch
-=== Power assertion
-=== Labeled statements
+=== Variable definition (TBD)
+=== Variable assignment (TBD)
+==== Multiple assignment (TBD)
+=== Control structures (TBD)
+==== Conditional structures (TBD)
+===== if / else (TBD)
+===== switch / case (TBD)
+==== Looping structures (TBD)
+===== Classic for loop (TBD)
+===== for in loop (TBD)
+===== while loop (TBD)
+==== Exception handling (TBD)
+==== try / catch / finally (TBD)
+==== Multi-catch (TBD)
+=== Power assertion (TBD)
+=== Labeled statements (TBD)
 
-== Expressions
+== Expressions (TBD)
 
-=== GPath expressions
+=== GPath expressions (TBD)
 
-== Promotion and coercion
+== Promotion and coercion (TBD)
 
-=== Number promotion
+=== Number promotion (TBD)
 === Closure to type coercion
 ==== Assigning a closure to a SAM type
 A SAM type is a type which defines a single abstract method. This includes:
@@ -274,20 +274,20 @@ It is failing because the `as` keyword only works with class literals. Instead, 
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=fixed_as_usage,indent=0]
 ----
 
-== Optionality
+== Optionality (TBD)
 
-=== Optional parentheses
-=== Optional semicolons
-=== Optional return keyword
-=== Optional public keyword
+=== Optional parentheses (TBD)
+=== Optional semicolons (TBD)
+=== Optional return keyword (TBD)
+=== Optional public keyword (TBD)
 
-== The Groovy Truth
+== The Groovy Truth (TBD)
 
-=== Customizing the truth with asBoolean() methods
+=== Customizing the truth with asBoolean() methods (TBD)
 
-== Typing
+== Typing (TBD)
 
-=== Optional typing
-=== Static type checking
-=== Static compilation
+=== Optional typing (TBD)
+=== Static type checking (TBD)
+=== Static compilation (TBD)
 

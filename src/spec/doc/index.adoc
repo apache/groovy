@@ -29,32 +29,32 @@ include::{projectdir}/src/spec/doc/tools-ide.adoc[]
 :leveloffset: 2
 include::{projectdir}/src/spec/doc/core-getting-started.adoc[]
 :leveloffset: 0
-=== Differences with Java
-==== Multi-methods
-==== Array initializers
-==== Package scope visibility
-==== ARM blocks
-==== Inner class instantiation
-=== Groovy Development Kit
-==== Working with IO
-==== Working with collections
-==== Handy utilities
-===== ConfigSlurper
-===== Expando
-===== Observable list, map and set
+=== Differences with Java (TBD)
+==== Multi-methods (TBD)
+==== Array initializers (TBD)
+==== Package scope visibility (TBD)
+==== ARM blocks (TBD)
+==== Inner class instantiation (TBD)
+=== Groovy Development Kit (TBD)
+==== Working with IO (TBD)
+==== Working with collections (TBD)
+==== Handy utilities (TBD)
+===== ConfigSlurper (TBD)
+===== Expando (TBD)
+===== Observable list, map and set (TBD)
 :leveloffset: 2
 include::{projectdir}/src/spec/doc/core-metaprogramming.adoc[]
 :leveloffset: 0
 :leveloffset: 2
 include::{projectdir}/src/spec/doc/grape.adoc[]
 :leveloffset: 0
-=== Testing guide
-=== Interacting with a SQL database
+=== Testing guide (TBD)
+=== Interacting with a SQL database (TBD)
 :leveloffset: 2
 include::{subprojroot}json/{specfolder}/json-userguide.adoc[]
 :leveloffset: 0
-=== Processing XML
-=== Scripting Ant tasks
+=== Processing XML (TBD)
+=== Scripting Ant tasks (TBD)
 
 :leveloffset: 2
 
@@ -62,16 +62,16 @@ include::{projectdir}/src/spec/doc/template-engines.adoc[]
 
 :leveloffset: 0
 
-=== Servlet support
-=== Integrating Groovy in a Java application
-==== Groovy integration mechanisms
-===== Eval
-===== GroovyShell
-===== GroovyClassLoader
-===== CompilationUnit
-===== Reloading
-==== Bean Scripting Framework
-==== JSR 223 javax.script API
+=== Servlet support (TBD)
+=== Integrating Groovy in a Java application (TBD)
+==== Groovy integration mechanisms (TBD)
+===== Eval (TBD)
+===== GroovyShell (TBD)
+===== GroovyClassLoader (TBD)
+===== CompilationUnit (TBD)
+===== Reloading (TBD)
+==== Bean Scripting Framework (TBD)
+==== JSR 223 javax.script API (TBD)
 
 :leveloffset: 2
 
@@ -80,8 +80,8 @@ include::{projectdir}/src/spec/doc/jmx.adoc[]
 
 :leveloffset: 0
 
-=== Creating Swing UIs
-=== Security
+=== Creating Swing UIs (TBD)
+=== Security (TBD)
 
 :leveloffset: 2
 
