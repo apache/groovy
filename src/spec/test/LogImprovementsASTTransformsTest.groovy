@@ -119,38 +119,42 @@ g.greet()
     }
 
     void testLog4j2ASTTransformation() {
-        assertScript '''
-// tag::log4j2_spec[]
-@groovy.util.logging.Log4j2
-class Greeter {
-    void greet() {
-        log.debug 'Called greeter'
-        println 'Hello, world!'
-    }
-}
-// end::log4j2_spec[]
-def g = new Greeter()
-g.greet()
-        '''
-
-        assertScript '''
-// tag::log4j2_equiv[]
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
-
-class Greeter {
-    private final static Logger log = LogManager.getLogger(Greeter)
-    void greet() {
-        if (log.isDebugEnabled()) {
+        try {
+            assertScript '''
+    // tag::log4j2_spec[]
+    @groovy.util.logging.Log4j2
+    class Greeter {
+        void greet() {
             log.debug 'Called greeter'
+            println 'Hello, world!'
         }
-        println 'Hello, world!'
     }
-}
-// end::log4j2_equiv[]
-def g = new Greeter()
-g.greet()
-'''
+    // end::log4j2_spec[]
+    def g = new Greeter()
+    g.greet()
+            '''
+
+            assertScript '''
+    // tag::log4j2_equiv[]
+    import org.apache.logging.log4j.LogManager
+    import org.apache.logging.log4j.Logger
+
+    class Greeter {
+        private final static Logger log = LogManager.getLogger(Greeter)
+        void greet() {
+            if (log.isDebugEnabled()) {
+                log.debug 'Called greeter'
+            }
+            println 'Hello, world!'
+        }
+    }
+    // end::log4j2_equiv[]
+    def g = new Greeter()
+    g.greet()
+    '''
+        } catch (UnsupportedClassVersionError e) {
+            // running on older, unsupported, JDK
+        }
     }
 
     void testSlf4jASTTransformation() {
