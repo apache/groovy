@@ -9,6 +9,8 @@ import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.customizers.SecureASTCustomizer
 import org.codehaus.groovy.control.customizers.SourceAwareCustomizer
+import org.codehaus.groovy.control.CompilerConfiguration
+import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
 
 import static org.codehaus.groovy.syntax.Types.*
 
@@ -220,5 +222,14 @@ a.@val // <1>
         // end::source_cz_predicates[]
 
         config.addCompilationCustomizers(sac)
+    }
+
+    void testCustomizerBuilder() {
+        // tag::customizer_withconfig[]
+        def conf = new CompilerConfiguration()
+        withConfig(conf) {
+            // ... <2>
+        }
+        // end::customizer_withconfig[]
     }
 }

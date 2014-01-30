@@ -503,7 +503,152 @@ Then you can use predicates on the source aware customizer:
 include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=source_cz_predicates,indent=0]
 --------------------------------------------------------------------------
 
-=== Customizer builder (TBD)
+=== Customizer builder
+
+If you are using compilation customizers in Groovy code (like the
+examples above) then you can use an alternative syntax to customize compilation.
+A builder (`org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder`)
+simplifies the creation of customizers using a hierarchical DSL.
+
+[source,groovy]
+-----------------------------------------------------------------------------------------------------
+import org.codehaus.groovy.control.CompilerConfiguration
+import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig <1>
+
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=customizer_withconfig,indent=0]
+-----------------------------------------------------------------------------------------------------
+<1> static import of the builder method
+<2> configuration goes here
+
+The code sample above shows how to use the builder. A static
+method, _withConfig_, takes a closure corresponding to the builder code,
+and automatically registers compilation customizers to the
+configuration. Every compilation customizer available in the distribution
+can be configured this way:
+
+==== Import customizer
+
+[source,groovy]
+----------------------------------------------------------------------------------
+withConfig(configuration) {
+   imports { // imports customizer
+      normal 'my.package.MyClass' // a normal import
+      alias 'AI', 'java.util.concurrent.atomic.AtomicInteger' // an aliased import
+      star 'java.util.concurrent' // star imports
+      staticMember 'java.lang.Math', 'PI' // static import
+      staticMember 'pi', 'java.lang.Math', 'PI' // aliased static import
+   }
+}
+----------------------------------------------------------------------------------
+
+==== AST transformation customizer
+
+[source,groovy]
+-------------------------------------------
+withConfig(conf) {
+   ast(Log) <1>
+}
+
+withConfig(conf) {
+   ast(Log, value: 'LOGGER') <2>
+}
+-------------------------------------------
+<1> apply @Log transparently
+<2> apply @Log with a different name for the logger
+
+==== Secure AST customizer
+
+[source,groovy]
+--------------------------------------
+withConfig(conf) {
+   secureAst {
+       closuresAllowed = false
+       methodDefinitionAllowed = false
+   }
+}
+--------------------------------------
+
+==== Source aware customizer
+
+[source,groovy]
+--------------------------------------------------------------------------------------
+withConfig(configuration){
+    source(extension: 'sgroovy') {
+        ast(CompileStatic) <1>
+    }
+}
+
+withConfig(configuration){
+    source(extensions: ['sgroovy','sg']) {
+        ast(CompileStatic) <2>
+    }
+}
+
+withConfig(configuration) {
+    source(extensionValidator: { it.name in ['sgroovy','sg']}) {
+        ast(CompileStatic) <2>
+    }
+}
+
+withConfig(configuration) {
+    source(basename: 'foo') {
+        ast(CompileStatic) <3>
+    }
+}
+
+withConfig(configuration) {
+    source(basenames: ['foo', 'bar']) {
+        ast(CompileStatic) <4>
+    }
+}
+
+withConfig(configuration) {
+    source(basenameValidator: { it in ['foo', 'bar'] }) {
+        ast(CompileStatic) <4>
+    }
+}
+
+withConfig(configuration) {
+    source(unitValidator: { unit -> !unit.AST.classes.any { it.name == 'Baz' } }) {
+        ast(CompileStatic) <5>
+    }
+}
+--------------------------------------------------------------------------------------
+<1> apply CompileStatic AST annotation on .sgroovy files
+<2> apply CompileStatic AST annotation on .sgroovy or .sg files
+<3> apply CompileStatic AST annotation on files whose name is 'foo'
+<4> apply CompileStatic AST annotation on files whose name is 'foo' or 'bar'
+<5> apply CompileStatic AST annotation on files that do not contain a class named 'Baz'
+
+==== Inlining a customizer
+
+Inlined customizer allows you to write a compilation customizer
+directly, without having to create a class for it.
+
+[source,groovy]
+--------------------------------------------------------------
+withConfig(configuration) {
+    inline(phase:'CONVERSION') { source, context, classNode ->  <1>
+        println "visiting $classNode"                           <2>
+    }
+}
+--------------------------------------------------------------
+<1> define an inlined customizer which will execute at the CONVERSION phase
+<2> prints the name of the class node being compiled
+
+==== Multiple customizers
+
+Of course, the builder allows you to define multiple customizers at
+once:
+
+[source,groovy]
+---------------------------
+withConfig(configuration) {
+   ast(ToString)
+   ast(EqualsAndHashCode)
+}
+---------------------------
+
 === Config script flag (TBD)
 === AST transformations (TBD)
 == Custom type checking extensions (TBD)
