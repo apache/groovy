@@ -388,7 +388,7 @@ include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_customnam
 As the AST transformation customizers works with objects instead of AST
 nodes, not all values can be converted to AST transformation parameters.
 For example, primitive types are converted to `ConstantExpression` (that
-is `LOGGER' is converted to `new ConstantExpression(’LOGGER’)`, but if
+is `LOGGER` is converted to `new ConstantExpression('LOGGER')`, but if
 your AST transformation takes a closure as an argument, then you have to
 give it a `ClosureExpression`, like in the following example:
 
@@ -399,7 +399,82 @@ include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_closure,i
 
 For a complete list of options, please refer to gapi::org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
-=== Secure AST customizer (TBD)
+=== Secure AST customizer
+
+This customizer will allow the developer of a DSL to restrict the
+*grammar* of the language, to prevent users from using some constructs,
+for example. It is only ``secure'' in that sense only and it is very
+important to understand that it does *not* replace a security manager.
+The only reason for it to exist is to limit the expressiveness of the
+language. This customizer only works at the AST (abstract syntax tree)
+level, not at runtime! It can be strange at first glance, but it makes
+much more sense if you think of Groovy as a platform to build DSLs. You
+may not want a user to have a complete language at hand. In the example
+below, we will demonstrate it using an example of language that only
+allows arithmetic operations, but this customizer allows you to:
+
+* allow/disallow creation of closures
+* allow/disallow imports
+* allow/disallow package definition
+* allow/disallow definition of methods
+* restrict the receivers of method calls
+* restrict the kind of AST expressions a user can use
+* restrict the tokens (grammar-wise) a user can use
+* restrict the types of the constants that can be used in code
+
+For all those features, the secure AST customizer works using either a
+whitelist (list of elements that are allowed) *or* a blacklist (list of
+elements that are disallowed). For each type of feature (imports,
+tokens, …) you have the choice to use either a whitelist or a blacklist,
+but you can mix whitelists and blacklists for distinct features. In
+general, you will choose whitelists (disallow all, allow selected).
+
+[source,groovy]
+-------------------------------------------------------------------------------------
+import org.codehaus.groovy.control.customizers.SecureASTCustomizer
+import static org.codehaus.groovy.syntax.Types.* <1>
+
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz,indent=0]
+-------------------------------------------------------------------------------------
+<1> use for token types from gapi::org.codehaus.groovy.syntax.Types
+<2> you can use class literals here
+
+If what the secure AST customizer provides out of the box isn’t enough
+for your needs, before creating your own compilation customizer, you
+might be interested in the expression and statement checkers that the
+AST customizer supports. Basically, it allows you to add custom checks
+on the AST tree, on expressions (expression checkers) or statements
+(statement checkers). For this, you must
+implement `org.codehaus.groovy.control.customizers.SecureASTCustomizer.StatementChecker`
+or `org.codehaus.groovy.control.customizers.SecureASTCustomizer.ExpressionChecker`.
+
+Those interfaces define a single method called `isAuthorized`, returning
+a boolean, and taking a `Statement` (or `Expression`) as a parameter. It
+allows you to perform complex logic over expressions or statements to
+tell if a user is allowed to do it or not.
+
+For example, there's no predefined configuration flag in the customizer which
+will let you prevent people from using an attribute expression. Using a custom
+checker, it is trivial:
+
+[source,groovy]
+----------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz_custom,indent=0]
+----------------------------------------------------------------------
+
+Then we can make sure that this works by evaluating a simple script:
+
+[source,groovy]
+----
+new GroovyShell(config).evaluate '''
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz_custom_assert,indent=4]
+'''
+----
+<1> will fail compilation
+
+Statements can be checked using gapi::org.codehaus.groovy.control.customizers.SecureASTCustomizer.StatementChecker
+Expressions can be checked using gapi::org.codehaus.groovy.control.customizers.SecureASTCustomizer.ExpressionChecker
+
 === Source aware customizer (TBD)
 === Customizer builder (TBD)
 === Config script flag (TBD)
