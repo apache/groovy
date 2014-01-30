@@ -649,7 +649,52 @@ withConfig(configuration) {
 }
 ---------------------------
 
-=== Config script flag (TBD)
+=== Config script flag
+
+So far, we have described how you can customize compilation using
+a `CompilationConfiguration` class, but this is only possible if you
+embed Groovy and that you create your own instances
+of `CompilerConfiguration` (then use it to create a
+`GroovyShell`, `GroovyScriptEngine`, …).
+
+If you want it to be applied on the classes you compile with the normal
+Groovy compiler (that is to say with  `groovyc`, `ant` or `gradle`,
+for example), it is possible to use a compilation flag named `configscript`
+that takes a Groovy configuration script as argument.
+
+This script gives you access to the `CompilerConfiguration` instance *before*
+the files are compiled (exposed into the configuration script as a variable named `configuration`),
+so that you can tweak it.
+
+It also transparently integrates the compiler configuration builder above. As an example, let's see
+how you would activate static compilation by default on all classes.
+
+==== Static compilation by default
+
+Normally, classes in Groovy are compiled with a dynamic runtime. You can activate static compilation
+by placing an annotation named `@CompileStatic` on any class. Some people would like to have this
+mode activated by default, that is to say not having to annotated classes. Using `configscript`,
+this is possible. First of all, you need to create a file named `config.groovy` into `src/conf` with
+the following contents:
+
+[source,groovy]
+--------------------------------------
+withConfig(configuration) { <1>
+   ast(groovy.transform.CompileStatic)
+}
+--------------------------------------
+<1> _configuration_ references a `CompilerConfiguration` instance
+
+That is actually all you need. You don’t have to import the builder, it’s automatically
+exposed in the script. Then, compile your files using the following command line:
+
+---------------------------------------------------------------------------
+groovyc -configscript src/conf/config.groovy src/main/groovy/MyClass.groovy
+---------------------------------------------------------------------------
+
+We strongly recommand you to separate configuration files from classes,
+hence why we suggest using the `src/main` and `src/conf` directories above.
+
 === AST transformations (TBD)
 == Custom type checking extensions (TBD)
 == Builders (TBD)
