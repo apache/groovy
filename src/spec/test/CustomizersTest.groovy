@@ -1,12 +1,15 @@
 import groovy.transform.ConditionalInterrupt
+import groovy.util.logging.Log
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.expr.AttributeExpression
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import groovy.util.logging.Log
+import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.customizers.SecureASTCustomizer
+import org.codehaus.groovy.control.customizers.SourceAwareCustomizer
+
 import static org.codehaus.groovy.syntax.Types.*
 
 /*
@@ -83,7 +86,8 @@ class CustomizersTest extends GroovyTestCase {
 
     void testLogCustomizerWithCustomName() {
         // tag::ast_cz_customname[]
-        def acz = new ASTTransformationCustomizer(Log, value: 'LOGGER') // use name 'LOGGER' instead of the default 'log'
+        def acz = new ASTTransformationCustomizer(Log, value: 'LOGGER')
+        // use name 'LOGGER' instead of the default 'log'
         config.addCompilationCustomizers(acz)
         // end::ast_cz_customname[]
 
@@ -95,8 +99,8 @@ class CustomizersTest extends GroovyTestCase {
     void testAstTransformationCustomizerWithClosureExpression() {
         // tag::ast_cz_closure[]
         def configuration = new CompilerConfiguration()
-        def expression = new AstBuilder().buildFromCode(CompilePhase.CONVERSION) {-> true }.expression[0]
-        def customizer = new ASTTransformationCustomizer(ConditionalInterrupt, value:expression, thrown:SecurityException)
+        def expression = new AstBuilder().buildFromCode(CompilePhase.CONVERSION) { -> true }.expression[0]
+        def customizer = new ASTTransformationCustomizer(ConditionalInterrupt, value: expression, thrown: SecurityException)
         configuration.addCompilationCustomizers(customizer)
         def shell = new GroovyShell(configuration)
         shouldFail(SecurityException) {
@@ -179,7 +183,7 @@ class CustomizersTest extends GroovyTestCase {
         def checker = { expr ->
             !(expr instanceof AttributeExpression)
         } as SecureASTCustomizer.ExpressionChecker
-        scz.addExpressionCheckers (checker)
+        scz.addExpressionCheckers(checker)
         // end::secure_cz_custom[]
         config.addCompilationCustomizers(scz)
         shouldFail {
@@ -192,5 +196,29 @@ def a = new A(val: 123)
 a.@val // <1>
 // end::secure_cz_custom_assert[]'''
         }
+    }
+
+    void testSourceAwareCustomizer() {
+        // tag::source_cz[]
+        def delegate = new ImportCustomizer()
+        def sac = new SourceAwareCustomizer(delegate)
+        // end::source_cz[]
+
+        // tag::source_cz_predicates[]
+        // the customizer will only be applied to classes ending with 'Bean'
+        sac.baseNameValidator = { baseName ->
+            baseName.endsWith 'Bean'
+        }
+
+        // the customizer will only be applied to files which extension is '.spec'
+        sac.extensionValidator = { ext -> ext == 'spec' }
+
+        // source unit validation
+        // allow compilation only if the file contains at most 1 class
+        sac.sourceUnitValidator = { SourceUnit sourceUnit -> sourceUnit.AST.classes.size() == 1 }
+
+        // end::source_cz_predicates[]
+
+        config.addCompilationCustomizers(sac)
     }
 }

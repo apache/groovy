@@ -475,7 +475,34 @@ include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz_custom
 Statements can be checked using gapi::org.codehaus.groovy.control.customizers.SecureASTCustomizer.StatementChecker
 Expressions can be checked using gapi::org.codehaus.groovy.control.customizers.SecureASTCustomizer.ExpressionChecker
 
-=== Source aware customizer (TBD)
+=== Source aware customizer
+
+This customizer may be used as a filter on other customizers. The
+filter, in that case, is the `org.codehaus.groovy.control.SourceUnit`.
+For this, the source aware customizer takes another customizer as a
+delegate, and it will apply customization of that delegate only and only
+if predicates on the source unit match.
+
+`SourceUnit` gives you access to multiple things but in particular the
+file being compiled (if compiling from a file, of course). It gives
+you the potential to perform operation based on the file name, for
+example. Here is how you would create a source aware customizer:
+
+[source,groovy]
+--------------------------------------------------------------------
+import org.codehaus.groovy.control.customizers.SourceAwareCustomizer
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=source_cz,indent=0]
+--------------------------------------------------------------------
+
+Then you can use predicates on the source aware customizer:
+
+[source,groovy]
+--------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=source_cz_predicates,indent=0]
+--------------------------------------------------------------------------
+
 === Customizer builder (TBD)
 === Config script flag (TBD)
 === AST transformations (TBD)
