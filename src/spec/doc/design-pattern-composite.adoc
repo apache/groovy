@@ -1,0 +1,33 @@
+= Composite Pattern
+
+The http://en.wikipedia.org/wiki/Composite_pattern[Composite Pattern] allows you to treat single instances of an object the same way as a group of objects. The pattern is often used with hierarchies of objects. Typically, one or more methods should be callable in the same way for either __leaf__ or __composite__ nodes within the hierarchy. In such a case, composite nodes typically invoke the same named method for each of their children nodes.
+
+== Example
+
+Consider this usage of the composite pattern where we want to call ++toString()++ on either ++Leaf++ or ++Composite++ objects.
+
+image::assets/img/CompositeClasses.gif[]
+
+In Java, the ++Component++ class is essential as it provides the type used for both leaf and composite nodes. In Groovy, because of duck-typing, we don't need it for that purpose, however, it can still server as a useful place to place common behaviour between the leaf and composite nodes.
+
+For our purposes, we will assemble the following hierarchy of components.
+
+image::assets/img/CompositeComponents.gif[]
+
+Here is the code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=composite_code,indent=0]
+----
+
+Here is the resulting output:
+
+----
+root
+-leaf A
+-comp B
+--leaf B1
+--leaf B2
+-leaf C
+----

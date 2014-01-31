@@ -1,80 +1,93 @@
 = Groovy Language Documentation
-:toc:
-:icons:
-:linkcss!:
+:toclevels: 10
 :numbered:
-:subprojroot: ../../../subprojects/groovy-
-:specfolder: /src/spec/doc/
 
-include::core-introduction.adoc[]
+include::{projectdir}/src/spec/doc/core-introduction.adoc[]
 
 == Groovy Language Specification
 
 :leveloffset: 2
-include::core-syntax.adoc[]
-include::core-semantics.adoc[]
-include::core-operators.adoc[]
-include::core-program-structure.adoc[]
-include::core-object-orientation.adoc[]
-include::core-closures.adoc[]
+include::{projectdir}/src/spec/doc/core-syntax.adoc[]
+include::{projectdir}/src/spec/doc/core-operators.adoc[]
+include::{projectdir}/src/spec/doc/core-program-structure.adoc[]
+include::{projectdir}/src/spec/doc/core-object-orientation.adoc[]
+include::{projectdir}/src/spec/doc/core-closures.adoc[]
+include::{projectdir}/src/spec/doc/core-semantics.adoc[]
 :leveloffset: 0
 
 == Tools
 
-=== groovyc, the Groovy compiler
-==== Ant task
-==== Maven integration
-===== GMaven and GMavenPlus
-===== The Groovy Eclipse Maven plugin
-==== Command-line compiler
-==== Joint compilation
-=== groovysh, the Groovy shell
-=== groovyConsole, the Groovy swing console
-=== groovydoc, the Groovy & Java documentation generator
-=== IDE integration
+:leveloffset: 2
+include::{projectdir}/src/spec/doc/tools-groovyc.adoc[]
+include::{projectdir}/src/spec/doc/tools-groovysh.adoc[]
+include::{projectdir}/src/spec/doc/tools-groovyconsole.adoc[]
+include::{projectdir}/src/spec/doc/tools-groovydoc.adoc[]
+include::{projectdir}/src/spec/doc/tools-ide.adoc[]
+:leveloffset: 0
 
 == User Guides
 :leveloffset: 2
-include::core-getting-started.adoc[]
+include::{projectdir}/src/spec/doc/core-getting-started.adoc[]
 :leveloffset: 0
-=== Differences with Java
-==== Multi-methods
-==== Array initializers
-==== Package scope visibility
-==== ARM blocks
-==== Inner class instantiation
-=== Groovy Development Kit
-==== Working with IO
-==== Working with collections
-==== Handy utilities
-===== ConfigSlurper
-===== Expando
-===== Observable list, map and set
 :leveloffset: 2
-include::core-metaprogramming.adoc[]
+include::{projectdir}/src/spec/doc/core-differences-java.adoc[]
 :leveloffset: 0
-=== Testing guide
-=== Interacting with a SQL database
+=== Groovy Development Kit (TBD)
+==== Working with IO (TBD)
+==== Working with collections (TBD)
+==== Handy utilities (TBD)
+===== ConfigSlurper (TBD)
+===== Expando (TBD)
+===== Observable list, map and set (TBD)
 :leveloffset: 2
-include::{subprojroot}json{specfolder}json-userguide.adoc[]
+include::{projectdir}/src/spec/doc/core-metaprogramming.adoc[]
 :leveloffset: 0
-=== Processing XML
-=== Scripting Ant tasks
-=== Template engines
-=== Servlet support
-=== Integrating Groovy in a Java application
-==== Groovy integration mechanisms
-===== Eval
-===== GroovyShell
-===== GroovyClassLoader
-===== CompilationUnit
-===== Reloading
-==== Bean Scripting Framework
-==== JSR 223 javax.script API
 :leveloffset: 2
-include::core-domain-specific-languages.adoc[]
+include::{projectdir}/src/spec/doc/grape.adoc[]
 :leveloffset: 0
-=== Working with JMX
-=== Creating Swing UIs
-=== Security
-=== Design patterns in Groovy
+=== Testing guide (TBD)
+=== Interacting with a SQL database (TBD)
+:leveloffset: 2
+include::{subprojroot}json/{specfolder}/json-userguide.adoc[]
+:leveloffset: 0
+=== Processing XML (TBD)
+=== Scripting Ant tasks (TBD)
+
+:leveloffset: 2
+
+include::{projectdir}/src/spec/doc/template-engines.adoc[]
+
+:leveloffset: 0
+
+=== Servlet support (TBD)
+=== Integrating Groovy in a Java application (TBD)
+==== Groovy integration mechanisms (TBD)
+===== Eval (TBD)
+===== GroovyShell (TBD)
+===== GroovyClassLoader (TBD)
+===== CompilationUnit (TBD)
+===== Reloading (TBD)
+==== Bean Scripting Framework (TBD)
+==== JSR 223 javax.script API (TBD)
+
+:leveloffset: 2
+
+include::{projectdir}/src/spec/doc/core-domain-specific-languages.adoc[]
+include::{projectdir}/src/spec/doc/jmx.adoc[]
+
+:leveloffset: 0
+
+=== Creating Swing UIs (TBD)
+=== Security (TBD)
+
+:leveloffset: 2
+
+include::{projectdir}/src/spec/doc/design-pattern-in-groovy.adoc[]
+
+:leveloffset: 0
+
+== Acknowledgements
+
+:leveloffset: 2
+include::{projectdir}/src/spec/doc/license-contributors.adoc[]
+:leveloffset: 0

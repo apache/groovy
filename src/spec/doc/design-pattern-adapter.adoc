@@ -1,0 +1,105 @@
+= Adapter Pattern
+
+The http://en.wikipedia.org/wiki/Adapter_pattern[Adapter Pattern] (sometimes called the wrapper pattern) allows objects satisfying one interface to be used where another type of interface is expected. There are two typical flavours of the pattern: the __delegation__ flavour and the __inheritance__ flavour.
+
+== Delegation Example
+
+Suppose we have the following classes:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=adapter_delegation_classes,indent=0]
+----
+
+We can ask the ++RoundHole++ class if a ++RoundPeg++ fits in it, but if we ask the same question for a ++SquarePeg++, then it will fail because the ++SquarePeg++ class doesn't have a ++radius++ property (i.e. doesn't satisfy the required interface).
+
+To get around this problem, we can create an adapter to make it appear to have the correct interface. It would look like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=adapter_delegation_code,indent=0]
+----
+
+We can use the adapter like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=adapter_delegation_usage,indent=0]
+----
+
+Which results in the following output:
+
+----
+peg SquarePegAdapter with peg width 4 (and notional radius 2.8284271247461903) fits in hole RoundHole with radius 4.0
+peg SquarePegAdapter with peg width 5 (and notional radius 3.5355339059327378) fits in hole RoundHole with radius 4.0
+peg SquarePegAdapter with peg width 6 (and notional radius 4.242640687119285) does not fit in hole RoundHole with radius 4.0
+peg SquarePegAdapter with peg width 7 (and notional radius 4.949747468305833) does not fit in hole RoundHole with radius 4.0
+----
+
+== Inheritance Example
+
+Let's consider the same example again using inheritance. First, here are the original classes (unchanged):
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=adapter_inheritance_classes,indent=0]
+----
+
+An adapter using inheritance:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=adapter_inheritance_code,indent=0]
+----
+
+Using the adapter:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=adapter_inheritance_usage,indent=0]
+----
+
+The output:
+
+----
+peg SquarePegAdapter with width 4 (and notional radius 2.8284271247461903) fits in hole RoundHole with radius 4.0
+peg SquarePegAdapter with width 5 (and notional radius 3.5355339059327378) fits in hole RoundHole with radius 4.0
+peg SquarePegAdapter with width 6 (and notional radius 4.242640687119285) does not fit in hole RoundHole with radius 4.0
+peg SquarePegAdapter with width 7 (and notional radius 4.949747468305833) does not fit in hole RoundHole with radius 4.0
+----
+
+== Adapting using Closures
+
+As a variation of the previous examples, we could instead define the following interface:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=adapter_closure_interface,indent=0]
+----
+
+We can then define an adapter as a closure as follows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=adapter_closure_define,indent=0]
+----
+
+And use it like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=adapter_closure_usage,indent=0]
+----
+
+== Adapting using the ExpandoMetaClass
+
+As of Groovy 1.1, there is a built-in MetaClass which can automatically add properties and methods dynamically.
+
+Here is how the example would work using that feature:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=adapter_expando_meta_class,indent=0]
+----
+
+After you create a peg object, you can simply add a property to it on the fly. No need to change the original class and no need for an adapter class.

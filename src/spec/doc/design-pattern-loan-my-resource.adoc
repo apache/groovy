@@ -1,0 +1,51 @@
+= Loan my Resource Pattern
+
+
+The https://wiki.scala-lang.org/display/SYGN/Loan[Loan my Resource] pattern ensures that a resource is deterministically disposed of once it goes out of scope.
+
+This pattern is built in to many Groovy helper methods. You should consider using it yourself if you need to work with resources in ways beyond what Groovy supports.
+
+== Example
+
+Consider the following code which works with a file. First we might write some line to the file and then print its size:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=loan_my_resource_example,indent=0]
+----
+
+We could also read back the contents of the file a line at a time and print each line out:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=loan_my_resource_example2,indent=0]
+----
+
+Note that normal Java ++Reader++ and ++PrintWriter++ objects were used under the covers by Groovy but the code writer did not have to worry about explicitly creating or closing those resources. The built-in Groovy methods loan the respective reader or writer to the closure code and then tidy up after themselves. So, you are using this pattern without having to do any work.
+
+Sometimes however, you wish to do things slightly differently to what you can get for free using Groovy's built-in mechanisms. You should consider utilising this pattern within your own resource-handling operations.
+
+Consider how you might process the list of words on each line within the file. We could actually do this one too using Groovy's built-in functions, but bear with us and assume we have to do some resource handling ourselves. Here is how we might write the code without using this pattern:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=loan_my_resource_example3,indent=0]
+----
+
+Notice that we now have an explicit call to ++close()++ in our code. If we didn't code it just right (here we didn't surround the code in a ++try ... finally++ block, we run the risk of leaving the file handle open.
+
+Let's now apply the loan pattern. First, we'll write a helper method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=loan_my_resource_example4,indent=0]
+----
+
+Now, we can re-write our code as follows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=loan_my_resource_example5,indent=0]
+----
+
+This is much simpler and has removed the explicit ++close()++. This is now catered for in one spot so we can apply the appropriate level of testing or reviewing in just one spot to be sure we have no problems.

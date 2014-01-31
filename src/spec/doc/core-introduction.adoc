@@ -1,9 +1,7 @@
 = Introduction
-:toc:
-:icons:
-:linkcss!:
 
 Groovy...
+
 * is an agile and dynamic language for the Java Virtual Machine
 * builds upon the strengths of Java but has additional power features inspired by languages like Python, Ruby and Smalltalk
 * makes modern programming features available to Java developers with almost-zero learning curve

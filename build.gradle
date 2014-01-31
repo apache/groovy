@@ -15,7 +15,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.5.0'
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.7.0'
         classpath 'net.saliman:gradle-cobertura-plugin:1.1.2'
     }
 }
@@ -52,12 +52,51 @@ allprojects {
         apply plugin: 'asciidoctor'
 
         asciidoctor {
+            def (full, major, minor, patch, flavor) = (groovyVersion =~ /(\d+)\.(\d++)\.(\d+)-?(.+)/)[0]
             logDocuments = true
             sourceDir = project.file('src/spec/doc')
+            options = [
+                    attributes: [
+                            'source-highlighter': 'prettify',
+                            groovyversion: groovyVersion,
+                            'groovy-major-version': major,
+                            'groovy-minor-version': minor,
+                            'groovy-patch-version': patch,
+                            'groovy-full-version': groovyVersion,
+                            'groovy-short-version': "${major}.${minor}",
+                            doctype: 'book',
+                            revnumber : groovyVersion,
+                            icons : 'font',
+                            toc2: '',
+                            subprojroot: 'subprojects/groovy-',
+                            specfolder: 'src/spec/doc',
+                            'linkcss!': '',
+                            encoding: 'utf-8'
+                    ]
+            ]
         }
 
         // skip the asciidoctor task if there's no directory with asciidoc files
         asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
+
+        asciidoctor.doLast {
+            outputDir.eachFileMatch(~'.*html') { File file ->
+                def text = file.getText('UTF-8')
+                text = text.replaceAll(/gapi::([a-zA-Z0-9$.#]+)/) { m->
+                    def cName = m[1]
+                    def cPath = m[1].replace('.','/')
+                    def anchor = ''
+                    int anchorIdx = cPath.indexOf('#')
+                    if (anchorIdx>0) {
+                        anchor = cPath.substring(anchorIdx)
+                        cPath = cPath.substring(0, anchorIdx)
+                    }
+
+                    "<a href='http://groovy.codehaus.org/gapi/index.html?${cPath}.html${anchor}' target='_blank'><code>$cName</code></a>"
+                }
+                file.write(text,'UTF-8')
+            }
+        }
     }
 
     // don't fail build on CodeNarc tasks

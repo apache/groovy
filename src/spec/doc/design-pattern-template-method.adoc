@@ -1,0 +1,47 @@
+= Template Method Pattern
+
+
+The http://en.wikipedia.org/wiki/Template_method_pattern[Template Method Pattern] abstracts away the details of several algorithms. The generic part of an algorithm is contained within a base class. Particular implementation details are captured within base classes. The generic pattern of classes involved looks like this:
+
+image::assets/img/TemplateMethodClasses.gif[]
+
+== Example
+
+In this example, ++Accumulator++ captures the essence of the accumulation algorithm. The base classes ++Sum++ and ++Product++ provide particular customised ways to use the generic accumulation algorithm.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=template_method_example,indent=0]
+----
+
+The resulting output is:
+
+----
+10
+24
+----
+
+In this particular case, you could use Groovy's inject method to achieve a similar result using Closures:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=template_method_example2,indent=0]
+----
+
+Thanks to duck-typing, this would also work with other objects which support an add (plus() in Groovy) method, e.g.:
+
+In this particular case, you could use Groovy's inject method to achieve a similar result using Closures:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=template_method_example3,indent=0]
+----
+
+We could also do the multiplication case as follows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=template_method_example4,indent=0]
+----
+
+Using closures this way looks more like the <<_strategy_pattern,Strategy Pattern>> but if we realise that the built-in ++inject++ method is the generic part of the algorithm for our template method, then the Closures become the customised parts of the template method pattern.
