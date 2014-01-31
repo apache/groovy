@@ -44,7 +44,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
         IADD,           //  PLUS        200
         ISUB,           //  MINUS       201
         IMUL,           //  MULTIPLY    202
-        0,              //  DIV, (203) but we don't want that one
+        IDIV,           //  DIV         203
         IDIV,           //  INTDIV      204
         IREM,           //  MOD         203
     };
@@ -259,6 +259,11 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
     }
 
     protected ClassNode getDevisionOpResultType() {
-        return ClassHelper.BigDecimal_TYPE;
+        return ClassHelper.int_TYPE;
+    }
+
+    @Override
+    protected boolean supportsDivision() {
+        return true;
     }
 }
