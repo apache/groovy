@@ -1,13 +1,15 @@
 apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
-apply from: 'gradle/bintray.gradle'
+if (JavaVersion.current().java6Compatible) {
+    apply from: 'gradle/bintray.gradle'
+}
 
 buildscript {
     repositories {
         jcenter()
-        maven { 
+        maven {
             name 'Bintray Asciidoctor repo'
-            url 'http://dl.bintray.com/content/aalmiray/asciidoctor' 
+            url 'http://dl.bintray.com/content/aalmiray/asciidoctor'
         }
     }
 
@@ -52,7 +54,7 @@ allprojects {
         ignoreFailures = true
         configFile = file("$rootProject.projectDir/config/checkstyle/checkstyle.xml")
     }
-    
+
     if (useIndy()) {
         def indyGroovy = {
             options.useAnt = true
@@ -270,7 +272,7 @@ sourceSets {
             ]
             fileTree("src/main/groovy/ui").matching {
                 exclude 'GroovyMain.java', 'GroovySocketServer.java'
-            }.visit {details ->
+            }.visit { details ->
                 exclude "groovy/ui/$details.path"
             }
             if (!useIndy()) {
@@ -386,9 +388,11 @@ apply from: 'gradle/codehaus.gradle'
 def isJava16() {
     System.properties['java.version'].contains('1.6')
 }
+
 def isJava15() {
     System.properties['java.version'].contains('1.5')
 }
+
 def modules() {
     subprojects.findAll { it.name =~ /groovy-(?!all-tests)/ }
 }
@@ -430,7 +434,7 @@ compileCompilerJava {
 }
 
 compileJava {
-    dependsOn compilerClasses,compilerDgmConverter,ensureGrammars
+    dependsOn compilerClasses, compilerDgmConverter, ensureGrammars
     options.fork(memoryMaximumSize: javacMain_mx)
 }
 
