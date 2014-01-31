@@ -29,12 +29,9 @@ include::{projectdir}/src/spec/doc/tools-ide.adoc[]
 :leveloffset: 2
 include::{projectdir}/src/spec/doc/core-getting-started.adoc[]
 :leveloffset: 0
-=== Differences with Java (TBD)
-==== Multi-methods (TBD)
-==== Array initializers (TBD)
-==== Package scope visibility (TBD)
-==== ARM blocks (TBD)
-==== Inner class instantiation (TBD)
+:leveloffset: 2
+include::{projectdir}/src/spec/doc/core-differences-java.adoc[]
+:leveloffset: 0
 === Groovy Development Kit (TBD)
 ==== Working with IO (TBD)
 ==== Working with collections (TBD)

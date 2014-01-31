@@ -1,0 +1,28 @@
+= Differences with Java
+
+Groovy tries to be as natural as possible for Java developers. We’ve
+tried to follow the principle of least surprise when designing Groovy,
+particularly for developers learning Groovy who’ve come from a Java
+background.
+
+Here we list all the major differences between Java and Groovy.
+
+== Default imports
+
+All these packages and classes are imported by default, i.e. you do not
+have to use an explicit `import` statement to use them:
+
+* java.io.*
+* java.lang.*
+* java.math.BigDecimal
+* java.math.BigInteger
+* java.net.*
+* java.util.*
+* groovy.lang.*
+* groovy.util.*
+
+== Multi-methods (TBD)
+== Array initializers (TBD)
+== Package scope visibility (TBD)
+== ARM blocks (TBD)
+== Inner class instantiation (TBD)
