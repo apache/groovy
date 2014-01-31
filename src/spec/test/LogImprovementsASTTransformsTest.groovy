@@ -16,6 +16,19 @@
 
 class LogImprovementsASTTransformsTest extends GroovyTestCase {
 
+    // Log4j2 requires at least Java 1.6
+    static final boolean testEnabled = true
+    static {
+        if (System.getProperty("java.version").startsWith("1.5.")) {
+            testEnabled = false
+        }
+        if (System.getProperty('groovy.target.indy') && System.getProperty("java.version").startsWith("1.7.")) {
+            // temporarily disable tests for indy if running on JDK 7 because of a bug in Log4j2
+            // todo: re-enable when Log4J2 beta10 is out
+            testEnabled = false
+        }
+    }
+
     void testLogASTTransformation() {
         assertScript '''
 // tag::log_spec[]
@@ -119,8 +132,9 @@ g.greet()
     }
 
     void testLog4j2ASTTransformation() {
-        try {
-            assertScript '''
+        if (testEnabled) {
+            try {
+                assertScript '''
     // tag::log4j2_spec[]
     @groovy.util.logging.Log4j2
     class Greeter {
@@ -134,7 +148,7 @@ g.greet()
     g.greet()
             '''
 
-            assertScript '''
+                assertScript '''
     // tag::log4j2_equiv[]
     import org.apache.logging.log4j.LogManager
     import org.apache.logging.log4j.Logger
@@ -152,8 +166,9 @@ g.greet()
     def g = new Greeter()
     g.greet()
     '''
-        } catch (UnsupportedClassVersionError e) {
-            // running on older, unsupported, JDK
+            } catch (UnsupportedClassVersionError e) {
+                // running on older, unsupported, JDK
+            }
         }
     }
 
