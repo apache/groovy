@@ -1,6 +1,96 @@
 = Domain-Specific Languages
 
-== Command chains (TBD)
+== Command chains
+
+Groovy lets you omit parentheses around the arguments of a
+method call for top-level statements. ``command chain'' feature extends this by allowing us to chain such
+parentheses-free method calls, requiring neither parentheses around arguments, nor dots between the chained calls.
+The general idea is that a call like `a b c d` will actually be equivalent to `a(b).c(d)`. This
+also works with multiple arguments, closure arguments, and even named arguments. Furthermore, such command chains can
+also appear on the right-hand side of assignments. Let’s have a look at some examples
+supported by this new syntax:
+
+[source,groovy]
+---------------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_1,indent=0]
+
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_2,indent=0]
+
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_3,indent=0]
+
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_4,indent=0]
+
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_5,indent=0]
+---------------------------------------------------------------------------------------------------------------
+
+It is also possible to use methods in the chain which take no arguments,
+but in that case, the parentheses are needed:
+
+[source,groovy]
+-------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_6,indent=0]
+-------------------------------------------------------------------------------------------------
+
+If your command chain contains an odd number of elements, the chain will
+be composed of method / arguments, and will finish by a final property
+access:
+
+[source,groovy]
+-------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_7,indent=0]
+-------------------------------------------------------------------------------------
+
+This command chain approach opens up interesting possibilities in terms of the much wider range of DSLs which
+can now be written in Groovy.
+
+The above examples illustrate using a command chain based DSL but not how to create one. There are various strategies
+that you can use, but to illustrate creating such a DSL, we will show a couple of examples - first using maps and Closures:
+
+[source,groovy]
+------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl1,indent=0]
+------------------------------------------------------------------------------------------------------
+
+As a second example, consider how you might write a DSL for simplifying
+one of your existing APIs. Maybe you need to put this code in front of
+customers, business analysts or testers who might be not hard-core Java
+developers. We’ll use the `Splitter` from the Google
+http://code.google.com/p/guava-libraries/[Guava libraries] project as it
+already has a nice Fluent API. Here is how we might use it out of the
+box:
+
+[source,groovy]
+----------------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl2,indent=0]
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl2_assert,indent=0]
+----------------------------------------------------------------------------------------------------------------
+
+It reads fairly well for a Java developer but if that is not your target
+audience or you have many such statements to write, it could be
+considered a little verbose. Again, there are many options for writing a
+DSL. We’ll keep it simple with Maps and Closures. We’ll first write a
+helper method:
+
+[source,groovy]
+------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl3,indent=0]
+------------------------------------------------------------------------------------------------------
+
+now instead of this line from our original example:
+
+[source,groovy]
+----------------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl2_assert,indent=0]
+----------------------------------------------------------------------------------------------------------------
+
+we can write this:
+
+[source,groovy]
+-----------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl3_assert,indent=0]
+-----------------------------------------------------
+
+
 == Operator overloading (TBD)
 == Script base classes (TBD)
 == Adding properties to numbers (TBD)
