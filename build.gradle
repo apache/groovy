@@ -1,5 +1,22 @@
 apply from: 'gradle/filter.gradle'
-apply from: "gradle/indy.gradle"
+apply from: 'gradle/indy.gradle'
+apply from: 'gradle/bintray.gradle'
+
+buildscript {
+    repositories {
+        jcenter()
+        maven { 
+            name 'Bintray Asciidoctor repo'
+            url 'http://dl.bintray.com/content/aalmiray/asciidoctor' 
+        }
+    }
+
+    dependencies {
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.5.0'
+        classpath 'net.saliman:gradle-cobertura-plugin:1.1.2'
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:2.2.3'
+    }
+}
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
@@ -17,7 +34,7 @@ allprojects {
     group = 'org.codehaus.groovy'
     version = groovyVersion
     repositories {
-        mavenCentral()
+        jcenter()
     }
 
     apply plugin: 'checkstyle'
