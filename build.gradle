@@ -1,13 +1,15 @@
 apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
-apply from: 'gradle/bintray.gradle'
+if (JavaVersion.current().java6Compatible) {
+    apply from: 'gradle/bintray.gradle'
+}
 
 buildscript {
     repositories {
         jcenter()
-        maven { 
+        maven {
             name 'Bintray Asciidoctor repo'
-            url 'http://dl.bintray.com/content/aalmiray/asciidoctor' 
+            url 'http://dl.bintray.com/content/aalmiray/asciidoctor'
         }
     }
 
@@ -68,7 +70,7 @@ allprojects {
         configFile = file("$rootProject.projectDir/config/checkstyle/checkstyle.xml")
         configProperties = ['rootProject.projectDir': rootProject.projectDir]
     }
-    
+
     if (useIndy()) {
         tasks.withType(GroovyCompile) {
             groovyOptions.optimizationOptions.indy = true
@@ -292,7 +294,7 @@ sourceSets {
             ]
             fileTree('src/main/groovy/ui').matching {
                 exclude 'GroovyMain.java', 'GroovySocketServer.java'
-            }.visit {details ->
+            }.visit { details ->
                 exclude "groovy/ui/$details.path"
             }
             if (!useIndy()) {
@@ -410,9 +412,11 @@ apply from: 'gradle/utils.gradle'
 def isJava16() {
     System.properties['java.version'].contains('1.6')
 }
+
 def isJava15() {
     System.properties['java.version'].contains('1.5')
 }
+
 def modules() {
     subprojects
 }
@@ -454,7 +458,7 @@ compileCompilerJava {
 }
 
 compileJava {
-    dependsOn compilerClasses,compilerDgmConverter,ensureGrammars
+    dependsOn compilerClasses, compilerDgmConverter, ensureGrammars
     options.fork(memoryMaximumSize: javacMain_mx)
 }
 
@@ -491,10 +495,10 @@ apply from: 'gradle/eclipse.gradle'
 // Define a GroovyDoc task which depends on the generated groovydoc tool
 apply from: 'gradle/groovydoc.gradle'
 if (isJava15()) {
-  // do nothing on JDK 5 as sardine is built for Java 6
-  logger.warn 'You must run on JDK 6+ to be able to deploy to codehaus.'
+    // do nothing on JDK 5 as sardine is built for Java 6
+    logger.warn 'You must run on JDK 6+ to be able to deploy to codehaus.'
 } else {
-  apply from: 'gradle/codehaus.gradle'
+    apply from: 'gradle/codehaus.gradle'
 }
 
 classes {
