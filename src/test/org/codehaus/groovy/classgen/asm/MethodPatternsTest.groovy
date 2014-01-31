@@ -367,4 +367,37 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             'IRETURN',
         ])
     }
+
+    void testDiv() {
+        if (config.optimizationOptions.indy) return;
+        def types = [
+            "byte", "short", "int", "long", "double", "float"]
+        types.each {type ->
+            assert compile(method: "someCode","""
+                def someCode() {
+                    $type v = 5/4
+                }
+            """).hasSequence(["IDIV"])
+        }
+        types.each {type ->
+            assert compile(method: "someCode","""
+                def someCode() {
+                    $type v = 0
+                    v = 5/4
+                }
+            """).hasSequence(["IDIV"])
+        }
+
+        assert compile(method: "someCode", """
+            def someCode() {
+                long l = 5l/4l
+            }
+        """).hasSequence(["LDIV"])
+        assert compile(method: "someCode", """
+            def someCode() {
+                long l
+                l = 5l/4l
+            }
+        """).hasSequence(["LDIV"])
+    }
 }
