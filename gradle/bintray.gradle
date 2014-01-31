@@ -1,13 +1,6 @@
 import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
 
 allprojects {
-    if (project.tasks.findByName('javadoc')) {
-        javadoc.enabled = false
-    }
-    if (project.tasks.findByName('groovydoc')) {
-        groovydoc.enabled = false
-    }
-
     apply plugin: 'artifactory'
 
     artifactory {
