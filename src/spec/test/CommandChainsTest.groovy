@@ -280,6 +280,8 @@ assert result == ['a ', 'b_ ', 'c']
 '''
         assertScript '''
 // tag::commandchain_impl3[]
+@Grab('com.google.guava:guava:r09')
+import com.google.common.base.*
 def split(string) {
   [on: { sep ->
     [trimming: { trimChar ->
