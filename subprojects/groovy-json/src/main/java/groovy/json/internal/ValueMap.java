@@ -17,16 +17,20 @@
  */
 package groovy.json.internal;
 
+import java.util.Map;
 
-import java.nio.charset.Charset;
 
+public interface ValueMap <K, V> extends Map<K, V> {
 
-/**
- *   @author Rick Hightower
- */
-public final class Charsets {
+    /* add a map item value. */
+    void add( MapItemValue miv );
+    /** Return size w/o hydrating the map. */
+    int len();
+    /** Has the map been hydrated. */
+    boolean hydrated();
+    /** Give me the items in the map without hydrating the map.
+     * Realize that the array is likely larger than the length so array items can be null.
+     * */
+    Entry<String, Value>[] items();
 
-    public static final Charset US_ASCII = Charset.forName("US-ASCII");
-    public static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
 }

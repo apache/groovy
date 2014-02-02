@@ -15,16 +15,16 @@
  */
 package groovy.json;
 
-import static groovy.json.JsonTokenType.*;
-import groovy.io.LineColumnReader;
-import groovy.json.internal.CharArrayParser;
+import groovy.json.internal.JsonFastParser;
+import groovy.json.internal.JsonParserCharArray;
+import groovy.json.internal.JsonParserLax;
+import groovy.json.internal.JsonParserUsingCharacterSource;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringReader;
 import java.net.URL;
 import java.util.*;
 
@@ -48,6 +48,59 @@ import java.util.*;
  */
 public class JsonSlurper {
 
+
+    private int maxSizeForInMemory = 2000000;
+    private boolean chop = false;
+    private boolean lazyChop = true;
+    private boolean checkDates = true;
+
+    private JsonParserType type = JsonParserType.CHAR_BUFFER;
+
+    public int getMaxSizeForInMemory() {
+        return maxSizeForInMemory;
+    }
+
+    public JsonSlurper setMaxSizeForInMemory( int maxSizeForInMemory ) {
+        this.maxSizeForInMemory = maxSizeForInMemory;
+        return this;
+    }
+
+    public JsonParserType getType() {
+        return type;
+    }
+
+    public JsonSlurper setType( JsonParserType type ) {
+        this.type = type;
+        return this;
+    }
+
+    public boolean isChop() {
+        return chop;
+    }
+
+    public JsonSlurper setChop( boolean chop ) {
+        this.chop = chop;
+        return this;
+    }
+
+    public boolean isLazyChop() {
+        return lazyChop;
+    }
+
+    public JsonSlurper setLazyChop( boolean lazyChop ) {
+        this.lazyChop = lazyChop;
+        return this;
+    }
+
+    public boolean isCheckDates() {
+        return checkDates;
+    }
+
+    public JsonSlurper setCheckDates( boolean checkDates ) {
+        this.checkDates = checkDates;
+        return this;
+    }
+
     /**
      * Parse a text representation of a JSON data structure
      *
@@ -55,6 +108,9 @@ public class JsonSlurper {
      * @return a data structure of lists and maps
      */
     public Object parseText(String text) {
+        if (text == null || "".equals ( text )) {
+            throw new IllegalArgumentException ( "Text must not be null"  );
+        }
         return createParser().parse( text );
     }
 
@@ -72,7 +128,24 @@ public class JsonSlurper {
     }
 
     private JsonParser createParser() {
-        return new CharArrayParser ();
+        switch (type) {
+
+            case LAX:
+                return new JsonParserLax(false, chop, lazyChop, checkDates);
+
+            case CHAR_BUFFER:
+                return new JsonParserCharArray();
+
+            case CHARACTER_SOURCE:
+                return new JsonParserUsingCharacterSource();
+
+
+            case INDEX_OVERLAY:
+                return new JsonFastParser(false, chop, lazyChop, checkDates);
+
+            default:
+                return new JsonParserCharArray();
+        }
     }
 
     /**
@@ -99,7 +172,12 @@ public class JsonSlurper {
     }
 
     private Object parseFile(File file, String charset) {
-        return createParser ().parse(file, charset);
+
+        if (file.length() < maxSizeForInMemory)  {
+            return createParser ().parse(file, charset);
+        } else {
+            return new JsonParserUsingCharacterSource ().parse ( file, charset );
+        }
     }
 
     /**

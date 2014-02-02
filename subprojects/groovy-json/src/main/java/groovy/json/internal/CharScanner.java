@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.Objects;
 
 
 /**
- * Ideas from other projects like Jackson.
  * @author Rick Hightower
  */
 public class CharScanner {
@@ -30,10 +29,6 @@ public class CharScanner {
 
 
 
-
-    protected static final int COMMA = ',';
-    protected static final int CLOSED_CURLY = '}';
-    protected static final int CLOSED_BRACKET = ']';
 
     protected static final int LETTER_E = 'e';
     protected static final int LETTER_BIG_E = 'E';
@@ -43,24 +38,12 @@ public class CharScanner {
 
 
     protected static final int ALPHA_0 = '0';
-    protected static final int ALPHA_1 = '1';
-    protected static final int ALPHA_2 = '2';
-    protected static final int ALPHA_3 = '3';
-    protected static final int ALPHA_4 = '4';
-    protected static final int ALPHA_5 = '5';
-    protected static final int ALPHA_6 = '6';
-    protected static final int ALPHA_7 = '7';
-    protected static final int ALPHA_8 = '8';
     protected static final int ALPHA_9 = '9';
 
     protected static final int MINUS = '-';
     protected static final int PLUS = '+';
 
 
-
-    protected static final int DOUBLE_QUOTE = '"';
-
-    protected static final int ESCAPE = '\\';
 
 
     public static boolean isDigit( int c ) {
@@ -104,212 +87,7 @@ public class CharScanner {
 
     }
 
-    public static boolean isDigits( final char[] inputArray ) {
-        for ( int index = 0; index < inputArray.length; index++ ) {
-            char a = inputArray[ index ];
-            if ( !isDigit( a ) ) {
-                return false;
-            }
-        }
-        return true;
-    }
 
-    public static char[][] splitExact( final char[] inputArray,
-                                       final char split, final int resultsArrayLength ) {
-        /** Holds the results. */
-        char[][] results = new char[ resultsArrayLength ][];
-
-        int resultIndex = 0;
-        int startCurrentLineIndex = 0;
-        int currentLineLength = 1;
-
-
-        char c = '\u0000';
-        int index = 0;
-
-        for (; index < inputArray.length; index++, currentLineLength++ ) {
-            c = inputArray[ index ];
-            if ( c == split ) {
-
-                results[ resultIndex ] = Chr.copy (
-                        inputArray, startCurrentLineIndex, currentLineLength - 1 );
-                startCurrentLineIndex = index + 1; //skip the char
-
-                currentLineLength = 0;
-                resultIndex++;
-            }
-        }
-
-        if ( c != split ) {
-
-            results[ resultIndex ] = Chr.copy(
-                    inputArray, startCurrentLineIndex, currentLineLength - 1 );
-            resultIndex++;
-        }
-
-        int actualLength = resultIndex;
-        if ( actualLength < resultsArrayLength ) {
-            final int newSize = resultsArrayLength - actualLength;
-            results = __shrink( results, newSize );
-        }
-        return results;
-    }
-
-    public static char[][] splitExact( final char[] inputArray,
-                                       final int resultsArrayLength, char... delims ) {
-        /** Holds the results. */
-        char[][] results = new char[ resultsArrayLength ][];
-
-        int resultIndex = 0;
-        int startCurrentLineIndex = 0;
-        int currentLineLength = 1;
-
-
-        char c = '\u0000';
-        int index = 0;
-        int j;
-        char split;
-
-
-        for (; index < inputArray.length; index++, currentLineLength++ ) {
-            c = inputArray[ index ];
-
-            inner:
-            for ( j = 0; j < delims.length; j++ ) {
-                split = delims[ j ];
-                if ( c == split ) {
-
-                    results[ resultIndex ] = Chr.copy(
-                            inputArray, startCurrentLineIndex, currentLineLength - 1 );
-                    startCurrentLineIndex = index + 1; //skip the char
-
-                    currentLineLength = 0;
-                    resultIndex++;
-                    break inner;
-                }
-            }
-        }
-
-        if ( !Chr.in( c, delims ) ) {
-
-            results[ resultIndex ] = Chr.copy(
-                    inputArray, startCurrentLineIndex, currentLineLength - 1 );
-            resultIndex++;
-        }
-
-
-        int actualLength = resultIndex;
-        if ( actualLength < resultsArrayLength ) {
-            final int newSize = resultsArrayLength - actualLength;
-            results = __shrink( results, newSize );
-        }
-        return results;
-    }
-
-    public static char[][] split( final char[] inputArray,
-                                  final char split ) {
-        /** Holds the results. */
-        char[][] results = new char[ 16 ][];
-
-        int resultIndex = 0;
-        int startCurrentLineIndex = 0;
-        int currentLineLength = 1;
-
-
-        char c = '\u0000';
-        int index = 0;
-
-        for (; index < inputArray.length; index++, currentLineLength++ ) {
-            c = inputArray[ index ];
-            if ( c == split ) {
-
-                if ( resultIndex == results.length ) {
-
-                    results = _grow( results );
-                }
-
-
-                results[ resultIndex ] = Chr.copy(
-                        inputArray, startCurrentLineIndex, currentLineLength - 1 );
-                startCurrentLineIndex = index + 1; //skip the char
-
-                currentLineLength = 0;
-                resultIndex++;
-            }
-        }
-
-        if ( c != split ) {
-
-            results[ resultIndex ] = Chr.copy(
-                    inputArray, startCurrentLineIndex, currentLineLength - 1 );
-            resultIndex++;
-        }
-
-        int actualLength = resultIndex;
-        if ( actualLength < results.length ) {
-            final int newSize = results.length - actualLength;
-            results = __shrink( results, newSize );
-        }
-        return results;
-    }
-
-    public static char[][] splitByChars( final char[] inputArray,
-                                         final char... delims ) {
-        /** Holds the results. */
-        char[][] results = new char[ 16 ][];
-
-        int resultIndex = 0;
-        int startCurrentLineIndex = 0;
-        int currentLineLength = 1;
-
-
-        char c = '\u0000';
-        int index = 0;
-        int j;
-        char split;
-
-
-        for (; index < inputArray.length; index++, currentLineLength++ ) {
-
-            c = inputArray[ index ];
-
-            inner:
-            for ( j = 0; j < delims.length; j++ ) {
-                split = delims[ j ];
-                if ( c == split ) {
-
-                    if ( resultIndex == results.length ) {
-
-                        results = _grow( results );
-                    }
-
-
-                    results[ resultIndex ] = Chr.copy(
-                            inputArray, startCurrentLineIndex, currentLineLength - 1 );
-                    startCurrentLineIndex = index + 1; //skip the char
-
-                    currentLineLength = 0;
-                    resultIndex++;
-                    break inner;
-                }
-            }
-        }
-
-        if ( !Chr.in( c, delims ) ) {
-
-            results[ resultIndex ] = Chr.copy(
-                    inputArray, startCurrentLineIndex, currentLineLength - 1 );
-            resultIndex++;
-        }
-
-
-        int actualLength = resultIndex;
-        if ( actualLength < results.length ) {
-            final int newSize = results.length - actualLength;
-            results = __shrink( results, newSize );
-        }
-        return results;
-    }
 
     public static char[][] splitByCharsFromToDelims( final char[] inputArray, int from, int to,
                                                      final char... delims ) {
@@ -369,13 +147,6 @@ public class CharScanner {
             results = __shrink( results, newSize );
         }
         return results;
-    }
-
-    public static char[][] splitByCharsNoneEmpty( final char[] inputArray,
-                                                  final char... delims ) {
-
-        final char[][] results = splitByChars( inputArray, delims );
-        return compact( results );
     }
 
 
@@ -758,20 +529,6 @@ public class CharScanner {
 
 
 
-    public static int skipWhiteSpace( char [] array, int index ) {
-        int c;
-        for (; index< array.length; index++ ) {
-            c = array [index];
-            if ( c > 32 ) {
-
-                return index;
-            }
-        }
-        return index;
-    }
-
-
-
 
     public static int skipWhiteSpace( char [] array, int index, final int length ) {
         int c;
@@ -784,22 +541,7 @@ public class CharScanner {
         }
         return index;
     }
-    public static char[] readNumber( char[] array, int idx ) {
-        final int startIndex = idx;
 
-        while (true) {
-            if ( !CharScanner.isDecimalDigit ( array[idx] )) {
-                break;
-            } else {
-                idx++;
-                if (idx  >= array.length) break;
-            }
-        }
-
-        return  Arrays.copyOfRange ( array, startIndex, idx );
-
-
-    }
 
 
 
@@ -825,20 +567,6 @@ public class CharScanner {
 
 
 
-
-
-    public static int  skipWhiteSpaceFast( char [] array ) {
-        int c;
-        int index=0;
-        for (; index< array.length; index++ ) {
-            c = array [index];
-            if ( c > 32 ) {
-
-                return index;
-            }
-        }
-        return index;
-    }
 
 
     public static String errorDetails( String message, char[] array, int index, int ch ) {

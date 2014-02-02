@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.*;
 
-/**
- * Created by Richard on 2/1/14.
+/**.
+ *  * @author Rick Hightower
  */
 public class Exceptions {
 
@@ -60,43 +60,12 @@ public class Exceptions {
     }
 
 
-    public static <T> T tryIt( Class<T> clazz, TrialWithReturn<T> tryIt ) {
-        try {
-            return tryIt.tryIt();
-        } catch ( java.lang.Exception ex ) {
-            throw new JsonInternalException ( ex );
-        }
-    }
-
-
-    public static void tryIt( Trial tryIt ) {
-        try {
-            tryIt.tryIt();
-        } catch ( java.lang.Exception ex ) {
-            throw new JsonInternalException ( ex );
-        }
-    }
-
     public static void handle( String message, Throwable e ) {
         throw new JsonInternalException ( message, e );
     }
 
-    public static void tryIt( String message, Trial tryIt ) {
-        try {
-            tryIt.tryIt();
-        } catch ( java.lang.Exception ex ) {
-            throw new JsonInternalException ( message, ex );
-        }
-    }
 
 
-    public static interface Trial {
-        void tryIt() throws java.lang.Exception;
-    }
-
-    public static interface TrialWithReturn<T> {
-        T tryIt() throws java.lang.Exception;
-    }
 
     public static class JsonInternalException extends JsonException {
 

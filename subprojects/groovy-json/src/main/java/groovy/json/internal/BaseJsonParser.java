@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.*;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -112,10 +111,6 @@ public abstract class BaseJsonParser implements JsonParser {
     }
 
 
-    @Override
-    public Map<String, Object> parseMap ( String jsonString ) {
-        return (Map<String, Object>) parse ( jsonString );
-    }
 
     @Override
     public Object parse ( String jsonString ) {
@@ -184,48 +179,6 @@ public abstract class BaseJsonParser implements JsonParser {
             }
         }
 
-    }
-
-
-
-    @Override
-    public Map<String, Object> parseMap ( char[] value ) {
-        return (Map<String, Object>) parse(value);
-    }
-
-    @Override
-    public Map<String, Object> parseMap ( byte[] value ) {
-        return (Map<String, Object>) parse(value);
-    }
-
-    @Override
-    public Map<String, Object> parseMap ( byte[] value, String charset ) {
-        return (Map<String, Object>) parse(value, charset);
-    }
-
-    @Override
-    public Map<String, Object> parseMap ( InputStream value, String charset ) {
-        return (Map<String, Object>) parse(value, charset);
-    }
-
-    @Override
-    public Map<String, Object> parseMap ( CharSequence value ) {
-        return (Map<String, Object>) parse(value);
-    }
-
-    @Override
-    public Map<String, Object> parseMap ( InputStream value ) {
-        return (Map<String, Object>) parse(value);
-    }
-
-    @Override
-    public Map<String, Object> parseMap ( Reader value ) {
-        return (Map<String, Object>) parse(value);
-    }
-
-    @Override
-    public Map<String, Object> parseMap ( File file, String charset ) {
-        return (Map<String, Object>) parse ( file, charset );
     }
 
 
@@ -303,7 +256,11 @@ public abstract class BaseJsonParser implements JsonParser {
                 }
             }
             if ( isEscape (currentChar) ) {
-                escape = true;
+                if (!escape) {
+                    escape = true;
+                } else {
+                    escape = false;
+                }
             } else {
                 escape = false;
             }

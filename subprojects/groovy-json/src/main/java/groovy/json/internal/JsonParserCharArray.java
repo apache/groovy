@@ -1,50 +1,86 @@
+/*
+ * Copyright 2003-2014 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Derived from Boon all rights granted to Groovy project for this fork.
+ */
 package groovy.json.internal;
 
 import groovy.json.JsonException;
 
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static groovy.json.internal.CharScanner.isInteger;
 
+
 /**
- * Created by Richard on 2/1/14.
+ * Converts an input JSON String into Java objects works with String or char array
+ * as input. Produces an Object which can be any of the basic JSON types mapped
+ * to Java.
+ * <p/>
+ * @author Rick Hightower
  */
-public class CharArrayParser extends BaseJsonParser {
+public class JsonParserCharArray extends BaseJsonParser  {
+
     protected char[] charArray;
     protected int __index;
     protected char __currentChar;
 
 
+
+
+    private int lastIndex;
+
     protected Object decodeFromChars( char[] cs ) {
         __index = 0;
         charArray = cs;
+        lastIndex = cs.length -1;
         Object value = decodeValue();
         return value;
     }
 
 
-    protected final Object decodeFromString( String cs ) {
-        return decodeFromChars( FastStringUtils.toCharArray( cs ) );
-    }
-
-
-    protected final Object decodeFromBytes( byte[] bytes ) {
-        final char[] chars = FastStringUtils.toCharArrayFromBytes( bytes, charset );
-        return decodeFromChars( chars );
-    }
-
-
-    protected final Object decodeFromBytes( byte[] bytes, String charset ) {
-        final char[] chars = FastStringUtils.toCharArrayFromBytes( bytes, charset );
-        return decodeFromChars( chars );
-    }
-
     protected final boolean hasMore() {
-        return __index + 1 < charArray.length;
+        return __index  < lastIndex;
     }
+
+
+    protected final boolean hasCurrent() {
+        return __index  <= lastIndex;
+    }
+
+
+
+    protected final void skipWhiteSpace() {
+        int ix = __index;
+
+
+        if (hasCurrent ()) {
+            this.__currentChar = this.charArray[ix];
+        }
+
+        if (__currentChar <= 32) {
+            ix = skipWhiteSpaceFast ( this.charArray, ix );
+            this.__currentChar = this.charArray[ix];
+            __index = ix;
+        }
+
+
+
+    }
+
+
 
     protected final char nextChar() {
 
@@ -79,11 +115,6 @@ public class CharArrayParser extends BaseJsonParser {
         return index-1;
     }
 
-
-    protected final void skipWhiteSpace() {
-        __index = skipWhiteSpaceFast ( this.charArray, __index );
-        this.__currentChar = this.charArray[__index];
-    }
 
     protected final Object decodeJsonObject() {
 
@@ -350,7 +381,7 @@ public class CharArrayParser extends BaseJsonParser {
 
         char[] array = charArray;
         int index = __index;
-        char currentChar = charArray[index];
+        char currentChar = array[index];
 
         if ( index < array.length && currentChar == '"' ) {
             index++;
@@ -380,59 +411,100 @@ public class CharArrayParser extends BaseJsonParser {
         return value;
     }
 
-
     protected final List decodeJsonArray() {
-        if ( __currentChar == '[' ) {
-            __index++;
-        }
 
 
-        skipWhiteSpace();
+        ArrayList<Object> list = null;
+
+        boolean foundEnd = false;
+        char [] charArray = this.charArray;
+
+        try {
+            if ( __currentChar == '[' ) {
+                __index++;
+            }
+
+            int lastIndex;
+
+            skipWhiteSpace();
 
 
         /* the list might be empty  */
-        if ( __currentChar == ']' ) {
-            __index++;
-            return Collections.EMPTY_LIST;
-        }
-
-        ArrayList<Object> list = new ArrayList();
-
-        do {
-
-            skipWhiteSpace();
-
-            Object arrayItem = decodeValueInternal();
-
-            list.add( arrayItem );
-
-
-            skipWhiteSpace();
-
-            char c = __currentChar;
-
-            if ( c == ',' ) {
+            if ( __currentChar == ']' ) {
                 __index++;
-                continue;
-            } else if ( c == ']' ) {
-                __index++;
-                break;
-            } else {
-
-                String charString = charDescription( c );
-
-                complain(
-                        String.format( "expecting a ',' or a ']', " +
-                                " but got \nthe current character of  %s " +
-                                " on array index of %s \n", charString, list.size() )
-                );
-
+                return Collections.EMPTY_LIST;
             }
-        } while ( this.hasMore() );
 
+            list = new ArrayList();
+
+
+            while ( this.hasMore() ) {
+
+                Object arrayItem = decodeValueInternal();
+
+                list.add( arrayItem );
+
+
+                char c  =  charArray[__index];
+
+
+                if ( c == ',' ) {
+                    __index++;
+                    continue;
+                } else if ( c == ']' ) {
+                    __index++;
+                    foundEnd = true;
+                    break;
+                }
+
+                lastIndex = __index;
+                skipWhiteSpace();
+
+
+                c  =  charArray[__index];
+
+                if ( c == ',' ) {
+                    __index++;
+                    continue;
+                } else if ( c == ']' && lastIndex != __index) {
+                    __index++;
+                    foundEnd = true;
+                    break;
+                } else {
+
+                    String charString = charDescription( c );
+
+                    complain(
+                            String.format( "expecting a ',' or a ']', " +
+                                    " but got \nthe current character of  %s " +
+                                    " on array index of %s \n", charString, list.size() )
+                    );
+
+                }
+            }
+
+        }catch ( Exception ex ) {
+            if (ex instanceof JsonException) {
+                JsonException jsonException = (JsonException) ex;
+                throw jsonException;
+            }
+            throw new JsonException ( exceptionDetails("issue parsing JSON array"), ex );
+        }
+        if (!foundEnd ) {
+            complain ( "Did not find end of Json Array" );
+        }
         return list;
+
     }
 
+    protected final char currentChar() {
+        if (__index > lastIndex) {
+            return 0;
+        }
+        else {
+            return charArray[__index];
+        }
+    }
 
 
     @Override
@@ -440,10 +512,6 @@ public class CharArrayParser extends BaseJsonParser {
         return this.decodeFromChars( chars );
     }
 
-    @Override
-    public Object parse ( byte[] bytes, String charset ) {
-        return this.decodeFromBytes ( bytes, charset );
-    }
 
 
 }

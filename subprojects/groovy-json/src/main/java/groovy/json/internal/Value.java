@@ -17,16 +17,47 @@
  */
 package groovy.json.internal;
 
-
-import java.nio.charset.Charset;
-
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Date;
 
 /**
- *   @author Rick Hightower
+ * @author Rick Hightower
  */
-public final class Charsets {
+public interface Value {
 
-    public static final Charset US_ASCII = Charset.forName("US-ASCII");
-    public static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
+
+    byte byteValue();
+
+    short shortValue();
+
+    int intValue();
+
+    long longValue();
+
+    BigDecimal bigDecimalValue();
+
+    BigInteger bigIntegerValue();
+
+    float floatValue();
+
+    double doubleValue();
+
+    boolean booleanValue();
+
+    Date dateValue();
+
+    String stringValue();
+
+    String stringValueEncoded();
+
+    Object toValue();
+
+    <T extends Enum> T toEnum( Class<T> cls );
+
+    boolean isContainer(); //either a map or a collection
+
+    public void chop();
+
+    char charValue ();
 }

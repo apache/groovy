@@ -28,6 +28,9 @@ import java.util.Arrays;
 
 import static groovy.json.internal.Exceptions.die;
 
+/**
+ *  @author Rick Hightower
+ */
 public class CharBuf extends Writer implements CharSequence {
     protected int capacity = 16;
     protected int location = 0;
@@ -60,10 +63,6 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
     public static CharBuf create( char[] buffer ) {
-        return new CharBuf( buffer );
-    }
-
-    public static CharBuf createFromUTF8Bytes( byte[] buffer ) {
         return new CharBuf( buffer );
     }
 
@@ -112,11 +111,6 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
-    public final CharBuf addObject ( Object object ) {
-        String str = object.toString();
-        addString ( str );
-        return this;
-    }
 
     public final CharBuf add( int i ) {
 
@@ -465,14 +459,6 @@ public class CharBuf extends Writer implements CharSequence {
                         _buffer[_location] =  '\\';
                         _location ++;
                         break;
-                    //There is not requirement to escape solidus so we will not.
-//                        case '/':
-//                            _buffer[_location] = '\\';
-//                            _location ++;
-//                            _buffer[_location] =  '/';
-//                            _location ++;
-//                            break;
-
                     case '\b':
                         _buffer[_location] = '\\';
                         _location ++;
@@ -1147,70 +1133,6 @@ public class CharBuf extends Writer implements CharSequence {
 
 
 
-    /**
-     * Turn a single bytes into two hex character representation.
-     *
-     * @param decoded the byte to serializeObject.
-     */
-    public  CharSequence addHex( final int decoded  ) {
-
-
-
-        int _location = location;
-        char [] _buffer = buffer;
-        int _capacity = capacity;
-
-        if ( 2 + _location > _capacity ) {
-            _buffer = Chr.grow( _buffer );
-            _capacity = _buffer.length;
-        }
-
-        _buffer [_location] = (char) encodeNibbleToHexAsciiCharByte( ( decoded >> 4 ) & 0x0F );
-        _location ++;
-
-
-        _buffer [_location] = (char) encodeNibbleToHexAsciiCharByte( decoded & 0x0F );;
-        _location ++;
-
-        location = _location;
-        buffer = _buffer;
-        capacity = _capacity;
-        return this;
-    }
-
-    /**
-     * Turns a single nibble into an ascii HEX digit.
-     *
-     * @param nibble the nibble to serializeObject.
-     * @return the encoded nibble (1/2 byte).
-     */
-    protected static int encodeNibbleToHexAsciiCharByte( final int nibble ) {
-
-        switch ( nibble ) {
-            case 0x00:
-            case 0x01:
-            case 0x02:
-            case 0x03:
-            case 0x04:
-            case 0x05:
-            case 0x06:
-            case 0x07:
-            case 0x08:
-            case 0x09:
-                return nibble + 0x30; // 0x30('0') - 0x39('9')
-            case 0x0A:
-            case 0x0B:
-            case 0x0C:
-            case 0x0D:
-            case 0x0E:
-            case 0x0F:
-                return nibble + 0x57; // 0x41('a') - 0x46('f')
-            default:
-                die( "illegal nibble: " + nibble );
-                return -1;
-        }
-    }
-
     public final CharBuf decodeJsonString ( char[] chars ) {
         return decodeJsonString ( chars, 0, chars.length );
     }
@@ -1292,182 +1214,6 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
 
-
-
-    protected static final int DOUBLE_QUOTE = '"';
-
-    protected static final int ESCAPE = '\\';
-
-
-    protected static final int LETTER_N = 'n';
-
-
-    protected static final int LETTER_U = 'u';
-
-
-    protected static final int LETTER_T = 't';
-
-    protected static final int LETTER_R = 'r';
-
-    protected static final int LETTER_B = 'b';
-
-    protected static final int LETTER_F = 'f';
-
-    protected static final int FORWARD_SLASH = '/';
-
-
-    public final CharBuf decodeJsonString ( byte[] bytes, int start, int to ) {
-        int len = to - start;
-
-        char [] buffer = this.buffer;
-        int location = this.location;
-
-        if (len > capacity) {
-            buffer =  Chr.grow ( buffer, buffer.length * 2 + len );
-            capacity = buffer.length;
-        }
-
-        for ( int index = start; index < to; index++ ) {
-            int c = bytes[ index ];
-            if ( c >= 0 ) {
-                if (c == ESCAPE && index < to)  {
-                    c = bytes[ ++index ];
-                    switch ( c ) {
-                        case LETTER_N:
-                            buffer[location++]='\n';
-                            break;
-                        case FORWARD_SLASH:
-                            buffer[location++]='/';
-                            break;
-                        case DOUBLE_QUOTE:
-                            buffer[location++]='"';
-                            break;
-                        case LETTER_F:
-                            buffer[location++]='\f';
-                            break;
-                        case LETTER_T:
-                            buffer[location++]='\t';
-                            break;
-                        case ESCAPE:
-                            buffer[location++]='\\';
-                            break;
-                        case LETTER_B:
-                            buffer[location++]='\b';
-                            break;
-                        case LETTER_R:
-                            buffer[location++]='\r';
-                            break;
-                        case LETTER_U:
-                            if ( index + 4 < to ) {
-                                String hex = new String( bytes, index + 1, 4 );
-                                char unicode = ( char ) Integer.parseInt( hex, 16 );
-                                buffer[location++]=unicode;
-                                index += 4;
-                            }
-                            break;
-                        default:
-                            throw new JsonException ( "Unable to decode string" );
-                    }
-
-                } else  {
-                    buffer[location++]=(char)c;
-                }
-            } else {
-                index = utf8MultiByte( c, index, bytes );
-            }
-        }
-
-        this.buffer = buffer;
-        this.location = location;
-
-        return this;
-
-    }
-
-    public final CharBuf decodeJsonStringAscii ( byte[] bytes, int start, int to ) {
-        int len = to - start;
-
-        char [] buffer = this.buffer;
-        int location = this.location;
-
-        if (len > capacity) {
-            buffer =  Chr.grow ( buffer, buffer.length * 2 + len );
-            capacity = buffer.length;
-        }
-
-        for ( int index = start; index < to; index++ ) {
-            int c = bytes[ index ];
-            if ( c == ESCAPE ) {
-                if ( index < to ) {
-                    index++;
-                    c = bytes[ index ];
-                    switch ( c ) {
-
-                        case LETTER_N:
-                            buffer[location++]='\n';
-                            break;
-
-                        case FORWARD_SLASH:
-                            buffer[location++]='/';
-                            break;
-
-                        case DOUBLE_QUOTE:
-                            buffer[location++]='"';
-                            break;
-
-                        case LETTER_F:
-                            buffer[location++]='\f';
-                            break;
-
-                        case LETTER_T:
-                            buffer[location++]='\t';
-                            break;
-
-                        case ESCAPE:
-                            buffer[location++]='\\';
-                            break;
-
-                        case LETTER_B:
-                            buffer[location++]='\b';
-                            break;
-
-                        case LETTER_R:
-                            buffer[location++]='\r';
-                            break;
-
-                        case LETTER_U:
-
-                            if ( index + 4 < to ) {
-                                String hex = new String( bytes, index + 1, 4 );
-                                char unicode = ( char ) Integer.parseInt( hex, 16 );
-                                buffer[location++]=unicode;
-                                index += 4;
-                            }
-                            break;
-                        default:
-                            throw new JsonException ( "Unable to decode string" );
-                    }
-                }
-            } else {
-
-
-                buffer[location++]=(char)c;
-            }
-        }
-
-        this.buffer = buffer;
-        this.location = location;
-
-        return this;
-
-    }
-
-    public void ensure( int i ) {
-        if ( i + location > capacity ) {
-            buffer = Chr.grow( buffer, i * 2 );
-            capacity = buffer.length;
-        }
-    }
 
 
 

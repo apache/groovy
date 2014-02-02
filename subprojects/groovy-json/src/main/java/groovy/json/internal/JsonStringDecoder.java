@@ -18,15 +18,36 @@
 package groovy.json.internal;
 
 
-import java.nio.charset.Charset;
-
-
 /**
- *   @author Rick Hightower
+ * @author Richard Hightower
  */
-public final class Charsets {
+public class JsonStringDecoder {
 
-    public static final Charset US_ASCII = Charset.forName("US-ASCII");
-    public static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
+
+
+
+
+
+
+    public static String decode( char[] chars, int start, int to ) {
+
+        if ( !Chr.contains( chars, '\\', start, to - start ) ) {
+            return new String( chars, start, to - start );
+        }
+        return decodeForSure( chars, start, to );
+    }
+
+
+
+
+    public static String decodeForSure( char[] chars, int start, int to ) {
+
+        CharBuf builder = CharBuf.create( to - start );
+        builder.decodeJsonString(chars, start, to);
+        return builder.toString();
+
+    }
+
+
+
 }
