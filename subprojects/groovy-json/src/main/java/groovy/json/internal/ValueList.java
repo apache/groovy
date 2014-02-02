@@ -28,11 +28,10 @@ import java.util.List;
  */
 public class ValueList extends AbstractList<Object> implements List<Object> {
 
-    List<Object> list = new ArrayList<Object> ( 5 );
+    List<Object> list = new ArrayList<Object>( 5 );
 
     private final boolean lazyChop;
     boolean converted = false;
-
 
 
     public ValueList( boolean lazyChop ) {
@@ -135,7 +134,7 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
         }
     }
 
-    public List<Object> list () {
+    public List<Object> list() {
         return this.list;
     }
 }

@@ -18,16 +18,12 @@
 package groovy.json.internal;
 
 import java.util.Arrays;
-import java.util.Objects;
 
 
 /**
  * @author Rick Hightower
  */
 public class CharScanner {
-
-
-
 
 
     protected static final int LETTER_E = 'e';
@@ -44,20 +40,17 @@ public class CharScanner {
     protected static final int PLUS = '+';
 
 
-
-
     public static boolean isDigit( int c ) {
         return c >= ALPHA_0 && c <= ALPHA_9;
     }
 
 
     public static boolean isDecimalDigit( int c ) {
-        return isDigit ( c ) || isDecimalChar ( c );
+        return isDigit( c ) || isDecimalChar( c );
     }
 
 
-
-    public static boolean isDecimalChar ( int currentChar ) {
+    public static boolean isDecimalChar( int currentChar ) {
         switch ( currentChar ) {
             case MINUS:
             case PLUS:
@@ -71,10 +64,10 @@ public class CharScanner {
     }
 
 
-    public static boolean hasDecimalChar ( char [] chars) {
+    public static boolean hasDecimalChar( char[] chars ) {
 
-        for (int index =0; index < chars.length; index++) {
-            switch ( chars[index] ) {
+        for ( int index = 0; index < chars.length; index++ ) {
+            switch ( chars[ index ] ) {
                 case MINUS:
                 case PLUS:
                 case LETTER_E:
@@ -86,7 +79,6 @@ public class CharScanner {
         return false;
 
     }
-
 
 
     public static char[][] splitByCharsFromToDelims( final char[] inputArray, int from, int to,
@@ -158,7 +150,6 @@ public class CharScanner {
     }
 
     public static char[][] compact( char[][] array ) {
-        Objects.requireNonNull ( array );
 
         int nullCount = 0;
         for ( char[] ch : array ) {
@@ -184,7 +175,6 @@ public class CharScanner {
 
 
     private static char[][] _grow( char[][] array ) {
-        Objects.requireNonNull( array );
 
         char[][] newArray = new char[ array.length * 2 ][];
         System.arraycopy( array, 0, newArray, 0, array.length );
@@ -192,7 +182,6 @@ public class CharScanner {
     }
 
     private static char[][] __shrink( char[][] array, int size ) {
-        Objects.requireNonNull( array );
         char[][] newArray = new char[ array.length - size ][];
 
         System.arraycopy( array, 0, ( char[][] ) newArray, 0, array.length - size );
@@ -224,14 +213,13 @@ public class CharScanner {
     }
 
 
-
     public static boolean isLong( char[] digitChars ) {
-        return isLong ( digitChars, 0, digitChars.length );
+        return isLong( digitChars, 0, digitChars.length );
     }
 
     public static boolean isLong( char[] digitChars, int offset, int len
     ) {
-        String cmpStr = digitChars[offset]=='-' ? MIN_LONG_STR_NO_SIGN : MAX_LONG_STR;
+        String cmpStr = digitChars[ offset ] == '-' ? MIN_LONG_STR_NO_SIGN : MAX_LONG_STR;
         int cmpLen = cmpStr.length();
         if ( len < cmpLen ) return true;
         if ( len > cmpLen ) return false;
@@ -263,13 +251,13 @@ public class CharScanner {
 
 
     public static boolean isInteger( char[] digitChars ) {
-        return isInteger ( digitChars, 0, digitChars.length );
+        return isInteger( digitChars, 0, digitChars.length );
     }
 
-    public static boolean isInteger( char[] digitChars, int offset, int len) {
+    public static boolean isInteger( char[] digitChars, int offset, int len ) {
 
 
-        String cmpStr = (digitChars[offset] == '-') ? MIN_INT_STR_NO_SIGN : MAX_INT_STR;
+        String cmpStr = ( digitChars[ offset ] == '-' ) ? MIN_INT_STR_NO_SIGN : MAX_INT_STR;
         int cmpLen = cmpStr.length();
         if ( len < cmpLen ) return true;
         if ( len > cmpLen ) return false;
@@ -391,7 +379,7 @@ public class CharScanner {
 
 
     public static long parseLong( char[] digitChars ) {
-        return parseLong ( digitChars, 0, digitChars.length );
+        return parseLong( digitChars, 0, digitChars.length );
     }
 
     public static long parseLongIgnoreDot( char[] digitChars, int offset, int len ) {
@@ -402,8 +390,8 @@ public class CharScanner {
 
     private final static long L_BILLION = 1000000000;
 
-    public static double doubleValue( char[] buffer) {
-        return doubleValue ( buffer, 0, buffer.length );
+    public static double doubleValue( char[] buffer ) {
+        return doubleValue( buffer, 0, buffer.length );
     }
 
     public static double doubleValue( char[] buffer, int startIndex, int endIndex ) {
@@ -527,13 +515,10 @@ public class CharScanner {
     };
 
 
-
-
-
-    public static int skipWhiteSpace( char [] array, int index, final int length ) {
+    public static int skipWhiteSpace( char[] array, int index, final int length ) {
         int c;
-        for (; index< length; index++ ) {
-            c = array [index];
+        for (; index < length; index++ ) {
+            c = array[ index ];
             if ( c > 32 ) {
 
                 return index;
@@ -543,30 +528,22 @@ public class CharScanner {
     }
 
 
-
-
     public static char[] readNumber( char[] array, int idx, final int len ) {
         final int startIndex = idx;
 
-        while (true) {
-            if ( !CharScanner.isDecimalDigit ( array[idx] )) {
+        while ( true ) {
+            if ( !CharScanner.isDecimalDigit( array[ idx ] ) ) {
                 break;
             } else {
                 idx++;
-                if (idx  >= len ) break;
+                if ( idx >= len ) break;
             }
         }
 
-        return  Arrays.copyOfRange ( array, startIndex, idx );
+        return Arrays.copyOfRange( array, startIndex, idx );
 
 
     }
-
-
-
-
-
-
 
 
     public static String errorDetails( String message, char[] array, int index, int ch ) {
@@ -600,7 +577,7 @@ public class CharScanner {
         }
 
 
-        buf.addLine( "line number " + (line + 1) );
+        buf.addLine( "line number " + ( line + 1 ) );
         buf.addLine( "index number " + index );
 
 
@@ -609,7 +586,7 @@ public class CharScanner {
         } catch ( Exception ex ) {
 
             try {
-                int start =  index = ( index - 10 < 0 ) ? 0 : index - 10;
+                int start = index = ( index - 10 < 0 ) ? 0 : index - 10;
 
                 buf.addLine( new String( array, start, index ) );
             } catch ( Exception ex2 ) {
@@ -636,7 +613,7 @@ public class CharScanner {
             charString = "[NEWLINE]";
 
         } else {
-            charString = "'" + (char)c + "'";
+            charString = "'" + ( char ) c + "'";
         }
 
         charString = charString + " with an int value of " + ( ( int ) c );

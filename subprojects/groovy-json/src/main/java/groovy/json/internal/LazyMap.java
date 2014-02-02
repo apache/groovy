@@ -23,6 +23,7 @@ import java.util.*;
 /**
  * This maps only builds once you ask for a key for the first time.
  * It is designed to not incur the overhead of creating a map unless needed.
+ *
  * @author Rick Hightower
  */
 public class LazyMap extends AbstractMap<String, Object> {
@@ -36,7 +37,6 @@ public class LazyMap extends AbstractMap<String, Object> {
     private String[] keys;
     /* The values stored in the map. */
     private Object[] values;
-
 
 
     public LazyMap() {
@@ -109,7 +109,7 @@ public class LazyMap extends AbstractMap<String, Object> {
 
     private void buildIfNeeded() {
         if ( map == null ) {
-            map = new LinkedHashMap<String, Object> ( size, 0.01f );
+            map = new LinkedHashMap<String, Object>( size, 0.01f );
             for ( int index = 0; index < size; index++ ) {
                 map.put( keys[ index ], values[ index ] );
             }
@@ -180,16 +180,16 @@ public class LazyMap extends AbstractMap<String, Object> {
         if ( map == null ) {
             return null;
         } else {
-            if (map instanceof LinkedHashMap)  {
-                return ((LinkedHashMap)map).clone();
+            if ( map instanceof LinkedHashMap ) {
+                return ( ( LinkedHashMap ) map ).clone();
             } else {
-                return new LinkedHashMap (this);
+                return new LinkedHashMap( this );
             }
         }
     }
 
     public LazyMap clearAndCopy() {
-        LazyMap map = new LazyMap ();
+        LazyMap map = new LazyMap();
         for ( int index = 0; index < size; index++ ) {
             map.put( keys[ index ], values[ index ] );
         }
@@ -198,7 +198,6 @@ public class LazyMap extends AbstractMap<String, Object> {
     }
 
     public static <V> V[] grow( V[] array ) {
-        Objects.requireNonNull( array );
         Object newArray = Array.newInstance( array.getClass().getComponentType(),
                 array.length * 2 );
         System.arraycopy( array, 0, newArray, 0, array.length );

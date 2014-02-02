@@ -18,7 +18,6 @@
 package groovy.json.internal;
 
 /**
- *
  * @author Rick Hightower
  */
 public enum CacheType {

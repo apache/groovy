@@ -55,7 +55,7 @@ public class NumberValue extends java.lang.Number implements Value {
         try {
             if ( chop ) {
 
-                this.buffer = Arrays.copyOfRange ( buffer, startIndex, endIndex );
+                this.buffer = Arrays.copyOfRange( buffer, startIndex, endIndex );
                 this.startIndex = 0;
                 this.endIndex = this.buffer.length;
                 chopped = true;
@@ -65,26 +65,25 @@ public class NumberValue extends java.lang.Number implements Value {
                 this.buffer = buffer;
             }
         } catch ( Exception ex ) {
-            Exceptions.handle (   sputs ( "exception", ex, "start", startIndex, "end", endIndex ),
-            ex );
+            Exceptions.handle( sputs( "exception", ex, "start", startIndex, "end", endIndex ),
+                    ex );
 
         }
     }
 
 
-
-    public String toString () {
+    public String toString() {
         if ( startIndex == 0 && endIndex == buffer.length ) {
-            return FastStringUtils.noCopyStringFromChars ( buffer );
+            return FastStringUtils.noCopyStringFromChars( buffer );
         } else {
-            return new String ( buffer, startIndex, ( endIndex - startIndex ) );
+            return new String( buffer, startIndex, ( endIndex - startIndex ) );
         }
     }
 
 
     @Override
-    public final Object toValue () {
-        return value != null ? value : (value = doToValue ()) ;
+    public final Object toValue() {
+        return value != null ? value : ( value = doToValue() );
     }
 
     @Override
@@ -92,7 +91,6 @@ public class NumberValue extends java.lang.Number implements Value {
 
         return toEnum( cls, intValue() );
     }
-
 
 
     public static <T extends Enum> T toEnum( Class<T> cls, int value ) {
@@ -112,11 +110,11 @@ public class NumberValue extends java.lang.Number implements Value {
         return false;
     }
 
-    private final Object doToValue () {
+    private final Object doToValue() {
 
         switch ( type ) {
             case DOUBLE:
-                return doubleValue ();
+                return doubleValue();
             case INTEGER:
 
                 int sign = 1;
@@ -129,18 +127,18 @@ public class NumberValue extends java.lang.Number implements Value {
                 }
 
 
-                if ( isInteger ( buffer, startIndex, endIndex - startIndex, negative ) ) {
-                    return intValue () * sign;
+                if ( isInteger( buffer, startIndex, endIndex - startIndex, negative ) ) {
+                    return intValue() * sign;
                 } else {
-                    return longValue () * sign;
+                    return longValue() * sign;
                 }
         }
-        die ();
+        die();
         return null;
     }
 
     @Override
-    public boolean equals ( Object o ) {
+    public boolean equals( Object o ) {
         if ( this == o ) return true;
         if ( !( o instanceof Value ) ) return false;
 
@@ -148,69 +146,69 @@ public class NumberValue extends java.lang.Number implements Value {
 
         if ( endIndex != value1.endIndex ) return false;
         if ( startIndex != value1.startIndex ) return false;
-        if ( !Arrays.equals ( buffer, value1.buffer ) ) return false;
+        if ( !Arrays.equals( buffer, value1.buffer ) ) return false;
         if ( type != value1.type ) return false;
-        if ( value != null ? !value.equals ( value1.value ) : value1.value != null ) return false;
+        if ( value != null ? !value.equals( value1.value ) : value1.value != null ) return false;
 
         return true;
     }
 
     @Override
-    public int hashCode () {
-        int result = type != null ? type.hashCode () : 0;
-        result = 31 * result + ( buffer != null ? Arrays.hashCode ( buffer ) : 0 );
+    public int hashCode() {
+        int result = type != null ? type.hashCode() : 0;
+        result = 31 * result + ( buffer != null ? Arrays.hashCode( buffer ) : 0 );
         result = 31 * result + startIndex;
         result = 31 * result + endIndex;
-        result = 31 * result + ( value != null ? value.hashCode () : 0 );
+        result = 31 * result + ( value != null ? value.hashCode() : 0 );
         return result;
     }
 
 
-    public BigDecimal bigDecimalValue () {
-        return new BigDecimal ( buffer, startIndex, endIndex - startIndex );
+    public BigDecimal bigDecimalValue() {
+        return new BigDecimal( buffer, startIndex, endIndex - startIndex );
     }
 
     @Override
     public BigInteger bigIntegerValue() {
-        return new BigInteger ( toString () );
+        return new BigInteger( toString() );
     }
 
-    public String stringValue () {
-        return toString ();
+    public String stringValue() {
+        return toString();
     }
 
     @Override
-    public String stringValueEncoded () {
-        return toString ();
-    }
-
-
-    @Override
-    public Date dateValue () {
-        return new Date ( Dates.utc ( longValue () ) );
+    public String stringValueEncoded() {
+        return toString();
     }
 
 
     @Override
-    public int intValue () {
+    public Date dateValue() {
+        return new Date( Dates.utc( longValue() ) );
+    }
+
+
+    @Override
+    public int intValue() {
         int sign = 1;
         if ( buffer[ startIndex ] == '-' ) {
             startIndex++;
             sign = -1;
 
         }
-        return parseInt ( buffer, startIndex, endIndex - startIndex ) * sign;
+        return parseInt( buffer, startIndex, endIndex - startIndex ) * sign;
     }
 
     @Override
-    public long longValue () {
+    public long longValue() {
         long sign = 1;
         if ( buffer[ startIndex ] == '-' ) {
             startIndex++;
             sign = -1;
 
         }
-        if ( isInteger ( buffer, startIndex, endIndex - startIndex, sign < 0 ) ){
+        if ( isInteger( buffer, startIndex, endIndex - startIndex, sign < 0 ) ) {
             return parseInt( buffer, startIndex, endIndex - startIndex ) * sign;
         } else {
             return parseLong( buffer, startIndex, endIndex - startIndex ) * sign;
@@ -218,12 +216,12 @@ public class NumberValue extends java.lang.Number implements Value {
     }
 
 
-    public byte byteValue () {
-        return ( byte ) intValue ();
+    public byte byteValue() {
+        return ( byte ) intValue();
     }
 
-    public short shortValue () {
-        return ( short ) intValue ();
+    public short shortValue() {
+        return ( short ) intValue();
     }
 
 
@@ -241,18 +239,18 @@ public class NumberValue extends java.lang.Number implements Value {
     };
 
     @Override
-    public double doubleValue () {
-        return CharScanner.doubleValue ( this.buffer, startIndex, endIndex );
+    public double doubleValue() {
+        return CharScanner.doubleValue( this.buffer, startIndex, endIndex );
 
     }
 
     @Override
     public boolean booleanValue() {
-        return Boolean.parseBoolean ( toString () );
+        return Boolean.parseBoolean( toString() );
     }
 
     @Override
-    public float floatValue () {
+    public float floatValue() {
 
         boolean simple = true;
         int digitsPastPoint = 0;
@@ -270,7 +268,7 @@ public class NumberValue extends java.lang.Number implements Value {
 
         int length = endIndex - startIndex;
         if ( length > 10 ) {
-            return Float.parseFloat ( toString () ) * sign;
+            return Float.parseFloat( toString() ) * sign;
         }
         loop:
         for ( int index = startIndex; index < endIndex; index++ ) {
@@ -304,7 +302,7 @@ public class NumberValue extends java.lang.Number implements Value {
         if ( simple ) {
             int value;
 
-            value = parseIntIgnoreDot ( buffer, startIndex, length );
+            value = parseIntIgnoreDot( buffer, startIndex, length );
             if ( digitsPastPoint < fpowersOf10.length ) {
                 float power = fpowersOf10[ digitsPastPoint ] * sign;
                 return value / power;
@@ -314,25 +312,23 @@ public class NumberValue extends java.lang.Number implements Value {
 
         }
 
-        return Float.parseFloat ( toString () ) * sign;
+        return Float.parseFloat( toString() ) * sign;
 
     }
 
-    public final void chop () {
+    public final void chop() {
         if ( !chopped ) {
             this.chopped = true;
-            this.buffer = Arrays.copyOfRange ( buffer, startIndex, endIndex );
+            this.buffer = Arrays.copyOfRange( buffer, startIndex, endIndex );
             this.startIndex = 0;
             this.endIndex = this.buffer.length;
         }
     }
 
 
-
-
     @Override
-    public char charValue () {
-        return buffer[startIndex];
+    public char charValue() {
+        return buffer[ startIndex ];
     }
 
 }

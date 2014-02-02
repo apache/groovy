@@ -27,13 +27,14 @@ import java.util.List;
  */
 public class JsonParserLax extends JsonParserCharArray {
 
-    private static ValueContainer EMPTY_LIST = new ValueContainer ( Collections.emptyList () );
+    private static ValueContainer EMPTY_LIST = new ValueContainer( Collections.emptyList() );
 
     private final boolean useValues;
     private final boolean chop;
     private final boolean lazyChop;
     private final boolean defaultCheckDates;
-    public JsonParserLax(  ) {
+
+    public JsonParserLax() {
         this( true );
     }
 
@@ -42,7 +43,7 @@ public class JsonParserLax extends JsonParserCharArray {
         this( useValues, false );
     }
 
-    public JsonParserLax(  boolean useValues, boolean chop ) {
+    public JsonParserLax( boolean useValues, boolean chop ) {
         this( useValues, chop, !chop );
     }
 
@@ -50,7 +51,7 @@ public class JsonParserLax extends JsonParserCharArray {
         this( useValues, chop, lazyChop, true );
     }
 
-    public JsonParserLax(  boolean useValues, boolean chop, boolean lazyChop, boolean defaultCheckDates ) {
+    public JsonParserLax( boolean useValues, boolean chop, boolean lazyChop, boolean defaultCheckDates ) {
         this.useValues = useValues;
         this.chop = chop;
         this.lazyChop = lazyChop;
@@ -62,8 +63,8 @@ public class JsonParserLax extends JsonParserCharArray {
         if ( __currentChar == '{' )
             this.nextChar();
 
-        ValueMap map =  useValues ? new ValueMapImpl () : new LazyValueMap ( lazyChop );
-        Value value  = new ValueContainer ( map );
+        ValueMap map = useValues ? new ValueMapImpl() : new LazyValueMap( lazyChop );
+        Value value = new ValueContainer( map );
 
         skipWhiteSpace();
         int startIndexOfKey = __index;
@@ -113,7 +114,7 @@ public class JsonParserLax extends JsonParserCharArray {
                     break;
 
                 case '\'':
-                    key = decodeStringSingle(  );
+                    key = decodeStringSingle();
 
                     //puts ( "key with quote", key );
 
@@ -142,7 +143,7 @@ public class JsonParserLax extends JsonParserCharArray {
                     break;
 
                 case '"':
-                    key = decodeStringDouble(  );
+                    key = decodeStringDouble();
 
                     //puts ( "key with quote", key );
 
@@ -216,7 +217,7 @@ public class JsonParserLax extends JsonParserCharArray {
                     break endIndexLookup;
             }
         }
-        return new CharSequenceValue ( chop, Type.STRING, startIndexOfKey, endIndex + 1, this.charArray, encoded, checkDate );
+        return new CharSequenceValue( chop, Type.STRING, startIndexOfKey, endIndex + 1, this.charArray, encoded, checkDate );
     }
 
     protected final Object decodeValue() {
@@ -257,11 +258,11 @@ public class JsonParserLax extends JsonParserCharArray {
                     break;
 
                 case '"':
-                    value = decodeStringDouble(  );
+                    value = decodeStringDouble();
                     break;
 
                 case '\'':
-                    value = decodeStringSingle( );
+                    value = decodeStringSingle();
                     break;
 
 
@@ -308,10 +309,10 @@ public class JsonParserLax extends JsonParserCharArray {
                 case '8':
                 case '9':
                 case '0':
-                    return decodeNumberLax (false);
+                    return decodeNumberLax( false );
 
                 case '-':
-                    return decodeNumberLax (true);
+                    return decodeNumberLax( true );
 
                 default:
                     value = decodeStringLax();
@@ -380,32 +381,32 @@ public class JsonParserLax extends JsonParserCharArray {
         }
     }
 
-    protected final Value decodeNumberLax(boolean minus) {
+    protected final Value decodeNumberLax( boolean minus ) {
 
         char[] array = charArray;
 
         final int startIndex = __index;
-        int index =  __index;
+        int index = __index;
         char currentChar;
         boolean doubleFloat = false;
 
-        if (minus && index + 1 < array.length) {
+        if ( minus && index + 1 < array.length ) {
             index++;
         }
 
-        while (true) {
-            currentChar = array[index];
-            if ( isNumberDigit ( currentChar )) {
+        while ( true ) {
+            currentChar = array[ index ];
+            if ( isNumberDigit( currentChar ) ) {
                 //noop
             } else if ( currentChar <= 32 ) { //white
                 break;
-            } else if ( isDelimiter ( currentChar ) ) {
+            } else if ( isDelimiter( currentChar ) ) {
                 break;
-            } else if ( isDecimalChar (currentChar) ) {
+            } else if ( isDecimalChar( currentChar ) ) {
                 doubleFloat = true;
             }
             index++;
-            if (index   >= array.length) break;
+            if ( index >= array.length ) break;
         }
 
         __index = index;
@@ -413,7 +414,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
         Type type = doubleFloat ? Type.DOUBLE : Type.INTEGER;
 
-        NumberValue value = new NumberValue ( chop, type, startIndex, __index, this.charArray );
+        NumberValue value = new NumberValue( chop, type, startIndex, __index, this.charArray );
 
         return value;
     }
@@ -461,13 +462,13 @@ public class JsonParserLax extends JsonParserCharArray {
         char currentChar = charArray[ __index ];
         final int startIndex = __index;
         boolean encoded = false;
-        char [] charArray = this.charArray;
+        char[] charArray = this.charArray;
 
         for (; index < charArray.length; index++ ) {
             currentChar = charArray[ index ];
 
-            if (isDelimiter( currentChar )) break;
-            else if (currentChar == '\\') break;
+            if ( isDelimiter( currentChar ) ) break;
+            else if ( currentChar == '\\' ) break;
         }
 
         Value value = this.extractLaxString( startIndex, index, encoded, defaultCheckDates );
@@ -476,7 +477,7 @@ public class JsonParserLax extends JsonParserCharArray {
         return value;
     }
 
-    private Value decodeStringDouble(  ) {
+    private Value decodeStringDouble() {
 
         __currentChar = charArray[ __index ];
 
@@ -514,7 +515,7 @@ public class JsonParserLax extends JsonParserCharArray {
             escape = false;
         }
 
-        Value value = new CharSequenceValue ( chop, Type.STRING, startIndex, __index, this.charArray, encoded, defaultCheckDates );
+        Value value = new CharSequenceValue( chop, Type.STRING, startIndex, __index, this.charArray, encoded, defaultCheckDates );
 
         if ( __index < charArray.length ) {
             __index++;
@@ -523,7 +524,7 @@ public class JsonParserLax extends JsonParserCharArray {
         return value;
     }
 
-    private Value decodeStringSingle(  ) {
+    private Value decodeStringSingle() {
 
         __currentChar = charArray[ __index ];
 
@@ -568,7 +569,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
         boolean checkDates = defaultCheckDates && !encoded && minusCount >= 2 && colonCount >= 2;
 
-        Value value = new CharSequenceValue ( chop, Type.STRING, startIndex, __index, this.charArray, encoded, checkDates );
+        Value value = new CharSequenceValue( chop, Type.STRING, startIndex, __index, this.charArray, encoded, checkDates );
 
         if ( __index < charArray.length ) {
             __index++;
@@ -593,12 +594,12 @@ public class JsonParserLax extends JsonParserCharArray {
         List<Object> list;
 
         if ( useValues ) {
-            list = new ArrayList<Object> ();
+            list = new ArrayList<Object>();
         } else {
-            list = new ValueList ( lazyChop );
+            list = new ValueList( lazyChop );
         }
 
-        Value value = new ValueContainer ( list );
+        Value value = new ValueContainer( list );
 
         do {
 
@@ -633,9 +634,9 @@ public class JsonParserLax extends JsonParserCharArray {
     }
 
     protected final Object decodeFromChars( char[] cs ) {
-        Value value =  ( ( Value ) super.decodeFromChars ( cs ) );
-        if (value.isContainer ()) {
-            return value.toValue ();
+        Value value = ( ( Value ) super.decodeFromChars( cs ) );
+        if ( value.isContainer() ) {
+            return value.toValue();
         } else {
             return value;
         }

@@ -25,14 +25,19 @@ import static groovy.json.internal.Exceptions.die;
  * This map is for object serialization mainly.
  * The idea is the final conversion of
  * the Value objects are delayed until the last possible moment, i.e., just before injected into a bean.
+ *
  * @author Rick Hightower
  */
-public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap <String, Value> {
+public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap<String, Value> {
 
-    /** The internal map to hold the Value map. */
+    /**
+     * The internal map to hold the Value map.
+     */
     private Map<String, Value> map = null;
 
-    /** The items held in the map. */
+    /**
+     * The items held in the map.
+     */
     private Entry<String, Value>[] items = new Entry[ 20 ];
 
     /* The current length of the map. */
@@ -41,6 +46,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
 
     /**
      * Add a MapItemValue to the map.
+     *
      * @param miv map value item.
      */
     @Override
@@ -59,17 +65,18 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
 
     @Override
     public boolean hydrated() {
-        return map!=null;
+        return map != null;
     }
 
     @Override
     public Entry<String, Value>[] items() {
-        return  items;
+        return items;
     }
 
 
     /**
      * Get the items for the key.
+     *
      * @param key
      * @return
      */
@@ -98,17 +105,21 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
     }
 
 
-    /** If the map has not been built yet, then we just return a fake entry set. */
+    /**
+     * If the map has not been built yet, then we just return a fake entry set.
+     */
     @Override
     public Set<Entry<String, Value>> entrySet() {
         buildIfNeededMap();
         return map.entrySet();
     }
 
-    /** Build the map if requested to, it does this lazily. */
+    /**
+     * Build the map if requested to, it does this lazily.
+     */
     private final void buildIfNeededMap() {
         if ( map == null ) {
-            map = new HashMap<String, Value> ( items.length );
+            map = new HashMap<String, Value>( items.length );
 
             for ( Entry<String, Value> miv : items ) {
                 if ( miv == null ) {
@@ -120,7 +131,9 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
     }
 
 
-    /** Return a collection of values. */
+    /**
+     * Return a collection of values.
+     */
     public Collection<Value> values() {
         this.buildIfNeededMap();
         return map.values();
@@ -129,6 +142,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
 
     /**
      * Return the size of the map. Use the map if it has already been created.
+     *
      * @return size
      */
     public int size() {

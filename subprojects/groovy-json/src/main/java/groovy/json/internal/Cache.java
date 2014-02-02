@@ -20,9 +20,10 @@ package groovy.json.internal;
 
 /**
  * Cache
- * @author Rick Hightower
+ *
  * @param <KEY>
  * @param <VALUE>
+ * @author Rick Hightower
  */
 public interface Cache<KEY, VALUE> {
     void put( KEY key, VALUE value );

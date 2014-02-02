@@ -59,5 +59,5 @@ public interface Value {
 
     public void chop();
 
-    char charValue ();
+    char charValue();
 }

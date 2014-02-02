@@ -35,16 +35,16 @@ public class FastStringUtils {
     public static final boolean ENABLED;
 
     private static final boolean WRITE_TO_FINAL_FIELDS = Boolean.parseBoolean( System.getProperty( "groovy.json.faststringutils.write.to.final.fields", "false" ) );
-    private static final boolean DISABLE = Boolean.parseBoolean( System.getProperty( "groovy.json.faststringutils.disable", "false" ) );
+    private static final boolean DISABLE = Boolean.parseBoolean( System.getProperty( "groovy.json.faststringutils.disable", "true" ) );
 
     static {
 
-        if (!DISABLE)  {
+        if ( !DISABLE ) {
             Unsafe unsafe;
             try {
-                Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-                unsafeField.setAccessible(true);
-                unsafe = (Unsafe) unsafeField.get(null);
+                Field unsafeField = Unsafe.class.getDeclaredField( "theUnsafe" );
+                unsafeField.setAccessible( true );
+                unsafe = ( Unsafe ) unsafeField.get( null );
 
             } catch ( Throwable cause ) {
                 unsafe = null;
@@ -59,9 +59,9 @@ public class FastStringUtils {
 
             if ( ENABLED ) {
                 try {
-                    stringValueFieldOffset = unsafe.objectFieldOffset(String.class.getDeclaredField("value"));
-                    stringOffsetFieldOffset = unsafe.objectFieldOffset(String.class.getDeclaredField("offset"));
-                    stringCountFieldOffset = unsafe.objectFieldOffset(String.class.getDeclaredField("count"));
+                    stringValueFieldOffset = unsafe.objectFieldOffset( String.class.getDeclaredField( "value" ) );
+                    stringOffsetFieldOffset = unsafe.objectFieldOffset( String.class.getDeclaredField( "offset" ) );
+                    stringCountFieldOffset = unsafe.objectFieldOffset( String.class.getDeclaredField( "count" ) );
                 } catch ( Throwable cause ) {
                 }
             }
@@ -85,20 +85,20 @@ public class FastStringUtils {
 
     public static char[] toCharArray( final String string ) {
         if ( ENABLED ) {
-            char[] value = (char[]) UNSAFE.getObject(string, STRING_VALUE_FIELD_OFFSET);
+            char[] value = ( char[] ) UNSAFE.getObject( string, STRING_VALUE_FIELD_OFFSET );
 
             if ( STRING_OFFSET_FIELD_OFFSET != -1 ) {
                 // old String version with offset and count
-                int offset = (Integer) UNSAFE.getObject(string, STRING_OFFSET_FIELD_OFFSET);
-                int count = (Integer) UNSAFE.getObject(string, STRING_COUNT_FIELD_OFFSET);
+                Integer offset = ( Integer ) UNSAFE.getObject( string, STRING_OFFSET_FIELD_OFFSET );
+                Integer count = ( Integer ) UNSAFE.getObject( string, STRING_COUNT_FIELD_OFFSET );
 
-                if ( offset == 0 && count == value.length ) {
+                if ( (offset==null || value == null) || (offset == 0 && count == value.length) ) {
                     // no need to copy
                     return value;
 
                 } else {
-                    char result[] = new char[count];
-                    System.arraycopy(value, offset, result, 0, count);
+                    char result[] = new char[ count ];
+                    System.arraycopy( value, offset, result, 0, count );
                     return result;
                 }
 
@@ -116,9 +116,8 @@ public class FastStringUtils {
     }
 
     public static char[] toCharArrayFromBytes( final byte[] bytes, Charset charset ) {
-        return toCharArray( new String( bytes, charset != null? charset: java.nio.charset.StandardCharsets.UTF_8 ) );
+        return toCharArray( new String( bytes, charset != null ? charset : Charsets.UTF_8 ) );
     }
-
 
 
     public static char[] toCharArrayFromBytes( final byte[] bytes, String charset ) {
@@ -127,11 +126,11 @@ public class FastStringUtils {
         Charset cs = null;
 
         try {
-            cs = Charset.forName ( charset );
+            cs = Charset.forName( charset );
         } catch ( Exception ex ) {
-            Exceptions.handle ( char[].class, ex );
+            Exceptions.handle( char[].class, ex );
         }
-        return toCharArray( new String( bytes, cs != null? cs: Charsets.UTF_8 ) );
+        return toCharArray( new String( bytes, cs != null ? cs : Charsets.UTF_8 ) );
     }
 
     public static String noCopyStringFromChars( final char[] chars ) {

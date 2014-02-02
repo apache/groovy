@@ -35,7 +35,6 @@ public class Dates {
     }
 
 
-
     private static Date internalDate( TimeZone tz, int year, int month, int day, int hour, int minute, int second ) {
 
         Calendar calendar = Calendar.getInstance();
@@ -58,7 +57,7 @@ public class Dates {
         Calendar calendar = Calendar.getInstance();
 
         calendar.set( Calendar.YEAR, year );
-        calendar.set ( Calendar.MONTH, month - 1 );
+        calendar.set( Calendar.MONTH, month - 1 );
         calendar.set( Calendar.DAY_OF_MONTH, day );
         calendar.set( Calendar.HOUR_OF_DAY, hour );
         calendar.set( Calendar.MINUTE, minute );
@@ -67,9 +66,9 @@ public class Dates {
 
         calendar.setTimeZone( tz );
 
-        return calendar.getTime ();
+        return calendar.getTime();
     }
- 
+
     public static Date toDate( TimeZone tz, int year, int month, int day,
                                int hour, int minute, int second ) {
         return internalDate( tz, year, month, day, hour, minute, second );
@@ -82,26 +81,15 @@ public class Dates {
     }
 
 
-
-
-
-
-
-
-
     final static int SHORT_ISO_8601_TIME_LENGTH = "1994-11-05T08:15:30Z".length();
     final static int LONG_ISO_8601_TIME_LENGTH = "1994-11-05T08:15:30-05:00".length();
     public final static int JSON_TIME_LENGTH = "2013-12-14T01:55:33.412Z".length();
 
 
-
-
-
-
     public static Date fromISO8601( char[] charArray, int from, int to ) {
 
         try {
-            if ( isISO8601 ( charArray, from, to ) ) {
+            if ( isISO8601( charArray, from, to ) ) {
                 int year = CharScanner.parseIntFromTo( charArray, from + 0, from + 4 );
                 int month = CharScanner.parseIntFromTo( charArray, from + 5, from + 7 );
                 int day = CharScanner.parseIntFromTo( charArray, from + 8, from + 10 );
@@ -130,7 +118,7 @@ public class Dates {
             } else {
                 return null;
             }
-        } catch (Exception ex) {
+        } catch ( Exception ex ) {
             return null;
         }
 
@@ -158,7 +146,7 @@ public class Dates {
             } else {
                 return null;
             }
-        } catch (Exception ex) {
+        } catch ( Exception ex ) {
             return null;
         }
 
@@ -204,7 +192,7 @@ public class Dates {
             }
 
             return false;
-        } catch (Exception ex) {
+        } catch ( Exception ex ) {
             ex.printStackTrace();
             return false;
         }

@@ -29,7 +29,7 @@ import java.util.Arrays;
 import static groovy.json.internal.Exceptions.die;
 
 /**
- *  @author Rick Hightower
+ * @author Rick Hightower
  */
 public class CharBuf extends Writer implements CharSequence {
     protected int capacity = 16;
@@ -51,7 +51,7 @@ public class CharBuf extends Writer implements CharSequence {
     public static CharBuf createExact( final int capacity ) {
         return new CharBuf( capacity ) {
             public CharBuf add( char[] chars ) {
-                Chr._idx ( buffer, location, chars );
+                Chr._idx( buffer, location, chars );
                 location += chars.length;
                 return this;
             }
@@ -82,7 +82,7 @@ public class CharBuf extends Writer implements CharSequence {
         if ( off == 0 && cbuf.length == len ) {
             this.add( cbuf );
         } else {
-            char[] buffer = Arrays.copyOfRange ( cbuf, off, off + len );
+            char[] buffer = Arrays.copyOfRange( cbuf, off, off + len );
             this.add( buffer );
         }
 
@@ -101,7 +101,7 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
     public final CharBuf add( String str ) {
-        add( FastStringUtils.toCharArray ( str ) );
+        add( FastStringUtils.toCharArray( str ) );
         return this;
     }
 
@@ -114,158 +114,157 @@ public class CharBuf extends Writer implements CharSequence {
 
     public final CharBuf add( int i ) {
 
-        add ( Integer.toString ( i ));
+        add( Integer.toString( i ) );
         return this;
     }
 
 
-    private Cache <Integer, char[]> icache;
+    private Cache<Integer, char[]> icache;
 
     public final CharBuf addInt( int i ) {
-        switch (i) {
+        switch ( i ) {
             case 0:
-                addChar('0');
+                addChar( '0' );
                 return this;
             case 1:
-                addChar('1');
+                addChar( '1' );
                 return this;
             case -1:
-                addChar('-');
-                addChar('1');
+                addChar( '-' );
+                addChar( '1' );
                 return this;
         }
 
         addInt( Integer.valueOf( i ) );
         return this;
     }
+
     public final CharBuf addInt( Integer key ) {
 
 
-        if (icache == null) {
-            icache = new SimpleCache<Integer, char[]> ( 20, CacheType.LRU );
+        if ( icache == null ) {
+            icache = new SimpleCache<Integer, char[]>( 20, CacheType.LRU );
         }
-        char [] chars = icache.get ( key );
+        char[] chars = icache.get( key );
 
-        if ( chars ==  null ) {
-            String str = Integer.toString ( key );
-            chars = FastStringUtils.toCharArray ( str );
-            icache.put ( key, chars );
+        if ( chars == null ) {
+            String str = Integer.toString( key );
+            chars = FastStringUtils.toCharArray( str );
+            icache.put( key, chars );
         }
 
-        addChars ( chars );
+        addChars( chars );
         return this;
     }
 
 
-    final char [] trueChars = "true".toCharArray ();
-    final char [] falseChars = "false".toCharArray ();
+    final char[] trueChars = "true".toCharArray();
+    final char[] falseChars = "false".toCharArray();
 
     public final CharBuf add( boolean b ) {
-        addChars ( b ? trueChars : falseChars );
+        addChars( b ? trueChars : falseChars );
         return this;
     }
 
 
     public final CharBuf addBoolean( boolean b ) {
 
-        add ( Boolean.toString ( b ));
+        add( Boolean.toString( b ) );
         return this;
     }
 
-    public final  CharBuf add( byte i ) {
+    public final CharBuf add( byte i ) {
 
-        add ( Byte.toString ( i ));
+        add( Byte.toString( i ) );
         return this;
     }
 
     public final CharBuf addByte( byte i ) {
 
-        addInt ( i );
+        addInt( i );
         return this;
     }
 
 
     public final CharBuf add( short i ) {
 
-        add ( Short.toString ( i ));
+        add( Short.toString( i ) );
         return this;
     }
 
 
     public final CharBuf addShort( short i ) {
 
-        addInt ( i );
+        addInt( i );
         return this;
     }
 
     public final CharBuf add( long l ) {
-        add ( Long.toString ( l ));
+        add( Long.toString( l ) );
         return this;
     }
 
 
-
-    public final  CharBuf add( double d ) {
-        add ( Double.toString ( d ) );
+    public final CharBuf add( double d ) {
+        add( Double.toString( d ) );
         return this;
     }
 
 
-    private Cache <Double, char[]> dcache;
+    private Cache<Double, char[]> dcache;
 
 
-
-    public final  CharBuf addDouble( double d ) {
+    public final CharBuf addDouble( double d ) {
         addDouble( Double.valueOf( d ) );
         return this;
     }
 
-    public final  CharBuf addDouble( Double key ) {
+    public final CharBuf addDouble( Double key ) {
 
-        if (dcache == null) {
-            dcache = new SimpleCache<Double, char[]> ( 20, CacheType.LRU );
+        if ( dcache == null ) {
+            dcache = new SimpleCache<Double, char[]>( 20, CacheType.LRU );
         }
-        char [] chars = dcache.get ( key );
+        char[] chars = dcache.get( key );
 
-        if ( chars ==  null ) {
-            String str = Double.toString ( key );
-            chars = FastStringUtils.toCharArray ( str );
-            dcache.put ( key, chars );
+        if ( chars == null ) {
+            String str = Double.toString( key );
+            chars = FastStringUtils.toCharArray( str );
+            dcache.put( key, chars );
         }
 
-        add ( chars );
+        add( chars );
         return this;
     }
 
 
-    public final  CharBuf add( float d ) {
-        add ( Float.toString ( d ));
+    public final CharBuf add( float d ) {
+        add( Float.toString( d ) );
         return this;
     }
 
 
-    private Cache <Float, char[]> fcache;
+    private Cache<Float, char[]> fcache;
 
-    public final  CharBuf addFloat( float d ) {
+    public final CharBuf addFloat( float d ) {
         addFloat( Float.valueOf( d ) );
         return this;
     }
 
 
-    public final  CharBuf addFloat( Float key ) {
+    public final CharBuf addFloat( Float key ) {
 
-        if (fcache == null) {
-            fcache = new SimpleCache<Float, char[]> ( 20, CacheType.LRU );
+        if ( fcache == null ) {
+            fcache = new SimpleCache<Float, char[]>( 20, CacheType.LRU );
         }
-        char [] chars = fcache.get ( key );
+        char[] chars = fcache.get( key );
 
-        if ( chars ==  null ) {
-            String str = Float.toString ( key );
-            chars = FastStringUtils.toCharArray ( str );
-            fcache.put ( key, chars );
+        if ( chars == null ) {
+            String str = Float.toString( key );
+            chars = FastStringUtils.toCharArray( str );
+            fcache.put( key, chars );
         }
 
-        add ( chars );
+        add( chars );
 
         return this;
     }
@@ -291,7 +290,7 @@ public class CharBuf extends Writer implements CharSequence {
     public final CharBuf addChar( final char ch ) {
 
         int _location = location;
-        char [] _buffer = buffer;
+        char[] _buffer = buffer;
         int _capacity = capacity;
 
         if ( 1 + _location > _capacity ) {
@@ -300,8 +299,8 @@ public class CharBuf extends Writer implements CharSequence {
 
         }
 
-        _buffer [_location] = ch;
-        _location ++;
+        _buffer[ _location ] = ch;
+        _location++;
 
 
         location = _location;
@@ -335,14 +334,13 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
 
-
     public final CharBuf addChars( char[] chars ) {
         if ( chars.length + location > capacity ) {
             buffer = Chr.grow( buffer, buffer.length * 2 + chars.length );
             capacity = buffer.length;
         }
 
-        arraycopy ( chars, 0, buffer, location, chars.length );
+        arraycopy( chars, 0, buffer, location, chars.length );
         location += chars.length;
         return this;
     }
@@ -351,21 +349,21 @@ public class CharBuf extends Writer implements CharSequence {
     public final CharBuf addQuoted( char[] chars ) {
 
         int _location = location;
-        char [] _buffer = buffer;
+        char[] _buffer = buffer;
         int _capacity = capacity;
 
         int sizeNeeded = chars.length + 2 + _location;
-        if (  sizeNeeded > _capacity ) {
-            _buffer = Chr.grow( _buffer, sizeNeeded * 2  );
+        if ( sizeNeeded > _capacity ) {
+            _buffer = Chr.grow( _buffer, sizeNeeded * 2 );
             _capacity = _buffer.length;
         }
-        _buffer [_location] = '"';
+        _buffer[ _location ] = '"';
         _location++;
 
         arraycopy( chars, 0, _buffer, _location, chars.length );
 
-        _location += (chars.length);
-        _buffer [_location] = '"';
+        _location += ( chars.length );
+        _buffer[ _location ] = '"';
         _location++;
 
         location = _location;
@@ -375,136 +373,133 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
 
-
     public final CharBuf addJsonEscapedString( String jsonString ) {
-        char[] charArray = FastStringUtils.toCharArray ( jsonString );
-        return addJsonEscapedString ( charArray );
+        char[] charArray = FastStringUtils.toCharArray( jsonString );
+        return addJsonEscapedString( charArray );
 
     }
 
 
-    private  static boolean isJSONControl ( int c ) {
+    private static boolean isJSONControl( int c ) {
         /* Anything less than space is a control character. */
         if ( c < 30 ) {
             return true;
         /* 34 is double quote. */
-        } else if (c == 34 ){
+        } else if ( c == 34 ) {
             return true;
-        } else if (c == 92) {
+        } else if ( c == 92 ) {
             return true;
         }
         return false;
     }
 
-    private static boolean hasAnyJSONControlChars ( final char[] charArray ) {
+    private static boolean hasAnyJSONControlChars( final char[] charArray ) {
 
         int index = 0;
         char c;
         while ( true ) {
             c = charArray[ index ];
-            if ( isJSONControl ( c )) {
+            if ( isJSONControl( c ) ) {
                 return true;
             }
-            if ( ++index >= charArray.length) return false;
+            if ( ++index >= charArray.length ) return false;
         }
 
     }
 
     public final CharBuf addJsonEscapedString( final char[] charArray ) {
-        if (charArray.length == 0 ) return this;
-        if ( hasAnyJSONControlChars ( charArray )) {
-            return doAddJsonEscapedString(charArray);
+        if ( charArray.length == 0 ) return this;
+        if ( hasAnyJSONControlChars( charArray ) ) {
+            return doAddJsonEscapedString( charArray );
         } else {
-            return this.addQuoted ( charArray );
+            return this.addQuoted( charArray );
         }
     }
 
     private final CharBuf doAddJsonEscapedString( char[] charArray ) {
 
-        char [] _buffer = buffer;
-        int _location =  this.location;
-        int  ensureThisMuch = charArray.length * 2;
+        char[] _buffer = buffer;
+        int _location = this.location;
+        int ensureThisMuch = charArray.length * 2;
 
-        int sizeNeeded =  (ensureThisMuch) + _location;
-        if ( sizeNeeded  > capacity ) {
+        int sizeNeeded = ( ensureThisMuch ) + _location;
+        if ( sizeNeeded > capacity ) {
 
-            int growBy =   ( _buffer.length * 2 ) <  sizeNeeded  ? sizeNeeded : (_buffer.length*2);
-            _buffer = Chr.grow( buffer, growBy);
+            int growBy = ( _buffer.length * 2 ) < sizeNeeded ? sizeNeeded : ( _buffer.length * 2 );
+            _buffer = Chr.grow( buffer, growBy );
             capacity = _buffer.length;
         }
 
 
-
-
-        _buffer[_location] = '"';
-        _location ++;
+        _buffer[ _location ] = '"';
+        _location++;
 
         int index = 0;
         while ( true ) {
             char c = charArray[ index ];
 
 
-            if ( isJSONControl ( c )) {
+            if ( isJSONControl( c ) ) {
 
                 switch ( c ) {
                     case '\"':
-                        _buffer[_location] = '\\';
-                        _location ++;
-                        _buffer[_location] =  '"';
-                        _location ++;
+                        _buffer[ _location ] = '\\';
+                        _location++;
+                        _buffer[ _location ] = '"';
+                        _location++;
                         break;
                     case '\\':
-                        _buffer[_location] = '\\';
-                        _location ++;
-                        _buffer[_location] =  '\\';
-                        _location ++;
+                        _buffer[ _location ] = '\\';
+                        _location++;
+                        _buffer[ _location ] = '\\';
+                        _location++;
                         break;
                     case '\b':
-                        _buffer[_location] = '\\';
-                        _location ++;
-                        _buffer[_location] =  'b';
-                        _location ++;
+                        _buffer[ _location ] = '\\';
+                        _location++;
+                        _buffer[ _location ] = 'b';
+                        _location++;
                         break;
                     case '\f':
-                        _buffer[_location] = '\\';
-                        _location ++;
-                        _buffer[_location] =  'f';
-                        _location ++;
+                        _buffer[ _location ] = '\\';
+                        _location++;
+                        _buffer[ _location ] = 'f';
+                        _location++;
                         break;
                     case '\n':
-                        _buffer[_location] = '\\';
-                        _location ++;
-                        _buffer[_location] =  'n';
-                        _location ++;
+                        _buffer[ _location ] = '\\';
+                        _location++;
+                        _buffer[ _location ] = 'n';
+                        _location++;
                         break;
                     case '\r':
-                        _buffer[_location] = '\\';
-                        _location ++;
-                        _buffer[_location] =  'r';
-                        _location ++;
+                        _buffer[ _location ] = '\\';
+                        _location++;
+                        _buffer[ _location ] = 'r';
+                        _location++;
                         break;
 
                     case '\t':
-                        _buffer[_location] = '\\';
-                        _location ++;
-                        _buffer[_location] =  't';
-                        _location ++;
+                        _buffer[ _location ] = '\\';
+                        _location++;
+                        _buffer[ _location ] = 't';
+                        _location++;
                         break;
                 }
-            }else {
+            } else {
 
-                _buffer[_location] = c;
-                _location ++;
+                _buffer[ _location ] = c;
+                _location++;
 
             }
 
 
-            if ( ++index >= charArray.length) break;
+            if ( ++index >= charArray.length ) break;
 
 
         }
-        _buffer[_location] = '"';
-        _location ++;
+        _buffer[ _location ] = '"';
+        _location++;
 
 
         buffer = _buffer;
@@ -514,48 +509,46 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
 
-
-
     public final CharBuf addJsonFieldName( String str ) {
-        return addJsonFieldName ( FastStringUtils.toCharArray ( str ) );
+        return addJsonFieldName( FastStringUtils.toCharArray( str ) );
     }
 
     public final CharBuf addJsonFieldName( char[] chars ) {
         int _location = location;
-        char [] _buffer = buffer;
+        char[] _buffer = buffer;
         int _capacity = capacity;
 
         try {
 
 
             int sizeNeeded = chars.length + 3 + _location;
-            if (  sizeNeeded > _capacity ) {
-                _buffer = Chr.grow( _buffer, sizeNeeded * 2  );
+            if ( sizeNeeded > _capacity ) {
+                _buffer = Chr.grow( _buffer, sizeNeeded * 2 );
                 _capacity = _buffer.length;
             }
-            _buffer [_location] = '"';
+            _buffer[ _location ] = '"';
             _location++;
 
             arraycopy( chars, 0, _buffer, _location, chars.length );
 
-            _location += (chars.length);
-            _buffer [_location] = '"';
+            _location += ( chars.length );
+            _buffer[ _location ] = '"';
             _location++;
-            _buffer [_location] = ':';
+            _buffer[ _location ] = ':';
             _location++;
 
             location = _location;
             buffer = _buffer;
             capacity = _capacity;
             return this;
-        } catch (Exception ex) {
-            return Exceptions.handle ( CharBuf.class, Exceptions.sputs ( toDebugString (), new String ( chars ), "_location", _location ), ex );
+        } catch ( Exception ex ) {
+            return Exceptions.handle( CharBuf.class, Exceptions.sputs( toDebugString(), new String( chars ), "_location", _location ), ex );
         }
     }
 
     public final CharBuf addQuoted( String str ) {
-        final char[] chars = FastStringUtils.toCharArray ( str );
-        addQuoted ( chars );
+        final char[] chars = FastStringUtils.toCharArray( str );
+        addQuoted( chars );
         return this;
     }
 
@@ -585,18 +578,19 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
 
-    private final static void sysstemarraycopy (final char [] src, final int srcPos, final char [] dest, final int destPos, final int length)  {
+    private final static void sysstemarraycopy( final char[] src, final int srcPos, final char[] dest, final int destPos, final int length ) {
         System.arraycopy( src, srcPos, dest, destPos, length );
 
     }
-    private final static void directArraycopy (final char [] src, final int srcPos, final char [] dest, final int destPos, final int length)  {
+
+    private final static void directArraycopy( final char[] src, final int srcPos, final char[] dest, final int destPos, final int length ) {
         int destIndex = destPos;
-        for (int index = srcPos; index < srcPos + length; index++, destIndex++ ) {
-            dest [destIndex] = src[index];
+        for ( int index = srcPos; index < srcPos + length; index++, destIndex++ ) {
+            dest[ destIndex ] = src[ index ];
         }
     }
 
-    private final static void arraycopy (final char [] src, final int srcPos, final char [] dest, final int destPos, final int length)  {
+    private final static void arraycopy( final char[] src, final int srcPos, final char[] dest, final int destPos, final int length ) {
 
         sysstemarraycopy( src, srcPos, dest, destPos, length );
 
@@ -604,7 +598,7 @@ public class CharBuf extends Writer implements CharSequence {
 
 
     public CharBuf add( byte[] bytes, int start, int end ) {
-        int charsLength =  end - start ;
+        int charsLength = end - start;
         if ( charsLength + location > capacity ) {
             buffer = Chr.grow( buffer, buffer.length * 2 + charsLength );
         }
@@ -617,10 +611,10 @@ public class CharBuf extends Writer implements CharSequence {
 
     public final CharBuf add( char ch ) {
         if ( 1 + location < capacity ) {
-            buffer [location] = ch;
+            buffer[ location ] = ch;
         } else {
             buffer = Chr.grow( buffer );
-            buffer [location] = ch;
+            buffer[ location ] = ch;
             capacity = buffer.length;
         }
         location += 1;
@@ -628,18 +622,18 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
     @Override
-    public int length () {
+    public int length() {
         return len();
     }
 
     @Override
-    public char charAt ( int index ) {
-        return buffer [ index ];
+    public char charAt( int index ) {
+        return buffer[ index ];
     }
 
     @Override
-    public CharSequence subSequence ( int start, int end ) {
-        return new String (buffer, start, end - start);
+    public CharSequence subSequence( int start, int end ) {
+        return new String( buffer, start, end - start );
     }
 
     public String toString() {
@@ -768,10 +762,10 @@ public class CharBuf extends Writer implements CharSequence {
             long value;
             final int length = location - startIndex;
 
-            if ( CharScanner.isInteger ( buffer, startIndex, length, negative ) ) {
-                value = CharScanner.parseIntIgnoreDot ( buffer, startIndex, length );
+            if ( CharScanner.isInteger( buffer, startIndex, length, negative ) ) {
+                value = CharScanner.parseIntIgnoreDot( buffer, startIndex, length );
             } else {
-                value = CharScanner.parseLongIgnoreDot ( buffer, startIndex, length );
+                value = CharScanner.parseLongIgnoreDot( buffer, startIndex, length );
             }
             if ( digitsPastPoint < powersOf10.length ) {
                 double power = powersOf10[ digitsPastPoint ] * sign;
@@ -839,7 +833,7 @@ public class CharBuf extends Writer implements CharSequence {
         if ( simple ) {
             int value;
 
-            value = CharScanner.parseIntIgnoreDot ( buffer, startIndex, length );
+            value = CharScanner.parseIntIgnoreDot( buffer, startIndex, length );
             if ( digitsPastPoint < powersOf10.length ) {
                 float power = fpowersOf10[ digitsPastPoint ] * sign;
                 return value / power;
@@ -861,7 +855,7 @@ public class CharBuf extends Writer implements CharSequence {
             sign = -1;
 
         }
-        return CharScanner.parseInt ( buffer, startIndex, location - startIndex ) * sign;
+        return CharScanner.parseInt( buffer, startIndex, location - startIndex ) * sign;
     }
 
     public long longValue() {
@@ -873,7 +867,7 @@ public class CharBuf extends Writer implements CharSequence {
             sign = -1;
 
         }
-        return CharScanner.parseLong ( buffer, startIndex, location - startIndex ) * sign;
+        return CharScanner.parseLong( buffer, startIndex, location - startIndex ) * sign;
     }
 
 
@@ -899,7 +893,7 @@ public class CharBuf extends Writer implements CharSequence {
         }
 
 
-        if ( CharScanner.isInteger ( buffer, startIndex, location - startIndex, negative ) ) {
+        if ( CharScanner.isInteger( buffer, startIndex, location - startIndex, negative ) ) {
             return intValue() * sign;
         } else {
             return longValue() * sign;
@@ -911,7 +905,6 @@ public class CharBuf extends Writer implements CharSequence {
     public void addAsUTF( byte[] value ) {
 
 
-
         if ( this.buffer == null ) {
             this.buffer = new char[ value.length * 2 ];
             capacity = buffer.length;
@@ -920,7 +913,7 @@ public class CharBuf extends Writer implements CharSequence {
             capacity = buffer.length;
         }
 
-        char [] buffer = this.buffer;
+        char[] buffer = this.buffer;
         int location = this.location;
 
         for ( int index = 0; index < value.length; index++ ) {
@@ -928,8 +921,8 @@ public class CharBuf extends Writer implements CharSequence {
 
 
             if ( c >= 0 ) {
-                buffer [location] = (char)c;
-                location ++;
+                buffer[ location ] = ( char ) c;
+                location++;
             } else {
                 this.location = location;
                 index = utf8MultiByte( c, index, value );
@@ -939,7 +932,6 @@ public class CharBuf extends Writer implements CharSequence {
         }
 
         this.location = location;
-
 
 
     }
@@ -972,7 +964,7 @@ public class CharBuf extends Writer implements CharSequence {
 
 
         int location = this.location;
-        char [] buffer = this.buffer;
+        char[] buffer = this.buffer;
 
         //boolean ok = true;
 
@@ -985,12 +977,12 @@ public class CharBuf extends Writer implements CharSequence {
 
             if ( isMalformed2( c, b2 ) ) {
 
-                buffer [location] =  '#' ;
-                location ++;
+                buffer[ location ] = '#';
+                location++;
 
             } else {
-                buffer [location] =  (char) (( ( c << 6 ) ^ b2 ) ^ 0x0f80 )  ;
-                location ++;
+                buffer[ location ] = ( char ) ( ( ( c << 6 ) ^ b2 ) ^ 0x0f80 );
+                location++;
 
             }
         } else if ( ( c >> 4 ) == -2 ) {
@@ -1005,11 +997,11 @@ public class CharBuf extends Writer implements CharSequence {
             b3 = bytes[ index ];
 
             if ( isMalformed3( c, b2, b3 ) ) {
-                buffer [location] =  '#' ;
-                location ++;
+                buffer[ location ] = '#';
+                location++;
             } else {
-                buffer [location] = (char) ( ( ( c << 12 ) ^ ( b2 << 6 ) ^ b3 ) ^ 0x1f80 ) ;
-                location ++;
+                buffer[ location ] = ( char ) ( ( ( c << 12 ) ^ ( b2 << 6 ) ^ b3 ) ^ 0x1f80 );
+                location++;
             }
         } else if ( ( c >> 3 ) == -2 ) {
             int b2;
@@ -1031,7 +1023,7 @@ public class CharBuf extends Writer implements CharSequence {
                     ( ( b3 & 0x3f ) << 6 ) |
                     ( b4 & 0x3f );
 
-            if ( isMalformed4( b2, b3, b4 ) && !Surrogate.neededFor ( uc ) ) {
+            if ( isMalformed4( b2, b3, b4 ) && !Surrogate.neededFor( uc ) ) {
                 addChar( '#' );
             } else {
 
@@ -1045,105 +1037,105 @@ public class CharBuf extends Writer implements CharSequence {
         }
 
 
-
         this.location = location;
         this.buffer = buffer;
         return index;
     }
 
 
-    final static char [] nullChars = "null".toCharArray ();
-    public final void addNull () {
-        this.add ( nullChars );
+    final static char[] nullChars = "null".toCharArray();
+
+    public final void addNull() {
+        this.add( nullChars );
     }
 
-    public void removeLastChar () {
+    public void removeLastChar() {
         location--;
     }
 
 
-    private Cache <BigDecimal, char[]> bigDCache;
+    private Cache<BigDecimal, char[]> bigDCache;
+
     public CharBuf addBigDecimal( BigDecimal key ) {
-        if (bigDCache == null) {
-            bigDCache = new SimpleCache<BigDecimal, char[]> ( 20, CacheType.LRU );
+        if ( bigDCache == null ) {
+            bigDCache = new SimpleCache<BigDecimal, char[]>( 20, CacheType.LRU );
         }
-        char [] chars = bigDCache.get ( key );
+        char[] chars = bigDCache.get( key );
 
-        if ( chars ==  null ) {
+        if ( chars == null ) {
             String str = key.toString();
-            chars = FastStringUtils.toCharArray ( str );
-            bigDCache.put ( key, chars );
+            chars = FastStringUtils.toCharArray( str );
+            bigDCache.put( key, chars );
         }
 
-        add ( chars );
+        add( chars );
 
         return this;
 
 
     }
 
-    private Cache <BigInteger, char[]> bigICache;
+    private Cache<BigInteger, char[]> bigICache;
 
     public CharBuf addBigInteger( BigInteger key ) {
-        if (bigICache == null) {
-            bigICache = new SimpleCache<BigInteger, char[]> ( 20, CacheType.LRU );
+        if ( bigICache == null ) {
+            bigICache = new SimpleCache<BigInteger, char[]>( 20, CacheType.LRU );
         }
-        char [] chars = bigICache.get ( key );
+        char[] chars = bigICache.get( key );
 
-        if ( chars ==  null ) {
+        if ( chars == null ) {
             String str = key.toString();
-            chars = FastStringUtils.toCharArray ( str );
-            bigICache.put ( key, chars );
+            chars = FastStringUtils.toCharArray( str );
+            bigICache.put( key, chars );
         }
 
-        add ( chars );
+        add( chars );
 
         return this;
 
     }
 
 
-    private Cache <Long, char[]> lcache;
+    private Cache<Long, char[]> lcache;
 
 
+    public final CharBuf addLong( long l ) {
 
-    public final  CharBuf addLong( long l ) {
-
-        addLong(Long.valueOf( l ));
+        addLong( Long.valueOf( l ) );
         return this;
     }
 
-    public final  CharBuf addLong( Long key ) {
+    public final CharBuf addLong( Long key ) {
 
-        if (lcache == null) {
-            lcache = new SimpleCache<Long, char[]> ( 20, CacheType.LRU );
+        if ( lcache == null ) {
+            lcache = new SimpleCache<Long, char[]>( 20, CacheType.LRU );
         }
-        char [] chars = lcache.get ( key );
+        char[] chars = lcache.get( key );
 
-        if ( chars ==  null ) {
-            String str = Long.toString ( key );
-            chars = FastStringUtils.toCharArray ( str );
-            lcache.put ( key, chars );
+        if ( chars == null ) {
+            String str = Long.toString( key );
+            chars = FastStringUtils.toCharArray( str );
+            lcache.put( key, chars );
         }
 
-        add ( chars );
+        add( chars );
 
         return this;
     }
 
 
-
-    public final CharBuf decodeJsonString ( char[] chars ) {
-        return decodeJsonString ( chars, 0, chars.length );
+    public final CharBuf decodeJsonString( char[] chars ) {
+        return decodeJsonString( chars, 0, chars.length );
     }
-    public final CharBuf decodeJsonString ( char[] chars, int start, int to ) {
+
+    public final CharBuf decodeJsonString( char[] chars, int start, int to ) {
         int len = to - start;
 
-        char [] buffer = this.buffer;
+        char[] buffer = this.buffer;
         int location = this.location;
 
-        if (len > capacity) {
-            buffer =  Chr.grow ( buffer, buffer.length * 2 + len );
+        if ( len > capacity ) {
+            buffer = Chr.grow( buffer, buffer.length * 2 + len );
             capacity = buffer.length;
         }
 
@@ -1156,35 +1148,35 @@ public class CharBuf extends Writer implements CharSequence {
                     switch ( c ) {
 
                         case 'n':
-                            buffer[location++]='\n';
+                            buffer[ location++ ] = '\n';
                             break;
 
                         case '/':
-                            buffer[location++]='/';
+                            buffer[ location++ ] = '/';
                             break;
 
                         case '"':
-                            buffer[location++]='"';
+                            buffer[ location++ ] = '"';
                             break;
 
                         case 'f':
-                            buffer[location++]='\f';
+                            buffer[ location++ ] = '\f';
                             break;
 
                         case 't':
-                            buffer[location++]='\t';
+                            buffer[ location++ ] = '\t';
                             break;
 
                         case '\\':
-                            buffer[location++]='\\';
+                            buffer[ location++ ] = '\\';
                             break;
 
                         case 'b':
-                            buffer[location++]='\b';
+                            buffer[ location++ ] = '\b';
                             break;
 
                         case 'r':
-                            buffer[location++]='\r';
+                            buffer[ location++ ] = '\r';
                             break;
 
                         case 'u':
@@ -1192,16 +1184,16 @@ public class CharBuf extends Writer implements CharSequence {
                             if ( index + 4 < to ) {
                                 String hex = new String( chars, index + 1, 4 );
                                 char unicode = ( char ) Integer.parseInt( hex, 16 );
-                                buffer[location++]=unicode;
+                                buffer[ location++ ] = unicode;
                                 index += 4;
                             }
                             break;
                         default:
-                            throw new JsonException ( "Unable to decode string" );
+                            throw new JsonException( "Unable to decode string" );
                     }
                 }
             } else {
-                buffer[location++]=c;
+                buffer[ location++ ] = c;
             }
         }
 
@@ -1212,9 +1204,6 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
 
     }
-
-
-
 
 
 }

@@ -23,10 +23,10 @@ import java.io.Reader;
 import java.io.Writer;
 
 
-
 /**
  * Created by Richard on 2/1/14.
- *  @author Rick Hightower
+ *
+ * @author Rick Hightower
  */
 public class IO {
 
@@ -58,7 +58,7 @@ public class IO {
             copy( input, charBuf );
 
         } catch ( IOException e ) {
-            Exceptions.handle ( e );
+            Exceptions.handle( e );
         } finally {
             try {
                 input.close();
@@ -73,7 +73,6 @@ public class IO {
     }
 
 
-
     public static int copy( Reader input, Writer output ) {
         long count = copyLarge( input, output );
         if ( count > Integer.MAX_VALUE ) {
@@ -81,7 +80,6 @@ public class IO {
         }
         return ( int ) count;
     }
-
 
 
     public static long copyLarge( Reader reader, Writer writer ) {

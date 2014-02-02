@@ -1,4 +1,4 @@
-package groovy.json;
+package groovy.json.internal;
 
 import groovy.json.internal.Cache;
 import groovy.json.internal.CacheType;
@@ -7,12 +7,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 
-
-
 /* This supports both LRU and FIFO */
 public class SimpleCache<K, V> implements Cache<K, V> {
 
-    Map<K, V> map = new LinkedHashMap ();
+    Map<K, V> map = new LinkedHashMap();
 
 
     private static class InternalCacheLinkedList<K, V> extends LinkedHashMap<K, V> {

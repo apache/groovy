@@ -29,15 +29,14 @@ import static groovy.json.internal.CharScanner.isInteger;
  * as input. Produces an Object which can be any of the basic JSON types mapped
  * to Java.
  * <p/>
+ *
  * @author Rick Hightower
  */
-public class JsonParserCharArray extends BaseJsonParser  {
+public class JsonParserCharArray extends BaseJsonParser {
 
     protected char[] charArray;
     protected int __index;
     protected char __currentChar;
-
-
 
 
     private int lastIndex;
@@ -45,41 +44,38 @@ public class JsonParserCharArray extends BaseJsonParser  {
     protected Object decodeFromChars( char[] cs ) {
         __index = 0;
         charArray = cs;
-        lastIndex = cs.length -1;
+        lastIndex = cs.length - 1;
         Object value = decodeValue();
         return value;
     }
 
 
     protected final boolean hasMore() {
-        return __index  < lastIndex;
+        return __index < lastIndex;
     }
 
 
     protected final boolean hasCurrent() {
-        return __index  <= lastIndex;
+        return __index <= lastIndex;
     }
-
 
 
     protected final void skipWhiteSpace() {
         int ix = __index;
 
 
-        if (hasCurrent ()) {
-            this.__currentChar = this.charArray[ix];
+        if ( hasCurrent() ) {
+            this.__currentChar = this.charArray[ ix ];
         }
 
-        if (__currentChar <= 32) {
-            ix = skipWhiteSpaceFast ( this.charArray, ix );
-            this.__currentChar = this.charArray[ix];
+        if ( __currentChar <= 32 ) {
+            ix = skipWhiteSpaceFast( this.charArray, ix );
+            this.__currentChar = this.charArray[ ix ];
             __index = ix;
         }
 
 
-
     }
-
 
 
     protected final char nextChar() {
@@ -92,38 +88,37 @@ public class JsonParserCharArray extends BaseJsonParser  {
                 return '\u0000';
             }
         } catch ( Exception ex ) {
-            throw new JsonException ( exceptionDetails( "unable to advance character" ), ex );
+            throw new JsonException( exceptionDetails( "unable to advance character" ), ex );
         }
     }
 
 
     protected String exceptionDetails( String message ) {
-        return CharScanner.errorDetails ( message, charArray, __index, __currentChar );
+        return CharScanner.errorDetails( message, charArray, __index, __currentChar );
     }
 
 
-
-    private static int  skipWhiteSpaceFast( char [] array, int index ) {
+    private static int skipWhiteSpaceFast( char[] array, int index ) {
         char c;
-        for (; index< array.length; index++ ) {
-            c = array [index];
+        for (; index < array.length; index++ ) {
+            c = array[ index ];
             if ( c > 32 ) {
 
                 return index;
             }
         }
-        return index-1;
+        return index - 1;
     }
 
 
     protected final Object decodeJsonObject() {
 
 
-        if ( __currentChar == '{' )  {
+        if ( __currentChar == '{' ) {
             __index++;
         }
 
-        LazyMap map = new LazyMap ();
+        LazyMap map = new LazyMap();
 
         for (; __index < this.charArray.length; __index++ ) {
 
@@ -190,7 +185,7 @@ public class JsonParserCharArray extends BaseJsonParser  {
 
     private final Object decodeValueInternal() {
         Object value = null;
-        skipWhiteSpace ();
+        skipWhiteSpace();
 
         switch ( __currentChar ) {
 
@@ -216,8 +211,6 @@ public class JsonParserCharArray extends BaseJsonParser  {
                 break;
 
 
-
-
             case '{':
                 value = decodeJsonObject();
                 break;
@@ -232,10 +225,10 @@ public class JsonParserCharArray extends BaseJsonParser  {
             case '7':
             case '8':
             case '9':
-                value = decodeNumber(false);
+                value = decodeNumber( false );
                 break;
             case '-':
-                value = decodeNumber(true);
+                value = decodeNumber( true );
                 break;
 
             default:
@@ -248,14 +241,12 @@ public class JsonParserCharArray extends BaseJsonParser  {
     }
 
 
-
-
-    private final Object decodeNumber(boolean minus) {
+    private final Object decodeNumber( boolean minus ) {
 
         char[] array = charArray;
 
         final int startIndex = __index;
-        int index =  __index;
+        int index = __index;
         char currentChar;
         boolean doubleFloat = false;
         boolean simple = true;
@@ -263,60 +254,57 @@ public class JsonParserCharArray extends BaseJsonParser  {
         int sign = 1;
 
 
-
-
         if ( minus ) {
             minus = true;
             sign = -1;
-            nextChar ();
+            nextChar();
         }
 
 
-        while (true) {
-            currentChar = array[index];
+        while ( true ) {
+            currentChar = array[ index ];
 
             if ( doubleFloat ) {
                 digitsPastPoint++;
             }
-            if ( isNumberDigit ( currentChar )) {
+            if ( isNumberDigit( currentChar ) ) {
                 //noop
             } else if ( currentChar <= 32 ) { //white
                 break;
-            } else if ( isDelimiter ( currentChar ) ) {
+            } else if ( isDelimiter( currentChar ) ) {
                 break;
-            } else if ( isDecimalChar (currentChar) ) {
+            } else if ( isDecimalChar( currentChar ) ) {
                 doubleFloat = true;
-                if (currentChar != '.') {
+                if ( currentChar != '.' ) {
                     simple = false;
                 }
             }
             index++;
-            if (index   >= array.length) break;
+            if ( index >= array.length ) break;
         }
 
         __index = index;
         __currentChar = currentChar;
 
-        return getNumberFromSpan ( startIndex, doubleFloat, simple, digitsPastPoint, minus, sign );
+        return getNumberFromSpan( startIndex, doubleFloat, simple, digitsPastPoint, minus, sign );
     }
 
-    private final Object getNumberFromSpan ( int startIndex, boolean doubleFloat, boolean simple, int digitsPastPoint, boolean minus, int sign ) {
+    private final Object getNumberFromSpan( int startIndex, boolean doubleFloat, boolean simple, int digitsPastPoint, boolean minus, int sign ) {
         Object value;
         if ( doubleFloat ) {
-            value = CharScanner.simpleDouble ( this.charArray, simple, minus, digitsPastPoint - 1, startIndex, __index );
+            value = CharScanner.simpleDouble( this.charArray, simple, minus, digitsPastPoint - 1, startIndex, __index );
         } else {
 
             if ( isInteger( this.charArray, startIndex, __index - startIndex, minus ) ) {
                 value = CharScanner.parseInt( charArray, startIndex, __index - startIndex ) * sign;
             } else {
-                value =  CharScanner.parseLong( charArray, startIndex, __index - startIndex ) * sign;
+                value = CharScanner.parseLong( charArray, startIndex, __index - startIndex ) * sign;
             }
 
         }
 
         return value;
     }
-
 
 
     protected static final char[] NULL = Chr.chars( "null" );
@@ -374,14 +362,13 @@ public class JsonParserCharArray extends BaseJsonParser  {
     }
 
 
-
     private CharBuf builder = CharBuf.create( 20 );
 
     private String decodeString() {
 
         char[] array = charArray;
         int index = __index;
-        char currentChar = array[index];
+        char currentChar = array[ index ];
 
         if ( index < array.length && currentChar == '"' ) {
             index++;
@@ -390,16 +377,15 @@ public class JsonParserCharArray extends BaseJsonParser  {
         final int startIndex = index;
 
 
-        boolean encoded = hasEscapeChar ( array, index, indexHolder );
-        index = indexHolder[0];
-
+        boolean encoded = hasEscapeChar( array, index, indexHolder );
+        index = indexHolder[ 0 ];
 
 
         String value = null;
         if ( encoded ) {
-            index = findEndQuote ( array,  index);
-            value = builder.decodeJsonString ( array, startIndex, index ).toString ();
-            builder.recycle ();
+            index = findEndQuote( array, index );
+            value = builder.decodeJsonString( array, startIndex, index ).toString();
+            builder.recycle();
         } else {
             value = new String( array, startIndex, ( index - startIndex ) );
         }
@@ -417,7 +403,7 @@ public class JsonParserCharArray extends BaseJsonParser  {
         ArrayList<Object> list = null;
 
         boolean foundEnd = false;
-        char [] charArray = this.charArray;
+        char[] charArray = this.charArray;
 
         try {
             if ( __currentChar == '[' ) {
@@ -445,7 +431,7 @@ public class JsonParserCharArray extends BaseJsonParser  {
                 list.add( arrayItem );
 
 
-                char c  =  charArray[__index];
+                char c = charArray[ __index ];
 
 
                 if ( c == ',' ) {
@@ -461,12 +447,12 @@ public class JsonParserCharArray extends BaseJsonParser  {
                 skipWhiteSpace();
 
 
-                c  =  charArray[__index];
+                c = charArray[ __index ];
 
                 if ( c == ',' ) {
                     __index++;
                     continue;
-                } else if ( c == ']' && lastIndex != __index) {
+                } else if ( c == ']' && lastIndex != __index ) {
                     __index++;
                     foundEnd = true;
                     break;
@@ -483,35 +469,33 @@ public class JsonParserCharArray extends BaseJsonParser  {
                 }
             }
 
-        }catch ( Exception ex ) {
-            if (ex instanceof JsonException) {
-                JsonException jsonException = (JsonException) ex;
+        } catch ( Exception ex ) {
+            if ( ex instanceof JsonException ) {
+                JsonException jsonException = ( JsonException ) ex;
                 throw jsonException;
             }
-            throw new JsonException ( exceptionDetails("issue parsing JSON array"), ex );
+            throw new JsonException( exceptionDetails( "issue parsing JSON array" ), ex );
         }
-        if (!foundEnd ) {
-            complain ( "Did not find end of Json Array" );
+        if ( !foundEnd ) {
+            complain( "Did not find end of Json Array" );
         }
         return list;
 
     }
 
     protected final char currentChar() {
-        if (__index > lastIndex) {
+        if ( __index > lastIndex ) {
             return 0;
-        }
-        else {
-            return charArray[__index];
+        } else {
+            return charArray[ __index ];
         }
     }
 
 
     @Override
-    public Object parse ( char[] chars ) {
+    public Object parse( char[] chars ) {
         return this.decodeFromChars( chars );
     }
-
 
 
 }

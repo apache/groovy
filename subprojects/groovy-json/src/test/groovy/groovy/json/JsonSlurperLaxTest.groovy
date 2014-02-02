@@ -60,8 +60,7 @@ class JsonSlurperLaxTest extends JsonSlurperTest{
 
         def jsonstring = json.toString()
 
-        def slurper = new JsonSlurper()
-        assert slurper.parseText(jsonstring).person.name == "Guill\\aume"
+        assert parser.parseText(jsonstring).person.name == "Guill\\aume"
 
         assert parser.parseText('{"a":"\\\\"}') == [a: '\\']
         assert parser.parseText('{"a":"C:\\\\\\"Documents and Settings\\"\\\\"}') == [a: 'C:\\"Documents and Settings"\\']
@@ -69,7 +68,46 @@ class JsonSlurperLaxTest extends JsonSlurperTest{
 
         assert parser.parseText('["c:\\\\GROOVY5144\\\\","d"]') == ['c:\\GROOVY5144\\', 'd']
 
-            parser.parseText('{"a":"c:\\\"}')
+        parser.parseText('{"a":"c:\\\"}')
+    }
+
+
+    void testLaxCommentsAndKeys() {
+
+        String jsonString = """
+
+            {
+            foo:bar,    //look mom no quotes
+            'foo1': 'bar1',  //I can do single quotes if I want to
+            /** This is a story of Foo */
+            "foo2": "bar2",   //Back to two quotes
+            # Do you like my foo?           // We support # for comments too, # puts the axe in lax.
+            "whoisfoo":fooisyou,
+            can this work: sure why not?,
+            flag : true,
+            flag2 : false,
+            strings : [we, are, string, here, us, roar],
+            he said : '"fire all your guns at once baby, and explode into the night"',
+            the : end
+            }
+        """
+
+        Map <String, Object> map = parser.parseText(jsonString);
+        assert map.foo == "bar"
+        assert map.foo1 == "bar1"
+        assert map.foo2 == "bar2"
+        assert map.whoisfoo == "fooisyou"
+        assert map['can this work'] == "sure why not?"
+        assert map.flag == true
+        assert map.flag2 == false
+        assert map.strings == ["we", "are", "string", "here", "us", "roar"]
+        assert map["he said"] == '"fire all your guns at once baby, and explode into the night"'
+        assert map.the == "end"
+
+
+
+
+
     }
 
 

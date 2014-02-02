@@ -23,7 +23,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import static groovy.json.internal.Exceptions.die;
 
 
-/** This holds a mapping from value key to value value to maximize laziness.
+/**
+ * This holds a mapping from value key to value value to maximize laziness.
  *
  * @author Rick Hightower
  */
@@ -37,14 +38,12 @@ public class MapItemValue implements Map.Entry<String, Value> {
     private static final boolean internKeys = Boolean.parseBoolean( System.getProperty( "groovy.json.implementation.internKeys", "false" ) );
 
 
-
     protected static ConcurrentHashMap<String, String> internedKeysCache;
-
 
 
     static {
         if ( internKeys ) {
-            internedKeysCache = new ConcurrentHashMap<String, String> ();
+            internedKeysCache = new ConcurrentHashMap<String, String>();
         }
     }
 

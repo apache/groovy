@@ -28,13 +28,14 @@ import static groovy.json.internal.Exceptions.sputs;
 
 /**
  * Created by Richard on 2/2/14.
+ *
  * @author Rick Hightower
  */
 public class ValueContainer implements CharSequence, Value {
 
-    public static final Value TRUE = new ValueContainer ( Type.TRUE );
-    public static final Value FALSE = new ValueContainer ( Type.FALSE );
-    public static final Value NULL = new ValueContainer ( Type.NULL );
+    public static final Value TRUE = new ValueContainer( Type.TRUE );
+    public static final Value FALSE = new ValueContainer( Type.FALSE );
+    public static final Value NULL = new ValueContainer( Type.NULL );
 
     public Object value;
 
@@ -43,7 +44,7 @@ public class ValueContainer implements CharSequence, Value {
 
     public boolean decodeStrings;
 
-    public ValueContainer(  Object value, Type type, boolean decodeStrings ) {
+    public ValueContainer( Object value, Type type, boolean decodeStrings ) {
         this.value = value;
         this.type = type;
         this.decodeStrings = decodeStrings;
@@ -67,12 +68,12 @@ public class ValueContainer implements CharSequence, Value {
 
     @Override
     public int intValue() {
-        return die(int.class, sputs("intValue not supported for type ", type) );
+        return die( int.class, sputs( "intValue not supported for type ", type ) );
     }
 
     @Override
     public long longValue() {
-        return die(int.class, sputs("intValue not supported for type ", type) );
+        return die( int.class, sputs( "intValue not supported for type ", type ) );
     }
 
 
@@ -93,7 +94,7 @@ public class ValueContainer implements CharSequence, Value {
 
     @Override
     public String stringValue() {
-        if (type == Type.NULL)  {
+        if ( type == Type.NULL ) {
             return null;
         } else {
             return type.toString();
@@ -111,16 +112,16 @@ public class ValueContainer implements CharSequence, Value {
     }
 
     @Override
-    public  Object toValue() {
+    public Object toValue() {
         if ( value != null ) {
             return value;
         }
         switch ( type ) {
             case FALSE:
-                return (value = false);
+                return ( value = false );
 
             case TRUE:
-                return (value = true);
+                return ( value = true );
             case NULL:
                 return null;
         }
@@ -130,8 +131,8 @@ public class ValueContainer implements CharSequence, Value {
     }
 
     @Override
-    public  <T extends Enum> T toEnum( Class<T> cls ) {
-        return (T) value;
+    public <T extends Enum> T toEnum( Class<T> cls ) {
+        return ( T ) value;
     }
 
     @Override
@@ -144,7 +145,7 @@ public class ValueContainer implements CharSequence, Value {
     }
 
     @Override
-    public char charValue () {
+    public char charValue() {
         return 0;
     }
 

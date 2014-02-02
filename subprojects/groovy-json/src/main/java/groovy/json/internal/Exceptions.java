@@ -23,26 +23,27 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.*;
 
-/**.
- *  * @author Rick Hightower
+/**
+ * .
+ * * @author Rick Hightower
  */
 public class Exceptions {
 
     public static boolean die() {
-        throw new JsonInternalException ( "died" );
+        throw new JsonInternalException( "died" );
     }
 
     public static boolean die( String message ) {
-        throw new JsonInternalException ( message );
+        throw new JsonInternalException( message );
     }
 
 
     public static <T> T die( Class<T> clazz, String message ) {
-        throw new JsonInternalException ( message );
+        throw new JsonInternalException( message );
     }
 
     public static void handle( java.lang.Exception e ) {
-        throw new JsonInternalException ( e );
+        throw new JsonInternalException( e );
     }
 
 
@@ -51,20 +52,18 @@ public class Exceptions {
         if ( e instanceof JsonInternalException ) {
             throw ( JsonInternalException ) e;
         }
-        throw new JsonInternalException ( e );
+        throw new JsonInternalException( e );
     }
 
     public static <T> T handle( Class<T> clazz, String message, Throwable e ) {
 
-        throw new JsonInternalException ( message, e );
+        throw new JsonInternalException( message, e );
     }
 
 
     public static void handle( String message, Throwable e ) {
-        throw new JsonInternalException ( message, e );
+        throw new JsonInternalException( message, e );
     }
-
-
 
 
     public static class JsonInternalException extends JsonException {
@@ -185,7 +184,7 @@ public class Exceptions {
             if ( message == null ) {
                 buf.add( "<NULL>" );
             } else if ( message.getClass().isArray() ) {
-                buf.add( Arrays.asList ( message ).toString() );
+                buf.add( Arrays.asList( message ).toString() );
             } else {
                 buf.add( message.toString() );
             }
@@ -195,7 +194,6 @@ public class Exceptions {
         return buf.toString();
 
     }
-
 
 
     public static String sputs( Object... messages ) {

@@ -45,7 +45,6 @@ public class Chr {
     }
 
 
-
     public static boolean in( int value, char[] array ) {
         for ( int currentValue : array ) {
             if ( currentValue == value ) {
@@ -79,35 +78,34 @@ public class Chr {
 
     public static char[] grow( char[] array, final int size ) {
         char[] newArray = new char[ array.length + size ];
-        arraycopy ( array, 0, newArray, 0, array.length );
+        arraycopy( array, 0, newArray, 0, array.length );
         return newArray;
     }
 
 
     public static char[] grow( char[] array ) {
         char[] newArray = new char[ array.length * 2 ];
-        arraycopy ( array, 0, newArray, 0, array.length );
+        arraycopy( array, 0, newArray, 0, array.length );
         return newArray;
     }
 
 
-
     public static char[] copy( char[] array ) {
         char[] newArray = new char[ array.length ];
-        arraycopy ( array, 0, newArray, 0, array.length );
+        arraycopy( array, 0, newArray, 0, array.length );
         return newArray;
     }
 
     public static char[] copy( char[] array, int offset, int length ) {
         char[] newArray = new char[ length ];
-        arraycopy ( array, offset, newArray, 0, length );
+        arraycopy( array, offset, newArray, 0, length );
         return newArray;
     }
 
 
     public static char[] add( char[] array, char v ) {
         char[] newArray = new char[ array.length + 1 ];
-        arraycopy ( array, 0, newArray, 0, array.length );
+        arraycopy( array, 0, newArray, 0, array.length );
         newArray[ array.length ] = v;
         return newArray;
     }
@@ -124,8 +122,8 @@ public class Chr {
 
     public static char[] add( char[] array, char[] array2 ) {
         char[] newArray = new char[ array.length + array2.length ];
-        arraycopy ( array, 0, newArray, 0, array.length );
-        arraycopy ( array2, 0, newArray, array.length, array2.length );
+        arraycopy( array, 0, newArray, 0, array.length );
+        arraycopy( array2, 0, newArray, array.length, array2.length );
         return newArray;
     }
 
@@ -167,7 +165,6 @@ public class Chr {
     }
 
 
-
     public static boolean contains( char[] chars, char c, int start, final int length ) {
         final int to = length + start;
         for ( int index = start; index < to; index++ ) {
@@ -191,23 +188,23 @@ public class Chr {
     public static void _idx( final char[] array, int startIndex, char[] input ) {
         try {
 
-            arraycopy ( input, 0, array, startIndex, input.length );
+            arraycopy( input, 0, array, startIndex, input.length );
         } catch ( Exception ex ) {
-            Exceptions.handle ( String.format ( "array size %d, startIndex %d, input length %d",
+            Exceptions.handle( String.format( "array size %d, startIndex %d, input length %d",
                     array.length, startIndex, input.length ), ex );
         }
     }
 
 
-    private static void arraycopy (final char [] src, final int srcPos, final char [] dest, final int destPos, final int length)  {
-        System.arraycopy( src, srcPos, dest, destPos,length );
+    private static void arraycopy( final char[] src, final int srcPos, final char[] dest, final int destPos, final int length ) {
+        System.arraycopy( src, srcPos, dest, destPos, length );
     }
 
 
     public static void _idx( final char[] array, int startIndex, char[] input, final int inputLength ) {
         try {
 
-            arraycopy ( input, 0, array, startIndex, inputLength );
+            arraycopy( input, 0, array, startIndex, inputLength );
         } catch ( Exception ex ) {
             Exceptions.handle( String.format( "array size %d, startIndex %d, input length %d",
                     array.length, startIndex, input.length ), ex );
@@ -225,7 +222,6 @@ public class Chr {
     }
 
 
-
     public static char[] add( char[]... strings ) {
         int length = 0;
         for ( char[] str : strings ) {
@@ -241,6 +237,6 @@ public class Chr {
             }
             builder.add( str );
         }
-        return builder.toCharArray ();
+        return builder.toCharArray();
     }
 }
