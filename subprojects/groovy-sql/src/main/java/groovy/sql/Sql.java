@@ -2963,7 +2963,7 @@ public class Sql {
 
             //Check both hasResultSet and getMoreResults() because of differences in vendor behavior
             if (processResultSet && (hasResultSet || statement.getMoreResults())) {
-                // TODO handle multiple ResultSets (GROOVY-3048)
+                // TODO handle multiple ResultSets (GROOVY-6551)
                 return asList(sql, statement.getResultSet());
             }
             return new ArrayList<GroovyRowResult>();
