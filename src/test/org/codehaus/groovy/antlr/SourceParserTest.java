@@ -9,7 +9,7 @@ import java.io.StringWriter;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 
-public class SourceParserTest extends GroovyTestCase {
+public abstract class SourceParserTest extends GroovyTestCase {
     protected void parse(String name, Reader reader) {
         SourceBuffer sourceBuffer = new SourceBuffer();
         UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(reader, sourceBuffer);

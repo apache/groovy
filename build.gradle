@@ -305,16 +305,10 @@ sourceSets {
     }
     test {
         groovy {
-            srcDirs = [
-                    "src/test",
-            ]
-            if (isJava15()) {
-                exclude "groovy/**/vm6/*Test.groovy"
-                exclude "org/codehaus/groovy/**/vm6/*Test.groovy"
-            }
+            srcDirs = ['src/test']
         }
         resources {
-            srcDirs = ["src/test-resources"]
+            srcDirs = ['src/test-resources']
         }
         output.classesDir = "$buildDir/test-classes" as File
     }

@@ -1,31 +1,51 @@
-test {
-    jvmArgs "-ea", "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}"
-    def headless = System.properties['java.awt.headless']
-    if (headless == 'true') {
-        systemProperties 'java.awt.headless': "true"
+import org.apache.tools.ant.taskdefs.condition.Os
+
+allprojects {
+    test {
+        if (JavaVersion.current().isJava8Compatible()) {
+            jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}"
+        } else {
+            jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}"
+        }
+        def headless = System.properties['java.awt.headless']
+        if (headless == 'true') {
+            systemProperties 'java.awt.headless': 'true'
+        }
+        if (rootProject.useIndy()) {
+            logger.debug 'Adding indy target'
+            systemProperties 'groovy.target.indy': true
+        }
+        forkEvery = 50
+        maxParallelForks = isRunningOnCI() ? 1 : Runtime.runtime.availableProcessors()
+        scanForTestClasses = true
+        ignoreFailures = false
+        testLogging {
+            exceptionFormat = 'full'
+            // uncomment the following line if you need more logging
+            // events "failed", "started"
+        }
     }
+
+    sourceSets {
+        test {
+            groovy {
+                srcDirs += 'src/spec/test'
+            }
+        }
+    }
+}
+
+test {
     def testdb = System.properties['groovy.testdb.props']
     if (testdb) {
         systemProperties 'groovy.testdb.props': testdb
     }
-    systemProperties 'apple.awt.UIElement': "true", "javadocAssertion.src.dir": './src/main'
-    systemProperties "gradle.home": gradle.gradleHomeDir // this is needed by the security.policy
-    if (rootProject.hasProperty('indy') && (Boolean.valueOf(rootProject.indy))) {
-        println "adding indy target"
-        systemProperties "groovy.target.indy": true
-    }
-    doFirst {
-        // this is needed by the security.policy. We set it at execution time to avoid resolving a configuration when not needed.
-// temp hack
-//        systemProperties "gradle.junit": configurations.testCompile.fileCollection { dep -> dep.name == 'junit' }.singleFile.absolutePath
-    }
+    systemProperties 'apple.awt.UIElement': 'true', 'javadocAssertion.src.dir': './src/main'
+    systemProperties 'gradle.home': gradle.gradleHomeDir // this is needed by the security.policy
+
     classpath = files('src/test') + classpath
-//    forkEvery = 10
-//    maxParallelForks = Runtime.runtime.availableProcessors()
-    scanForTestClasses = false
-    ignoreFailures = false
+    exclude buildExcludeFilter()
     ext.resultText = ''
-    includes = getIncludePattern()
     doLast {
         ant.delete {
             fileset(dir: '.', includes: '*.class')
@@ -38,47 +58,53 @@ boolean isRunningOnCI() {
     path.contains('ci.codehaus.org') || path.contains('teamcity')
 }
 
-logger.lifecycle "Detected ${isRunningOnCI()?'Continuous Integration environment':'development environment'}"
+logger.lifecycle "Detected ${isRunningOnCI() ? 'Continuous Integration environment' : 'development environment'}"
 
-allprojects {
-    test {
-        forkEvery = isRunningOnCI()?50:200
-        maxParallelForks = isRunningOnCI()?1:Runtime.runtime.availableProcessors()
-    }
-}
-tasks.addRule("Pattern: testSingle<Name> will test **/<Name>.class") {String taskName ->
-    if (taskName.startsWith("testSingle")) {
-        tasks.add(taskName).dependsOn(test)
+tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String taskName ->
+    if (taskName.startsWith('testSingle')) {
+        tasks.create(taskName).dependsOn(test)
         test.includes = ['**/' + taskName.substring(10) + '.class']
         test.outputs.upToDateWhen { false }
     }
 }
 
-def getIncludePattern() {
-    def baseInclude = ['UberTestCaseBugs.class',
-            'UberTestCaseGroovySourceCodehausPackages.class',
-            'UberTestCaseGroovySourceRootPackage.class',
-            "UberTestCaseGroovySourceSubPackages.class",
-            "UberTestCaseJavaSourceCodehausPackages.class",
-            "UberTestCaseJavaSourceGroovyPackagesNonSecurity.class",
-            "UberTestCaseTCK.class"
-            // temporarily disable security test suite, see GRADLE-2170
-            //,"UberTestCaseJavaSourceGroovyPackagesSecurity.class"
-    ]
-    if (System.properties['junit.network']) {
-        baseInclude += ['groovy/grape/*Test.class']    
+def buildExcludeFilter() {
+    def excludes = ['GroovyTestCase', 'TestSupport', 'DummyTestDerivation', 'LineColumnChecker']
+
+    // temporary disabling Groovy4393Bug because it requires a specific configuration
+    excludes << 'Groovy4393Bug'
+
+    // deal with OS specific tests
+    def windowsTests = ['ExecuteTest_Windows']
+    def unixTests = ['ExecuteTest_LinuxSolaris']
+    Set osSpecificTests = [*windowsTests, *unixTests]
+    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        osSpecificTests.removeAll windowsTests
+    } else if (Os.isFamily(Os.FAMILY_UNIX)) {
+        osSpecificTests.removeAll unixTests
     }
-    if (!isJava15()) {
-        baseInclude += [
-                "UberTestCaseGroovySourceSubPackages_VM6.class",
-                "UberTestCaseGroovySourceCodehausPackages_VM6.class"
-        ]
+    excludes += osSpecificTests
+
+    // temporarily disable security tests, see GRADLE-2170
+    excludes << 'security'
+
+    // if on Java 5, disable 5+ specific tests
+    if (isJava15()) {
+        excludes << 'VM6'
+        excludes << 'vm6'
     }
-    if (rootProject.hasProperty('indy') && (Boolean.valueOf(rootProject.indy))) {
-        println "adding indy include"
-        baseInclude += [
-            "UberTestCaseIndy.class"
-        ]
+
+    // if not compiled with indy support, disable indy tests
+    if (!rootProject.useIndy()) {
+        excludes += ['indy', 'Indy']
     }
-    baseInclude
+
+    // if no network available, disable Grapes
+    if (!System.properties['junit.network']) {
+        excludes  << 'groovy/grape/'
+    }
+
+    return { f ->
+        excludes.any { f.file =~ it }
+    }
 }

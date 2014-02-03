@@ -286,12 +286,12 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testDefaultPackage() throws Exception {
         List<String> srcList = new ArrayList<String>();
-        srcList.add("UberTestCaseBugs.java");
+        srcList.add("DefaultPackageClassSupport.java");
         xmlToolForTests.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
-        String domBuilderDoc = output.getText(MOCK_DIR + "/DefaultPackage/UberTestCaseBugs.html");
-        assertTrue(domBuilderDoc.indexOf("<extends>TestCase</extends>") > 0);
+        String doc = output.getText(MOCK_DIR + "/DefaultPackage/DefaultPackageClassSupport.html");
+        assertTrue(doc.indexOf("<extends>GroovyTestCase</extends>") > 0);
     }
 
     public void testStaticModifier() throws Exception {

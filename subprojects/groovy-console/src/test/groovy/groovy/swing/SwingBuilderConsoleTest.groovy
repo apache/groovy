@@ -19,10 +19,37 @@ import groovy.ui.Console
 import groovy.ui.ConsoleActions
 import groovy.ui.view.BasicMenuBar
 import groovy.ui.view.MacOSXMenuBar
+import java.util.prefs.Preferences
+import org.junit.rules.TemporaryFolder
 
+import javax.swing.SwingUtilities
 import java.awt.Color
 
 class SwingBuilderConsoleTest extends GroovySwingTestCase {
+
+    TemporaryFolder temporaryFolder
+    Preferences testPreferences
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp()
+        temporaryFolder = new TemporaryFolder()
+        temporaryFolder.create()
+
+        // create a temporary preferences object instead of using the local Console preferences
+        testPreferences = Preferences.userRoot().node('/swingBuilder/console/tests')
+        Preferences.metaClass.static.userNodeForPackage = { Class c ->
+            testPreferences
+        }
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        temporaryFolder.delete()
+
+        super.tearDown()
+    }
+
     void testTabbedPane() {
         testInEDT {
 
@@ -97,7 +124,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             // GROOVY-3288
             def model = [wordValue: 'word']
             swing.tabbedPane {
-                panel(title: "a") {
+                panel(title: 'a') {
                     textField(id: 'wordValue', columns: 20)
                 }
                 bean(model, word: bind { wordValue.text })
@@ -160,7 +187,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         testInEDT {
             def swing = new SwingBuilder()
             final String ICON_PATH = '/groovy/ui/ConsoleIcon.png'
-            String baseDir = new File("src/main/resources").absolutePath
+            String baseDir = new File('src/main/resources').absolutePath
 
             String resource = ICON_PATH
             GString gresource = "${ICON_PATH}"
@@ -311,7 +338,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     void testMacOSXMenuBarHasBasicMenuBarSubElements() {
         testInEDT {
             def binding = new Binding()
-            binding.setVariable("controller", new Console())
+            binding.setVariable('controller', new Console())
 
             final basicMenuBarScript = new BasicMenuBar()
             final macOSXMenuBarScript = new MacOSXMenuBar()
