@@ -53,7 +53,7 @@ Please note that the following Gradle tasks generate both indy and non indy vari
 Continuous Integration
 ---
 
-The official CI server runs [here](https://bamboo-ci.codehaus.org/browse/GROOVY).
+The official CI server runs [here](http://ci.groovy-lang.org) (login as user guest and leave the password blank).
 
 License
 ---
