@@ -32,8 +32,6 @@ public class FastStringUtils {
 
     public static final Unsafe UNSAFE;
     public static final long STRING_VALUE_FIELD_OFFSET;
-    public static final long STRING_OFFSET_FIELD_OFFSET;
-    public static final long STRING_COUNT_FIELD_OFFSET;
     public static final boolean ENABLED;
 
     private static final boolean WRITE_TO_FINAL_FIELDS = Boolean.parseBoolean( System.getProperty( "groovy.json.faststringutils.write.to.final.fields", "false" ) );
@@ -44,10 +42,7 @@ public class FastStringUtils {
 
         boolean enabled = !DISABLE; //Check to see if it is forced to disabled.
         Unsafe unsafe = null;
-        boolean hasCountAndOffset = false;
         long valueFieldOffset = -1L;
-        long offsetFieldOffset = -1L;
-        long countFieldOffset = -1L;
 
 
         if ( enabled ) {
@@ -64,27 +59,34 @@ public class FastStringUtils {
         }
 
 
-        /* Now that we know Unsafe works, let's grab the string fields. */
+        /* Now that we know Unsafe works, let's grab the string value field. */
         if ( enabled ) {
             try {
-                /* Older strings have value, offset, and count. Newer strings only have value. */
                 valueFieldOffset = unsafe.objectFieldOffset( String.class.getDeclaredField( "value" ) );
-                offsetFieldOffset = unsafe.objectFieldOffset( String.class.getDeclaredField( "offset" ) );
-                countFieldOffset = unsafe.objectFieldOffset( String.class.getDeclaredField( "count" ) );
-                hasCountAndOffset = true;
+
+
             } catch ( Throwable cause ) {
-                hasCountAndOffset = false;
+                enabled = false;
             }
 
             /* If for some reason we did not find value, then disable the whole thing. */
-            enabled = valueFieldOffset != -1;
+            enabled &= enabled && valueFieldOffset != -1;
         }
 
 
+        /* Disable support if we find offset or count.  */
+        if ( enabled ) {
+            try {
+                unsafe.objectFieldOffset( String.class.getDeclaredField( "offset" ) );
+                unsafe.objectFieldOffset( String.class.getDeclaredField( "count" ) );
+                enabled = false;
+            } catch ( Throwable cause ) {
+            }
+
+        }
+
         STRING_VALUE_FIELD_OFFSET = valueFieldOffset;
-        STRING_OFFSET_FIELD_OFFSET = offsetFieldOffset;
-        STRING_COUNT_FIELD_OFFSET = countFieldOffset;
-        ENABLED = enabled && !hasCountAndOffset;
+        ENABLED = enabled;
         UNSAFE = unsafe;
 
     }
@@ -99,32 +101,6 @@ public class FastStringUtils {
         }
     }
 
-    private static char[] toCharArrayWithCountOffset( String string ) {
-
-        try {
-            char[] value = ( char[] ) UNSAFE.getObject( string, STRING_VALUE_FIELD_OFFSET );
-
-                /* old String version with offset and count  */
-            Integer offset = ( Integer ) UNSAFE.getObject( string, STRING_OFFSET_FIELD_OFFSET );
-            Integer count = ( Integer ) UNSAFE.getObject( string, STRING_COUNT_FIELD_OFFSET );
-
-
-
-            if ( (offset == 0 && count == value.length) ) {
-                    /* no need to copy since the offset is 0 and the length and count are the same. */
-                    return value;
-
-            } else {
-                    /* A subset of the string was used, so only copy a subset over. */
-                    char result[] = new char[ count ];
-                    System.arraycopy( value, offset, result, 0, count );
-                    return result;
-            }
-        } catch (Exception ex) {
-            return Exceptions.handle(char[].class, sputs( "STRING str", string, ex.getMessage() ), ex);
-        }
-
-    }
 
     public static char[] toCharArray( final CharSequence charSequence ) {
         return toCharArray( charSequence.toString() );
@@ -154,10 +130,6 @@ public class FastStringUtils {
 
             final String string = new String();
             UNSAFE.putObject( string, STRING_VALUE_FIELD_OFFSET, chars );
-
-            if ( STRING_COUNT_FIELD_OFFSET != -1 ) {
-                UNSAFE.putObject( string, STRING_COUNT_FIELD_OFFSET, chars.length );
-            }
 
             return string;
         } else {
