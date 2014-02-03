@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +38,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.*;
  * mind, but these tests illustrate some of the possible ways to use them from Java.
  */
 public class ClosureJavaIntegrationTest extends TestCase {
-    Map<String, Integer> zoo = new HashMap<String, Integer>();
+    Map<String, Integer> zoo = new LinkedHashMap<String, Integer>();
     List<String> animals = Arrays.asList("ant", "bear", "camel");
 
     @Override
@@ -69,7 +70,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
                 result.add("k=" + k + ",v=" + v);
             }
         });
-        assertEquals(Arrays.asList("k=Lions,v=5", "k=Monkeys,v=3", "k=Giraffe,v=2"), result);
+        assertEquals(Arrays.asList("k=Monkeys,v=3", "k=Giraffe,v=2", "k=Lions,v=5" ), result);
     }
 
     public void testCollectList() {
