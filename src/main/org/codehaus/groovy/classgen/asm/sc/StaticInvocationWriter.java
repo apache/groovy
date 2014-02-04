@@ -95,6 +95,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             super.writeInvokeConstructor(call);
             return;
         }
+        if (writeAICCall(call)) return;
         ConstructorNode cn;
         if (mn instanceof ConstructorNode) {
             cn = (ConstructorNode) mn;
