@@ -25,7 +25,16 @@ class ImportCommandTest
     extends CommandTestSupport
 {
     void testImport() {
-
-        shell << 'import'
+        assert null == shell << 'import'
+        assert 'java.awt.TextField' == shell << 'import java.awt.TextField'
+        // test semicolon does not lead to duplicate import
+        assert 'java.awt.TextField' == shell << 'import java.awt.TextField;'
+        // test last import is added at the end
+        assert 'java.awt.TextField, java.awt.TextArea' == shell << 'import java.awt.TextArea;'
+        assert 'java.awt.TextArea, java.awt.TextField' == shell << 'import java.awt.TextField;'
+        // test multiple commands are not allowed (as they would be executed on every next buffer evaluation)
+        assert null == shell << 'import java.awt.TextField; println("foo")'
+        // test *, recognizing unnecessary imports sadly not implemented
+        assert 'java.awt.TextArea, java.awt.TextField, java.awt.*' == shell << 'import java.awt.*'
     }
 }

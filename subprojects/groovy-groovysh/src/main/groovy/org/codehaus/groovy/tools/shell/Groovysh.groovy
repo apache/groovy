@@ -138,8 +138,10 @@ class Groovysh extends Shell {
         // Append the line to the current buffer
         current << line
 
+        String importsSpec = this.getImportStatements()
+
         // Attempt to parse the current buffer
-        def status = parser.parse(imports + current)
+        def status = parser.parse([importsSpec] + current)
 
         switch (status.code) {
             case ParseCode.COMPLETE:
@@ -150,7 +152,7 @@ class Groovysh extends Shell {
                 }
 
                 // Evaluate the current buffer w/imports and dummy statement
-                List buff = imports + [ 'true' ] + current
+                List buff = [importsSpec] + [ 'true' ] + current
 
                 setLastResult(result = interp.evaluate(buff))
                 buffers.clearSelected()
@@ -187,6 +189,10 @@ class Groovysh extends Shell {
             
             io.out.println(" ${lineNum}@|bold >|@ $line")
         }
+    }
+
+    String getImportStatements() {
+        return this.imports.collect({String it -> "import $it;"}).join('')
     }
 
     //

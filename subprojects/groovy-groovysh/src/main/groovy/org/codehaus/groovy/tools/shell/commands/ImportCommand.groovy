@@ -72,6 +72,15 @@ class ImportCommand
             fail("Command 'import' requires one or more arguments") // TODO: i18n
         }
 
+        def importSpec = args.join(' ')
+        if (! (importSpec ==~ '[a-zA-Z_. *]+;?$')) {
+            def msg = "Invalid import definition: '${importSpec}'" // TODO: i18n
+            log.debug(msg)
+            fail(msg)
+        }
+        // remove last semicolon
+        importSpec = importSpec.replaceAll(';', '')
+
         def buff = [ 'import ' + args.join(' ') ]
         buff << 'def dummp = false'
         
@@ -82,16 +91,17 @@ class ImportCommand
             // No need to keep duplicates, but order may be important so remove the previous def, since
             // the last defined import will win anyways
             
-            if (imports.remove(buff[0])) {
+            if (imports.remove(importSpec)) {
                 log.debug("Removed duplicate import from list")
             }
             
-            log.debug("Adding import: ${buff[0]}")
+            log.debug("Adding import: $importSpec")
             
-            imports << buff[0]
+            imports.add(importSpec)
+            return imports.join(', ')
         }
         catch (CompilationFailedException e) {
-            def msg = "Invalid import definition: '${buff[0]}'; reason: $e.message" // TODO: i18n
+            def msg = "Invalid import definition: '${importSpec}'; reason: $e.message" // TODO: i18n
             log.debug(msg, e)
             fail(msg)
         }
