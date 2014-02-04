@@ -1118,5 +1118,26 @@ assert it.next() == 1G
             assert seq.getNext(2) == 10
 '''
     }
+
+    // GROOVY-6552
+    void testShouldNotThrowClassCastException() {
+        assertScript '''import java.util.concurrent.Callable
+
+    String text(Class clazz) {
+        new Callable<String>() {
+            String call() throws Exception {
+                new Callable<String>() {
+                    String call() throws Exception {
+                        clazz.getName()
+                    }
+                }.call()
+            }
+        }.call()
+    }
+
+    assert text(String) == 'java.lang.String'
+    '''
+    }
+
 }
 
