@@ -1,5 +1,19 @@
 import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
 
+ext.bintrayUser = project.hasProperty('bintrayUser') ? project.bintrayUser : System.getenv('BINTRAY_USER')
+ext.bintrayPassword = project.hasProperty('bintrayKey') ? project.bintrayKey : System.getenv('BINTRAY_KEY')
+
+if (!bintrayUser) {
+    // try to read from properties
+    def bintrayFile = file('bintray.properties')
+    if (bintrayFile.exists()) {
+        def props = new Properties()
+        props.load(bintrayFile.newReader())
+        ext.bintrayUser = props.getProperty('bintrayUser','')
+        ext.bintrayPassword = props.getProperty('bintrayPassword','')
+    }
+}
+
 allprojects {
     apply plugin: 'artifactory'
 
@@ -15,8 +29,8 @@ allprojects {
                 repoKey = 'oss-snapshot-local' //The Artifactory repository key to publish to
                 //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
                 //~/.gradle/gradle.properties, otherwise to be set in the build server
-                username = project.hasProperty('bintrayUser') ? project.bintrayUser : System.getenv('BINTRAY_USER')
-                password = project.hasProperty('bintrayKey') ? project.bintrayKey : System.getenv('BINTRAY_KEY')
+                username = rootProject.bintrayUser
+                password = rootProject.bintrayPassword
             }
         }
     }

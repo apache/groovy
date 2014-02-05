@@ -1,26 +1,39 @@
+boolean isUsingBintray = rootProject.hasProperty('bintrayUser') && rootProject.bintrayUser &&
+        rootProject.hasProperty('bintrayPassword') && rootProject.bintrayPassword
+
+if (isUsingBintray) {
+    logger.lifecycle 'Deployment environment set to Bintray'
+}
+
 allprojects {
     apply plugin: 'maven'
     apply from: "${rootProject.projectDir}/gradle/pomconfigurer.gradle"
+
 
     configurations {
         deployerJars
     }
 
-    dependencies {
-        deployerJars 'org.apache.maven.wagon:wagon-webdav:1.0-beta-2'
+    if (!isUsingBintray) {
+        dependencies {
+            deployerJars 'org.apache.maven.wagon:wagon-webdav:1.0-beta-2'
+        }
     }
 
     uploadArchives {
         repositories {
             mavenDeployer {
-                def credentials = [
-                        userName: System.getProperty('groovy.deploy.username'),
-                        password: System.getProperty('groovy.deploy.password')
-                ]
                 configuration = configurations.deployerJars
-                repository(id:'codehaus.org',url: uri('dav:https://dav.codehaus.org/repository/groovy'), authentication: credentials)
-                snapshotRepository(id:'codehaus.org',url: uri('dav:https://dav.codehaus.org/snapshots.repository/groovy'), authentication: credentials)
                 pom pomConfigureClosure
+
+                if (!isUsingBintray) {
+                    def credentials = [
+                            userName: System.getProperty('groovy.deploy.username'),
+                            password: System.getProperty('groovy.deploy.password')
+                    ]
+                    repository(id:'codehaus.org',url: uri('dav:https://dav.codehaus.org/repository/groovy'), authentication: credentials)
+                    snapshotRepository(id:'codehaus.org',url: uri('dav:https://dav.codehaus.org/snapshots.repository/groovy'), authentication: credentials)
+                }
             }
         }
     }
