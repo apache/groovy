@@ -18,3 +18,4 @@ dependencies {
 
 install.enabled = false
 uploadArchives.enabled = false
+artifactoryPublish.enabled = false
