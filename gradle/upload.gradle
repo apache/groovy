@@ -1,4 +1,4 @@
-boolean isUsingBintray = System.getenv('BINTRAY_USER')
+boolean isUsingBintray = rootProject.bintrayUser && rootProject.bintrayPassword
 if (isUsingBintray) {
     logger.lifecycle 'Deployment environment set to Bintray'
 }
