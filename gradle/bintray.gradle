@@ -52,9 +52,6 @@ artifactoryPublish {
                     new Date(), file("$projectDir/target/libs/groovy-all-${version}-indy.jar")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-indy.jar"),
             gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "pom", "pom", null,
                     new Date(), file("$projectDir/target/poms/pom-all.xml")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}.pom"),
-            gradleDeployDetails(new DefaultPublishArtifact("groovy-binary", "pom", "pom", null,
-                    new Date(), file("$projectDir/target/poms/pom-binary.xml")), 'artifacts', "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.pom"),
-
     ]
     additionalFiles.each { deployDetails.add(it) }
     }
