@@ -20,102 +20,188 @@ package groovy.json.internal;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
-import java.nio.charset.*;
-
-import static groovy.json.internal.Exceptions.sputs;
 
 /**
  * @author Rick Hightower
- * @author Stephane Landelle
+ * @author Stephane Landelle (creator of Gatling and JSONPath and first Boon JSON parser adopter.)
  */
 public class FastStringUtils {
 
     public static final Unsafe UNSAFE;
     public static final long STRING_VALUE_FIELD_OFFSET;
+    public static final long STRING_OFFSET_FIELD_OFFSET;
+    public static final long STRING_COUNT_FIELD_OFFSET;
     public static final boolean ENABLED;
-
     private static final boolean WRITE_TO_FINAL_FIELDS = Boolean.parseBoolean( System.getProperty( "groovy.json.faststringutils.write.to.final.fields", "false" ) );
     private static final boolean DISABLE = Boolean.parseBoolean( System.getProperty( "groovy.json.faststringutils.disable", "false" ) );
 
+    /**
+     * @return Unsafe
+     * @author Stéphane Landelle
+     */
+    private static Unsafe loadUnsafe() {
+        try {
+            Field unsafeField = Unsafe.class.getDeclaredField( "theUnsafe" );
+            unsafeField.setAccessible( true );
+            return ( Unsafe ) unsafeField.get( null );
+
+        } catch ( Exception e ) {
+            return null;
+        }
+    }
 
     static {
-
-        boolean enabled = !DISABLE; //Check to see if it is forced to disabled.
-        Unsafe unsafe = null;
-        long valueFieldOffset = -1L;
-
-
-        if ( enabled ) {
-            try {
-                /* Lookup unsafe field, if there are any problems abort. */
-                Field unsafeField = Unsafe.class.getDeclaredField( "theUnsafe" );
-                unsafeField.setAccessible( true );
-                unsafe = ( Unsafe ) unsafeField.get( null );
-
-            } catch ( Throwable cause ) {
-                unsafe = null;
-                enabled = false;
-            }
-        }
-
-
-        /* Now that we know Unsafe works, let's grab the string value field. */
-        if ( enabled ) {
-            try {
-                valueFieldOffset = unsafe.objectFieldOffset( String.class.getDeclaredField( "value" ) );
-
-
-            } catch ( Throwable cause ) {
-                enabled = false;
-            }
-
-            /* If for some reason we did not find value, then disable the whole thing. */
-            enabled &= enabled && valueFieldOffset != -1;
-        }
-
-
-        /* Disable support if we find offset or count.  */
-        if ( enabled ) {
-            try {
-                unsafe.objectFieldOffset( String.class.getDeclaredField( "offset" ) );
-                unsafe.objectFieldOffset( String.class.getDeclaredField( "count" ) );
-                enabled = false;
-            } catch ( Throwable cause ) {
-            }
-
-        }
-
-        STRING_VALUE_FIELD_OFFSET = valueFieldOffset;
-        ENABLED = enabled;
-        UNSAFE = unsafe;
-
+        UNSAFE = DISABLE ? null : loadUnsafe();
+        ENABLED = UNSAFE != null;
     }
 
+    /**
+     * @param fieldName name of field
+     * @return offset
+     * @author Stéphane Landelle
+     */
+    private static long getFieldOffset( String fieldName ) {
+        if ( ENABLED ) {
+            try {
+                return UNSAFE.objectFieldOffset( String.class.getDeclaredField( fieldName ) );
+            } catch ( NoSuchFieldException e ) {
+                // field undefined
+            }
+        }
+        return -1L;
+    }
 
-    public static char[] toCharArray( final String string ) {
-        if ( ENABLED  ) {
-            return ( char[] ) UNSAFE.getObject( string, STRING_VALUE_FIELD_OFFSET );
+    static {
+        STRING_VALUE_FIELD_OFFSET = getFieldOffset( "value" );
+        STRING_OFFSET_FIELD_OFFSET = getFieldOffset( "offset" );
+        STRING_COUNT_FIELD_OFFSET = getFieldOffset( "count" );
+    }
+
+    /**
+     * @author Stéphane Landelle
+     */
+    private enum StringImplementation {
+        /**
+         * JDK 7 drops offset and count so there is special handling for later version of JDK 7.
+         */
+        DIRECT_CHARS {
+            @Override
+            public char[] toCharArray( String string ) {
+                return ( char[] ) UNSAFE.getObject( string, STRING_VALUE_FIELD_OFFSET );
+            }
+
+            @Override
+            public String noCopyStringFromChars( char[] chars ) {
+                if ( WRITE_TO_FINAL_FIELDS ) {
+                    String string = new String();
+                    UNSAFE.putObject( string, STRING_VALUE_FIELD_OFFSET, chars );
+                    return string;
+                } else {
+                    return new String( chars );
+                }
+            }
+        },
+        /**
+         * JDK 4 and JDK 5 have offset and count fields.
+         */
+        OFFSET {
+            @Override
+            public char[] toCharArray( String string ) {
+                char[] value = ( char[] ) UNSAFE.getObject( string, STRING_VALUE_FIELD_OFFSET );
+                int offset = UNSAFE.getInt( string, STRING_OFFSET_FIELD_OFFSET );
+                int count = UNSAFE.getInt( string, STRING_COUNT_FIELD_OFFSET );
+                if ( offset == 0 && count == value.length ) {
+                    // no need to copy
+                    return value;
+                } else {
+                    return string.toCharArray();
+                }
+            }
+
+            @Override
+            public String noCopyStringFromChars( char[] chars ) {
+                if ( WRITE_TO_FINAL_FIELDS ) {
+                    String string = new String();
+                    UNSAFE.putObject( string, STRING_VALUE_FIELD_OFFSET, chars );
+                    UNSAFE.putInt( string, STRING_COUNT_FIELD_OFFSET, chars.length );
+                    return string;
+                } else {
+                    return new String( chars );
+                }
+            }
+        },
+        UNKNOWN {
+            @Override
+            public char[] toCharArray( String string ) {
+                return string.toCharArray();
+            }
+
+            @Override
+            public String noCopyStringFromChars( char[] chars ) {
+                return new String( chars );
+            }
+        };
+
+        public abstract char[] toCharArray( String string );
+
+        public abstract String noCopyStringFromChars( char[] chars );
+    }
+
+    public static StringImplementation STRING_IMPLEMENTATION = computeStringImplementation();
+
+    /**
+     * @return correct string implementation
+     * @author Stéphane Landelle
+     */
+    private static StringImplementation computeStringImplementation() {
+
+        if ( STRING_VALUE_FIELD_OFFSET != -1L ) {
+            if ( STRING_OFFSET_FIELD_OFFSET != -1L && STRING_COUNT_FIELD_OFFSET != -1L ) {
+                return StringImplementation.OFFSET;
+
+            } else if ( STRING_OFFSET_FIELD_OFFSET == -1L && STRING_COUNT_FIELD_OFFSET == -1L ) {
+                return StringImplementation.DIRECT_CHARS;
+            } else {
+                // WTF this is a French abbreviation for unknown.
+                return StringImplementation.UNKNOWN;
+            }
         } else {
-            /* Here we just go ahead an use the default, the only downside is an extra buffer copy. */
-            return string.toCharArray();
+            return StringImplementation.UNKNOWN;
         }
     }
 
 
+    /**
+     * @param string string to grab array from.
+     * @return char array from string
+     * @author Stéphane Landelle
+     */
+    public static char[] toCharArray( final String string ) {
+        return STRING_IMPLEMENTATION.toCharArray( string );
+
+    }
+
+
+    /**
+     * @param charSequence to grab array from.
+     * @return char array from char sequence
+     * @author Stéphane Landelle
+     */
     public static char[] toCharArray( final CharSequence charSequence ) {
         return toCharArray( charSequence.toString() );
     }
 
+    /**
+     * @param chars to shove array into.
+     * @return new string with chars copied into it
+     * @author Stéphane Landelle
+     */
     public static String noCopyStringFromChars( final char[] chars ) {
-
-        if ( WRITE_TO_FINAL_FIELDS && ENABLED ) {
-
-            final String string = new String();
-            UNSAFE.putObject( string, STRING_VALUE_FIELD_OFFSET, chars );
-
-            return string;
-        } else {
-            return new String( chars );
-        }
+        /*
+        J'ai écrit JSON parser du Boon. Sans Stéphane, l'analyseur n'existerait pas. Stéphane est la muse de Boon JSON,
+         et mon entraîneur pour l'open source, github, et plus encore. Stéphane n'est pas le créateur directe, mais il
+         est le maître architecte et je l'appelle mon ami. It is Step-eff-on not Stef-fa-nee.. Ok?
+         */
+        return STRING_IMPLEMENTATION.noCopyStringFromChars( chars );
     }
 }

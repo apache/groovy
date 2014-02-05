@@ -48,14 +48,14 @@ public class ReaderCharacterSource implements CharacterSource {
 
     public ReaderCharacterSource( final Reader reader, final int readAheadSize ) {
         this.reader = reader;
-        this.readBuf = new char[ readAheadSize + MAX_TOKEN_SIZE ];
+        this.readBuf = new char[readAheadSize + MAX_TOKEN_SIZE];
         this.readAheadSize = readAheadSize;
     }
 
     public ReaderCharacterSource( final Reader reader ) {
         this.reader = reader;
         this.readAheadSize = 10000;
-        this.readBuf = new char[ readAheadSize + MAX_TOKEN_SIZE ];
+        this.readBuf = new char[readAheadSize + MAX_TOKEN_SIZE];
     }
 
     public ReaderCharacterSource( final String string ) {
@@ -104,13 +104,13 @@ public class ReaderCharacterSource implements CharacterSource {
 
     public final int nextChar() {
         ensureBuffer();
-        return ch = readBuf[ index++ ];
+        return ch = readBuf[index++];
     }
 
 
     public final int currentChar() {
         ensureBuffer();
-        return readBuf[ index ];
+        return readBuf[index];
     }
 
 
@@ -133,7 +133,7 @@ public class ReaderCharacterSource implements CharacterSource {
             }
 
             for (; i < match.length; i++, idx++ ) {
-                ok &= ( match[ i ] == _chars[ idx ] );
+                ok &= ( match[i] == _chars[idx] );
                 if ( !ok ) break;
             }
 
@@ -158,7 +158,7 @@ public class ReaderCharacterSource implements CharacterSource {
     public final int safeNextChar() {
         try {
             ensureBuffer();
-            return index + 1 < readBuf.length ? readBuf[ index++ ] : -1;
+            return index + 1 < readBuf.length ? readBuf[index++] : -1;
         } catch ( Exception ex ) {
             String str = CharScanner.errorDetails( "safeNextChar issue", readBuf, index, ch );
             return Exceptions.handle( int.class, str, ex );
@@ -166,8 +166,7 @@ public class ReaderCharacterSource implements CharacterSource {
     }
 
 
-    private final char[] EMPTY_CHARS = new char[ 0 ];
-
+    private final char[] EMPTY_CHARS = new char[0];
 
 
     public char[] findNextChar( int match, int esc ) {
@@ -181,7 +180,7 @@ public class ReaderCharacterSource implements CharacterSource {
             if ( ch == '"' ) {
 
             } else if ( idx < length - 1 ) {
-                ch = _chars[ idx ];
+                ch = _chars[idx];
 
                 if ( ch == '"' ) {
                     idx++;
@@ -190,7 +189,7 @@ public class ReaderCharacterSource implements CharacterSource {
 
 
             if ( idx < length ) {
-                ch = _chars[ idx ];
+                ch = _chars[idx];
             }
 
             if ( ch == '"' ) {
@@ -208,7 +207,7 @@ public class ReaderCharacterSource implements CharacterSource {
 
 
             for (; idx < length; idx++ ) {
-                ch = _chars[ idx ];
+                ch = _chars[idx];
                 if ( ch == match || ch == esc ) {
                     if ( ch == match ) {
                         foundEnd = true;
@@ -238,7 +237,7 @@ public class ReaderCharacterSource implements CharacterSource {
             if ( foundEnd ) {
                 index++;
                 if ( index < length ) {
-                    ch = _chars[ index ];
+                    ch = _chars[index];
                     this.ch = ch;
                 }
                 return results;
@@ -264,7 +263,6 @@ public class ReaderCharacterSource implements CharacterSource {
     public boolean hadEscape() {
         return foundEscape;
     }
-
 
 
     public void skipWhiteSpace() {

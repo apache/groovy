@@ -64,7 +64,6 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
     }
 
 
-
     public Iterator<Object> iterator() {
         convertAllIfNeeded();
         return list.iterator();
@@ -80,7 +79,6 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
         }
 
     }
-
 
 
     public void clear() {

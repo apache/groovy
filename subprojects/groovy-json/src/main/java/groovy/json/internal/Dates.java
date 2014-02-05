@@ -22,6 +22,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+/**
+ * @author Rick Hightower
+ */
 public class Dates {
 
     private static TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone( "UTC" );
@@ -100,7 +103,7 @@ public class Dates {
                 int second = CharScanner.parseIntFromTo( charArray, from + 17, from + 19 );
                 TimeZone tz = null;
 
-                if ( charArray[ from + 19 ] == 'Z' ) {
+                if ( charArray[from + 19] == 'Z' ) {
 
                     tz = TimeZone.getTimeZone( "GMT" );
 
@@ -158,11 +161,11 @@ public class Dates {
         final int length = to - start;
 
         if ( length == SHORT_ISO_8601_TIME_LENGTH ) {
-            valid &= ( charArray[ start + 19 ] == 'Z' );
+            valid &= ( charArray[start + 19] == 'Z' );
 
         } else if ( length == LONG_ISO_8601_TIME_LENGTH ) {
-            valid &= ( charArray[ start + 19 ] == '-' || charArray[ start + 19 ] == '+' );
-            valid &= ( charArray[ start + 22 ] == ':' );
+            valid &= ( charArray[start + 19] == '-' || charArray[start + 19] == '+' );
+            valid &= ( charArray[start + 22] == ':' );
 
         } else {
             return false;
@@ -171,11 +174,11 @@ public class Dates {
         //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4
         // "1 9 9 4 - 1 1 - 0 5 T 0 8 : 1 5 : 3 0 - 0 5 : 0 0
 
-        valid &= ( charArray[ start + 4 ] == '-' ) &&
-                ( charArray[ start + 7 ] == '-' ) &&
-                ( charArray[ start + 10 ] == 'T' ) &&
-                ( charArray[ start + 13 ] == ':' ) &&
-                ( charArray[ start + 16 ] == ':' );
+        valid &= ( charArray[start + 4] == '-' ) &&
+                ( charArray[start + 7] == '-' ) &&
+                ( charArray[start + 10] == 'T' ) &&
+                ( charArray[start + 13] == ':' ) &&
+                ( charArray[start + 16] == ':' );
 
         return valid;
     }
@@ -186,7 +189,7 @@ public class Dates {
         try {
 
             if ( length == JSON_TIME_LENGTH || length == LONG_ISO_8601_TIME_LENGTH
-                    || length == SHORT_ISO_8601_TIME_LENGTH || ( length >= 17 && ( charArray[ start + 16 ] == ':' ) )
+                    || length == SHORT_ISO_8601_TIME_LENGTH || ( length >= 17 && ( charArray[start + 16] == ':' ) )
                     ) {
                 return true;
             }
@@ -207,18 +210,18 @@ public class Dates {
             return false;
         }
 
-        valid &= ( charArray[ start + 19 ] == '.' );
+        valid &= ( charArray[start + 19] == '.' );
 
         if ( !valid ) {
             return false;
         }
 
 
-        valid &= ( charArray[ start + 4 ] == '-' ) &&
-                ( charArray[ start + 7 ] == '-' ) &&
-                ( charArray[ start + 10 ] == 'T' ) &&
-                ( charArray[ start + 13 ] == ':' ) &&
-                ( charArray[ start + 16 ] == ':' );
+        valid &= ( charArray[start + 4] == '-' ) &&
+                ( charArray[start + 7] == '-' ) &&
+                ( charArray[start + 10] == 'T' ) &&
+                ( charArray[start + 13] == ':' ) &&
+                ( charArray[start + 16] == ':' );
 
         return valid;
     }

@@ -19,7 +19,9 @@ package groovy.json.internal;
 
 import groovy.json.JsonException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static groovy.json.internal.CharScanner.isInteger;
 
@@ -65,12 +67,12 @@ public class JsonParserCharArray extends BaseJsonParser {
 
 
         if ( hasCurrent() ) {
-            this.__currentChar = this.charArray[ ix ];
+            this.__currentChar = this.charArray[ix];
         }
 
         if ( __currentChar <= 32 ) {
             ix = skipWhiteSpaceFast( this.charArray, ix );
-            this.__currentChar = this.charArray[ ix ];
+            this.__currentChar = this.charArray[ix];
             __index = ix;
         }
 
@@ -83,7 +85,7 @@ public class JsonParserCharArray extends BaseJsonParser {
         try {
             if ( hasMore() ) {
                 __index++;
-                return __currentChar = charArray[ __index ];
+                return __currentChar = charArray[__index];
             } else {
                 return '\u0000';
             }
@@ -101,7 +103,7 @@ public class JsonParserCharArray extends BaseJsonParser {
     private static int skipWhiteSpaceFast( char[] array, int index ) {
         char c;
         for (; index < array.length; index++ ) {
-            c = array[ index ];
+            c = array[index];
             if ( c > 32 ) {
 
                 return index;
@@ -262,7 +264,7 @@ public class JsonParserCharArray extends BaseJsonParser {
 
 
         while ( true ) {
-            currentChar = array[ index ];
+            currentChar = array[index];
 
             if ( doubleFloat ) {
                 digitsPastPoint++;
@@ -312,10 +314,10 @@ public class JsonParserCharArray extends BaseJsonParser {
     protected final Object decodeNull() {
 
         if ( __index + NULL.length <= charArray.length ) {
-            if ( charArray[ __index ] == 'n' &&
-                    charArray[ ++__index ] == 'u' &&
-                    charArray[ ++__index ] == 'l' &&
-                    charArray[ ++__index ] == 'l' ) {
+            if ( charArray[__index] == 'n' &&
+                    charArray[++__index] == 'u' &&
+                    charArray[++__index] == 'l' &&
+                    charArray[++__index] == 'l' ) {
                 __index++;
                 return null;
             }
@@ -329,10 +331,10 @@ public class JsonParserCharArray extends BaseJsonParser {
     protected final boolean decodeTrue() {
 
         if ( __index + TRUE.length <= charArray.length ) {
-            if ( charArray[ __index ] == 't' &&
-                    charArray[ ++__index ] == 'r' &&
-                    charArray[ ++__index ] == 'u' &&
-                    charArray[ ++__index ] == 'e' ) {
+            if ( charArray[__index] == 't' &&
+                    charArray[++__index] == 'r' &&
+                    charArray[++__index] == 'u' &&
+                    charArray[++__index] == 'e' ) {
 
                 __index++;
                 return true;
@@ -349,11 +351,11 @@ public class JsonParserCharArray extends BaseJsonParser {
     protected final boolean decodeFalse() {
 
         if ( __index + FALSE.length <= charArray.length ) {
-            if ( charArray[ __index ] == 'f' &&
-                    charArray[ ++__index ] == 'a' &&
-                    charArray[ ++__index ] == 'l' &&
-                    charArray[ ++__index ] == 's' &&
-                    charArray[ ++__index ] == 'e' ) {
+            if ( charArray[__index] == 'f' &&
+                    charArray[++__index] == 'a' &&
+                    charArray[++__index] == 'l' &&
+                    charArray[++__index] == 's' &&
+                    charArray[++__index] == 'e' ) {
                 __index++;
                 return false;
             }
@@ -368,7 +370,7 @@ public class JsonParserCharArray extends BaseJsonParser {
 
         char[] array = charArray;
         int index = __index;
-        char currentChar = array[ index ];
+        char currentChar = array[index];
 
         if ( index < array.length && currentChar == '"' ) {
             index++;
@@ -378,7 +380,7 @@ public class JsonParserCharArray extends BaseJsonParser {
 
 
         boolean encoded = hasEscapeChar( array, index, indexHolder );
-        index = indexHolder[ 0 ];
+        index = indexHolder[0];
 
 
         String value = null;
@@ -431,7 +433,7 @@ public class JsonParserCharArray extends BaseJsonParser {
                 list.add( arrayItem );
 
 
-                char c = charArray[ __index ];
+                char c = charArray[__index];
 
 
                 if ( c == ',' ) {
@@ -447,7 +449,7 @@ public class JsonParserCharArray extends BaseJsonParser {
                 skipWhiteSpace();
 
 
-                c = charArray[ __index ];
+                c = charArray[__index];
 
                 if ( c == ',' ) {
                     __index++;
@@ -487,10 +489,9 @@ public class JsonParserCharArray extends BaseJsonParser {
         if ( __index > lastIndex ) {
             return 0;
         } else {
-            return charArray[ __index ];
+            return charArray[__index];
         }
     }
-
 
 
     public Object parse( char[] chars ) {

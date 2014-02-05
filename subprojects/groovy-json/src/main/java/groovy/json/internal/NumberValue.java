@@ -81,7 +81,6 @@ public class NumberValue extends java.lang.Number implements Value {
     }
 
 
-
     public final Object toValue() {
         return value != null ? value : ( value = doToValue() );
     }
@@ -119,7 +118,7 @@ public class NumberValue extends java.lang.Number implements Value {
 
                 int sign = 1;
                 boolean negative = false;
-                if ( buffer[ startIndex ] == '-' ) {
+                if ( buffer[startIndex] == '-' ) {
                     startIndex++;
                     sign = -1;
                     negative = true;
@@ -183,16 +182,14 @@ public class NumberValue extends java.lang.Number implements Value {
     }
 
 
-
     public Date dateValue() {
         return new Date( Dates.utc( longValue() ) );
     }
 
 
-
     public int intValue() {
         int sign = 1;
-        if ( buffer[ startIndex ] == '-' ) {
+        if ( buffer[startIndex] == '-' ) {
             startIndex++;
             sign = -1;
 
@@ -203,7 +200,7 @@ public class NumberValue extends java.lang.Number implements Value {
 
     public long longValue() {
         long sign = 1;
-        if ( buffer[ startIndex ] == '-' ) {
+        if ( buffer[startIndex] == '-' ) {
             startIndex++;
             sign = -1;
 
@@ -258,7 +255,7 @@ public class NumberValue extends java.lang.Number implements Value {
 
         float sign;
 
-        if ( buffer[ startIndex ] == '-' ) {
+        if ( buffer[startIndex] == '-' ) {
             startIndex++;
             sign = -1.0f;
         } else {
@@ -272,7 +269,7 @@ public class NumberValue extends java.lang.Number implements Value {
         }
         loop:
         for ( int index = startIndex; index < endIndex; index++ ) {
-            char ch = buffer[ index ];
+            char ch = buffer[index];
             switch ( ch ) {
                 case 'e':
                     simple = false;
@@ -304,7 +301,7 @@ public class NumberValue extends java.lang.Number implements Value {
 
             value = parseIntIgnoreDot( buffer, startIndex, length );
             if ( digitsPastPoint < fpowersOf10.length ) {
-                float power = fpowersOf10[ digitsPastPoint ] * sign;
+                float power = fpowersOf10[digitsPastPoint] * sign;
                 return value / power;
 
             }
@@ -326,9 +323,8 @@ public class NumberValue extends java.lang.Number implements Value {
     }
 
 
-
     public char charValue() {
-        return buffer[ startIndex ];
+        return buffer[startIndex];
     }
 
 }

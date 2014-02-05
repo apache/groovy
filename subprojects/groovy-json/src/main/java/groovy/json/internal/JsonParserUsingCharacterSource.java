@@ -330,14 +330,12 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
     }
 
 
-
     public Object parse( Reader reader ) {
 
         characterSource = new ReaderCharacterSource( reader );
         return this.decodeValue();
 
     }
-
 
 
     public Object parse( char[] chars ) {

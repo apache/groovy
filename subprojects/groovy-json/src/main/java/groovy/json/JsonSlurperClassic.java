@@ -35,6 +35,8 @@ import static groovy.json.JsonTokenType.CLOSE_CURLY;
 import static groovy.json.JsonTokenType.COMMA;
 
 /**
+ * This is the original slurper included in case someone relies on its exact behavior.
+ *
  * JSON slurper which parses text or reader content into a data structure of lists and maps.
  * <p>
  * Example usage:

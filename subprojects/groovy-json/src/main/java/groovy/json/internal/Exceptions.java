@@ -21,7 +21,7 @@ import groovy.json.JsonException;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.Arrays;
 
 /**
  * .
@@ -79,7 +79,6 @@ public class Exceptions {
         public JsonInternalException( Throwable cause ) {
             super( "Wrapped Exception", cause );
         }
-
 
 
         public void printStackTrace( PrintStream s ) {

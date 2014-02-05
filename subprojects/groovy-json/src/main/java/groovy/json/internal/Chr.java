@@ -56,7 +56,7 @@ public class Chr {
 
     public static boolean in( char value, int offset, char[] array ) {
         for ( int index = offset; index < array.length; index++ ) {
-            char currentValue = array[ index ];
+            char currentValue = array[index];
             if ( currentValue == value ) {
                 return true;
             }
@@ -67,7 +67,7 @@ public class Chr {
 
     public static boolean in( char value, int offset, int end, char[] array ) {
         for ( int index = offset; index < end; index++ ) {
-            char currentValue = array[ index ];
+            char currentValue = array[index];
             if ( currentValue == value ) {
                 return true;
             }
@@ -77,36 +77,36 @@ public class Chr {
 
 
     public static char[] grow( char[] array, final int size ) {
-        char[] newArray = new char[ array.length + size ];
+        char[] newArray = new char[array.length + size];
         arraycopy( array, 0, newArray, 0, array.length );
         return newArray;
     }
 
 
     public static char[] grow( char[] array ) {
-        char[] newArray = new char[ array.length * 2 ];
+        char[] newArray = new char[array.length * 2];
         arraycopy( array, 0, newArray, 0, array.length );
         return newArray;
     }
 
 
     public static char[] copy( char[] array ) {
-        char[] newArray = new char[ array.length ];
+        char[] newArray = new char[array.length];
         arraycopy( array, 0, newArray, 0, array.length );
         return newArray;
     }
 
     public static char[] copy( char[] array, int offset, int length ) {
-        char[] newArray = new char[ length ];
+        char[] newArray = new char[length];
         arraycopy( array, offset, newArray, 0, length );
         return newArray;
     }
 
 
     public static char[] add( char[] array, char v ) {
-        char[] newArray = new char[ array.length + 1 ];
+        char[] newArray = new char[array.length + 1];
         arraycopy( array, 0, newArray, 0, array.length );
-        newArray[ array.length ] = v;
+        newArray[array.length] = v;
         return newArray;
     }
 
@@ -121,7 +121,7 @@ public class Chr {
 
 
     public static char[] add( char[] array, char[] array2 ) {
-        char[] newArray = new char[ array.length + array2.length ];
+        char[] newArray = new char[array.length + array2.length];
         arraycopy( array, 0, newArray, 0, array.length );
         arraycopy( array2, 0, newArray, array.length, array2.length );
         return newArray;
@@ -135,7 +135,7 @@ public class Chr {
 
     private static char[] getCharsFromStringBuilder( StringBuilder sbuf ) {
         final int length = sbuf.length();
-        char[] array2 = new char[ length ];
+        char[] array2 = new char[length];
         sbuf.getChars( 0, length, array2, 0 );
         return array2;
     }
@@ -149,16 +149,16 @@ public class Chr {
 
         int delta = size - in.length;
         int index = 0;
-        char[] newArray = new char[ size ];
+        char[] newArray = new char[size];
 
 
         for (; index < delta; index++ ) {
-            newArray[ index ] = pad;
+            newArray[index] = pad;
         }
 
 
         for ( int index2 = 0; index2 < in.length; index++, index2++ ) {
-            newArray[ index ] = in[ index2 ];
+            newArray[index] = in[index2];
         }
 
         return newArray;
@@ -168,7 +168,7 @@ public class Chr {
     public static boolean contains( char[] chars, char c, int start, final int length ) {
         final int to = length + start;
         for ( int index = start; index < to; index++ ) {
-            char ch = chars[ index ];
+            char ch = chars[index];
             if ( ch == c ) {
                 return true;
             }
@@ -180,7 +180,7 @@ public class Chr {
         int index2 = 0;
         int endLocation = ( location + chars.length );
         for ( int index = location; index < endLocation; index++, index2++ ) {
-            buffer[ index ] = ( char ) chars[ index2 ];
+            buffer[index] = ( char ) chars[index2];
         }
     }
 
@@ -216,7 +216,7 @@ public class Chr {
         int index2 = start;
         int endLocation = ( location + ( end - start ) );
         for ( int index = location; index < endLocation; index++, index2++ ) {
-            buffer[ index ] = ( char ) chars[ index2 ];
+            buffer[index] = ( char ) chars[index2];
         }
 
     }

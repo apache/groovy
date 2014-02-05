@@ -83,7 +83,7 @@ public class IO {
 
 
     public static long copyLarge( Reader reader, Writer writer ) {
-        return copyLarge( reader, writer, new char[ DEFAULT_BUFFER_SIZE ] );
+        return copyLarge( reader, writer, new char[DEFAULT_BUFFER_SIZE] );
     }
 
 

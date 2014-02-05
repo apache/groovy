@@ -114,7 +114,6 @@ public class CharSequenceValue implements Value, CharSequence {
     }
 
 
-
     public boolean isContainer() {
         return false;
     }
@@ -128,7 +127,7 @@ public class CharSequenceValue implements Value, CharSequence {
 
                 int sign = 1;
                 boolean negative = false;
-                if ( buffer[ startIndex ] == '-' ) {
+                if ( buffer[startIndex] == '-' ) {
                     startIndex++;
                     sign = -1;
                     negative = true;
@@ -193,14 +192,13 @@ public class CharSequenceValue implements Value, CharSequence {
     }
 
 
-
     public final int length() {
         return buffer.length;
     }
 
 
     public final char charAt( int index ) {
-        return buffer[ index ];
+        return buffer[index];
     }
 
 
@@ -259,7 +257,7 @@ public class CharSequenceValue implements Value, CharSequence {
 
     public int intValue() {
         int sign = 1;
-        if ( buffer[ startIndex ] == '-' ) {
+        if ( buffer[startIndex] == '-' ) {
             startIndex++;
             sign = -1;
 
@@ -270,7 +268,7 @@ public class CharSequenceValue implements Value, CharSequence {
 
     public long longValue() {
         long sign = 1;
-        if ( buffer[ startIndex ] == '-' ) {
+        if ( buffer[startIndex] == '-' ) {
             startIndex++;
             sign = -1;
 
@@ -322,7 +320,7 @@ public class CharSequenceValue implements Value, CharSequence {
 
         float sign;
 
-        if ( buffer[ startIndex ] == '-' ) {
+        if ( buffer[startIndex] == '-' ) {
             startIndex++;
             sign = -1.0f;
         } else {
@@ -335,7 +333,7 @@ public class CharSequenceValue implements Value, CharSequence {
         }
         loop:
         for ( int index = startIndex; index < endIndex; index++ ) {
-            char ch = buffer[ index ];
+            char ch = buffer[index];
             switch ( ch ) {
                 case 'e':
                     simple = false;
@@ -367,7 +365,7 @@ public class CharSequenceValue implements Value, CharSequence {
 
             value = parseIntIgnoreDot( buffer, startIndex, length );
             if ( digitsPastPoint < fpowersOf10.length ) {
-                float power = fpowersOf10[ digitsPastPoint ] * sign;
+                float power = fpowersOf10[digitsPastPoint] * sign;
                 return value / power;
 
             }
@@ -387,7 +385,7 @@ public class CharSequenceValue implements Value, CharSequence {
 
 
     public char charValue() {
-        return buffer[ startIndex ];
+        return buffer[startIndex];
     }
 }
 

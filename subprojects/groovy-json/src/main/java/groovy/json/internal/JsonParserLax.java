@@ -89,7 +89,7 @@ public class JsonParserLax extends JsonParserCharArray {
                     break;
 
                 case ':':
-                    char startChar = charArray[ startIndexOfKey ];
+                    char startChar = charArray[startIndexOfKey];
                     if ( startChar == ',' ) {
                         startIndexOfKey++;
                     }
@@ -184,7 +184,7 @@ public class JsonParserLax extends JsonParserCharArray {
         char startChar;
         startIndexLookup:
         for (; startIndexOfKey < __index && startIndexOfKey < charArray.length; startIndexOfKey++ ) {
-            startChar = charArray[ startIndexOfKey ];
+            startChar = charArray[startIndexOfKey];
             switch ( startChar ) {
                 case ' ':
                 case '\n':
@@ -200,7 +200,7 @@ public class JsonParserLax extends JsonParserCharArray {
         int endIndex = end >= charArray.length ? charArray.length - 1 : end;
         endIndexLookup:
         for (; endIndex >= startIndexOfKey + 1 && endIndex >= 0; endIndex-- ) {
-            endChar = charArray[ endIndex ];
+            endChar = charArray[endIndex];
             switch ( endChar ) {
                 case ' ':
                 case '\n':
@@ -328,7 +328,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
     private void handleBashComment() {
         for (; __index < charArray.length; __index++ ) {
-            __currentChar = charArray[ __index ];
+            __currentChar = charArray[__index];
 
             if ( __currentChar == '\n' ) {
                 __index++;
@@ -341,17 +341,17 @@ public class JsonParserLax extends JsonParserCharArray {
 
         if ( hasMore() ) {
             __index++;
-            __currentChar = charArray[ __index ];
+            __currentChar = charArray[__index];
 
             switch ( __currentChar ) {
                 case '*':
                     for (; __index < charArray.length; __index++ ) {
-                        __currentChar = charArray[ __index ];
+                        __currentChar = charArray[__index];
 
                         if ( __currentChar == '*' ) {
                             if ( hasMore() ) {
                                 __index++;
-                                __currentChar = charArray[ __index ];
+                                __currentChar = charArray[__index];
                                 if ( __currentChar == '/' ) {
                                     if ( hasMore() ) {
                                         __index++;
@@ -366,7 +366,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
                 case '/':
                     for (; __index < charArray.length; __index++ ) {
-                        __currentChar = charArray[ __index ];
+                        __currentChar = charArray[__index];
 
                         if ( __currentChar == '\n' ) {
                             if ( hasMore() ) {
@@ -395,7 +395,7 @@ public class JsonParserLax extends JsonParserCharArray {
         }
 
         while ( true ) {
-            currentChar = array[ index ];
+            currentChar = array[index];
             if ( isNumberDigit( currentChar ) ) {
                 //noop
             } else if ( currentChar <= 32 ) { //white
@@ -421,10 +421,10 @@ public class JsonParserLax extends JsonParserCharArray {
 
     private boolean isNull() {
         if ( __index + NULL.length <= charArray.length ) {
-            if ( charArray[ __index ] == 'n' &&
-                    charArray[ __index + 1 ] == 'u' &&
-                    charArray[ __index + 2 ] == 'l' &&
-                    charArray[ __index + 3 ] == 'l' ) {
+            if ( charArray[__index] == 'n' &&
+                    charArray[__index + 1] == 'u' &&
+                    charArray[__index + 2] == 'l' &&
+                    charArray[__index + 3] == 'l' ) {
                 return true;
             }
         }
@@ -433,10 +433,10 @@ public class JsonParserLax extends JsonParserCharArray {
 
     private boolean isTrue() {
         if ( __index + TRUE.length <= charArray.length ) {
-            if ( charArray[ __index ] == 't' &&
-                    charArray[ __index + 1 ] == 'r' &&
-                    charArray[ __index + 2 ] == 'u' &&
-                    charArray[ __index + 3 ] == 'e' ) {
+            if ( charArray[__index] == 't' &&
+                    charArray[__index + 1] == 'r' &&
+                    charArray[__index + 2] == 'u' &&
+                    charArray[__index + 3] == 'e' ) {
                 return true;
 
             }
@@ -446,11 +446,11 @@ public class JsonParserLax extends JsonParserCharArray {
 
     private boolean isFalse() {
         if ( __index + FALSE.length <= charArray.length ) {
-            if ( charArray[ __index ] == 'f' &&
-                    charArray[ __index + 1 ] == 'a' &&
-                    charArray[ __index + 2 ] == 'l' &&
-                    charArray[ __index + 3 ] == 's' &&
-                    charArray[ __index + 4 ] == 'e' ) {
+            if ( charArray[__index] == 'f' &&
+                    charArray[__index + 1] == 'a' &&
+                    charArray[__index + 2] == 'l' &&
+                    charArray[__index + 3] == 's' &&
+                    charArray[__index + 4] == 'e' ) {
                 return true;
             }
         }
@@ -459,13 +459,13 @@ public class JsonParserLax extends JsonParserCharArray {
 
     private Value decodeStringLax() {
         int index = __index;
-        char currentChar = charArray[ __index ];
+        char currentChar = charArray[__index];
         final int startIndex = __index;
         boolean encoded = false;
         char[] charArray = this.charArray;
 
         for (; index < charArray.length; index++ ) {
-            currentChar = charArray[ index ];
+            currentChar = charArray[index];
 
             if ( isDelimiter( currentChar ) ) break;
             else if ( currentChar == '\\' ) break;
@@ -479,7 +479,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
     private Value decodeStringDouble() {
 
-        __currentChar = charArray[ __index ];
+        __currentChar = charArray[__index];
 
         if ( __index < charArray.length && __currentChar == '"' ) {
             __index++;
@@ -492,7 +492,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
         done:
         for (; __index < this.charArray.length; __index++ ) {
-            __currentChar = charArray[ __index ];
+            __currentChar = charArray[__index];
             switch ( __currentChar ) {
 
                 case '"':
@@ -526,7 +526,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
     private Value decodeStringSingle() {
 
-        __currentChar = charArray[ __index ];
+        __currentChar = charArray[__index];
 
         if ( __index < charArray.length && __currentChar == '\'' ) {
             __index++;
@@ -541,7 +541,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
         done:
         for (; __index < this.charArray.length; __index++ ) {
-            __currentChar = charArray[ __index ];
+            __currentChar = charArray[__index];
             switch ( __currentChar ) {
 
                 case '\'':

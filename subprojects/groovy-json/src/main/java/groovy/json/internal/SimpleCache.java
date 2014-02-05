@@ -1,7 +1,5 @@
 package groovy.json.internal;
 
-import groovy.json.internal.Cache;
-import groovy.json.internal.CacheType;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

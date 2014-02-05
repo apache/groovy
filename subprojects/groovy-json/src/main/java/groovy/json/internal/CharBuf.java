@@ -17,15 +17,13 @@
  */
 package groovy.json.internal;
 
-import groovy.json.*;
+import groovy.json.JsonException;
 import sun.nio.cs.Surrogate;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-
-import static groovy.json.internal.Exceptions.die;
 
 /**
  * @author Rick Hightower
@@ -96,7 +94,7 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
     public void init() {
-        buffer = new char[ capacity ];
+        buffer = new char[capacity];
     }
 
     public final CharBuf add( String str ) {
@@ -298,7 +296,7 @@ public class CharBuf extends Writer implements CharSequence {
 
         }
 
-        _buffer[ _location ] = ch;
+        _buffer[_location] = ch;
         _location++;
 
 
@@ -356,13 +354,13 @@ public class CharBuf extends Writer implements CharSequence {
             _buffer = Chr.grow( _buffer, sizeNeeded * 2 );
             _capacity = _buffer.length;
         }
-        _buffer[ _location ] = '"';
+        _buffer[_location] = '"';
         _location++;
 
         arraycopy( chars, 0, _buffer, _location, chars.length );
 
         _location += ( chars.length );
-        _buffer[ _location ] = '"';
+        _buffer[_location] = '"';
         _location++;
 
         location = _location;
@@ -397,7 +395,7 @@ public class CharBuf extends Writer implements CharSequence {
         int index = 0;
         char c;
         while ( true ) {
-            c = charArray[ index ];
+            c = charArray[index];
             if ( isJSONControl( c ) ) {
                 return true;
             }
@@ -430,64 +428,64 @@ public class CharBuf extends Writer implements CharSequence {
         }
 
 
-        _buffer[ _location ] = '"';
+        _buffer[_location] = '"';
         _location++;
 
         int index = 0;
         while ( true ) {
-            char c = charArray[ index ];
+            char c = charArray[index];
 
 
             if ( isJSONControl( c ) ) {
 
                 switch ( c ) {
                     case '\"':
-                        _buffer[ _location ] = '\\';
+                        _buffer[_location] = '\\';
                         _location++;
-                        _buffer[ _location ] = '"';
+                        _buffer[_location] = '"';
                         _location++;
                         break;
                     case '\\':
-                        _buffer[ _location ] = '\\';
+                        _buffer[_location] = '\\';
                         _location++;
-                        _buffer[ _location ] = '\\';
+                        _buffer[_location] = '\\';
                         _location++;
                         break;
                     case '\b':
-                        _buffer[ _location ] = '\\';
+                        _buffer[_location] = '\\';
                         _location++;
-                        _buffer[ _location ] = 'b';
+                        _buffer[_location] = 'b';
                         _location++;
                         break;
                     case '\f':
-                        _buffer[ _location ] = '\\';
+                        _buffer[_location] = '\\';
                         _location++;
-                        _buffer[ _location ] = 'f';
+                        _buffer[_location] = 'f';
                         _location++;
                         break;
                     case '\n':
-                        _buffer[ _location ] = '\\';
+                        _buffer[_location] = '\\';
                         _location++;
-                        _buffer[ _location ] = 'n';
+                        _buffer[_location] = 'n';
                         _location++;
                         break;
                     case '\r':
-                        _buffer[ _location ] = '\\';
+                        _buffer[_location] = '\\';
                         _location++;
-                        _buffer[ _location ] = 'r';
+                        _buffer[_location] = 'r';
                         _location++;
                         break;
 
                     case '\t':
-                        _buffer[ _location ] = '\\';
+                        _buffer[_location] = '\\';
                         _location++;
-                        _buffer[ _location ] = 't';
+                        _buffer[_location] = 't';
                         _location++;
                         break;
                 }
             } else {
 
-                _buffer[ _location ] = c;
+                _buffer[_location] = c;
                 _location++;
 
             }
@@ -497,7 +495,7 @@ public class CharBuf extends Writer implements CharSequence {
 
 
         }
-        _buffer[ _location ] = '"';
+        _buffer[_location] = '"';
         _location++;
 
 
@@ -525,15 +523,15 @@ public class CharBuf extends Writer implements CharSequence {
                 _buffer = Chr.grow( _buffer, sizeNeeded * 2 );
                 _capacity = _buffer.length;
             }
-            _buffer[ _location ] = '"';
+            _buffer[_location] = '"';
             _location++;
 
             arraycopy( chars, 0, _buffer, _location, chars.length );
 
             _location += ( chars.length );
-            _buffer[ _location ] = '"';
+            _buffer[_location] = '"';
             _location++;
-            _buffer[ _location ] = ':';
+            _buffer[_location] = ':';
             _location++;
 
             location = _location;
@@ -585,7 +583,7 @@ public class CharBuf extends Writer implements CharSequence {
     private final static void directArraycopy( final char[] src, final int srcPos, final char[] dest, final int destPos, final int length ) {
         int destIndex = destPos;
         for ( int index = srcPos; index < srcPos + length; index++, destIndex++ ) {
-            dest[ destIndex ] = src[ index ];
+            dest[destIndex] = src[index];
         }
     }
 
@@ -610,10 +608,10 @@ public class CharBuf extends Writer implements CharSequence {
 
     public final CharBuf add( char ch ) {
         if ( 1 + location < capacity ) {
-            buffer[ location ] = ch;
+            buffer[location] = ch;
         } else {
             buffer = Chr.grow( buffer );
-            buffer[ location ] = ch;
+            buffer[location] = ch;
             capacity = buffer.length;
         }
         location += 1;
@@ -627,7 +625,7 @@ public class CharBuf extends Writer implements CharSequence {
 
 
     public char charAt( int index ) {
-        return buffer[ index ];
+        return buffer[index];
     }
 
 
@@ -719,7 +717,7 @@ public class CharBuf extends Writer implements CharSequence {
 
         double sign;
 
-        if ( buffer[ startIndex ] == '-' ) {
+        if ( buffer[startIndex] == '-' ) {
             startIndex++;
             negative = true;
             sign = -1.0;
@@ -730,7 +728,7 @@ public class CharBuf extends Writer implements CharSequence {
 
         loop:
         for ( int index = startIndex; index < location; index++ ) {
-            char ch = buffer[ index ];
+            char ch = buffer[index];
             switch ( ch ) {
                 case 'e':
                     simple = false;
@@ -767,7 +765,7 @@ public class CharBuf extends Writer implements CharSequence {
                 value = CharScanner.parseLongIgnoreDot( buffer, startIndex, length );
             }
             if ( digitsPastPoint < powersOf10.length ) {
-                double power = powersOf10[ digitsPastPoint ] * sign;
+                double power = powersOf10[digitsPastPoint] * sign;
                 return value / power;
 
             }
@@ -788,7 +786,7 @@ public class CharBuf extends Writer implements CharSequence {
         float sign;
         int startIndex = 0;
 
-        if ( buffer[ startIndex ] == '-' ) {
+        if ( buffer[startIndex] == '-' ) {
             startIndex++;
             sign = -1.0f;
         } else {
@@ -802,7 +800,7 @@ public class CharBuf extends Writer implements CharSequence {
         }
         loop:
         for ( int index = startIndex; index < location; index++ ) {
-            char ch = buffer[ index ];
+            char ch = buffer[index];
             switch ( ch ) {
                 case 'e':
                     simple = false;
@@ -834,7 +832,7 @@ public class CharBuf extends Writer implements CharSequence {
 
             value = CharScanner.parseIntIgnoreDot( buffer, startIndex, length );
             if ( digitsPastPoint < powersOf10.length ) {
-                float power = fpowersOf10[ digitsPastPoint ] * sign;
+                float power = fpowersOf10[digitsPastPoint] * sign;
                 return value / power;
 
             }
@@ -849,7 +847,7 @@ public class CharBuf extends Writer implements CharSequence {
     public int intValue() {
         int sign = 1;
         int startIndex = 0;
-        if ( buffer[ startIndex ] == '-' ) {
+        if ( buffer[startIndex] == '-' ) {
             startIndex++;
             sign = -1;
 
@@ -861,7 +859,7 @@ public class CharBuf extends Writer implements CharSequence {
         long sign = 1;
         int startIndex = 0;
 
-        if ( buffer[ startIndex ] == '-' ) {
+        if ( buffer[startIndex] == '-' ) {
             startIndex++;
             sign = -1;
 
@@ -884,7 +882,7 @@ public class CharBuf extends Writer implements CharSequence {
         int sign = 1;
         boolean negative = false;
         int startIndex = 0;
-        if ( buffer[ startIndex ] == '-' ) {
+        if ( buffer[startIndex] == '-' ) {
             startIndex++;
             sign = -1;
             negative = true;
@@ -905,7 +903,7 @@ public class CharBuf extends Writer implements CharSequence {
 
 
         if ( this.buffer == null ) {
-            this.buffer = new char[ value.length * 2 ];
+            this.buffer = new char[value.length * 2];
             capacity = buffer.length;
         } else if ( this.buffer.length < value.length ) {
             buffer = Chr.grow( buffer, value.length - buffer.length );
@@ -916,11 +914,11 @@ public class CharBuf extends Writer implements CharSequence {
         int location = this.location;
 
         for ( int index = 0; index < value.length; index++ ) {
-            int c = value[ index ];
+            int c = value[index];
 
 
             if ( c >= 0 ) {
-                buffer[ location ] = ( char ) c;
+                buffer[location] = ( char ) c;
                 location++;
             } else {
                 this.location = location;
@@ -972,15 +970,15 @@ public class CharBuf extends Writer implements CharSequence {
 
             //ok = index + 1 < bytes.length || die( "unable to parse 2 byte utf 8 - b2" );
             index++;
-            b2 = bytes[ index ];
+            b2 = bytes[index];
 
             if ( isMalformed2( c, b2 ) ) {
 
-                buffer[ location ] = '#';
+                buffer[location] = '#';
                 location++;
 
             } else {
-                buffer[ location ] = ( char ) ( ( ( c << 6 ) ^ b2 ) ^ 0x0f80 );
+                buffer[location] = ( char ) ( ( ( c << 6 ) ^ b2 ) ^ 0x0f80 );
                 location++;
 
             }
@@ -990,16 +988,16 @@ public class CharBuf extends Writer implements CharSequence {
 
             //ok = index + 1 < bytes.length || die( "unable to parse 3 byte utf 8 - b2" );
             index++;
-            b2 = bytes[ index ];
+            b2 = bytes[index];
             //ok = index + 1 < bytes.length || die( "unable to parse 3 byte utf 8 - b3" );
             index++;
-            b3 = bytes[ index ];
+            b3 = bytes[index];
 
             if ( isMalformed3( c, b2, b3 ) ) {
-                buffer[ location ] = '#';
+                buffer[location] = '#';
                 location++;
             } else {
-                buffer[ location ] = ( char ) ( ( ( c << 12 ) ^ ( b2 << 6 ) ^ b3 ) ^ 0x1f80 );
+                buffer[location] = ( char ) ( ( ( c << 12 ) ^ ( b2 << 6 ) ^ b3 ) ^ 0x1f80 );
                 location++;
             }
         } else if ( ( c >> 3 ) == -2 ) {
@@ -1009,13 +1007,13 @@ public class CharBuf extends Writer implements CharSequence {
 
             //ok = index + 1 < bytes.length || die( "unable to parse 4 byte utf 8 - b2" );
             index++;
-            b2 = bytes[ index ];
+            b2 = bytes[index];
             //ok = index + 1 < bytes.length || die( "unable to parse 4 byte utf 8 - b3" );
             index++;
-            b3 = bytes[ index ];
+            b3 = bytes[index];
             //ok = index + 1 < bytes.length || die( "unable to parse 4 byte utf 8 - b4" );
             index++;
-            b4 = bytes[ index ];
+            b4 = bytes[index];
 
             int uc = ( ( c & 0x07 ) << 18 ) |
                     ( ( b2 & 0x3f ) << 12 ) |
@@ -1139,43 +1137,43 @@ public class CharBuf extends Writer implements CharSequence {
         }
 
         for ( int index = start; index < to; index++ ) {
-            char c = chars[ index ];
+            char c = chars[index];
             if ( c == '\\' ) {
                 if ( index < to ) {
                     index++;
-                    c = chars[ index ];
+                    c = chars[index];
                     switch ( c ) {
 
                         case 'n':
-                            buffer[ location++ ] = '\n';
+                            buffer[location++] = '\n';
                             break;
 
                         case '/':
-                            buffer[ location++ ] = '/';
+                            buffer[location++] = '/';
                             break;
 
                         case '"':
-                            buffer[ location++ ] = '"';
+                            buffer[location++] = '"';
                             break;
 
                         case 'f':
-                            buffer[ location++ ] = '\f';
+                            buffer[location++] = '\f';
                             break;
 
                         case 't':
-                            buffer[ location++ ] = '\t';
+                            buffer[location++] = '\t';
                             break;
 
                         case '\\':
-                            buffer[ location++ ] = '\\';
+                            buffer[location++] = '\\';
                             break;
 
                         case 'b':
-                            buffer[ location++ ] = '\b';
+                            buffer[location++] = '\b';
                             break;
 
                         case 'r':
-                            buffer[ location++ ] = '\r';
+                            buffer[location++] = '\r';
                             break;
 
                         case 'u':
@@ -1183,7 +1181,7 @@ public class CharBuf extends Writer implements CharSequence {
                             if ( index + 4 < to ) {
                                 String hex = new String( chars, index + 1, 4 );
                                 char unicode = ( char ) Integer.parseInt( hex, 16 );
-                                buffer[ location++ ] = unicode;
+                                buffer[location++] = unicode;
                                 index += 4;
                             }
                             break;
@@ -1192,7 +1190,7 @@ public class CharBuf extends Writer implements CharSequence {
                     }
                 }
             } else {
-                buffer[ location++ ] = c;
+                buffer[location++] = c;
             }
         }
 

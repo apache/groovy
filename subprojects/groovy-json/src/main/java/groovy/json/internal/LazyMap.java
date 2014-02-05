@@ -40,20 +40,20 @@ public class LazyMap extends AbstractMap<String, Object> {
 
 
     public LazyMap() {
-        keys = new String[ 5 ];
-        values = new Object[ 5 ];
+        keys = new String[5];
+        values = new Object[5];
     }
 
     public LazyMap( int initialSize ) {
-        keys = new String[ initialSize ];
-        values = new Object[ initialSize ];
+        keys = new String[initialSize];
+        values = new Object[initialSize];
 
     }
 
     public Object put( String key, Object value ) {
         if ( map == null ) {
-            keys[ size ] = key;
-            values[ size ] = value;
+            keys[size] = key;
+            values[size] = value;
             size++;
             if ( size == keys.length ) {
                 keys = grow( keys );
@@ -111,7 +111,7 @@ public class LazyMap extends AbstractMap<String, Object> {
         if ( map == null ) {
             map = new LinkedHashMap<String, Object>( size, 0.01f );
             for ( int index = 0; index < size; index++ ) {
-                map.put( keys[ index ], values[ index ] );
+                map.put( keys[index], values[index] );
             }
             this.keys = null;
             this.values = null;
@@ -191,7 +191,7 @@ public class LazyMap extends AbstractMap<String, Object> {
     public LazyMap clearAndCopy() {
         LazyMap map = new LazyMap();
         for ( int index = 0; index < size; index++ ) {
-            map.put( keys[ index ], values[ index ] );
+            map.put( keys[index], values[index] );
         }
         size = 0;
         return map;

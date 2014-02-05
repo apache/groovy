@@ -21,6 +21,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * The original slurper and lexer use this class.
+ * This is kept around in case someone needs its exact behavior.
  * Enum listing all the possible JSON tokens that should be recognized by the lexer.
  *
  * @author Guillaume Laforge

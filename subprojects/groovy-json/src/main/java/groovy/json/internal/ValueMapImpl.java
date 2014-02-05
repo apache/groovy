@@ -38,7 +38,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
     /**
      * The items held in the map.
      */
-    private Entry<String, Value>[] items = new Entry[ 20 ];
+    private Entry<String, Value>[] items = new Entry[20];
 
     /* The current length of the map. */
     private int len = 0;
@@ -54,7 +54,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
         if ( len >= items.length ) {
             items = LazyMap.grow( items );
         }
-        items[ len ] = miv;
+        items[len] = miv;
         len++;
     }
 
@@ -96,7 +96,6 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
             return map.get( key );
         }
     }
-
 
 
     public Value put( String key, Value value ) {

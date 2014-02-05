@@ -18,7 +18,8 @@
 package groovy.json.internal;
 
 
-import groovy.json.*;
+import groovy.json.JsonException;
+import groovy.json.JsonParser;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
@@ -132,12 +133,12 @@ public abstract class BaseJsonParser implements JsonParser {
 
     }
 
-    
+
     public Object parse( InputStream input ) {
         return parse( input, charset );
     }
 
-    
+
     public Object parse( InputStream input, String charset ) {
         try {
             return parse( new InputStreamReader( input, charset ) );
@@ -149,7 +150,6 @@ public abstract class BaseJsonParser implements JsonParser {
     private final CharBuf builder = CharBuf.create( 20 );
 
 
-    
     public Object parse( File file, String charset ) {
 
 
@@ -209,22 +209,22 @@ public abstract class BaseJsonParser implements JsonParser {
     protected static boolean hasEscapeChar( char[] array, int index, int[] indexHolder ) {
         char currentChar;
         for (; index < array.length; index++ ) {
-            currentChar = array[ index ];
+            currentChar = array[index];
             if ( isDoubleQuote( currentChar ) ) {
-                indexHolder[ 0 ] = index;
+                indexHolder[0] = index;
                 return false;
             } else if ( isEscape( currentChar ) ) {
-                indexHolder[ 0 ] = index;
+                indexHolder[0] = index;
                 return true;
             }
 
         }
 
-        indexHolder[ 0 ] = index;
+        indexHolder[0] = index;
         return false;
     }
 
-    int[] indexHolder = new int[ 1 ];
+    int[] indexHolder = new int[1];
 
 
     protected static int findEndQuote( final char[] array, int index ) {
@@ -232,7 +232,7 @@ public abstract class BaseJsonParser implements JsonParser {
         boolean escape = false;
 
         for (; index < array.length; index++ ) {
-            currentChar = array[ index ];
+            currentChar = array[index];
             if ( isDoubleQuote( currentChar ) ) {
                 if ( !escape ) {
                     break;

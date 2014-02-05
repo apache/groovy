@@ -39,6 +39,8 @@ import static groovy.json.internal.Exceptions.die;
  * The lazyChop is performed on the tree that is touched by the JSONPath expression or its ilk.
  * <p/>
  * The chop operation can be done during parsing or lazily by storing the values in this construct.
+ *
+ * @author Rick Hightower (insane chipmonk)
  */
 public class LazyValueMap extends AbstractMap<String, Object> implements ValueMap<String, Object> {
 
@@ -67,12 +69,12 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
 
     public LazyValueMap( boolean lazyChop ) {
 
-        this.items = new Entry[ 5 ];
+        this.items = new Entry[5];
         this.lazyChop = lazyChop;
     }
 
     public LazyValueMap( boolean lazyChop, int initialSize ) {
-        this.items = new Entry[ initialSize ];
+        this.items = new Entry[initialSize];
         this.lazyChop = lazyChop;
     }
 
@@ -85,7 +87,7 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
         if ( len >= items.length ) {
             items = LazyMap.grow( items );
         }
-        items[ len ] = miv;
+        items[len] = miv;
         len++;
 
     }
@@ -143,7 +145,7 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
         /* If the internal map was not create yet, don't. We can chop the value w/o creating the internal map.*/
         if ( this.map == null ) {
             for ( int index = 0; index < len; index++ ) {
-                MapItemValue entry = ( MapItemValue ) items[ index ];
+                MapItemValue entry = ( MapItemValue ) items[index];
 
                 Value value = entry.getValue();
                 if ( value == null ) continue;
@@ -190,12 +192,10 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
     }
 
 
-
     public Value put( String key, Object value ) {
         die( "Not that kind of map" );
         return null;
     }
-
 
 
     public Set<Entry<String, Object>> entrySet() {

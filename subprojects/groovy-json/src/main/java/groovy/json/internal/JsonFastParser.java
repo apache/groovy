@@ -177,7 +177,7 @@ public class JsonFastParser extends JsonParserCharArray {
         }
 
         while ( true ) {
-            currentChar = array[ index ];
+            currentChar = array[index];
             if ( isNumberDigit( currentChar ) ) {
                 //noop
             } else if ( currentChar <= 32 ) { //white
@@ -205,7 +205,7 @@ public class JsonFastParser extends JsonParserCharArray {
 
         char[] array = charArray;
         int index = __index;
-        char currentChar = charArray[ index ];
+        char currentChar = charArray[index];
 
         if ( index < array.length && currentChar == '"' ) {
             index++;
@@ -214,7 +214,7 @@ public class JsonFastParser extends JsonParserCharArray {
         final int startIndex = index;
 
         boolean encoded = hasEscapeChar( array, index, indexHolder );
-        index = indexHolder[ 0 ];
+        index = indexHolder[0];
 
         if ( encoded ) {
             index = findEndQuote( array, index );

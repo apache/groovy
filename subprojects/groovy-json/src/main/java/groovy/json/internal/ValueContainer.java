@@ -77,7 +77,6 @@ public class ValueContainer implements CharSequence, Value {
     }
 
 
-
     public boolean booleanValue() {
 
         switch ( type ) {
@@ -90,7 +89,6 @@ public class ValueContainer implements CharSequence, Value {
         return false;
 
     }
-
 
 
     public String stringValue() {
@@ -165,7 +163,6 @@ public class ValueContainer implements CharSequence, Value {
     }
 
 
-
     public Date dateValue() {
         return null;
     }
@@ -189,11 +186,9 @@ public class ValueContainer implements CharSequence, Value {
     }
 
 
-
     public double doubleValue() {
         return 0;
     }
-
 
 
     public float floatValue() {
