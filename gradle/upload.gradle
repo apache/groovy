@@ -1,4 +1,6 @@
-boolean isUsingBintray = rootProject.bintrayUser && rootProject.bintrayPassword
+boolean isUsingBintray = rootProject.hasProperty('bintrayUser') && rootProject.bintrayUser &&
+        rootProject.hasProperty('bintrayPassword') && rootProject.bintrayPassword
+
 if (isUsingBintray) {
     logger.lifecycle 'Deployment environment set to Bintray'
 }
