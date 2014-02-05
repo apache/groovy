@@ -31,6 +31,9 @@ allprojects {
             groovy {
                 srcDirs += 'src/spec/test'
             }
+            resources {
+                srcDirs += 'src/spec/test-resources'
+            }
         }
     }
 }

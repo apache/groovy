@@ -32,10 +32,138 @@ at compile-time. Both have pros and cons, that we will detail in this section.
 ===== Runtime discovery (TBD)
 ===== Static methods (TBD)
 
-=== Extension modules (TBD)
-==== Module descriptor (TBD)
-==== Instance methods (TBD)
-==== Static methods (TBD)
+=== Extension modules
+==== Extending existing classes
+
+An extension module allows you to add new methods to existing classes, including classes which are precompiled, like
+classes from the JDK. Those new methods, unlike those defined through a metaclass or using a category, are available
+globally. For example, when you write:
+
+[source,groovy]
+.Standard extension method
+------------------------------------
+def file = new File(...)
+def contents = file.getText('utf-8')
+------------------------------------
+
+The `getText` method doesn’t exist on the `File` class. However, Groovy knows it because it is defined in a special
+class, `ResourceGroovyMethods`:
+
+[source,java]
+.ResourceGroovyMethods.java
+----------------------------------------------------------------------------
+public static String getText(File file, String charset) throws IOException {
+ return IOGroovyMethods.getText(newReader(file, charset));
+}
+----------------------------------------------------------------------------
+
+You may notice that the extension method is defined using a static method in a ``helper'' class (where various extension
+methods are defined). The first argument of the `getText` method corresponds to the receiver, while additional parameters
+correspond to the arguments of the extension method. So here, we are defining a method called _getText_ on
+the `File` class (because the first argument is of type `File`), which takes a single argument as a parameter (the encoding `String`).
+
+The process of creating an extension module is simple:
+
+* write an extension class like above
+* write a module descriptor file
+
+Then you have to make the extension module visible to Groovy, which is as simple as having the extension module classes
+and descriptor available on classpath. This means that you have the choice:
+
+* either provide the classes and module descriptor directly on classpath
+* or bundle your extension module into a jar for reusability
+
+An extension module may add two kind of methods to a class:
+
+* instance methods (to be called on an instance of a class)
+* static methods (to be called on the class itself)
+
+==== Instance methods
+
+To add an instance method to an existing class, you need to create an extension class. For example, let's say you
+want to add a `maxRetries` method on `Integer` which accepts a closure and executes it at most _n_ times until no
+exception is thrown. To do that, you only need to write the following:
+
+[source,groovy]
+.MaxRetriesExtension.groovy
+----
+include::{projectdir}/src/spec/test/support/MaxRetriesExtension.groovy[tags=instance_extension,indent=0]
+----
+<1> The extension class
+<2> First argument of the static method corresponds to the receiver of the message, that is to say the extended instance
+
+Then, after <<module-descriptor,having declared your extension class>>, you can call it this way:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ExtensionModuleSpecTest.groovy[tags=instance_extension_assert,indent=0]
+----
+
+==== Static methods
+
+It is also possible to add static methods to a class. In that case, the static method needs to be defined in its *own*
+file:
+
+[source,groovy]
+.StaticStringExtension.groovy
+----
+include::{projectdir}/src/spec/test/support/StaticStringExtension.groovy[tags=static_extension,indent=0]
+----
+<1> The static extension class
+<2> First argument of the static method corresponds to the class being extended and is *unused*
+
+In which case you can call it directly on the `String` class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ExtensionModuleSpecTest.groovy[tags=static_extension_assert,indent=0]
+----
+
+[[module-descriptor]]
+==== Module descriptor
+
+For Groovy to be able to load your extension methods, you must declare
+your extension helper classes. You must create a file named
+`org.codehaus.groovy.runtime.ExtensionModule` into the
+`META-INF/services` directory:
+
+.org.codehaus.groovy.runtime.ExtensionModule
+--------------------------------------------------------
+include::{projectdir}/src/spec/test-resources/META-INF/services/org.codehaus.groovy.runtime.ExtensionModule[tags=extension_descriptor,indent=0]
+--------------------------------------------------------
+
+The module descriptor requires 4 keys:
+
+* _moduleName_ : the name of your module
+* _moduleVersion_: the version of your module. Note that version number
+is only used to check that you don’t load the same module in two
+different versions.
+* _extensionClasses_: the list of extension helper classes for instance
+methods. You can provide several classes, given that they are comma
+separated.
+* _staticExtensionClasses_: the list of extension helper classes for
+static methods. You can provide several classes, given that they are
+comma separated.
+
+Note that it is not required for a module to define both static helpers
+and instance helpers, and that you may add several classes to a single
+module. You can also extend different classes in a single module without
+problem. It is even possible to use different classes in a single
+extension class, but it is recommended to group extension methods into
+classes by feature set.
+
+==== Extension modules and classpath
+
+It's worth noting that you can't use an extension which is compiled at the same time as code using it. That means that
+to use an extension, it *has* to be available on classpath, as compiled classes, before the code using it gets compiled.
+Usually, this means that you can't have the _test_ classes in the same source unit as the extension class itself. Since
+in general, test sources are separated from normal sources and executed in another step of the build, this is not an issue.
+
+==== Compatibility with type checking
+
+Unlike categories, extension modules are compatible with type checking: if they are found on classpath, then the type
+checker is aware of the extension methods and will not complain when you call them. It is also compatible with static
+compilation.
 
 == Compile-time metaprogramming
 
