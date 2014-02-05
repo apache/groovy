@@ -15,6 +15,7 @@
  */
 package groovy.json
 
+import groovy.util.GroovyTestCase;
 /**
  * @author Guillaume Laforge
  */

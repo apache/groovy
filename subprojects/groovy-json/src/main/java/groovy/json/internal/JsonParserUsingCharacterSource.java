@@ -330,7 +330,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
     }
 
 
-    @Override
+
     public Object parse( Reader reader ) {
 
         characterSource = new ReaderCharacterSource( reader );
@@ -339,7 +339,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
     }
 
 
-    @Override
+
     public Object parse( char[] chars ) {
         return parse( new StringReader( new String( chars ) ) );
     }

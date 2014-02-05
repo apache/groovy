@@ -50,7 +50,7 @@ public class CharSequenceValue implements Value, CharSequence {
 
         if ( chop ) {
             try {
-                this.buffer = Arrays.copyOfRange( buffer, startIndex, endIndex );
+                this.buffer = ArrayUtils.copyRange( buffer, startIndex, endIndex );
             } catch ( Exception ex ) {
                 Exceptions.handle( ex );
             }
@@ -73,12 +73,12 @@ public class CharSequenceValue implements Value, CharSequence {
         }
     }
 
-    @Override
+
     public final Object toValue() {
         return value != null ? value : ( value = doToValue() );
     }
 
-    @Override
+
     public <T extends Enum> T toEnum( Class<T> cls ) {
 
         switch ( type ) {
@@ -114,7 +114,7 @@ public class CharSequenceValue implements Value, CharSequence {
     }
 
 
-    @Override
+
     public boolean isContainer() {
         return false;
     }
@@ -166,7 +166,7 @@ public class CharSequenceValue implements Value, CharSequence {
         return null;
     }
 
-    @Override
+
     public boolean equals( Object o ) {
         if ( this == o ) return true;
         if ( !( o instanceof Value ) ) return false;
@@ -182,7 +182,7 @@ public class CharSequenceValue implements Value, CharSequence {
         return true;
     }
 
-    @Override
+
     public int hashCode() {
         int result = type != null ? type.hashCode() : 0;
         result = 31 * result + ( buffer != null ? Arrays.hashCode( buffer ) : 0 );
@@ -193,17 +193,17 @@ public class CharSequenceValue implements Value, CharSequence {
     }
 
 
-    @Override
+
     public final int length() {
         return buffer.length;
     }
 
-    @Override
+
     public final char charAt( int index ) {
         return buffer[ index ];
     }
 
-    @Override
+
     public final CharSequence subSequence( int start, int end ) {
         return new CharSequenceValue( false, type, start, end, buffer, decodeStrings, checkDate );
     }
@@ -212,7 +212,7 @@ public class CharSequenceValue implements Value, CharSequence {
         return new BigDecimal( buffer, startIndex, endIndex - startIndex );
     }
 
-    @Override
+
     public BigInteger bigIntegerValue() {
         return new BigInteger( toString() );
     }
@@ -225,12 +225,12 @@ public class CharSequenceValue implements Value, CharSequence {
         }
     }
 
-    @Override
+
     public String stringValueEncoded() {
         return JsonStringDecoder.decode( buffer, startIndex, endIndex );
     }
 
-    @Override
+
     public Date dateValue() {
 
 
@@ -256,7 +256,7 @@ public class CharSequenceValue implements Value, CharSequence {
         }
     }
 
-    @Override
+
     public int intValue() {
         int sign = 1;
         if ( buffer[ startIndex ] == '-' ) {
@@ -267,7 +267,7 @@ public class CharSequenceValue implements Value, CharSequence {
         return parseInt( buffer, startIndex, endIndex - startIndex ) * sign;
     }
 
-    @Override
+
     public long longValue() {
         long sign = 1;
         if ( buffer[ startIndex ] == '-' ) {
@@ -303,17 +303,17 @@ public class CharSequenceValue implements Value, CharSequence {
             1000000000.0f,
     };
 
-    @Override
+
     public double doubleValue() {
         return CharScanner.doubleValue( this.buffer, startIndex, endIndex );
     }
 
-    @Override
+
     public boolean booleanValue() {
         return Boolean.parseBoolean( toString() );
     }
 
-    @Override
+
     public float floatValue() {
 
         boolean simple = true;
@@ -379,13 +379,13 @@ public class CharSequenceValue implements Value, CharSequence {
     public final void chop() {
         if ( !chopped ) {
             this.chopped = true;
-            this.buffer = Arrays.copyOfRange( buffer, startIndex, endIndex );
+            this.buffer = ArrayUtils.copyRange( buffer, startIndex, endIndex );
             this.startIndex = 0;
             this.endIndex = this.buffer.length;
         }
     }
 
-    @Override
+
     public char charValue() {
         return buffer[ startIndex ];
     }

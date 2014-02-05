@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Arrays;
 
 import static groovy.json.internal.Exceptions.die;
 
@@ -76,23 +75,23 @@ public class CharBuf extends Writer implements CharSequence {
         init();
     }
 
-    @Override
+
     public void write( char[] cbuf, int off, int len ) {
 
         if ( off == 0 && cbuf.length == len ) {
             this.add( cbuf );
         } else {
-            char[] buffer = Arrays.copyOfRange( cbuf, off, off + len );
+            char[] buffer = ArrayUtils.copyRange( cbuf, off, off + len );
             this.add( buffer );
         }
 
     }
 
-    @Override
+
     public void flush() throws IOException {
     }
 
-    @Override
+
     public void close() throws IOException {
     }
 
@@ -621,17 +620,17 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
-    @Override
+
     public int length() {
         return len();
     }
 
-    @Override
+
     public char charAt( int index ) {
         return buffer[ index ];
     }
 
-    @Override
+
     public CharSequence subSequence( int start, int end ) {
         return new String( buffer, start, end - start );
     }

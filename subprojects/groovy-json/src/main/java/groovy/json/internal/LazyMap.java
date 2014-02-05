@@ -65,13 +65,13 @@ public class LazyMap extends AbstractMap<String, Object> {
         }
     }
 
-    @Override
+
     public Set<Entry<String, Object>> entrySet() {
         buildIfNeeded();
         return map.entrySet();
     }
 
-    @Override
+
     public int size() {
         if ( map == null ) {
             return size;
@@ -80,7 +80,7 @@ public class LazyMap extends AbstractMap<String, Object> {
         }
     }
 
-    @Override
+
     public boolean isEmpty() {
         if ( map == null ) {
             return size == 0;
@@ -89,19 +89,19 @@ public class LazyMap extends AbstractMap<String, Object> {
         }
     }
 
-    @Override
+
     public boolean containsValue( Object value ) {
         buildIfNeeded();
         return map.containsValue( value );
     }
 
-    @Override
+
     public boolean containsKey( Object key ) {
         buildIfNeeded();
         return map.containsKey( key );
     }
 
-    @Override
+
     public Object get( Object key ) {
         buildIfNeeded();
         return map.get( key );
@@ -118,19 +118,19 @@ public class LazyMap extends AbstractMap<String, Object> {
         }
     }
 
-    @Override
+
     public Object remove( Object key ) {
         buildIfNeeded();
         return map.remove( key );
     }
 
-    @Override
+
     public void putAll( Map m ) {
         buildIfNeeded();
         map.putAll( m );
     }
 
-    @Override
+
     public void clear() {
         if ( map == null ) {
             size = 0;
@@ -139,14 +139,14 @@ public class LazyMap extends AbstractMap<String, Object> {
         }
     }
 
-    @Override
+
     public Set<String> keySet() {
         buildIfNeeded();
         return map.keySet();
 
     }
 
-    @Override
+
     public Collection<Object> values() {
 
         buildIfNeeded();
@@ -155,26 +155,26 @@ public class LazyMap extends AbstractMap<String, Object> {
 
     }
 
-    @Override
+
     public boolean equals( Object o ) {
         buildIfNeeded();
         return map.equals( o );
     }
 
-    @Override
+
     public int hashCode() {
         buildIfNeeded();
         return map.hashCode();
     }
 
-    @Override
+
     public String toString() {
 
         buildIfNeeded();
         return map.toString();
     }
 
-    @Override
+
     protected Object clone() throws CloneNotSupportedException {
 
         if ( map == null ) {

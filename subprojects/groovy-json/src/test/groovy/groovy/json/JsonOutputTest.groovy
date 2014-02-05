@@ -15,6 +15,8 @@
  */
 package groovy.json
 
+
+import groovy.util.GroovyTestCase
 import static groovy.json.JsonOutput.toJson
 import groovy.transform.Canonical
 

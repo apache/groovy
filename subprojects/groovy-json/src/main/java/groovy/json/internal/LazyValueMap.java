@@ -97,7 +97,7 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      * @param key to lookup
      * @return
      */
-    @Override
+
     public final Object get( Object key ) {
 
         Object object = null;
@@ -190,14 +190,14 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
     }
 
 
-    @Override
+
     public Value put( String key, Object value ) {
         die( "Not that kind of map" );
         return null;
     }
 
 
-    @Override
+
     public Set<Entry<String, Object>> entrySet() {
         if ( map == null ) {
             buildMap();

@@ -17,8 +17,6 @@
  */
 package groovy.json.internal;
 
-import java.util.Arrays;
-
 
 /**
  * @author Rick Hightower
@@ -540,7 +538,7 @@ public class CharScanner {
             }
         }
 
-        return Arrays.copyOfRange( array, startIndex, idx );
+        return ArrayUtils.copyRange( array, startIndex, idx );
 
 
     }

@@ -38,7 +38,7 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
         this.lazyChop = lazyChop;
     }
 
-    @Override
+
     public Object get( int index ) {
 
         Object obj = list.get( index );
@@ -58,12 +58,12 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
         return value.toValue();
     }
 
-    @Override
+
     public int size() {
         return list.size();
     }
 
-    @Override
+
 
     public Iterator<Object> iterator() {
         convertAllIfNeeded();
@@ -82,7 +82,7 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
     }
 
 
-    @Override
+
     public void clear() {
         list.clear();
     }

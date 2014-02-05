@@ -108,28 +108,23 @@ public abstract class BaseJsonParser implements JsonParser {
     }
 
 
-    @Override
     public Object parse( String jsonString ) {
         return parse( FastStringUtils.toCharArray( jsonString ) );
     }
 
-    @Override
     public Object parse( byte[] bytes ) {
         return parse( bytes, charset );
     }
 
 
-    @Override
     public Object parse( byte[] bytes, String charset ) {
         return parse( bytes, charset );
     }
 
-    @Override
     public Object parse( CharSequence charSequence ) {
         return parse( FastStringUtils.toCharArray( charSequence ) );
     }
 
-    @Override
     public Object parse( Reader reader ) {
 
         fileInputBuf = IO.read( reader, fileInputBuf, bufSize );
@@ -137,12 +132,12 @@ public abstract class BaseJsonParser implements JsonParser {
 
     }
 
-    @Override
+    
     public Object parse( InputStream input ) {
         return parse( input, charset );
     }
 
-    @Override
+    
     public Object parse( InputStream input, String charset ) {
         try {
             return parse( new InputStreamReader( input, charset ) );
@@ -154,7 +149,7 @@ public abstract class BaseJsonParser implements JsonParser {
     private final CharBuf builder = CharBuf.create( 20 );
 
 
-    @Override
+    
     public Object parse( File file, String charset ) {
 
 

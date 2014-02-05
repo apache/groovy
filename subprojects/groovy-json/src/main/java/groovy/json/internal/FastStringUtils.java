@@ -106,24 +106,6 @@ public class FastStringUtils {
         return toCharArray( charSequence.toString() );
     }
 
-    public static char[] toCharArrayFromBytes( final byte[] bytes, Charset charset ) {
-        return toCharArray( new String( bytes, charset != null ? charset : Charsets.UTF_8 ) );
-    }
-
-
-    public static char[] toCharArrayFromBytes( final byte[] bytes, String charset ) {
-
-
-        Charset cs = null;
-
-        try {
-            cs = Charset.forName( charset );
-        } catch ( Exception ex ) {
-            Exceptions.handle( char[].class, ex );
-        }
-        return toCharArray( new String( bytes, cs != null ? cs : Charsets.UTF_8 ) );
-    }
-
     public static String noCopyStringFromChars( final char[] chars ) {
 
         if ( WRITE_TO_FINAL_FIELDS && ENABLED ) {

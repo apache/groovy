@@ -42,18 +42,18 @@ public class SimpleCache<K, V> implements Cache<K, V> {
 
     }
 
-    @Override
+
     public void put( K key, V value ) {
         map.put( key, value );
     }
 
-    @Override
+
     public V get( K key ) {
         return map.get( key );
     }
 
     //For testing only
-    @Override
+
     public V getSilent( K key ) {
         V value = map.get( key );
         if ( value != null ) {
@@ -63,12 +63,12 @@ public class SimpleCache<K, V> implements Cache<K, V> {
         return value;
     }
 
-    @Override
+
     public void remove( K key ) {
         map.remove( key );
     }
 
-    @Override
+
     public int size() {
         return map.size();
     }
