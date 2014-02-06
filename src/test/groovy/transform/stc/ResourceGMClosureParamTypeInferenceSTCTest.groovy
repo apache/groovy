@@ -490,6 +490,48 @@ c;C"""
             }
 
 '''
+
+        assertScript '''
+            def tmp = File.createTempFile('test','tmp')
+            tmp.deleteOnExit()
+            try {
+                tmp.withWriter { BufferedWriter it ->
+                    it.write 'Groovy'
+                }
+                tmp.withWriter('utf-8') { BufferedWriter it ->
+                    it.write 'Groovy'
+                }
+                tmp.withWriterAppend { BufferedWriter it ->
+                    it.write 'Groovy'
+                }
+                tmp.withWriterAppend('utf-8') { BufferedWriter it ->
+                    it.write 'Groovy'
+                }
+                int read = 0
+                tmp.withReader { BufferedReader it ->
+                    read = it.read()
+                }
+                assert read as char == 'G'
+                read = 0
+                tmp.withReader('utf-8') { BufferedReader it ->
+                    read = it.read()
+                }
+                assert read as char == 'G'
+                read = 0
+                tmp.toURI().toURL().withReader('utf-8') { BufferedReader it ->
+                    read = it.read()
+                }
+                assert read as char == 'G'
+                read = 0
+                tmp.toURI().toURL().withReader('utf-8') { BufferedReader it ->
+                    read = it.read()
+                }
+                assert read as char == 'G'
+            } finally {
+                tmp.delete()
+            }
+
+'''
     }
 
 }

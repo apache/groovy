@@ -1568,7 +1568,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withReader(File file, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
+    public static <T> T withReader(File file, @ClosureParams(value=SimpleType.class, options="java.io.BufferedReader") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withReader(newReader(file), closure);
     }
 
@@ -1584,7 +1584,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.6.0
      */
-    public static <T> T withReader(File file, String charset, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
+    public static <T> T withReader(File file, String charset, @ClosureParams(value=SimpleType.class, options="java.io.BufferedReader") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withReader(newReader(file, charset), closure);
     }
 
@@ -1786,7 +1786,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withWriter(File file, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriter(File file, @ClosureParams(value=SimpleType.class, options="java.io.BufferedWriter") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newWriter(file), closure);
     }
 
@@ -1802,7 +1802,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withWriter(File file, String charset, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriter(File file, String charset, @ClosureParams(value=SimpleType.class, options="java.io.BufferedWriter") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newWriter(file, charset), closure);
     }
 
@@ -1818,7 +1818,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withWriterAppend(File file, String charset, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriterAppend(File file, String charset, @ClosureParams(value=SimpleType.class, options="java.io.BufferedWriter") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newWriter(file, charset, true), closure);
     }
 
@@ -1832,7 +1832,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withWriterAppend(File file, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriterAppend(File file, @ClosureParams(value=SimpleType.class, options="java.io.BufferedWriter") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newWriter(file, true), closure);
     }
 
@@ -1903,7 +1903,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withReader(URL url, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
+    public static <T> T withReader(URL url, @ClosureParams(value=SimpleType.class, options="java.io.BufferedReader") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withReader(url.openConnection().getInputStream(), closure);
     }
 
@@ -1918,7 +1918,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.6
      */
-    public static <T> T withReader(URL url, String charset, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
+    public static <T> T withReader(URL url, String charset, @ClosureParams(value=SimpleType.class, options="java.io.BufferedReader") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withReader(url.openConnection().getInputStream(), charset, closure);
     }
 
