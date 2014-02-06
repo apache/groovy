@@ -463,9 +463,10 @@ public class CharBuf extends Writer implements CharSequence {
 
             if ( hasAnyJSONControlOrUnicodeChars( c )) {
 
-                    /* We are covering our bet with a safety net.
-                    * otherwise we would have to have 5x buffer allocated for control chars*/
-                if (_location + 5 > charArray.length) {
+                   /* We are covering our bet with a safety net.
+                      otherwise we would have to have 5x buffer
+                      allocated for control chars */
+                if (_location + 5 > _buffer.length) {
                     _buffer = Chr.grow( _buffer, 20 );
                 }
 
