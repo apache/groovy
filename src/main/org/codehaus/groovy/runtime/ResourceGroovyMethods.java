@@ -1903,7 +1903,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withReader(URL url, @ClosureParams(value=SimpleType.class, options="java.io.BufferedReader") Closure<T> closure) throws IOException {
+    public static <T> T withReader(URL url, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withReader(url.openConnection().getInputStream(), closure);
     }
 
@@ -1918,7 +1918,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.6
      */
-    public static <T> T withReader(URL url, String charset, @ClosureParams(value=SimpleType.class, options="java.io.BufferedReader") Closure<T> closure) throws IOException {
+    public static <T> T withReader(URL url, String charset, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withReader(url.openConnection().getInputStream(), charset, closure);
     }
 

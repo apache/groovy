@@ -518,12 +518,12 @@ c;C"""
                 }
                 assert read as char == 'G'
                 read = 0
-                tmp.toURI().toURL().withReader('utf-8') { BufferedReader it ->
+                tmp.toURI().toURL().withReader('utf-8') { Reader it ->
                     read = it.read()
                 }
                 assert read as char == 'G'
                 read = 0
-                tmp.toURI().toURL().withReader('utf-8') { BufferedReader it ->
+                tmp.toURI().toURL().withReader('utf-8') { Reader it ->
                     read = it.read()
                 }
                 assert read as char == 'G'
