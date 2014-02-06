@@ -255,18 +255,7 @@ public class CharScanner {
     public static boolean isInteger( char[] digitChars, int offset, int len ) {
 
 
-        String cmpStr = ( digitChars[offset] == '-' ) ? MIN_INT_STR_NO_SIGN : MAX_INT_STR;
-        int cmpLen = cmpStr.length();
-        if ( len < cmpLen ) return true;
-        if ( len > cmpLen ) return false;
-
-        for ( int i = 0; i < cmpLen; ++i ) {
-            int diff = digitChars[offset + i] - cmpStr.charAt( i );
-            if ( diff != 0 ) {
-                return ( diff < 0 );
-            }
-        }
-        return true;
+        return isInteger(digitChars,offset,len,digitChars[offset] == '-');
     }
 
     public static int parseInt( char[] digitChars ) {
