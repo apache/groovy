@@ -18,7 +18,6 @@ package groovy.json
 import static JsonTokenType.*
 
 
-import groovy.util.GroovyTestCase
 /**
  * @author Guillaume Laforge
  */

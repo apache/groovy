@@ -262,7 +262,7 @@ public class CharSequenceValue implements Value, CharSequence {
             sign = -1;
 
         }
-        return parseInt( buffer, startIndex, endIndex - startIndex ) * sign;
+        return parseIntFromTo( buffer, startIndex, endIndex  ) * sign;
     }
 
 
@@ -274,9 +274,9 @@ public class CharSequenceValue implements Value, CharSequence {
 
         }
         if ( isInteger( buffer, startIndex, endIndex - startIndex, sign < 0 ) ) {
-            return parseInt( buffer, startIndex, endIndex - startIndex ) * sign;
+            return parseIntFromTo( buffer, startIndex, endIndex  ) * sign;
         } else {
-            return parseLong( buffer, startIndex, endIndex - startIndex ) * sign;
+            return parseLongFromTo( buffer, startIndex, endIndex  ) * sign;
         }
     }
 

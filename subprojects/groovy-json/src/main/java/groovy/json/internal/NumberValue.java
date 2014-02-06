@@ -194,7 +194,7 @@ public class NumberValue extends java.lang.Number implements Value {
             sign = -1;
 
         }
-        return parseInt( buffer, startIndex, endIndex - startIndex ) * sign;
+        return parseIntFromTo( buffer, startIndex, endIndex ) * sign;
     }
 
 
@@ -206,9 +206,9 @@ public class NumberValue extends java.lang.Number implements Value {
 
         }
         if ( isInteger( buffer, startIndex, endIndex - startIndex, sign < 0 ) ) {
-            return parseInt( buffer, startIndex, endIndex - startIndex ) * sign;
+            return parseIntFromTo( buffer, startIndex, endIndex  ) * sign;
         } else {
-            return parseLong( buffer, startIndex, endIndex - startIndex ) * sign;
+            return parseLongFromTo( buffer, startIndex, endIndex  ) * sign;
         }
     }
 

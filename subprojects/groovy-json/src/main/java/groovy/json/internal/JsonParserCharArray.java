@@ -298,9 +298,9 @@ public class JsonParserCharArray extends BaseJsonParser {
         } else {
 
             if ( isInteger( this.charArray, startIndex, __index - startIndex, minus ) ) {
-                value = CharScanner.parseInt( charArray, startIndex, __index - startIndex ) * sign;
+                value = CharScanner.parseIntFromTo( charArray, startIndex, __index  ) * sign;
             } else {
-                value = CharScanner.parseLong( charArray, startIndex, __index - startIndex ) * sign;
+                value = CharScanner.parseLongFromTo( charArray, startIndex, __index  ) * sign;
             }
 
         }

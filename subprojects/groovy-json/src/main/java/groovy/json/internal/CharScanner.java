@@ -258,61 +258,26 @@ public class CharScanner {
         return isInteger(digitChars,offset,len,digitChars[offset] == '-');
     }
 
-    public static int parseInt( char[] digitChars ) {
-        return parseInt( digitChars, 0, digitChars.length );
-    }
-
-    public static int parseInt( char[] digitChars, int offset, int len ) {
-        int num = digitChars[offset] - '0';
-        int to = len + offset;
-        // This looks ugly, but appears the fastest way (as per measurements)
-        if ( ++offset < to ) {
-            num = ( num * 10 ) + ( digitChars[offset] - '0' );
-            if ( ++offset < to ) {
-                num = ( num * 10 ) + ( digitChars[offset] - '0' );
-                if ( ++offset < to ) {
-                    num = ( num * 10 ) + ( digitChars[offset] - '0' );
-                    if ( ++offset < to ) {
-                        num = ( num * 10 ) + ( digitChars[offset] - '0' );
-                        if ( ++offset < to ) {
-                            num = ( num * 10 ) + ( digitChars[offset] - '0' );
-                            if ( ++offset < to ) {
-                                num = ( num * 10 ) + ( digitChars[offset] - '0' );
-                                if ( ++offset < to ) {
-                                    num = ( num * 10 ) + ( digitChars[offset] - '0' );
-                                    if ( ++offset < to ) {
-                                        num = ( num * 10 ) + ( digitChars[offset] - '0' );
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return num;
-    }
-
 
     public static int parseIntFromTo( char[] digitChars, int offset, int to ) {
-        int num = digitChars[offset] - '0';
-        // This looks ugly, but appears the fastest way (as per measurements)
-        if ( ++offset < to ) {
-            num = ( num * 10 ) + ( digitChars[offset] - '0' );
+            int num = digitChars[ offset ] - '0';
             if ( ++offset < to ) {
-                num = ( num * 10 ) + ( digitChars[offset] - '0' );
+                num = ( num * 10 ) + ( digitChars[ offset ] - '0' );
                 if ( ++offset < to ) {
-                    num = ( num * 10 ) + ( digitChars[offset] - '0' );
+                    num = ( num * 10 ) + ( digitChars[ offset ] - '0' );
                     if ( ++offset < to ) {
-                        num = ( num * 10 ) + ( digitChars[offset] - '0' );
+                        num = ( num * 10 ) + ( digitChars[ offset ] - '0' );
                         if ( ++offset < to ) {
-                            num = ( num * 10 ) + ( digitChars[offset] - '0' );
+                            num = ( num * 10 ) + ( digitChars[ offset ] - '0' );
                             if ( ++offset < to ) {
-                                num = ( num * 10 ) + ( digitChars[offset] - '0' );
+                                num = ( num * 10 ) + ( digitChars[ offset ] - '0' );
                                 if ( ++offset < to ) {
-                                    num = ( num * 10 ) + ( digitChars[offset] - '0' );
+                                    num = ( num * 10 ) + ( digitChars[ offset ] - '0' );
                                     if ( ++offset < to ) {
-                                        num = ( num * 10 ) + ( digitChars[offset] - '0' );
+                                        num = ( num * 10 ) + ( digitChars[ offset ] - '0' );
+                                        if ( ++offset < to ) {
+                                            num = ( num * 10 ) + ( digitChars[ offset ] - '0' );
+                                        }
                                     }
                                 }
                             }
@@ -320,9 +285,17 @@ public class CharScanner {
                     }
                 }
             }
-        }
-        return num;
+            return num;
     }
+
+
+
+    public static int parseInt( char[] digitChars ) {
+        return parseIntFromTo( digitChars, 0, digitChars.length );
+    }
+
+
+
 
     public static int parseIntIgnoreDot( char[] digitChars, int offset, int len ) {
         int num = digitChars[offset] - '0';
@@ -358,15 +331,14 @@ public class CharScanner {
         return num;
     }
 
-    public static long parseLong( char[] digitChars, int offset, int len ) {
-        int len1 = len - 9;
-        long val = parseInt( digitChars, offset, len1 ) * L_BILLION;
-        return val + ( long ) parseInt( digitChars, offset + len1, 9 );
+    public static long parseLongFromTo( char[] digitChars, int offset, int to ) {
+        long val = parseIntFromTo( digitChars, offset, to - 9  ) * L_BILLION;
+        return val + ( long ) parseIntFromTo( digitChars, to - 9, to );
     }
 
 
     public static long parseLong( char[] digitChars ) {
-        return parseLong( digitChars, 0, digitChars.length );
+        return parseLongFromTo( digitChars, 0, digitChars.length );
     }
 
     public static long parseLongIgnoreDot( char[] digitChars, int offset, int len ) {
