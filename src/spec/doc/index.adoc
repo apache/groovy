@@ -73,7 +73,7 @@ include::{projectdir}/src/spec/doc/template-engines.adoc[]
 :leveloffset: 2
 
 include::{projectdir}/src/spec/doc/core-domain-specific-languages.adoc[]
-include::{projectdir}/src/spec/doc/jmx.adoc[]
+include::{projectdir}/subprojects/groovy-jmx/src/spec/doc/jmx.adoc[]
 
 :leveloffset: 0
 

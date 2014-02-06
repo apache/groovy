@@ -3,3 +3,5 @@ dependencies {
     groovy rootProject
     testCompile project(':groovy-test')
 }
+
+sourceSets.test.compileClasspath += rootProject.sourceSets.test.output

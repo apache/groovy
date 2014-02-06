@@ -311,11 +311,6 @@ sourceSets {
         java {
             srcDirs = [
                     'src/main',
-                    'subprojects/groovy-ant/src/main',
-                    'subprojects/groovy-groovydoc/src/main',
-                    'subprojects/groovy-templates/src/main',
-                    'subprojects/groovy-xml/src/main',
-                    'subprojects/groovy-jmx/src/main',
                     "$generatedDirectory/src/main"
             ]
             if (!useIndy()) {
