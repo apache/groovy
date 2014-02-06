@@ -12,31 +12,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Derived from Boon all rights granted to Groovy project for this fork.
  */
-package groovy.json;
+package groovy.json.internal;
+
+
+import java.nio.charset.Charset;
+
 
 /**
- * <code>JsonException</code> is the exception thrown by the JSON builder and slurper classes,
- * whenever a problem occurs when creating or parsing JSON data structures.
- *
- * @author Guillaume Laforge
- * @since 1.8.0
+ * @author Rick Hightower
  */
-public class JsonException extends RuntimeException {
-    public JsonException() {
-        super();
-    }
+public final class Charsets {
 
-    public JsonException(String s) {
-        super(s);
-    }
-
-    public JsonException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
-
-    public JsonException(Throwable throwable) {
-        super(throwable);
-    }
-
+    public static final Charset US_ASCII = Charset.forName( "US-ASCII" );
+    public static final Charset ISO_8859_1 = Charset.forName( "ISO-8859-1" );
+    public static final Charset UTF_8 = Charset.forName( "UTF-8" );
 }

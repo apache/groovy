@@ -18,6 +18,7 @@ package groovy.json
 import static groovy.json.JsonTokenType.*
 import groovy.io.LineColumnReader
 
+
 /**
  * @author Guillaume Laforge
  */

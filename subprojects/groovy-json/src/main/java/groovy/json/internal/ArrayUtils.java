@@ -12,31 +12,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Derived from Boon all rights granted to Groovy project for this fork.
  */
-package groovy.json;
+package groovy.json.internal;
 
 /**
- * <code>JsonException</code> is the exception thrown by the JSON builder and slurper classes,
- * whenever a problem occurs when creating or parsing JSON data structures.
- *
- * @author Guillaume Laforge
- * @since 1.8.0
+ * @author Richard Hightower
  */
-public class JsonException extends RuntimeException {
-    public JsonException() {
-        super();
-    }
+public class ArrayUtils {
 
-    public JsonException(String s) {
-        super(s);
+    public static char[] copyRange( char[] source, int startIndex, int endIndex ) {
+        int len = endIndex - startIndex;
+        char[] copy = new char[len];
+        System.arraycopy( source, startIndex, copy, 0, Math.min( source.length - startIndex, len ) );
+        return copy;
     }
-
-    public JsonException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
-
-    public JsonException(Throwable throwable) {
-        super(throwable);
-    }
-
 }

@@ -15,6 +15,7 @@
  */
 package groovy.json
 
+
 /**
  * @author Tim Yates
  * @author Guillaume Laforge
@@ -342,4 +343,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             }
         }
     }
+
+
+
 }

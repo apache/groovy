@@ -15,19 +15,23 @@
  */
 package groovy.json
 
+
+
 /**
  * @author Guillaume Laforge
  */
 class JsonSlurperTest extends GroovyTestCase {
 
-    def parser = new JsonSlurper()
+    def parser;
+
+    public JsonSlurperTest () {
+           parser = new JsonSlurper();
+    }
 
     void testJsonShouldStartWithCurlyOrBracket() {
-        def msg = shouldFail(JsonException) {
-            parser.parseText("true")
-        }
+        /* We can handle parsing boolean, numbers, and such. */
+        parser.parseText("true")
 
-        assert msg.contains('A JSON payload should start with')
     }
 
     void testEmptyStructures() {
