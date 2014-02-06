@@ -387,16 +387,19 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
 
-    private static boolean isJSONControl( int c ) {
+    private  static boolean hasAnyJSONControlOrUnicodeChars( int c ) {
         /* Anything less than space is a control character. */
         if ( c < 30 ) {
             return true;
         /* 34 is double quote. */
-        } else if ( c == 34 ) {
+        } else if (c == 34 ){
             return true;
-        } else if ( c == 92 ) {
+        } else if (c == 92) {
+            return true;
+        } else if (c < ' ' || c > 126) {
             return true;
         }
+
         return false;
     }
 
@@ -406,7 +409,7 @@ public class CharBuf extends Writer implements CharSequence {
         char c;
         while ( true ) {
             c = charArray[index];
-            if ( isJSONControl( c ) ) {
+            if ( hasAnyJSONControlOrUnicodeChars( c ) ) {
                 return true;
             }
             if ( ++index >= charArray.length ) return false;
@@ -423,90 +426,146 @@ public class CharBuf extends Writer implements CharSequence {
         }
     }
 
+
+    final byte[] encoded = new byte[2];
+
+    final byte[] charTo = new byte[2];
     private final CharBuf doAddJsonEscapedString( char[] charArray ) {
 
-        char[] _buffer = buffer;
-        int _location = this.location;
-        int ensureThisMuch = charArray.length * 2;
+        char [] _buffer = buffer;
+        int _location =  this.location;
 
-        int sizeNeeded = ( ensureThisMuch ) + _location;
-        if ( sizeNeeded > capacity ) {
+        final byte[] _encoded = encoded;
 
-            int growBy = ( _buffer.length * 2 ) < sizeNeeded ? sizeNeeded : ( _buffer.length * 2 );
-            _buffer = Chr.grow( buffer, growBy );
+        final byte[] _charTo = charTo;
+        /* We are making a bet that not all chars will be unicode. */
+        int  ensureThisMuch = charArray.length * 2 + 2;
+
+        int sizeNeeded =  (ensureThisMuch) + _location;
+        if ( sizeNeeded  > capacity ) {
+
+            int growBy =   ( _buffer.length * 2 ) <  sizeNeeded  ? sizeNeeded : (_buffer.length*2);
+            _buffer = Chr.grow( buffer, growBy);
             capacity = _buffer.length;
         }
 
 
+
+
         _buffer[_location] = '"';
-        _location++;
+        _location ++;
 
         int index = 0;
         while ( true ) {
-            char c = charArray[index];
+
+            char c = charArray[ index ];
 
 
-            if ( isJSONControl( c ) ) {
+            if ( hasAnyJSONControlOrUnicodeChars( c )) {
+
+                    /* We are covering our bet with a safety net.
+                    * otherwise we would have to have 5x buffer allocated for control chars*/
+                if (_location + 5 > charArray.length) {
+                    _buffer = Chr.grow( _buffer, 20 );
+                }
 
                 switch ( c ) {
                     case '\"':
                         _buffer[_location] = '\\';
-                        _location++;
-                        _buffer[_location] = '"';
-                        _location++;
+                        _location ++;
+                        _buffer[_location] =  '"';
+                        _location ++;
                         break;
                     case '\\':
                         _buffer[_location] = '\\';
-                        _location++;
-                        _buffer[_location] = '\\';
-                        _location++;
+                        _location ++;
+                        _buffer[_location] =  '\\';
+                        _location ++;
                         break;
+                    //There is not requirement to escape solidus so we will not.
+//                        case '/':
+//                            _buffer[_location] = '\\';
+//                            _location ++;
+//                            _buffer[_location] =  '/';
+//                            _location ++;
+//                            break;
+
                     case '\b':
                         _buffer[_location] = '\\';
-                        _location++;
-                        _buffer[_location] = 'b';
-                        _location++;
+                        _location ++;
+                        _buffer[_location] =  'b';
+                        _location ++;
                         break;
                     case '\f':
                         _buffer[_location] = '\\';
-                        _location++;
-                        _buffer[_location] = 'f';
-                        _location++;
+                        _location ++;
+                        _buffer[_location] =  'f';
+                        _location ++;
                         break;
                     case '\n':
                         _buffer[_location] = '\\';
-                        _location++;
-                        _buffer[_location] = 'n';
-                        _location++;
+                        _location ++;
+                        _buffer[_location] =  'n';
+                        _location ++;
                         break;
                     case '\r':
                         _buffer[_location] = '\\';
-                        _location++;
-                        _buffer[_location] = 'r';
-                        _location++;
+                        _location ++;
+                        _buffer[_location] =  'r';
+                        _location ++;
                         break;
 
                     case '\t':
                         _buffer[_location] = '\\';
-                        _location++;
-                        _buffer[_location] = 't';
-                        _location++;
+                        _location ++;
+                        _buffer[_location] =  't';
+                        _location ++;
                         break;
+
+                    default:
+                        _buffer[_location] = '\\';
+                        _location ++;
+                        _buffer[_location] =  'u';
+                        _location ++;
+                        if (c <= 255) {
+                            _buffer[_location] =  '0';
+                            _location ++;
+                            _buffer[_location] =  '0';
+                            _location ++;
+                            ByteScanner.encodeByteIntoTwoAsciiCharBytes( c, _encoded );
+                            for (int b : _encoded) {
+                                _buffer [_location] = (char)b;
+                                _location ++;
+
+                            }
+                        } else {
+                            Byt.charTo( _charTo, c );
+
+                            for (int charByte : _charTo) {
+                                ByteScanner.encodeByteIntoTwoAsciiCharBytes( charByte, _encoded );
+                                for (int b : _encoded) {
+                                    _buffer [_location] = (char)b;
+                                    _location ++;
+                                }
+                            }
+
+                        }
+
                 }
-            } else {
+            }else {
 
                 _buffer[_location] = c;
-                _location++;
+                _location ++;
 
             }
 
 
-            if ( ++index >= charArray.length ) break;
+            if ( ++index >= charArray.length) break;
 
 
         }
         _buffer[_location] = '"';
-        _location++;
+        _location ++;
 
 
         buffer = _buffer;
