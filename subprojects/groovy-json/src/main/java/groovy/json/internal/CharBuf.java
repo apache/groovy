@@ -18,9 +18,10 @@
 package groovy.json.internal;
 
 import groovy.json.JsonException;
-import sun.nio.cs.Surrogate;
+
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -36,13 +37,22 @@ public class CharBuf extends Writer implements CharSequence {
 
 
     public CharBuf( char[] buffer ) {
+        __init__( buffer );
+    }
+
+    private void  __init__( char[] buffer ) {
         this.buffer = buffer;
         this.capacity = buffer.length;
     }
 
     public CharBuf( byte[] bytes ) {
         this.buffer = null;
-        this.addAsUTF( bytes );
+        try {
+            String str = new String (bytes, "UTF-8");
+            __init__ (FastStringUtils.toCharArray( str ));
+        } catch ( UnsupportedEncodingException e ) {
+            Exceptions.handle( e );
+        }
     }
 
     public static CharBuf createExact( final int capacity ) {
@@ -580,12 +590,6 @@ public class CharBuf extends Writer implements CharSequence {
 
     }
 
-    private final static void directArraycopy( final char[] src, final int srcPos, final char[] dest, final int destPos, final int length ) {
-        int destIndex = destPos;
-        for ( int index = srcPos; index < srcPos + length; index++, destIndex++ ) {
-            dest[destIndex] = src[index];
-        }
-    }
 
     private final static void arraycopy( final char[] src, final int srcPos, final char[] dest, final int destPos, final int length ) {
 
@@ -899,145 +903,8 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
 
-    public void addAsUTF( byte[] value ) {
 
 
-        if ( this.buffer == null ) {
-            this.buffer = new char[value.length * 2];
-            capacity = buffer.length;
-        } else if ( this.buffer.length < value.length ) {
-            buffer = Chr.grow( buffer, value.length - buffer.length );
-            capacity = buffer.length;
-        }
-
-        char[] buffer = this.buffer;
-        int location = this.location;
-
-        for ( int index = 0; index < value.length; index++ ) {
-            int c = value[index];
-
-
-            if ( c >= 0 ) {
-                buffer[location] = ( char ) c;
-                location++;
-            } else {
-                this.location = location;
-                index = utf8MultiByte( c, index, value );
-                location = this.location;
-            }
-
-        }
-
-        this.location = location;
-
-
-    }
-
-
-    //  [C2..DF] [80..BF]
-    private static boolean isMalformed2( int b1, int b2 ) {
-        return ( b1 & 0x1e ) == 0x0 || ( b2 & 0xc0 ) != 0x80;
-    }
-
-    //  [E0]     [A0..BF] [80..BF]
-    //  [E1..EF] [80..BF] [80..BF]
-    private static boolean isMalformed3( int b1, int b2, int b3 ) {
-        return ( b1 == ( byte ) 0xe0 && ( b2 & 0xe0 ) == 0x80 ) ||
-                ( b2 & 0xc0 ) != 0x80 || ( b3 & 0xc0 ) != 0x80;
-    }
-
-    //  [F0]     [90..BF] [80..BF] [80..BF]
-    //  [F1..F3] [80..BF] [80..BF] [80..BF]
-    //  [F4]     [80..8F] [80..BF] [80..BF]
-    //  only check 80-be range here, the [0xf0,0x80...] and [0xf4,0x90-...]
-    //  will be checked by Surrogate.neededFor(uc)
-    private static boolean isMalformed4( int b2, int b3, int b4 ) {
-        return ( b2 & 0xc0 ) != 0x80 || ( b3 & 0xc0 ) != 0x80 ||
-                ( b4 & 0xc0 ) != 0x80;
-    }
-
-
-    private final int utf8MultiByte( final int c, int index, byte[] bytes ) {
-
-
-        int location = this.location;
-        char[] buffer = this.buffer;
-
-        //boolean ok = true;
-
-        if ( ( c >> 5 ) == -2 ) {
-            int b2;
-
-            //ok = index + 1 < bytes.length || die( "unable to parse 2 byte utf 8 - b2" );
-            index++;
-            b2 = bytes[index];
-
-            if ( isMalformed2( c, b2 ) ) {
-
-                buffer[location] = '#';
-                location++;
-
-            } else {
-                buffer[location] = ( char ) ( ( ( c << 6 ) ^ b2 ) ^ 0x0f80 );
-                location++;
-
-            }
-        } else if ( ( c >> 4 ) == -2 ) {
-            int b2;
-            int b3;
-
-            //ok = index + 1 < bytes.length || die( "unable to parse 3 byte utf 8 - b2" );
-            index++;
-            b2 = bytes[index];
-            //ok = index + 1 < bytes.length || die( "unable to parse 3 byte utf 8 - b3" );
-            index++;
-            b3 = bytes[index];
-
-            if ( isMalformed3( c, b2, b3 ) ) {
-                buffer[location] = '#';
-                location++;
-            } else {
-                buffer[location] = ( char ) ( ( ( c << 12 ) ^ ( b2 << 6 ) ^ b3 ) ^ 0x1f80 );
-                location++;
-            }
-        } else if ( ( c >> 3 ) == -2 ) {
-            int b2;
-            int b3;
-            int b4;
-
-            //ok = index + 1 < bytes.length || die( "unable to parse 4 byte utf 8 - b2" );
-            index++;
-            b2 = bytes[index];
-            //ok = index + 1 < bytes.length || die( "unable to parse 4 byte utf 8 - b3" );
-            index++;
-            b3 = bytes[index];
-            //ok = index + 1 < bytes.length || die( "unable to parse 4 byte utf 8 - b4" );
-            index++;
-            b4 = bytes[index];
-
-            int uc = ( ( c & 0x07 ) << 18 ) |
-                    ( ( b2 & 0x3f ) << 12 ) |
-                    ( ( b3 & 0x3f ) << 6 ) |
-                    ( b4 & 0x3f );
-
-            if ( isMalformed4( b2, b3, b4 ) && !Surrogate.neededFor( uc ) ) {
-                addChar( '#' );
-            } else {
-
-                final char high = Surrogate.high( uc );
-                final char low = Surrogate.low( uc );
-
-                addChar( high );
-                addChar( low );
-
-            }
-        }
-
-
-        this.location = location;
-        this.buffer = buffer;
-        return index;
-    }
 
 
     final static char[] nullChars = "null".toCharArray();
