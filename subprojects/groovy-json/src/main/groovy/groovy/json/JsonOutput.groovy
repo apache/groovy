@@ -62,7 +62,7 @@ class JsonOutput {
      */
     @CompileStatic
     static String toJson(Character c) {
-        "\"$c\""
+        toJson(c.toString())
     }
 
     /**
