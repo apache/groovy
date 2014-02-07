@@ -405,7 +405,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 // GROOVY-6061
                 Expression right = ((BinaryExpression) parent).getRightExpression();
                 rhsValueLoader.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE,
-                        controller.getTypeChooser().resolveType(right, controller.getClassNode()));
+                        controller.getTypeChooser().resolveType(parent, controller.getClassNode()));
             }
             MethodCallExpression mce = new MethodCallExpression(
                     receiver,
