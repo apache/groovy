@@ -1409,7 +1409,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isPrimitiveType(exprType) || isPrimitiveType(getUnwrapper(exprType))) {
             if (operationType == PLUS_PLUS || operationType == MINUS_MINUS) {
                 if (!isPrimitiveType(exprType)) {
-                    MethodNode node = findMethodOrFail(innerExpression, exprType, name);
+                    MethodNode node = findMethodOrFail(new VariableExpression("_dummy_", exprType), exprType, name);
                     if (node != null) {
                         storeTargetMethod(origin, node);
                         storeType(origin,
