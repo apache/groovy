@@ -551,6 +551,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 MethodNode getAtNode = null;
                 while (current!=null && getAtNode==null) {
                     getAtNode = current.getMethod("getAt", new Parameter[]{new Parameter(aType, "index")});
+                    if (getAtNode==null && isPrimitiveType(aType)) {
+                        getAtNode = current.getMethod("getAt", new Parameter[]{new Parameter(getWrapper(aType), "index")});
+                    } else if (getAtNode==null && aType.isDerivedFrom(Number_TYPE)) {
+                        getAtNode = current.getMethod("getAt", new Parameter[]{new Parameter(getUnwrapper(aType), "index")});
+                    }
                     current = current.getSuperClass();
                 }
                 if (getAtNode!=null) {
