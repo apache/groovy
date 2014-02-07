@@ -152,7 +152,7 @@ class JsonOutputTest extends GroovyTestCase {
 
     void testURL() {
         assert toJson(new URL("http://glaforge.appspot.com")) == '"http://glaforge.appspot.com"'
-        assert JsonOutput.toJson(new URL('file', '', 'C:\\this\\is\\windows\\path')) == '"C:\\\\this\\\\is\\\\windows\\\\path"' // GROOVY-6560
+        assert JsonOutput.toJson(new URL('file', '', 'C:\\this\\is\\windows\\path')) == '"file:C:\\\\this\\\\is\\\\windows\\\\path"' // GROOVY-6560
     }
 
     void testCalendar() {
