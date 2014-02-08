@@ -39,7 +39,9 @@ public class GenericsUtils {
      * @param parameterizedTypes the actual type arguments used on this class node
      * @param alignmentTarget the generic type arguments to which we want to align to
      * @return aligned type arguments
+     * @deprecated You shouldn't call this method because it is inherently unreliable
      */
+    @Deprecated
     public static GenericsType[] alignGenericTypes(final GenericsType[] redirectGenericTypes, final GenericsType[] parameterizedTypes, final GenericsType[] alignmentTarget) {
         if (alignmentTarget==null) return EMPTY_GENERICS_ARRAY;
         if (parameterizedTypes==null || parameterizedTypes.length==0) return alignmentTarget;
