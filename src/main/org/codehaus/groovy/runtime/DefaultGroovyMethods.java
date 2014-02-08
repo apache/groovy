@@ -6430,7 +6430,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the sorted map
      * @since 1.6.0
      */
-    public static <K, V> Map<K, V> sort(Map<K, V> self, @ClosureParams(value=FromString.class, options="Map.Entry<K,V>,Map.Entry<K,V>") Closure closure) {
+    public static <K, V> Map<K, V> sort(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>","Map.Entry<K,V>,Map.Entry<K,V>"}) Closure closure) {
         Map<K, V> result = new LinkedHashMap<K, V>();
         List<Map.Entry<K, V>> entries = asList(self.entrySet());
         sort(entries, closure);

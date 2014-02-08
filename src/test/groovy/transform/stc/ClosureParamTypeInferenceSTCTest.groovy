@@ -979,6 +979,16 @@ import groovy.transform.stc.ClosureParams
         def map = [a:5, b:3, c:6, d:4].sort { a, b -> a.value <=> b.value }
         assert map == [b:3, d:4, a:5, c:6]
         '''
+
+        assertScript '''
+        def map = [a:5, b:3, c:6, d:4].sort { a -> a.value }
+        assert map == [b:3, d:4, a:5, c:6]
+        '''
+
+        assertScript '''
+        def map = [a:5, b:3, c:6, d:4].sort { it.value }
+        assert map == [b:3, d:4, a:5, c:6]
+        '''
     }
 
     void testDGM_slitOnCollection() {
