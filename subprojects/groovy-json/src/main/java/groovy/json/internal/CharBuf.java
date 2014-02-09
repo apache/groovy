@@ -739,197 +739,24 @@ public class CharBuf extends Writer implements CharSequence {
     }
 
 
-    private static double powersOf10[] = {
-            1.0,
-            10.0,
-            100.0,
-            1000.0,
-            10000.0,
-            100000.0,
-            1000000.0,
-            10000000.0,
-            100000000.0,
-            1000000000.0,
-            10000000000.0,
-            100000000000.0,
-            1000000000000.0,
-            10000000000000.0,
-            100000000000000.0,
-    };
-
-
-    private static float fpowersOf10[] = {
-            1.0f,
-            10.0f,
-            100.0f,
-            1000.0f,
-            10000.0f,
-            100000.0f,
-            1000000.0f,
-            10000000.0f,
-            100000000.0f,
-            1000000000.0f,
-    };
 
     public double doubleValue() {
-
-        boolean simple = true;
-        int digitsPastPoint = 0;
-        boolean foundPoint = false;
-        boolean negative = false;
-        int startIndex = 0;
-
-        double sign;
-
-        if ( buffer[startIndex] == '-' ) {
-            startIndex++;
-            negative = true;
-            sign = -1.0;
-        } else {
-            negative = false;
-            sign = 1.0;
-        }
-
-        loop:
-        for ( int index = startIndex; index < location; index++ ) {
-            char ch = buffer[index];
-            switch ( ch ) {
-                case 'e':
-                    simple = false;
-                    break loop;
-                case 'E':
-                    simple = false;
-                    break loop;
-                case 'F':
-                    simple = false;
-                    break loop;
-                case 'f':
-                    simple = false;
-                    break loop;
-                case '.':
-                    foundPoint = true;
-                    continue loop;
-            }
-            if ( foundPoint ) {
-                digitsPastPoint++;
-                if ( digitsPastPoint >= powersOf10.length ) {
-                    simple = true;
-                    break;
-                }
-            }
-        }
-
-        if ( simple ) {
-            long value;
-            final int length = location - startIndex;
-
-            if ( CharScanner.isInteger( buffer, startIndex, length, negative ) ) {
-                value = CharScanner.parseIntIgnoreDot( buffer, startIndex, length );
-            } else {
-                value = CharScanner.parseLongIgnoreDot( buffer, startIndex, length );
-            }
-            if ( digitsPastPoint < powersOf10.length ) {
-                double power = powersOf10[digitsPastPoint] * sign;
-                return value / power;
-
-            }
-
-
-        }
-
-        return Double.parseDouble( toString() ) * sign;
+        return CharScanner.parseDouble( this.buffer, 0, location );
     }
 
 
     public float floatValue() {
-
-        boolean simple = true;
-        int digitsPastPoint = 0;
-        boolean foundPoint = false;
-
-        float sign;
-        int startIndex = 0;
-
-        if ( buffer[startIndex] == '-' ) {
-            startIndex++;
-            sign = -1.0f;
-        } else {
-            sign = 1.0f;
-        }
-
-
-        int length = location - startIndex;
-        if ( length > 10 ) {
-            return Float.parseFloat( toString() ) * sign;
-        }
-        loop:
-        for ( int index = startIndex; index < location; index++ ) {
-            char ch = buffer[index];
-            switch ( ch ) {
-                case 'e':
-                    simple = false;
-                    break loop;
-                case 'E':
-                    simple = false;
-                    break loop;
-                case 'F':
-                    simple = false;
-                    break loop;
-                case 'f':
-                    simple = false;
-                    break loop;
-                case '.':
-                    foundPoint = true;
-                    continue loop;
-            }
-            if ( foundPoint ) {
-                digitsPastPoint++;
-                if ( digitsPastPoint >= powersOf10.length ) {
-                    simple = true;
-                    break;
-                }
-            }
-        }
-
-        if ( simple ) {
-            int value;
-
-            value = CharScanner.parseIntIgnoreDot( buffer, startIndex, length );
-            if ( digitsPastPoint < powersOf10.length ) {
-                float power = fpowersOf10[digitsPastPoint] * sign;
-                return value / power;
-
-            }
-
-
-        }
-
-        return Float.parseFloat( toString() ) * sign;
-
+        return CharScanner.parseFloat( this.buffer, 0, location );
     }
 
     public int intValue() {
-        int sign = 1;
-        int startIndex = 0;
-        if ( buffer[startIndex] == '-' ) {
-            startIndex++;
-            sign = -1;
-
-        }
-        return CharScanner.parseIntFromTo( buffer, startIndex, location  ) * sign;
+        return CharScanner.parseIntFromTo( buffer, 0, location );
     }
 
     public long longValue() {
-        long sign = 1;
-        int startIndex = 0;
-
-        if ( buffer[startIndex] == '-' ) {
-            startIndex++;
-            sign = -1;
-
-        }
-        return CharScanner.parseLongFromTo( buffer, startIndex, location  ) * sign;
+        return CharScanner.parseLongFromTo( buffer, 0, location  );
     }
+
 
 
     public byte byteValue() {
@@ -943,21 +770,10 @@ public class CharBuf extends Writer implements CharSequence {
 
     public Number toIntegerWrapper() {
 
-        int sign = 1;
-        boolean negative = false;
-        int startIndex = 0;
-        if ( buffer[startIndex] == '-' ) {
-            startIndex++;
-            sign = -1;
-            negative = true;
-
-        }
-
-
-        if ( CharScanner.isInteger( buffer, startIndex, location - startIndex, negative ) ) {
-            return intValue() * sign;
+        if ( CharScanner.isInteger( buffer, 0, location  ) ) {
+            return intValue() ;
         } else {
-            return longValue() * sign;
+            return longValue();
         }
 
     }

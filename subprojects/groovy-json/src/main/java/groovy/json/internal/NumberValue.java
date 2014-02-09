@@ -126,7 +126,7 @@ public class NumberValue extends java.lang.Number implements Value {
                 }
 
 
-                if ( isInteger( buffer, startIndex, endIndex - startIndex, negative ) ) {
+                if ( isInteger( buffer, startIndex, endIndex - startIndex ) ) {
                     return intValue() * sign;
                 } else {
                     return longValue() * sign;
@@ -199,16 +199,11 @@ public class NumberValue extends java.lang.Number implements Value {
 
 
     public long longValue() {
-        long sign = 1;
-        if ( buffer[startIndex] == '-' ) {
-            startIndex++;
-            sign = -1;
 
-        }
-        if ( isInteger( buffer, startIndex, endIndex - startIndex, sign < 0 ) ) {
-            return parseIntFromTo( buffer, startIndex, endIndex  ) * sign;
+        if ( isInteger( buffer, startIndex, endIndex - startIndex ) ) {
+            return parseIntFromTo( buffer, startIndex, endIndex  );
         } else {
-            return parseLongFromTo( buffer, startIndex, endIndex  ) * sign;
+            return parseLongFromTo( buffer, startIndex, endIndex  );
         }
     }
 
@@ -237,7 +232,7 @@ public class NumberValue extends java.lang.Number implements Value {
 
 
     public double doubleValue() {
-        return CharScanner.doubleValue( this.buffer, startIndex, endIndex );
+        return CharScanner.parseDouble( this.buffer, startIndex, endIndex );
 
     }
 
@@ -248,69 +243,7 @@ public class NumberValue extends java.lang.Number implements Value {
 
 
     public float floatValue() {
-
-        boolean simple = true;
-        int digitsPastPoint = 0;
-        boolean foundPoint = false;
-
-        float sign;
-
-        if ( buffer[startIndex] == '-' ) {
-            startIndex++;
-            sign = -1.0f;
-        } else {
-            sign = 1.0f;
-        }
-
-
-        int length = endIndex - startIndex;
-        if ( length > 10 ) {
-            return Float.parseFloat( toString() ) * sign;
-        }
-        loop:
-        for ( int index = startIndex; index < endIndex; index++ ) {
-            char ch = buffer[index];
-            switch ( ch ) {
-                case 'e':
-                    simple = false;
-                    break loop;
-                case 'E':
-                    simple = false;
-                    break loop;
-                case 'F':
-                    simple = false;
-                    break loop;
-                case 'f':
-                    simple = false;
-                    break loop;
-                case '.':
-                    foundPoint = true;
-                    continue loop;
-            }
-            if ( foundPoint ) {
-                digitsPastPoint++;
-                if ( digitsPastPoint >= fpowersOf10.length ) {
-                    simple = true;
-                    break;
-                }
-            }
-        }
-
-        if ( simple ) {
-            int value;
-
-            value = parseIntIgnoreDot( buffer, startIndex, length );
-            if ( digitsPastPoint < fpowersOf10.length ) {
-                float power = fpowersOf10[digitsPastPoint] * sign;
-                return value / power;
-
-            }
-
-
-        }
-
-        return Float.parseFloat( toString() ) * sign;
-
+        return CharScanner.parseFloat( this.buffer, startIndex, endIndex );
     }
 
     public final void chop() {

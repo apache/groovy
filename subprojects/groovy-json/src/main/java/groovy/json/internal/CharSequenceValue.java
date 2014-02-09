@@ -125,20 +125,10 @@ public class CharSequenceValue implements Value, CharSequence {
                 return doubleValue();
             case INTEGER:
 
-                int sign = 1;
-                boolean negative = false;
-                if ( buffer[startIndex] == '-' ) {
-                    startIndex++;
-                    sign = -1;
-                    negative = true;
-
-                }
-
-
-                if ( isInteger( buffer, startIndex, endIndex - startIndex, negative ) ) {
-                    return intValue() * sign;
+                if ( isInteger( buffer, startIndex, endIndex - startIndex ) ) {
+                    return intValue() ;
                 } else {
-                    return longValue() * sign;
+                    return longValue() ;
                 }
             case STRING:
                 if ( checkDate ) {
@@ -267,16 +257,11 @@ public class CharSequenceValue implements Value, CharSequence {
 
 
     public long longValue() {
-        long sign = 1;
-        if ( buffer[startIndex] == '-' ) {
-            startIndex++;
-            sign = -1;
 
-        }
-        if ( isInteger( buffer, startIndex, endIndex - startIndex, sign < 0 ) ) {
-            return parseIntFromTo( buffer, startIndex, endIndex  ) * sign;
+        if ( isInteger( buffer, startIndex, endIndex - startIndex ) ) {
+            return parseIntFromTo( buffer, startIndex, endIndex  ) ;
         } else {
-            return parseLongFromTo( buffer, startIndex, endIndex  ) * sign;
+            return parseLongFromTo( buffer, startIndex, endIndex  ) ;
         }
     }
 
@@ -288,22 +273,8 @@ public class CharSequenceValue implements Value, CharSequence {
         return ( short ) intValue();
     }
 
-    private static float fpowersOf10[] = {
-            1.0f,
-            10.0f,
-            100.0f,
-            1000.0f,
-            10000.0f,
-            100000.0f,
-            1000000.0f,
-            10000000.0f,
-            100000000.0f,
-            1000000000.0f,
-    };
-
-
     public double doubleValue() {
-        return CharScanner.doubleValue( this.buffer, startIndex, endIndex );
+        return CharScanner.parseDouble( this.buffer, startIndex, endIndex );
     }
 
 
@@ -314,64 +285,7 @@ public class CharSequenceValue implements Value, CharSequence {
 
     public float floatValue() {
 
-        boolean simple = true;
-        int digitsPastPoint = 0;
-        boolean foundPoint = false;
-
-        float sign;
-
-        if ( buffer[startIndex] == '-' ) {
-            startIndex++;
-            sign = -1.0f;
-        } else {
-            sign = 1.0f;
-        }
-
-        int length = endIndex - startIndex;
-        if ( length > 10 ) {
-            return Float.parseFloat( toString() ) * sign;
-        }
-        loop:
-        for ( int index = startIndex; index < endIndex; index++ ) {
-            char ch = buffer[index];
-            switch ( ch ) {
-                case 'e':
-                    simple = false;
-                    break loop;
-                case 'E':
-                    simple = false;
-                    break loop;
-                case 'F':
-                    simple = false;
-                    break loop;
-                case 'f':
-                    simple = false;
-                    break loop;
-                case '.':
-                    foundPoint = true;
-                    continue loop;
-            }
-            if ( foundPoint ) {
-                digitsPastPoint++;
-                if ( digitsPastPoint >= fpowersOf10.length ) {
-                    simple = true;
-                    break;
-                }
-            }
-        }
-
-        if ( simple ) {
-            int value;
-
-            value = parseIntIgnoreDot( buffer, startIndex, length );
-            if ( digitsPastPoint < fpowersOf10.length ) {
-                float power = fpowersOf10[digitsPastPoint] * sign;
-                return value / power;
-
-            }
-        }
-
-        return Float.parseFloat( toString() ) * sign;
+        return CharScanner.parseFloat( this.buffer, startIndex, endIndex );
     }
 
     public final void chop() {

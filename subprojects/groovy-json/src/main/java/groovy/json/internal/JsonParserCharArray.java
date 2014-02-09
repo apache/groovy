@@ -227,10 +227,10 @@ public class JsonParserCharArray extends BaseJsonParser {
             case '7':
             case '8':
             case '9':
-                value = decodeNumber( false );
+                value = decodeNumber();
                 break;
             case '-':
-                value = decodeNumber( true );
+                value = decodeNumber();
                 break;
 
             default:
@@ -243,69 +243,15 @@ public class JsonParserCharArray extends BaseJsonParser {
     }
 
 
-    private final Object decodeNumber( boolean minus ) {
 
-        char[] array = charArray;
+    int[] endIndex = new int[1];
 
-        final int startIndex = __index;
-        int index = __index;
-        char currentChar;
-        boolean doubleFloat = false;
-        boolean simple = true;
-        int digitsPastPoint = 0;
-        int sign = 1;
+    private final Object decodeNumber() {
 
+        Number num =  CharScanner.parseJsonNumber( charArray, __index, charArray.length, endIndex );
+        __index = endIndex[0];
 
-        if ( minus ) {
-            minus = true;
-            sign = -1;
-            nextChar();
-        }
-
-
-        while ( true ) {
-            currentChar = array[index];
-
-            if ( doubleFloat ) {
-                digitsPastPoint++;
-            }
-            if ( isNumberDigit( currentChar ) ) {
-                //noop
-            } else if ( currentChar <= 32 ) { //white
-                break;
-            } else if ( isDelimiter( currentChar ) ) {
-                break;
-            } else if ( isDecimalChar( currentChar ) ) {
-                doubleFloat = true;
-                if ( currentChar != '.' ) {
-                    simple = false;
-                }
-            }
-            index++;
-            if ( index >= array.length ) break;
-        }
-
-        __index = index;
-        __currentChar = currentChar;
-
-        return getNumberFromSpan( startIndex, doubleFloat, simple, digitsPastPoint, minus, sign );
-    }
-
-    private final Object getNumberFromSpan( int startIndex, boolean doubleFloat, boolean simple, int digitsPastPoint, boolean minus, int sign ) {
-        Object value;
-        if ( doubleFloat ) {
-            value = CharScanner.simpleDouble( this.charArray, simple, minus, digitsPastPoint - 1, startIndex, __index );
-        } else {
-
-            if ( isInteger( this.charArray, startIndex, __index - startIndex, minus ) ) {
-                value = CharScanner.parseIntFromTo( charArray, startIndex, __index  ) * sign;
-            } else {
-                value = CharScanner.parseLongFromTo( charArray, startIndex, __index  ) * sign;
-            }
-
-        }
-
-        return value;
+        return num;
     }
 
 
