@@ -215,7 +215,7 @@ class Groovysh extends Shell {
 
         def groovyshellProperty = System.getProperty("groovysh.prompt")
         if (groovyshellProperty) {
-            return  "@|bold ${groovyshellProperty}:|@${lineNum}@|bold >|@ "
+            return "@|bold ${groovyshellProperty}:|@${lineNum}@|bold >|@ "
         }
         def groovyshellEnv = System.getenv("GROOVYSH_PROMPT")
         if (groovyshellEnv) {

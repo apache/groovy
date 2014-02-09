@@ -18,7 +18,6 @@ package org.codehaus.groovy.tools.shell
 
 import jline.console.ConsoleReader
 import jline.console.completer.AggregateCompleter
-
 import jline.console.history.FileHistory
 import org.codehaus.groovy.tools.shell.completion.*
 import org.codehaus.groovy.tools.shell.util.Logger
@@ -51,7 +50,8 @@ class InteractiveShellRunner
         
         this.prompt = prompt
         this.wrappedInputStream = new WrappedInputStream(shell.io.inputStream)
-        this.reader = new ConsoleReader(wrappedInputStream, shell.io.outputStream)
+        this.reader = new PatchedConsoleReader(wrappedInputStream, shell.io.outputStream)
+        this.reader.setCompletionHandler(new PatchedCandidateListCompletionHandler())
         // expand events ia an advanced feature of JLine that clashes with Groovy syntax (e.g. invoke "2!=3")
         this.reader.expandEvents = false
 
