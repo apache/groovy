@@ -8,3 +8,8 @@ dependencies {
     testCompile project(':groovy-test')
     testCompile project(':groovy-swing').sourceSets.test.runtimeClasspath
 }
+
+task console(type: JavaExec, dependsOn:classes) {
+    main = 'groovy.ui.Console'
+    classpath = sourceSets.main.runtimeClasspath
+}
