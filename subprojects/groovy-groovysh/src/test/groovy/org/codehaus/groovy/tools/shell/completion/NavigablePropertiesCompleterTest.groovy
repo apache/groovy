@@ -8,7 +8,7 @@ import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
  */
 class NavigablePropertiesCompleterTest extends GroovyTestCase {
 
-    void testMap() {
+    void testSet() {
         NavigablePropertiesCompleter completer = new NavigablePropertiesCompleter()
         completer.addCompletions(null, '', [] as Set)
 
@@ -23,6 +23,21 @@ class NavigablePropertiesCompleterTest extends GroovyTestCase {
         candidates = [] as Set
         completer.addCompletions(['aaa': 1, 'bbb': 2], 'a', candidates)
         assert ['aaa'] as Set == candidates
+    }
+
+    void testMap() {
+        NavigablePropertiesCompleter completer = new NavigablePropertiesCompleter()
+        completer.addCompletions(null, '', [] as Set)
+
+        Map map = [
+                'id': 'FX-17',
+                name: 'Turnip',
+                99: 123,
+        ]
+
+        Set candidates = [] as Set
+        completer.addCompletions(map, '', candidates)
+        assert ['id', 'name'] as Set == candidates
     }
 
     void testNodeList() {
