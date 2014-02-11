@@ -34,9 +34,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
 
 /**
  * A call site writer which replaces call site caching with static calls. This means that the generated code
@@ -93,9 +91,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             receiverType = (ClassNode) type;
         }
         boolean isClassReceiver = false;
-        if (receiverType.equals(CLASS_Type)
-                && receiverType.getGenericsTypes()!=null
-                && !receiverType.getGenericsTypes()[0].isPlaceholder()) {
+        if (isClassClassNodeWrappingConcreteType(receiverType)) {
             isClassReceiver = true;
             receiverType = receiverType.getGenericsTypes()[0].getType();
         }
