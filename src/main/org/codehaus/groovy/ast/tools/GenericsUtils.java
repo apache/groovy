@@ -133,7 +133,24 @@ public class GenericsUtils {
             GenericsType redirectType = redirectGenericsTypes[i];
             if (redirectType.isPlaceholder()) {
                 String name = redirectType.getName();
-                if (!map.containsKey(name)) map.put(name, parameterized[i]);
+                if (!map.containsKey(name)) {
+                    GenericsType value = parameterized[i];
+                    map.put(name, value);
+                    if (value.isWildcard()) {
+                        ClassNode lowerBound = value.getLowerBound();
+                        if (lowerBound!=null) {
+                            extractPlaceholders(lowerBound, map);
+                        }
+                        ClassNode[] upperBounds = value.getUpperBounds();
+                        if (upperBounds!=null) {
+                            for (ClassNode upperBound : upperBounds) {
+                                extractPlaceholders(upperBound, map);
+                            }
+                        }
+                    } else if (!value.isPlaceholder()) {
+                        extractPlaceholders(value.getType(), map);
+                    }
+                }
             }
         }
     }
