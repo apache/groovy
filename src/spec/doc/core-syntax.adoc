@@ -1010,6 +1010,9 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_3,indent=0]
 <1> Retrieve the first element of the array
 <2> Set the value of the third element of the array to a new value
 
+[NOTE]
+Java's array initializer notation is not supported by Groovy, 
+as the curly braces can be misinterpreted with the notation of Groovy closures.
 
 == Maps (TBD)
 
