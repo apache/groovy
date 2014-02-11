@@ -2,7 +2,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 allprojects {
     test {
-        if (JavaVersion.current().isJava8Compatible()) {
+        if (JavaVersion.current().isJava8Compatible() || JavaVersion.current().isJava9Compatible()) {
             jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}"
         } else {
             jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}"
