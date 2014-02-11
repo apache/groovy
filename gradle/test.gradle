@@ -2,7 +2,11 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 allprojects {
     test {
-        jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}"
+        if (JavaVersion.current().isJava8Compatible() || JavaVersion.current().isJava9Compatible()) {
+            jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}"
+        } else {
+            jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}"
+        }
         def headless = System.properties['java.awt.headless']
         if (headless == 'true') {
             systemProperties 'java.awt.headless': 'true'
