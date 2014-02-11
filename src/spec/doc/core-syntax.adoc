@@ -920,9 +920,65 @@ But more complex boolean expressions can be represented using <<_bitwise_and_log
 In addition, Groovy has <<_the_groovy_truth,special rules>> (often referred to as _Groovy Truth_)
 for coercing non-boolean objects to a boolean value.
 
-== Arrays (TBD)
+== Lists
 
-== Lists (TBD)
+Groovy uses a comma-separated list of values, surrounded by square brackets, to denote lists.
+Groovy lists are plain JDK +java.util.List+, as Groovy doesn't define its own collection classes.
+The concrete list implementation used when defining list literals are +java.util.ArrayList+ by default,
+unless you decide to specify otherwise, as we shall see later on.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=list_1,indent=0]
+----
+<1> We define a list numbers delimited by commas and surrounded by square brackets, and we assign that list into a variable
+<2> The list is an instance of Java's +java.util+List+ interface
+<3> The size of the list can be queried with the +size()+ method, and shows our list contains 3 elements
+
+In the above example, we used a homogeneous list, but you can also create lists containing values of heterogeneous types:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=list_2,indent=0]
+----
+<1> Our list here contains a number, a string and a boolean value
+
+We mentioned that by default, list literals are actually instances of +java.util.ArrayList+, 
+but it is possible to use a different backing type for our lists, 
+thanks to using type coercion with the +as+ operator, or with explicit type declaration for your variables:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=coercion_of_list,indent=0]
+----
+<1> We use coercion with the +as+ operator to explicitly request a +java.util.LinkedList+ implementation
+<2> We can say that the variable holding the list literal is of type +java.util.LinkedList+
+
+You can access elements of the list with the +[]+ subscript operator (both for reading and setting values)
+with positive indices or negative indices to access elements from the end of the list, as well as with ranges,
+and use the +<<+ leftShift operator to append elements to a list:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=subscript_and_leftshift,indent=0]
+----
+<1> Access the first element of the list (zeroth-based counting)
+<2> Access the last element of the list with a negative index: -1 is the first element from the end of the list
+<3> Use an assignment to set a new value for the third element of the list
+<4> Use the +<<+ leftShift operator to append an element at the end of the list
+<5> Access two elements at once, returning a new list containing those two elements
+<6> Use a range to access a range of values from the list, from a start to an end element position
+
+As lists can be heterogeneous in nature, lists can also contain other lists to create multi-dimensional lists:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=multi_dim_list,indent=0]
+----
+<1> Define a list of list of numbers
+<2> Access the second element of the top-most list, and the first element of the inner list
+
+== Arrays (TBD)
 
 == Maps (TBD)
 

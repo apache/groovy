@@ -628,4 +628,57 @@ class SyntaxTest extends CompilableTestSupport {
         assert    2    **   0.1f instanceof Double     //  1.0717734636432956
         // end::number_power[]
     }
+
+    void testLists() {
+        // tag::list_1[]
+        def numbers = [1, 2, 3]         // <1>
+
+        assert numbers instanceof List  // <2>
+        assert numbers.size() == 3      // <3>
+        // end::list_1[]
+
+        // tag::list_2[]
+        def heterogeneous = [1, "a", true]  // <1>
+        // end::list_2[]
+
+        assert heterogeneous instanceof List
+        assert heterogeneous.size() == 3
+
+        // tag::coercion_of_list[]
+        def arrayList = [1, 2, 3]
+        assert arrayList instanceof java.util.ArrayList
+
+        def linkedList = [2, 3, 4] as LinkedList    // <1>
+        assert linkedList instanceof java.util.LinkedList
+
+        LinkedList otherLinked = [3, 4, 5]          // <2>
+        assert otherLinked instanceof java.util.LinkedList
+        // end::coercion_of_list[]
+
+        // tag::subscript_and_leftshift[]
+        def letters = ['a', 'b', 'c', 'd']
+
+        assert letters[0] == 'a'     // <1>
+        assert letters[1] == 'b'
+
+        assert letters[-1] == 'd'    // <2>
+        assert letters[-2] == 'c'
+
+        letters[2] = 'C'             // <3>
+        assert letters[2] == 'C'
+
+        letters << 'e'               // <4>
+        assert letters[ 4] == 'e'
+        assert letters[-1] == 'e'
+
+        assert letters[1, 3] == ['b', 'd']         // <5>
+        assert letters[2..4] == ['C', 'd', 'e']    // <6>
+        // end::subscript_and_leftshift[]
+
+        // tag::multi_dim_list[]
+        def multi = [[0, 1], [2, 3]]     // <1>
+        assert multi[1][0] == 2          // <2>
+        // end::multi_dim_list[]
+
+    }
 }
