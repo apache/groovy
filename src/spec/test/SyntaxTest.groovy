@@ -679,6 +679,36 @@ class SyntaxTest extends CompilableTestSupport {
         def multi = [[0, 1], [2, 3]]     // <1>
         assert multi[1][0] == 2          // <2>
         // end::multi_dim_list[]
+    }
 
+    void testArrays() {
+        // tag::array_1[]
+        String[] arrStr = ['Ananas', 'Banana', 'Kiwi']  // <1>
+
+        assert arrStr instanceof String[]    // <2>
+        assert !(arrStr instanceof List)     // <3>
+
+        def numArr = [1, 2, 3] as int[]      // <4>
+
+        assert numArr instanceof int[]       // <5>
+        assert numArr.size() == 3
+        // end::array_1[]
+
+        // tag::array_2[]
+        def matrix3 = new Integer[3][3]         // <1>
+        assert matrix3.size() == 3
+
+        Integer[][] matrix2                     // <2>
+        matrix2 = [[1, 2], [3, 4]]
+        assert matrix2 instanceof Integer[][]
+        // end::array_2[]
+
+        // tag::array_3[]
+        String[] names = ['Cédric', 'Guillaume', 'Jochen', 'Paul']
+        assert names[0] == 'Cédric'     // <1>
+
+        names[2] = 'Blackdrag'          // <2>
+        assert names[2] == 'Blackdrag'
+        // end::array_3[]
     }
 }

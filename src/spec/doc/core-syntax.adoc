@@ -980,6 +980,37 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=multi_dim_list,indent
 
 == Arrays (TBD)
 
+Groovy reuses the list notation for arrays, but to make such literals arrays, 
+you need to explicitely define the type of the array through coercion or type declaration.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_1,indent=0]
+----
+<1> Define an array of strings using explicit variable type declaration
+<2> Assert that we created an array of strings
+<3> Create an array of ints with the +as+ operator
+<4> Assert that we created an array of primitive ints
+
+You can also create multi-dimensional arrays:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_2,indent=0]
+----
+<1> You can define the bounds of a new array
+<2> Or declare an array without specifying its bounds
+
+Access to elements of an array follows the same notation as for lists:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_3,indent=0]
+----
+<1> Retrieve the first element of the array
+<2> Set the value of the third element of the array to a new value
+
+
 == Maps (TBD)
 
 === String keys (TBD)
