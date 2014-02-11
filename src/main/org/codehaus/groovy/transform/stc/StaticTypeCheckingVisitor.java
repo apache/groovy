@@ -904,7 +904,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Expression objectExpression = pexp.getObjectExpression();
         final ClassNode objectExpressionType = getType(objectExpression);
 
-        boolean staticOnlyAccess = objectExpressionType.equals(CLASS_Type);
+        boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
         if (objectExpressionType.isArray() && "length".equals(pexp.getPropertyAsString())) {
             storeType(pexp, int_TYPE);
             if (visitor != null) {
@@ -940,7 +940,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // as well, since in case of a static property access we have the class
                     // itself in the list of receivers already;
                     boolean staticOnly;
-                    if (current.equals(CLASS_Type)) {
+                    if (isClassClassNodeWrappingConcreteType(current)) {
                         staticOnly = false;
                     } else {
                         staticOnly = staticOnlyAccess;
@@ -2358,7 +2358,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final ClassNode receiver = getType(objectExpression);
         List<Receiver<String>> owners = new LinkedList<Receiver<String>>();
         owners.add(Receiver.<String>make(receiver));
-        if (receiver.equals(CLASS_Type) && receiver.getGenericsTypes() != null) {
+        if (isClassClassNodeWrappingConcreteType(receiver)) {
             GenericsType clazzGT = receiver.getGenericsTypes()[0];
             owners.add(0,Receiver.<String>make(clazzGT.getType()));
         }

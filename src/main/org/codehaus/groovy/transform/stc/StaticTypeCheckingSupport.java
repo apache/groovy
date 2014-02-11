@@ -1739,4 +1739,21 @@ public abstract class StaticTypeCheckingSupport {
         out.addAll(allInterfaces);
         collectAllInterfaces(node.getSuperClass(), out);
     }
+
+    /**
+     * Returns true if the class node represents a the class node for the Class class
+     * and if the parametrized type is a neither a placeholder or a wildcard. For example,
+     * the class node Class&lt;Foo&gt; where Foo is a class would return true, but the class
+     * node for Class&lt;?&gt; would return false.
+     * @param classNode a class node to be tested
+     * @return true if it is the class node for Class and its generic type is a real class
+     */
+    public static boolean isClassClassNodeWrappingConcreteType(ClassNode classNode) {
+        GenericsType[] genericsTypes = classNode.getGenericsTypes();
+        return ClassHelper.CLASS_Type.equals(classNode)
+                && classNode.isUsingGenerics()
+                && genericsTypes!=null
+                && !genericsTypes[0].isPlaceholder()
+                && !genericsTypes[0].isWildcard();
+    }
 }
