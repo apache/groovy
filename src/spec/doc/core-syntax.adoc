@@ -978,7 +978,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=multi_dim_list,indent
 <1> Define a list of list of numbers
 <2> Access the second element of the top-most list, and the first element of the inner list
 
-== Arrays (TBD)
+== Arrays
 
 Groovy reuses the list notation for arrays, but to make such literals arrays, 
 you need to explicitely define the type of the array through coercion or type declaration.
