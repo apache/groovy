@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
@@ -42,8 +43,9 @@ public class MethodCallExpressionTransformer {
         if (isCallOnClosure(expr)) {
             FieldNode field = staticCompilationTransformer.getClassNode().getField(expr.getMethodAsString());
             if (field != null) {
+                VariableExpression vexp = new VariableExpression(field);
                 MethodCallExpression result = new MethodCallExpression(
-                        new FieldExpression(field),
+                        vexp,
                         "call",
                         staticCompilationTransformer.transform(expr.getArguments())
                 );
@@ -51,6 +53,7 @@ public class MethodCallExpressionTransformer {
                 result.setSourcePosition(expr);
                 result.setSafe(expr.isSafe());
                 result.setSpreadSafe(expr.isSpreadSafe());
+                result.setMethodTarget(StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS);
                 return result;
             }
         }
