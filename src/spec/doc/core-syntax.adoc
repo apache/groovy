@@ -1014,7 +1014,69 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_3,indent=0]
 Java's array initializer notation is not supported by Groovy, 
 as the curly braces can be misinterpreted with the notation of Groovy closures.
 
-== Maps (TBD)
+== Maps
 
-=== String keys (TBD)
-=== Parenthesized keys (TBD)
+Sometimes called dictionaries or associative arrays in other languages, Groovy features maps.
+Maps associate keys to values, separating keys and values with columns, and each key/value pairs with commas, 
+and the whole keys and values surrounded by square brackets.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=map_def_access,indent=0]
+----
+<1> We define a map of string color names, associated with their hexadecimal-coded html colors
+<2> We use the subscript notation to check the content associated with the +red+ key
+<3> We can also use the property notation to assert the color green's hexadecimal representation
+<4> Similarily, we can use the subscript notation to add a new key/value pair
+<5> Or the property notation, to add the +yellow+ color
+
+[NOTE]
+When using names for the keys, we actually define string keys in the map.
+
+[NOTE]
+Groovy creates maps that are actually instances of +java.util.LinkedHashMap+.
+
+If you try to access a key which is not present in the map:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=unknown_key,indent=0]
+----
+
+You will retrieve a +null+ result.
+
+In the examples above, we used string keys, but you can also use values of other types as keys:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=number_key,indent=0]
+----
+
+Here, we used numbers as keys, as numbers can unambiguously recognized as numbers,
+so Groovy will not create a string key like in our previous examples.
+But consider the case you want to pass a variable in lieu of the key, to have the value of that variable become the key:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_key_2,indent=0]
+----
+<1> The +key+ associated with the +'Guillaume'+ name will actually be the +"key"+ string, not the value associated with the +key+ variable
+<2> The map doesn't contain the +'name'+ key
+<3> Instead, the map contains a +'key'+ key
+
+[NOTE]
+You can also pass quoted strings as well as keys: +["name": "Guillaume"]+.
+This is mandatory if your key string isn't a valid identifier.
+
+When you need to pass variable values as keys in your map definitions, you must surround the variable or expression with parentheses:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_key_2,indent=0]
+----
+<1> This time, we surround the +key+ variable with parentheses, to instruct the parser we are passing a variable rather than defining a string key
+<2> The map does contain the +name+ key
+<3> But the map doesn't contain the +key+ key as before
+
+
+

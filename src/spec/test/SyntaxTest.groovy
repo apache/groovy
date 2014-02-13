@@ -711,4 +711,48 @@ class SyntaxTest extends CompilableTestSupport {
         assert names[2] == 'Blackdrag'
         // end::array_3[]
     }
+
+    void testMaps() {
+        // tag::map_def_access[]
+        def colors = [red: '#FF0000', green: '#00FF00', blue: '#0000FF']   // <1>
+
+        assert colors['red'] == '#FF0000'    // <2>
+        assert colors.green  == '#00FF00'    // <3>
+
+        colors['pink'] = '#FF00FF'           // <4>
+        colors.yellow  = '#FFFF00'           // <5>
+
+        assert colors.pink == '#FF00FF'
+        assert colors['yellow'] == '#FFFF00'
+
+        assert colors instanceof java.util.LinkedHashMap
+        // end::map_def_access[]
+
+        // tag::unknown_key[]
+        assert colors.unknown == null
+        // end::unknown_key[]
+
+        // tag::number_key[]
+        def numbers = [1: 'one', 2: 'two']
+
+        assert numbers[1] == 'one'
+        // end::number_key[]
+
+        // tag::variable_key_1[]
+        def key = 'name'
+        def person = [key: 'Guillaume']      // <1>
+
+        assert !person.containsKey('name')   // <2>
+        assert person.containsKey('key')     // <3>
+        // end::variable_key_1[]
+
+        // tag::variable_key_2[]
+        person = [(key): 'Guillaume']        // <1>
+
+        assert person.containsKey('name')    // <2>
+        assert !person.containsKey('key')    // <3>
+        // end::variable_key_2[]
+
+
+    }
 }
