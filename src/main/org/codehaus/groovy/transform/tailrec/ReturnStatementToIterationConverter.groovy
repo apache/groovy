@@ -55,18 +55,23 @@ class ReturnStatementToIterationConverter {
         BlockStatement result = new BlockStatement()
         result.statementLabel = statement.statementLabel
 
+        /* Create temp declarations for all method arguments.
+         * Add the declarations and var mapping to tempMapping and tempDeclarations for further reference.
+         */
         getArguments(recursiveCall).eachWithIndex { Expression expression, int index ->
-            String argName = positionMapping[index]['name']
-            String tempName = "_${argName}_"
-            ClassNode argAndTempType = positionMapping[index]['type'] as ClassNode
-            tempMapping[argName] = [name: tempName, type: argAndTempType]
-            ExpressionStatement tempDeclaration = AstHelper.createVariableAlias(tempName, argAndTempType, argName)
-            tempDeclarations[tempName] = tempDeclaration
+            ExpressionStatement tempDeclaration = createTempDeclaration(index, positionMapping, tempMapping, tempDeclarations)
             result.addStatement(tempDeclaration)
-            ExpressionStatement argAssignment = AstHelper.createAssignment(argName, argAndTempType, expression)
+        }
+
+        /*
+         * Assign the iteration variables their new value before recuring
+         */
+        getArguments(recursiveCall).eachWithIndex { Expression expression, int index ->
+            ExpressionStatement argAssignment = createAssignmentToIterationVariable(expression, index, positionMapping)
             argAssignments.add(argAssignment)
             result.addStatement(argAssignment)
         }
+
         Set<String> unusedTemps = replaceAllArgUsages(argAssignments, tempMapping)
         for (String temp : unusedTemps) {
             result.statements.remove(tempDeclarations[temp])
@@ -74,6 +79,23 @@ class ReturnStatementToIterationConverter {
         result.addStatement(recurStatement)
 
         return result
+    }
+
+    private ExpressionStatement createAssignmentToIterationVariable(Expression expression, int index, Map<Integer, Map> positionMapping) {
+        String argName = positionMapping[index]['name']
+        ClassNode argAndTempType = positionMapping[index]['type'] as ClassNode
+        ExpressionStatement argAssignment = AstHelper.createAssignment(argName, argAndTempType, expression)
+        argAssignment
+    }
+
+    private ExpressionStatement createTempDeclaration(int index,  Map<Integer, Map> positionMapping, Map<String, Map> tempMapping, Map tempDeclarations) {
+        String argName = positionMapping[index]['name']
+        String tempName = "_${argName}_"
+        ClassNode argAndTempType = positionMapping[index]['type'] as ClassNode
+        ExpressionStatement tempDeclaration = AstHelper.createVariableAlias(tempName, argAndTempType, argName)
+        tempMapping[argName] = [name: tempName, type: argAndTempType]
+        tempDeclarations[tempName] = tempDeclaration
+        return tempDeclaration
     }
 
     private List<Expression> getArguments(Expression recursiveCall) {

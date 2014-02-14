@@ -337,4 +337,23 @@ class TailRecursiveTransformationTest extends GroovyShellTestCase {
         assert target.sum(100) == 5050
     }
 
+    /**
+     * https://jira.codehaus.org/browse/GROOVY-6573
+     */
+    void testParameterIsUsedInRecursiveArgPositionedEarlier() {
+        def target = evaluate('''
+            import groovy.transform.TailRecursive
+            class TargetClass {
+                @TailRecursive
+                BigInteger iterate(final BigInteger i, final BigInteger a, final BigInteger b) {
+                    i < 1 ? a : iterate(i - 1, b, a + b)
+                }
+            }
+            new TargetClass()
+        ''')
+        assert target.iterate(0, 0, 1) == 0
+        assert target.iterate(1, 0, 1) == 1
+        assert target.iterate(10, 1, 1) == 89
+    }
+
 }
