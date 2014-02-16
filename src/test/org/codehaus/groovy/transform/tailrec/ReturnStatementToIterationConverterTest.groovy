@@ -123,6 +123,13 @@ class ReturnStatementToIterationConverterTest {
                     }
                 }
                 expression {
+                    declaration {
+                        variable '__b__'
+                        token '='
+                        variable '_b_'
+                    }
+                }
+                expression {
                     binary {
                         variable '_a_'
                         token '='
@@ -131,13 +138,6 @@ class ReturnStatementToIterationConverterTest {
                             token '+'
                             constant 1
                         }
-                    }
-                }
-                expression {
-                    declaration {
-                        variable '__b__'
-                        token '='
-                        variable '_b_'
                     }
                 }
                 expression {

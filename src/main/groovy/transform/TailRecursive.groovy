@@ -52,7 +52,6 @@ import java.lang.annotation.Target
  * <li>In the presence of method overloading and method overriding you might run into situations where a call is considered recursive although it really is not.
  * <li>Catching {@code Throwable} around a recursive might lead to problems
  * <li>Non trivial continuation passing style examples do not work.
- * <li>Does not compose with {@code @Memoized}. The first (upper) annotations wins.
  * <li>Probably many unrecognized edge cases.
  * </ul>
  *
