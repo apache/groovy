@@ -82,7 +82,7 @@ public abstract class Script extends GroovyObjectSupport {
         catch (MissingMethodException mme) {
             try {
                 if (name.equals(mme.getMethod())) {
-                    Object boundClosure = binding.getVariable(name);
+                    Object boundClosure = getProperty(name);
                     if (boundClosure != null && boundClosure instanceof Closure) {
                         return ((Closure) boundClosure).call((Object[])args);
                     } else {
