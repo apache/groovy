@@ -742,5 +742,18 @@ Thing.run()
             exec('foo') { println it.toUpperCase() }
         '''
     }
+
+    // GROOVY-6574
+    void testShouldInferPrimitiveBoolean() {
+        assertScript '''
+def foo(Boolean o) {
+  @ASTTest(phase=INSTRUCTION_SELECTION,value={
+    assert node.getNodeMetaData(INFERRED_TYPE) == boolean_TYPE
+  })
+  boolean b = o
+  println b
+}
+'''
+    }
 }
 
