@@ -217,7 +217,7 @@ def items = []
 
     void testInferenceForDGM_collectManyOnArray() {
         assertScript '''
-            Integer[] arr = (0..5)
+            Integer[] arr = (0..5) as Integer[]
             assert arr.collectMany { [it, 2*it ]} == [0,0,1,2,2,4,3,6,4,8,5,10]
 '''
     }
