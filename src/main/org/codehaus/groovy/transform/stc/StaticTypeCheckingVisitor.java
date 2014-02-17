@@ -485,6 +485,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     resultType = lType;
                 }
 
+                // make sure we keep primitive types
+                if (isPrimitiveType(originType) && resultType.equals(getWrapper(originType))) {
+                    resultType = originType;
+                }
+
                 // if we are in an if/else branch, keep track of assignment
                 if (typeCheckingContext.ifElseForWhileAssignmentTracker != null && leftExpression instanceof VariableExpression
                         && !isNullConstant(rightExpression)) {
