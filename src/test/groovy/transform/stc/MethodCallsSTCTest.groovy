@@ -970,8 +970,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6569, GROOVY-6528
     void testMoreExplicitErrorMessageOnStaticMethodNotFound() {
         shouldFailWithMessages '''
-            Double.isFinite(2.0d)
-        ''', 'Cannot find matching method java.lang.Double#isFinite(double)'
+            Double.isFiniteMissing(2.0d)
+        ''', 'Cannot find matching method java.lang.Double#isFiniteMissing(double)'
         shouldFailWithMessages '''
             String.doSomething()
         ''', 'Cannot find matching method java.lang.String#doSomething()'
