@@ -771,10 +771,21 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             int foo(int x) { 1 }
             int foo(Integer x) { 2 }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                lookup('mce').each {
+                    def call = it.expression
+                    def target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                    assert target.parameters[0].type == int_TYPE
+                }
+            })
             int bar() {
-                foo(1)
+                mce: foo(1)
             }
-            assert bar() == 1
+            bar()
+            // commented out the next line because this is something
+            // the dynamic runtime cannot ensure
+            //assert bar() == 1
         '''
     }
 
