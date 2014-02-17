@@ -285,8 +285,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
                                 new ClassExpression(classNode),
                                 new VariableExpression("args"))))));
 
-        classNode.addMethod(
-            new MethodNode("run", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementBlock));
+        MethodNode methodNode = new MethodNode("run", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementBlock);
+        methodNode.setIsScriptBody();
+        classNode.addMethod(methodNode);
 
         classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
         Statement stmt = new ExpressionStatement(

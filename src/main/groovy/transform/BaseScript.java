@@ -46,10 +46,44 @@ import java.lang.annotation.Target;
  * In this example, the base script of the current script will be changed to 
  * <code>CustomScript</code> allowing usage of <code>getTheMeaningOfLife()</code>
  * method. <code>baseScript</code> variable will become typed shortcut for 
- * <code>this<code> object which enables better IDE support.
+ * <code>this</code> object which enables better IDE support.
+ * </p><p>
+ * The custom base script may implement the run() method and specify a different
+ * method name to be used for the script body by declaring a single abstract method.
+ * For example:
+ * <pre>
+ * abstract class CustomScriptBodyMethod extends Script {
+ *     abstract def runScript()
+ *     def preRun() { println "preRunning" }
+ *     def postRun() { println "postRunning" }
+ *     def run() {
+ *         preRun()
+ *         try {
+ *             3.times { runScript() }
+ *         } finally {
+ *             postRun()
+ *         }
+ *     }
+ * }
  *
+ * {@code @BaseScript} CustomScriptBodyMethod baseScript
+ * println "Script body run"
+ * </pre>
+ * That will produce the following output:
+ * <pre>
+ * preRunning
+ * Script body run
+ * Script body run
+ * Script body run
+ * postRunning
+ * </pre>
+ *
+ * Note that while you can declare arguments for the script body's method, as
+ * the AST is currently implemented they are not accessible in the script body code.
+ * </p>
  * @author Paul King
  * @author Vladimir Orany
+ * @author Jim White
  * @since 2.2.0
  */
 @java.lang.annotation.Documented

@@ -19,6 +19,7 @@ package org.codehaus.groovy.transform;
 import groovy.transform.BaseScript;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -26,12 +27,15 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
@@ -40,6 +44,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * @author Paul King
  * @author Cedric Champeau
  * @author Vladimir Orany
+ * @author Jim White
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class BaseScriptASTTransformation extends AbstractASTTransformation {
@@ -83,9 +88,25 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
                 addError("Declared type " + baseScriptType + " does not extend groovy.lang.Script class!", parent);
                 return;
             }
-            
+
             cNode.setSuperClass(baseScriptType);
             de.setRightExpression(new VariableExpression("this"));
+
+            // Method in base script that will contain the script body code.
+            MethodNode runScriptMethod = ClassHelper.findSAM(baseScriptType);
+
+            // If they want to use a name other than than "run", then make the change.
+            if (runScriptMethod != null && !runScriptMethod.getName().equals("run")) {
+                MethodNode defaultMethod = cNode.getDeclaredMethod("run", Parameter.EMPTY_ARRAY);
+                cNode.removeMethod(defaultMethod);
+                MethodNode methodNode = new MethodNode(runScriptMethod.getName(), runScriptMethod.getModifiers() & ~ACC_ABSTRACT
+                    , runScriptMethod.getReturnType(), runScriptMethod.getParameters(), runScriptMethod.getExceptions()
+                    , defaultMethod.getCode());
+                // The AST node metadata has the flag that indicates that this method is a script body.
+                // It may also be carrying data for other AST transforms.
+                methodNode.copyNodeMetaData(defaultMethod);
+                cNode.addMethod(methodNode);
+            }
         }
     }
     

@@ -111,6 +111,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 map.put(key, list);
             }
         }
+        public void remove(Object key, MethodNode value) {
+            get(key).remove(value);
+        }
     }
 
     public static final ClassNode[] EMPTY_ARRAY = new ClassNode[0];
@@ -586,6 +589,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         node.setDeclaringClass(this);
         redirect().methodsList.add(node);
         redirect().methods.put(node.getName(), node);
+    }
+
+    public void removeMethod(MethodNode node) {
+        redirect().methodsList.remove(node);
+        redirect().methods.remove(node.getName(), node);
     }
 
     /**
