@@ -2791,8 +2791,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // ex: (Date)null
         } else if (char_TYPE == targetType && isPrimitiveType(expressionType) && isNumberType(expressionType)) {
             // char c = (char) ...
-        }
-        else if (sourceIsNull && isPrimitiveType(targetType)) {
+        } else if (sourceIsNull && isPrimitiveType(targetType) && !boolean_TYPE.equals(targetType)) {
             return false;
         } else if ((expressionType.getModifiers()&Opcodes.ACC_FINAL)==0 && targetType.isInterface()) {
             return true;
@@ -2941,7 +2940,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // as anything can be assigned to a String, Class or boolean, return the left type instead
                 if (STRING_TYPE.equals(initialType)
                         || CLASS_Type.equals(initialType)
-                        || Boolean_TYPE.equals(initialType)) {
+                        || Boolean_TYPE.equals(initialType)
+                        || boolean_TYPE.equals(initialType)) {
                     return initialType;
                 }
             }

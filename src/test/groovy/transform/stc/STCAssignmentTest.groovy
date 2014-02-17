@@ -335,9 +335,19 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     void testCastNullToBoolean() {
-        shouldFailWithMessages '''
+        // GROOVY-6577
+        assertScript '''
             boolean c = null
-        ''', 'Cannot assign value of type java.lang.Object to variable of type boolean'
+            assert c == false
+        '''
+    }
+
+    void testCastNullToBooleanWithExplicitCast() {
+        // GROOVY-6577
+        assertScript '''
+            boolean c = (boolean) null
+            assert c == false
+        '''
     }
 
     void testCastStringToCharacter() {

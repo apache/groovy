@@ -655,7 +655,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (castExpression.isCoerce()) {
             controller.getOperandStack().doAsType(type);
         } else {
-            if (isNullConstant(subExpression)) {
+            if (isNullConstant(subExpression) && !ClassHelper.isPrimitiveType(type)) {
                 controller.getOperandStack().replace(type);
             } else {
                 controller.getOperandStack().doGroovyCast(type);
