@@ -284,4 +284,55 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 "INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;"
         ])
     }
+
+    void testShouldGenerateDirectConstructorCall() {
+        assert compile([method:'m'],'''
+        @groovy.transform.CompileStatic
+        class Foo {
+            String msg
+            Foo(int x, String y) { msg = y*x }
+            static Foo foo() {
+                Foo result = [2,'Bar']
+            }
+        }
+        ''').hasStrictSequence([
+                'ICONST_2',
+                'LDC "Bar"',
+                'INVOKESPECIAL Foo.<init> (ILjava/lang/String;)V'
+        ])
+    }
+
+    void testShouldGenerateDirectArrayConstruct() {
+        assert compile([method:'m'],'''
+        @groovy.transform.CompileStatic
+        void m() {
+            int[] arr = [123,456]
+        }
+        ''').hasStrictSequence([
+                'ICONST_2',
+                'NEWARRAY T_INT',
+                'DUP',
+                'ICONST_0',
+                'BIPUSH 123',
+                'IASTORE'
+        ])
+    }
+
+    void testShouldGenerateDirectBooleanArrayConstruct() {
+        assert compile([method:'m'],'''
+        @groovy.transform.CompileStatic
+        void m() {
+            boolean[] arr = [123,false]
+        }
+        ''').hasStrictSequence([
+                'ICONST_2',
+                'NEWARRAY T_BOOLEAN',
+                'DUP',
+                'ICONST_0',
+                'BIPUSH 123',
+                'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
+                'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
+                'BASTORE'
+        ])
+    }
 }
