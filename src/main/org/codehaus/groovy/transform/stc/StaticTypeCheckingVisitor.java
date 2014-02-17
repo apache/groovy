@@ -2630,7 +2630,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         Expression leftExpression = expr.getLeftExpression();
         if (op == ASSIGN || op == ASSIGNMENT_OPERATOR) {
-            if (leftRedirect.isArray() && !rightRedirect.isArray()) return leftRedirect;
+            if (leftRedirect.isArray() && implementsInterfaceOrIsSubclassOf(rightRedirect, Collection_TYPE)) return leftRedirect;
             if (leftRedirect.implementsInterface(Collection_TYPE) && rightRedirect.implementsInterface(Collection_TYPE)) {
                 // because of type inferrence, we must perform an additional check if the right expression
                 // is an empty list expression ([]). In that case and only in that case, the inferred type
