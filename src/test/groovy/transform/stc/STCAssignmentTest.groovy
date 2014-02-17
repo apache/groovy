@@ -788,5 +788,13 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             println m( 65 )
         '''
     }
+
+    // GROOVY-6575
+    void testAssignementOfObjectToArrayShouldFail() {
+        shouldFailWithMessages '''
+            Object o
+            int[] array = o
+        ''', 'Cannot assign value of type java.lang.Object to variable of type int[]'
+    }
 }
 
