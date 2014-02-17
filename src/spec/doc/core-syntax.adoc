@@ -1017,7 +1017,7 @@ as the curly braces can be misinterpreted with the notation of Groovy closures.
 == Maps
 
 Sometimes called dictionaries or associative arrays in other languages, Groovy features maps.
-Maps associate keys to values, separating keys and values with columns, and each key/value pairs with commas, 
+Maps associate keys to values, separating keys and values with colons, and each key/value pairs with commas, 
 and the whole keys and values surrounded by square brackets.
 
 [source,groovy]
@@ -1052,21 +1052,22 @@ In the examples above, we used string keys, but you can also use values of other
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=number_key,indent=0]
 ----
 
-Here, we used numbers as keys, as numbers can unambiguously recognized as numbers,
+Here, we used numbers as keys, as numbers can unambiguously be recognized as numbers,
 so Groovy will not create a string key like in our previous examples.
 But consider the case you want to pass a variable in lieu of the key, to have the value of that variable become the key:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_key_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_key_1,indent=0]
 ----
-<1> The +key+ associated with the +'Guillaume'+ name will actually be the +"key"+ string, not the value associated with the +key+ variable
-<2> The map doesn't contain the +'name'+ key
-<3> Instead, the map contains a +'key'+ key
+<1> The +key+ associated with the +\'Guillaume'+ name will actually be the +"key"+ string, not the value associated with the +key+ variable
+<2> The map doesn't contain the +\'name'+ key
+<3> Instead, the map contains a +\'key'+ key
 
 [NOTE]
 You can also pass quoted strings as well as keys: +["name": "Guillaume"]+.
-This is mandatory if your key string isn't a valid identifier.
+This is mandatory if your key string isn't a valid identifier, 
+for example if you wanted to create a string key containing a hash like in: +["street-name": "Main street"]+.
 
 When you need to pass variable values as keys in your map definitions, you must surround the variable or expression with parentheses:
 
