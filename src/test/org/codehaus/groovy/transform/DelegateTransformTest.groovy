@@ -481,6 +481,50 @@ class DelegateTransformTest extends CompilableTestSupport {
             assert new B().foo(10) == 20
         """
     }
+
+    // GROOVY-6542
+    void testLineNumberInStackTrace() {
+        try {
+            assertScript '''import groovy.transform.ASTTest
+    import org.codehaus.groovy.control.CompilePhase
+
+    @ASTTest(phase=CompilePhase.CANONICALIZATION, value={
+        def fieldNode = node.getDeclaredField('thingie')
+        def blowupMethod = node.getDeclaredMethod('blowup')
+        def mce = blowupMethod.code.expression
+        assert mce.lineNumber==fieldNode.lineNumber
+        assert mce.lineNumber>0
+    })
+    class Upper {
+      @Delegate Lower thingie
+
+      Upper() {
+        thingie = new Lower()
+      }
+    }
+
+    class Lower {
+      def foo() {
+        println("Foo!")
+      }
+
+      def blowup(String a) {
+        throw new Exception("blow up with ${a}")
+      }
+
+      def blowup() {
+        throw new Exception("blow up")
+      }
+    }
+
+    def up = new Upper()
+    up.foo()
+    up.blowup("bar")
+    '''
+        } catch (e) {
+            // ok
+        }
+    }
 }
 
 interface DelegateFoo {
