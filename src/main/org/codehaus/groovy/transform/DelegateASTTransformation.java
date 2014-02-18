@@ -254,16 +254,18 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
                 args.addExpression(new VariableExpression(newParam));
             }
             // addMethod will ignore attempts to override abstract or static methods with same signature on self
+            MethodCallExpression mce = new MethodCallExpression(
+                    new VariableExpression(fieldNode.getName(), nonGeneric(fieldNode.getOriginType())),
+                    candidate.getName(),
+                    args);
+            mce.setSourcePosition(fieldNode);
             MethodNode newMethod = owner.addMethod(candidate.getName(),
                     candidate.getModifiers() & (~ACC_ABSTRACT) & (~ACC_NATIVE),
                     nonGeneric(candidate.getReturnType()),
                     newParams,
                     candidate.getExceptions(),
                     new ExpressionStatement(
-                            new MethodCallExpression(
-                                    new VariableExpression(fieldNode.getName(),nonGeneric(fieldNode.getOriginType())),
-                                    candidate.getName(),
-                                    args)));
+                            mce));
             newMethod.setGenericsTypes(candidate.getGenericsTypes());
 
             if (hasBooleanValue(node.getMember(MEMBER_METHOD_ANNOTATIONS), true)) {
