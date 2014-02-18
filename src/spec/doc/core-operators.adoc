@@ -4,7 +4,11 @@ This chapter covers the operators of the Groovy programming language.
 
 == Arithmetic operators (TBD)
 
-== Bitwise and logical operators (TBD)
+== Relational operators (TBD)
+
+== Lgical operators (TBD)
+
+== Bitwise operators (TBD)
 
 == Conditional operators (TBD)
 
