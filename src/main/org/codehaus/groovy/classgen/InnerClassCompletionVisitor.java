@@ -161,8 +161,13 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
                 new Parameter(ClassHelper.STRING_TYPE, "name"),
                 new Parameter(ClassHelper.OBJECT_TYPE, "args")
         };
+
+        String methodName = "methodMissing";
+        if (isStatic)
+            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
+
         MethodNode method = node.addSyntheticMethod(
-                "methodMissing",
+                methodName,
                 Opcodes.ACC_PUBLIC,
                 ClassHelper.OBJECT_TYPE,
                 parameters,
@@ -197,8 +202,13 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
                 new Parameter(ClassHelper.STRING_TYPE, "name"),
                 new Parameter(ClassHelper.OBJECT_TYPE, "val")
         };
+
+        methodName = "propertyMissing";
+        if (isStatic)
+            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
+
         method = node.addSyntheticMethod(
-                "propertyMissing",
+                methodName,
                 Opcodes.ACC_PUBLIC,
                 ClassHelper.VOID_TYPE,
                 parameters,
@@ -232,8 +242,13 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         parameters = new Parameter[]{
                 new Parameter(ClassHelper.STRING_TYPE, "name")
         };
+
+        methodName = "propertyMissing";
+        if (isStatic)
+            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
+
         method = node.addSyntheticMethod(
-                "propertyMissing",
+                methodName,
                 Opcodes.ACC_PUBLIC,
                 ClassHelper.OBJECT_TYPE,
                 parameters,
@@ -261,6 +276,21 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             );
         }
         method.setCode(block);
+    }
+
+    /**
+     * Adds a compilation error if a {@link MethodNode} with the given <tt>methodName</tt> and
+     * <tt>parameters</tt> exists in the {@link InnerClassNode}.
+     */
+    private void addCompilationErrorOnCustomMethodNode(InnerClassNode node, String methodName, Parameter[] parameters) {
+        MethodNode existingMethodNode = node.getMethod(methodName, parameters);
+        // if there is a user-defined methodNode, add compiler error msg and continue
+        if (existingMethodNode != null && !existingMethodNode.isSynthetic())  {
+            addError("\"" +methodName + "\" implementations are not supported on static inner classes as " +
+                    "a synthetic version of \"" + methodName + "\" is added during compilation for the purpose " +
+                    "of outer class delegation.",
+                    existingMethodNode);
+        }
     }
 
     private boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
