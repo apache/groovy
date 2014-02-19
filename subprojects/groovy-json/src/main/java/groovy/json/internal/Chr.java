@@ -23,10 +23,6 @@ package groovy.json.internal;
  */
 public class Chr {
 
-    /**
-     * @param array
-     * @return
-     */
     public static char[] array( final char... array ) {
         return array;
     }

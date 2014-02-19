@@ -37,7 +37,6 @@ public class FastStringUtils {
 
     /**
      * @return Unsafe
-     * @author Stéphane Landelle
      */
     private static Unsafe loadUnsafe() {
         try {
@@ -58,7 +57,6 @@ public class FastStringUtils {
     /**
      * @param fieldName name of field
      * @return offset
-     * @author Stéphane Landelle
      */
     private static long getFieldOffset( String fieldName ) {
         if ( ENABLED ) {
@@ -151,7 +149,6 @@ public class FastStringUtils {
 
     /**
      * @return correct string implementation
-     * @author Stéphane Landelle
      */
     private static StringImplementation computeStringImplementation() {
 
@@ -174,7 +171,6 @@ public class FastStringUtils {
     /**
      * @param string string to grab array from.
      * @return char array from string
-     * @author Stéphane Landelle
      */
     public static char[] toCharArray( final String string ) {
         return STRING_IMPLEMENTATION.toCharArray( string );
@@ -185,7 +181,6 @@ public class FastStringUtils {
     /**
      * @param charSequence to grab array from.
      * @return char array from char sequence
-     * @author Stéphane Landelle
      */
     public static char[] toCharArray( final CharSequence charSequence ) {
         return toCharArray( charSequence.toString() );
@@ -194,7 +189,6 @@ public class FastStringUtils {
     /**
      * @param chars to shove array into.
      * @return new string with chars copied into it
-     * @author Stéphane Landelle
      */
     public static String noCopyStringFromChars( final char[] chars ) {
         /*

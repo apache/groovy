@@ -98,7 +98,6 @@ public class JsonSlurper {
     /**
      * Max size before Slurper starts to use windowing buffer parser.
      * @return size of file/buffer
-     * @author Rick Hightower
      * @since 2.3
      */
     public int getMaxSizeForInMemory() {
@@ -108,7 +107,6 @@ public class JsonSlurper {
 
     /**
      * Max size before Slurper starts to use windowing buffer parser.
-     * @author Rick Hightower
      * @since 2.3
      * @return JsonSlurper
      */
@@ -118,7 +116,6 @@ public class JsonSlurper {
     }
 
     /** Parser type.
-     * @author Rick Hightower
      * @since 2.3
      * @see groovy.json.JsonParserType
      * @return  type
@@ -129,7 +126,6 @@ public class JsonSlurper {
 
 
     /** Parser type.
-     * @author Rick Hightower
      * @since 2.3
      * @see groovy.json.JsonParserType
      * @return  JsonSlurper
@@ -140,7 +136,6 @@ public class JsonSlurper {
     }
 
     /** Turns on buffer chopping for index overlay.
-     * @author Rick Hightower
      * @since 2.3
      * @see groovy.json.JsonParserType
      * @return  chop on or off
@@ -150,7 +145,6 @@ public class JsonSlurper {
     }
 
     /** Turns on buffer chopping for index overlay.
-     * @author Rick Hightower
      * @since 2.3
      * @see groovy.json.JsonParserType
      * @return  JsonSlurper
@@ -164,7 +158,6 @@ public class JsonSlurper {
     /** Turns on buffer lazy chopping for index overlay.
      * @see groovy.json.JsonParserType
      * @return  on or off
-     * @author Rick Hightower
      * @since 2.3
      */
     public boolean isLazyChop() {
@@ -175,7 +168,6 @@ public class JsonSlurper {
     /** Turns on buffer lazy chopping for index overlay.
      * @see groovy.json.JsonParserType
      * @return  JsonSlurper
-     * @author Rick Hightower
      * @since 2.3
      */
     public JsonSlurper setLazyChop( boolean lazyChop ) {
@@ -186,7 +178,6 @@ public class JsonSlurper {
     /**
      * Determine if slurper will automatically parse strings it recognizes as dates. Index overlay only.
      * @return on or off
-     * @author Rick Hightower
      * @since 2.3
      */
     public boolean isCheckDates() {
@@ -197,7 +188,6 @@ public class JsonSlurper {
     /**
      * Determine if slurper will automatically parse strings it recognizes as dates. Index overlay only.
      * @return on or off
-     * @author Rick Hightower
      * @since 2.3
      */
     public JsonSlurper setCheckDates( boolean checkDates ) {
@@ -242,7 +232,6 @@ public class JsonSlurper {
      *
      * @param inputStream stream over a JSON content
      * @return a data structure of lists and maps
-     * @author Rick Hightower
      * @since 2.3
      */
     public Object parse(InputStream inputStream) {
@@ -262,7 +251,6 @@ public class JsonSlurper {
      * @param inputStream stream over a JSON content
      * @param charset charset
      * @return a data structure of lists and maps
-     * @author Rick Hightower
      * @since 2.3
      */
     public Object parse(InputStream inputStream, String charset) {
@@ -285,7 +273,6 @@ public class JsonSlurper {
      * @param bytes buffer of JSON content
      * @param charset charset
      * @return a data structure of lists and maps
-     * @author Rick Hightower
      * @since 2.3
      */
     public Object parse(byte [] bytes, String charset) {
@@ -309,7 +296,6 @@ public class JsonSlurper {
      *
      * @param bytes buffer of JSON content
      * @return a data structure of lists and maps
-     * @author Rick Hightower
      * @since 2.3
      */
     public Object parse(byte [] bytes) {
@@ -327,7 +313,6 @@ public class JsonSlurper {
      *
      * @param chars buffer of JSON content
      * @return a data structure of lists and maps
-     * @author Rick Hightower
      * @since 2.3
      */
     public Object parse(char [] chars) {

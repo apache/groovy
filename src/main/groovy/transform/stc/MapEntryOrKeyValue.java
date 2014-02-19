@@ -31,13 +31,13 @@ import java.util.Map;
 
 /**
  * <p>A special hint which handles a common use case in the Groovy methods that work on maps. In case of an
- * iteration on a list of map entries, you often want the user to be able to work either on a {@link Map.Entry map entry}
+ * iteration on a list of map entries, you often want the user to be able to work either on a {@link java.util.Map.Entry} map entry
  * or on a key,value pair.</p>
  * <p>The result is a closure which can have the following forms:</p>
  * <ul>
  *     <li><code>{ key, value -> ...}</code> where key is the key of a map entry, and value the corresponding value</li>
- *     <li><code>{ entry -> ... }</code> where entry is a {@link java.util.Map.Entry map entry}</li>
- *     <li><code>{ ...}</code> where <i>it</i> is an implicit {@link java.util.Map.Entry map entry}</li>
+ *     <li><code>{ entry -> ... }</code> where entry is a {@link java.util.Map.Entry} map entry</li>
+ *     <li><code>{ ...}</code> where <i>it</i> is an implicit {@link java.util.Map.Entry} map entry</li>
  * </ul>
  * <p>This hint handles all those cases by picking the generics from the first argument of the method (by default).</p>
  * <p>The options array is used to modify the behavior of this hint. Each string in the option array consists of

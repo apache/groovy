@@ -36,7 +36,9 @@ import java.lang.annotation.Target;
  * class CustomScript extends Script {
  *     int getTheMeaningOfLife() { 42 }
  * }
- * {@code @BaseScript} CustomScript baseScript
+ *
+ * &#64;BaseScript CustomScript baseScript
+ *
  * assert baseScript == this
  * assert theMeaningOfLife == 42
  * assert theMeaningOfLife == baseScript.theMeaningOfLife

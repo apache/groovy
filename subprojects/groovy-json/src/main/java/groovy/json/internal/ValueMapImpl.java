@@ -78,7 +78,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
      * Get the items for the key.
      *
      * @param key
-     * @return
+     * @return the items for the given key
      */
 
     public Value get( Object key ) {
