@@ -43,9 +43,10 @@ class SafeNavigationTest extends GroovyTestCase {
                  .y
                  ?.toString()
         assert y == null
+        def m = 'toString'
         def z = x
                  .a
-                 ?.toString()
+                 ?."$m"()
         assert z == '1'
     }
 

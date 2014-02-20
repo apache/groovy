@@ -2492,10 +2492,10 @@ pathElementStart!
     :   (nls! ( DOT
                 |   SPREAD_DOT
                 |   OPTIONAL_DOT
-                |   MEMBER_POINTER )
+                |   MEMBER_POINTER ) )
         |   LBRACK
         |   LPAREN
-        |   LCURLY )
+        |   LCURLY
     ;
 
 /** This is the grammar for what can follow a dot:  x.a, x.@a, x.&a, x.'a', etc.

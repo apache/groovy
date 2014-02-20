@@ -120,6 +120,23 @@ public class SpreadDotTest extends GroovyTestCase {
         assert wardrobe*.size == [1, 1]
         assert wardrobe*.@size == [12, 12]
     }
+
+    void testNewLine() {
+        def x = [ a:1, b:2 ]
+        def y = x
+                 *.value
+                 *.toString()
+        assert y == [ '1', '2' ]
+        def z = x
+                 *.value
+                 .sum()
+        assert z == 3
+
+        x = [ new Singlet(), new Singlet() ]
+        y = x
+             *.@size
+        assert y == [ 12, 12 ]
+    }
 }
 
 class SpreadDotDemo {
