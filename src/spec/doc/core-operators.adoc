@@ -49,8 +49,44 @@ Here are a few examples of usage of those operators:
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=binary_arith_ops,indent=0]
 ----
 
+=== Unary operators
+
+The +++ and +-+ operators are also available as unary operators:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=unary_plus_minus,indent=0]
+----
+<1> Note the usage of parentheses to surround an expression to apply the unary minus to that surrounded expression.
+
+In terms of unary arithmetics operators, the ++++ (increment) and +--+ (decrement) operators are available, 
+both in prefix and postfix notation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=plusplus_minusminus,indent=0]
+----
+<1> The postfix increment will increment +a+ after the expression has been evaluated and assigned into +b+
+<2> The postfix decrement will decrement +c+ after the expression has been evaluated and assigned into +d+
+<3> The prefix increment will increment +e+ before the expression is evaluated and assigned into +f+
+<4> The prefix decrement will decrement +g+ before the expression is evaluated and assigned into +h+
 
 === Assignment arithmetic operators
+
+From the binary arithmetic operators we have seen above, certain of them are also available in an assignment form:
+
+* ++=+
+* +-=+
+* +*=+
+* +/=+
+* +%=+
+
+Let's see them in action:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=binary_assign_operators,indent=0]
+----
 
 
 == Relational operators (TBD)
