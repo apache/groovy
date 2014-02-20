@@ -857,6 +857,7 @@ The following table summarizes those rules:
 Thanks Groovy's operator overloading, the usual arithmetic operators work as well with +BigInteger+ and +BigDecimal+,
 unlike in Java where you have to use explict methods for operating on those numbers.
 
+[[integer_division]]
 ==== The case of the division operator
 
 The division operators +/+ (and +/=+ for division and assignment) produce a +double+ result 
@@ -875,6 +876,7 @@ of the maximum of 10 and the maximum of the operands' scale.
 For integer division like in Java, you should use the +intdiv()+ method,
 as Groovy doesn't provide a dedicated integer division operator symbol.
 
+[[power_operator]]
 ==== The case of the power operator
 
 The power operation is represented by the +**+ operator, with two parameters: the base and the exponent.

@@ -2,7 +2,56 @@
 
 This chapter covers the operators of the Groovy programming language.
 
-== Arithmetic operators (TBD)
+== Arithmetic operators
+
+Groovy supports the usual familiar arithmetic operators you find in mathematics and in other programming languages like Java.
+All the Java arithmetic operators are supported. Let's go through them in the following examples.
+
+=== Normal arithmetic operators
+
+The following binary arithmetic operators are available in Groovy:
+
+[cols="1,1,1" options="header"]
+|====
+| Operator
+| Purpose
+| Remarks
+
+| +++
+| addition
+|
+
+| +-+
+| substraction
+|
+
+| +*+
+| multiplication
+|
+
+| +/+
+| division
+| Use +intdiv()+ for integer division, and see the section about <<core-syntax.adoc#integer_division,the integer division>> for more information on the return type of the division.
+
+| +%+
+| modulo
+|
+
+| +**+
+| power
+| See the section about <<core-syntax.adoc#power_operator,the power operation>> for more information on the return type of the operation.
+|====
+
+Here are a few examples of usage of those operators:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=binary_arith_ops,indent=0]
+----
+
+
+=== Assignment arithmetic operators
+
 
 == Relational operators (TBD)
 
