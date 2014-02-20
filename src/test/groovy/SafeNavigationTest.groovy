@@ -37,6 +37,18 @@ class SafeNavigationTest extends GroovyTestCase {
         assert y == null
     }
 
+    void testNewLine() {
+        def x = [ a:1, b:2 ]
+        def y = x
+                 .y
+                 ?.toString()
+        assert y == null
+        def z = x
+                 .a
+                 ?.toString()
+        assert z == '1'
+    }
+
     // ------------------------------------
     // GROOVY-5479
     private checkDouble(x) {
