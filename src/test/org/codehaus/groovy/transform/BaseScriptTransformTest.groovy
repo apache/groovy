@@ -189,6 +189,86 @@ class BaseScriptTransformTest extends CompilableTestSupport {
         '''
     }
 
+    void testBaseScriptOnImport() {
+        def result = new GroovyShell().evaluate('''
+            @BaseScript(DeclaredBaseScript)
+            import groovy.transform.BaseScript
+
+            class DeclaredBaseScript extends Script {
+                boolean iBeenRun
+                def run() { iBeenRun = true }
+            }
+
+
+            assert !iBeenRun
+
+            super.run()
+
+            assert iBeenRun
+
+            iBeenRun
+        ''')
+
+        assert result
+    }
+
+    void testBaseScriptOnPackage() {
+        def result = new GroovyShell().evaluate('''
+            @BaseScript(DeclaredBaseScript)
+            package foo
+
+            import groovy.transform.BaseScript
+
+            class DeclaredBaseScript extends Script {
+                boolean iBeenRun
+                def run() { iBeenRun = true }
+            }
+
+
+            assert !iBeenRun
+
+            super.run()
+
+            assert iBeenRun
+
+            iBeenRun
+        ''')
+
+        assert result
+    }
+
+    void testShouldNotAllowClassMemberIfUsedOnADeclaration() {
+        shouldNotCompile '''import groovy.transform.BaseScript
+
+            @BaseScript(Script) Script foo
+            println 'ok'
+        '''
+    }
+
+    void testShouldNotAllowClassMemberIsNotClassLiteral() {
+        shouldNotCompile '''
+            @BaseScript('Script')
+            import groovy.transform.BaseScript
+            println 'ok'
+        '''
+    }
+
+    void testShouldNotAllowBaseScriptOnMultipleAssignment() {
+        shouldNotCompile '''import groovy.transform.BaseScript
+
+            @BaseScript def (Script a, Script b) = [null,null]
+            println 'ok'
+        '''
+    }
+
+    void testShouldNotAllowBaseScriptOnVariableAssignment() {
+        shouldNotCompile '''import groovy.transform.BaseScript
+
+            @BaseScript a = null
+            println 'ok'
+        '''
+    }
+
 }
 
 abstract class MyCustomScript extends Script {}

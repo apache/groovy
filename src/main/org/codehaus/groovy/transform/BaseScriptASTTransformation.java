@@ -27,10 +27,14 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -65,48 +69,76 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
         if (!MY_TYPE.equals(node.getClassNode())) return;
 
         if (parent instanceof DeclarationExpression) {
-            DeclarationExpression de = (DeclarationExpression) parent;
-            ClassNode cNode = de.getDeclaringClass();
-            if (!cNode.isScript()) {
-                addError("Annotation " + MY_TYPE_NAME + " can only be used within a Script.", parent);
-                return;
-            }
-            
-            if (de.isMultipleAssignmentDeclaration()) {
-                addError("Annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", parent);
-                return;
-            }
-            
-            if (!(de.getRightExpression() instanceof EmptyExpression)) {
-                addError("Annotation " + MY_TYPE_NAME + " not supported with variable assignment.", parent);
-                return;
-            }
-            
-            ClassNode baseScriptType = de.getVariableExpression().getType().getPlainNodeReference();
-            
-            if(!baseScriptType.isScript()){
-                addError("Declared type " + baseScriptType + " does not extend groovy.lang.Script class!", parent);
-                return;
-            }
+            changeBaseScriptTypeFromDeclaration((DeclarationExpression)parent, node);
+        } else if (parent instanceof ImportNode || parent instanceof PackageNode) {
+            changeBaseScriptTypeFromPackageOrImport(source, parent, node);
+        }
+    }
 
-            cNode.setSuperClass(baseScriptType);
-            de.setRightExpression(new VariableExpression("this"));
-
-            // Method in base script that will contain the script body code.
-            MethodNode runScriptMethod = ClassHelper.findSAM(baseScriptType);
-
-            // If they want to use a name other than than "run", then make the change.
-            if (isSuitableAbstractMethod(runScriptMethod)) {
-                MethodNode defaultMethod = cNode.getDeclaredMethod("run", Parameter.EMPTY_ARRAY);
-                cNode.removeMethod(defaultMethod);
-                MethodNode methodNode = new MethodNode(runScriptMethod.getName(), runScriptMethod.getModifiers() & ~ACC_ABSTRACT
-                    , runScriptMethod.getReturnType(), runScriptMethod.getParameters(), runScriptMethod.getExceptions()
-                    , defaultMethod.getCode());
-                // The AST node metadata has the flag that indicates that this method is a script body.
-                // It may also be carrying data for other AST transforms.
-                methodNode.copyNodeMetaData(defaultMethod);
-                cNode.addMethod(methodNode);
+    private void changeBaseScriptTypeFromPackageOrImport(final SourceUnit source, final AnnotatedNode parent, final AnnotationNode node) {
+        Expression value = node.getMember("value");
+        if (!(value instanceof ClassExpression)) {
+            addError("Annotation " + MY_TYPE_NAME + " member 'value' should be a class literal.", value);
+            return;
+        }
+        List<ClassNode> classes = source.getAST().getClasses();
+        for (ClassNode classNode : classes) {
+            if (classNode.isScriptBody()) {
+                changeBaseScriptType(parent, classNode, value.getType());
             }
+        }
+    }
+
+    private void changeBaseScriptTypeFromDeclaration(final DeclarationExpression de, final AnnotationNode node) {
+        if (de.isMultipleAssignmentDeclaration()) {
+            addError("Annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", de);
+            return;
+        }
+
+        if (!(de.getRightExpression() instanceof EmptyExpression)) {
+            addError("Annotation " + MY_TYPE_NAME + " not supported with variable assignment.", de);
+            return;
+        }
+        Expression value = node.getMember("value");
+        if (value!=null) {
+            addError("Annotation " + MY_TYPE_NAME + " cannot have member 'value' if used on a declaration.", value);
+            return;
+        }
+
+        ClassNode cNode = de.getDeclaringClass();
+        ClassNode baseScriptType = de.getVariableExpression().getType().getPlainNodeReference();
+        de.setRightExpression(new VariableExpression("this"));
+
+        changeBaseScriptType(de, cNode, baseScriptType);
+    }
+
+    private void changeBaseScriptType(final AnnotatedNode parent, final ClassNode cNode, final ClassNode baseScriptType) {
+        if (!cNode.isScriptBody()) {
+            addError("Annotation " + MY_TYPE_NAME + " can only be used within a Script.", parent);
+            return;
+        }
+
+        if(!baseScriptType.isScript()){
+            addError("Declared type " + baseScriptType + " does not extend groovy.lang.Script class!", parent);
+            return;
+        }
+
+        cNode.setSuperClass(baseScriptType);
+
+        // Method in base script that will contain the script body code.
+        MethodNode runScriptMethod = ClassHelper.findSAM(baseScriptType);
+
+        // If they want to use a name other than than "run", then make the change.
+        if (isSuitableAbstractMethod(runScriptMethod)) {
+            MethodNode defaultMethod = cNode.getDeclaredMethod("run", Parameter.EMPTY_ARRAY);
+            cNode.removeMethod(defaultMethod);
+            MethodNode methodNode = new MethodNode(runScriptMethod.getName(), runScriptMethod.getModifiers() & ~ACC_ABSTRACT
+                , runScriptMethod.getReturnType(), runScriptMethod.getParameters(), runScriptMethod.getExceptions()
+                , defaultMethod.getCode());
+            // The AST node metadata has the flag that indicates that this method is a script body.
+            // It may also be carrying data for other AST transforms.
+            methodNode.copyNodeMetaData(defaultMethod);
+            cNode.addMethod(methodNode);
         }
     }
 
