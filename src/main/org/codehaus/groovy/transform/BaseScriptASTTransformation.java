@@ -96,7 +96,7 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
             MethodNode runScriptMethod = ClassHelper.findSAM(baseScriptType);
 
             // If they want to use a name other than than "run", then make the change.
-            if (runScriptMethod != null && !runScriptMethod.getName().equals("run")) {
+            if (isSuitableAbstractMethod(runScriptMethod)) {
                 MethodNode defaultMethod = cNode.getDeclaredMethod("run", Parameter.EMPTY_ARRAY);
                 cNode.removeMethod(defaultMethod);
                 MethodNode methodNode = new MethodNode(runScriptMethod.getName(), runScriptMethod.getModifiers() & ~ACC_ABSTRACT
@@ -109,7 +109,14 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
             }
         }
     }
-    
+
+    private boolean isSuitableAbstractMethod(MethodNode node) {
+        return node != null
+                && !(node.getDeclaringClass().equals(ClassHelper.SCRIPT_TYPE)
+                && "run".equals(node.getName())
+                && node.getParameters().length == 0);
+    }
+
     public SourceUnit getSourceUnit() {
         return sourceUnit;
     }

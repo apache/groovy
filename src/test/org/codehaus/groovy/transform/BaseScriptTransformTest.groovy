@@ -177,6 +177,18 @@ class BaseScriptTransformTest extends CompilableTestSupport {
         assert result
     }
 
+    void testBaseScriptCanImplementRunMethodWithArgs() {
+        assertScript '''
+            abstract class  Foo extends Script {
+               def run() {run(null)}
+              abstract run(Object x)
+            }
+
+            @groovy.transform.BaseScript Foo foo
+            println "hello world"
+        '''
+    }
+
 }
 
 abstract class MyCustomScript extends Script {}
