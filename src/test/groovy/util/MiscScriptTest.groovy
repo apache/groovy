@@ -15,9 +15,22 @@
  */
 package groovy.util
 
-public class EmptyScriptTest extends GroovyTestCase {
+import gls.CompilableTestSupport
+
+/**
+ * Miscellaneous tests for {@link groovy.lang.Script}.
+ */
+public class MiscScriptTest extends CompilableTestSupport {
 
     public void testEmptyScript() throws Exception {
         assertScript("");
+    }
+
+    // GROOVY-6589
+    void testShouldFailCompilation() {
+        shouldNotCompile '''
+            def run() {}
+            run()
+        '''
     }
 }
