@@ -33,18 +33,4 @@ public abstract class CompilableTestSupport extends GroovyTestCase {
         gcl.parseClass(script, getTestClassName())
         assert true
     }
-
-    protected void shouldFail(Class th = null, String script) {
-        try {
-            def shell = new GroovyShell()
-            shell.evaluate(script, getTestClassName())
-        } catch (Throwable thrown) {
-            if (th == null) return
-            if (th != thrown.getClass()) {
-                fail "script should have thrown $th, but it did throw ${thrown.getClass()}"
-            }
-            return
-        }
-        fail "script should have failed, but succeeded"
-    }
 }
