@@ -88,10 +88,47 @@ Let's see them in action:
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=binary_assign_operators,indent=0]
 ----
 
+== Relational operators
 
-== Relational operators (TBD)
+Relational operators allow comparisons between objects, to know if two objects are the same or different,
+or if one is greater or lower than or equal to the other.
 
-== Lgical operators (TBD)
+The following operators are available:
+
+[cols="1,1" options="header"]
+|====
+| Operator
+| Purpose
+
+| +==+
+| equal
+
+| +!=+
+| different
+
+| +<+
+| less than
+
+| `<=`
+| less than or equal
+
+| +>+
+| greater than
+
+| +>=+
+| greater than or equal
+|====
+
+These operators into action in simple number comparisons:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=simple_relational_op,indent=0]
+----
+
+
+
+== Logical operators (TBD)
 
 == Bitwise operators (TBD)
 
