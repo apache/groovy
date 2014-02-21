@@ -287,18 +287,10 @@ public class ModuleNode extends ASTNode implements Opcodes {
                                 new ClassExpression(classNode),
                                 new VariableExpression("args"))))));
 
-        MethodNode methodNode = hasRunMethod();
-        if (methodNode!=null) {
-            ErrorCollector ec = context.getErrorCollector();
-            ec.addError(new SyntaxException("You cannot define a 'run()' method in a script because it is used to wrap the script body. Please choose another name.",
-                        methodNode.getLineNumber(),
-                        methodNode.getLineNumber()),
-                    context);
-        } else {
-            methodNode = new MethodNode("run", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementBlock);
-            methodNode.setIsScriptBody();
-            classNode.addMethod(methodNode);
-        }
+        MethodNode methodNode = new MethodNode("run", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementBlock);
+        methodNode.setIsScriptBody();
+        classNode.addMethod(methodNode);
+
         classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
         Statement stmt = new ExpressionStatement(
                         new MethodCallExpression(
@@ -327,17 +319,6 @@ public class ModuleNode extends ASTNode implements Opcodes {
             classNode.addMethod(node);
         }
         return classNode;
-    }
-
-    private MethodNode hasRunMethod() {
-        MethodNode methodNode = null;
-        for (MethodNode method : methods) {
-            if ("run".equals(method.getName()) && method.getParameters().length==0) {
-                methodNode = method;
-                break;
-            }
-        }
-        return methodNode;
     }
 
     /*

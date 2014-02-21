@@ -189,6 +189,53 @@ class BaseScriptTransformTest extends CompilableTestSupport {
         '''
     }
 
+    void testScriptCanOverrideRun() {
+        assertScript '''
+            abstract class Foo extends Script {
+               def depth = 3
+               def run() { myRun() }
+               abstract myRun()
+            }
+
+            def run() {
+               while (depth-- > 0) {
+                  println "Going super"
+                  super.run()
+               }
+            }
+
+            @groovy.transform.BaseScript Foo foo
+            println "hello world"
+        '''
+    }
+
+    void testScriptCanOverrideRunButNotIfFinal() {
+        shouldNotCompile '''
+            abstract class Foo extends Script {
+               def depth = 3
+               final def run() { myRun() }
+               abstract myRun()
+            }
+
+            def run() {
+               while (depth-- > 0) {
+                  println "Going super"
+                  super.run()
+               }
+            }
+
+            @groovy.transform.BaseScript Foo foo
+            println "hello world"
+        '''
+    }
+
+    void testMultipleMethodsWithSameSignatureFails() {
+        shouldNotCompile '''
+            def run() { println 'hmm' }
+            println 'huh?'
+        '''
+    }
+
     void testBaseScriptOnImport() {
         def result = new GroovyShell().evaluate('''
             @BaseScript(DeclaredBaseScript)

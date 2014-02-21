@@ -188,11 +188,23 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (mn.isSynthetic()) continue;
             String mySig = makeDescriptorWithoutReturnType(mn);
             if (descriptors.contains(mySig)) {
-                throw new RuntimeParserException("The method " + mn.getText() +
-                        " duplicates another method of the same signature", mn);
+                if (mn.isScriptBody() || mySig.equals(scriptBodySignatureWithoutReturnType(cn))) {
+                    throw new RuntimeParserException("The method " + mn.getText() +
+                            " is a duplicate of the one declared for this script's body code", mn);
+                } else {
+                    throw new RuntimeParserException("The method " + mn.getText() +
+                            " duplicates another method of the same signature", mn);
+                }
             }
             descriptors.add(mySig);
         }
+    }
+
+    private String scriptBodySignatureWithoutReturnType(ClassNode cn) {
+        for (MethodNode mn : cn.getMethods()) {
+            if (mn.isScriptBody()) return makeDescriptorWithoutReturnType(mn);
+        }
+        return null;
     }
 
     private FieldNode checkFieldDoesNotExist(ClassNode node, String fieldName) {
