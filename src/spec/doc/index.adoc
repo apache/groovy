@@ -45,11 +45,15 @@ include::{projectdir}/src/spec/doc/core-metaprogramming.adoc[]
 :leveloffset: 2
 include::{projectdir}/src/spec/doc/grape.adoc[]
 :leveloffset: 0
-=== Testing guide (TBD)
-=== Interacting with a SQL database (TBD)
+:leveloffset: 2
+include::{projectdir}/src/spec/doc/core-testing-guide.adoc[]
+:leveloffset: 0
+
 :leveloffset: 2
 include::{subprojroot}json/{specfolder}/json-userguide.adoc[]
 :leveloffset: 0
+
+=== Interacting with a SQL database (TBD)
 === Processing XML (TBD)
 === Scripting Ant tasks (TBD)
 
