@@ -149,7 +149,7 @@ void printProgress(it) {
 }
 
 void setGroovyLib() {
-    def f = new File("../target/dist")
+    def f = new File("../target/libs")
     f.eachFile { entry ->
         def name = entry.name
         if (!name.startsWith("groovy-all")) return
@@ -157,4 +157,3 @@ void setGroovyLib() {
         GROOVY_LIB = entry.absolutePath
     }
 }
-
