@@ -42,16 +42,40 @@ class GroovyMainTest extends GroovyTestCase {
     void testAandNEparametersWithBeginEndFunctions() {
         def originalErr = System.err
         System.setErr(ps)
-        def tempFile = File.createTempFile("dummy", "txt")
-        tempFile << "dummy text\n" * 10
+        def tempFile = null
         try {
+            tempFile = File.createTempFile("groovy-ui-GroovyMainTest-testAandNEparametersWithBeginEndFunctions", "txt")
+            tempFile.text = "dummy text\n" * 10
             String[] args = ['-a', '-ne', 'def begin() { nb = 0 }; def end() { System.err.println nb }; nb++', tempFile.absolutePath]
             GroovyMain.main(args)
             def out = baos.toString()
             assert out.contains('10')
         } finally {
-            tempFile.delete()
             System.setErr(originalErr)
+            tempFile?.delete()
+        }
+    }
+
+    /**
+     * GROOVY-6561 : Correct handling of scripts from a URI.
+     */
+    void testURISource() {
+        def tempFile = File.createTempFile("groovy-ui-GroovyMainTest-testURISource", ".groovy")
+        // TODO: For GROOVY-6561 we need to actually test that we got a URI to the compiler.
+        tempFile.text = """
+print 'SUCCESS'
+"""
+        tempFile.deleteOnExit()
+
+        def oldOut = System.out
+        System.setOut(ps)
+        try {
+            String[] args = [tempFile.toURI().toString()]
+            GroovyMain.main(args)
+            def out = baos.toString()
+            assert out == 'SUCCESS'
+        } finally {
+            System.setOut(oldOut)
         }
     }
 }
