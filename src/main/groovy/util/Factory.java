@@ -61,7 +61,7 @@ public interface Factory {
      * @param builder the FactoryBuilder
      * @param node the node (returned from newINstance) to consider the attributes for
      * @param attributes the attributes, a mutable set
-     * @return true if the factory builder should use standerd bean property matching for the remaining attributes
+     * @return true if the factory builder should use standard bean property matching for the remaining attributes
      */
     boolean onHandleNodeAttributes( FactoryBuilderSupport builder, Object node, Map attributes );
 

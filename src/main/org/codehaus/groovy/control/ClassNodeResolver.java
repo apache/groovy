@@ -32,7 +32,7 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.objectweb.asm.Opcodes;
 
 /**
- * This class is used as a plugable way to resolve class names.
+ * This class is used as a pluggable way to resolve class names.
  * An instance of this class has to be added to {@link CompilationUnit} using 
  * {@link CompilationUnit#setClassNodeResolver(ClassNodeResolver)}. The 
  * CompilationUnit will then set the resolver on the {@link ResolveVisitor} each 

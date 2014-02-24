@@ -290,7 +290,7 @@ public class Types
     public static final int GSTRING_START               = 901;   // any marker tha begins a GString
     public static final int GSTRING_END                 = 902;   // any matching marker that ends a GString
     public static final int GSTRING_EXPRESSION_START    = 903;   // the ${ marker that starts a GString expression
-    public static final int GSTRING_EXPRESSION_END      = 904;   // the } marker that ends a GString expresssion
+    public static final int GSTRING_EXPRESSION_END      = 904;   // the } marker that ends a GString expression
 
 
     //
@@ -967,7 +967,7 @@ public class Types
 
 
    /**
-    *  Returns the precendence of the specified operator.  Non-operator's will
+    *  Returns the precedence of the specified operator.  Non-operator's will
     *  receive -1 or a GroovyBugError, depending on your preference.
     */
 

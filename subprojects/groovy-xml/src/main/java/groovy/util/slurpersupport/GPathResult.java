@@ -223,7 +223,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     /**
      * Returns the parent of this GPathResult. If this GPathResult has no parent the GPathResult itself is returned.
      * This is no navigation in the XML tree. It is backtracking on the GPath expression chain.
-     * It is the bevavior of parent() prior to 2.2.0.
+     * It is the behavior of parent() prior to 2.2.0.
      * Backtracking on '..' actually goes down one level in the tree again.
      * find() and findAll() are popped along with the level they have been applied to.
      *

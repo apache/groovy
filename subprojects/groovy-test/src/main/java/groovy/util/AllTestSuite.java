@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * be wrapped transparently into a TestCase.
  * The directory and the pattern can be set via System properties (see this classes' constants for details.)
  * <p>
- * When setting the loglevel of this class to FINEST, all file loading will be logged.
+ * When setting the log level of this class to FINEST, all file loading will be logged.
  * <p>
  * See also groovy.util.AllTestSuiteTest.groovy
  *

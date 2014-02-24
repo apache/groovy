@@ -999,7 +999,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * Removes the last context from the stack.
      *
-     * @return the contet just removed
+     * @return the content just removed
      */
     protected Map<String, Object> popContext() {
         if (!getProxyBuilder().getContexts().isEmpty()) {

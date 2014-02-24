@@ -74,7 +74,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
     }
 
     private void createDirectCallMethod(final ClassNode closureClass, final MethodNode doCallMethod) {
-        // in case there is no "call" method on the closure, we can create a "fast invocation" pathes
+        // in case there is no "call" method on the closure, we can create a "fast invocation" paths
         // to avoid going through ClosureMetaClass by call(Object...) method
 
         // we can't have a specialized version of call(Object...) because the dispatch logic in ClosureMetaClass

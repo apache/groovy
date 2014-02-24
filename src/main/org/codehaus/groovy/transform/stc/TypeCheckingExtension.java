@@ -52,7 +52,7 @@ public class TypeCheckingExtension {
 
     /**
      * Subclasses should implement this method if they need to perform additional
-     * checks after the type checker has finished its work. This is particularily
+     * checks after the type checker has finished its work. This is particularly
      * useful for situations where you need multiple passes. Some checks in that
      * case may be deferred to the end, using this method.
      */
@@ -122,7 +122,7 @@ public class TypeCheckingExtension {
      *
      * @param lhsType the type of the left hand side of the assignment, as found by the type checker
      * @param rhsType the type of the right hand side of the assignment, as found by the type checker
-     * @param assignmentExpression the assignment expression which triggerred this call
+     * @param assignmentExpression the assignment expression which triggered this call
      * @return <code>boolean</code> false if the extension does not handle this assignment, true otherwise
      */
     public boolean handleIncompatibleAssignment(final ClassNode lhsType, final ClassNode rhsType, final Expression assignmentExpression) {

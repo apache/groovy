@@ -78,7 +78,7 @@ public class FromString extends ClosureSignatureHint {
      *
      *
      * @param option a string representing a type
-     * @param sourceUnit the source unit (of the file beeing compiled)
+     * @param sourceUnit the source unit (of the file being compiled)
      * @param compilationUnit the compilation unit (of the file being compiled)
      * @param mn the method node
      * @param usage
