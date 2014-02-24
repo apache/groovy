@@ -263,7 +263,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     }
 
     private String concat(String[] details) {
-        StringBuffer detailBuffer = new StringBuffer();
+        StringBuilder detailBuffer = new StringBuilder();
         for (int i = 0; i < details.length; i++) {
             detailBuffer.append(details[i]);
             detailBuffer.append(" ");

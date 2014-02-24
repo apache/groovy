@@ -69,7 +69,7 @@ public class MapExpression extends Expression {
     }
 
     public String getText() {
-        StringBuffer sb = new StringBuffer(32);
+        StringBuilder sb = new StringBuilder(32);
         sb.append("[");
         int size = mapEntryExpressions.size();
         MapEntryExpression mapEntryExpression = null;

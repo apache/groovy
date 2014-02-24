@@ -69,7 +69,7 @@ public class ClosureListExpression extends ListExpression {
     }
     
     public String getText() {
-        StringBuffer buffer = new StringBuffer("(");
+        StringBuilder buffer = new StringBuilder("(");
         boolean first = true;
         for (Expression expression : getExpressions()) {
             if (first) {

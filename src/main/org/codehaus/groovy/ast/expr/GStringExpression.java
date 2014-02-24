@@ -100,7 +100,7 @@ public class GStringExpression extends Expression {
     }
 
     public Expression asConstantString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         for (ConstantExpression expression : strings) {
             Object value = expression.getValue();
             if (value != null) {

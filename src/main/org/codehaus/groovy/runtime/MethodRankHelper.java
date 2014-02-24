@@ -73,7 +73,7 @@ public class MethodRankHelper{
         List<MetaMethod> methods = new ArrayList<MetaMethod>(ci.getMetaClass().getMethods());
         methods.addAll(ci.getMetaClass().getMetaMethods());
         List<MetaMethod> sugg = rankMethods(methodName,arguments,methods);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (!sugg.isEmpty()){
             sb.append("\nPossible solutions: ");
             for(int i = 0; i < sugg.size(); i++) {
@@ -148,7 +148,7 @@ public class MethodRankHelper{
     public static String getConstructorSuggestionString(Class type, Object[] arguments){
         Constructor[] sugg = rankConstructors(arguments, type.getConstructors());
         if(sugg.length >0){
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("\nPossible solutions: ");
             for(int i = 0; i < sugg.length; i++){
                 if(i != 0) sb.append(", ");
@@ -174,7 +174,7 @@ public class MethodRankHelper{
         ClassInfo ci = ClassInfo.getClassInfo(type);
         List<MetaProperty>  fi = ci.getMetaClass().getProperties();
         List<RankableField> rf = new ArrayList<RankableField>(fi.size());
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("\nPossible solutions: ");
         
         for(MetaProperty mp : fi) rf.add(new RankableField(fieldName, mp));
@@ -198,7 +198,7 @@ public class MethodRankHelper{
      * @return the Class names
      */
     private static String listParameterNames(Class[] cachedClasses){
-      StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
       for(int i =0; i < cachedClasses.length;i++){
           if(i != 0) sb.append(", ");
           sb.append(cachedClasses[i].getName());
@@ -208,7 +208,7 @@ public class MethodRankHelper{
     
     
     private static String listParameterNames(CachedClass[] cachedClasses){
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for(int i =0; i < cachedClasses.length;i++){
             if(i != 0) sb.append(", ");
             sb.append(cachedClasses[i].getName());

@@ -162,7 +162,7 @@ public class NodeChildren extends GPathResult {
     }
 
     public String text() {
-        final StringBuffer buf = new StringBuffer();
+        final StringBuilder buf = new StringBuilder();
         final Iterator iter = nodeIterator();
         while (iter.hasNext()) {
             buf.append(((Node) iter.next()).text());
