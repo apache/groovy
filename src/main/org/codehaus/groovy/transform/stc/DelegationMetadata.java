@@ -22,7 +22,7 @@ import org.codehaus.groovy.ast.ClassNode;
  * Delegation metadata is used to store the delegation strategy and delegate type of
  * closures.
  *
- * As closures can be organized in a hierachy, a delegation metadata may have a parent.
+ * As closures can be organized in a hierarchy, a delegation metadata may have a parent.
  *
  * @author Cedric Champeau
  */

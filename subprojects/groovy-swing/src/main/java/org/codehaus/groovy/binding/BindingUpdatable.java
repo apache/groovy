@@ -44,12 +44,12 @@ public interface BindingUpdatable {
     void rebind();
 
     /**
-     * Causes the values to be propigated from the source to the target
+     * Causes the values to be propagated from the source to the target
      */
     void update();
 
     /**
-     * If supported, Causes the values to be propigated from the target to the source,
+     * If supported, Causes the values to be propagated from the target to the source,
      * If not supported, an exception may be thrown 
      */
     void reverseUpdate();

@@ -157,7 +157,7 @@ public class ConcurrentReaderHashMap
        entry is found, but not invalidated (value field null), it is
        returned. If not found, operations must recheck (after a memory
        barrier) to make sure they are using both the right list and
-       the right table (which can change under resizes). If
+       the right table (which can change under re-sizes). If
        invalidated, reads must acquire main update lock to wait out
        the update, and then re-traverse.
 
@@ -187,7 +187,7 @@ public class ConcurrentReaderHashMap
   /**
    * Force a memory synchronization that will cause
    * all readers to see table. Call only when already
-   * holding main synch lock.
+   * holding main sync lock.
    **/
   protected final void recordModification(Object x) { 
     synchronized(barrierLock) {
@@ -516,7 +516,7 @@ public class ConcurrentReaderHashMap
 
 
   /**
-   * Continuation of put(), called only when synch lock is
+   * Continuation of put(), called only when sync lock is
    * held and interference has been detected.
    **/
   protected Object sput(Object key, Object value, int hash) { 
@@ -554,7 +554,7 @@ public class ConcurrentReaderHashMap
     Entry[] oldTable = table;
     int oldCapacity = oldTable.length;
     if (oldCapacity >= MAXIMUM_CAPACITY) {
-      threshold = Integer.MAX_VALUE; // avoid retriggering
+      threshold = Integer.MAX_VALUE; // avoid re-triggering
       return;
     }
 
@@ -570,16 +570,16 @@ public class ConcurrentReaderHashMap
      * oldCapacity+index. We also eliminate unnecessary node
      * creation by catching cases where old nodes can be reused
      * because their next fields won't change. Statistically, at
-     * the default threshhold, only about one-sixth of them need
+     * the default threshold, only about one-sixth of them need
      * cloning. (The nodes they replace will be garbage
-     * collectable as soon as they are no longer referenced by any
+     * collectible as soon as they are no longer referenced by any
      * reader thread that may be in the midst of traversing table
      * right now.)
      */
     
     for (int i = 0; i < oldCapacity ; i++) {
       // We need to guarantee that any existing reads of old Map can
-      //  proceed. So we cannot yet null out each bin.  
+      // proceed. So we cannot yet null out each bin.
       Entry e = oldTable[i];
       
       if (e != null) {
@@ -679,7 +679,7 @@ public class ConcurrentReaderHashMap
   }
 
   /**
-   * Continuation of remove(), called only when synch lock is
+   * Continuation of remove(), called only when sync lock is
    * held and interference has been detected.
    **/
   protected Object sremove(Object key, int hash) {
@@ -1075,7 +1075,7 @@ public class ConcurrentReaderHashMap
      * guarantee lack of concurrent modification), <tt>setValue</tt>
      * is not strictly guaranteed to actually replace the value field
      * obtained via the <tt>get</tt> operation of the underlying hash
-     * table in multithreaded applications.  If iterator-wide
+     * table in multi-threaded applications.  If iterator-wide
      * synchronization is not used, and any other concurrent
      * <tt>put</tt> or <tt>remove</tt> operations occur, sometimes
      * even to <em>other</em> entries, then this change is not

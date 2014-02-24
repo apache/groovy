@@ -815,7 +815,7 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Disables global AST transformations. In order to avoid classloading side effects, it is not recommended
+     * Disables global AST transformations. In order to avoid class loading side effects, it is not recommended
      * to use MyASTTransformation.class.getName() by directly use the class name as a string. Disabled AST transformations
      * only apply to automatically loaded global AST transformations, that is to say transformations defined in a
      * META-INF/org.codehaus.groovy.transform.ASTTransformation file. If you explicitly add a global AST transformation
