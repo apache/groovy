@@ -2798,7 +2798,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         List strings = new ArrayList();
         List values = new ArrayList();
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
 
         boolean isPrevString = false;
 
@@ -2845,7 +2845,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         if (isType(DOT, qualifiedNameNode)) {
             AST node = qualifiedNameNode.getFirstChild();
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             boolean first = true;
 
             for (; node != null && !isType(TYPE_ARGUMENTS, node); node = node.getNextSibling()) {

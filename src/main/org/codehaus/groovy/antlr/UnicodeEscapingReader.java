@@ -129,7 +129,7 @@ public class UnicodeEscapingReader extends Reader {
 
         // Get first hex digit
         checkHexDigit(c);
-        StringBuffer charNum = new StringBuffer();
+        StringBuilder charNum = new StringBuilder();
         charNum.append((char) c);
 
         // Must now be three more hex digits

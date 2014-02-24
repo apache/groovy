@@ -86,7 +86,7 @@ public class BlockStatement extends Statement {
     }
 
     public String getText() {
-        StringBuffer buffer = new StringBuffer("{ ");
+        StringBuilder buffer = new StringBuilder("{ ");
         boolean first = true;
         for (Statement statement : statements) {
             if (first) {

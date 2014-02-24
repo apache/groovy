@@ -702,7 +702,7 @@ public class CompilationUnit extends ProcessingUnit {
                     String name = (String) iter.next();
                     SourceUnit su = ast.getScriptSourceLocation(name);
                     List<ClassNode> classesInSourceUnit = su.ast.getClasses();
-                    StringBuffer message = new StringBuffer();
+                    StringBuilder message = new StringBuilder();
                     message
                             .append("Compilation incomplete: expected to find the class ")
                             .append(name)

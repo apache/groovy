@@ -128,7 +128,7 @@ public class GroovyServlet extends AbstractHttpServlet {
             };
             GroovyCategorySupport.use(ServletCategory.class, closure);
         } catch (RuntimeException runtimeException) {
-            StringBuffer error = new StringBuffer("GroovyServlet Error: ");
+            StringBuilder error = new StringBuilder("GroovyServlet Error: ");
             error.append(" script: '");
             error.append(scriptUri);
             error.append("': ");
