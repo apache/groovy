@@ -16,6 +16,7 @@
 package org.codehaus.groovy.control.io;
 
 import java.io.*;
+import java.net.URI;
 import java.nio.charset.Charset;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -69,5 +70,14 @@ public class FileReaderSource extends AbstractReaderSource {
        }
        return new InputStreamReader( in, cs );
     }
-    
+
+    /**
+     * Returns a URI for the file of this source.
+     *
+     * @return URI for the file of this source.
+     */
+    public URI getURI() {
+        return file.toURI();
+    }
+
 }

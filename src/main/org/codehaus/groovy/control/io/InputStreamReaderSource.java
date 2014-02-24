@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URI;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 
@@ -60,5 +61,14 @@ public class InputStreamReaderSource extends AbstractReaderSource {
      */
     public boolean canReopenSource() {
         return false;
+    }
+
+    /**
+     * TODO: Should return the URI for this source, but we can't know what it is here.
+     *
+     * @return null
+     */
+    public URI getURI() {
+        return null;
     }
 }

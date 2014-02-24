@@ -63,7 +63,11 @@ class GroovyMainTest extends GroovyTestCase {
         def tempFile = File.createTempFile("groovy-ui-GroovyMainTest-testURISource", ".groovy")
         // TODO: For GROOVY-6561 we need to actually test that we got a URI to the compiler.
         tempFile.text = """
-print 'SUCCESS'
+@groovy.transform.ScriptURI def myURI
+
+assert myURI instanceof java.net.URI
+
+print myURI
 """
         tempFile.deleteOnExit()
 
@@ -73,7 +77,7 @@ print 'SUCCESS'
             String[] args = [tempFile.toURI().toString()]
             GroovyMain.main(args)
             def out = baos.toString()
-            assert out == 'SUCCESS'
+            assert out == tempFile.toURI()
         } finally {
             System.setOut(oldOut)
         }
