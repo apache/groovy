@@ -50,7 +50,7 @@ public class GroovyEngine extends BSFEngineImpl {
         if (inName.startsWith("scriptdef_")) inName = inName.substring(10);
         if (inName.equals("")) return "_";
 
-        StringBuffer output = new StringBuffer(inName.length());
+        StringBuilder output = new StringBuilder(inName.length());
         boolean firstChar = true;
         for (int i = 0; i < inName.length(); ++i) {
             char ch = inName.charAt(i);

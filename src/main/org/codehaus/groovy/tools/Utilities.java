@@ -38,7 +38,7 @@ public abstract class Utilities
 
     public static String repeatString( String pattern, int repeats )
     {
-        StringBuffer buffer = new StringBuffer( pattern.length() * repeats );
+        StringBuilder buffer = new StringBuilder( pattern.length() * repeats );
         for( int i = 0; i < repeats; i++ )
         {
             buffer.append( pattern );

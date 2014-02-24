@@ -802,7 +802,7 @@ public class MetaClassHelper {
         String logname = "methodCalls." + className + "." + methodName;
         Logger objLog = Logger.getLogger(logname);
         if (!objLog.isLoggable(Level.FINER)) return;
-        StringBuffer msg = new StringBuffer(methodName);
+        StringBuilder msg = new StringBuilder(methodName);
         msg.append("(");
         if (arguments != null) {
             for (int i = 0; i < arguments.length;) {
