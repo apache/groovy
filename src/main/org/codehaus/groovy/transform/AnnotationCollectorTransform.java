@@ -58,7 +58,7 @@ public class AnnotationCollectorTransform {
      * into what is needed by the compiler. This means removing invalid
      * modifiers, interfaces and superclasses, as well as adding a static
      * value method returning our serialized version of the data for processing
-     * from a precompiled state. By doing this the old annotations will be
+     * from a pre-compiled state. By doing this the old annotations will be
      * removed as well 
      * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
      */

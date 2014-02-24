@@ -160,7 +160,7 @@ public class Groovy extends Java {
      * Set an inline command to execute.
      * NB: Properties are not expanded in this text.
      *
-     * @param txt the inline groovy ommands to execute
+     * @param txt the inline groovy commands to execute
      */
     public void addText(String txt) {
         log("addText('" + txt + "')", Project.MSG_VERBOSE);

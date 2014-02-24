@@ -73,7 +73,7 @@ public class TypeCheckingContext {
     // this map is used to ensure that two errors are not reported on the same line/column
     protected final Set<Long> reportedErrors = new TreeSet<Long>();
 
-    // stores the current binary expresssion. This is used when assignments are made with a null object, for type
+    // stores the current binary expression. This is used when assignments are made with a null object, for type
     // inference
     protected final LinkedList<BinaryExpression> enclosingBinaryExpressions = new LinkedList<BinaryExpression>();
 

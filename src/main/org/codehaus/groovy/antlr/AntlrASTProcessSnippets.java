@@ -18,7 +18,7 @@ package org.codehaus.groovy.antlr;
 
 /**
  * Process to decorate antlr AST with ending line/col info, and if
- * possible the snipppet of source from the start/end line/col for each node.
+ * possible the snippet of source from the start/end line/col for each node.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  * @version $Revision$
@@ -34,7 +34,7 @@ public class AntlrASTProcessSnippets implements AntlrASTProcessor{
 
     /**
      * decorate antlr AST with ending line/col info, and if
-     * possible the snipppet of source from the start/end line/col for each node.
+     * possible the snippet of source from the start/end line/col for each node.
      * @param t the AST to decorate
      * @return the decorated AST
      */

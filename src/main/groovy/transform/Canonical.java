@@ -112,7 +112,7 @@ public @interface Canonical {
      *
      * If the {@code @Canonical} behavior is customised by using it in conjunction with one of the more specific
      * related annotations (i.e. {@code @ToString}, {@code @EqualsAndHashCode} or {@code @TupleConstructor}), then
-     * the value of this attribute can be overriden within the more specific annotation.
+     * the value of this attribute can be overridden within the more specific annotation.
      */
     String[] excludes() default {};
 
@@ -123,7 +123,7 @@ public @interface Canonical {
      *
      * If the {@code @Canonical} behavior is customised by using it in conjunction with one of the more specific
      * related annotations (i.e. {@code @ToString}, {@code @EqualsAndHashCode} or {@code @TupleConstructor}), then
-     * the value of this attribute can be overriden within the more specific annotation.
+     * the value of this attribute can be overridden within the more specific annotation.
      */
     String[] includes() default {};
 }

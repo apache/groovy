@@ -285,7 +285,7 @@ public class CompileStack implements Opcodes {
      * creates a temporary variable.
      *
      * @param name defines type and name
-     * @param store defines if the toplevel argument of the stack should be stored
+     * @param store defines if the top-level argument of the stack should be stored
      * @return the index used for this temporary variable
      */
     public int defineTemporaryVariable(String name,boolean store) {
@@ -297,7 +297,7 @@ public class CompileStack implements Opcodes {
      *
      * @param name defines the name
      * @param node defines the node
-     * @param store defines if the toplevel argument of the stack should be stored
+     * @param store defines if the top-level argument of the stack should be stored
      * @return the index used for this temporary variable
      */
     public int defineTemporaryVariable(String name, ClassNode node, boolean store) {
@@ -426,7 +426,7 @@ public class CompileStack implements Opcodes {
     }
 
     /**
-     * Causes the statestack to add an element and sets
+     * Causes the state-stack to add an element and sets
      * the given scope as new current variable scope. Creates
      * a element for the state stack so pop has to be called later
      */
@@ -439,7 +439,7 @@ public class CompileStack implements Opcodes {
     }
 
     /**
-     * Should be called when decending into a loop that defines
+     * Should be called when descending into a loop that defines
      * also a scope. Calls pushVariableScope and prepares labels
      * for a loop structure. Creates a element for the state stack
      * so pop has to be called later
@@ -459,7 +459,7 @@ public class CompileStack implements Opcodes {
     }
 
     /**
-     * Should be called when decending into a loop that does
+     * Should be called when descending into a loop that does
      * not define a scope. Creates a element for the state stack
      * so pop has to be called later
      */
@@ -616,7 +616,7 @@ public class CompileStack implements Opcodes {
         return defineVariable(v, v.getOriginType(), initFromStack);
     }
     public BytecodeVariable defineVariable(Variable v, ClassNode variableType, boolean initFromStack) {
-        //TODO: any usage of this method should have different operand stack hanlding
+        //TODO: any usage of this method should have different operand stack handing
         //      then the remove(1) here and there in this one can be removed and others
         //      can be changed
         String name = v.getName();

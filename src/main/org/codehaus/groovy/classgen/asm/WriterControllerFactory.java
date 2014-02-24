@@ -16,7 +16,7 @@
 package org.codehaus.groovy.classgen.asm;
 
 /**
- * A non static factory to get alternative writer controller to be stroed in the meta data
+ * A non static factory to get alternative writer controller to be stored in the meta data
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public interface WriterControllerFactory {

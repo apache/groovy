@@ -346,7 +346,7 @@ public class FileSystemCompiler {
 
     /**
      * Creates a temporary directory in the default temporary directory (as specified by the system
-     * propery <i>java.io.tmpdir</i>.
+     * property <i>java.io.tmpdir</i>.
      *
      * @deprecated Use {@link DefaultGroovyStaticMethods#createTempDir(java.io.File, String, String)} instead.
      */
