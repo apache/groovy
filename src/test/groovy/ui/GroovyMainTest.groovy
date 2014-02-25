@@ -58,10 +58,10 @@ class GroovyMainTest extends GroovyTestCase {
 
     /**
      * GROOVY-6561 : Correct handling of scripts from a URI.
+     * GROOVY-1642 : Enable a script to get it's URI by annotating a field.
      */
     void testURISource() {
         def tempFile = File.createTempFile("groovy-ui-GroovyMainTest-testURISource", ".groovy")
-        // TODO: For GROOVY-6561 we need to actually test that we got a URI to the compiler.
         tempFile.text = """
 @groovy.transform.ScriptURI def myURI
 
@@ -76,8 +76,8 @@ print myURI
         try {
             String[] args = [tempFile.toURI().toString()]
             GroovyMain.main(args)
-            def out = baos.toString()
-            assert out == tempFile.toURI()
+            def out = baos.toString().trim()
+            assert out == tempFile.toURI().toString()
         } finally {
             System.setOut(oldOut)
         }

@@ -23,25 +23,19 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Arrays;
 
 /**
@@ -95,15 +89,30 @@ public class ScriptURIASTTransformation extends AbstractASTTransformation {
         if (uri == null) {
             addError("Unable to get the URI for the source of this script!", de);
         } else {
-            // Set the RHS to '= new URI("string for this URI")'.
-            // That may throw a URISyntaxException, but we don't need to deal with that here.
-            de.setRightExpression(new ConstructorCallExpression(URI_TYPE
+            if (!(uri.isAbsolute() || memberHasValue(node, "allowRelative", true))) {
+                // FIXME:  What should we use as the base URI?
+                // It is unlikely we get to this point with a relative URI since making a URL
+                // from will make it absolute I think.  But lets handle the simple case of
+                // using file paths and turning that into an absolute file URI.
+                // So we will use the current working directory as the base.
+                URI baseURI = new File(".").toURI();
+                uri = uri.resolve(baseURI);
+            }
+
+            // Set the RHS to '= URI.create("string for this URI")'.
+            // That may throw an IllegalArgumentExpression wrapping the URISyntaxException.
+            de.setRightExpression(new StaticMethodCallExpression(URI_TYPE, "create"
                     , new ArgumentListExpression(new ConstantExpression(uri.toString()))));
         }
     }
 
     public SourceUnit getSourceUnit() {
         return sourceUnit;
+    }
+
+    protected boolean memberHasValue(AnnotationNode node, String name, Object value) {
+        final Expression member = node.getMember(name);
+        return member != null && member instanceof ConstantExpression && ((ConstantExpression) member).getValue().equals(value);
     }
 
     protected void addError(String msg, ASTNode expr) {
