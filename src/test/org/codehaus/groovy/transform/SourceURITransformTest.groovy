@@ -22,14 +22,14 @@ import gls.CompilableTestSupport
  *
  * @author Jim White
  */
-class ScriptURITransformTest extends CompilableTestSupport {
+class SourceURITransformTest extends CompilableTestSupport {
     void testWorksInClass() {
         def groovy = new GroovyClassLoader()
         def compiledClass = groovy.parseClass '''class CompanionThingy {
-   @groovy.transform.ScriptURI static def myURI
-   @groovy.transform.ScriptURI static java.net.URI alsoMyURI
-   @groovy.transform.ScriptURI def myURIMember
-   @groovy.transform.ScriptURI java.net.URI alsoMyURIMember
+   @groovy.transform.SourceURI static def myURI
+   @groovy.transform.SourceURI static java.net.URI alsoMyURI
+   @groovy.transform.SourceURI def myURIMember
+   @groovy.transform.SourceURI java.net.URI alsoMyURIMember
 
    String toString() {
       assert myURI == alsoMyURI
@@ -44,8 +44,8 @@ class ScriptURITransformTest extends CompilableTestSupport {
 
     void testWorksInScript() {
         assertScript '''// This is script for testWorksInScript
-   @groovy.transform.ScriptURI def myURI
-   @groovy.transform.ScriptURI java.net.URI alsoMyURI
+   @groovy.transform.SourceURI def myURI
+   @groovy.transform.SourceURI java.net.URI alsoMyURI
 
    assert myURI == alsoMyURI
    assert myURI.toString().matches(".*data:.*,//%20This%20is%20script%20for%20testWorksInScript%0A.*")

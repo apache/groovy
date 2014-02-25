@@ -37,9 +37,9 @@ import java.lang.annotation.Target;
  *
  * Example usage:
  * <pre>
- * @groovy.transform.ScriptURI def scriptURI
+ * @groovy.transform.SourceURI def sourceURI
  *
- * assert scriptURI instanceof java.net.URI
+ * assert sourceURI instanceof java.net.URI
  * </pre>
  *
  * @author Jim White
@@ -48,7 +48,7 @@ import java.lang.annotation.Target;
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.LOCAL_VARIABLE, ElementType.FIELD})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.ScriptURIASTTransformation")
-public @interface ScriptURI {
+@GroovyASTTransformationClass("org.codehaus.groovy.transform.SourceURIASTTransformation")
+public @interface SourceURI {
     boolean allowRelative() default false;
 }

@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.transform;
 
-import groovy.transform.ScriptURI;
+import groovy.transform.SourceURI;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -48,9 +48,9 @@ import java.util.Arrays;
  * @author Jim White
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-public class ScriptURIASTTransformation extends AbstractASTTransformation {
+public class SourceURIASTTransformation extends AbstractASTTransformation {
 
-    private static final Class<ScriptURI> MY_CLASS = ScriptURI.class;
+    private static final Class<SourceURI> MY_CLASS = SourceURI.class;
     private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode URI_TYPE = ClassHelper.make(java.net.URI.class);

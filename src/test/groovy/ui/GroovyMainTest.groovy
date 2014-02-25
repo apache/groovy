@@ -63,7 +63,7 @@ class GroovyMainTest extends GroovyTestCase {
     void testURISource() {
         def tempFile = File.createTempFile("groovy-ui-GroovyMainTest-testURISource", ".groovy")
         tempFile.text = """
-@groovy.transform.ScriptURI def myURI
+@groovy.transform.SourceURI def myURI
 
 assert myURI instanceof java.net.URI
 
