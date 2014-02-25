@@ -503,6 +503,37 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     /**
+     * Runs the given script source with command line arguments
+     *
+     * @param source    is the source content of the script
+     * @param args      the command line arguments to pass in
+     */
+    public Object run(URI source, List args) throws CompilationFailedException, IOException {
+        return run(new GroovyCodeSource(source), ((String[]) args.toArray(new String[args.size()])));
+    }
+
+    /**
+     * Runs the given script source with command line arguments
+     *
+     * @param source    is the source content of the script
+     * @param args      the command line arguments to pass in
+     */
+    public Object run(URI source, String[] args) throws CompilationFailedException, IOException {
+        return run(new GroovyCodeSource(source), args);
+    }
+
+    /**
+     * Runs the given script with command line arguments
+     *
+     * @param in       the stream reading the script
+     * @param fileName is the logical file name of the script (which is used to create the class name of the script)
+     * @param list     the command line arguments to pass in
+     */
+    public Object run(final Reader in, final String fileName, List list) throws CompilationFailedException {
+        return run(in, fileName, new String[list.size()]);
+    }
+
+    /**
      * Runs the given script with command line arguments
      *
      * @param in       the stream reading the script
@@ -589,6 +620,15 @@ public class GroovyShell extends GroovyObjectSupport {
     /**
      * Evaluates some script against the current Binding and returns the result
      *
+     * @param uri is the URI of the script (which is used to create the class name of the script)
+     */
+    public Object evaluate(URI uri) throws CompilationFailedException, IOException {
+        return evaluate(new GroovyCodeSource(uri));
+    }
+
+    /**
+     * Evaluates some script against the current Binding and returns the result
+     *
      * @param in the stream reading the script
      */
     public Object evaluate(Reader in) throws CompilationFailedException {
@@ -661,7 +701,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param uri is the URI of the script (which is used to create the class name of the script)
      */
     public Script parse(URI uri) throws CompilationFailedException, IOException {
-        return parse(new GroovyCodeSource(uri.toURL()));
+        return parse(new GroovyCodeSource(uri));
     }
 
     /**
