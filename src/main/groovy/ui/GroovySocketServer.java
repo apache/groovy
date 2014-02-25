@@ -16,6 +16,7 @@
 package groovy.ui;
 
 import groovy.lang.GroovyCodeSource;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 
@@ -26,6 +27,8 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 /**
@@ -60,7 +63,50 @@ public class GroovySocketServer implements Runnable {
     private GroovyShell groovy;
     private GroovyCodeSource source;
     private boolean autoOutput;
-    
+
+    /**
+     * This creates and starts the socket server on a new Thread. There is no need to call run or spawn
+     * a new thread yourself.
+     * @param groovy
+     *       The GroovyShell object that evaluates the incoming text. If you need additional classes in the
+     *       classloader then configure that through this object.
+     * @param isScriptFile
+     *       Whether the incoming socket data String will be a script or a file path.
+     * @param scriptFilenameOrText
+     *       This will be a groovy script or a file location depending on the argument isScriptFile.
+     * @param autoOutput
+     *       whether output should be automatically echoed back to the client
+     * @param port
+     *       the port to listen on
+     *
+     */
+    public GroovySocketServer(GroovyShell groovy, boolean isScriptFile, String scriptFilenameOrText, boolean autoOutput, int port) {
+        this(groovy, getCodeSource(isScriptFile, scriptFilenameOrText), autoOutput, port);
+    }
+
+    private static GroovyCodeSource getCodeSource(boolean scriptFile, String scriptFilenameOrText) {
+        if (scriptFile) {
+            try {
+                if (isScriptURI(scriptFilenameOrText)) {
+                    return new GroovyCodeSource(new URI(scriptFilenameOrText));
+                } else {
+                    return new GroovyCodeSource(GroovyMain.huntForTheScriptFile(scriptFilenameOrText));
+                }
+            } catch (IOException e) {
+                throw new GroovyRuntimeException("Unable to get script from: " + scriptFilenameOrText, e);
+            } catch (URISyntaxException e) {
+                throw new GroovyRuntimeException("Unable to get script from URI: " + scriptFilenameOrText, e);
+            }
+        } else {
+            return new GroovyCodeSource(scriptFilenameOrText, "script_from_command_line", GroovyShell.DEFAULT_CODE_BASE);
+        }
+    }
+
+    private static boolean isScriptURI(String urlOrFilename) {
+        return urlOrFilename.matches("^\\w+:.*");
+    }
+
+
     /**
     * This creates and starts the socket server on a new Thread. There is no need to call run or spawn
     * a new thread yourself. 
@@ -73,7 +119,7 @@ public class GroovySocketServer implements Runnable {
     *       whether output should be automatically echoed back to the client
     * @param port
     *       the port to listen on
-    * 
+    * @since 2.3.0
     */ 
     public GroovySocketServer(GroovyShell groovy, GroovyCodeSource source, boolean autoOutput, int port) {
         this.groovy = groovy;

@@ -430,7 +430,7 @@ public class GroovyMain {
      * - name.gy
      * - name.gsh
      */
-    public File huntForTheScriptFile(String input) {
+    public static File huntForTheScriptFile(String input) {
         String scriptFileName = input.trim();
         File scriptFile = new File(scriptFileName);
         String[] standardExtensions = {".groovy",".gvy",".gy",".gsh"};
