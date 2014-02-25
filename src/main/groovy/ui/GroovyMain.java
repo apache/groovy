@@ -400,10 +400,47 @@ public class GroovyMain {
      */
     private void processSockets() throws CompilationFailedException, IOException, URISyntaxException {
         GroovyShell groovy = new GroovyShell(conf);
-        new GroovySocketServer(groovy, getScriptSource(), autoOutput, port);
+        new GroovySocketServer(groovy, getScriptSource(isScriptFile, script), autoOutput, port);
     }
 
-    private GroovyCodeSource getScriptSource() throws IOException, URISyntaxException {
+    /**
+     * Get the text of the Groovy script at the given location.
+     * If the location is a file path and it does not exist as given,
+     * then {@link GroovyMain#huntForTheScriptFile(String)} is called to try
+     * with some Groovy extensions appended.
+     *
+     * This method is not used to process scripts and is retained for backward
+     * compatibility.  If you want to modify how GroovyMain processes scripts
+     * then use {@link GroovyMain#getScriptSource(boolean, String)}.
+     *
+     * @param uriOrFilename
+     * @return the text content at the location
+     * @throws IOException
+     * @deprecated
+     */
+    public String getText(String uriOrFilename) throws IOException {
+        if (isScriptURI(uriOrFilename)) {
+            try {
+                return ResourceGroovyMethods.getText(new URL(uriOrFilename));
+            } catch (Exception e) {
+                throw new GroovyRuntimeException("Unable to get script from URL: ", e);
+            }
+        }
+        return ResourceGroovyMethods.getText(huntForTheScriptFile(uriOrFilename));
+    }
+
+    /**
+     * Get a new GroovyCodeSource for a script which may be given as a location
+     * (isScript is true) or as text (isScript is false).
+     *
+     * @param isScriptFile indicates whether the script parameter is a location or content
+     * @param script the location or context of the script
+     * @return a new GroovyCodeSource for the given script
+     * @throws IOException
+     * @throws URISyntaxException
+     * @since 2.3.0
+     */
+    protected GroovyCodeSource getScriptSource(boolean isScriptFile, String script) throws IOException, URISyntaxException {
         //check the script is currently valid before starting a server against the script
         if (isScriptFile) {
             if (isScriptURI(script)) {
@@ -416,12 +453,12 @@ public class GroovyMain {
         }
     }
 
-    private boolean isScriptURI(String urlOrFilename) {
+    private static boolean isScriptURI(String urlOrFilename) {
         return urlOrFilename.matches("^\\w+:.*");
     }
 
     /**
-     * Hunt for the script file, doesn't bother if it is named precisely.
+     * Search for the script file, doesn't bother if it is named precisely.
      *
      * Tries in this order:
      * - actual supplied name
@@ -429,10 +466,14 @@ public class GroovyMain {
      * - name.gvy
      * - name.gy
      * - name.gsh
+     *
+     * @since 2.3.0
      */
-    public static File huntForTheScriptFile(String input) {
+    public static File searchForGroovyScriptFile(String input) {
         String scriptFileName = input.trim();
         File scriptFile = new File(scriptFileName);
+        // TODO: Shouldn't these extensions be kept elsewhere?  What about CompilerConfiguration?
+        // This method probably shouldn't be in GroovyMain either.
         String[] standardExtensions = {".groovy",".gvy",".gy",".gsh"};
         int i = 0;
         while (i < standardExtensions.length && !scriptFile.exists()) {
@@ -447,22 +488,21 @@ public class GroovyMain {
     }
 
     /**
+     * Hunt for the script file by calling searchForGroovyScriptFile(String).
+     *
+     * @see GroovyMain#searchForGroovyScriptFile(String)
+     */
+    public File huntForTheScriptFile(String input) {
+        return GroovyMain.searchForGroovyScriptFile(input);
+    }
+
+    /**
      * Process the input files.
      */
     private void processFiles() throws CompilationFailedException, IOException, URISyntaxException {
         GroovyShell groovy = new GroovyShell(conf);
 
-        Script s;
-
-        if (isScriptFile) {
-            if (isScriptURI(script)) {
-                s = groovy.parse(new URI(script));
-            } else {
-                s = groovy.parse(huntForTheScriptFile(script));
-            }
-        } else {
-            s = groovy.parse(script, "main");
-        }
+        Script s = groovy.parse(getScriptSource(isScriptFile, script));
 
         if (args.isEmpty()) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -479,7 +519,9 @@ public class GroovyMain {
             Iterator i = args.iterator();
             while (i.hasNext()) {
                 String filename = (String) i.next();
-                File file = huntForTheScriptFile(filename);
+                //TODO: These are the arguments for -p and -i.  Why are we searching using Groovy script extensions?
+                // Where is this documented?
+                File file = searchForGroovyScriptFile(filename);
                 processFile(s, file);
             }
         }
@@ -579,6 +621,6 @@ public class GroovyMain {
      */
     private void processOnce() throws CompilationFailedException, IOException, URISyntaxException {
         GroovyShell groovy = new GroovyShell(conf);
-        groovy.run(getScriptSource(), args);
+        groovy.run(getScriptSource(isScriptFile, script), args);
     }
 }

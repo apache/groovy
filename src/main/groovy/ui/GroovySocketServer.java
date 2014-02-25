@@ -90,7 +90,7 @@ public class GroovySocketServer implements Runnable {
                 if (isScriptURI(scriptFilenameOrText)) {
                     return new GroovyCodeSource(new URI(scriptFilenameOrText));
                 } else {
-                    return new GroovyCodeSource(GroovyMain.huntForTheScriptFile(scriptFilenameOrText));
+                    return new GroovyCodeSource(GroovyMain.searchForGroovyScriptFile(scriptFilenameOrText));
                 }
             } catch (IOException e) {
                 throw new GroovyRuntimeException("Unable to get script from: " + scriptFilenameOrText, e);
