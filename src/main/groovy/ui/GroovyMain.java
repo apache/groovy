@@ -16,6 +16,7 @@
 package groovy.ui;
 
 import groovy.lang.Binding;
+import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.GroovySystem;
@@ -38,6 +39,8 @@ import org.codehaus.groovy.runtime.StackTraceUtils;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
@@ -395,30 +398,26 @@ public class GroovyMain {
     /**
      * Process Sockets.
      */
-    private void processSockets() throws CompilationFailedException, IOException {
+    private void processSockets() throws CompilationFailedException, IOException, URISyntaxException {
         GroovyShell groovy = new GroovyShell(conf);
+        new GroovySocketServer(groovy, getScriptSource(), autoOutput, port);
+    }
+
+    private GroovyCodeSource getScriptSource() throws IOException, URISyntaxException {
         //check the script is currently valid before starting a server against the script
         if (isScriptFile) {
-            groovy.parse(getText(script));
-        } else {
-            groovy.parse(script);
-        }
-        new GroovySocketServer(groovy, isScriptFile, script, autoOutput, port);
-    }
-
-    public String getText(String urlOrFilename) throws IOException {
-        if (isScriptUrl(urlOrFilename)) {
-            try {
-                return ResourceGroovyMethods.getText(new URL(urlOrFilename));
-            } catch (Exception e) {
-                throw new GroovyRuntimeException("Unable to get script from URL: ", e);
+            if (isScriptURI(script)) {
+                return new GroovyCodeSource(new URI(script));
+            } else {
+                return new GroovyCodeSource(huntForTheScriptFile(script));
             }
+        } else {
+            return new GroovyCodeSource(script, "script_from_command_line", GroovyShell.DEFAULT_CODE_BASE);
         }
-        return ResourceGroovyMethods.getText(huntForTheScriptFile(urlOrFilename));
     }
 
-    private boolean isScriptUrl(String urlOrFilename) {
-        return urlOrFilename.startsWith("http://") || urlOrFilename.startsWith("https://") || urlOrFilename.startsWith("file:") || urlOrFilename.startsWith("jar:");
+    private boolean isScriptURI(String urlOrFilename) {
+        return urlOrFilename.matches("^\\w+:.*");
     }
 
     /**
@@ -450,14 +449,14 @@ public class GroovyMain {
     /**
      * Process the input files.
      */
-    private void processFiles() throws CompilationFailedException, IOException {
+    private void processFiles() throws CompilationFailedException, IOException, URISyntaxException {
         GroovyShell groovy = new GroovyShell(conf);
 
         Script s;
 
         if (isScriptFile) {
-            if (isScriptUrl(script)) {
-                s = groovy.parse(getText(script), script.substring(script.lastIndexOf("/") + 1));
+            if (isScriptURI(script)) {
+                s = groovy.parse(new URI(script));
             } else {
                 s = groovy.parse(huntForTheScriptFile(script));
             }
@@ -578,17 +577,8 @@ public class GroovyMain {
     /**
      * Process the standard, single script with args.
      */
-    private void processOnce() throws CompilationFailedException, IOException {
+    private void processOnce() throws CompilationFailedException, IOException, URISyntaxException {
         GroovyShell groovy = new GroovyShell(conf);
-
-        if (isScriptFile) {
-            if (isScriptUrl(script)) {
-                groovy.run(getText(script), script.substring(script.lastIndexOf("/") + 1), args);
-            } else {
-                groovy.run(huntForTheScriptFile(script), args);
-            }
-        } else {
-            groovy.run(script, "script_from_command_line", args);
-        }
+        groovy.run(getScriptSource(), args);
     }
 }

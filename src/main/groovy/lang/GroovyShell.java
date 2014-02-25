@@ -27,6 +27,7 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
@@ -477,7 +478,27 @@ public class GroovyShell extends GroovyObjectSupport {
                 return new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
             }
         });
-        Class scriptClass = parseClass(gcs);
+        return run(gcs, args);
+    }
+
+    /**
+     * Runs the given script source with command line arguments
+     *
+     * @param source    is the source content of the script
+     * @param args      the command line arguments to pass in
+     */
+    public Object run(GroovyCodeSource source, List args) throws CompilationFailedException {
+        return run(source, ((String[]) args.toArray(new String[args.size()])));
+    }
+
+    /**
+     * Runs the given script source with command line arguments
+     *
+     * @param source    is the source content of the script
+     * @param args      the command line arguments to pass in
+     */
+    public Object run(GroovyCodeSource source, String[] args) throws CompilationFailedException {
+        Class scriptClass = parseClass(source);
         return runScriptOrMainOrTestOrRunnable(scriptClass, args);
     }
 
@@ -632,6 +653,15 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     public Script parse(File file) throws CompilationFailedException, IOException {
         return parse(new GroovyCodeSource(file, config.getSourceEncoding()));
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run
+     *
+     * @param uri is the URI of the script (which is used to create the class name of the script)
+     */
+    public Script parse(URI uri) throws CompilationFailedException, IOException {
+        return parse(new GroovyCodeSource(uri.toURL()));
     }
 
     /**

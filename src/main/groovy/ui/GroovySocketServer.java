@@ -15,6 +15,7 @@
  */
 package groovy.ui;
 
+import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 
@@ -57,8 +58,7 @@ import java.net.URL;
 public class GroovySocketServer implements Runnable {
     private URL url;
     private GroovyShell groovy;
-    private boolean isScriptFile;
-    private String scriptFilenameOrText;
+    private GroovyCodeSource source;
     private boolean autoOutput;
     
     /**
@@ -67,20 +67,17 @@ public class GroovySocketServer implements Runnable {
     * @param groovy
     *       The GroovyShell object that evaluates the incoming text. If you need additional classes in the 
     *       classloader then configure that through this object. 
-    * @param isScriptFile
-    *       Whether the incoming socket data String will be a script or a file path.
-    * @param scriptFilenameOrText
-    *       This will be a groovy script or a file location depending on the argument isScriptFile. 
+    * @param source
+    *       GroovyCodeSource for the Groovy script
     * @param autoOutput
     *       whether output should be automatically echoed back to the client
     * @param port
     *       the port to listen on
     * 
     */ 
-    public GroovySocketServer(GroovyShell groovy, boolean isScriptFile, String scriptFilenameOrText, boolean autoOutput, int port) {
+    public GroovySocketServer(GroovyShell groovy, GroovyCodeSource source, boolean autoOutput, int port) {
         this.groovy = groovy;
-        this.isScriptFile = isScriptFile;
-        this.scriptFilenameOrText = scriptFilenameOrText;
+        this.source = source;
         this.autoOutput = autoOutput;
         try {
             url = new URL("http", InetAddress.getLocalHost().getHostAddress(), port, "/");
@@ -103,13 +100,7 @@ public class GroovySocketServer implements Runnable {
                 // This is purposefully not caching the Script
                 // so that the script source file can be changed on the fly,
                 // as each connection is made to the server.
-                Script script;
-                if (isScriptFile) {
-                    GroovyMain gm = new GroovyMain();
-                    script = groovy.parse(gm.getText(scriptFilenameOrText));
-                } else {
-                    script = groovy.parse(scriptFilenameOrText);
-                }
+                Script script = groovy.parse(source);
                 new GroovyClientConnection(script, autoOutput, serverSocket.accept());
             }
         } catch (Exception e) {
