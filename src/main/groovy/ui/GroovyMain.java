@@ -521,7 +521,7 @@ public class GroovyMain {
                 String filename = (String) i.next();
                 //TODO: These are the arguments for -p and -i.  Why are we searching using Groovy script extensions?
                 // Where is this documented?
-                File file = searchForGroovyScriptFile(filename);
+                File file = huntForTheScriptFile(filename);
                 processFile(s, file);
             }
         }
