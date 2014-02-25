@@ -266,10 +266,16 @@ public class GroovyClassLoader extends URLClassLoader {
         Class answer;  // Was neither already loaded nor compiling, so compile and add to cache.
         CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
         SourceUnit su = null;
-        if (codeSource.getFile() == null) {
-            su = unit.addSource(codeSource.getName(), codeSource.getScriptText());
+        File file = codeSource.getFile();
+        if (file != null) {
+            su = unit.addSource(file);
         } else {
-            su = unit.addSource(codeSource.getFile());
+            URL url = codeSource.getURL();
+            if (url != null) {
+                su = unit.addSource(url);
+            } else {
+                su = unit.addSource(codeSource.getName(), codeSource.getScriptText());
+            }
         }
 
         ClassCollector collector = createCollector(unit, su);
