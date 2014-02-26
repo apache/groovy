@@ -859,6 +859,8 @@ public class GroovyClassLoader extends URLClassLoader {
         // incorrect results (-1)
         if (isFile(source)) {
             // Coerce the file URL to a File
+            // See ClassNodeResolver.isSourceNewer for another method that replaces '|' with ':'.
+            // WTF: Why is this done and where is it documented?
             String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
             File file = new File(path);
             lastMod = file.lastModified();
@@ -881,19 +883,43 @@ public class GroovyClassLoader extends URLClassLoader {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 try {
-                    File f = new File(path);
-                    URL newURL = f.toURI().toURL();
+                    // As the java.net.URL Javadoc says, the recommended way to get a URL is via URI.
+                    // http://docs.oracle.com/javase/7/docs/api/java/net/URL.html
+                    // "Note, the URI class does perform escaping of its component fields in certain circumstances.
+                    // The recommended way to manage the encoding and decoding of URLs is to use URI, and to convert
+                    // between these two classes using toURI() and URI.toURL()."
+                    // A possibly better approach here is to construct a URI and then resolve it against
+                    // a URI for the current working directory.
+                    // But we use this string match for now so everyone can see it doesn't hurt file-only classpaths.
+                    URI newURI;
+                    if (!isPathURI(path)) {
+                        newURI = new File(path).toURI();
+                    } else {
+                        newURI = new URI(path);
+                    }
                     URL[] urls = getURLs();
                     for (URL url : urls) {
-                        if (url.equals(newURL)) return null;
+                        // Do not use URL.equals.  It uses the network to resolve names and compares ip addresses!
+                        // That is a violation of RFC and just plain evil.
+                        // http://michaelscharf.blogspot.com/2006/11/javaneturlequals-and-hashcode-make.html
+                        // http://docs.oracle.com/javase/7/docs/api/java/net/URL.html#equals(java.lang.Object)
+                        // "Since hosts comparison requires name resolution, this operation is a blocking operation.
+                        // Note: The defined behavior for equals is known to be inconsistent with virtual hosting in HTTP."
+                        if (newURI.equals(url.toURI())) return null;
                     }
-                    addURL(newURL);
+                    addURL(newURI.toURL());
                 } catch (MalformedURLException e) {
                     //TODO: fail through ?
+                } catch (URISyntaxException e) {
+                    // Just doing the same thing...
                 }
                 return null;
             }
         });
+    }
+
+    private static boolean isPathURI(String path) {
+        return path.matches("^\\w+:.*");
     }
 
     /**
