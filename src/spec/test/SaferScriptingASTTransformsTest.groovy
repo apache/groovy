@@ -176,12 +176,12 @@ import java.util.concurrent.TimeUnit
 // tag::timedinterrupt_thrown[]
 @TimedInterrupt(thrown=TooLongException, applyToAllClasses = false, value=1L)
 class Slow {
-    def fib(n) { n<2?n:fib(n-1)+fib(n-2) }
+    def fib(n) { Thread.sleep(100); n<2?n:fib(n-1)+fib(n-2) }
 }
 def result
 def t = Thread.start {
     try {
-        result = new Slow().fib(500)
+        result = new Slow().fib(50)
     } catch (TooLongException e) {
         result = -1
     }
