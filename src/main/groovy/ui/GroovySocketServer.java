@@ -64,6 +64,7 @@ public class GroovySocketServer implements Runnable {
     private GroovyShell groovy;
     private GroovyCodeSource source;
     private boolean autoOutput;
+    private static int counter;
 
     /**
      * This creates and starts the socket server on a new Thread. There is no need to call run or spawn
@@ -99,9 +100,17 @@ public class GroovySocketServer implements Runnable {
                 throw new GroovyRuntimeException("Unable to get script from URI: " + scriptFilenameOrText, e);
             }
         } else {
-            return new GroovyCodeSource(scriptFilenameOrText, "script_from_command_line", GroovyShell.DEFAULT_CODE_BASE);
+            // We could jump through some hoops to have GroovyShell make our script name, but that seems unwarranted.
+            // If we *did* jump through that hoop then we should probably change the run loop to not recompile
+            // the script on every iteration since the script text can't change (the reason for the recompilation).
+            return new GroovyCodeSource(scriptFilenameOrText, generateScriptName(), GroovyShell.DEFAULT_CODE_BASE);
         }
     }
+
+    private static synchronized String generateScriptName() {
+        return "ServerSocketScript" + (++counter) + ".groovy";
+    }
+
 
     // RFC2396
     // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
@@ -146,6 +155,9 @@ public class GroovySocketServer implements Runnable {
                 // This is purposefully not caching the Script
                 // so that the script source file can be changed on the fly,
                 // as each connection is made to the server.
+                //FIXME: Groovy has other mechanisms specifically for watching to see if source code changes.
+                // We should probably be using that here.
+                // See also the comment about the fact we recompile a script that can't change.
                 Script script = groovy.parse(source);
                 new GroovyClientConnection(script, autoOutput, serverSocket.accept());
             }
