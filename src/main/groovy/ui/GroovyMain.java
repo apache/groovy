@@ -44,6 +44,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * A Command line to execute groovy.
@@ -419,7 +420,7 @@ public class GroovyMain {
      * @deprecated
      */
     public String getText(String uriOrFilename) throws IOException {
-        if (isScriptURI(uriOrFilename)) {
+        if (uriPattern.matcher(uriOrFilename).matches()) {
             try {
                 return ResourceGroovyMethods.getText(new URL(uriOrFilename));
             } catch (Exception e) {
@@ -443,7 +444,7 @@ public class GroovyMain {
     protected GroovyCodeSource getScriptSource(boolean isScriptFile, String script) throws IOException, URISyntaxException {
         //check the script is currently valid before starting a server against the script
         if (isScriptFile) {
-            if (isScriptURI(script)) {
+            if (uriPattern.matcher(script).matches()) {
                 return new GroovyCodeSource(new URI(script));
             } else {
                 return new GroovyCodeSource(huntForTheScriptFile(script));
@@ -453,9 +454,9 @@ public class GroovyMain {
         }
     }
 
-    private static boolean isScriptURI(String urlOrFilename) {
-        return urlOrFilename.matches("^\\w+:.*");
-    }
+    // RFC2396
+    // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
+    private static final Pattern uriPattern = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:.*");
 
     /**
      * Search for the script file, doesn't bother if it is named precisely.

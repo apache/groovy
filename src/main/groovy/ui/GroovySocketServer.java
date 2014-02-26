@@ -30,6 +30,7 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.regex.Pattern;
 
 /**
  * Simple server that executes supplied script against a socket.
@@ -87,7 +88,7 @@ public class GroovySocketServer implements Runnable {
     private static GroovyCodeSource getCodeSource(boolean scriptFile, String scriptFilenameOrText) {
         if (scriptFile) {
             try {
-                if (isScriptURI(scriptFilenameOrText)) {
+                if (uriPattern.matcher(scriptFilenameOrText).matches()) {
                     return new GroovyCodeSource(new URI(scriptFilenameOrText));
                 } else {
                     return new GroovyCodeSource(GroovyMain.searchForGroovyScriptFile(scriptFilenameOrText));
@@ -102,10 +103,9 @@ public class GroovySocketServer implements Runnable {
         }
     }
 
-    private static boolean isScriptURI(String urlOrFilename) {
-        return urlOrFilename.matches("^\\w+:.*");
-    }
-
+    // RFC2396
+    // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
+    private static final Pattern uriPattern = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:.*");
 
     /**
     * This creates and starts the socket server on a new Thread. There is no need to call run or spawn

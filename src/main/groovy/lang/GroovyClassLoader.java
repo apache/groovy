@@ -35,6 +35,7 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * A ClassLoader which can load Groovy classes. The loaded classes are cached,
@@ -892,7 +893,7 @@ public class GroovyClassLoader extends URLClassLoader {
                     // a URI for the current working directory.
                     // But we use this string match for now so everyone can see it doesn't hurt file-only classpaths.
                     URI newURI;
-                    if (!isPathURI(path)) {
+                    if (!uriPattern.matcher(path).matches()) {
                         newURI = new File(path).toURI();
                     } else {
                         newURI = new URI(path);
@@ -918,9 +919,9 @@ public class GroovyClassLoader extends URLClassLoader {
         });
     }
 
-    private static boolean isPathURI(String path) {
-        return path.matches("^\\w+:.*");
-    }
+    // RFC2396
+    // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
+    private static final Pattern uriPattern = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:.*");
 
     /**
      * <p>Returns all Groovy classes loaded by this class loader.
