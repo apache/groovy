@@ -60,7 +60,7 @@ public class DefaultGroovyMethodsSupport {
     /**
      * This converts a possibly negative index to a real index into the array.
      *
-     * @param i    the unnormalised index
+     * @param i    the unnormalized index
      * @param size the array size
      * @return the normalised index
      */

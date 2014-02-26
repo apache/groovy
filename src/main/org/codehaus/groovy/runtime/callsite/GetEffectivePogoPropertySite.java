@@ -23,11 +23,9 @@ import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 /**
- * Created by IntelliJ IDEA.
 * User: applerestore
 * Date: May 21, 2008
 * Time: 10:37:37 AM
-* To change this template use File | Settings | File Templates.
 */
 class GetEffectivePogoPropertySite extends AbstractCallSite {
     private final MetaClass metaClass;

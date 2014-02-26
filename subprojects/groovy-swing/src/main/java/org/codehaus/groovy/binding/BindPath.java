@@ -177,7 +177,7 @@ public class BindPath {
     }
 
     /**
-     * Remove listeners, believeing that our bould flags are accurate and it removes
+     * Remove listeners, believing that our bould flags are accurate and it removes
      * only as declared.
      */
     public void removeListeners() {

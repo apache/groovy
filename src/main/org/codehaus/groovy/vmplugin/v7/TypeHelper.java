@@ -30,7 +30,7 @@ public class TypeHelper {
     /**
      * Get wrapper class for a given class. 
      * If the class is for a primitive number type, then the wrapper class
-     * will be returned. If it is no primtive number type, we return the 
+     * will be returned. If it is no primitive number type, we return the
      * class itself.
      */
     protected static Class getWrapperClass(Class c) {

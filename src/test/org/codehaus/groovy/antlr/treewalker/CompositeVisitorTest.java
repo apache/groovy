@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Testcases for the composite visitor.
+ * Test cases for the composite visitor.
  */
 public class CompositeVisitorTest extends TestCase {
 

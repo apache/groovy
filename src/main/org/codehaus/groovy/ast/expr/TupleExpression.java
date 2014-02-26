@@ -88,7 +88,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
     }
 
     public String getText() {
-        StringBuffer buffer = new StringBuffer("(");
+        StringBuilder buffer = new StringBuilder("(");
         boolean first = true;
         for (Expression expression : expressions) {
             if (first) {

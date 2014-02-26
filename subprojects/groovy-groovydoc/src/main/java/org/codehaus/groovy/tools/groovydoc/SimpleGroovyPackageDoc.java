@@ -132,7 +132,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 
     public String getRelativeRootPath() {
         StringTokenizer tokenizer = new StringTokenizer(name(), "" + FS);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         while (tokenizer.hasMoreTokens()) {
             tokenizer.nextToken();
             sb.append("../");

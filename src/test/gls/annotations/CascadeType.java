@@ -16,7 +16,7 @@
 package gls.annotations;
 
 /**
- * This class mimicks JPA's CascadeType enum
+ * This class mimics JPA's CascadeType enum
  * 
  * @author Guillaume Laforge
  */
