@@ -6,7 +6,10 @@ The Groovy development team
 :groovy-www: http://groovy.codehaus.org/
 :groovy-ci: http://ci.groovy-lang.org?guest=1
 :jdk: http://www.oracle.com/technetwork/java/javase/downloads
-
+:bintray-latest-version-image: https://api.bintray.com/packages/groovy/maven/groovy/images/download.png
+:bintray-latest-version-link: https://bintray.com/groovy/maven/groovy/_latestVersion
+:bintray-watch-image: https://www.bintray.com/docs/images/bintray_badge_color.png
+:bintray-watch-link: https://bintray.com/groovy/maven/groovy/view?source=watch
 
 [.left.text-left]
 image::http://groovy.codehaus.org/images/groovy-logo.png[]
@@ -17,6 +20,16 @@ Groovy makes modern programming features available to Java developers with almos
 Groovy makes writing shell and build scripts easy with its powerful processing primitives, OO abilities and an Ant DSL.
 
 It also increases developer productivity by reducing scaffolding code when developing web, GUI, database or console applications. Groovy simplifies testing by supporting unit testing and mocking out-of-the-box. Groovy also seamlessly integrates with all existing Java classes and libraries and compiles straight to Java bytecode so you can use it anywhere you can use Java.
+
+== Downloading
+
+Latest Groovy version is availble on Bintray image:{bintray-latest-version-image}[Bintray latest version, link={bintray-latest-version-link}]
+
+Binary distribution links are on the package page.
+
+Maven, Gradle and Ivy dependency declaration snippets are available on specific files of a particular module.
+
+image:{bintray-watch-image}[Get automatic notifications about new "groovy" versions link={bintray-watch-link}]
 
 == Building
 
