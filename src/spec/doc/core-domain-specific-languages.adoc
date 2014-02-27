@@ -386,6 +386,7 @@ the example above, that means that the delegate type is resolved against `List<T
 
 NOTE: We're using a `genericTypeIndex` instead of a placeholder (`T`) because of JVM limitations.
 
+[[compilation-customizers]]
 == Compilation customizers
 === Introduction
 

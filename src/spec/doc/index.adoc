@@ -64,21 +64,14 @@ include::{projectdir}/src/spec/doc/template-engines.adoc[]
 :leveloffset: 0
 
 === Servlet support (TBD)
-=== Integrating Groovy in a Java application (TBD)
-==== Groovy integration mechanisms (TBD)
-===== Eval (TBD)
-===== GroovyShell (TBD)
-===== GroovyClassLoader (TBD)
-===== CompilationUnit (TBD)
-===== Reloading (TBD)
-==== Bean Scripting Framework (TBD)
-==== JSR 223 javax.script API (TBD)
 
 :leveloffset: 2
+include::{projectdir}/src/spec/doc/guide-integrating.adoc[]
+:leveloffset: 0
 
+:leveloffset: 2
 include::{projectdir}/src/spec/doc/core-domain-specific-languages.adoc[]
 include::{projectdir}/subprojects/groovy-jmx/src/spec/doc/jmx.adoc[]
-
 :leveloffset: 0
 
 === Creating Swing UIs (TBD)
