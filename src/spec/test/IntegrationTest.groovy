@@ -84,8 +84,8 @@ try {
         assertScript '''// tag::groovyshell_parse_binding[]
 def shell = new GroovyShell()
 
-def b1 = new Binding(x:3)
-def b2 = new Binding(x:4)
+def b1 = new Binding(x:3)                       // <1>
+def b2 = new Binding(x:4)                       // <2>
 def script = shell.parse('x = 2*x')
 script.binding = b1
 script.run()
@@ -180,6 +180,64 @@ assert clazz2.name == 'Foo'
 assert clazz1 == clazz2                                                     // <4>
 // end::gcl_same_classes[]
 file.delete()
+'''
+    }
+
+    void testGroovyScriptEngine() {
+        assertScript '''def tmpDir = File.createTempDir("reloading", "gse")
+
+def copyResource = { String source, String dest ->
+    File dst = new File(tmpDir, "${dest}.groovy")
+    if (dst.exists()) {
+        dst.delete()
+        Thread.sleep(1000)
+    }
+    dst << this.class.classLoader.getResourceAsStream("reloading/${source}.groovy")
+}
+
+try {
+    // tag::gse_init[]
+    def binding = new Binding()
+    def engine = new GroovyScriptEngine([tmpDir.toURI().toURL()] as URL[])          // <1>
+    // end::gse_init[]
+
+    copyResource('source1', 'ReloadingTest')
+    /*
+    // tag::gse_script_fakeloop_begin[]
+    while (true) {
+    // end::gse_script_fakeloop_begin[]
+    // tag::gse_script_fakeloop_end[]
+        Thread.sleep(1000)
+    }
+    // end::gse_script_fakeloop_end[]
+    */
+    // tag::gse_script1[]
+    def greeter = engine.run('ReloadingTest.groovy', binding)                   // <2>
+    println greeter.sayHello()                                                  // <3>
+    // end::gse_script1[]
+    assert greeter.sayHello() == 'Hello, world!'
+
+    copyResource('source2', 'ReloadingTest')
+
+    greeter = engine.run('ReloadingTest.groovy', binding)
+    println greeter.sayHello()
+    assert greeter.sayHello() == 'Hello, Groovy!'
+
+    copyResource('source3', 'ReloadingTest')
+    copyResource('dependency1', 'Dependency')
+
+    greeter = engine.run('ReloadingTest.groovy', binding)
+    println greeter.sayHello()
+    assert greeter.sayHello() == 'Hello, dependency 1'
+
+    copyResource('dependency2', 'Dependency')
+
+    greeter = engine.run('ReloadingTest.groovy', binding)
+    println greeter.sayHello()
+    assert greeter.sayHello() == 'Hello, dependency 2'
+} finally {
+    tmpDir.deleteDir()
+}
 '''
     }
 

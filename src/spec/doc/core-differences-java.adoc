@@ -183,7 +183,7 @@ a good way to prevent this problem.
 
 Java 8 supports lambdas and method references:
 
-[groovy,source]
+[source,groovy]
 ----
 Runnable run = () -> System.out.println("Run");
 list.forEach(System.out::println);
@@ -192,7 +192,7 @@ list.forEach(System.out::println);
 Does can be more or less considered as anonymous inner classes. Groovy doesn't support that syntax, but has closures
 instead:
 
-[groovy,source]
+[source,groovy]
 ----
 Runnable run = { println 'run' }
 list.each { println it } // or list.each(this.&println)

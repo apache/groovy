@@ -1,0 +1,65 @@
+= Bean Scripting Framework
+
+WARNING: The http://commons.apache.org/proper/commons-bsf/[Bean Scripting Framework] is an attempt to create an API
+to allow calling scripting languages from Java. It hasn't been updated for long and abandonned in favor of the
+standard <<jsr223,JSR-223>> API.
+
+The BSF engine for Groovy is implemented by the `org.codehaus.groovy.bsf.GroovyEngine` class. However, that fact is
+normally hidden away by the BSF APIs. You just treat Groovy like any of the other scripting languages via the BSF
+API.
+
+NOTE: Since Groovy has its own native support for integration with Java, you only need to worry about BSF if you also
+want to also be able to call other languages, e.g. http://jruby.codehaus.org/[JRuby] or if you want to remain very
+loosely coupled from your scripting language.
+
+== Getting started
+
+Provided you have Groovy and BSF jars in your classpath, you can use the
+following Java code to run a sample Groovy script:
+
+[source,java]
+-------------------------------------------------------------------------------
+include::{rootDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_simple,indent=0]
+-------------------------------------------------------------------------------
+
+== Passing in variables
+
+BSF lets you pass beans between Java and your scripting language. You
+can _register_/_unregister_ beans which makes them known to BSF. You can
+then use BSF methods to _lookup_ beans as required. Alternatively, you
+can _declare_/_undeclare_ beans. This will register them but also make
+them available for use directly in your scripting language. This second
+approach is the normal approach used with Groovy. Here is an example:
+
+[source,java]
+-----------------------------------------------------------------------
+include::{rootDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_variable_passing,indent=0]
+-----------------------------------------------------------------------
+
+== Other calling options
+
+The previous examples used the _eval_ method. BSF makes multiple methods
+available for your use (see the
+http://commons.apache.org/proper/commons-bsf/manual.html[BSF documentation] for more
+details). One of the other available methods is _apply_. It allows you
+to define an anonymous function in your scripting language and apply
+that function to arguments. Groovy supports this function using
+closures. Here is an example:
+
+[source,java]
+--------------------------------------------------------------------------------
+include::{rootDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_apply,indent=0]
+--------------------------------------------------------------------------------
+
+== Access to the scripting engine
+
+Although you don’t normally need it, BSF does provide a hook that lets
+you get directly to the scripting engine. One of the functions which the
+engine can perform is to invoke a single method call on an object. Here
+is an example:
+
+[source,java]
+--------------------------------------------------------------------------
+include::{rootDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_access,indent=0]
+--------------------------------------------------------------------------
+

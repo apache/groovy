@@ -32,7 +32,7 @@ include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=eval_x,indent=0]
 The `Eval` class makes it very easy to evaluate simple scripts, but doesn't scale: there is no caching of the script, and
 it isn't meant to evaluate more than one liners.
 
-[[integ-groovyshell]
+[[integ-groovyshell]]
 === GroovyShell
 ==== Multiple sources
 The `groovy.lang.GroovyShell` class is the preferred way to evaluate scripts with the ability to cache the resulting
@@ -139,11 +139,11 @@ include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=custom_script_us
 <3> then use the compiler configuration when you create the shell
 <4> the script now has access to the new method `greet`
 
-NOTE:You are not limited to the sole _scriptBaseClass_ configuration. You can use any of the compiler configuration
+NOTE: You are not limited to the sole _scriptBaseClass_ configuration. You can use any of the compiler configuration
 tweaks, including the <<compilation-customizers,compilation customizers>>.
 
 [[groovyclassloader]]
-=== GroovyClassLoader (in progress)
+=== GroovyClassLoader
 
 In the <<integ-groovyshell,previous section>>, we have shown that `GroovyShell` was an easy tool to execute scripts, but
 it makes it complicated to compile anything but scripts. Internally, it makes use of the `groovy.lang.GroovyClassLoader`,
@@ -189,9 +189,121 @@ include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gcl_same_classes
 Using a `File` as input, the `GroovyClassLoader` is capable of *caching* the generated class file, which avoids
 creating multiple classes at runtime for the same source.
 
-=== GroovyScriptEngine (TBD)
-=== CompilationUnit (TBD)
-=== Reloading (TBD)
-== Bean Scripting Framework (TBD)
-== JSR 223 javax.script API (TBD)
+=== GroovyScriptEngine
+
+The `groovy.util.GroovyScriptEngine` class provides a flexible foundation for applications which rely on script
+reloading and script dependencies. While `GroovyShell` focuses on standalone `Script`s and `GroovyClassLoader` handles
+dynamic compilation and loading of any Groovy class, the `GroovyScriptEngine` will add a layer on top of `GroovyClassLoader`
+to handle both script dependencies and reloading.
+
+To illustrate this, we will create a script engine and execute code in an infinite loop. First of all, you need to create
+a directory with the following script inside:
+
+[source,groovy]
+.ReloadingTest.groovy
+----
+include::{projectdir}/src/spec/test-resources/reloading/source1.groovy[]
+----
+
+then you can execute this code using a `GroovyScriptEngine`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gse_init,indent=0]
+
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gse_script_fakeloop_begin,indent=0]
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gse_script1,indent=4]
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gse_script_fakeloop_end,indent=0]
+----
+<1> create a script engine which will look for sources into our source directory
+<2> execute the script, which will return an instance of `Greeter`
+<3> print the greeting message
+
+At this point, you should see a message printed every second:
+
+----
+Hello, world!
+Hello, world!
+...
+----
+
+*Without* interrupting the script execution, now replace the contents of the `ReloadingTest` file with:
+
+[source,groovy]
+.ReloadingTest.groovy
+----
+include::{projectdir}/src/spec/test-resources/reloading/source2.groovy[]
+----
+
+And the message should change to:
+
+----
+Hello, world!
+...
+Hello, Groovy!
+Hello, Groovy!
+...
+----
+
+But it is also possible to have a dependency on another script. To illustrate this, create the following file into
+the same directory, without interrupting the executing script:
+
+[source,groovy]
+.Depencency.groovy
+----
+include::{projectdir}/src/spec/test-resources/reloading/dependency1.groovy[]
+----
+
+and update the `ReloadingTest` script like this:
+
+[source,groovy]
+.ReloadingTest.groovy
+----
+include::{projectdir}/src/spec/test-resources/reloading/source3.groovy[]
+----
+
+And this time, the message should change to:
+
+----
+Hello, Groovy!
+...
+Hello, dependency 1!
+Hello, dependency 1!
+...
+----
+
+And as a last test, you can update the `Dependency.groovy` file without touching the `ReloadingTest` file:
+
+[source,groovy]
+.Depencency.groovy
+----
+include::{projectdir}/src/spec/test-resources/reloading/dependency2.groovy[]
+----
+
+And you should observe that the dependent file was reloaded:
+
+----
+Hello, dependency 1!
+...
+Hello, dependency 2!
+Hello, dependency 2!
+----
+
+=== CompilationUnit
+
+Ultimately, it is possible to perform more operations during compilation by relying directly on the
+`org.codehaus.groovy.control.CompilationUnit` class. This class is responsible for determining the various steps of
+compilation and would let you introduce new steps or even stop compilation at various phases. This is for example how
+stub generation is done, for the joint compiler.
+
+However, overriding `CompilationUnit` is not recommanded and should only be done if no other standard solution works.
+
+:leveloffset: 3
+include::{projectdir}/subprojects/groovy-bsf/{specfolder}/integrating-bsf.adoc[]
+:leveloffset: 2
+
+:leveloffset: 3
+include::{projectdir}/subprojects/groovy-jsr223/{specfolder}/integrating-jsr223.adoc[]
+:leveloffset: 2
+
 
