@@ -1444,12 +1444,8 @@ public class AsmClassGenerator extends ClassGenerator {
             if (elementExpression == null) {
                 ConstantExpression.NULL.visit(this);
             } else {
-                ClassNode type = controller.getTypeChooser().resolveType(elementExpression, controller.getClassNode());
-                if (!elementType.equals(type)) {
-                    visitCastExpression(new CastExpression(elementType, elementExpression, true));
-                } else {
-                    elementExpression.visit(this);
-                }
+                elementExpression.visit(this);
+                controller.getOperandStack().doGroovyCast(elementType);
             }
             mv.visitInsn(storeIns);
             controller.getOperandStack().remove(1);
