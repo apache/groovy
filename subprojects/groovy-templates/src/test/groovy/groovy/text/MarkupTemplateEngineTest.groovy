@@ -568,6 +568,30 @@ yield "$name: $x"
         assert rendered.toString() == "Hi John :-)"
     }
 
+    void testLoadTemplateFromDirectory() {
+        def tplDir = File.createTempDir("templates", "")
+        try {
+            def templateFile = new File(tplDir, "hello-from-dir.tpl")
+
+            def loader = this.class.classLoader
+            templateFile << loader.getResourceAsStream('includes/hello.tpl')
+            assert templateFile.text
+            MarkupTemplateEngine engine = new MarkupTemplateEngine(loader, tplDir, new TemplateConfiguration())
+            def template = engine.createTemplate '''
+html {
+    body {
+        include template:'hello-from-dir.tpl'
+    }
+}
+'''
+            StringWriter rendered = new StringWriter()
+            template.make().writeTo(rendered)
+            assert rendered.toString() == '<html><body>Hello from include!</body></html>'
+        } finally {
+            tplDir.deleteDir()
+        }
+    }
+
     class SimpleTagLib {
         def emoticon = { attrs, body ->
             out << body() << (attrs.happy == 'true' ? " :-)" : " :-(")

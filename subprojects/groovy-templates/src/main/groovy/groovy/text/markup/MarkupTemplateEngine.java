@@ -32,10 +32,13 @@ import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -76,6 +79,24 @@ public class MarkupTemplateEngine extends TemplateEngine {
             );
         }
         groovyClassLoader = new TemplateGroovyClassLoader(parentLoader, compilerConfiguration);
+    }
+
+    /**
+     * Convenience constructor to build a template engine which searches for templates
+     * into a directory
+     * @param templateDirectory directory where to find templates
+     * @param tplConfig template engine configuration
+     */
+    public MarkupTemplateEngine(ClassLoader parentLoader, File templateDirectory, TemplateConfiguration tplConfig) {
+        this(new URLClassLoader(buildURLs(templateDirectory), parentLoader), tplConfig);
+    }
+
+    private static URL[] buildURLs(final File templateDirectory) {
+        try {
+            return new URL[]{templateDirectory.toURI().toURL()};
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Invalid directory",e);
+        }
     }
 
     public Template createTemplate(final Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
