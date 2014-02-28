@@ -691,4 +691,23 @@ public class WideningCategories {
         }
         return true;
     }
+    
+    /**
+     * Determines if the source class implements an interface or subclasses the target type.
+     * This method takes the {@link org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode lowest
+     * upper bound class node} type into account, allowing to remove unnecessary casts.
+     * @param source the type of interest
+     * @param targetType the target type of interest
+     */
+    public static boolean implementsInterfaceOrSubclassOf(final ClassNode source, final ClassNode targetType) {
+        if (source.isDerivedFrom(targetType) || source.implementsInterface(targetType)) return true;
+        if (targetType instanceof WideningCategories.LowestUpperBoundClassNode) {
+            WideningCategories.LowestUpperBoundClassNode lub = (WideningCategories.LowestUpperBoundClassNode) targetType;
+            if (implementsInterfaceOrSubclassOf(source, lub.getSuperClass())) return true;
+            for (ClassNode classNode : lub.getInterfaces()) {
+                if (source.implementsInterface(classNode)) return true;
+            }
+        }
+        return false;
+    }
 }

@@ -208,7 +208,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             return (T) toFloat(self);
         } else if (c == File.class) {
             return (T) new File(self);
-        } else if (DefaultTypeTransformation.isEnumSubclass(c)) {
+        } else if (c.isEnum()) {
             return (T) InvokerHelper.invokeMethod(c, "valueOf", new Object[]{ self });
         }
         return DefaultGroovyMethods.asType((Object) self, c);

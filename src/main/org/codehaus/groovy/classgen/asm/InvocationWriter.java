@@ -16,7 +16,6 @@
 package org.codehaus.groovy.classgen.asm;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -24,12 +23,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
 
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -37,6 +37,7 @@ import org.objectweb.asm.MethodVisitor;
 import static org.objectweb.asm.Opcodes.*;
 
 public class InvocationWriter {
+
     // method invocation
     public static final MethodCallerMultiAdapter invokeMethodOnCurrent = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeMethodOnCurrent", true, false);
     public static final MethodCallerMultiAdapter invokeMethodOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeMethodOnSuper", true, false);
@@ -44,6 +45,14 @@ public class InvocationWriter {
     public static final MethodCallerMultiAdapter invokeStaticMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod", true, true);
     public static final MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
     private static final MethodNode CLASS_FOR_NAME_STRING = ClassHelper.CLASS_Type.getDeclaredMethod("forName", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE,"name")});
+
+    // type conversions
+    private static final MethodCaller
+        asTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType"),
+        castToTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "castToType"),
+        castToClassMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToClass"),
+        castToStringMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToString"),
+        castToEnumMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToEnum");
 
     // constructor calls with this() and super()
     static final MethodCaller selectConstructorAndTransformArguments = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "selectConstructorAndTransformArguments");
@@ -570,7 +579,6 @@ public class InvocationWriter {
 
     private void visitSpecialConstructorCall(ConstructorCallExpression call) {
         if (controller.getClosureWriter().addGeneratedClosureConstructorCall(call)) return;
-        AsmClassGenerator acg = controller.getAcg();
         ClassNode callNode = controller.getClassNode();
         if (call.isSuperCall()) callNode = callNode.getSuperClass();
         List<ConstructorNode> constructors = sortConstructors(call, callNode);
@@ -769,4 +777,46 @@ public class InvocationWriter {
         return lastMatch;
     }
 
+    /**
+     * This converts sourceType to a non primitive by using Groovy casting.
+     * sourceType might be a primitive
+     * This might be done using SBA#castToType
+     */
+    public void castToNonPrimitiveIfNecessary(final ClassNode sourceType, final ClassNode targetType) {
+        OperandStack os = controller.getOperandStack();
+        ClassNode boxedType = os.box();
+        if (WideningCategories.implementsInterfaceOrSubclassOf(boxedType, targetType)) return;
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (ClassHelper.CLASS_Type.equals(targetType)) {
+            castToClassMethod.call(mv);
+        } else if (ClassHelper.STRING_TYPE.equals(targetType)) {
+            castToStringMethod.call(mv);
+        } else if (targetType.isDerivedFrom(ClassHelper.Enum_Type)) {
+            (new ClassExpression(targetType)).visit(controller.getAcg());
+            os.remove(1);
+            castToEnumMethod.call(mv);
+            BytecodeHelper.doCast(mv, targetType);
+        } else {
+            (new ClassExpression(targetType)).visit(controller.getAcg());
+            os.remove(1);
+            castToTypeMethod.call(mv);
+        }
+    }
+
+    public void castNonPrimitiveToBool(ClassNode last) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        BytecodeHelper.unbox(mv, ClassHelper.boolean_TYPE);
+    }
+
+    public void coerce(ClassNode from, ClassNode target) {
+        if (from.isDerivedFrom(target)) return;
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack os = controller.getOperandStack();
+        os.box();
+        (new ClassExpression(target)).visit(controller.getAcg());
+        os.remove(1);
+        asTypeMethod.call(mv);
+        BytecodeHelper.doCast(mv,target);
+        os.replace(target);
+    }
 }

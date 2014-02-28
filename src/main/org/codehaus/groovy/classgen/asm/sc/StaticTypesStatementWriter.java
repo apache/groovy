@@ -82,6 +82,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
                     "iterator",
                     "(Ljava/lang/Object;)Ljava/util/Iterator;"
             );
+            operandStack.replace(ClassHelper.Iterator_TYPE);
         }
 
         // Then get the iterator and generate the loop control

@@ -16,10 +16,12 @@
 package org.codehaus.groovy.classgen.asm;
 
 import groovy.lang.GroovyRuntimeException;
+
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -27,6 +29,7 @@ import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -284,8 +287,9 @@ public class BinaryExpressionHelper {
         OperandStack operandStack = controller.getOperandStack();
         Expression rightExpression = expression.getRightExpression();
         Expression leftExpression = expression.getLeftExpression();
+        ClassNode lhsType = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
 
-        if (    defineVariable && 
+        if (    defineVariable &&
                 rightExpression instanceof EmptyExpression && 
                 !(leftExpression instanceof TupleExpression) )
         {
@@ -297,7 +301,12 @@ public class BinaryExpressionHelper {
 
         // let's evaluate the RHS and store the result
         ClassNode rhsType;
-        if (rightExpression instanceof EmptyExpression) {
+        if (rightExpression instanceof ListExpression && lhsType.isArray()) {
+            ListExpression list = (ListExpression) rightExpression;
+            ArrayExpression array = new ArrayExpression(lhsType.getComponentType(), list.getExpressions());
+            array.setSourcePosition(list);
+            array.visit(acg);
+        } else if (rightExpression instanceof EmptyExpression) {
             rhsType = leftExpression.getType();
             loadInitValue(rhsType);
         } else {
@@ -314,8 +323,7 @@ public class BinaryExpressionHelper {
                 rhsType = ClassHelper.getWrapper(rhsType);
                 operandStack.box();
             }
-            
-            ClassNode lhsType = controller.getTypeChooser().resolveType(var, controller.getClassNode());
+
             // ensure we try to unbox null to cause a runtime NPE in case we assign 
             // null to a primitive typed variable, even if it is used only in boxed 
             // form as it is closure shared

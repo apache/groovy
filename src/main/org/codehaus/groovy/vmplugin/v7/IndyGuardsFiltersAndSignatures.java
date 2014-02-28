@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.vmplugin.v7;
 
+import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
@@ -26,14 +27,21 @@ import groovy.lang.MissingMethodException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
@@ -68,11 +76,13 @@ public class IndyGuardsFiltersAndSignatures {
         GROOVY_OBJECT_INVOKER, GROOVY_OBJECT_GET_PROPERTY,
         HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
         BEAN_CONSTRUCTOR_PROPERTY_SETTER,
-        META_PROPERTY_GETTER, 
+        META_PROPERTY_GETTER,
         SLOW_META_CLASS_FIND, META_CLASS_INVOKE_STATIC_METHOD,
         MOP_GET, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
         INTERCEPTABLE_INVOKER,
-        CLASS_FOR_NAME
+        CLASS_FOR_NAME, BOOLEAN_IDENTITY, 
+        DTT_CAST_TO_TYPE, SAM_CONVERSION,
+        HASHSET_CONSTRUCTOR, ARRAYLIST_CONSTRUCTOR, GROOVY_CAST_EXCEPTION
         ;
 
     static {
@@ -98,6 +108,13 @@ public class IndyGuardsFiltersAndSignatures {
             INTERCEPTABLE_INVOKER = LOOKUP.findVirtual(GroovyObject.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
 
             CLASS_FOR_NAME = LOOKUP.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));
+
+            BOOLEAN_IDENTITY = MethodHandles.identity(Boolean.class);
+            DTT_CAST_TO_TYPE = LOOKUP.findStatic(DefaultTypeTransformation.class, "castToType", MethodType.methodType(Object.class,Object.class,Class.class));
+            SAM_CONVERSION = LOOKUP.findStatic(CachedSAMClass.class, "coerceToSAM", MethodType.methodType(Object.class, Closure.class, Method.class, Class.class, boolean.class));
+            HASHSET_CONSTRUCTOR = LOOKUP.findConstructor(HashSet.class, MethodType.methodType(void.class, Collection.class));
+            ARRAYLIST_CONSTRUCTOR = LOOKUP.findConstructor(ArrayList.class, MethodType.methodType(void.class, Collection.class));
+            GROOVY_CAST_EXCEPTION = LOOKUP.findConstructor(GroovyCastException.class, MethodType.methodType(void.class, Object.class, Class.class));
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }
