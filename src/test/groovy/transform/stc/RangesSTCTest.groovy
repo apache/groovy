@@ -53,4 +53,18 @@ class RangesSTCTest extends StaticTypeCheckingTestCase{
         '''
     }
 
+    // GROOVY-
+    void testInferenceOfBigIntRange() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def irt = node.getNodeMetaData(INFERRED_TYPE)
+                assert irt==make(Range)
+                assert irt.isUsingGenerics()
+                assert irt.genericsTypes[0].type == make(BigInteger)
+            })
+            def range = (1G..1G)
+            range.each { BigInteger bi -> println bi}
+        '''
+    }
+
 }
