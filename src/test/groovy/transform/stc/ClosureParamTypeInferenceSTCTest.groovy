@@ -1170,4 +1170,17 @@ wrap {
 
 '''
     }
+
+    void testGroovy6602() {
+        shouldFailWithMessages '''import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.FromString
+
+void foo(@ClosureParams(value = FromString, options = "java.lang.Number")
+         Closure cl) {
+    cl.call(4.5)
+}
+
+foo { Integer i -> println i }
+''', 'Expected parameter of type java.lang.Number but got java.lang.Integer'
+    }
 }
