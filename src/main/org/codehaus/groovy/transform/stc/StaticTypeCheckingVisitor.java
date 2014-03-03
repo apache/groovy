@@ -395,7 +395,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (Integer_TYPE.equals(fromType) && Integer_TYPE.equals(toType)) {
             storeType(expression, ClassHelper.make(IntRange.class));
         } else {
-            storeType(expression, ClassHelper.make(ObjectRange.class));
+            ClassNode rangeType = ClassHelper.make(Range.class).getPlainNodeReference();
+            rangeType.setGenericsTypes(new GenericsType[] { new GenericsType(WideningCategories.lowestUpperBound(fromType, toType))});
+            storeType(expression,  rangeType);
         }
     }
 
