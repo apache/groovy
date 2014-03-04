@@ -82,12 +82,17 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
         }
 
         onMethodSelection { call, node ->
-            if (isMethodCallExpression(call) && call.objectExpression.text=='this.getModel()' && modelTypesClassNodes!=null) {
+            if (isMethodCallExpression(call) && modelTypesClassNodes!=null) {
                 def args = getArguments(call).expressions
-                if (args.size()==1 && isConstantExpression(args[0])) {
-                    def type = modelTypesClassNodes[args[0].text]
+                if (args.size()==1) {
+                    String varName = isConstantExpression(args[0])?args[0].text:call.getNodeMetaData(MarkupBuilderCodeTransformer.TARGET_VARIABLE)
+                    def type = modelTypesClassNodes[varName]
                     if (type) {
-                        storeType(call, type)
+                        if (call.objectExpression.text=='this.getModel()') {
+                            storeType(call, type)
+                        } else if (call.methodAsString=='tryEscape') {
+                            storeType(call, type)
+                        }
                     }
                 }
             }

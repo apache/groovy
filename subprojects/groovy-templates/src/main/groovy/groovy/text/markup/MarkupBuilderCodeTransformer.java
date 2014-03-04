@@ -52,6 +52,8 @@ import java.util.Set;
  */
 class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
 
+    final static String TARGET_VARIABLE = "target.variable";
+
     private final SourceUnit unit;
     private final boolean autoEscape;
 
@@ -102,6 +104,7 @@ class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
                 );
                 yield.setImplicitThis(true);
                 yield.setSourcePosition(exp);
+                yield.putNodeMetaData(TARGET_VARIABLE, varName);
                 return autoEscape?yield:mce;
             }
         }

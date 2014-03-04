@@ -16,11 +16,9 @@
 
 package groovy.text
 
-import groovy.text.markup.BaseTemplate
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TagLibAdapter
 import groovy.text.markup.TemplateConfiguration
-import groovy.transform.CompileStatic
 
 class MarkupTemplateEngineTest extends GroovyTestCase {
     private Locale locale
@@ -660,6 +658,26 @@ html {
         def tpl = template.make(model)
         tpl.writeTo(rendered)
         assert rendered.toString() == "Bonjour!"
+    }
+
+    void testTypeCheckedModelShouldNotConflictWithAutoEscape() {
+
+        def model = [title: "This is my glorious title ${1 + 1}".toString()]
+
+        def template = new MarkupTemplateEngine(
+                getClass().getClassLoader(),
+                new TemplateConfiguration(autoNewLine: true, autoEscape: true, newLineString: 'NL')).createTypeCheckedModelTemplate('''
+body {
+  div(class: 'text')  {
+    yield title.toUpperCase()
+  }
+}
+
+''', [title: 'String'])
+
+        def stringWriter = new StringWriter()
+        template.make(model).writeTo(stringWriter)
+        assert stringWriter.toString() == '<body>NL<div class=\'text\'>NLTHIS IS MY GLORIOUS TITLE 2NL</div>NL</body>'
     }
 
     class SimpleTagLib {
