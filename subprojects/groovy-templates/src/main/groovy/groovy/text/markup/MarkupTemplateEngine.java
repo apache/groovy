@@ -133,7 +133,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         return new MarkupTemplateMaker(resource, null);
     }
 
-    public Template createTemplate(final URL resource, Map<String, String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
+    public Template createTypeCheckedModelTemplate(final URL resource, Map<String, String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
         return new MarkupTemplateMaker(resource, modelTypes);
     }
 

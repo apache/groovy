@@ -277,7 +277,7 @@ public abstract class BaseTemplate implements Writable {
      */
     public void includeGroovy(String templatePath) throws IOException, ClassNotFoundException {
         URL resource = engine.resolveTemplate(templatePath);
-        engine.createTemplate(resource, modelTypes).make(model).writeTo(out);
+        engine.createTypeCheckedModelTemplate(resource, modelTypes).make(model).writeTo(out);
     }
 
 
