@@ -23,6 +23,21 @@ import groovy.text.markup.TemplateConfiguration
 import groovy.transform.CompileStatic
 
 class MarkupTemplateEngineTest extends GroovyTestCase {
+    private Locale locale
+
+    @Override
+    void setUp() {
+        locale = Locale.default
+        super.setUp();
+        Locale.default = Locale.US
+    }
+
+    @Override
+    void tearDown() {
+        super.tearDown();
+        Locale.default = locale
+    }
+
     void testSimpleTemplate() {
         MarkupTemplateEngine engine = new MarkupTemplateEngine()
         def template = engine.createTemplate '''
@@ -64,6 +79,22 @@ html {
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == '<html><body>Hello from include!</body></html>'
+    }
+
+    void testSimpleTemplateWithIncludeTemplateWithLocale() {
+        def tplConfig = new TemplateConfiguration()
+        tplConfig.locale = Locale.FRANCE
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, tplConfig)
+        def template = engine.createTemplate '''
+html {
+    body {
+        include template:'includes/hello.tpl'
+    }
+}
+'''
+        StringWriter rendered = new StringWriter()
+        template.make().writeTo(rendered)
+        assert rendered.toString() == '<html><body>Bonjour!</body></html>'
     }
 
     void testSimpleTemplateWithIncludeRaw() {
@@ -590,6 +621,29 @@ html {
         } finally {
             tplDir.deleteDir()
         }
+    }
+
+    void testLoadTemplateByName() {
+        TemplateConfiguration config = new TemplateConfiguration()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, config)
+        def template = engine.createTemplateByPath 'includes/hello.tpl'
+        StringWriter rendered = new StringWriter()
+        def model = [:]
+        def tpl = template.make(model)
+        tpl.writeTo(rendered)
+        assert rendered.toString() == "Hello from include!"
+    }
+
+    void testLoadTemplateByNameWithLocale() {
+        TemplateConfiguration config = new TemplateConfiguration()
+        config.locale = Locale.FRANCE
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, config)
+        def template = engine.createTemplateByPath 'includes/hello.tpl'
+        StringWriter rendered = new StringWriter()
+        def model = [:]
+        def tpl = template.make(model)
+        tpl.writeTo(rendered)
+        assert rendered.toString() == "Bonjour!"
     }
 
     class SimpleTagLib {

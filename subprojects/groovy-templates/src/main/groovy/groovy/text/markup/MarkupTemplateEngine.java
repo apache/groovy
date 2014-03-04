@@ -44,6 +44,8 @@ import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A template engine which leverages {@link groovy.xml.StreamingMarkupBuilder} to generate XML/XHTML.
@@ -53,6 +55,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class MarkupTemplateEngine extends TemplateEngine {
 
     final static ClassNode MARKUPTEMPLATEENGINE_CLASSNODE = ClassHelper.make(MarkupTemplateEngine.class);
+    private final static Pattern LOCALIZED_RESOURCE_PATTERN = Pattern.compile("(.+?)(_[a-z]{2}(?:_[A-Z]{2,3}))?\\.(\\p{Alnum}+)");
 
     private final static AtomicLong counter = new AtomicLong();
 
@@ -69,7 +72,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         templateConfiguration = tplConfig;
         compilerConfiguration.addCompilationCustomizers(new TemplateASTTransformer(tplConfig));
         compilerConfiguration.addCompilationCustomizers(
-                new ASTTransformationCustomizer(Collections.singletonMap("extensions","groovy.text.markup.MarkupTemplateTypeCheckingExtension"),CompileStatic.class));
+                new ASTTransformationCustomizer(Collections.singletonMap("extensions", "groovy.text.markup.MarkupTemplateTypeCheckingExtension"), CompileStatic.class));
         if (templateConfiguration.isAutoNewLine()) {
             compilerConfiguration.addCompilationCustomizers(
                     new CompilationCustomizer(CompilePhase.CONVERSION) {
@@ -88,10 +91,10 @@ public class MarkupTemplateEngine extends TemplateEngine {
     }
 
     /**
-     * Convenience constructor to build a template engine which searches for templates
-     * into a directory
+     * Convenience constructor to build a template engine which searches for templates into a directory
+     *
      * @param templateDirectory directory where to find templates
-     * @param tplConfig template engine configuration
+     * @param tplConfig         template engine configuration
      */
     public MarkupTemplateEngine(ClassLoader parentLoader, File templateDirectory, TemplateConfiguration tplConfig) {
         this(new URLClassLoader(buildURLs(templateDirectory), parentLoader), tplConfig);
@@ -101,7 +104,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         try {
             return new URL[]{templateDirectory.toURI().toURL()};
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Invalid directory",e);
+            throw new IllegalArgumentException("Invalid directory", e);
         }
     }
 
@@ -109,12 +112,20 @@ public class MarkupTemplateEngine extends TemplateEngine {
         return new MarkupTemplateMaker(reader, null);
     }
 
-    public Template createTypeCheckedModelTemplate(final String source, Map<String,String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
+    public Template createTemplateByPath(final String templatePath) throws CompilationFailedException, ClassNotFoundException, IOException {
+        return new MarkupTemplateMaker(resolveTemplate(templatePath), null);
+    }
+
+    public Template createTypeCheckedModelTemplate(final String source, Map<String, String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
         return new MarkupTemplateMaker(new StringReader(source), modelTypes);
     }
 
-    public Template createTypeCheckedModelTemplate(final Reader reader, Map<String,String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
+    public Template createTypeCheckedModelTemplate(final Reader reader, Map<String, String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
         return new MarkupTemplateMaker(reader, modelTypes);
+    }
+
+    public Template createTypeCheckedModelTemplateByPath(final String templatePath, Map<String, String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
+        return new MarkupTemplateMaker(resolveTemplate(templatePath), modelTypes);
     }
 
     @Override
@@ -122,7 +133,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         return new MarkupTemplateMaker(resource, null);
     }
 
-    public Template createTemplate(final URL resource, Map<String,String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
+    public Template createTemplate(final URL resource, Map<String, String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
         return new MarkupTemplateMaker(resource, modelTypes);
     }
 
@@ -138,13 +149,29 @@ public class MarkupTemplateEngine extends TemplateEngine {
         return templateConfiguration;
     }
 
+    URL resolveTemplate(String templatePath) throws IOException {
+        MarkupTemplateEngine.TemplateResource templateResource = MarkupTemplateEngine.TemplateResource.parse(templatePath);
+        String localeString = templateConfiguration.getLocale().toLanguageTag().replace("-", "_");
+        URL resource = groovyClassLoader.getResource(templateResource.withLocale(localeString).toString());
+        if (resource == null) {
+            resource = groovyClassLoader.getResource(templateResource.toString());
+        }
+        if (resource == null) {
+            resource = groovyClassLoader.getResource(templateResource.withLocale(null).toString());
+        }
+        if (resource == null) {
+            throw new IOException("Unable to load template:" + templatePath);
+        }
+        return resource;
+    }
+
     /**
-     * Implements the {@link groovy.text.Template} interface by caching a compiled template script
-     * and keeping a reference to the optional map of types of the model elements.
+     * Implements the {@link groovy.text.Template} interface by caching a compiled template script and keeping a
+     * reference to the optional map of types of the model elements.
      */
     private class MarkupTemplateMaker implements Template {
         final Class<BaseTemplate> templateClass;
-        final Map<String,String> modeltypes;
+        final Map<String, String> modeltypes;
 
         @SuppressWarnings("unchecked")
         public MarkupTemplateMaker(final Reader reader, Map<String, String> modelTypes) {
@@ -168,23 +195,51 @@ public class MarkupTemplateEngine extends TemplateEngine {
     }
 
     /**
-     * A specialized GroovyClassLoader which will support passing values to the type checking extension thanks
-     * to a thread local.
+     * A specialized GroovyClassLoader which will support passing values to the type checking extension thanks to a
+     * thread local.
      */
     static class TemplateGroovyClassLoader extends GroovyClassLoader {
-        final static ThreadLocal<Map<String,String>> modelTypes = new ThreadLocal<Map<String, String>>();
+        final static ThreadLocal<Map<String, String>> modelTypes = new ThreadLocal<Map<String, String>>();
 
         public TemplateGroovyClassLoader(final ClassLoader parentLoader, final CompilerConfiguration compilerConfiguration) {
             super(parentLoader, compilerConfiguration);
         }
 
-        public Class parseClass(final GroovyCodeSource codeSource, Map<String,String> hints) throws CompilationFailedException {
+        public Class parseClass(final GroovyCodeSource codeSource, Map<String, String> hints) throws CompilationFailedException {
             modelTypes.set(hints);
             try {
                 return super.parseClass(codeSource);
             } finally {
                 modelTypes.set(null);
             }
+        }
+    }
+
+    static class TemplateResource {
+        private final String baseName;
+        private final String locale;
+        private final String extension;
+
+        public static TemplateResource parse(String fullPath) {
+            Matcher matcher = LOCALIZED_RESOURCE_PATTERN.matcher(fullPath);
+            if (!matcher.find()) {
+                throw new IllegalArgumentException("Illegal template path: " + fullPath);
+            }
+            return new TemplateResource(matcher.group(1), matcher.group(2), matcher.group(3));
+        }
+
+        private TemplateResource(final String baseName, final String locale, final String extension) {
+            this.baseName = baseName;
+            this.locale = locale;
+            this.extension = extension;
+        }
+
+        public TemplateResource withLocale(String locale) {
+            return new TemplateResource(baseName, locale, extension);
+        }
+
+        public String toString() {
+            return baseName + (locale != null ? "_" + locale : "") + "." + extension;
         }
     }
 

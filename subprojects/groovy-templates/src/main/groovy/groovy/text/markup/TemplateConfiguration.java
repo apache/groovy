@@ -15,6 +15,8 @@
  */
 package groovy.text.markup;
 
+import java.util.Locale;
+
 /**
  * Configuration options for the {@link groovy.text.markup.MarkupTemplateEngine markup template engine}.
  *
@@ -31,6 +33,7 @@ public class TemplateConfiguration {
     private String autoIndentString = DelegatingIndentWriter.SPACES;
     private boolean autoNewLine = false;
     private Class<? extends BaseTemplate> baseTemplateClass = BaseTemplate.class;
+    private Locale locale = Locale.getDefault();
 
     /**
      * @return the encoding used in the declaration header
@@ -142,5 +145,13 @@ public class TemplateConfiguration {
      */
     public void setBaseTemplateClass(final Class<? extends BaseTemplate> baseTemplateClass) {
         this.baseTemplateClass = baseTemplateClass;
+    }
+
+    public Locale getLocale() {
+        return locale;
+    }
+
+    public void setLocale(final Locale locale) {
+        this.locale = locale;
     }
 }

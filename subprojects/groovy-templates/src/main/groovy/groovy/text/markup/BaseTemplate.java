@@ -276,17 +276,10 @@ public abstract class BaseTemplate implements Writable {
      * @throws ClassNotFoundException
      */
     public void includeGroovy(String templatePath) throws IOException, ClassNotFoundException {
-        URL resource = getIncludedResource(templatePath);
+        URL resource = engine.resolveTemplate(templatePath);
         engine.createTemplate(resource, modelTypes).make(model).writeTo(out);
     }
 
-    private URL getIncludedResource(final String templatePath) throws IOException {
-        URL resource = engine.getTemplateLoader().getResource(templatePath);
-        if (resource == null) {
-            throw new IOException("Unable to load template:" + templatePath);
-        }
-        return resource;
-    }
 
     /**
      * Includes contents of another file, not as a template but as escaped text.
@@ -294,7 +287,7 @@ public abstract class BaseTemplate implements Writable {
      * @throws IOException
      */
     public void includeEscaped(String templatePath) throws IOException {
-        URL resource = getIncludedResource(templatePath);
+        URL resource = engine.resolveTemplate(templatePath);
         yield(ResourceGroovyMethods.getText(resource, engine.getCompilerConfiguration().getSourceEncoding()));
     }
 
@@ -304,7 +297,7 @@ public abstract class BaseTemplate implements Writable {
      * @throws IOException
      */
     public void includeUnescaped(String templatePath) throws IOException {
-        URL resource = getIncludedResource(templatePath);
+        URL resource = engine.resolveTemplate(templatePath);
         yieldUnescaped(ResourceGroovyMethods.getText(resource, engine.getCompilerConfiguration().getSourceEncoding()));
     }
 
