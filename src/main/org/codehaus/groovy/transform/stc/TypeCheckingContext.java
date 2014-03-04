@@ -307,6 +307,10 @@ public class TypeCheckingContext {
         this.compilationUnit = compilationUnit;
     }
 
+    public SourceUnit getSource() {
+        return source;
+    }
+
     /**
      * Represents the context of an enclosing closure. An enclosing closure wraps
      * a closure expression and the list of return types found in the closure body.

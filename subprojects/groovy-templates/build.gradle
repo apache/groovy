@@ -4,3 +4,10 @@ dependencies {
     groovy project(':')
     testCompile project(':groovy-test')
 }
+
+task backportJar(type:Jar) {
+    appendix = 'markup-backport'
+    dependsOn classes
+    from sourceSets.main.output
+    include 'groovy/text/markup/**'
+}
