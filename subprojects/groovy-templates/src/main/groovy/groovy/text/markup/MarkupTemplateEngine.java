@@ -39,6 +39,8 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -62,7 +64,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         this(MarkupTemplateEngine.class.getClassLoader(), new TemplateConfiguration());
     }
 
-    public MarkupTemplateEngine(ClassLoader parentLoader, TemplateConfiguration tplConfig) {
+    public MarkupTemplateEngine(final ClassLoader parentLoader, final TemplateConfiguration tplConfig) {
         compilerConfiguration = new CompilerConfiguration();
         templateConfiguration = tplConfig;
         compilerConfiguration.addCompilationCustomizers(new TemplateASTTransformer(tplConfig));
@@ -78,7 +80,11 @@ public class MarkupTemplateEngine extends TemplateEngine {
                     }
             );
         }
-        groovyClassLoader = new TemplateGroovyClassLoader(parentLoader, compilerConfiguration);
+        groovyClassLoader = AccessController.doPrivileged(new PrivilegedAction<TemplateGroovyClassLoader>() {
+            public TemplateGroovyClassLoader run() {
+                return new TemplateGroovyClassLoader(parentLoader, compilerConfiguration);
+            }
+        });
     }
 
     /**
