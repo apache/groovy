@@ -39,7 +39,7 @@ class MarkupTemplateEngineTest extends GroovyTestCase {
     }
 
     void testSimpleTemplate() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 html {
     body {
@@ -53,7 +53,7 @@ html {
     }
 
     void testSimpleTemplateWithModel() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 html {
     body {
@@ -68,7 +68,7 @@ html {
     }
 
     void testSimpleTemplateWithIncludeTemplate() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 html {
     body {
@@ -98,7 +98,7 @@ html {
     }
 
     void testSimpleTemplateWithIncludeRaw() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 html {
     body {
@@ -112,7 +112,7 @@ html {
     }
 
     void testSimpleTemplateWithIncludeEscaped() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 html {
     body {
@@ -126,7 +126,7 @@ html {
     }
 
     void testCollectionInModel() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 html {
     body {
@@ -146,7 +146,7 @@ html {
     }
 
     void testHTMLHeader() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 yieldUnescaped '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
 html {
@@ -159,7 +159,7 @@ html {
     }
 
     void testTemplateWithHelperMethod() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 def foo = {
     body('Hello from foo!')
@@ -175,7 +175,7 @@ html {
     }
 
     void testCallPi() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 pi("xml-stylesheet":[href:"mystyle.css", type:"text/css"])
 html {
@@ -188,7 +188,7 @@ html {
     }
 
     void testXmlDeclaration() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 xmlDeclaration()
 html {
@@ -201,7 +201,7 @@ html {
     }
 
     void testNewLine() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         engine.templateConfiguration.newLineString = '||'
         def template = engine.createTemplate '''
 html {
@@ -215,7 +215,7 @@ html {
     }
 
     void testXMLWithYieldTag() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 ':yield'()
 '''
@@ -225,7 +225,7 @@ html {
     }
 
     void testTagsWithAttributes() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
 html {
     a(href:'foo.html', 'Link text')
@@ -238,7 +238,7 @@ html {
     }
 
     void testTagsWithAttributesAndDoubleQuotes() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         engine.templateConfiguration.useDoubleQuotes = true
         def template = engine.createTemplate '''
 html {
@@ -252,7 +252,7 @@ html {
     }
 
     void testLoopInTemplate() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def model = [text: 'Hello', persons: ['Bob', 'Alice']]
         def template = engine.createTemplate '''
 html {
@@ -271,7 +271,7 @@ html {
     }
 
     void testHelperFunctionInBinding() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def model = [text: { it.toUpperCase() }]
         def template = engine.createTemplate '''
 html {
@@ -286,7 +286,7 @@ html {
     }
 
     void testShouldNotEscapeUserInputAutomatically() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def model = [text: '<xml>']
         def template = engine.createTemplate '''
 html {
@@ -330,7 +330,7 @@ html {
 
 
     void testTypeCheckedModel() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTypeCheckedModelTemplate '''
 html {
     body(text.toUpperCase())
@@ -345,7 +345,7 @@ html {
 
     void testTypeCheckedModelShouldFail() {
         assert shouldFail {
-            MarkupTemplateEngine engine = new MarkupTemplateEngine()
+            MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
             def template = engine.createTypeCheckedModelTemplate '''
     html {
         body(text.toUpperCase())
@@ -361,7 +361,7 @@ html {
 
     void testTypeCheckedModelShouldFailWithoutModelDescription() {
         assert shouldFail {
-            MarkupTemplateEngine engine = new MarkupTemplateEngine()
+            MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
             def template = engine.createTypeCheckedModelTemplate '''
     html {
         body(p.name.toUpperCase())
@@ -375,7 +375,7 @@ html {
     }
 
     void testTypeCheckedModelShouldSucceedWithModelDescription() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTypeCheckedModelTemplate '''
     html {
         body(p.name.toUpperCase())
@@ -388,7 +388,7 @@ html {
     }
 
     void testTypeCheckedModelShouldSucceedWithModelDescriptionUsingGenerics() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTypeCheckedModelTemplate '''
     html {
         ul {
@@ -406,7 +406,7 @@ html {
 
     void testTypeCheckedTemplateShouldFailInInclude() {
         assert shouldFail {
-            MarkupTemplateEngine engine = new MarkupTemplateEngine()
+            MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
             def template = engine.createTypeCheckedModelTemplate '''
     html {
         body {

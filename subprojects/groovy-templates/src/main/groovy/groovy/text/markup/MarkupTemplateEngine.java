@@ -63,8 +63,8 @@ public class MarkupTemplateEngine extends TemplateEngine {
     private final CompilerConfiguration compilerConfiguration;
     private final TemplateConfiguration templateConfiguration;
 
-    public MarkupTemplateEngine() {
-        this(MarkupTemplateEngine.class.getClassLoader(), new TemplateConfiguration());
+    public MarkupTemplateEngine(final TemplateConfiguration tplConfig) {
+        this(MarkupTemplateEngine.class.getClassLoader(), tplConfig);
     }
 
     public MarkupTemplateEngine(final ClassLoader parentLoader, final TemplateConfiguration tplConfig) {
