@@ -151,7 +151,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
 
     URL resolveTemplate(String templatePath) throws IOException {
         MarkupTemplateEngine.TemplateResource templateResource = MarkupTemplateEngine.TemplateResource.parse(templatePath);
-        String configurationLocale = templateConfiguration.getLocale().toLanguageTag().replace("-", "_");
+        String configurationLocale = templateConfiguration.getLocale().toString().replace("-", "_");
         URL resource = templateResource.hasLocale()?groovyClassLoader.getResource(templateResource.toString()):null;
         if (resource == null) {
             // no explicit locale in the template path or resource not found
