@@ -218,7 +218,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         }
     }
 
-    static class TemplateResource {
+    public static class TemplateResource {
         private final String baseName;
         private final String locale;
         private final String extension;
