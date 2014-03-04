@@ -97,6 +97,22 @@ html {
         assert rendered.toString() == '<html><body>Bonjour!</body></html>'
     }
 
+    void testSimpleTemplateWithIncludeTemplateWithLocalePriority() {
+        def tplConfig = new TemplateConfiguration()
+        tplConfig.locale = Locale.FRANCE // set default locale
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, tplConfig)
+        def template = engine.createTemplate '''
+html {
+    body {
+        include template:'includes/hello_en_US.tpl' // if not found, will fall back to the default locale
+    }
+}
+'''
+        StringWriter rendered = new StringWriter()
+        template.make().writeTo(rendered)
+        assert rendered.toString() == '<html><body>Bonjour!</body></html>'
+    }
+
     void testSimpleTemplateWithIncludeRaw() {
         MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''

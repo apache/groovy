@@ -151,12 +151,15 @@ public class MarkupTemplateEngine extends TemplateEngine {
 
     URL resolveTemplate(String templatePath) throws IOException {
         MarkupTemplateEngine.TemplateResource templateResource = MarkupTemplateEngine.TemplateResource.parse(templatePath);
-        String localeString = templateConfiguration.getLocale().toLanguageTag().replace("-", "_");
-        URL resource = groovyClassLoader.getResource(templateResource.withLocale(localeString).toString());
+        String configurationLocale = templateConfiguration.getLocale().toLanguageTag().replace("-", "_");
+        URL resource = templateResource.hasLocale()?groovyClassLoader.getResource(templateResource.toString()):null;
         if (resource == null) {
-            resource = groovyClassLoader.getResource(templateResource.toString());
+            // no explicit locale in the template path or resource not found
+            // fallback to the default configuration locale
+            resource = groovyClassLoader.getResource(templateResource.withLocale(configurationLocale).toString());
         }
         if (resource == null) {
+            // no resource found with the default locale, try without any locale
             resource = groovyClassLoader.getResource(templateResource.withLocale(null).toString());
         }
         if (resource == null) {
@@ -240,6 +243,10 @@ public class MarkupTemplateEngine extends TemplateEngine {
 
         public String toString() {
             return baseName + (locale != null ? "_" + locale : "") + "." + extension;
+        }
+
+        public boolean hasLocale() {
+            return locale!=null && !"".equals(locale);
         }
     }
 
