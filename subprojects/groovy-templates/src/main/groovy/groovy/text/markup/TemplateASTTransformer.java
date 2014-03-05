@@ -18,21 +18,15 @@ package groovy.text.markup;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -77,7 +71,7 @@ class TemplateASTTransformer extends CompilationCustomizer {
     private void transformRunMethod(final ClassNode classNode, final SourceUnit source) {
         MethodNode runMethod = classNode.getDeclaredMethod("run", Parameter.EMPTY_ARRAY);
         Statement code = runMethod.getCode();
-        MarkupBuilderCodeTransformer transformer = new MarkupBuilderCodeTransformer(source, config.isAutoEscape());
+        MarkupBuilderCodeTransformer transformer = new MarkupBuilderCodeTransformer(source, classNode, config.isAutoEscape());
         code.visit(transformer);
     }
 

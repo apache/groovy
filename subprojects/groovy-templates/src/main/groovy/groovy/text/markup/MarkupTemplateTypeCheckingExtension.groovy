@@ -48,16 +48,25 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
 
     @Override
     Object run() {
-        def modelTypesClassNodes
+        def modelTypesClassNodes = null
 
-        setup {
+        beforeVisitClass { classNode ->
             def modelTypes = MarkupTemplateEngine.TemplateGroovyClassLoader.modelTypes.get()
             if (modelTypes!=null) {
                 modelTypesClassNodes = [:]
                 modelTypes.each { k, v ->
                     modelTypesClassNodes[k] = buildNodeFromString(v, context)
                 }
-            } else {
+            }
+            def modelTypesFromTemplate = classNode.getNodeMetaData(MarkupTemplateEngine.MODELTYPES_ASTKEY)
+            if (modelTypesFromTemplate) {
+                if (modelTypesClassNodes==null) {
+                    modelTypesClassNodes = modelTypesFromTemplate
+                } else {
+                    modelTypesClassNodes.putAll(modelTypesFromTemplate)
+                }
+            }
+            if (modelTypesClassNodes==null) {
                 // push a new error collector, we want type checking errors to be silent
                 context.pushErrorCollector()
             }

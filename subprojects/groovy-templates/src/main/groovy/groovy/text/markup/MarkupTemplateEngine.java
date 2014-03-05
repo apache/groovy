@@ -55,6 +55,8 @@ import java.util.regex.Pattern;
 public class MarkupTemplateEngine extends TemplateEngine {
 
     final static ClassNode MARKUPTEMPLATEENGINE_CLASSNODE = ClassHelper.make(MarkupTemplateEngine.class);
+    final static String MODELTYPES_ASTKEY = "MTE.modelTypes";
+
     private final static Pattern LOCALIZED_RESOURCE_PATTERN = Pattern.compile("(.+?)(_[a-z]{2}(?:_[A-Z]{2,3}))?\\.(\\p{Alnum}+)");
 
     private final static AtomicLong counter = new AtomicLong();

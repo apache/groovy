@@ -701,6 +701,57 @@ body {
         }
     }
 
+    void testInlinedModelTypeDeclaration() {
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def template = engine.createTemplate '''
+modelTypes = {
+    List<groovy.text.MarkupTemplateEngineTest.Person> persons
+}
+
+html {
+    body {
+        ul {
+            persons.each { p ->
+                li(p.name)
+            }
+        }
+    }
+}
+'''
+        StringWriter rendered = new StringWriter()
+        def model = [persons: [[name: 'Cedric'], [name: 'Jochen']]]
+        template.make(model).writeTo(rendered)
+        assert rendered.toString() == '<html><body><ul><li>Cedric</li><li>Jochen</li></ul></body></html>'
+
+    }
+
+    void testInlinedModelTypeDeclarationShouldFailBecauseIncorrectType() {
+        assert shouldFail {
+            MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+            def template = engine.createTemplate '''
+modelTypes = {
+    List<String> persons
+}
+
+html {
+    body {
+        ul {
+            persons.each { p ->
+                li(p.name)
+            }
+        }
+    }
+}
+'''
+            StringWriter rendered = new StringWriter()
+            def model = [persons: [[name: 'Cedric'], [name: 'Jochen']]]
+            template.make(model).writeTo(rendered)
+            assert rendered.toString() == '<html><body><ul><li>Cedric</li><li>Jochen</li></ul></body></html>'
+        } =~ 'No such property: name for class: java.lang.String'
+
+    }
+
+
     class SimpleTagLib {
         def emoticon = { attrs, body ->
             out << body() << (attrs.happy == 'true' ? " :-)" : " :-(")
