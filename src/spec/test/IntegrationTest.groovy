@@ -189,7 +189,7 @@ file.delete()
 def copyResource = { String source, String dest ->
     File dst = new File(tmpDir, "${dest}.groovy")
     if (dst.exists()) {
-        dst.delete()
+        dst.text = ''
         Thread.sleep(1000)
     }
     dst << this.class.classLoader.getResourceAsStream("reloading/${source}.groovy")
