@@ -12,12 +12,13 @@ import org.codehaus.groovy.control.CompilerConfiguration
 class Groovy3464Bug extends GroovyTestCase {
 
     GroovyShell shell
+    CompilerConfiguration config
     File targetDir, stubDir
 
     protected void setUp() {
         super.setUp()
 
-        def config = new CompilerConfiguration()
+        config = new CompilerConfiguration()
         config.with {
             targetDirectory = createTempDir()
             jointCompilationOptions = [stubDir: createTempDir()]
@@ -56,6 +57,8 @@ class Groovy3464Bug extends GroovyTestCase {
     }
 
     protected void tearDown() {
+        config.targetDirectory?.deleteDir()
+        config.jointCompilationOptions?.stubDir?.deleteDir()
         targetDir?.deleteDir()
         stubDir?.deleteDir()
 

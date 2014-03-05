@@ -11,7 +11,7 @@ void testBug3235 () {
       All these lines should be written.
 """
       def f = File.createTempFile("groovy.bugs.Groovy3235Bug", ".txt")
-      
+      f.deleteOnExit()
       f.withWriter { w ->
           d.eachLine { w.println it }
       }
