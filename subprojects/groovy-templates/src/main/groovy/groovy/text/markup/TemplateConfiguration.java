@@ -35,6 +35,22 @@ public class TemplateConfiguration {
     private Class<? extends BaseTemplate> baseTemplateClass = BaseTemplate.class;
     private Locale locale = Locale.getDefault();
 
+    public TemplateConfiguration() {
+    }
+
+    public TemplateConfiguration(TemplateConfiguration that) {
+        this.declarationEncoding = that.declarationEncoding;
+        this.expandEmptyElements = that.expandEmptyElements;
+        this.useDoubleQuotes = that.useDoubleQuotes;
+        this.newLineString = that.newLineString;
+        this.autoEscape = that.autoEscape;
+        this.autoIndent = that.autoIndent;
+        this.autoIndentString = that.autoIndentString;
+        this.autoNewLine = that.autoNewLine;
+        this.baseTemplateClass = that.baseTemplateClass;
+        this.locale = that.locale;
+    }
+
     /**
      * @return the encoding used in the declaration header
      */

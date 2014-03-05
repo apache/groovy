@@ -16,6 +16,7 @@
 
 package groovy.text
 
+import groovy.text.markup.BaseTemplate
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TagLibAdapter
 import groovy.text.markup.TemplateConfiguration
@@ -678,6 +679,26 @@ body {
         def stringWriter = new StringWriter()
         template.make(model).writeTo(stringWriter)
         assert stringWriter.toString() == '<body>NL<div class=\'text\'>NLTHIS IS MY GLORIOUS TITLE 2NL</div>NL</body>'
+    }
+
+    void testCopyConstructorForTemplateConfiguration() {
+        TemplateConfiguration cfg = new TemplateConfiguration(
+                declarationEncoding : 'iso-8859-1',
+                expandEmptyElements : true,
+                useDoubleQuotes     : false,
+                newLineString       : 'NL',
+                autoEscape          : true,
+                autoIndent          : true,
+                autoIndentString    : true,
+                autoNewLine         : true,
+                baseTemplateClass   : BaseTemplate,
+                locale              : Locale.CHINA
+        )
+        def copy = new TemplateConfiguration(cfg)
+        cfg.properties.each {
+            String pName = it.key
+            assert cfg."$pName" == copy."$pName"
+        }
     }
 
     class SimpleTagLib {
