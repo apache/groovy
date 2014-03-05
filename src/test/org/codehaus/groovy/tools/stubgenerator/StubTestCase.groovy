@@ -179,6 +179,9 @@ abstract class StubTestCase extends GroovyTestCase {
             use (QDoxCategory) {
                 verifyStubs()
             }
+            if (sourceRootPath.getAbsolutePath() =~ 'stubgentests') {
+                sourceRootPath.deleteDir()
+            }
         }
 
     }
