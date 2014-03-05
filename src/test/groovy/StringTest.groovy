@@ -299,6 +299,7 @@ foo
 
     void innerNormalizationFileRoundTrip(String s) {
         def f = File.createTempFile("groovy.StringTest", ".txt")
+        f.deleteOnExit()
 
         def sd = s.denormalize()
         f.write(sd)

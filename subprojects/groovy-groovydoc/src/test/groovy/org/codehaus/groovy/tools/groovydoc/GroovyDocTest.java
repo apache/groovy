@@ -58,6 +58,12 @@ public class GroovyDocTest extends BuildFileTest {
         tmpDir = new File(getProject().getProperty("tmpdir"));
     }
 
+    @Override
+    protected void tearDown() throws Exception {
+        ResourceGroovyMethods.deleteDir(tmpDir);
+        super.tearDown();
+    }
+
     public void testCustomClassTemplate() throws Exception {
         executeTarget("testCustomClassTemplate");
 

@@ -34,6 +34,8 @@ class Groovy5061 extends GroovyTestCase {
             cu.compile()
         } finally {
             parentDir.deleteDir()
+            config.targetDirectory?.deleteDir()
+            config.jointCompilationOptions.stubDir?.deleteDir()
         }
 
     }
@@ -68,6 +70,8 @@ class Groovy5061 extends GroovyTestCase {
             cu.compile()
         } finally {
             parentDir.deleteDir()
+            config.targetDirectory?.deleteDir()
+            config.jointCompilationOptions.stubDir?.deleteDir()
         }
 
     }
