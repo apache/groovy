@@ -82,7 +82,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 if (leftFieldName!=null) {
                     MethodCallExpression mce = new MethodCallExpression(
                             new CastExpression(fieldHelper,weaved),
-                            leftFieldName + TraitASTTransformation.DIRECT_SETTER_SUFFIX,
+                            leftFieldName + TraitConstants.DIRECT_SETTER_SUFFIX,
                             new ArgumentListExpression(super.transform(rightExpression))
                     );
                     mce.setSourcePosition(exp);
@@ -118,7 +118,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         } else if (exp instanceof FieldExpression) {
             MethodCallExpression mce = new MethodCallExpression(
                     new CastExpression(fieldHelper,weaved),
-                    TraitASTTransformation.helperGetterName(((FieldExpression) exp).getField()),
+                    TraitConstants.helperGetterName(((FieldExpression) exp).getField()),
                     ArgumentListExpression.EMPTY_ARGUMENTS
             );
             mce.setSourcePosition(exp);
@@ -129,7 +129,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             if (vexp.getAccessedVariable() instanceof FieldNode) {
                 MethodCallExpression mce = new MethodCallExpression(
                         new CastExpression(fieldHelper,weaved),
-                        TraitASTTransformation.helperGetterName((FieldNode) vexp.getAccessedVariable()),
+                        TraitConstants.helperGetterName((FieldNode) vexp.getAccessedVariable()),
                         ArgumentListExpression.EMPTY_ARGUMENTS
                 );
                 mce.setSourcePosition(exp);
@@ -149,7 +149,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             if (((PropertyExpression) exp).isImplicitThis() || "this".equals(((PropertyExpression) exp).getObjectExpression().getText())) {
                 MethodCallExpression mce = new MethodCallExpression(
                         new CastExpression(fieldHelper,weaved),
-                        ((PropertyExpression) exp).getPropertyAsString() + TraitASTTransformation.DIRECT_GETTER_SUFFIX,
+                        ((PropertyExpression) exp).getPropertyAsString() + TraitConstants.DIRECT_GETTER_SUFFIX,
                         ArgumentListExpression.EMPTY_ARGUMENTS
                 );
                 mce.setSourcePosition(exp);

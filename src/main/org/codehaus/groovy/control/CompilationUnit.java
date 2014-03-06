@@ -32,7 +32,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.codehaus.groovy.transform.AnnotationCollectorTransform;
-import org.codehaus.groovy.transform.trait.TraitASTTransformation;
+import org.codehaus.groovy.transform.trait.TraitComposer;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
@@ -185,7 +185,7 @@ public class CompilationUnit extends ProcessingUnit {
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context,
                              ClassNode classNode) throws CompilationFailedException {
-                TraitASTTransformation.doExtendTraits(classNode, source);
+                TraitComposer.doExtendTraits(classNode, source);
             }
         }, Phases.CANONICALIZATION);
         addPhaseOperation(compileCompleteCheck, Phases.CANONICALIZATION);

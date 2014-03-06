@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.transform
+package org.codehaus.groovy.transform.traitx
 
 class TraitASTTransformationTest extends GroovyTestCase {
     void testTraitWithNoMethod() {
@@ -112,7 +112,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testWithPrecompiledTraitWithOneMethod() {
-        assertScript '''import org.codehaus.groovy.transform.TraitASTTransformationTest.TestTrait as TestTrait
+        assertScript '''import org.codehaus.groovy.transform.traitx.TraitASTTransformationTest.TestTrait as TestTrait
 
             class Foo implements TestTrait {}
             def foo = new Foo()
@@ -152,7 +152,7 @@ class TraitASTTransformationTest extends GroovyTestCase {
     }
 
     void testTraitWithField2() {
-        assertScript '''import org.codehaus.groovy.transform.TestTrait2 as TestTrait2
+        assertScript '''import org.codehaus.groovy.transform.traitx.TestTrait2
         class Foo implements TestTrait2 {
             def cat() { "cat" }
         }
@@ -291,16 +291,18 @@ assert f.id == 456L
 '''
     }
 
+    void testSimpleTraitInheritance() {
+        assertScript '''
+trait Top { String methodFromA() { 'A' } }
+trait Bottom extends Top { String methodFromB() { 'B' }}
+class Foo implements Bottom {}
+def f = new Foo()
+assert f.methodFromA() == 'A'
+assert f.methodFromB() == 'B'
+'''
+    }
+
     static trait TestTrait {
         int a() { 123 }
-    }
-}
-
-trait TestTrait2 {
-    private String message = 'Hello'
-    String getMessage() { this.message }
-    String blah() { message }
-    def meow() {
-        "Meow! I'm a ${cat()}"
     }
 }
