@@ -119,7 +119,7 @@ public abstract class BaseTemplate implements Writable {
         out.write("<?xml ");
         writeAttribute("version", "1.0");
         if (configuration.getDeclarationEncoding() != null) {
-            writeAttribute("encoding", configuration.getDeclarationEncoding());
+            writeAttribute(" encoding", configuration.getDeclarationEncoding());
         }
         out.write("?>");
         out.write(configuration.getNewLineString());

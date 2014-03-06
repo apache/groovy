@@ -215,6 +215,21 @@ html {
         assert rendered.toString() == '<?xml version=\'1.0\'?>\n<html><body>Hello, PI!</body></html>'
     }
 
+    void testXmlDeclarationWithEncoding() {
+        def configuration = new TemplateConfiguration()
+        configuration.declarationEncoding = 'UTF-8'
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(configuration)
+        def template = engine.createTemplate '''
+xmlDeclaration()
+html {
+    body('Hello, PI!')
+}
+'''
+        StringWriter rendered = new StringWriter()
+        template.make().writeTo(rendered)
+        assert rendered.toString() == '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<html><body>Hello, PI!</body></html>'
+    }
+
     void testNewLine() {
         MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         engine.templateConfiguration.newLineString = '||'
