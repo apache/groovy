@@ -529,7 +529,7 @@ Texte en français
         TemplateConfiguration config = new TemplateConfiguration();         // <1>
         MarkupTemplateEngine engine = new MarkupTemplateEngine(config);     // <2>
         Template template = engine.createTemplate("p('test template')");    // <3>
-        Map<String, Object> model = new HashMap<>();                         // <4>
+        Map<String, Object> model = new HashMap<>();                        // <4>
         Writable output = template.make(model);                             // <5>
         output.writeTo(writer);                                             // <6>
         // end::rendering_setup[]

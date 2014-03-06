@@ -29,6 +29,7 @@ The key features of this template engine are:
 * fast rendering
 * optional type checking of the model
 * includes
+* internationalization support
 
 == The template format
 === Basics
