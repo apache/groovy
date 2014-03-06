@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
@@ -138,7 +139,7 @@ class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
                 //  ...
                 // }
                 Map<String,ClassNode> modelTypes = extractModelTypesFromClosureExpression((ClosureExpression)rightExpression);
-                Expression result = new ConstantExpression(null);
+                Expression result = new EmptyExpression();
                 result.setSourcePosition(bin);
                 classNode.putNodeMetaData(MarkupTemplateEngine.MODELTYPES_ASTKEY, modelTypes);
                 return result;
