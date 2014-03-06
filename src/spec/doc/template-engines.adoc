@@ -13,6 +13,7 @@ Included with Groovy are several template engines:
 - ++SimpleTemplateEngine++ - for basic templates
 - ++GStringTemplateEngine++ - stores the template as writable closures (useful for streaming scenarios)
 - ++XmlTemplateEngine++ - works well when the template and output are valid XML
+- ++MarkupTemplateEngine++ - a very complete, optimized, template engine
 
 == SimpleTemplateEngine
 
@@ -136,6 +137,10 @@ This example will produce this output:
   How are you today?
 </document>
 ----
+
+:leveloffset: 3
+include::{rootDir}/subprojects/groovy-templates/src/spec/doc/markup-template-engine.adoc[]
+:leveloffset: 2
 
 == Other solutions
 
