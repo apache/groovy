@@ -751,6 +751,16 @@ html {
 
     }
 
+    void testSimplePIRenderedProperly() {
+        def config = new TemplateConfiguration()
+        config.newLineString=''
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(config)
+        def template = engine.createTemplate '''pi(FOO: 'bar')'''
+        StringWriter rendered = new StringWriter()
+        template.make().writeTo(rendered)
+        assert rendered.toString() == '<?FOO bar?>'
+    }
+
 
     class SimpleTagLib {
         def emoticon = { attrs, body ->

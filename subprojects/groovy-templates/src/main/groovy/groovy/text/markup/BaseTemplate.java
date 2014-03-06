@@ -121,7 +121,8 @@ public abstract class BaseTemplate implements Writable {
         if (configuration.getDeclarationEncoding() != null) {
             writeAttribute("encoding", configuration.getDeclarationEncoding());
         }
-        out.write("?>\n");
+        out.write("?>");
+        out.write(configuration.getNewLineString());
         return this;
     }
 
@@ -148,15 +149,16 @@ public abstract class BaseTemplate implements Writable {
             Object target = entry.getKey();
             Object instruction = entry.getValue();
             out.write("<?");
-            out.write(target.toString());
             if (instruction instanceof Map) {
+                out.write(target.toString());
                 writeAttributes((Map) instruction);
             } else {
                 out.write(target.toString());
                 out.write(" ");
                 out.write(instruction.toString());
             }
-            out.write("?>\n");
+            out.write("?>");
+            out.write(configuration.getNewLineString());
         }
         return this;
     }
