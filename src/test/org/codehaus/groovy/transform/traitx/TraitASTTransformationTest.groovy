@@ -332,6 +332,25 @@ assert f.methodFromB() == 'B'
 '''
     }
 
+    void testTraitOnEnum() {
+        assertScript '''trait WithBar { int bar }
+
+enum MyEnum implements WithBar {
+    X, Y
+}
+
+class MyClass implements WithBar {}
+
+def o = new MyClass()
+o.bar = 123
+assert o.bar == 123
+
+MyEnum.X.bar = 123
+assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
+
+'''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }
