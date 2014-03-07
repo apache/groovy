@@ -73,6 +73,10 @@ public class MetaInfExtensionModule extends SimpleExtensionModule {
                 }
             } catch (ClassNotFoundException e) {
                 errors.add(extensionClass);
+            } catch (NoClassDefFoundError e) {
+                errors.add(extensionClass);
+            } catch (UnsupportedClassVersionError e) {
+                errors.add(extensionClass);
             }
         }
         for (String extensionClass : staticExtensionClasses) {
@@ -82,6 +86,10 @@ public class MetaInfExtensionModule extends SimpleExtensionModule {
                     staticClasses.add(loader.loadClass(extensionClass));
                 }
             } catch (ClassNotFoundException e) {
+                errors.add(extensionClass);
+            } catch (NoClassDefFoundError e) {
+                errors.add(extensionClass);
+            } catch (UnsupportedClassVersionError e) {
                 errors.add(extensionClass);
             }
         }
