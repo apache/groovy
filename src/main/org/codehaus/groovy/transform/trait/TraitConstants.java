@@ -50,4 +50,8 @@ public abstract class TraitConstants {
     static String remappedFieldName(final ClassNode traitNode, final String name) {
         return traitNode.getName().replace('.','_')+"__"+name;
     }
+
+    public static boolean isTrait(final ClassNode cNode) {
+        return cNode!=null && cNode.isInterface() && !cNode.getAnnotations(TRAIT_CLASSNODE).isEmpty();
+    }
 }

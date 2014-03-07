@@ -33,7 +33,6 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.ExceptionUtils;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
@@ -44,7 +43,15 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
+/**
+ * This class contains a static utility method {@link #doExtendTraits(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.control.SourceUnit)}
+ * aimed at generating code for a classnode implementing a trait.
+ *
+ * @author Cédric Champeau
+ * @since 2.3.0
+ */
 public abstract class TraitComposer {
     /**
      * This comparator is used to make sure that generated direct getters appear first in the list of method
@@ -57,12 +64,20 @@ public abstract class TraitComposer {
         }
     };
 
+    /**
+     * Given a class node, if this class node implements a trait, then generate all the appropriate
+     * code which delegates calls to the trait. It is safe to call this method on a class node which
+     * does not implement a trait.
+     * @param cNode a class node
+     * @param unit the source unit
+     */
     public static void doExtendTraits(final ClassNode cNode, final SourceUnit unit) {
-        boolean isItselfTrait = isTrait(cNode);
+        boolean isItselfTrait = TraitConstants.isTrait(cNode);
         if (isItselfTrait) {
-            inheritTrait(cNode, unit);
+            checkTraitAllowed(cNode, unit);
+            return;
         }
-        ClassNode[] interfaces = cNode.getInterfaces();
+        Set<ClassNode> interfaces = cNode.getAllInterfaces();
         for (ClassNode trait : interfaces) {
             List<AnnotationNode> traitAnn = trait.getAnnotations(TraitConstants.TRAIT_CLASSNODE);
             if (traitAnn != null && !traitAnn.isEmpty() && !cNode.getNameWithoutPackage().endsWith(TraitConstants.TRAIT_HELPER)) {
@@ -87,18 +102,12 @@ public abstract class TraitComposer {
         }
     }
 
-    private static boolean isTrait(final ClassNode cNode) {
-        return cNode.isInterface() && !cNode.getAnnotations(TraitConstants.TRAIT_CLASSNODE).isEmpty();
-    }
-
-    private static void inheritTrait(final ClassNode bottomTrait, final SourceUnit unit) {
+    private static void checkTraitAllowed(final ClassNode bottomTrait, final SourceUnit unit) {
         ClassNode superClass = bottomTrait.getSuperClass();
         if (superClass==null || ClassHelper.OBJECT_TYPE.equals(superClass)) return;
-        if (!isTrait(superClass)) {
+        if (!TraitConstants.isTrait(superClass)) {
             unit.addError(new SyntaxException("A trait can only inherit from another trait", superClass.getLineNumber(), superClass.getColumnNumber()));
-            return;
         }
-        //System.out.println("bottomTrait = " + bottomTrait);
     }
 
     private static void applyPrecompiledTrait(final ClassNode trait, final ClassNode cNode) {
