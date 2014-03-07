@@ -144,7 +144,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
           modifiedExpandos.add(this);
         }
 
-        weakMetaClass = null;
+        clearWeakMetaClass();
     }
 
     public MetaClass getWeakMetaClass() {
@@ -155,11 +155,17 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         version++;
 
         strongMetaClass = null;
-        if (answer == null) {
-           weakMetaClass = null;
-        } else {
+        clearWeakMetaClass();
+        if (answer != null) {
            weakMetaClass = new ManagedReference<MetaClass> (softBundle,answer);
         }
+    }
+
+    private void clearWeakMetaClass() {
+        if (weakMetaClass != null) {
+            weakMetaClass.clear();
+        }
+        weakMetaClass = null;
     }
 
     public MetaClass getMetaClassForClass() {
