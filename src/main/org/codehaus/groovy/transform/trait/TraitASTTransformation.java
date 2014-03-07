@@ -37,7 +37,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.ExceptionUtils;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -65,6 +64,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!TraitConstants.TRAIT_CLASSNODE.equals(anno.getClassNode())) return;
         unit = source;
+        init(nodes, source);
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
             checkNotInterface(cNode, TraitConstants.TRAIT_TYPE_NAME);
@@ -130,14 +130,15 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         // add methods
         List<MethodNode> methods = cNode.getMethods();
         for (final MethodNode methodNode : methods) {
-            if (methodNode.isPrivate() || methodNode.isProtected()) {
-                ExceptionUtils.sneakyThrow(new SyntaxException("Cannot have " + (methodNode.isPrivate() ? "private" : "protected") + " method in a trait",
-                        methodNode.getLineNumber(), methodNode.getColumnNumber()));
-            }
-            if (methodNode.getDeclaringClass() == cNode) {
+            boolean declared = methodNode.getDeclaringClass() == cNode;
+            if (declared) {
+                if (!methodNode.isSynthetic() && (methodNode.isPrivate() || methodNode.isProtected())) {
+                    unit.addError(new SyntaxException("Cannot have " + (methodNode.isPrivate() ? "private" : "protected") + " method in a trait (" + cNode.getName() + "#" + methodNode.getTypeDescriptor() + ")",
+                            methodNode.getLineNumber(), methodNode.getColumnNumber()));
+                    return;
+                }
                 helper.addMethod(processMethod(cNode, methodNode, fieldHelper));
             }
-
         }
 
         // add fields
