@@ -32,4 +32,38 @@ class CompileOrderTest extends GroovyTestCase {
          concreteFile.delete()
       }
    }
+
+    public void testCompileFileURI() {
+        def interfaceFile = File.createTempFile("TestURLOrderInterface", ".groovy", new File("target"))
+        def concreteFile = File.createTempFile("TestURLOrderConcrete", ".groovy", new File("target"))
+
+        def cl = new GroovyClassLoader(this.class.classLoader);
+        def currentDir = concreteFile.parentFile.absolutePath
+        println currentDir
+        cl.addClasspath(currentDir)
+        cl.shouldRecompile = true
+
+        try {
+            // Create the interface
+            println "a"
+            interfaceFile.deleteOnExit()
+            def interfaceName = interfaceFile.name - ".groovy"
+            interfaceFile.write "interface $interfaceName { }\n"
+
+            // Create a concrete class which implements the interface
+            concreteFile.deleteOnExit()
+            def concreteName = concreteFile.name - ".groovy"
+            concreteFile.write "class $concreteName implements $interfaceName { }\n"
+
+            GroovyCodeSource codeSource = new GroovyCodeSource(concreteFile.toURI())
+            // We're testing whether this fails:
+            def groovyClass = cl.parseClass(codeSource,false)
+            // Create an object, just for good measure.
+            def object = groovyClass.newInstance()
+        } finally {
+            interfaceFile.delete()
+            concreteFile.delete()
+        }
+    }
+
 }

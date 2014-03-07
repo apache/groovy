@@ -21,6 +21,7 @@ import groovy.util.CharsetToolkit;
 
 import java.io.*;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.CodeSource;
@@ -65,6 +66,8 @@ public class GroovyCodeSource {
     private boolean cachable;
 
     private File file;
+
+    private URL url;
 
     public GroovyCodeSource(String script, String name, String codeBase) {
         this.name = name;
@@ -155,10 +158,16 @@ public class GroovyCodeSource {
         this(infile, CharsetToolkit.getDefaultSystemCharset().name());
     }
 
+    public GroovyCodeSource(URI uri) throws IOException {
+        this(uri.toURL());
+    }
+
     public GroovyCodeSource(URL url) throws IOException {
         if (url == null) {
             throw new RuntimeException("Could not construct a GroovyCodeSource from a null URL");
         }
+        this.url = url;
+        // TODO: GROOVY-6561: GroovyMain got the name this way: script.substring(script.lastIndexOf("/") + 1)
         this.name = url.toExternalForm();
         this.codeSource = new CodeSource(url, (java.security.cert.Certificate[]) null);
         try {
@@ -187,6 +196,10 @@ public class GroovyCodeSource {
 
     public File getFile() {
         return file;
+    }
+
+    public URL getURL() {
+        return url;
     }
 
     public void setCachable(boolean b) {

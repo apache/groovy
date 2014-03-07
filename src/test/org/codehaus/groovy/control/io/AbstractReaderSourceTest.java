@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.Janitor;
 import java.io.Reader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URI;
 
 /**
  * Unit test for AbstractReaderSource.
@@ -82,6 +83,10 @@ public class AbstractReaderSourceTest {
             return new StringReader(
                     String.format("%s\n%s\n%s", SAMPLE_SOURCE_LINE1, SAMPLE_SOURCE_LINE2, SAMPLE_SOURCE_LINE3)
             );
+        }
+
+        public URI getURI() {
+            return null;
         }
     }
 }
