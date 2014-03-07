@@ -32,13 +32,9 @@ include::{projectdir}/src/spec/doc/core-getting-started.adoc[]
 :leveloffset: 2
 include::{projectdir}/src/spec/doc/core-differences-java.adoc[]
 :leveloffset: 0
-=== Groovy Development Kit (TBD)
-==== Working with IO (TBD)
-==== Working with collections (TBD)
-==== Handy utilities (TBD)
-===== ConfigSlurper (TBD)
-===== Expando (TBD)
-===== Observable list, map and set (TBD)
+:leveloffset: 2
+include::{projectdir}/src/spec/doc/core-gdk.adoc[]
+:leveloffset: 0
 :leveloffset: 2
 include::{projectdir}/src/spec/doc/core-metaprogramming.adoc[]
 :leveloffset: 0
