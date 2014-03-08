@@ -1,4 +1,4 @@
-
+package gdk
 
 /*
  * Copyright 2003-2014 the original author or authors.
@@ -17,24 +17,24 @@
  */
 
 class ExpandoTest extends GroovyTestCase {
-    // tag::expando_property[]
     void testExpandoAddProperty() {
+        // tag::expando_property[]
         def expando = new Expando()
         expando.name = 'John'
 
         assert expando.name == 'John'
+        // end::expando_property[]
     }
-    // end::expando_property[]
 
-    // tag::expando_method[]
     void testExpandoAddMethod() {
+        // tag::expando_method[]
         def expando = new Expando()
         expando.toString = { -> 'John' }
         expando.say = { String s -> "John says: ${s}" }
 
         assert expando as String == 'John'
         assert expando.say('Hi') == 'John says: Hi'
+        // end::expando_method[]
     }
-    // end::expando_method[]
 
 }

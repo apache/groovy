@@ -1,4 +1,4 @@
-
+package gdk
 
 /*
  * Copyright 2003-2014 the original author or authors.
@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 class ConfigSlurperTest extends GroovyTestCase {
-    // tag::arbitrary_types[]
     void testWithArbitraryTypes() {
+        // tag::arbitrary_types[]
         def config = new ConfigSlurper().parse('''
             app.date = new Date()  // <1>
             app.age  = 42
@@ -29,11 +29,11 @@ class ConfigSlurperTest extends GroovyTestCase {
         assert config.app.date instanceof Date
         assert config.app.age == 42
         assert config.app.name == 'Test42'
+        // end::arbitrary_types[]
     }
-    // end::arbitrary_types[]
 
-    // tag::never_null[]
     void testConfigSlurperMustNotReturnNull() {
+        // tag::never_null[]
         def config = new ConfigSlurper().parse('''
             app.date = new Date()
             app.age  = 42
@@ -41,21 +41,21 @@ class ConfigSlurperTest extends GroovyTestCase {
         ''')
 
         assert config.test != null   // <1>
+        // end::never_null[]
     }
-    // end::never_null[]
 
-    // tag::escape_dot[]
     void testEscapeDot() {
+        // tag::escape_dot[]
         def config = new ConfigSlurper().parse('''
             app."person.age"  = 42
         ''')
 
         assert config.app."person.age" == 42
+        // end::escape_dot[]
     }
-    // end::escape_dot[]
 
-    // tag::environments[]
     void testEnvironments() {
+        // tag::environments[]
         def config = new ConfigSlurper('development').parse('''
           environments {
                development {
@@ -73,11 +73,11 @@ class ConfigSlurperTest extends GroovyTestCase {
         ''')
 
         assert config.app.port == 8080
+        // end::environments[]
     }
-    // end::environments[]
 
-    // tag::custom_environments[]
     void testCustomEnvironment() {
+        // tag::custom_environments[]
         def slurper = new ConfigSlurper()
         slurper.registerConditionalBlock('myProject', 'developers')   // <1>
 
@@ -92,11 +92,11 @@ class ConfigSlurperTest extends GroovyTestCase {
         ''')
 
         assert !config.sendMail
+        // end::custom_environments[]
     }
-    // end::custom_environments[]
 
-    // tag::properties[]
     void testProperties() {
+        // tag::properties[]
         def config = new ConfigSlurper().parse('''
             app.date = new Date()
             app.age  = 42
@@ -110,6 +110,6 @@ class ConfigSlurperTest extends GroovyTestCase {
         assert properties."app.date" instanceof String
         assert properties."app.age" == '42'
         assert properties."app.name" == 'Test42'
+        // end::properties[]
     }
-    // end::properties[]
 }

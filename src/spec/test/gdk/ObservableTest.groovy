@@ -1,3 +1,5 @@
+package gdk
+
 import java.beans.PropertyChangeListener
 
 /*
@@ -18,8 +20,8 @@ import java.beans.PropertyChangeListener
 
 class ObservableTest extends GroovyTestCase {
 
-    // tag::observable_list[]
     void testObservableList() {
+        // tag::observable_list[]
 
         def event                                       // <1>
         def listener = {
@@ -41,13 +43,11 @@ class ObservableTest extends GroovyTestCase {
         assert elementAddedEvent.index == 3
         assert elementAddedEvent.oldValue == null
         assert elementAddedEvent.newValue == 42
-
+        // end::observable_list[]
     }
-    // end::observable_list[]
 
-    // tag::observable_list_clear[]
     void testObservableListAndClear() {
-
+        // tag::observable_list_clear[]
         def event
         def listener = {
             if (it instanceof ObservableList.ElementEvent)  {
@@ -66,8 +66,6 @@ class ObservableTest extends GroovyTestCase {
         def elementClearedEvent = event as ObservableList.ElementClearedEvent
         assert elementClearedEvent.values == [1, 2, 3]
         assert observable.size() == 0
-
+        // end::observable_list_clear[]
     }
-    // end::observable_list_clear[]
-
 }
