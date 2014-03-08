@@ -68,5 +68,24 @@ object that might be stored to a `*.properties` text file. Be aware though that 
 include::{projectdir}/src/spec/test/ConfigSlurperTest.groovy[tags=properties,indent=0]
 ----
 
-=== Expando (TBD)
+=== Expando
+
+The `Expando` class can be used to create a dynamically expandable object. Despite its name it does not use the
+`ExpandoMetaClass` underneath. Each `Expando` object represents a standalone, dynamically-crafted instance that can be
+extended with properties (or methods) at runtime.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ExpandoTest.groovy[tags=expando_property,indent=0]
+----
+
+A special case occurs when a dynamic property registers a `Closure` code block. Once being registered it can be invoked
+as it would be done with a method call.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ExpandoTest.groovy[tags=expando_method,indent=0]
+----
+
+
 === Observable list, map and set (TBD)
