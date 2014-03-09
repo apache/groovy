@@ -54,7 +54,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 public class BaseScriptASTTransformation extends AbstractASTTransformation {
 
     private static final Class<BaseScript> MY_CLASS = BaseScript.class;
-    private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    public static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private SourceUnit sourceUnit;
 
@@ -72,6 +72,8 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
             changeBaseScriptTypeFromDeclaration((DeclarationExpression)parent, node);
         } else if (parent instanceof ImportNode || parent instanceof PackageNode) {
             changeBaseScriptTypeFromPackageOrImport(source, parent, node);
+        } else if (parent instanceof ClassNode) {
+            changeBaseScriptTypeFromClass((ClassNode) parent, node);
         }
     }
 
@@ -87,6 +89,15 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
                 changeBaseScriptType(parent, classNode, value.getType());
             }
         }
+    }
+
+    private void changeBaseScriptTypeFromClass(final ClassNode parent, final AnnotationNode node) {
+//        Expression value = node.getMember("value");
+//        if (!(value instanceof ClassExpression)) {
+//            addError("Annotation " + MY_TYPE_NAME + " member 'value' should be a class literal.", value);
+//            return;
+//        }
+        changeBaseScriptType(parent, parent, parent.getSuperClass());
     }
 
     private void changeBaseScriptTypeFromDeclaration(final DeclarationExpression de, final AnnotationNode node) {

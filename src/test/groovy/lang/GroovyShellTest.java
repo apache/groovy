@@ -92,7 +92,20 @@ public class GroovyShellTest extends GroovyTestCase {
         assertEquals("I like Cheddar", result);
         assertEquals("abc", context.getVariable("x"));
     }
-    
+
+    /**
+     * Test for GROOVY-6615
+     * @throws Exception
+     */
+    public void testScriptWithCustomBodyMethod() throws Exception {
+        Binding context = new Binding();
+        CompilerConfiguration config = new CompilerConfiguration();
+        config.setScriptBaseClass(BaseScriptCustomBodyMethod.class.getName());
+        GroovyShell shell = new GroovyShell(context, config);
+        Object result = shell.evaluate("'I like ' + cheese");
+        assertEquals("I like Cheddar", result);
+    }
+
     public void testClassLoader() {
         Binding context = new Binding();
         CompilerConfiguration config = new CompilerConfiguration();

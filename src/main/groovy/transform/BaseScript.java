@@ -89,7 +89,7 @@ import java.lang.annotation.Target;
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.LOCAL_VARIABLE, ElementType.PACKAGE /*, ElementType.IMPORT*/})
+@Target({ElementType.LOCAL_VARIABLE, ElementType.PACKAGE, ElementType.TYPE /*, ElementType.IMPORT*/})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.BaseScriptASTTransformation")
 public @interface BaseScript {
     Class value() default Script.class;
