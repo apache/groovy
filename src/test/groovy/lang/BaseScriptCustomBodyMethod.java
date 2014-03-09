@@ -22,10 +22,11 @@ public abstract class BaseScriptCustomBodyMethod extends Script {
 
     abstract protected Object runScriptBody();
 
-    public String cheese = "Cheddar";
+    public String cheese = "Swiss";
 
     @Override
     public Object run() {
+        cheese = "Cheddar";
         return runScriptBody();
     }
 }
