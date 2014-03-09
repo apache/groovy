@@ -241,9 +241,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
             classNode = new ClassNode(name, ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
         } else {
             classNode = new ClassNode(name, ACC_PUBLIC, ClassHelper.SCRIPT_TYPE);
+            setScriptBaseClassFromConfig(classNode);
             classNode.setScript(true);
             classNode.setScriptBody(true);
-            setScriptBaseClassFromConfig(classNode);
         }
 
         scriptDummy = classNode;
