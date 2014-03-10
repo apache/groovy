@@ -25,7 +25,6 @@ import java.io.IOException;
  * Tests some particular script features.
  *
  * @author Guillaume Laforge
- * @author Jim White
  */
 public class ScriptTest extends TestSupport {
     /**
@@ -56,24 +55,4 @@ public class ScriptTest extends TestSupport {
             return new Integer(3);
         }
     }
-
-    /**
-     * GROOVY-6582 : Script.invokeMethod bypasses getProperty when looking for closure-valued properties.
-     *
-     * Make sure that getProperty and invokeMethod are consistent.
-     *
-     */
-    public void testGROOVY_6582() {
-        String script = "" +
-            "abstract class DeclaredBaseScript extends Script {\n" +
-            "   def v = { it * 2 }\n" +
-            "   def getProperty(String n) { n == 'c' ? v : super.getProperty(n) }\n" +
-            "}\n" +
-            "@groovy.transform.BaseScript DeclaredBaseScript baseScript\n" +
-            "assert c(2) == 4";
-
-        GroovyShell shell = new GroovyShell();
-        shell.evaluate(script);
-    }
-
 }
