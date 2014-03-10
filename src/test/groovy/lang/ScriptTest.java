@@ -67,12 +67,10 @@ public class ScriptTest extends TestSupport {
         String script = "" +
             "abstract class DeclaredBaseScript extends Script {\n" +
             "   def v = { it * 2 }\n" +
-            "   def z = { it * 3 }\n" +
             "   def getProperty(String n) { n == 'c' ? v : super.getProperty(n) }\n" +
             "}\n" +
             "@groovy.transform.BaseScript DeclaredBaseScript baseScript\n" +
-            "assert c(2) == 4\n" +
-            "assert z(2) == 6";
+            "assert c(2) == 4";
 
         GroovyShell shell = new GroovyShell();
         shell.evaluate(script);
