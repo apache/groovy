@@ -22,15 +22,223 @@ at compile-time. Both have pros and cons, that we will detail in this section.
 ===== Delegating metaclass (TBD)
 ===== Magic package (TBD)
 ==== Per instance metaclass (TBD)
-==== ExpandoMetaClass (TBD)
-===== Constructors (TBD)
-===== Borrowing methods (TBD)
-===== Dynamic method names (TBD)
-===== GroovyObject methods (TBD)
-===== Overriding static invokeMethod (TBD)
-===== Properties (TBD)
-===== Runtime discovery (TBD)
-===== Static methods (TBD)
+
+==== ExpandoMetaClass
+
+Groovy comes with a special `MetaClass` the so-called `ExpandoMetaClass`. It is special in that it allows for dynamically
+adding or changing methods, constructors, properties and even static methods by using a neat closure syntax.
+
+Applying those modifications can be especially useful in mocking or stubbing scenarios as shown in the <<core-testing-guide.adoc#testing_guide_emc,Testing Guide>>.
+
+Every `java.lang.Class` is supplied by Groovy with a special `metaClass` property that will give you a reference to an
+`ExpandoMetaClass` instance. This instance can then be used to add methods or change the behaviour of already existing
+ones.
+
+[NOTE]
+By default `ExpandoMetaClass` doesn't do inheritance. To enable this you must call `ExpandoMetaClass#enableGlobally()`
+before your app starts such as in the main method or servlet bootstrap.
+
+The following sections go into detail on how `ExpandoMetaClass` can be used in various scenarios.
+
+===== Methods
+
+Once the `ExpandoMetaClass` is accessed by calling the `metaClass` property, methods can added by using either the left shift
+`<<` or the `=` operator.
+
+[NOTE]
+Note that the left shift operator is used to _append_ a new method. If the method already exists
+an exception will be thrown. If you want to _replace_ a method you can use the `=` operator.
+
+The operators are applied on a non-existent property of `metaClass` passing an instance of a `Closure` code block.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_method,indent=0]
+----
+
+The example above shows how a new method can be added to a class by accessing the `metaClass` property and using the `<<` or
+ `=` operator to assign a `Closure` code block. The `Closure` parameters are interpreted as method parameters. Parameterless methods
+ can be added by using the `{-> ...}` syntax.
+
+===== Properties
+
+`ExpandoMetaClass` supports two mechanisms for adding or overriding properties.
+
+Firstly, it has support for declaring a _mutable property_ by simply assigning a value to a property of `metaClass`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_property,indent=0]
+----
+
+Another way is to add getter and/or setter methods by using the standard mechanisms for adding instance methods.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_getter,indent=0]
+----
+
+In the source code example above the property is dictated by the closure and is a read-only property. It is feasible to add
+an equivalent setter method but then the property value needs to be stored for later usage. This could be done as
+shown in the following example.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_getter_setter,indent=0]
+----
+
+This is not the only technique however. For example in a servlet container one way might be to store the values in
+the currently executing request as request attributes (as is done in some cases in Grails).
+
+===== Constructors
+
+Constructors can be added by using a special `constructor` property. Either the `<<` or `=` operator can be used
+to assign a `Closure` code block. The `Closure` arguments will become the constructor arguments when the code is
+executed at runtime.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_constructors,indent=0]
+----
+
+[NOTE]
+Be careful when adding constructors however, as it is very easy to get into stack overflow troubles.
+
+===== Static Methods
+
+Static methods can be added using the same technique as instance methods with the addition of the `static` qualifier
+before the method name.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_static,indent=0]
+----
+
+===== Borrowing Methods
+
+With `ExpandoMetaClass` it is possible to use Groovy's method pointer syntax to borrow methods from other classes.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_method_pointer,indent=0]
+----
+
+===== Dynamic Method Names
+
+Since Groovy allows you to use Strings as property names this in turns allows you to dynamically create method and
+property names at runtime. To create a method with a dynamic name simply use the language feature of reference property
+names as strings.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_dynamic_method_names,indent=0]
+----
+
+The same concept can be applied to static methods and properties.
+
+One application of dynamic method names can be found in the Grails web application framework. The concept of "dynamic
+codecs" is implemented by using dynamic method names.
+
+[source,groovy]
+.`HTMLCodec` Class
+------------------------------------------------------
+class HTMLCodec {
+    static encode = { theTarget ->
+        HtmlUtils.htmlEscape(theTarget.toString())
+    }
+
+    static decode = { theTarget ->
+    	HtmlUtils.htmlUnescape(theTarget.toString())
+    }
+}
+------------------------------------------------------
+
+The example above shows a codec implementation. Grails comes with various codec implementations each defined in a single class.
+At runtime there will be multiple codec classes in the application classpath. At application startup the framework adds
+a `encodeXXX` and a `decodeXXX` method to certain meta-classes where `XXX` is the first part of the codec class name (e.g.
+`encodeHTML`). This mechanism is in the following shown in some Groovy pseudo-code:
+
+[source,groovy]
+------------------------------------------------------
+def codecs = classes.findAll { it.name.endsWith('Codec') }
+
+codecs.each { codec ->
+    Object.metaClass."encodeAs${codec.name-'Codec'}" = { codec.newInstance().encode(delegate) }
+    Object.metaClass."decodeFrom${codec.name-'Codec'}" = { codec.newInstance().decode(delegate) }
+}
+
+
+def html = '<html><body>hello</body></html>'
+
+assert '<html><body>hello</body></html>' == html.encodeAsHTML()
+------------------------------------------------------
+
+===== Runtime Discovery
+
+At runtime it is often useful to know what other methods or properties exist at the time the method is executed. `ExpandoMetaClass`
+provides the following methods as of this writing:
+
+* `getMetaMethod`
+* `hasMetaMethod`
+* `getMetaProperty`
+* `hasMetaProperty`
+
+Why can't you just use reflection? Well because Groovy is different, it has the methods that are "real" methods and
+methods that are available only at runtime. These are sometimes (but not always) represented as MetaMethods. The
+MetaMethods tell you what methods are available at runtime, thus your code can adapt.
+
+This is of particular use when overriding `invokeMethod`, `getProperty` and/or `setProperty`.
+
+===== GroovyObject Methods
+
+Another feature of `ExpandoMetaClass` is that it allows to override the methods `invokeMethod`, `getProperty` and
+`setProperty`, all of them can be found in the `groovy.lang.GroovyObject` class.
+
+The following example shows how to override `invokeMethod`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_invoke_method,indent=0]
+----
+
+The first step in the `Closure` code is to lookup the `MetaMethod` for the given name and arguments. If the method
+can be found everything is fine and it is delegated to. If not, a dummy value is returned.
+
+[NOTE]
+A `MetaMethod` is a method that is known to exist on the `MetaClass` whether added at runtime or at compile-time.
+
+The same logic can be used to override `setProperty` or `getProperty`.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_get_property,indent=0]
+----
+
+The important thing to note here is that instead of a `MetaMethod` a `MetaProperty` instance is looked up. If that exists
+the `getProperty` method of the `MetaProperty` is called, passing the delegate.
+
+===== Overriding Static invokeMethod
+
+`ExpandoMetaClass` even allows for overriding static method with a special `invokeMethod` syntax.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_invoke_method_static,indent=0]
+----
+
+The logic that is used for overriding the static method is the same as we've seen before for overriding instance methods. The
+only difference is the access to the `metaClass.static` property and the call to `getStaticMethodName` for retrieving
+the static `MetaMethod` instance.
+
+===== Extending Interfaces
+
+It is possible to add methods onto interfaces with `ExpandoMetaClass`. To do this however, it *must* be enabled
+globally using the `ExpandoMetaClass.enableGlobally()` method before application start-up.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_interface,indent=0]
+----
 
 === Extension modules
 ==== Extending existing classes
