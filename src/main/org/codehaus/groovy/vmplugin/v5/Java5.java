@@ -24,6 +24,12 @@ import org.codehaus.groovy.vmplugin.VMPlugin;
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -359,10 +365,19 @@ public class Java5 implements VMPlugin {
         if (interfaceTypes.length == 0) {
             classNode.setInterfaces(ClassNode.EMPTY_ARRAY);
         } else {
-            Class[] interfaceClasses = clazz.getInterfaces();
             ClassNode[] ret = new ClassNode[interfaceTypes.length];
             for (int i = 0; i < interfaceTypes.length; i++) {
-                ret[i] = makeClassNode(cu, interfaceTypes[i], interfaceClasses[i]);
+                Type type = interfaceTypes[i];
+                while (!(type instanceof Class)) {
+                    ParameterizedType pt = (ParameterizedType) type;
+                    Type t2 = pt.getRawType();
+                    if (t2==type) {
+                        throw new GroovyBugError("Cannot transform generic signature of "+clazz+
+                                " with generic interface "+interfaceTypes[i]+" to a class.");
+                    }
+                    type = t2;
+                }
+                ret[i] = makeClassNode(cu, interfaceTypes[i], (Class) type);
             }
             classNode.setInterfaces(ret);
         }
