@@ -191,6 +191,7 @@ include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags
 `MockFor` and `StubFor` can not be used to test statically compiled classes e.g for Java classes or Groovy classes that
 make use of +@CompileStatic+. To stub and/or mock these classes you can use Spock or one of the Java mocking libraries.
 
+[[testing_guide_emc]]
 ==== Expando Meta-Class (EMC)
 
 Groovy includes a special `MetaClass` the so-called `ExpandoMetaClass` (EMC). It allows to dynamically add methods,
