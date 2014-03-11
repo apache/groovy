@@ -126,8 +126,6 @@ These operators into action in simple number comparisons:
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=simple_relational_op,indent=0]
 ----
 
-
-
 == Logical operators (TBD)
 
 == Bitwise operators (TBD)

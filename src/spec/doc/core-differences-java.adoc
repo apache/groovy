@@ -172,7 +172,8 @@ Groovy doesn't support the `y.new X()` syntax. Instead, you have to write `new X
 include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=innerclass_3,indent=0]
 ----------------------------------
 
-CautionCaution though, Groovy supports calling methods with one
+[WARNING]
+Caution though, Groovy supports calling methods with one
 parameter without giving an argument. The parameter will then have the
 value null. Basically the same rules apply to calling a constructor.
 There is a danger that you will write new X() instead of new X(this) for
