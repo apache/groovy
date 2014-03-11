@@ -12,8 +12,72 @@ at compile-time. Both have pros and cons, that we will detail in this section.
 ==== get/setMetaClass (TBD)
 
 === get/setAttribute (TBD)
-=== propertyMissing (TBD)
-=== methodMissing (TBD)
+
+=== methodMissing
+
+Groovy supports the concept of `methodMissing`. This method differs from `invokeMethod` in that it
+is only invoked in the case of a failed method dispatch, when no method can be found for the given name and/or the
+given arguments.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MethodPropertyMissingTest.groovy[tags=method_missing_simple,indent=0]
+----
+
+Typically when using `methodMissing` the code will react in some way that makes it possible for the next time the same
+method is called, that it goes through the regular Groovy method dispatch logic.
+
+For example consider dynamic finders in GORM. These are implemented in terms of `methodMissing`. The code resembles
+something like this:
+
+[source,groovy]
+----
+class GORM {
+   def dynamicMethods = [...] // an array of dynamic methods that use regex
+   def methodMissing(String name, args) {
+       def method = dynamicMethods.find { it.match(name) }
+       if(method) {
+          GORM.metaClass."$name" = { Object[] varArgs ->
+             method.invoke(delegate, name, varArgs)
+          }
+          return method.invoke(delegate,name, args)
+       }
+       else throw new MissingMethodException(name, delegate, args)
+   }
+}
+----
+
+Notice how, if we find a method to invoke then we dynamically register a new method on the fly using `ExpandoMetaClass`.
+This is so that the next time the same method is called it is more efficient. This way `methodMissing` doesn't have
+the overhead of `invokeMethod` _and_ is not expensive for the second call.
+
+=== propertyMissing
+
+Groovy supports the concept of `propertyMissing` for intercepting otherwise failing property resolution attempts. In the
+case of a getter method, `propertyMissing` takes a single String argument resembling the property name:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MethodPropertyMissingTest.groovy[tags=property_missing_getter,indent=0]
+----
+
+The `propertyMissing(String)` method is only called when no getter method for the given property can be found by the Groovy
+runtime.
+
+For a setter methods a second `propertyMissing` definition can be added that takes an additional value argument:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MethodPropertyMissingTest.groovy[tags=property_missing_getter_setter,indent=0]
+----
+
+As with `methodMissing` it is best practice to dynamically register new properties at runtime to improve the overall lookup
+performance.
+
+[NOTE]
+`methodMissing` and `propertyMissing` that deal with static methods and properties can be added via
+the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>.
+
 === GroovyInterceptable (TBD)
 
 === Categories
@@ -135,6 +199,7 @@ There is a distinct section on `@Category` in the <<core-metaprogramming.adoc#xf
 ===== Magic package (TBD)
 ==== Per instance metaclass (TBD)
 
+[[metaprogramming_emc]]
 ==== ExpandoMetaClass
 
 Groovy comes with a special `MetaClass` the so-called `ExpandoMetaClass`. It is special in that it allows for dynamically
