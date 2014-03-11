@@ -3620,7 +3620,12 @@ options {
     protected GroovyRecognizer parser;  // little-used link; TODO: get rid of
     private void require(boolean z, String problem, String solution) throws SemanticException {
         // TODO: Direct to a common error handler, rather than through the parser.
-        if (!z)  parser.requireFailed(problem, solution);
+        if (!z && parser!=null)  parser.requireFailed(problem, solution);
+        if (!z) {
+            int lineNum = inputState.getLine(), colNum = inputState.getColumn();
+            throw new SemanticException(problem + ";\n   solution: " + solution,
+                                        getFilename(), lineNum, colNum);
+        }
     }
 }
 
