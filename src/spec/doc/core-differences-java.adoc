@@ -189,7 +189,7 @@ Runnable run = () -> System.out.println("Run");
 list.forEach(System.out::println);
 ----
 
-Does can be more or less considered as anonymous inner classes. Groovy doesn't support that syntax, but has closures
+Java 8 lambdas can be more or less considered as anonymous inner classes. Groovy doesn't support that syntax, but has closures
 instead:
 
 [source,groovy]
