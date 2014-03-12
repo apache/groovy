@@ -12,10 +12,186 @@ at compile-time. Both have pros and cons, that we will detail in this section.
 ==== get/setMetaClass (TBD)
 
 === get/setAttribute (TBD)
-=== propertyMissing (TBD)
-=== methodMissing (TBD)
+
+=== methodMissing
+
+Groovy supports the concept of `methodMissing`. This method differs from `invokeMethod` in that it
+is only invoked in the case of a failed method dispatch, when no method can be found for the given name and/or the
+given arguments.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MethodPropertyMissingTest.groovy[tags=method_missing_simple,indent=0]
+----
+
+Typically when using `methodMissing` the code will react in some way that makes it possible for the next time the same
+method is called, that it goes through the regular Groovy method dispatch logic.
+
+For example consider dynamic finders in GORM. These are implemented in terms of `methodMissing`. The code resembles
+something like this:
+
+[source,groovy]
+----
+class GORM {
+   def dynamicMethods = [...] // an array of dynamic methods that use regex
+   def methodMissing(String name, args) {
+       def method = dynamicMethods.find { it.match(name) }
+       if(method) {
+          GORM.metaClass."$name" = { Object[] varArgs ->
+             method.invoke(delegate, name, varArgs)
+          }
+          return method.invoke(delegate,name, args)
+       }
+       else throw new MissingMethodException(name, delegate, args)
+   }
+}
+----
+
+Notice how, if we find a method to invoke then we dynamically register a new method on the fly using `ExpandoMetaClass`.
+This is so that the next time the same method is called it is more efficient. This way `methodMissing` doesn't have
+the overhead of `invokeMethod` _and_ is not expensive for the second call.
+
+=== propertyMissing
+
+Groovy supports the concept of `propertyMissing` for intercepting otherwise failing property resolution attempts. In the
+case of a getter method, `propertyMissing` takes a single String argument resembling the property name:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MethodPropertyMissingTest.groovy[tags=property_missing_getter,indent=0]
+----
+
+The `propertyMissing(String)` method is only called when no getter method for the given property can be found by the Groovy
+runtime.
+
+For a setter methods a second `propertyMissing` definition can be added that takes an additional value argument:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/MethodPropertyMissingTest.groovy[tags=property_missing_getter_setter,indent=0]
+----
+
+As with `methodMissing` it is best practice to dynamically register new properties at runtime to improve the overall lookup
+performance.
+
+[NOTE]
+`methodMissing` and `propertyMissing` that deal with static methods and properties can be added via
+the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>.
+
 === GroovyInterceptable (TBD)
-=== Categories (TBD)
+
+=== Categories
+
+There are situations where it is useful if a class _not_ under control had additional methods. In order to enable this
+capability, Groovy implements a feature borrowed from Objective-C, called _Categories_.
+
+Categories are implemented with so-called _category classes_. A category class is special in that it needs to meet certain
+pre-defined rules for defining extension methods.
+
+There are a few categories that are included in the system for adding functionality to classes that make them more
+usable within the Groovy environment:
+
+* http://groovy.codehaus.org/api/groovy/time/TimeCategory.html[groovy.time.TimeCategory]
+* http://groovy.codehaus.org/api/groovy/servlet/ServletCategory.html[groovy.servlet.ServletCategory]
+* http://groovy.codehaus.org/api/groovy/xml/dom/DOMCategory.html[groovy.xml.dom.DOMCategory]
+
+Category classes aren't enabled by default. To use the methods defined in a category class it is necessary to apply
+the scoped `use` method that is provided by the GDK and available from inside every Groovy object instance:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/CategoryTest.groovy[tags=time_category,indent=0]
+----
+<1> `TimeCategory` adds methods to `Integer`
+<2> `TimeCategory` adds methods to `Date`
+
+The `use` method takes the category class as its first parameter and a closure code block as second parameter. Inside the
+`Closure` access to the category methods is available. As can be seen in the example above even JDK classes
+like `java.lang.Integer` or `java.util.Date` can be enriched with user-defined methods.
+
+A category needs not to be directly exposed to the user code, the following will also do:
+
+[source,groovy]
+----------------------------------------------------------------------------------------------------------------------
+class JPACategory{
+  // Let's enhance JPA EntityManager without getting into the JSR committee
+  static void persistAll(EntityManager em , Object[] entities) { //add an interface to save all
+    entities?.each { em.persist(it) }
+  }
+}
+
+def transactionContext = {
+  EntityManager em, Closure c ->
+  def tx = em.transaction
+  try {
+    tx.begin()
+    use(JPACategory) {
+      c()
+    }
+    tx.commit()
+  } catch (e) {
+    tx.rollback()
+  } finally {
+    //cleanup your resource here
+  }
+}
+
+// user code, they always forget to close resource in exception, some even forget to commit, let's not rely on them.
+EntityManager em; //probably injected
+transactionContext (em) {
+ em.persistAll(obj1, obj2, obj3)
+ // let's do some logics here to make the example sensible
+ em.persistAll(obj2, obj4, obj6)
+}
+----------------------------------------------------------------------------------------------------------------------
+
+When we have a look at the `groovy.time.TimeCategory` class we see that the extension methods are all declared as `static`
+methods. In fact, this is one of the requirements that must be met by category classes for its methods to be successfully added to
+a class inside the `use` code block:
+
+[source,groovy]
+----------------------------------------------------------------------------------------------------------------------
+public class TimeCategory {
+
+    public static Date plus(final Date date, final BaseDuration duration) {
+        return duration.plus(date);
+    }
+
+    public static Date minus(final Date date, final BaseDuration duration) {
+        final Calendar cal = Calendar.getInstance();
+
+        cal.setTime(date);
+        cal.add(Calendar.YEAR, -duration.getYears());
+        cal.add(Calendar.MONTH, -duration.getMonths());
+        cal.add(Calendar.DAY_OF_YEAR, -duration.getDays());
+        cal.add(Calendar.HOUR_OF_DAY, -duration.getHours());
+        cal.add(Calendar.MINUTE, -duration.getMinutes());
+        cal.add(Calendar.SECOND, -duration.getSeconds());
+        cal.add(Calendar.MILLISECOND, -duration.getMillis());
+
+        return cal.getTime();
+    }
+
+    // ...
+----------------------------------------------------------------------------------------------------------------------
+
+Another requirement is the first argument of the static method must define the type the method is attached to once being activated. The
+other arguments are the normal arguments the method will take as parameters.
+
+Because of the parameter and static method convention, category method definitions may be a bit less intuitive than
+normal method definitions. As an alternative Groovy comes with a `@Category` annotation that transforms annotated classes
+into category classes at compile-time.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/CategoryTest.groovy[tags=time_category_anno,indent=0]
+----
+
+Applying the `@Category` annotation has the advantage of being able to use instance methods without the target type as a
+first parameter. The target type class is given as an argument to the annotation instead.
+
+[NOTE]
+There is a distinct section on `@Category` in the <<core-metaprogramming.adoc#xform-Category,compile-time metaprogramming section>>.
 
 === Metaclasses (TBD)
 ==== Custom metaclasses (TBD)
@@ -23,6 +199,7 @@ at compile-time. Both have pros and cons, that we will detail in this section.
 ===== Magic package (TBD)
 ==== Per instance metaclass (TBD)
 
+[[metaprogramming_emc]]
 ==== ExpandoMetaClass
 
 Groovy comes with a special `MetaClass` the so-called `ExpandoMetaClass`. It is special in that it allows for dynamically
