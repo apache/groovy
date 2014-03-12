@@ -1249,21 +1249,20 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         ClassNode mr = overridingMethod.getReturnType();
         ClassNode omr = oldMethod.getReturnType();
         boolean equalReturnType = mr.equals(omr);
-        if (equalReturnType && normalEqualParameters) return null;
 
-        // if we reach this point we have at least one parameter or return type, that
-        // is different in its specified form. That means we have to create a bridge method!
         ClassNode testmr = correctToGenericsSpec(genericsSpec, omr);
         if (!isAssignable(mr, testmr)) {
             throw new RuntimeParserException(
                     "The return type of " +
                             overridingMethod.getTypeDescriptor() +
                             " in " + overridingMethod.getDeclaringClass().getName() +
-                            " is incompatible with " +
-                            oldMethod.getTypeDescriptor() +
+                            " is incompatible with " + testmr.getName() +
                             " in " + oldMethod.getDeclaringClass().getName(),
                     overridingMethod);
         }
+
+        if (equalReturnType && normalEqualParameters) return null;
+
         if ((oldMethod.getModifiers() & ACC_FINAL) != 0) {
             throw new RuntimeParserException(
                     "Cannot override final method " +
@@ -1288,7 +1287,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     message = " with old and new method having different primitive return types";
                 } else if (newM) {
                     message = " with new method having a primitive return type and old method not";
-                } else if (oldM) {
+                } else /* oldM */ {
                     message = " with old method having a primitive return type and new method not";
                 }
                 throw new RuntimeParserException(
@@ -1300,6 +1299,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
 
+        // if we reach this point we have at least one parameter or return type, that
+        // is different in its specified form. That means we have to create a bridge method!
         MethodNode newMethod = new MethodNode(
                 oldMethod.getName(),
                 overridingMethod.getModifiers() | ACC_SYNTHETIC | ACC_BRIDGE,
