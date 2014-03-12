@@ -1339,8 +1339,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
     
     // GROOVY-6455
-    // TODO reinstate (temporarily disabled)
-    void _testDelegateWithGenerics() {
+    void testDelegateWithGenerics() {
         assertScript '''
             @groovy.transform.CompileStatic
             class IntList {

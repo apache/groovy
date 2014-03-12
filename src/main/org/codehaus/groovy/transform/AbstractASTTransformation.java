@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,11 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 //import org.codehaus.groovy.ast.MethodNode;
 //import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
@@ -34,7 +36,9 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation {
     private SourceUnit sourceUnit;
@@ -192,5 +196,46 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
             return type.getComponentType().getPlainNodeReference().makeArray();
         }
         return type;
+    }
+
+    public static ClassNode newClass(ClassNode type) {
+        return type.getPlainNodeReference();
+    }
+
+    public static ClassNode makeClassSafe0(ClassNode type, GenericsType... genericTypes) {
+        ClassNode plainNodeReference = newClass(type);
+        if (genericTypes != null && genericTypes.length > 0) plainNodeReference.setGenericsTypes(genericTypes);
+        return plainNodeReference;
+    }
+
+    public static ClassNode makeClassSafeWithGenerics(ClassNode type, ClassNode... genericTypes) {
+        if (type.isArray()) {
+            return makeClassSafeWithGenerics(type.getComponentType(), genericTypes).makeArray();
+        }
+        GenericsType[] gtypes = new GenericsType[0];
+        if (genericTypes != null) {
+            gtypes = new GenericsType[genericTypes.length];
+            for (int i = 0; i < gtypes.length; i++) {
+                gtypes[i] = new GenericsType(newClass(genericTypes[i]));
+            }
+        }
+        return makeClassSafe0(type, gtypes);
+    }
+
+    static ClassNode correctToGenericsSpecRecurse(Map genericsSpec, ClassNode type) {
+        if (type.isGenericsPlaceHolder()) {
+            String name = type.getGenericsTypes()[0].getName();
+            type = (ClassNode) genericsSpec.get(name);
+        }
+        if (type == null) type = ClassHelper.OBJECT_TYPE;
+        GenericsType[] oldgTypes = type.getGenericsTypes();
+        ClassNode[] newgTypes = new ClassNode[0];
+        if (oldgTypes != null) {
+            newgTypes = new ClassNode[oldgTypes.length];
+            for (int i = 0; i < newgTypes.length; i++) {
+                newgTypes[i] = Verifier.correctToGenericsSpec(genericsSpec, oldgTypes[i]);
+            }
+        }
+        return makeClassSafeWithGenerics(type, newgTypes);
     }
 }

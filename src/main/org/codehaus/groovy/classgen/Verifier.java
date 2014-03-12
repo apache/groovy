@@ -1371,7 +1371,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
-    private ClassNode correctToGenericsSpec(Map genericsSpec, GenericsType type) {
+    public static ClassNode correctToGenericsSpec(Map genericsSpec, GenericsType type) {
         ClassNode ret = null;
         if (type.isPlaceholder()) {
             String name = type.getName();
@@ -1381,7 +1381,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return ret;
     }
 
-    private ClassNode correctToGenericsSpec(Map genericsSpec, ClassNode type) {
+    public static ClassNode correctToGenericsSpec(Map genericsSpec, ClassNode type) {
         if (type.isGenericsPlaceHolder()) {
             String name = type.getGenericsTypes()[0].getName();
             type = (ClassNode) genericsSpec.get(name);
@@ -1415,7 +1415,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return true;
     }
 
-    private Map createGenericsSpec(ClassNode current, Map oldSpec) {
+    public static Map createGenericsSpec(ClassNode current, Map oldSpec) {
         Map ret = new HashMap(oldSpec);
         // ret contains the type specs, what we now need is the type spec for the
         // current class. To get that we first apply the type parameters to the
