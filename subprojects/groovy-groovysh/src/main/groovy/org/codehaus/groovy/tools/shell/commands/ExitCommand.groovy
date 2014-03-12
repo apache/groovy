@@ -18,7 +18,6 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.ExitNotification
 
 /**
@@ -31,12 +30,12 @@ class ExitCommand
     extends CommandSupport
 {
     ExitCommand(final Groovysh shell) {
-        super(shell, 'exit', '\\x')
+        super(shell, ':exit', ':x')
 
-        alias('quit', '\\q')
+        alias(':quit', ':q')
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assertNoArguments(args)
         
         //

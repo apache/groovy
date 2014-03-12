@@ -302,9 +302,9 @@ class ListTest extends GroovyTestCase {
         assert list[-1..-2] == [3, 2]     , 'negative index range reversed'
         assert list[-1..<-2] == [3]       , 'negative index range reversed exclusive'  // aaaahhhhh !
         assert list[0..-1] == list        , 'pos - neg value'
-        assert list[0..<-1] == [0]        , 'pos - neg value exclusive -> empty'
-        assert list[0..<-2] == list       , 'pos - neg value exclusive -> full'
-        shouldFail(NullPointerException) { list[null] }
+        assert list[0..<-1] == [0, 1, 2]  , 'pos - neg value exclusive'
+        assert list[0..<-2] == [0, 1]     , 'pos - neg value exclusive'
+        shouldFail(GroovyRuntimeException) { list[null] }
         shouldFail(IndexOutOfBoundsException) { list[5..6] }
     }
 
@@ -538,7 +538,7 @@ class ListTest extends GroovyTestCase {
     void testLazyListAndFailingNegativeRangeAccess() {
         def l1 = [].withDefault { 42 }
 
-        shouldFail(ArrayIndexOutOfBoundsException) {
+        shouldFail(IndexOutOfBoundsException) {
             l1[-42..0]
         }
     }
@@ -546,7 +546,7 @@ class ListTest extends GroovyTestCase {
     void testEagerListAndFailingNegativeRangeAccess() {
         def l1 = [].withEagerDefault { 42 }
 
-        shouldFail(ArrayIndexOutOfBoundsException) {
+        shouldFail(IndexOutOfBoundsException) {
             l1[-42..0]
         }
     }
@@ -648,7 +648,7 @@ class ListTest extends GroovyTestCase {
 
     void testEagerListWithNegativeIndex() {
         def a = [].withEagerDefault { 42 }
-        shouldFail(ArrayIndexOutOfBoundsException) {
+        shouldFail(IndexOutOfBoundsException) {
             a[-2]
         }
     }
@@ -670,5 +670,110 @@ class ListTest extends GroovyTestCase {
 
         def sub = list[0..4]
         assert sub[5] == 42
+    }
+
+    void testCollectionAccessCreatesListCopy() {
+        def list = [0,1,2,3]
+        def sublist = list[0,1]
+
+        assert sublist == [0,1]
+
+        sublist[0] = 42
+
+        assert sublist == [42, 1]
+        assert list == [0,1,2,3]
+    }
+
+    void testLazyListCollectionAccessCreatesListCopy() {
+        def list = [0,1,2,3].withDefault { 42 }
+        def sublist = list[0,1]
+
+        assert sublist == [0,1]
+
+        sublist[0] = 42
+
+        assert sublist == [42, 1]
+        assert list == [0,1,2,3]
+    }
+
+    void testRangeAccessCreatesListCopy() {
+        def list = [0,1,2,3]
+        def sublist = list[0..<2]
+
+        assert sublist == [0,1]
+
+        sublist[0] = 42
+
+        assert sublist == [42, 1]
+        assert list == [0,1,2,3]
+    }
+
+    void testLazyListRangeAccessCreatesListCopy() {
+        def list = [0,1,2,3].withDefault { 42 }
+        def sublist = list[0..<2]
+
+        assert sublist == [0,1]
+
+        sublist[0] = 42
+
+        assert sublist == [42, 1]
+        assert list == [0,1,2,3]
+    }
+
+    void testLazyListSubListCreatesListDelegateCopy() {
+        def list = [0,1,2,3].withDefault { 42 }
+        def sublist = list[0..1]
+
+        assert sublist instanceof ListWithDefault
+        assert sublist.size() == 2
+
+        sublist[0] = 42
+
+        assert list == [0,1,2,3]
+    }
+
+    void testReversedRangeAccessCreatesListCopy() {
+        def list = [0,1,2,3]
+        def sublist = list[1..0]
+
+        assert sublist == [1,0]
+
+        sublist[0] = 42
+
+        assert sublist == [42, 0]
+        assert list == [0,1,2,3]
+    }
+
+    void testReversedLazyListRangeAccessCreatesListCopy() {
+        def list = [0,1,2,3].withDefault { 42 }
+        def sublist = list[1..0]
+
+        assert sublist == [1,0]
+
+        sublist[0] = 42
+
+        assert sublist == [42, 0]
+        assert list == [0,1,2,3]
+    }
+
+    void testRangeAccessOnLinkedListCreatesLinkedListCopy() {
+        def list = new LinkedList([0,1,2,3])
+        def sublist = list[0..<2]
+
+        assert sublist == [0,1]
+        assert sublist instanceof LinkedList
+    }
+
+    void testReversedRangeAccessOnLinkedListCreatesLinkedListCopy() {
+        def list = new LinkedList([0,1,2,3])
+        def sublist = list[1..0]
+
+        assert sublist == [1,0]
+        assert sublist instanceof LinkedList
+    }
+
+    void testEmptyRangeAccessReturnsLinkedListCopy() {
+        def list = new LinkedList([0,1,2,3])
+        assert list[0..<0] instanceof LinkedList
     }
 }

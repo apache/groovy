@@ -1,0 +1,293 @@
+= Semantics
+
+This chapter covers the semantic of the Groovy programming language.
+
+== Statements (TBD)
+
+=== Variable definition (TBD)
+=== Variable assignment (TBD)
+==== Multiple assignment (TBD)
+=== Control structures (TBD)
+==== Conditional structures (TBD)
+===== if / else (TBD)
+===== switch / case (TBD)
+==== Looping structures (TBD)
+===== Classic for loop (TBD)
+===== for in loop (TBD)
+===== while loop (TBD)
+==== Exception handling (TBD)
+==== try / catch / finally (TBD)
+==== Multi-catch (TBD)
+=== Power assertion (TBD)
+=== Labeled statements (TBD)
+
+== Expressions (TBD)
+
+=== GPath expressions (TBD)
+
+== Promotion and coercion (TBD)
+
+=== Number promotion (TBD)
+=== Closure to type coercion
+==== Assigning a closure to a SAM type
+A SAM type is a type which defines a single abstract method. This includes:
+
+[source,groovy]
+.Functional interfaces
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=filter_sam_type,indent=0]
+----
+
+[source,groovy]
+.Abstract classes with single abstract method
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=greeter_sam_type,indent=0]
+----
+
+Any closure can be converted into a SAM type using the `as` operator:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=assertions_explicit_closure_to_sam,indent=0]
+----
+
+However, the `as Type` expression is optional since Groovy 2.2.0. You can omit it and simply write:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=assertions_implicit_closure_to_sam,indent=0]
+----
+
+which means you are also allowed to use method pointers, as shown in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=assertions_implicit_closure_to_sam_and_method_pointer,indent=0]
+----
+
+==== Calling a method accepting a SAM type with a closure
+
+The second and probably more important use case for closure to SAM type coercion is calling a method which accepts
+a SAM type. Imagine the following method:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=method_accepting_filter,indent=0]
+-----
+
+Then you can call it with a closure, without having to create an explicit implementation of the interface:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=method_call_with_explicit_coercion,indent=0]
+-----
+
+But since Groovy 2.2.0, you are also able to omit the explicit coercion and call the method as if it used a closure:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=method_call_with_implicit_coercion,indent=0]
+-----
+
+As you can see, this has the advantage of letting you use the closure syntax for method calls, that is to say put the
+closure outside of the parenthesis, improving the readability of your code.
+
+==== Closure to arbitrary type coercion
+
+In addition to SAM types, a closure can be coerced to any type and in particular interfaces. Let's define the
+following interface:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=foobar_interface,indent=0]
+----
+
+You can coerce a closure into the interface using the `as` keyword:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=foobar2closure_coercion,indent=0]
+----
+
+This produces a class for which all methods are implemented using the closure:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=foobarintf_assertions,indent=0]
+----
+
+But it is also possible to coerce a closure to any class. For example, we can replace the `interface` that we defined
+with `class` without changing the assertions:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=closure2foobarclass,indent=0]
+----
+
+=== Map to type coercion
+
+Usually using a single closure to implement an interface or a class with multiple methods is not the way to go. As an
+alternative, Groovy allows you to coerce a map into an interface or a class. In that case, keys of the map are
+interpreted as method names, while the values are the method implementation. The following example illustrates the
+coercion of a map into an `Iterator`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=coerce_map_to_iterator,indent=0]
+----
+
+Of course this is a rather contrived example, but illustrates the concept. You only need to implement those methods
+that are actually called, but if a method is called that doesn't exist in the map a `MissingMethodException` or an
+`UnsupportedOperationException` is thrown, depending on the arguments passed to the call,
+as in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=define_x_interface,indent=0]
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=call_existing_method,indent=0]
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=call_non_existing_method,indent=0]
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=call_notimplemented_method,indent=0]
+----
+
+The type of the exception depends on the call itself:
+
+* `MissingMethodException` if the arguments of the call do not match those from the interface/class
+* `UnsupportedOperationException` if the arguments of the call match one of the overloaded methods of the interface/class
+
+=== String to enum coercion
+
+Groovy allows transparent +String+ (or +GString+) to enum values coercion. Imagine you define the following enum:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=state_enum,indent=0]
+----
+
+then you can assign a string to the enum without having to use an explicit `as` coercion:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_coerce_assignment,indent=0]
+----
+
+It is also possible to use a +GString+ as the value:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_coerce_assignment_gstring,indent=0]
+----
+
+
+However, this would throw a runtime error (+IllegalArgumentException+):
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_coerce_assignment_wrong,indent=0]
+----
+
+Note that it is also possible to use implicit coercion in switch statements:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_switch_method,indent=0]
+----
+
+in particular, see how the `case` use string constants. But if you call a method that uses an enum with a +String+
+argument, you still have to use an explicit `as` coercion:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_switch_test,indent=0]
+----
+
+=== Custom type coercion
+
+It is possible for a class to define custom coercion strategies by implementing the +asType+ method. Custom coercion
+is invoked using the `as` operator and is never implicit. As an example,
+imagine you defined two classes, +Polar+ and +Cartesian+, like in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_header,indent=0]
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_footer,indent=0]
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=cartesian_class,indent=0]
+----
+
+And that you want to convert from polar coordinates to cartesian coordinates. One way of doing this is to define
+the +asType+ method in the +Polar+ class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_astype,indent=0]
+----
+
+which allows you to use the +as+ coercion operator:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_astype_assert,indent=0]
+----
+
+Putting it all together, the +Polar+ class looks like this:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_header,indent=0]
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_astype,indent=4]
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_footer,indent=0]
+----
+
+but it is also possible to define +asType+ outside of the +Polar+ class, which can be practical if you want to define
+custom coercion strategies for "closed" classes or classes for which you don't own the source code, for example using
+a metaclass:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_metaclass_astype,indent=0]
+----
+
+=== Class literals vs variables and the as operator
+
+Using the `as` keyword is only possible if you have a static reference to a class, like in the following code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=as_keyword,indent=0]
+----
+
+But what if you get the class by reflection, for example by calling `Class.forName`?
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=clazz_greeter_header,indent=0]
+----
+
+Trying to use the reference to the class with the `as` keyword would fail:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=incorrect_as_usage,indent=0]
+----
+
+It is failing because the `as` keyword only works with class literals. Instead, you need to call the `asType` method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=fixed_as_usage,indent=0]
+----
+
+== Optionality (TBD)
+
+=== Optional parentheses (TBD)
+=== Optional semicolons (TBD)
+=== Optional return keyword (TBD)
+=== Optional public keyword (TBD)
+
+== The Groovy Truth (TBD)
+
+=== Customizing the truth with asBoolean() methods (TBD)
+
+== Typing (TBD)
+
+=== Optional typing (TBD)
+=== Static type checking (TBD)
+=== Static compilation (TBD)
+

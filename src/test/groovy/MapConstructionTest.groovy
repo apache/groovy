@@ -19,7 +19,6 @@ package groovy
  * Tests creating Maps in Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 class MapConstructionTest extends GroovyTestCase {
 
@@ -35,11 +34,11 @@ class MapConstructionTest extends GroovyTestCase {
         assertMap(m)
     }
 
-    def testMapAsParameter() {
+    void testMapAsParameter() {
         assertMap([ 1 : 'abc', 2 : 'def', 3 : 'xyz' ])
     }
 
-    def testMapViaHashMap() {
+    void testMapViaHashMap() {
         def m = new HashMap()
         m.put(1, 'abc')
         m.put(2, 'def')
@@ -58,7 +57,9 @@ class MapConstructionTest extends GroovyTestCase {
             text = text + e.value
         }
         assert result == 6
-        assert text == "abcdefxyz"
+        assert text.contains('abc')
+		assert text.contains('def')
+		assert text.contains('xyz')
 
         assert m.size() == 3
 

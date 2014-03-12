@@ -18,8 +18,10 @@ package groovy.util;
 import groovy.lang.*;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 /**
@@ -141,6 +143,9 @@ public class ProxyGenerator {
 
     @SuppressWarnings("unchecked")
     public GroovyObject instantiateAggregate(Map closureMap, List<Class> interfaces, Class clazz, Object[] constructorArgs) {
+        if (clazz!=null && Modifier.isFinal(clazz.getModifiers())) {
+            throw new GroovyCastException("Cannot coerce a map to class "+clazz.getName()+" because it is a final class");
+        }
         Map<Object,Object> map = closureMap!=null?closureMap: EMPTY_CLOSURE_MAP;
         Class[] intfs = interfaces!=null? interfaces.toArray(new Class[interfaces.size()]): EMPTY_INTERFACE_ARRAY;
         Class base = clazz;

@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.tools.shell
 
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.fusesource.jansi.Ansi
 
@@ -88,7 +89,7 @@ class Shell
         def result = null
         
         if (command) {
-            def args = parseLine(line)
+            List<String> args = parseLine(line)
             
             if (args.size() == 1) {
                 args = []
@@ -103,16 +104,19 @@ class Shell
             } catch (CommandException e) {
                 io.err.println(ansi().a(Ansi.Attribute.INTENSITY_BOLD).fg(Ansi.Color.RED).a(e.getMessage()).reset());
             }
-            log.debug("Result: ${String.valueOf(result)}")
+            log.debug("Result: ${InvokerHelper.toString(result)}")
         }
         
         return result
     }
     
     Command register(final Command command) {
-        return (registry << command) as Command
+        return registry.register(command)
     }
-    
+
+    /**
+     * this should probably be deprecated
+     */
     def leftShift(final String line) {
         return execute(line)
     }

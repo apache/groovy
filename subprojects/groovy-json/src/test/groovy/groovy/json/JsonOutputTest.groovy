@@ -15,6 +15,8 @@
  */
 package groovy.json
 
+
+import groovy.util.GroovyTestCase
 import static groovy.json.JsonOutput.toJson
 import groovy.transform.Canonical
 
@@ -152,6 +154,7 @@ class JsonOutputTest extends GroovyTestCase {
 
     void testURL() {
         assert toJson(new URL("http://glaforge.appspot.com")) == '"http://glaforge.appspot.com"'
+        assert JsonOutput.toJson(new URL('file', '', 'C:\\this\\is\\windows\\path')) == '"file:C:\\\\this\\\\is\\\\windows\\\\path"' // GROOVY-6560
     }
 
     void testCalendar() {
@@ -331,6 +334,19 @@ class JsonOutputTest extends GroovyTestCase {
 		def json = toJson(new JsonFoo(name: "foo"))
 		assert json == '{"properties":0,"name":"foo"}'
 	}
+
+    void testCharacter() {
+        assert toJson('a' as char) == '"a"'
+        assert toJson('"' as char) == '"\\""'
+        assert toJson('\b' as char) == '"\\b"'
+        assert toJson('\f' as char) == '"\\f"'
+        assert toJson('\n' as char) == '"\\n"'
+        assert toJson('\r' as char) == '"\\r"'
+        assert toJson('\t' as char) == '"\\t"'
+        assert toJson('\\' as char) == '"\\\\"'
+        assert toJson(1 as char) == '"\\u0001"'
+        assert toJson('\u0002' as char) == '"\\u0002"'
+    }
 }
 
 @Canonical

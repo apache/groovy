@@ -16,8 +16,12 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.tools.shell.Command
+import org.codehaus.groovy.tools.shell.CommandRegistry
 import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Shell
+import org.codehaus.groovy.tools.shell.Groovysh
+import org.codehaus.groovy.tools.shell.completion.CommandNameCompleter
+import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'alias' command.
@@ -28,8 +32,15 @@ import org.codehaus.groovy.tools.shell.Shell
 class AliasCommand
     extends CommandSupport
 {
-    AliasCommand(final Shell shell) {
-        super(shell, 'alias', '\\a')
+    AliasCommand(final Groovysh shell) {
+        super(shell, ':alias', ':a', )
+    }
+
+    protected List createCompleters() {
+        return [
+                new CommandNameCompleter(registry),
+                null
+        ]
     }
 
     Object execute(final List args) {
@@ -42,9 +53,12 @@ class AliasCommand
         String name = args[0]
         List target = args[1..-1]
         
-        def command = registry[name]
-        
-        if (command) {
+        Command command = registry.find(name)
+
+        if (command == null) {
+            command = registry.find(name)
+        }
+        if (command != null) {
             if (command instanceof AliasTargetProxyCommand) {
                 log.debug("Rebinding alias: $name")
                 
@@ -66,20 +80,20 @@ class AliasCommand
         
         // Try to install the completor
         if (shell.runner) {
-            shell.runner.completor << command
+            shell.runner.completer.add(command)
         }
     }
 }
 
 class AliasTargetProxyCommand
-    extends CommandSupport
+    extends CommandSupport implements Command
 {
     private static int counter = 0
     
     final List args
     
-    AliasTargetProxyCommand(final Shell shell, final String name, final List args) {
-        super(shell, name, '\\a' + counter++)
+    AliasTargetProxyCommand(final Groovysh shell, final String name, final List args) {
+        super(shell, name, ':a' + counter++)
         
         assert args
         

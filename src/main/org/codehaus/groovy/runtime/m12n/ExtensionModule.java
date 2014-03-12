@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * An extension module is a class responsible for providing a list of {@link MetaMethod meta methods} to the Groovy
- * compiler and runtime. Those methods are use to "dynamically extend" exisiting classes by adding methods to
+ * compiler and runtime. Those methods are use to "dynamically extend" existing classes by adding methods to
  * existing classes.
  *
  * @since 2.0.0

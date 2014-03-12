@@ -179,7 +179,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
     }
 
     private void addSimpleCloneHelperMethod(ClassNode cNode, List<FieldNode> list, List<String> excludes) {
-        Parameter methodParam = new Parameter(cNode, "other");
+        Parameter methodParam = new Parameter(nonGeneric(cNode), "other");
         final Expression other = new VariableExpression(methodParam);
         boolean hasParent = cNode.getSuperClass() != ClassHelper.OBJECT_TYPE;
         BlockStatement methodBody = new BlockStatement();

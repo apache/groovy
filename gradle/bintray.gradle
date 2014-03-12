@@ -1,0 +1,63 @@
+import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
+
+ext.bintrayUser = project.hasProperty('bintrayUser') ? project.bintrayUser : System.getenv('BINTRAY_USER')
+ext.bintrayPassword = project.hasProperty('bintrayKey') ? project.bintrayKey : System.getenv('BINTRAY_KEY')
+
+if (!bintrayUser) {
+    // try to read from properties
+    def bintrayFile = file('bintray.properties')
+    if (bintrayFile.exists()) {
+        def props = new Properties()
+        props.load(bintrayFile.newReader())
+        ext.bintrayUser = props.getProperty('bintrayUser','')
+        ext.bintrayPassword = props.getProperty('bintrayPassword','')
+    }
+}
+
+allprojects {
+    apply plugin: 'artifactory'
+
+    artifactory {
+        contextUrl = 'https://oss.jfrog.org'
+        resolve {
+            repository {
+                repoKey = 'libs-release'
+            }
+        }
+        publish {
+            repository {
+                repoKey = 'oss-snapshot-local' //The Artifactory repository key to publish to
+                //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
+                //~/.gradle/gradle.properties, otherwise to be set in the build server
+                username = rootProject.bintrayUser
+                password = rootProject.bintrayPassword
+            }
+        }
+    }
+}
+
+artifactoryPublish {
+    mavenDescriptor = new File("$projectDir/target/poms/pom-groovy.xml")
+    doFirst{
+    def additionalFiles = [
+            gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "jar", "jar", null,
+            new Date(), file("$projectDir/target/libs/groovy-all-${version}.jar")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}.jar"),
+            gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "jar", "jar", 'sources',
+                    new Date(), file("$projectDir/target/libs/groovy-all-${version}-sources.jar")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-sources.jar"),
+            gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "jar", "jar", 'javadoc',
+                    new Date(), file("$projectDir/target/libs/groovy-all-${version}-javadoc.jar")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-javadoc.jar"),
+            gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "jar", "jar", 'groovydoc',
+                    new Date(), file("$projectDir/target/libs/groovy-all-${version}-groovydoc.jar")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-groovydoc.jar"),
+            gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "jar", "jar", 'indy',
+                    new Date(), file("$projectDir/target/libs/groovy-all-${version}-indy.jar")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}-indy.jar"),
+            gradleDeployDetails(new DefaultPublishArtifact("groovy-all", "pom", "pom", null,
+                    new Date(), file("$projectDir/target/poms/pom-all.xml")), 'artifacts', "org/codehaus/groovy/groovy-all/${version}/groovy-all-${version}.pom"),
+            gradleDeployDetails(new DefaultPublishArtifact("groovy-binary", "zip", "zip", null,
+                    new Date(), file("$projectDir/target/distributions/groovy-binary-${version}.zip")), 'artifacts', "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.zip"),
+            gradleDeployDetails(new DefaultPublishArtifact("groovy-binary", "pom", "pom", null,
+                    new Date(), file("$projectDir/target/poms/pom-binary.xml")), 'artifacts', "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.pom"),
+
+    ]
+    additionalFiles.each { deployDetails.add(it) }
+    }
+}

@@ -14,7 +14,9 @@ class InnerClassTest extends CompilableTestSupport {
                     called = true
                 }
             }, 0)
-            sleep 100
+            for(int i = 0; !called && i < 20; i++) {
+                sleep 50
+            }
 
             assert called
         """

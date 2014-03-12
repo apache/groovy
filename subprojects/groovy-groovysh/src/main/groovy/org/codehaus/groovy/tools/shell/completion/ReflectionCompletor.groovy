@@ -35,9 +35,21 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
 class ReflectionCompletor {
 
     Groovysh shell
+    static NavigablePropertiesCompleter propertiesCompleter = new NavigablePropertiesCompleter()
+    int metaclass_completion_prefix_length
 
     ReflectionCompletor(Groovysh shell) {
+        this(shell, 0)
+    }
+
+    /**
+     *
+     * @param shell
+     * @param metaclass_completion_prefix_length how long the prefix must be to disaply candidates from metaclass
+     */
+    ReflectionCompletor(Groovysh shell, int metaclass_completion_prefix_length) {
         this.shell = shell
+        this.metaclass_completion_prefix_length = metaclass_completion_prefix_length
     }
 
     public int complete(final List<GroovySourceToken> tokens, List candidates) {
@@ -71,9 +83,23 @@ class ReflectionCompletor {
         }
 
         // look for public methods/fields that match the prefix
-        List myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
+        Collection<String> myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
+        boolean showAllMethods = identifierPrefix.length() >= this.metaclass_completion_prefix_length
+        // Also add metaclass methods if prefix is long enough (user would usually not care about those)
+        myCandidates.addAll(getMetaclassMethods(
+                instance,
+                identifierPrefix,
+                showAllMethods))
+        if (!showAllMethods) {
+            // user probably does not care to see default Object / GroovyObject Methods,
+            // they obfuscate the business logic
+            removeStandardMethods(myCandidates)
+        }
+        // specific DefaultGroovyMethods only suggested for suitable instances
+        addDefaultMethods(instance, identifierPrefix, myCandidates)
+
         if (myCandidates.size() > 0) {
-            candidates.addAll(myCandidates)
+            candidates.addAll(myCandidates.sort())
             int lastDot
             // dot could be on previous line
             if (currentElementToken && dotToken.getLine() != currentElementToken.getLine()) {
@@ -104,7 +130,7 @@ class ReflectionCompletor {
             try {
                 String instanceRefExpression = tokenListToEvalString(invokerTokens)
                 instanceRefExpression = instanceRefExpression.replace('\n', '')
-                Object instance = shell.interp.evaluate(shell.imports + ['true'] + instanceRefExpression)
+                Object instance = shell.interp.evaluate([shell.getImportStatements()] + ['true'] + [instanceRefExpression])
                 return instance
             } catch (MissingPropertyException |
                     MissingMethodException |
@@ -264,6 +290,19 @@ class ReflectionCompletor {
                 (!(name.contains('$')) && !name.startsWith("_"));
     }
 
+    static Collection<String> getMetaclassMethods(Object instance, String prefix, boolean includeMetaClassImplMethods) {
+        Set<String> rv = new HashSet<String>()
+        MetaClass metaclass = InvokerHelper.getMetaClass(instance)
+        if (includeMetaClassImplMethods || ! metaclass instanceof MetaClassImpl) {
+            metaclass.metaMethods.each { MetaMethod mmit ->
+                if (acceptName(mmit.name, prefix)) {
+                    rv << mmit.getName() + (mmit.parameterTypes.length == 0 ? "()" : "(")
+                }
+            }
+        }
+        return rv.sort()
+    }
+
     /**
      * Build a list of public fields and methods for an object
      * that match a given prefix.
@@ -273,28 +312,18 @@ class ReflectionCompletor {
      */
     static Collection<String> getPublicFieldsAndMethods(Object instance, String prefix) {
         Set<String> rv = new HashSet<String>()
-        Set.getInterfaces()
-        Class clazz = instance.class
-        if (clazz == null) {
-            clazz = instance.getClass()
-        }
+        Class clazz = instance.getClass()
         if (clazz == null) {
             return rv;
         }
-        boolean isClass = false
-        if (clazz == Class) {
-            isClass = true
+
+        boolean isClass = (clazz == Class)
+        if (isClass) {
             clazz = instance as Class
         }
 
-        InvokerHelper.getMetaClass(instance).metaMethods.each { MetaMethod mmit ->
-            if (acceptName(mmit.name, prefix)) {
-                rv << mmit.getName() + (mmit.parameterTypes.length == 0 ? "()" : "(")
-            }
-        }
-
         Class loopclazz = clazz
-        while (loopclazz != null) {
+        while (loopclazz != null && loopclazz != Object && loopclazz != GroovyObject) {
             addClassFieldsAndMethods(loopclazz, isClass, prefix, rv)
             loopclazz = loopclazz.superclass
         }
@@ -306,8 +335,121 @@ class ReflectionCompletor {
                 }
             }
         }
+
+        // other completions that are commonly possible with properties
+        if (!isClass) {
+            propertiesCompleter.addCompletions(instance, prefix, rv)
+        }
+
         return rv.sort()
     }
+
+    /**
+     * removes candidates that, most of the times, a programmer does not want to see in completion
+     * @param candidates
+     */
+    static removeStandardMethods(Collection<String> candidates) {
+        for (String defaultMethod in [
+                'clone()', 'finalize()', 'getClass()',
+                'getMetaClass()', 'getProperty(',  'invokeMethod(', 'setMetaClass(', 'setProperty(',
+                'equals(', 'hashCode()', 'toString()',
+                'notify()', 'notifyAll()', 'wait(', 'wait()']) {
+            candidates.remove(defaultMethod)
+        }
+    }
+
+    /**
+     * Offering all DefaultGroovyMethods on any object is too verbose, hiding all
+     * removes user-friendlyness. So here util methods will be added to candidates
+     * if the instance is of a suitable type.
+     * This does not need to be strictly complete, only the most useful functions may appear.
+     */
+    static addDefaultMethods(Object instance, String prefix, Collection<String> candidates) {
+        if (instance instanceof Iterable) {
+            [
+                    'any()', 'any(',
+                    'collect()', 'collect(',
+                    'combinations()',
+                    'count(',
+                    'countBy(',
+                    'drop(',
+                    'dropWhile(',
+                    'each()', 'each(',
+                    'eachPermutation(',
+                    'every()', 'every(',
+                    'find(', 'findResult(', 'findResults(',
+                    'flatten()',
+                    'inject(',
+                    'intersect(',
+                    'join(',
+                    'max()', 'min()',
+                    'reverse()',
+                    'size()',
+                    'sort()',
+                    'split(',
+                    'take(', 'takeWhile(',
+                    'toSet()',
+                    'retainAll(', 'removeAll(',
+                    'unique()', 'unique('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            if (instance instanceof List) {
+                [
+                        'collate(',
+                        'pop()',
+                        'transpose()'
+                ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            }
+        }
+        if (instance instanceof Map) {
+            [
+                    'any(',
+                    'drop(',
+                    'each(',
+                    'find(', 'findAll(', 'findResult(', 'findResults(',
+                    'groupEntriesBy(', 'groupBy(',
+                    'inject(', 'intersect(',
+                    'spread()',
+                    'subMap(',
+                    'take(', 'takeWhile('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+        }
+        if (instance instanceof Number) {
+            [
+                    'abs()',
+                    'downto(',
+                    'times(',
+                    'power(',
+                    'upto('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+        }
+        Class clazz = instance.getClass()
+        if (clazz != null && clazz != Class && clazz.isArray()) {
+            [
+                    'any()', 'any(',
+                    'collect()', 'collect(',
+                    'count(',
+                    'countBy(',
+                    'drop(',
+                    'dropWhile(',
+                    'each()', 'each(',
+                    'every()', 'every(',
+                    'find(', 'findResult(',
+                    'flatten()',
+                    'inject(',
+                    'join(',
+                    'max()', 'min()',
+                    'reverse()',
+                    'size()',
+                    'sort()',
+                    'split(',
+                    'take(', 'takeWhile('
+            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+        }
+    }
+
+
+
+
 
     private static Collection<String> addClassFieldsAndMethods(final Class clazz, final boolean staticOnly, final String prefix, Collection rv) {
         Field[] fields = staticOnly ? clazz.fields : clazz.getDeclaredFields()

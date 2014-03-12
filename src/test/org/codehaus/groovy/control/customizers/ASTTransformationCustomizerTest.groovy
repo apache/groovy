@@ -16,8 +16,14 @@
 
 package org.codehaus.groovy.control.customizers
 
+import groovy.transform.TimedInterrupt
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.expr.ClassExpression
+import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.control.CompilerConfiguration
 import groovy.util.logging.Log
+
+import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
@@ -107,6 +113,25 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
         assert result.distance == 1
     }
 
+    void testLocalTransformationWithClosureAnnotationParameter_notAnnotatedAsASTInterface() {
+        // add @Contract2({distance = 1 })
+        customizer = new ASTTransformationCustomizer(Contract2, "org.codehaus.groovy.control.customizers.ContractAnnotation")
+        final expression = new AstBuilder().buildFromCode(CompilePhase.CONVERSION) {->
+            distance = 1
+        }.expression[0]
+        customizer.annotationParameters = [value: expression]
+        configuration.addCompilationCustomizers(customizer)
+        def shell = new GroovyShell(configuration)
+        def result = shell.evaluate("""
+            class MyClass {
+                int distance
+                MyClass() {}
+            }
+            new MyClass()
+        """)
+        assert result.distance == 1
+    }
+
     void testLocalTransformationWithClassAnnotationParameter() {
         // add @ConditionalInterrupt(value={ true }, thrown=SecurityException)
         final expression = new AstBuilder().buildFromCode(CompilePhase.CONVERSION) {->
@@ -157,6 +182,25 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
         assert result == 42
     }
 
+    void testAnyExpressionAsParameterValue() {
+        customizer = new ASTTransformationCustomizer(value:100, unit: new PropertyExpression(new ClassExpression(ClassHelper.make(TimeUnit)),'MILLISECONDS'), TimedInterrupt)
+        configuration.addCompilationCustomizers(customizer)
+        def shell = new GroovyShell(configuration)
+        def result = shell.evaluate '''import java.util.concurrent.TimeoutException
+
+boolean interrupted = false
+try {
+    25.times {
+        Thread.sleep(100)
+    }
+} catch (TimeoutException e) {
+    interrupted = true
+}
+
+interrupted'''
+        assert result
+    }
+
     @GroovyASTTransformation(phase=CompilePhase.CONVERSION)
     private static class TestTransformation implements ASTTransformation {
 
@@ -186,5 +230,10 @@ protected class ContractAnnotation implements ASTTransformation, Opcodes {
         def member = node.getMember("value")
         ((ClassNode)nodes[1]).getDeclaredConstructors()[0].code = member.code
     }
+}
 
+@Retention(RetentionPolicy.SOURCE)
+@Target([ElementType.TYPE])
+protected @interface Contract2 {
+    Class value();
 }

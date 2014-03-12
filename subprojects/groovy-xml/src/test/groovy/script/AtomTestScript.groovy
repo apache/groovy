@@ -1,4 +1,4 @@
-package groovy.script
+package script
 
 import groovy.xml.MarkupBuilder;
 
@@ -21,11 +21,11 @@ println f.author.name
 
 xml = new MarkupBuilder()
 
-atom = xml.atom() {
+atom = xml.atom {
   title("Ted Leung off the air")
   link("http://www.sauria.com/noblog")
-  author() {
-    person() {
+  author {
+    person {
       name(f.author.name)
       url(f.author.url)
       email(f.author.email)
@@ -33,7 +33,7 @@ atom = xml.atom() {
   }
 
   for (e in f.entries) {
-    entry() {
+    entry {
       title(e.title)
       summary(e.summary)
     }

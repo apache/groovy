@@ -17,8 +17,15 @@ package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
@@ -33,6 +40,23 @@ public class MethodCallExpressionTransformer {
     Expression transformMethodCallExpression(final MethodCallExpression expr) {
         Expression objectExpression = expr.getObjectExpression();
         ClassNode type = staticCompilationTransformer.getTypeChooser().resolveType(objectExpression, staticCompilationTransformer.getClassNode());
+        if (isCallOnClosure(expr)) {
+            FieldNode field = staticCompilationTransformer.getClassNode().getField(expr.getMethodAsString());
+            if (field != null) {
+                VariableExpression vexp = new VariableExpression(field);
+                MethodCallExpression result = new MethodCallExpression(
+                        vexp,
+                        "call",
+                        staticCompilationTransformer.transform(expr.getArguments())
+                );
+                result.setImplicitThis(false);
+                result.setSourcePosition(expr);
+                result.setSafe(expr.isSafe());
+                result.setSpreadSafe(expr.isSpreadSafe());
+                result.setMethodTarget(StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS);
+                return result;
+            }
+        }
         if (type != null && type.isArray()) {
             String method = expr.getMethodAsString();
             ClassNode componentType = type.getComponentType();
@@ -59,8 +83,7 @@ public class MethodCallExpressionTransformer {
                         }
                     }
                 }
-            }
-            if ("putAt".equals(method)) {
+            } else if ("putAt".equals(method)) {
                 Expression arguments = expr.getArguments();
                 if (arguments instanceof TupleExpression) {
                     List<Expression> argList = ((TupleExpression) arguments).getExpressions();
@@ -87,6 +110,12 @@ public class MethodCallExpressionTransformer {
             }
         }
         return staticCompilationTransformer.superTransform(expr);
+    }
+
+    private boolean isCallOnClosure(final MethodCallExpression expr) {
+        return expr.isImplicitThis()
+                && expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET) == StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS
+                && !"call".equals(expr.getMethodAsString());
     }
 
 }

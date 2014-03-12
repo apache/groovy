@@ -74,7 +74,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     private static class LocalData {
         CompilationUnit cu;
         StringSetMap dependencyCache = new StringSetMap();
-        Map<String,String> precompiledEntries = new HashMap();
+        Map<String,String> precompiledEntries = new HashMap<String,String>();
     }
     private static WeakReference<ThreadLocal<LocalData>> localData = new WeakReference<ThreadLocal<LocalData>>(null);
     private static synchronized ThreadLocal<LocalData> getLocalData() {
@@ -90,7 +90,13 @@ public class GroovyScriptEngine implements ResourceConnector {
     private final ClassLoader parentLoader;
     private final GroovyClassLoader groovyLoader;
     private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();
-    private CompilerConfiguration config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+    private CompilerConfiguration config;
+
+    {
+        config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+        config.setSourceEncoding("UTF-8");
+    }
+
 
     //TODO: more finals?
 
@@ -113,13 +119,14 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     private class ScriptClassLoader extends GroovyClassLoader {
+
+
         public ScriptClassLoader(GroovyClassLoader loader) {
             super(loader);
-            setResLoader();
         }
 
-        public ScriptClassLoader(ClassLoader loader) {
-            super(loader);
+        public ScriptClassLoader(ClassLoader loader, CompilerConfiguration config) {
+            super(loader, config, false);
             setResLoader();
         }
 
@@ -242,7 +249,20 @@ public class GroovyScriptEngine implements ResourceConnector {
             ScriptCacheEntry origEntry = scriptCache.get(codeSource.getName());
             Set<String> origDep = null;
             if (origEntry != null) origDep = origEntry.dependencies;
-            if (origDep != null) cache.put(".", origDep);
+            if (origDep != null) {
+                HashSet<String> newDep = new HashSet<String>(origDep.size());
+                for (String depName : origDep) {
+                    ScriptCacheEntry dep = scriptCache.get(depName);
+                    try{
+                        if (origEntry==dep || GroovyScriptEngine.this.isSourceNewer(dep)) {
+                            newDep.add(depName);
+                        }
+                    } catch (ResourceException re) {
+                        
+                    }
+                }
+                cache.put(".", newDep);
+            }
 
             Class answer = super.parseClass(codeSource, false);
 
@@ -258,7 +278,13 @@ public class GroovyScriptEngine implements ResourceConnector {
                 if (entryNames.contains(entryName)) continue;
                 entryNames.add(entryName);
                 Set<String> value = convertToPaths(entry.getValue(), localData.precompiledEntries);
-                ScriptCacheEntry cacheEntry = new ScriptCacheEntry(clazz, time, time, value, false);
+                long lastModified;
+                try {
+                    lastModified = getLastModified(entryName);
+                } catch (ResourceException e) {
+                    lastModified = time;
+                }
+                ScriptCacheEntry cacheEntry = new ScriptCacheEntry(clazz, lastModified, time, value, false);
                 scriptCache.put(entryName, cacheEntry);
             }
             cache.clear();
@@ -325,7 +351,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                 if (parentLoader instanceof GroovyClassLoader) {
                     return new ScriptClassLoader((GroovyClassLoader) parentLoader);
                 } else {
-                    return new ScriptClassLoader(parentLoader);
+                    return new ScriptClassLoader(parentLoader, config);
                 }
             }
         });
@@ -509,7 +535,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         try {
             if (isSourceNewer(entry)) {
                 try {
-                    String encoding = conn.getContentEncoding() != null ? conn.getContentEncoding() : "UTF-8";
+                    String encoding = conn.getContentEncoding() != null ? conn.getContentEncoding() : config.getSourceEncoding();
                     String content = IOGroovyMethods.getText(conn.getInputStream(), encoding);
                     clazz = groovyLoader.parseClass(content, path);
                 } catch (IOException e) {
@@ -568,8 +594,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         URLConnection conn = rc.getResourceConnection(scriptName);
         long lastMod = 0;
         try {
-            // getLastModified() truncates up to 999 ms from the true modification time, let's fix that
-            lastMod = ((conn.getLastModified() / 1000) + 1) * 1000 - 1;
+            lastMod = conn.getLastModified();
         } finally {
             // getResourceConnection() opening the inputstream, let's ensure all streams are closed
             forceClose(conn);
@@ -583,13 +608,17 @@ public class GroovyScriptEngine implements ResourceConnector {
         long mainEntryLastCheck = entry.lastCheck;
         long now = 0;
 
+        boolean returnValue = false;
         for (String scriptName : entry.dependencies) {
             ScriptCacheEntry depEntry = scriptCache.get(scriptName);
             if (depEntry.sourceNewer) return true;
 
             // check if maybe dependency was recompiled, but this one here not
-            if (mainEntryLastCheck<depEntry.lastModified) return true;
-            
+            if (mainEntryLastCheck<depEntry.lastModified) {
+                returnValue = true;
+                continue;
+            }
+
             if (now==0) now = getCurrentTime();
             long nextSourceCheck = depEntry.lastCheck + config.getMinimumRecompilationInterval();
             if (nextSourceCheck > now) continue;
@@ -598,14 +627,14 @@ public class GroovyScriptEngine implements ResourceConnector {
             if (depEntry.lastModified < lastMod) {
                 depEntry = new ScriptCacheEntry(depEntry, lastMod, true);
                 scriptCache.put(scriptName, depEntry);
-                return true;
+                returnValue = true;
             } else {
                 depEntry = new ScriptCacheEntry(depEntry, now, false);
                 scriptCache.put(scriptName, depEntry);
             }
         }
 
-        return false;
+        return returnValue;
     }
 
     /**

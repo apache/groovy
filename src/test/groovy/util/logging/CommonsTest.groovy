@@ -12,8 +12,22 @@ import java.lang.reflect.Modifier
  */
 class CommonsTest extends GroovyTestCase {
 
-    public void testPrivateFinalStaticLogFieldAppears() {
+    PrintStream savedSystemOut
+    ByteArrayOutputStream redirectedSystemOut
 
+    void setUp() {
+        super.setUp()
+        savedSystemOut = System.out
+        redirectedSystemOut = new ByteArrayOutputStream()
+        System.out = new PrintStream(redirectedSystemOut)
+    }
+
+    void tearDown() {
+        super.tearDown()
+        System.out = savedSystemOut
+    }
+
+    void testPrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
               @groovy.util.logging.Commons
               class MyClass {
@@ -28,8 +42,7 @@ class CommonsTest extends GroovyTestCase {
         }
     }
 
-    public void testPrivateFinalStaticNamedLogFieldAppears() {
-
+    void testPrivateFinalStaticNamedLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
               @groovy.util.logging.Commons('logger')
               class MyClass {
@@ -44,10 +57,8 @@ class CommonsTest extends GroovyTestCase {
         }
     }
 
-    public void testClassAlreadyHasLogField() {
-
+    void testClassAlreadyHasLogField() {
         shouldFail {
-
             Class clazz = new GroovyClassLoader().parseClass('''
                 @groovy.util.logging.Commons
                 class MyClass {
@@ -58,10 +69,8 @@ class CommonsTest extends GroovyTestCase {
         }
     }
 
-    public void testClassAlreadyHasNamedLogField() {
-
+    void testClassAlreadyHasNamedLogField() {
         shouldFail {
-
             Class clazz = new GroovyClassLoader().parseClass('''
                 @groovy.util.logging.Commons('logger')
                 class MyClass {
@@ -72,12 +81,7 @@ class CommonsTest extends GroovyTestCase {
         }
     }
 
-    /**
-     * This test output must be observed manually.
-     * There is unfortunately no good way to add an appender to Commons Logging.
-     */
-    public void testLogInfo_IntegrationTest() {
-
+    void testLogLevelDebug() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Commons
             class MyClass {
@@ -91,8 +95,13 @@ class CommonsTest extends GroovyTestCase {
             }
             new MyClass().loggingMethod() ''')
 
-        Script s = (Script) clazz.newInstance()
-        s.run()
+        clazz.newInstance().run()
+        
+        String log = redirectedSystemOut.toString()
+        assert log.contains("error called")
+        assert log.contains("warn called")
+        assert log.contains("info called")
+        assert log.contains("debug called")
     }
 
     void testLogFromStaticMethods() {
@@ -105,17 +114,13 @@ class CommonsTest extends GroovyTestCase {
             }
             MyClass.loggingMethod()""")
 
-        Script s = (Script) clazz.newInstance()
-        s.run()
+        clazz.newInstance().run()
+        
+        String log = redirectedSystemOut.toString()
+        assert log.contains("(static) info called")
     }
 
-
-    /**
-     * This test output must be observed manually.
-     * There is unfortunately no good way to add an appender to Commons Logging.
-     */
-    public void testNamedLogInfo_IntegrationTest() {
-
+    void testNamedLogger() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Commons('logger')
             class MyClass {
@@ -129,25 +134,66 @@ class CommonsTest extends GroovyTestCase {
             }
             new MyClass().loggingMethod() ''')
 
-        Script s = (Script) clazz.newInstance()
-        s.run()
+        clazz.newInstance().run()
+        
+        String log = redirectedSystemOut.toString()
+        assert log.contains("error called")
+        assert log.contains("warn called")
+        assert log.contains("info called")
+        assert log.contains("debug called")
     }
 
-    public void testLogGuards() {
+    void testLogGuards() {
         Class clazz = new GroovyClassLoader().parseClass('''
-            def traceCalled = false
+            class LogDecorator extends groovy.util.Proxy {
+                boolean isTraceEnabled() { false }
+            }
+
             @groovy.util.logging.Commons
             class MyClass {
+                boolean traceCalled = false
+                MyClass() {
+                    log = new LogDecorator().wrap(log) as org.apache.commons.logging.Log
+                }
 
                 def loggingMethod() {
                     log.trace (traceCalled = true)
                 }
             }
-            new MyClass().loggingMethod()
-            return traceCalled''')
+            def o = new MyClass()
+            o.loggingMethod()
+            o.traceCalled''')
 
         Script s = (Script) clazz.newInstance()
         def result = s.run()
         assert !result
+    }
+
+    void testDefaultCategory() {
+        Class clazz = new GroovyClassLoader().parseClass("""
+            @groovy.util.logging.Commons
+            class MyClass {
+                static loggingMethod() {
+                  log.error("error called")
+                }
+            }""")
+
+        clazz.newInstance().loggingMethod()
+
+        assert redirectedSystemOut.toString().contains('MyClass')
+    }
+
+    void testCustomCategory() {
+        Class clazz = new GroovyClassLoader().parseClass("""
+            @groovy.util.logging.Commons(category='customCategory')
+            class MyClass {
+                static loggingMethod() {
+                  log.error("error called")
+                }
+            }""")
+
+        clazz.newInstance().loggingMethod()
+
+        assert redirectedSystemOut.toString().contains('customCategory')
     }
 }

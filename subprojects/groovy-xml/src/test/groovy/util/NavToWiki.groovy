@@ -1,4 +1,4 @@
-package groovy.util
+package util
 
 if (args.size() < 1) {
     println "Usage: NavToWiki fileName"

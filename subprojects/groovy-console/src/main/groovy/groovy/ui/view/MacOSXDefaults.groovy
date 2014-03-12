@@ -18,18 +18,22 @@ package groovy.ui.view
 import groovy.ui.text.GroovyFilter
 import java.awt.Color
 import javax.swing.text.StyleConstants
+import java.util.prefs.Preferences
 
 build(Defaults)
 
 // menu bar tweaks
-System.setProperty("apple.laf.useScreenMenuBar", "true")
-System.setProperty("com.apple.mrj.application.apple.menu.about.name", "GroovyConsole")
+System.setProperty('apple.laf.useScreenMenuBar', 'true')
+System.setProperty('com.apple.mrj.application.apple.menu.about.name', 'GroovyConsole')
+
+def prefs = Preferences.userNodeForPackage(groovy.ui.Console)
+def fontFamily = prefs.get("fontName", "Monaco")
 
 // redo output styles
 styles = [
     // output window styles
     regular: [
-            (StyleConstants.FontFamily): "Monaco"
+            (StyleConstants.FontFamily): fontFamily
         ],
     prompt: [
             (StyleConstants.Foreground): Color.LIGHT_GRAY

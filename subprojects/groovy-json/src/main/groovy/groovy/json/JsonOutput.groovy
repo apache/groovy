@@ -62,7 +62,7 @@ class JsonOutput {
      */
     @CompileStatic
     static String toJson(Character c) {
-        "\"$c\""
+        toJson(c.toString())
     }
 
     /**
@@ -108,7 +108,7 @@ class JsonOutput {
      */
     @CompileStatic
     static String toJson(URL url) {
-        "\"${url.toString()}\""
+        toJson(url.toString())
     }
 
     /**

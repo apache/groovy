@@ -233,8 +233,6 @@ public class Sql {
 
     private static final List<Object> EMPTY_LIST = Collections.emptyList();
 
-    private static final Pattern NAMED_QUERY_PATTERN = Pattern.compile("(?<!:)(:)(\\w+)|\\?(\\d*)(?:\\.(\\w+))?");
-
     private DataSource dataSource;
 
     private Connection useConnection;
@@ -2807,47 +2805,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public void call(String sql, List<Object> params, Closure closure) throws Exception {
-        Connection connection = createConnection();
-        CallableStatement statement = connection.prepareCall(sql);
-        List<GroovyResultSet> resultSetResources = new ArrayList<GroovyResultSet>();
-        try {
-            LOG.fine(sql + " | " + params);
-            setParameters(params, statement);
-            // TODO handle multiple results and mechanism for retrieving ResultSet if any (GROOVY-3048)
-            statement.execute();
-            List<Object> results = new ArrayList<Object>();
-            int indx = 0;
-            int inouts = 0;
-            for (Object value : params) {
-                if (value instanceof OutParameter) {
-                    if (value instanceof ResultSetOutParameter) {
-                        GroovyResultSet resultSet = CallResultSet.getImpl(statement, indx);
-                        resultSetResources.add(resultSet);
-                        results.add(resultSet);
-                    } else {
-                        Object o = statement.getObject(indx + 1);
-                        if (o instanceof ResultSet) {
-                            GroovyResultSet resultSet = new GroovyResultSetProxy((ResultSet) o).getImpl();
-                            results.add(resultSet);
-                            resultSetResources.add(resultSet);
-                        } else {
-                            results.add(o);
-                        }
-                    }
-                    inouts++;
-                }
-                indx++;
-            }
-            closure.call(results.toArray(new Object[inouts]));
-        } catch (SQLException e) {
-            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
-            throw e;
-        } finally {
-            closeResources(connection, statement);
-            for (GroovyResultSet rs : resultSetResources) {
-                closeResources(null, null, rs);
-            }
-        }
+        callWithRows(sql, params, false, closure);
     }
 
     /**
@@ -2887,6 +2845,137 @@ public class Sql {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         call(sql, params, closure);
+    }
+
+    /**
+     * Performs a stored procedure call with the given parameters,
+     * calling the closure once with all result objects,
+     * and also returning the rows of the ResultSet.
+     * <p>
+     * Use this when calling a stored procedure that utilizes both
+     * output parameters and returns a single ResultSet.
+     * <p>
+     * Once created, the stored procedure can be called like this:
+     * <pre>
+     * def first = 'Jeff'
+     * def last = 'Sheets'
+     * def rows = sql.callWithRows "{call Hemisphere2($first, $last, ${Sql.VARCHAR})}", { dwells ->
+     *     println dwells
+     * }
+     * </pre>
+     * <p>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param closure called once with all out parameter results
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @see #callWithRows(String, List, Closure)
+     */
+    public List<GroovyRowResult> callWithRows(GString gstring, Closure closure) throws SQLException {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return callWithRows(sql, params, closure);
+    }
+
+    /**
+     * Performs a stored procedure call with the given parameters,
+     * calling the closure once with all result objects,
+     * and also returning the rows of the ResultSet.
+     * <p>
+     * Use this when calling a stored procedure that utilizes both
+     * output parameters and returns a single ResultSet.
+     * <p>
+     * Once created, the stored procedure can be called like this:
+     * <pre>
+     * def rows = sql.callWithRows '{call Hemisphere2(?, ?, ?)}', ['Guillaume', 'Laforge', Sql.VARCHAR], { dwells ->
+     *     println dwells
+     * }
+     * </pre>
+     * <p>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param sql     the sql statement
+     * @param params  a list of parameters
+     * @param closure called once with all out parameter results
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @see #callWithRows(GString, Closure)
+     */
+    public List<GroovyRowResult> callWithRows(String sql, List<Object> params, Closure closure) throws SQLException {
+        return callWithRows(sql, params, true, closure);
+    }
+
+    /**
+     * Base internal method for both call() and callWithRows() style of methods.
+     * <p>
+     * Performs a stored procedure call with the given parameters,
+     * calling the closure once with all result objects,
+     * and also returning the rows of the ResultSet (if processResultSet is set to true)
+     * <p>
+     * Main purpose of processResultSet param is to retain original call() method
+     * performance when this is set to false
+     * <p>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param sql     the sql statement
+     * @param params  a list of parameters
+     * @param processResultSet true to collect result set rows, false to skip result set processing
+     * @param closure called once with all out parameter results
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @see #callWithRows(String, List, Closure)
+     */
+    protected List<GroovyRowResult> callWithRows(String sql, List<Object> params, boolean processResultSet, Closure closure) throws SQLException {
+        Connection connection = createConnection();
+        CallableStatement statement = null;
+        List<GroovyResultSet> resultSetResources = new ArrayList<GroovyResultSet>();
+        try {
+            statement = connection.prepareCall(sql);
+
+            LOG.fine(sql + " | " + params);
+            setParameters(params, statement);
+            boolean hasResultSet = statement.execute();
+            List<Object> results = new ArrayList<Object>();
+            int indx = 0;
+            int inouts = 0;
+            for (Object value : params) {
+                if (value instanceof OutParameter) {
+                    if (value instanceof ResultSetOutParameter) {
+                        GroovyResultSet resultSet = CallResultSet.getImpl(statement, indx);
+                        resultSetResources.add(resultSet);
+                        results.add(resultSet);
+                    } else {
+                        Object o = statement.getObject(indx + 1);
+                        if (o instanceof ResultSet) {
+                            GroovyResultSet resultSet = new GroovyResultSetProxy((ResultSet) o).getImpl();
+                            results.add(resultSet);
+                            resultSetResources.add(resultSet);
+                        } else {
+                            results.add(o);
+                        }
+                    }
+                    inouts++;
+                }
+                indx++;
+            }
+            closure.call(results.toArray(new Object[inouts]));
+
+            //Check both hasResultSet and getMoreResults() because of differences in vendor behavior
+            if (processResultSet && (hasResultSet || statement.getMoreResults())) {
+                // TODO handle multiple ResultSets (GROOVY-6551)
+                return asList(sql, statement.getResultSet());
+            }
+            return new ArrayList<GroovyRowResult>();
+        } catch (SQLException e) {
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
+            throw e;
+        } finally {
+            closeResources(connection, statement);
+            for (GroovyResultSet rs : resultSetResources) {
+                closeResources(null, null, rs);
+            }
+        }
     }
 
     /**
@@ -3067,7 +3156,14 @@ public class Sql {
             handleError(connection, e);
             throw e;
         } finally {
-            if (connection != null) connection.setAutoCommit(savedAutoCommit);
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(savedAutoCommit);
+                }
+                catch (SQLException e) {
+                    LOG.finest("Caught exception resetting auto commit: " + e.getMessage() + " - continuing");
+                }
+            }
             cacheConnection = false;
             closeResources(connection, null);
             cacheConnection = savedCacheConnection;
@@ -3902,19 +3998,48 @@ public class Sql {
         return new SqlWithParams(preCheck.getSql(), getUpdatedParams(params, indexPropList));
     }
 
+    /**
+     * @deprecated Use {@link #buildSqlWithIndexedProps(String)} instead
+     */
+    @Deprecated
     public SqlWithParams preCheckForNamedParams(String sql) {
+        return buildSqlWithIndexedProps(sql);
+    }
+
+    /**
+     * Hook to allow derived classes to override behavior associated with the
+     * parsing and indexing of parameters from a given sql statement.
+     *
+     * @param sql the sql statement to process
+     * @return a {@link SqlWithParams} instance containing the parsed sql
+     *         and parameters containing the indexed location and property
+     *         name of parameters or {@code null} if no parsing of
+     *         the sql was performed.
+     */
+    protected SqlWithParams buildSqlWithIndexedProps(String sql) {
         // look for quick exit
-        if (!enableNamedQueries || !NAMED_QUERY_PATTERN.matcher(sql).find()) {
+        if (!enableNamedQueries || !ExtractIndexAndSql.hasNamedParameters(sql)) {
             return null;
         }
 
-        ExtractIndexAndSql extractIndexAndSql = new ExtractIndexAndSql(sql).invoke();
-        String newSql = extractIndexAndSql.getNewSql();
+        String newSql;
+        List<Tuple> propList;
+        if (cacheNamedQueries && namedParamSqlCache.containsKey(sql)) {
+            newSql = namedParamSqlCache.get(sql);
+            propList = namedParamIndexPropCache.get(sql);
+        } else {
+            ExtractIndexAndSql extractIndexAndSql = ExtractIndexAndSql.from(sql);
+            newSql = extractIndexAndSql.getNewSql();
+            propList = extractIndexAndSql.getIndexPropList();
+            namedParamSqlCache.put(sql, newSql);
+            namedParamIndexPropCache.put(sql, propList);
+        }
+
         if (sql.equals(newSql)) {
             return null;
         }
 
-        List<Object> indexPropList = new ArrayList<Object>(extractIndexAndSql.getIndexPropList());
+        List<Object> indexPropList = new ArrayList<Object>(propList);
         return new SqlWithParams(newSql, indexPropList);
     }
 
@@ -4159,80 +4284,4 @@ public class Sql {
     protected void setInternalConnection(Connection conn) {
     }
 
-    private class ExtractIndexAndSql {
-        private String sql;
-        private List<Tuple> indexPropList;
-        private String newSql;
-
-        private ExtractIndexAndSql(String sql) {
-            this.sql = sql;
-        }
-
-        private List<Tuple> getIndexPropList() {
-            return indexPropList;
-        }
-
-        private String getNewSql() {
-            return newSql;
-        }
-
-        private ExtractIndexAndSql invoke() {
-            if (cacheNamedQueries && namedParamSqlCache.containsKey(sql)) {
-                newSql = namedParamSqlCache.get(sql);
-                indexPropList = namedParamIndexPropCache.get(sql);
-            } else {
-                indexPropList = new ArrayList<Tuple>();
-                StringBuilder sb = new StringBuilder();
-                StringBuilder currentChunk = new StringBuilder();
-                char[] chars = sql.toCharArray();
-                int i = 0;
-                boolean inString = false; //TODO: Cater for comments?
-                while (i < chars.length) {
-                    switch (chars[i]) {
-                        case '\'':
-                            inString = !inString;
-                            if (inString) {
-                                sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
-                                currentChunk = new StringBuilder();
-                                currentChunk.append(chars[i]);
-                            } else {
-                                currentChunk.append(chars[i]);
-                                sb.append(currentChunk);
-                                currentChunk = new StringBuilder();
-                            }
-                            break;
-                        default:
-                            currentChunk.append(chars[i]);
-                    }
-                    i++;
-                }
-                if (inString)
-                    throw new IllegalStateException("Failed to process query. Unterminated ' character?");
-                sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
-                newSql = sb.toString();
-                namedParamSqlCache.put(sql, newSql);
-                namedParamIndexPropCache.put(sql, indexPropList);
-            }
-            return this;
-        }
-
-        private String adaptForNamedParams(String sql, List<Tuple> indexPropList) {
-            StringBuilder newSql = new StringBuilder();
-            int txtIndex = 0;
-
-            Matcher matcher = NAMED_QUERY_PATTERN.matcher(sql);
-            while (matcher.find()) {
-                newSql.append(sql.substring(txtIndex, matcher.start())).append('?');
-                String indexStr = matcher.group(1);
-                if (indexStr == null) indexStr = matcher.group(3);
-                int index = (indexStr == null || indexStr.length() == 0 || ":".equals(indexStr)) ? 0 : new Integer(indexStr) - 1;
-                String prop = matcher.group(2);
-                if (prop == null) prop = matcher.group(4);
-                indexPropList.add(new Tuple(new Object[]{index, prop == null || prop.length() == 0 ? "<this>" : prop}));
-                txtIndex = matcher.end();
-            }
-            newSql.append(sql.substring(txtIndex)); // append ending SQL after last param.
-            return newSql.toString();
-        }
-    }
 }

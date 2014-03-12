@@ -319,6 +319,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         try {
             // let's try getting the property on the first object
             return InvokerHelper.getProperty(firstTry, property);
+
         } catch (MissingPropertyException e1) {
             if (secondTry != null && firstTry != this && firstTry != secondTry) {
                 try {
@@ -329,6 +330,17 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
                 }
             }
             throw e1;
+
+        } catch (MissingFieldException e2)  { // see GROOVY-5875
+            if (secondTry != null && firstTry != this && firstTry != secondTry) {
+                try {
+                    // let's try getting the property on the second object
+                    return InvokerHelper.getProperty(secondTry, property);
+                } catch (GroovyRuntimeException e3) {
+                    // ignore, we'll throw e2
+                }
+            }
+            throw e2;
         }
     }
 

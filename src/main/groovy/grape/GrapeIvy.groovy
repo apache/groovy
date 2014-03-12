@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,13 +88,13 @@ class GrapeIvy implements GrapeEngine {
         // configure settings
         def grapeConfig = getLocalGrapeConfig()
         if (!grapeConfig.exists()) {
-            grapeConfig = GrapeIvy.class.getResource("defaultGrapeConfig.xml")
+            grapeConfig = GrapeIvy.getResource("defaultGrapeConfig.xml")
         }
         try {
             settings.load(grapeConfig) // exploit multi-methods for convenience
         } catch (java.text.ParseException ex) {
             System.err.println "Local Ivy config file '$grapeConfig.canonicalPath' appears corrupt - ignoring it and using default config instead\nError was: " + ex.message
-            grapeConfig = GrapeIvy.class.getResource("defaultGrapeConfig.xml")
+            grapeConfig = GrapeIvy.getResource("defaultGrapeConfig.xml")
             settings.load(grapeConfig)
         }
 
@@ -132,9 +132,7 @@ class GrapeIvy implements GrapeEngine {
         if(grapeConfig) {
             return new File(grapeConfig)
         }
-        else {
-            return new File(getGrapeDir(), 'grapeConfig.xml')
-        }
+        return new File(getGrapeDir(), 'grapeConfig.xml')
     }
 
     public File getGrapeDir() {
@@ -142,15 +140,13 @@ class GrapeIvy implements GrapeEngine {
         if(root == null) {
             return getGroovyRoot()
         }
-        else {
-            File grapeRoot = new File(root)
-            try {
-                grapeRoot = grapeRoot.canonicalFile
-            } catch (IOException e) {
-                // skip canonicalization then, it may not exist yet
-            }
-            return grapeRoot
+        File grapeRoot = new File(root)
+        try {
+            grapeRoot = grapeRoot.canonicalFile
+        } catch (IOException e) {
+            // skip canonicalization then, it may not exist yet
         }
+        return grapeRoot
     }
 
     public File getGrapeCacheDir() {
@@ -238,7 +234,7 @@ class GrapeIvy implements GrapeEngine {
     }
 
     public grab(Map args, Map... dependencies) {
-        def loader
+        ClassLoader loader = null
         grabRecordsForCurrDependencies.clear()
         try {
             // identify the target classloader early, so we fail before checking repositories
@@ -246,17 +242,21 @@ class GrapeIvy implements GrapeEngine {
                 classLoader:args.remove('classLoader'),
                 refObject:args.remove('refObject'),
                 calleeDepth:args.calleeDepth?:DEFAULT_DEPTH,
-                )
+            )
 
             // check for non-fail null.
             // If we were in fail mode we would have already thrown an exception
             if (!loader) return
 
-            for (URI uri in resolve(loader, args, dependencies)) {
+            def uris = resolve(loader, args, dependencies)
+            for (URI uri in uris) {
+                loader.addURL(uri.toURL())
+            }
+            for (URI uri in uris) {
                 //TODO check artifact type, jar vs library, etc
                 File file = new File(uri)
-                processCategoryMethods(uri, loader, file)
-                processOtherServices(file, loader);
+                processCategoryMethods(loader, file)
+                processOtherServices(loader, file)
             }
         } catch (Exception e) {
             // clean-up the state first
@@ -266,16 +266,13 @@ class GrapeIvy implements GrapeEngine {
 
             if (args.noExceptions) {
                 return e
-            } else {
-                throw e
             }
+            throw e
         }
         return null
     }
 
-    private processCategoryMethods(URI uri, ClassLoader loader, File file) {
-        URL url = uri.toURL()
-        loader.addURL(url)
+    private processCategoryMethods(ClassLoader loader, File file) {
         // register extension methods if jar
         if (file.name.toLowerCase().endsWith(".jar")) {
             def mcRegistry = GroovySystem.metaClassRegistry
@@ -314,15 +311,20 @@ class GrapeIvy implements GrapeEngine {
         }
     }
 
-    void processOtherServices(File f, ClassLoader loader) {
-        ZipFile zf = new ZipFile(f)
-        ZipEntry serializedCategoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.SerializedCategoryMethods")
-        if (serializedCategoryMethods != null) {
-            processSerializedCategoryMethods(zf.getInputStream(serializedCategoryMethods))
-        }
-        ZipEntry pluginRunners = zf.getEntry("META-INF/services/org.codehaus.groovy.plugins.Runners")
-        if (pluginRunners != null) {
-            processRunners(zf.getInputStream(pluginRunners), f.getName(), loader)
+    void processOtherServices(ClassLoader loader, File f) {
+        try {
+            ZipFile zf = new ZipFile(f)
+            ZipEntry serializedCategoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.SerializedCategoryMethods")
+            if (serializedCategoryMethods != null) {
+                processSerializedCategoryMethods(zf.getInputStream(serializedCategoryMethods))
+            }
+            ZipEntry pluginRunners = zf.getEntry("META-INF/services/org.codehaus.groovy.plugins.Runners")
+            if (pluginRunners != null) {
+                processRunners(zf.getInputStream(pluginRunners), f.getName(), loader)
+            }
+        } catch(ZipException ignore) {
+            // ignore files we can't process, e.g. non-jar/zip artifacts
+            // TODO log a warning
         }
     }
 
@@ -350,17 +352,17 @@ class GrapeIvy implements GrapeEngine {
         addExcludesIfNeeded(args, md)
 
         for (IvyGrabRecord grabRecord : grabRecords) {
-            DefaultDependencyDescriptor dd = new DefaultDependencyDescriptor(md,
-                    grabRecord.mrid, grabRecord.force, grabRecord.changing, grabRecord.transitive)
             def conf = grabRecord.conf ?: ['*']
-            conf.each {dd.addDependencyConfiguration('default', it)}
-            if (grabRecord.classifier || grabRecord.ext) {
-                def dad = new DefaultDependencyArtifactDescriptor(dd,
-                      grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, grabRecord.classifier ? [classifier:grabRecord.classifier] : null)
-                conf.each { dad.addConfiguration(it) }
-                dd.addDependencyArtifact('default', dad)
+            DefaultDependencyDescriptor dd = md.dependencies.find {it.dependencyRevisionId.equals(grabRecord.mrid)}
+            if (dd) {
+                createAndAddDependencyArtifactDescriptor(dd, grabRecord, conf)
+            } else {
+                dd = new DefaultDependencyDescriptor(md, grabRecord.mrid, grabRecord.force,
+                        grabRecord.changing, grabRecord.transitive)
+                conf.each {dd.addDependencyConfiguration('default', it)}
+                createAndAddDependencyArtifactDescriptor(dd, grabRecord, conf)
+                md.addDependency(dd)
             }
-            md.addDependency(dd)
         }
 
        // resolve grab and dependencies
@@ -370,6 +372,9 @@ class GrapeIvy implements GrapeEngine {
             .setValidate(args.containsKey('validate') ? args.validate : false)
 
         ivyInstance.settings.defaultResolver = args.autoDownload ? 'downloadGrapes' : 'cachedGrapes'
+        if (args.disableChecksums) {
+            ivyInstance.settings.setVariable('ivy.checksums', '')
+        }
         boolean reportDownloads = System.getProperty('groovy.grape.report.downloads', 'false') == 'true'
         if (reportDownloads) {
             ivyInstance.eventManager.addIvyListener([progress:{ ivyEvent -> switch(ivyEvent) {
@@ -425,6 +430,16 @@ class GrapeIvy implements GrapeEngine {
         }
 
         return report
+    }
+
+    private void createAndAddDependencyArtifactDescriptor(DefaultDependencyDescriptor dd, IvyGrabRecord grabRecord, List<String> conf) {
+        // TODO: find out "unknown" reason and change comment below - also, confirm conf[0] check vs conf.contains('optional')
+        if (conf[0]!="optional" || grabRecord.classifier) {  // for some unknown reason optional dependencies should not have an artifactDescriptor
+            def dad = new DefaultDependencyArtifactDescriptor(dd,
+                    grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, grabRecord.classifier ? [classifier: grabRecord.classifier] : null)
+            conf.each { dad.addConfiguration(it) }
+            dd.addDependencyArtifact('default', dad)
+        }
     }
 
     public void uninstallArtifact(String group, String module, String rev) {
@@ -611,9 +626,8 @@ class GrapeIvy implements GrapeEngine {
                 results << dep
             }
             return results
-        } else {
-            return null
         }
+        return null
     }
 
     public void addResolver(Map<String, Object> args) {
@@ -661,4 +675,5 @@ class IvyGrabRecord {
             && (ext == o.ext)
             && (type == o.type))
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,46 @@ import groovy.transform.AutoClone
 import groovy.transform.AutoExternalize
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.TupleConstructor
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+
 import static groovy.transform.AutoCloneStyle.*
 import groovy.transform.ToString
-//import groovy.transform.InheritConstructors
 import groovy.transform.Canonical
 
 /**
  * @author Paul King
  */
 class CanonicalComponentsTransformTest extends GroovyShellTestCase {
+
+    void testTupleConstructorWithEnum() {
+        assertScript """
+            @groovy.transform.TupleConstructor
+            enum Operator {
+                PLUS('+'), MINUS('-')
+                String symbol
+            }
+            assert Operator.PLUS.next() == Operator.MINUS
+        """
+    }
+
+    void testBooleanPropertyGROOVY6407() {
+        assertScript """
+            @groovy.transform.EqualsAndHashCode
+            @groovy.transform.ToString
+            class Demo {
+                boolean myBooleanProperty
+
+                boolean isMyBooleanProperty() {
+                    false
+                }
+
+                static main(args) {
+                    assert new Demo().hashCode() == 5174
+                    assert new Demo(myBooleanProperty: true).toString() == 'Demo(false)'
+                }
+            }
+        """
+    }
 
     void testCloningWithFinalFields() {
         def p1 = new Person1('John', 'Smith')
@@ -252,6 +283,23 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert ts3 != ts4 // no caching
     }
 
+    // GROOVY-6337
+    void testCanonicalWithLazy() {
+        def result = new GroovyShell().evaluate('''
+            @groovy.transform.Canonical
+            class Person {
+              @Lazy first = missing()
+              @Lazy last = 'Smith'
+              int age
+            }
+            def p = new Person(21)
+            // $first setter is an implementation detail
+            p.$first = 'Mary'
+            "$p.first $p.last ${p.toString()}"
+        ''')
+        assert result == 'Mary Smith Person(21)'
+    }
+
     // GROOVY-5901
     void testSimpleCloning() {
       def p1 = new Person6(first:'John', last:'Smith', since:new Date())
@@ -278,6 +326,105 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert p1.hashCode() == p2.hashCode()
         assert 'canEqual' in p1.class.methods*.name
         assert !('canEqual' in p2.class.methods*.name)
+    }
+
+    // GROOVY-5864
+    void testExternalizeMethodsWithImmutable() {
+        try {
+            new GroovyShell().parse """
+                @groovy.transform.ExternalizeMethods
+                @groovy.transform.Immutable
+                class Person {
+                    String first
+                }
+            """
+            fail('The compilation should have failed as the final field first (created via @Immutable) is being assigned to (via @ExternalizeMethods).')
+        } catch (MultipleCompilationErrorsException e) {
+            def syntaxError = e.errorCollector.getSyntaxError(0)
+            assert syntaxError.message.contains("cannot modify final field 'first' outside of constructor")
+        }
+    }
+
+    // GROOVY-5864
+    void testExternalizeVerifierWithNonExternalizableClass() {
+        try {
+            new GroovyShell().parse """
+                @groovy.transform.ExternalizeVerifier
+                class Person { }
+            """
+            fail("The compilation should have failed as the class doesn't implement Externalizable")
+        } catch (MultipleCompilationErrorsException e) {
+            def syntaxError = e.errorCollector.getSyntaxError(0)
+            assert syntaxError.message.contains("An Externalizable class must implement the Externalizable interface")
+        }
+    }
+
+    // GROOVY-5864
+    void testExternalizeVerifierWithFinalField() {
+        try {
+            new GroovyShell().parse """
+                @groovy.transform.ExternalizeVerifier
+                class Person implements Externalizable {
+                    final String first
+                    void writeExternal(ObjectOutput out)throws IOException{ }
+                    void readExternal(ObjectInput objectInput)throws IOException,ClassNotFoundException{ }
+                }
+            """
+            fail("The compilation should have failed as the final field first (can't be set inside readExternal).")
+        } catch (MultipleCompilationErrorsException e) {
+            def syntaxError = e.errorCollector.getSyntaxError(0)
+            assert syntaxError.message.contains("The Externalizable property (or field) 'first' cannot be final")
+        }
+    }
+
+    // GROOVY-5864
+    void testAutoExternalizeWithoutNoArg() {
+        try {
+            new GroovyShell().parse """
+                @groovy.transform.AutoExternalize
+                class Person {
+                    Person(String first) {}
+                    String first
+                }
+            """
+            fail("The compilation should have failed as there is no no-arg constructor.")
+        } catch (MultipleCompilationErrorsException e) {
+            def syntaxError = e.errorCollector.getSyntaxError(0)
+            assert syntaxError.message.contains("An Externalizable class requires a no-arg constructor but none found")
+        }
+    }
+
+    // GROOVY-5864
+    void testExternalizeVerifierWithNonExternalizableField() {
+        try {
+            new GroovyShell().parse """
+                class Name {}
+
+                @groovy.transform.ExternalizeVerifier(checkPropertyTypes=true)
+                class Person implements Externalizable {
+                    Name name
+                    int age
+                    void writeExternal(ObjectOutput out)throws IOException{ }
+                    void readExternal(ObjectInput objectInput)throws IOException,ClassNotFoundException{ }
+                }
+            """
+            fail("The compilation should have failed as the type of Name isn't Externalizable or Serializable.")
+        } catch (MultipleCompilationErrorsException e) {
+            def syntaxError = e.errorCollector.getSyntaxError(0)
+            assert syntaxError.message.contains("strict type checking is enabled and the non-primitive property (or field) 'name' in an Externalizable class has the type 'Name' which isn't Externalizable or Serializable")
+        }
+    }
+
+    // GROOVY-5864
+    void testAutoExternalizeHappyPath() {
+        new GroovyShell().evaluate """
+            import org.codehaus.groovy.transform.*
+            def orig = new Person7(name: new Name7('John', 'Smith'), address: new Address7(street: 'somewhere lane', town: 'my town'), age: 21, verified: true)
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream{ os -> os.writeObject(orig) }
+            def bais = new ByteArrayInputStream(baos.toByteArray())
+            bais.withObjectInputStream { is -> assert is.readObject().toString() == 'Person7(Name7(John, Smith), Address7(somewhere lane, my town), 21, true)' }
+        """
     }
 
     // GROOVY-4570
@@ -337,7 +484,27 @@ class Person6 { String first, last; Date since }
 @TupleConstructor(includeSuperProperties=true, callSuper=true)
 @AutoClone(style=SIMPLE)
 @EqualsAndHashCode
-class Customer6 extends Person6 { List favItems }
+class Customer6 extends Person6 { List<String> favItems }
+
+// GROOVY-5864
+@Canonical
+@ToString(includePackage=false)
+class Name7 implements Serializable { String first, last }
+
+// GROOVY-5864
+@AutoExternalize
+@ToString(includePackage=false)
+class Address7 { String street, town }
+
+// GROOVY-5864
+@ToString(includePackage=false)
+@AutoExternalize(checkPropertyTypes=true)
+class Person7 {
+    Name7 name
+    Address7 address
+    int age
+    Boolean verified
+}
 
 // GROOVY-4786
 @EqualsAndHashCode(excludes="y")
@@ -365,7 +532,7 @@ class IntPairNoCanEqual {
 // GROOVY-4570
 @ToString(includeNames=true)
 enum Color {
-  BLACK(0,0,0), WHITE(255,255,255), PURPLE(255,0,255)
-  int r, g, b
-  Color(int r, g, b) { this.r = r; this.g = g; this.b = b }
+    BLACK(0,0,0), WHITE(255,255,255), PURPLE(255,0,255)
+    int r, g, b
+    Color(int r, g, b) { this.r = r; this.g = g; this.b = b }
 }

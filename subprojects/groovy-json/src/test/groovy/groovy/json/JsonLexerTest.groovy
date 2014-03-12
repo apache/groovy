@@ -18,6 +18,7 @@ package groovy.json
 import static groovy.json.JsonTokenType.*
 import groovy.io.LineColumnReader
 
+
 /**
  * @author Guillaume Laforge
  */
@@ -109,7 +110,9 @@ class JsonLexerTest extends GroovyTestCase {
     }
 
     void testUnescapingWithLexer() {
-        def lexer = new JsonLexer(new StringReader('"\\' + 'u004A\\' + 'u0053\\' + 'u004F\\' + 'u004E"'))
+        // use string concatenation so that the unicode escape characters are not decoded 
+        // by Groovy's lexer but by the JsonLexer
+        def lexer = new JsonLexer(new StringReader('"\\' + 'u004A\\' + 'u0053\\' + 'u004F\\' + 'u004E"')) 
 
         assert lexer.nextToken().value == 'JSON'
     }
@@ -124,7 +127,9 @@ class JsonLexerTest extends GroovyTestCase {
         assert JsonLexer.unescape('\\/') == '/'
         assert JsonLexer.unescape('\\"') == '"'
 
-        assert JsonLexer.unescape('\\' + 'u004A\\' + 'u0053\\' + 'u004F\\' + 'u004E') == 'JSON'
+        // use string concatenation so that the unicode escape characters are not decoded
+        // by Groovy's lexer but by the JsonLexer
+        assert JsonLexer.unescape('\\' + 'u004A\\' + 'u0053\\' + 'u004F\\' + 'u004E') == 'JSON' 
     }
 
     void testBackSlashEscaping() {

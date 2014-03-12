@@ -386,9 +386,6 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         extension = null
         assertScript '''
         @groovy.transform.stc.MyType(String)
-        @ASTTest(phase=INSTRUCTION_SELECTION,value={
-            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == int_TYPE
-        })
         int foo() { 1 }
         '''
 
@@ -452,18 +449,34 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
     }
 
     void testAmbiguousMethodCall() {
+        // fail with error from type checker
         extension = null
         shouldFailWithMessages '''
             int foo(Integer x) { 1 }
             int foo(String s) { 2 }
+            int foo(Date d) { 3 }
             assert foo(null) == 2
         ''', 'Reference to method is ambiguous'
+        // fail with error from runtime
         extension = 'groovy/transform/stc/AmbiguousMethods.groovy'
-        assertScript '''
+        shouldFail { assertScript '''
             int foo(Integer x) { 1 }
             int foo(String s) { 2 }
             int foo(Date d) { 3 }
             assert foo(null) == 2
+        '''}
+    }
+
+    void testIncompatibleReturnType() {
+        extension = null
+        shouldFailWithMessages '''
+            Date foo() { '1' }
+            true
+        ''', 'Cannot return value of type'
+        extension = 'groovy/transform/stc/IncompatibleReturnTypeTestExtension.groovy'
+        assertScript '''
+            Date foo() { '1' }
+            true
         '''
     }
 

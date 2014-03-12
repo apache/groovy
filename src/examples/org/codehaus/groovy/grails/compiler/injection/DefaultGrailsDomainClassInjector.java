@@ -239,12 +239,13 @@ public class DefaultGrailsDomainClassInjector implements ASTTransformation {
      */
     private static boolean implementsMethod(ClassNode classNode, String methodName, Class[] argTypes) {
         List methods = classNode.getMethods();
-        for (Iterator i = methods.iterator(); i.hasNext();) {
-            MethodNode mn = (MethodNode) i.next();
-            final boolean isZeroArg = (argTypes == null || argTypes.length ==0);
-            boolean methodMatch = isZeroArg && mn.getName().equals(methodName);
-            if(methodMatch)return true;
-            // TODO Implement further parameter analysis
+        if (argTypes == null || argTypes.length ==0) {
+            for (Iterator i = methods.iterator(); i.hasNext();) {
+                MethodNode mn = (MethodNode) i.next();
+                boolean methodMatch = mn.getName().equals(methodName);
+                if(methodMatch)return true;
+                // TODO Implement further parameter analysis
+            }
         }
         return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,11 @@
  */
 package org.codehaus.groovy.transform;
 
-import org.junit.Test;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.junit.Assert;
-import org.junit.Before;
-
-import org.codehaus.groovy.ast.expr.EmptyExpression; 
-import org.codehaus.groovy.ast.expr.ConstantExpression; 
-import org.codehaus.groovy.ast.ASTNode; 
+import org.junit.Test;
 
 /**
  * Unit test for SingletonASTTransformation.
@@ -34,16 +32,15 @@ public class SingletonASTTransformationTest {
     public void testVisit_Contract() {
         try {
             ASTNode[] badInput = new ASTNode[]{
-                new ConstantExpression("sample"), 
-                new EmptyExpression() 
-            }; 
-            new SingletonASTTransformation().visit(badInput, null); 
-            Assert.fail("Contract Failure"); 
-        } catch (RuntimeException ex) {
-            Assert.assertTrue("Bad error msg: " + ex.getMessage(), ex.getMessage().contains("wrong types")); 
-            Assert.assertTrue("Bad error msg: " + ex.getMessage(), ex.getMessage().contains("ConstantExpression")); 
-            Assert.assertTrue("Bad error msg: " + ex.getMessage(), ex.getMessage().contains("EmptyExpression")); 
-            Assert.assertTrue("Bad error msg: " + ex.getMessage(), ex.getMessage().contains("Expected: AnnotationNode / AnnotatedNode")); 
+                    new ConstantExpression("sample"),
+                    new EmptyExpression()
+            };
+            new SingletonASTTransformation().visit(badInput, null);
+            Assert.fail("Contract Failure");
+        } catch (Error e) {
+            Assert.assertTrue("Bad error msg: " + e.getMessage(), e.getMessage().contains("ConstantExpression"));
+            Assert.assertTrue("Bad error msg: " + e.getMessage(), e.getMessage().contains("EmptyExpression"));
+            Assert.assertTrue("Bad error msg: " + e.getMessage(), e.getMessage().contains("expecting [AnnotationNode, AnnotatedNode]"));
         }
     }
 

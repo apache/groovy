@@ -1,0 +1,29 @@
+= Closures (TBD)
+
+This chapter covers Groovy Closures.
+
+== Syntax (TBD)
+
+== Parameters (TBD)
+
+=== Normal parameters (TBD)
+=== Implicit parameter (TBD)
+=== Default parameter (TBD)
+=== Varargs (TBD)
+
+== Delegation strategy (TBD)
+
+== Closures in GStrings (TBD)
+
+== Functional programming (TBD)
+
+=== Currying (TBD)
+==== Left currying (TBD)
+==== Right currying (TBD)
+==== Index based currying (TBD)
+
+=== Memoization (TBD)
+
+=== Composition (TBD)
+
+=== Trampoline (TBD)

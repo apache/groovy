@@ -115,7 +115,7 @@ public class ASTNode {
         }
         return (T) metaDataMap.get(key);
     }
-    
+
     /**
      * Copies all node meta data from the other node to this one
      * @param other - the other node
@@ -171,7 +171,6 @@ public class ASTNode {
      */
     public void removeNodeMetaData(Object key) {
         if (key==null) throw new GroovyBugError("Tried to remove meta data with null key "+this+".");
-        // GRECLIPSE: start
         if (metaDataMap == null) {
             return;
         }

@@ -498,6 +498,74 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6230
+    void testAttributeWithGetterOfDifferentType() {
+        assertScript '''import java.awt.Dimension
+            def d = new Dimension(800,600)
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def rit = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert rit == int_TYPE
+            })
+            int width = d.@width
+            assert width == 800
+            assert (d.@width).getClass() == Integer
+        '''
+    }
+
+    // GROOVY-6489
+    void testShouldNotThrowUnmatchedGenericsError() {
+        assertScript '''public class Foo {
+
+    private List<String> names;
+
+    public List<String> getNames() {
+        return names;
+    }
+
+    public void setNames(List<String> names) {
+        this.names = names;
+    }
+}
+
+class FooWorker {
+
+    public void doSomething() {
+        new Foo().with {
+            names = new ArrayList()
+        }
+    }
+}
+
+new FooWorker().doSomething()'''
+    }
+
+    void testShouldFailWithIncompatibleGenericTypes() {
+        shouldFailWithMessages '''public class Foo {
+
+    private List<String> names;
+
+    public List<String> getNames() {
+        return names;
+    }
+
+    public void setNames(List<String> names) {
+        this.names = names;
+    }
+}
+
+class FooWorker {
+
+    public void doSomething() {
+        new Foo().with {
+            names = new ArrayList<Integer>()
+        }
+    }
+}
+
+new FooWorker().doSomething()''', 'Incompatible generic argument types. Cannot assign java.util.ArrayList <Integer> to: java.util.List <java.lang.String>'
+    }
+
     public static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
     }

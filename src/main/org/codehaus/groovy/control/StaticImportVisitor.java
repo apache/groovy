@@ -269,8 +269,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                             lookForPossibleStaticMethod = false;
                         }
                     }
-                    if (inSpecialConstructorCall ||
-                            (lookForPossibleStaticMethod && currentClass.hasPossibleStaticMethod(methodName, args))) {
+                    if (!inClosure && (inSpecialConstructorCall ||
+                            (lookForPossibleStaticMethod && currentClass.hasPossibleStaticMethod(methodName, args)))) {
                         StaticMethodCallExpression smce = new StaticMethodCallExpression(currentClass, methodName, args);
                         setSourcePosition(smce, mce);
                         return smce;

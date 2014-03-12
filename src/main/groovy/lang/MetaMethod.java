@@ -174,7 +174,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
         if (signature == null) {
             CachedClass [] parameters = getParameterTypes();
             final String name = getName();
-            StringBuffer buf = new StringBuffer(name.length()+parameters.length*10);
+            StringBuilder buf = new StringBuilder(name.length()+parameters.length*10);
             buf.append(getReturnType().getName());
             //
             buf.append(' ');

@@ -1,0 +1,24 @@
+= Version Scheme
+
+
+== The Groovy Version Scheme
+
+=== Since Groovy 2.0.0:
+
+Since Groovy 2.0.0 we follow the scheme as described in http://semver.org. This means the next minor version after 2.0.0 is 2.1.0, the first bugfix version after 2.0.0 is 2.0.1 and the next major version will be 3.0.0.
+
+=== Before Groovy 2.0.0:
+
+Before Groovy 2.0.0 we followed a version scheme where we have X.Y.Z, where X.Y is the major version, and Z the minor version. Bugfix versions where not really done, you had to upgrade to the next minor version for that. Since Groovy 1.0 we incremented only the Y for a new major version. The increment of X we wanted to leave for a very big breaking change, like a new MOP. The last major version in these scheme is 1.8(.0), 1.8.1 is the first minor and bugfix version. The major versions in the past using this scheme are: 1.8, 1.7, 1.6, 1.5, 1.0. Each of them having around 10 minor/bugfix versions.
+
+=== Official Major Version:
+
+The official major version is the current major version that should/can be used by the developers if they are not bound to a specific major version.
+
+=== Maintenance Release Branch:
+
+Here we indicate a former major version's bugfix release.
+
+=== How long is a major version maintained?
+
+That depends on the users. Let's say we have X in maintenance and Y is the official major version, then if a new major version Z is released, Y goes into maintenance. Usually we make one or two more bugfix releases for X and then we discontinue it, unless there are strong requests to have certain things fixed for users that can absolutely not upgrade.

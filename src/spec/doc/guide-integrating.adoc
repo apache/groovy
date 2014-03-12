@@ -1,0 +1,309 @@
+= Integrating Groovy in a Java application
+== Groovy integration mechanisms
+
+The Groovy language proposes several ways to integrate itself into applications (Java or even Groovy) at runtime, from
+the most basic, simple code execution to the most complete, integrating caching and compiler customization.
+
+TIP: All the examples written in this section are using Groovy, but the same integration mechanisms can be used from
+Java.
+
+[[integ-eval]]
+=== Eval
+
+The `groovy.util.Eval` class is the simplest way to execute Groovy dynamically at runtime. This can be done by calling the `me`
+method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=eval_me,indent=0]
+----
+
+`Eval` supports multiple variants that accept parameters for simple evaluation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=eval_x,indent=0]
+----
+<1> Simple evaluation with one bound parameter named `x`
+<2> Same evaluation, with a custom bound parameter named `k`
+<3> Simple evaluation with two bound parameters named `x` and `y`
+<4> Simple evaluation with three bound parameters named `x`, `y` and `z`
+
+The `Eval` class makes it very easy to evaluate simple scripts, but doesn't scale: there is no caching of the script, and
+it isn't meant to evaluate more than one liners.
+
+[[integ-groovyshell]]
+=== GroovyShell
+==== Multiple sources
+The `groovy.lang.GroovyShell` class is the preferred way to evaluate scripts with the ability to cache the resulting
+script instance. Although the `Eval` class returns the result of the execution of the compiled script, the `GroovyShell`
+class offers more options.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=groovyshell_simple,indent=0]
+----
+<1> create a new `GroovyShell` instance
+<2> can be used as `Eval` with direct execution of the code
+<3> can read from multiple sources (`String`, `Reader`, `File`, `InputStream`)
+<4> can defer execution of the script. `parse` returns a `Script` instance
+<5> `Script` defines a `run` method
+
+==== Sharing data between a script and the application
+
+It is possible to share data between the application and the script using a `groovy.lang.Binding`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=groovyshell_binding,indent=0]
+----
+<1> create a new `Binding` that will contain shared data
+<2> create a `GroovyShell` using this shared data
+<3> add a string to the binding
+<4> add a date to the binding (you are not limited to simple types)
+<5> evaluate the script
+
+Note that it is also possible to write from the script into the binding:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=groovyshell_binding_output,indent=0]
+----
+<1> create a new `Binding` instance
+<2> create a new `GroovyShell` using that shared data
+<3> use an *undeclared* variable to store the result into the binding
+<4> read the result from the caller
+
+It is important to understand that you need to use an undeclared variable if you want to write into the binding. Using
+`def` or an `explicit` type like in the example below would fail because you would then create a _local variable_:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=groovyshell_binding_localvariable,indent=0]
+----
+
+WARNING: You must be very careful when using shared data in a multithreaded environment. The `Binding` instance that
+you pass to `GroovyShell` is *not* thread safe, and shared by all scripts.
+
+It is possible to work around the shared instance of `Binding` by leveraging the `Script` instance which is returned
+by `parse`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=groovyshell_parse_binding,indent=0]
+----
+<1> will store the `x` variable inside `b1`
+<2> will store the `x` variable inside `b2`
+
+However, you must be aware that you are still sharing the *same instance* of a script. So this technique cannot be
+used if you have two threads working on the same script. In that case, you must make sure of creating two distinct
+script instances:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=groovyshell_threadsafe,indent=0]
+----
+<1> create an instance of script for thread 1
+<2> create an instance of script for thread 2
+<3> assign first binding to script 1
+<4> assign second binding to script 2
+<5> start first script in a separate thread
+<6> start second script in a separate thread
+<7> wait for completion
+
+In case you need thread safety like here, it is more advisable to use the <<groovyclassloader, GroovyClassLoader>>
+directly instead.
+
+==== Custom script class
+
+We have seen that the `parse` method returns an instance of `groovy.lang.Script`, but it is possible to use a custom
+class, given that it extends `Script` itself. It can be used to provide additional behavior to the script like in
+the example below:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=custom_script_scriptclass,indent=0]
+----
+
+The custom class defines a property called `name` and a new method called `greet`. This class can be used as the script
+base class by using a custom configuration:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=custom_script_imports,indent=0]
+
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=custom_script_usage,indent=0]
+----
+<1> create a `CompilerConfiguration` instance
+<2> instruct it to use `MyScript` as the base class for scripts
+<3> then use the compiler configuration when you create the shell
+<4> the script now has access to the new method `greet`
+
+NOTE: You are not limited to the sole _scriptBaseClass_ configuration. You can use any of the compiler configuration
+tweaks, including the <<compilation-customizers,compilation customizers>>.
+
+[[groovyclassloader]]
+=== GroovyClassLoader
+
+In the <<integ-groovyshell,previous section>>, we have shown that `GroovyShell` was an easy tool to execute scripts, but
+it makes it complicated to compile anything but scripts. Internally, it makes use of the `groovy.lang.GroovyClassLoader`,
+which is at the heart of the compilation and loading of classes at runtime.
+
+By leveraging the `GroovyClassLoader` instead of `GroovyShell`, you will be able to load classes, instead of instances
+of scripts:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gcl,indent=0]
+----
+<1> create a new `GroovyClassLoader`
+<2> `parseClass` will return an instance of `Class`
+<3> you can check that the class which is returns is really the one defined in the script
+<4> and you can create a new instance of the class, which is not a script
+<5> then call any method on it
+
+NOTE: A GroovyClassLoader keeps a reference of all the classes it created, so it is easy to create a memory leak. In
+particular, if you execute the same script twice, if it is a String, then you obtain two distinct classes!
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gcl_distinct_classes,indent=0]
+----
+<1> dynamically create a class named "Foo"
+<2> create an identical looking class, using a separate `parseClass` call
+<3> make sure both classes have the same name
+<4> but they are actually different!
+
+The reason is that a `GroovyClassLoader` doesn't keep track of the source text. If you want to have the same instance,
+then the source *must* be a file, like in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gcl_same_classes,indent=0]
+----
+<1> parse a class from a `File`
+<2> parse a class from a distinct file instance, but pointing to the same physical file
+<3> make sure our classes have the same name
+<4> but now, they are the same instance
+
+Using a `File` as input, the `GroovyClassLoader` is capable of *caching* the generated class file, which avoids
+creating multiple classes at runtime for the same source.
+
+=== GroovyScriptEngine
+
+The `groovy.util.GroovyScriptEngine` class provides a flexible foundation for applications which rely on script
+reloading and script dependencies. While `GroovyShell` focuses on standalone `Script`s and `GroovyClassLoader` handles
+dynamic compilation and loading of any Groovy class, the `GroovyScriptEngine` will add a layer on top of `GroovyClassLoader`
+to handle both script dependencies and reloading.
+
+To illustrate this, we will create a script engine and execute code in an infinite loop. First of all, you need to create
+a directory with the following script inside:
+
+[source,groovy]
+.ReloadingTest.groovy
+----
+include::{projectdir}/src/spec/test-resources/reloading/source1.groovy[]
+----
+
+then you can execute this code using a `GroovyScriptEngine`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gse_init,indent=0]
+
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gse_script_fakeloop_begin,indent=0]
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gse_script1,indent=4]
+include::{projectdir}/src/spec/test/IntegrationTest.groovy[tags=gse_script_fakeloop_end,indent=0]
+----
+<1> create a script engine which will look for sources into our source directory
+<2> execute the script, which will return an instance of `Greeter`
+<3> print the greeting message
+
+At this point, you should see a message printed every second:
+
+----
+Hello, world!
+Hello, world!
+...
+----
+
+*Without* interrupting the script execution, now replace the contents of the `ReloadingTest` file with:
+
+[source,groovy]
+.ReloadingTest.groovy
+----
+include::{projectdir}/src/spec/test-resources/reloading/source2.groovy[]
+----
+
+And the message should change to:
+
+----
+Hello, world!
+...
+Hello, Groovy!
+Hello, Groovy!
+...
+----
+
+But it is also possible to have a dependency on another script. To illustrate this, create the following file into
+the same directory, without interrupting the executing script:
+
+[source,groovy]
+.Depencency.groovy
+----
+include::{projectdir}/src/spec/test-resources/reloading/dependency1.groovy[]
+----
+
+and update the `ReloadingTest` script like this:
+
+[source,groovy]
+.ReloadingTest.groovy
+----
+include::{projectdir}/src/spec/test-resources/reloading/source3.groovy[]
+----
+
+And this time, the message should change to:
+
+----
+Hello, Groovy!
+...
+Hello, dependency 1!
+Hello, dependency 1!
+...
+----
+
+And as a last test, you can update the `Dependency.groovy` file without touching the `ReloadingTest` file:
+
+[source,groovy]
+.Depencency.groovy
+----
+include::{projectdir}/src/spec/test-resources/reloading/dependency2.groovy[]
+----
+
+And you should observe that the dependent file was reloaded:
+
+----
+Hello, dependency 1!
+...
+Hello, dependency 2!
+Hello, dependency 2!
+----
+
+=== CompilationUnit
+
+Ultimately, it is possible to perform more operations during compilation by relying directly on the
+`org.codehaus.groovy.control.CompilationUnit` class. This class is responsible for determining the various steps of
+compilation and would let you introduce new steps or even stop compilation at various phases. This is for example how
+stub generation is done, for the joint compiler.
+
+However, overriding `CompilationUnit` is not recommanded and should only be done if no other standard solution works.
+
+:leveloffset: 3
+include::{projectdir}/subprojects/groovy-bsf/{specfolder}/integrating-bsf.adoc[]
+:leveloffset: 2
+
+:leveloffset: 3
+include::{projectdir}/subprojects/groovy-jsr223/{specfolder}/integrating-jsr223.adoc[]
+:leveloffset: 2
+
+

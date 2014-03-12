@@ -14,4 +14,19 @@ public class DeclarationTest extends CompilableTestSupport {
       """
   }
   
+  public void testNullAssignmentToPrimitive() {
+      shouldFail (org.codehaus.groovy.runtime.typehandling.GroovyCastException, """
+          int x = null
+      """)
+      assertScript """
+          Integer x = null
+      """
+  }
+  
+  public void testNullAssignmentToPrimitiveForSharedVariable() {
+      shouldFail(org.codehaus.groovy.runtime.typehandling.GroovyCastException, """
+          int i = null
+          def c = {i}
+      """)
+  }
 }

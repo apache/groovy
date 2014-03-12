@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ class JmxBeanInfoManagerTest extends GroovyTestCase {
     def object
 
     void setUp() {
+        super.setUp()
         object = new MockManagedObject()
         defaultDomain = "jmx.builder"
         defaultType = "ExportedObject"
@@ -48,7 +49,7 @@ class JmxBeanInfoManagerTest extends GroovyTestCase {
         assert m.attributes.size() == 3
     }
 
-    void TODO_testGetModelMBeanInfoFromMap() {
+    void testGetModelMBeanInfoFromMap() {
         def object = new MockManagedObject()
         Map m = JmxMetaMapBuilder.buildObjectMapFrom(object)
         assert m
@@ -56,7 +57,7 @@ class JmxBeanInfoManagerTest extends GroovyTestCase {
         ModelMBeanInfo info = JmxBeanInfoManager.getModelMBeanInfoFromMap(m)
         assert info
 
-        assert info.getAttributes().size() == 2
+        assert info.getAttributes().size() == 3
         assert info.getAttribute("Something").getName() == "Something"
         assert info.getAttribute("SomethingElse").getName() == "SomethingElse"
 
@@ -67,6 +68,5 @@ class JmxBeanInfoManagerTest extends GroovyTestCase {
         assert info.getOperation("doSomething").getSignature().size() == 0
         assert info.getOperation("doSomethingElse").getName() == "doSomethingElse"
         assert info.getOperation("doSomethingElse").getSignature().size() == 2
-
     }
 }

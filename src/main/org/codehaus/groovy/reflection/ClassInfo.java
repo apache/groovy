@@ -19,6 +19,7 @@ import groovy.lang.*;
 
 import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.SoftReference;
@@ -71,6 +72,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
     public void incVersion() {
         version++;
+        VMPluginFactory.getPlugin().invalidateCallSites();
     }
 
     public ExpandoMetaClass getModifiedExpando() {
@@ -267,11 +269,17 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
                 cachedClass = new CharacterCachedClass(klazz, classInfo, true);
             } else if (Closure.class.isAssignableFrom(klazz)) {
                 cachedClass = new CachedClosureClass (klazz, classInfo);
+            } else if (isSAM(klazz)) {
+                cachedClass = new CachedSAMClass(klazz, classInfo);
             } else {
                 cachedClass = new CachedClass(klazz, classInfo);
             }
         }
         return cachedClass;
+    }
+    
+    private static boolean isSAM(Class<?> c) {
+        return CachedSAMClass.getSAMMethod(c) !=null;
     }
 
     public void lock () {

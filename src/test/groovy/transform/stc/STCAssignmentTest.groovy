@@ -335,9 +335,19 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     void testCastNullToBoolean() {
-        shouldFailWithMessages '''
+        // GROOVY-6577
+        assertScript '''
             boolean c = null
-        ''', 'Cannot assign value of type java.lang.Object to variable of type boolean'
+            assert c == false
+        '''
+    }
+
+    void testCastNullToBooleanWithExplicitCast() {
+        // GROOVY-6577
+        assertScript '''
+            boolean c = (boolean) null
+            assert c == false
+        '''
     }
 
     void testCastStringToCharacter() {
@@ -655,6 +665,21 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
     
+    //GROOVY-6435
+    void testBigDecAndBigIntSubclass() {
+        assertScript '''
+            class MyDecimal extends BigDecimal {
+              public MyDecimal(String s) {super(s)}
+            }
+            class MyInteger extends BigInteger {
+              public MyInteger(String s) {super(s)}
+            }
+
+            BigDecimal d = new MyDecimal("3.0")
+            BigInteger i = new MyInteger("3")
+        '''
+    }
+
     void testPostfixOnInt() {
         assertScript '''
             int i = 0
@@ -772,6 +797,14 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
             println m( 65 )
         '''
+    }
+
+    // GROOVY-6575
+    void testAssignementOfObjectToArrayShouldFail() {
+        shouldFailWithMessages '''
+            Object o
+            int[] array = o
+        ''', 'Cannot assign value of type java.lang.Object to variable of type int[]'
     }
 }
 

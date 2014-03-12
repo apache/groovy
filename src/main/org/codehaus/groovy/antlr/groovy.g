@@ -1291,14 +1291,20 @@ protected enumConstantFieldInternal![AST mods, AST tp, AST t, Token first]
         ((nls "throws") => tc:throwsClause)?
 
         ( s2:compoundStatement )?
-        {#enumConstantFieldInternal = #(create(METHOD_DEF,"METHOD_DEF",first,LT(1)),
-                                 mods,
-                                 tp,
-                                 #(create(TYPE,"TYPE",first,LT(1)),t),
-                                 IDENT,
-                                 param,
-                                 tc,
-                                 s2);}
+        {
+            #enumConstantFieldInternal = #(create(METHOD_DEF,"METHOD_DEF",first,LT(1)),
+                    mods,
+                    #(create(TYPE,"TYPE",first,LT(1)),t),
+                    IDENT,
+                    param,
+                    tc,
+                    s2);
+            if (tp != null) {
+                AST old = #enumConstantFieldInternal.getFirstChild();
+                #enumConstantFieldInternal.setFirstChild(#tp);
+                #tp.setNextSibling(old);
+            }
+        }
 
     |   v:variableDefinitions[#mods,#t]
         {#enumConstantFieldInternal = #v;}
@@ -2435,14 +2441,15 @@ pathElement[AST prefix] {Token operator = LT(1);}
         // The primary can then be followed by a chain of .id, (a), [a], and {...}
     :
         { #pathElement = prefix; }
-        (   // Spread operator:  x*.y  ===  x?.collect{it.y}
-            SPREAD_DOT!
-        |   // Optional-null operator:  x?.y  === (x==null)?null:x.y
-            OPTIONAL_DOT!
-        |   // Member pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
-            MEMBER_POINTER!
-        |   // The all-powerful dot.
-            (nls! DOT!)
+        ( nls!
+            ( SPREAD_DOT!     // Spread operator:  x*.y  ===  x?.collect{it.y}
+            |
+              OPTIONAL_DOT!   // Optional-null operator:  x?.y  === (x==null)?null:x.y
+            |
+              MEMBER_POINTER! // Member pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
+            |
+              DOT!            // The all-powerful dot.
+            )
         ) nls!
         (ta:typeArguments!)?
         np:namePart!
@@ -2482,13 +2489,13 @@ pathElement[AST prefix] {Token operator = LT(1);}
     ;
 
 pathElementStart!
-    :   (nls! DOT)
-    |   SPREAD_DOT
-    |   OPTIONAL_DOT
-    |   MEMBER_POINTER
-    |   LBRACK
-    |   LPAREN
-    |   LCURLY
+    :   (nls! ( DOT
+                |   SPREAD_DOT
+                |   OPTIONAL_DOT
+                |   MEMBER_POINTER ) )
+        |   LBRACK
+        |   LPAREN
+        |   LCURLY
     ;
 
 /** This is the grammar for what can follow a dot:  x.a, x.@a, x.&a, x.'a', etc.
@@ -2688,8 +2695,8 @@ assignmentExpression[int lc_stmt]
 conditionalExpression[int lc_stmt]
     :   logicalOrExpression[lc_stmt]
         (
-          (ELVIS_OPERATOR)=> ELVIS_OPERATOR^ nls! conditionalExpression[0]
-          | QUESTION^ nls! assignmentExpression[0] nls! COLON! nls! conditionalExpression[0]
+          (nls! ELVIS_OPERATOR)=> nls! ELVIS_OPERATOR^ nls! conditionalExpression[0]
+          | (nls! QUESTION)=> nls! QUESTION^ nls! assignmentExpression[0] nls! COLON! nls! conditionalExpression[0]
         )?
     ;
 
@@ -3622,7 +3629,12 @@ options {
     protected GroovyRecognizer parser;  // little-used link; TODO: get rid of
     private void require(boolean z, String problem, String solution) throws SemanticException {
         // TODO: Direct to a common error handler, rather than through the parser.
-        if (!z)  parser.requireFailed(problem, solution);
+        if (!z && parser!=null)  parser.requireFailed(problem, solution);
+        if (!z) {
+            int lineNum = inputState.getLine(), colNum = inputState.getColumn();
+            throw new SemanticException(problem + ";\n   solution: " + solution,
+                                        getFilename(), lineNum, colNum);
+        }
     }
 }
 
@@ -4140,6 +4152,12 @@ options {
             // for them in package names for better integration with existing Java packages
             if ((ttype == LITERAL_as || ttype == LITERAL_def || ttype == LITERAL_in) &&
                 (LA(1) == '.' || lastSigTokenType == DOT || lastSigTokenType == LITERAL_package)) {
+                ttype = IDENT;
+            }
+            // allow access to classes with the name package
+            if ((ttype == LITERAL_package) &&
+                (LA(1) == '.' || lastSigTokenType == DOT || lastSigTokenType == LITERAL_import
+                || (LA(1) == ')' && lastSigTokenType == LPAREN))) {
                 ttype = IDENT;
             }
             if (ttype == LITERAL_static && LA(1) == '.') {

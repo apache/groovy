@@ -21,7 +21,6 @@ import java.util.List;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
-
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.Verifier;
@@ -98,6 +97,7 @@ public class OptimizingStatementWriter extends StatementWriter {
     
     private FastPathData writeGuards(StatementMeta meta, Statement statement) {
         if (notEnableFastPath(meta)) return null;
+        controller.getAcg().onLineNumber(statement, null);
         MethodVisitor mv = controller.getMethodVisitor();
         FastPathData fastPathData = new FastPathData();
         Label slowPath = new Label();
@@ -584,7 +584,9 @@ public class OptimizingStatementWriter extends StatementWriter {
             right.visit(this);
             
             ClassNode leftType = typeChooser.resolveType(expression.getLeftExpression(), node);
-            ClassNode rightType = typeChooser.resolveType(expression.getRightExpression(), node);
+            Expression rightExpression = expression.getRightExpression();
+            ClassNode rightType = optimizeDivWithIntOrLongTarget(rightExpression, leftType);
+            if (rightType==null) rightType = typeChooser.resolveType(expression.getRightExpression(), node);
             if (isPrimitiveType(leftType) && isPrimitiveType(rightType)) {
                 // if right is a constant, then we optimize only if it makes
                 // a block complete, so we set a maybe
@@ -631,7 +633,8 @@ public class OptimizingStatementWriter extends StatementWriter {
                         if (isLongCategory(leftType) && isLongCategory(rightType)) {
                             resultType = BigDecimal_TYPE;
                         } else if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) {
-                            resultType = BigDecimal_TYPE;
+                            // no optimization for BigDecimal yet
+                            //resultType = BigDecimal_TYPE;
                         } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
                             resultType = double_TYPE;
                         }
@@ -640,6 +643,7 @@ public class OptimizingStatementWriter extends StatementWriter {
                         //TODO: implement
                         break;
                     case Types.ASSIGN:
+                        resultType = optimizeDivWithIntOrLongTarget(expression.getRightExpression(), leftType);
                         opt.chainCanOptimize(true);
                         break;
                     default:
@@ -648,7 +652,8 @@ public class OptimizingStatementWriter extends StatementWriter {
                         } else if (isLongCategory(leftType) && isLongCategory(rightType)) {
                             resultType = long_TYPE;
                         } else if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) {
-                            resultType = BigDecimal_TYPE;
+                            // no optimization for BigDecimal yet
+                            //resultType = BigDecimal_TYPE;
                         } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
                             resultType = double_TYPE;
                         }
@@ -663,6 +668,45 @@ public class OptimizingStatementWriter extends StatementWriter {
                 opt.chainInvolvedType(leftType);
                 opt.chainInvolvedType(rightType);
             }
+        }
+
+        /**
+         * method to optimize Z = X/Y with Z being int or long style
+         * @returns null if the optimization cannot be applied, otherwise it
+         * will return the new target type
+         */
+        private ClassNode optimizeDivWithIntOrLongTarget(Expression rhs, ClassNode assignmentTartgetType) {
+            if (!(rhs instanceof BinaryExpression)) return null;
+            BinaryExpression binExp = (BinaryExpression) rhs;
+            int op = binExp.getOperation().getType();
+            if (op!=Types.DIVIDE && op!=Types.DIVIDE_EQUAL) return null;
+
+            ClassNode originalResultType = typeChooser.resolveType(binExp, node);
+            if (    !originalResultType.equals(BigDecimal_TYPE) ||
+                    !(isLongCategory(assignmentTartgetType) || isFloatingCategory(assignmentTartgetType)) 
+            ) {
+                return null;
+            }
+
+            ClassNode leftType = typeChooser.resolveType(binExp.getLeftExpression(), node);
+            if (!isLongCategory(leftType)) return null;
+            ClassNode rightType = typeChooser.resolveType(binExp.getRightExpression(), node);
+            if (!isLongCategory(rightType)) return null;
+
+            ClassNode target;
+            if (isIntCategory(leftType) && isIntCategory(rightType)) {
+                target = int_TYPE;
+            } else if (isLongCategory(leftType) && isLongCategory(rightType)) {
+                target = long_TYPE;
+            } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
+                target = double_TYPE;
+            } else {
+                return null;
+            }
+            StatementMeta meta = addMeta(rhs);
+            meta.type = target;
+            opt.chainInvolvedType(target);
+            return target;
         }
 
         @Override

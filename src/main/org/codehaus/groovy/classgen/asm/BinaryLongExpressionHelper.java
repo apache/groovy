@@ -98,7 +98,7 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         LADD,           //  PLUS        200
         LSUB,           //  MINUS       201
         LMUL,           //  MULTIPLY    202
-        0,              //  DIV, (203) but we don't want that one
+        LDIV,           //  DIV         203
         LDIV,           //  INTDIV      204
         LREM,           //  MOD         203
     };
@@ -116,8 +116,13 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         mv.visitInsn(LCONST_1);
         mv.visitInsn(LADD);
     }
-    
+
     protected ClassNode getDevisionOpResultType() {
-        return ClassHelper.BigDecimal_TYPE;
+        return ClassHelper.long_TYPE;
+    }
+
+    @Override
+    protected boolean supportsDivision() {
+        return true;
     }
 }

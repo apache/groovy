@@ -125,6 +125,13 @@ public class JavaStubGenerator {
         }
         try {
             Verifier verifier = new Verifier() {
+                @Override
+                public void visitClass(final ClassNode node) {
+                    List<Statement> savedStatements = new ArrayList<Statement>(node.getObjectInitializerStatements());
+                    super.visitClass(node);
+                    node.getObjectInitializerStatements().addAll(savedStatements);
+                }
+
                 public void addCovariantMethods(ClassNode cn) {}
                 protected void addTimeStamp(ClassNode node) {}
                 protected void addInitialization(ClassNode node) {}
@@ -414,19 +421,21 @@ public class JavaStubGenerator {
         ClassNode type = node.getDeclaringClass();
         ClassNode superType = type.getUnresolvedSuperClass();
 
+        Parameter[] bestMatch = null;
         for (ConstructorNode c : superType.getDeclaredConstructors()) {
             // Only look at things we can actually call
-            if (c.isPublic() || c.isProtected()) {
-                Parameter[] parameters = c.getParameters();
-                // workaround for GROOVY-5859: remove generic type info
-                Parameter[] copy = new Parameter[parameters.length];
-                for (int i = 0; i < copy.length; i++) {
-                    Parameter orig = parameters[i];
-                    copy[i] = new Parameter(orig.getOriginType().getPlainNodeReference(), orig.getName());
-                }
-                return copy;
+            if (!c.isPublic() && !c.isProtected()) continue;
+            Parameter[] parameters = c.getParameters();
+            // workaround for GROOVY-5859: remove generic type info
+            Parameter[] copy = new Parameter[parameters.length];
+            for (int i = 0; i < copy.length; i++) {
+                Parameter orig = parameters[i];
+                copy[i] = new Parameter(orig.getOriginType().getPlainNodeReference(), orig.getName());
             }
+            if (noExceptionToAvoid(node,c)) return copy;
+            if (bestMatch==null) bestMatch = copy;
         }
+        if (bestMatch!=null) return bestMatch;
 
         // fall back for parameterless constructor
         if (superType.isPrimaryClassNode()) {
@@ -434,6 +443,29 @@ public class JavaStubGenerator {
         }
 
         return null;
+    }
+
+    final private static ClassNode RUNTIME_EXCEPTION = ClassHelper.make(RuntimeException.class);
+
+    private boolean noExceptionToAvoid(ConstructorNode fromStub, ConstructorNode fromSuper) {
+        ClassNode[] superExceptions = fromSuper.getExceptions();
+        if (superExceptions==null || superExceptions.length==0) return true;
+
+        ClassNode[] stubExceptions = fromStub.getExceptions();
+        if (stubExceptions==null || stubExceptions.length==0) return false;
+
+
+        // if all remaining exceptions are used in the stub we are good
+        outer: for (int i=0; i<superExceptions.length; i++) {
+            ClassNode superExc = superExceptions[i];
+            for (ClassNode stub:stubExceptions) {
+                if (stub.isDerivedFrom(superExc)) continue outer;
+            }
+            // not found 
+            return false;
+        }
+
+        return true;
     }
 
     private void printSpecialConstructorArgs(PrintWriter out, ConstructorNode node, ConstructorCallExpression constrCall) {
@@ -723,13 +755,13 @@ public class JavaStubGenerator {
     }
 
     private void printAnnotation(PrintWriter out, AnnotationNode annotation) {
-        out.print("@" + annotation.getClassNode().getName() + "(");
+        out.print("@" + annotation.getClassNode().getName().replace('$', '.') + "(");
         boolean first = true;
         Map<String, Expression> members = annotation.getMembers();
         for (String key : members.keySet()) {
             if (first) first = false;
             else out.print(", ");
-            out.print(key + "=" + getAnnotationValue(members.get(key)));
+            out.print(key + "=" + getAnnotationValue(members.get(key)).replace('$', '.'));
         }
         out.print(") ");
     }

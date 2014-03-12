@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package groovy.lang;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -89,11 +90,10 @@ import java.util.*;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
- * @author Jochen Theodorou
+ * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  * @author Graeme Rocher
  * @author Alex Tkachman
  * @author Roshan Dawrani
- * @version $Revision$
  * @see groovy.lang.MetaClass
  */
 public class MetaClassImpl implements MetaClass, MutableMetaClass {
@@ -1405,6 +1405,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public int selectConstructorAndTransformArguments(int numberOfConstructors, Object[] arguments) {
+        if (numberOfConstructors==-1) {
+            return selectConstructorAndTransformArguments1(arguments);
+        } else {
+            // falling back to pre 2.1.9 selection algorithm
+            // in practice this branch will only be reached if the class calling this code is a Groovy class
+            // compiled with an earlier version of the Groovy compiler
+            return selectConstructorAndTransformArguments0(numberOfConstructors, arguments);
+        }
+
+
+    }
+
+    private int selectConstructorAndTransformArguments0(final int numberOfConstructors, Object[] arguments) {
         //TODO: that is just a quick prototype, not the real thing!
         if (numberOfConstructors != constructors.size()) {
             throw new IncompatibleClassChangeError("the number of constructors during runtime and compile time for " +
@@ -1446,6 +1459,46 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
+     * Constructor selection algorithm for Groovy 2.1.9+.
+     * This selection algorithm was introduced as a workaround for GROOVY-6080. Instead of generating an index between
+     * 0 and N where N is the number of super constructors at the time the class is compiled, this algorithm uses
+     * a hash of the constructor descriptor instead.
+     *
+     * This has the advantage of letting the super class add new constructors while being binary compatible. But there
+     * are still problems with this approach:
+     * <ul>
+     *     <li>There's a risk of hash collision, even if it's very low (two constructors of the same class must have the same hash)</li>
+     *     <li>If the super class adds a new constructor which takes as an argument a superclass of an existing constructor parameter and
+     *     that this new constructor is selected at runtime, it would not find it.</li>
+     * </ul>
+     *
+     * Hopefully in the last case, the error message is much nicer now since it explains that it's a binary incompatible change.
+     *
+     * @param arguments the actual constructor call arguments
+     * @return a hash used to identify the constructor to be called
+     * @since 2.1.9
+     */
+    private int selectConstructorAndTransformArguments1(Object[] arguments) {
+        if (arguments == null) arguments = EMPTY_ARGUMENTS;
+        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+        MetaClassHelper.unwrap(arguments);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
+        if (constructor == null) {
+            constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
+        }
+        if (constructor == null) {
+            throw new GroovyRuntimeException(
+                    "Could not find matching constructor for: "
+                            + theClass.getName()
+                            + "(" + InvokerHelper.toTypeString(arguments) + ")");
+        }
+        final String methodDescriptor = BytecodeHelper.getMethodDescriptor(Void.TYPE, constructor.getNativeParameterTypes());
+        // keeping 3 bits for additional information such as vargs
+        return BytecodeHelper.hashCode(methodDescriptor);
+    }
+
+
+    /**
      * checks if the initialisation of the class id complete.
      * This method should be called as a form of assert, it is no
      * way to test if there is still initialisation work to be done.
@@ -1467,7 +1520,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * This is a helper class introduced in Groovy 2.1.0, which is used only by
      * indy. This class is for internal use only.
-     * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
      * @since Groovy 2.1.0
      */
     public final static class MetaConstructor extends MetaMethod {
@@ -1498,7 +1550,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * This is a helper method added in Groovy 2.1.0, which is used only by indy.
      * This method is for internal use only.
-     * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a> 
      * @since Groovy 2.1.0
      */
     public MetaMethod retrieveConstructor(Object[] arguments) {
@@ -2901,8 +2952,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         Object answer;
         if (arguments == null || arguments.length == 0) {
             answer = MetaClassHelper.chooseEmptyMethodParams(methods);
-        } else if (arguments.length == 1 && arguments[0] == null) {
-            answer = MetaClassHelper.chooseMostGeneralMethodWith1NullParam(methods);
         } else {
             Object matchingMethods = null;
 
@@ -2939,6 +2988,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         throw new MethodSelectionException(methodName, methods, arguments);
     }
+
 
     private Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
 

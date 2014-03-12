@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package groovy.bugs
-
-import org.codehaus.groovy.control.*
 
 class Groovy4410Bug extends GroovyTestCase {
     void testBridgeMethodWithArrayTypeParameterV1() {
@@ -50,7 +48,7 @@ class StringProducer1 implements G4410Producer1 {
     }
 }
 
-class HackProducer2 implements G4410Producer2<String> {
+class HackProducer2 implements G4410Producer2<Object> {
     Object gimme(String[] a1) {
         "Hello World"
     }

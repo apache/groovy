@@ -19,13 +19,18 @@ import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
 
 import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
@@ -175,4 +180,45 @@ public class InvokeDynamicWriter extends InvocationWriter {
         makeCall(call, new ClassExpression(call.getType()), new ConstantExpression("<init>"), call.getArguments(), null, false, false, false);
     }
     
+    @Override
+    public void coerce(ClassNode from, ClassNode target) {
+        ClassNode wrapper = ClassHelper.getWrapper(target);
+        makeIndyCall(invokeMethod, EmptyExpression.INSTANCE, false, false, "asType", new ClassExpression(wrapper));
+        if (ClassHelper.boolean_TYPE.equals(target) || ClassHelper.Boolean_TYPE.equals(target)) {
+            writeIndyCast(ClassHelper.OBJECT_TYPE,target);
+        } else {
+            BytecodeHelper.doCast(controller.getMethodVisitor(), wrapper);
+            controller.getOperandStack().replace(wrapper);
+            controller.getOperandStack().doGroovyCast(target);
+        }
+    }
+
+    @Override
+    public void castToNonPrimitiveIfNecessary(ClassNode sourceType, ClassNode targetType) {
+        ClassNode boxedType = ClassHelper.getWrapper(sourceType);
+        if (WideningCategories.implementsInterfaceOrSubclassOf(boxedType, targetType)) {
+            controller.getOperandStack().box();
+            return;
+        }
+        writeIndyCast(sourceType, targetType);
+    }
+
+    private void writeIndyCast(ClassNode sourceType, ClassNode targetType) {
+        StringBuilder sig = new StringBuilder();
+        sig.append('(');
+        sig.append(getTypeDescription(sourceType));
+        sig.append(')');
+        sig.append(getTypeDescription(targetType));
+
+        controller.getMethodVisitor().visitInvokeDynamicInsn(
+                //TODO: maybe use a different bootstrap method since no arguments are needed here
+                CAST.getCallSiteName(), sig.toString(), BSM, "()", 0);
+        controller.getOperandStack().replace(targetType);
+    }
+
+    @Override
+    public void castNonPrimitiveToBool(ClassNode sourceType) {
+        writeIndyCast(sourceType, ClassHelper.boolean_TYPE);;
+    }
+
 }

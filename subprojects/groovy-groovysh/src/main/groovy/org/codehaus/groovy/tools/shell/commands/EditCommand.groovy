@@ -18,7 +18,6 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
@@ -31,9 +30,24 @@ class EditCommand
     extends CommandSupport
 {
     EditCommand(final Groovysh shell) {
-        super(shell, 'edit', '\\e')
+        super(shell, ':edit', ':e')
     }
-    
+
+    ProcessBuilder getEditorProcessBuilder(String editCommand, String tempFilename) {
+        def pb = new ProcessBuilder(editCommand, tempFilename)
+
+        // GROOVY-6201: Editor should inherit I/O from the current process.
+        //    Fixed only for java >= 1.7 using new ProcessBuilder api
+        pb.redirectErrorStream(true);
+        def javaVer = Double.valueOf(System.getProperty("java.specification.version"));
+        if (javaVer >= 1.7) {
+            pb.redirectInput(ProcessBuilder.Redirect.INHERIT)
+            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT)
+        }
+
+        return pb
+    }
+
     private String getEditorCommand() {
         def editor = Preferences.editor;
 
@@ -46,7 +60,7 @@ class EditCommand
         return editor
     }
     
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assertNoArguments(args)
         
         File file = File.createTempFile('groovysh-buffer', '.groovy')
@@ -56,24 +70,32 @@ class EditCommand
             // Write the current buffer to a tmp file
             file.write(buffer.join(NEWLINE))
             
-            // Try to launch the editor
-            def cmd = "$editorCommand $file"
-            log.debug("Executing: $cmd")
-            def p = cmd.execute()
-            
+            //Try to launch the editor.
+            log.debug("Executing: $editorCommand $file")
+            def pb = getEditorProcessBuilder("$editorCommand", "$file")
+            def p = pb.start()
+
             // Wait for it to finish
             log.debug("Waiting for process: $p")
             p.waitFor()
 
             log.debug("Editor contents: ${file.text}")
             
-            // Load the new lines...
-            file.eachLine { String line ->
-                shell << line as String
-            }
+            replaceCurrentBuffer(file.readLines())
         }
         finally {
             file.delete()
         }
     }
+    
+    void replaceCurrentBuffer(List contents) {
+        // clear current buffer contents
+        shell.buffers.clearSelected()       
+        
+        // load editor contents into current buffer
+        for (line in contents) {
+            shell.execute(line as String)
+        }
+    }
+    
 }

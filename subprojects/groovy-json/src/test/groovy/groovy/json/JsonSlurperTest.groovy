@@ -15,19 +15,23 @@
  */
 package groovy.json
 
+
+
 /**
  * @author Guillaume Laforge
  */
 class JsonSlurperTest extends GroovyTestCase {
 
-    def parser = new JsonSlurper()
+    def parser;
+
+    public JsonSlurperTest () {
+           parser = new JsonSlurper();
+    }
 
     void testJsonShouldStartWithCurlyOrBracket() {
-        def msg = shouldFail(JsonException) {
-            parser.parseText("true")
-        }
+        /* We can handle parsing boolean, numbers, and such. */
+        parser.parseText("true")
 
-        assert msg.contains('A JSON payload should start with')
     }
 
     void testEmptyStructures() {
@@ -46,6 +50,89 @@ class JsonSlurperTest extends GroovyTestCase {
             parser.parseText('[123, "abc"')
         }
     }
+
+
+    void testParseNum() {
+        int i = parser.parseText('123')
+        int i2 = 123;
+        assert i == i2;
+
+    }
+
+
+    void testNegNum() {
+        int i = parser.parseText('-123')
+        int i2 = -123;
+        assert i == i2;
+
+    }
+
+
+    void testNegNumWithSpace() {
+        int i = parser.parseText('   -123')
+        int i2 = -123;
+        assert i == i2;
+
+    }
+
+
+
+    void testLargeNegNumWithSpace() {
+        int i = parser.parseText('   -1234567891')
+        int i2 = -1234567891;
+        assert i == i2;
+
+    }
+
+
+
+    void testWithSpaces() {
+        int num = ((Number)parser.parseText( "           123")).intValue();
+        int num2 = 123;
+        boolean ok = num == num2 || die ( "" + num);
+
+    }
+
+
+
+    void testParseLargeNum() {
+        long num = parser.parseText(""+Long.MAX_VALUE)
+        long num2 = Long.MAX_VALUE;
+        assert num == num2;
+
+    }
+
+
+    void testParseSmallNum() {
+        long num = parser.parseText(""+Long.MIN_VALUE)
+        long num2 = Long.MIN_VALUE
+        assert num == num2
+
+    }
+
+
+    void testParseLargeDecimal() {
+        double num  = parser.parseText(""+Double.MAX_VALUE)
+        double num2 = Double.MAX_VALUE;
+        assert num == num2
+
+    }
+
+
+    void testParseSmallDecimal() {
+        double num  = parser.parseText(""+Double.MIN_VALUE)
+        double num2 = Double.MIN_VALUE;
+        assert num == num2
+
+    }
+
+    void exactly312Test() {
+        assert parser.parseText('22') == 22
+        assert parser.parseText('-22') == -22
+        assert parser.parseText('-22.0065') == -22.0065
+    }
+
+
 
     void testArrayOfArrayWithSimpleValues() {
         assert parser.parseText('[1, 2, 3, ["a", "b", "c", [true, false], "d"], 4]') ==

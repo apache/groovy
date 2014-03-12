@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-
-
 package org.codehaus.groovy.tools.groovydoc.testfiles.c
-
-import org.codehaus.groovy.tools.groovydoc.testfiles.b.Base
 
 class DescendantF extends Base {
 }

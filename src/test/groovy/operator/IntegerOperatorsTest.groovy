@@ -5,7 +5,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
     def x
     def y
     def z
-    
+
     void testPlus() {
         x = 2 + 2
         assert x == 4
@@ -16,7 +16,15 @@ class IntegerOperatorsTest extends GroovyTestCase {
         z = y + x + 1 + 2
         assert z == 12
     }
-    
+
+    void testUnaryPlus() {
+        x = 3
+        y = +x
+        assert y == 3
+        y = x.unaryPlus()
+        assert y == 3
+    }
+
     void testCharacterPlus() {
         Character c1 = 1
         Character c2 = 2
@@ -53,7 +61,23 @@ class IntegerOperatorsTest extends GroovyTestCase {
         y = x - 1
         assert y == 3
     }
-    
+
+    void testUnaryMinus() {
+        x = 3
+        y = -x
+        assert y == -3
+        y = x.unaryMinus()
+        assert y == -3
+    }
+
+    void testBitwiseNegate() {
+        x = 3
+        y = ~x
+        assert y == -4
+        y = x.bitwiseNegate()
+        assert y == -4
+    }
+
     void testCharacterMinus() {
         Character c1 = 1
         Character c2 = 2

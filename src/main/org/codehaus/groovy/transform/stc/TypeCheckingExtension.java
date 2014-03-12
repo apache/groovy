@@ -19,6 +19,7 @@ package org.codehaus.groovy.transform.stc;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,7 +52,7 @@ public class TypeCheckingExtension {
 
     /**
      * Subclasses should implement this method if they need to perform additional
-     * checks after the type checker has finished its work. This is particularily
+     * checks after the type checker has finished its work. This is particularly
      * useful for situations where you need multiple passes. Some checks in that
      * case may be deferred to the end, using this method.
      */
@@ -121,7 +122,7 @@ public class TypeCheckingExtension {
      *
      * @param lhsType the type of the left hand side of the assignment, as found by the type checker
      * @param rhsType the type of the right hand side of the assignment, as found by the type checker
-     * @param assignmentExpression the assignment expression which triggerred this call
+     * @param assignmentExpression the assignment expression which triggered this call
      * @return <code>boolean</code> false if the extension does not handle this assignment, true otherwise
      */
     public boolean handleIncompatibleAssignment(final ClassNode lhsType, final ClassNode rhsType, final Expression assignmentExpression) {
@@ -226,6 +227,19 @@ public class TypeCheckingExtension {
     public void onMethodSelection(Expression expression, MethodNode target) {
     }
 
+    /**
+     * Allows the extension to catch incompatible return types. This event is called whenever the type
+     * checker finds that an inferred return type is incompatible with the declared return type of
+     * a method.
+     *
+     * @param returnStatement the statement that triggered the error
+     * @param inferredReturnType the inferred return type for this statement
+     * @return false if the extension doesn't handle the error, true otherwise
+     */
+    public boolean handleIncompatibleReturnType(ReturnStatement returnStatement, ClassNode inferredReturnType) {
+        return false;
+    }
+
     // ------------------------------------------------------------------------------------------
     // Below, you will find various helper methods aimed at simplifying algorithms for subclasses
     // ------------------------------------------------------------------------------------------
@@ -312,4 +326,64 @@ public class TypeCheckingExtension {
         }
         return result;
     }
+
+    /**
+     * Builds a parametrized class node for List, to represent List&lt;X&gt;
+     * @param componentType the classnode for the component type of the list
+     * @return a classnode representing List&lt;componentType&gt;
+     * @since 2.2.0
+     */
+    public ClassNode buildListType(ClassNode componentType) {
+        return parameterizedType(ClassHelper.LIST_TYPE, componentType);
+    }
+
+    /**
+     * Builds a parametrized class node representing the Map&lt;keyType,valueType&gt; type.
+     * @param keyType the classnode type of the key
+     * @param valueType the classnode type of the value
+     * @return a class node for Map&lt;keyType,valueType&gt;
+     * @since 2.2.0
+     */
+    public ClassNode buildMapType(ClassNode keyType, ClassNode valueType) {
+        return parameterizedType(ClassHelper.MAP_TYPE, keyType, valueType);
+    }
+
+    /**
+     * Given a method call, first checks that it's a static method call, and if it is, returns the
+     * class node for the receiver. For example, with the following code:
+     * <code></code>Person.findAll { ... }</code>, it would return the class node for <i>Person</i>.
+     * If it's not a static method call, returns null.
+     * @param call a method call
+     * @return null if it's not a static method call, or the class node for the receiver instead.
+     */
+    public ClassNode extractStaticReceiver(MethodCall call) {
+        if (call instanceof StaticMethodCallExpression) {
+            return ((StaticMethodCallExpression) call).getOwnerType();
+        } else if (call instanceof MethodCallExpression) {
+            Expression objectExpr = ((MethodCallExpression) call).getObjectExpression();
+            if (objectExpr instanceof ClassExpression && ClassHelper.CLASS_Type.equals(objectExpr.getType())) {
+                GenericsType[] genericsTypes = objectExpr.getType().getGenericsTypes();
+                if (genericsTypes!=null && genericsTypes.length==1) {
+                    return genericsTypes[0].getType();
+                }
+            }
+            if (objectExpr instanceof ClassExpression) {
+                return objectExpr.getType();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Given a method call, checks if it's a static method call and if it is, tells if the receiver matches
+     * the one supplied as an argument.
+     * @param call a method call
+     * @param receiver a class node
+     * @return true if the method call is a static method call on the receiver
+     */
+    public boolean isStaticMethodCallOnClass(MethodCall call, ClassNode receiver) {
+        ClassNode staticReceiver = extractStaticReceiver(call);
+        return staticReceiver!=null && staticReceiver.equals(receiver);
+    }
+
 }

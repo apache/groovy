@@ -26,11 +26,11 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
 
     void testEmpty() {
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
-            assertEquals(-1, completor.complete("", 0, []))
+            assert -1 == completor.complete("", 0, [])
         }
     }
 
@@ -38,15 +38,15 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         idCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens.collect{it.getText()} == ["jav"]); candidates << "javup"; candidates << "java.lang.String" ; true}
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "jav"
             // in the shell, only Classes in the default package occur,but well...
-            assertEquals(0, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["javup", "java.lang.String"], candidates)
+            assert 0 == completor.complete(buffer, buffer.length(), candidates)
+            assert ["javup", "java.lang.String"] == candidates
         }
     }
 
@@ -54,15 +54,15 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         idCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens.collect{it.getText()} == ["{", "jav"]); candidates << "javup"; candidates << "java.lang.String" ; true}
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "{jav"
             // in the shell, only Classes in the default package occur,but well...
-            assertEquals(1, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["javup", "java.lang.String"], candidates)
+            assert 1 == completor.complete(buffer, buffer.length(), candidates)
+            assert ["javup", "java.lang.String"] == candidates
         }
     }
 
@@ -70,14 +70,14 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         reflectionCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens.collect{it.getText()} == ["Math", ".", "ma"]); candidates << "max("; 5}
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "Math.ma"
-            assertEquals(5, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["max("], candidates)
+            assert 5 == completor.complete(buffer, buffer.length(), candidates)
+            assert ["max("] == candidates
         }
     }
 
@@ -85,15 +85,15 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         reflectionCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens.collect{it.getText()} == ["Fo", ".", "ba", "(", ")", ".", "xyz"]); candidates << "xyzabc"; 0}
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "Fo.ba().xyz"
             // xyz cannot be not a var here
-            assertEquals(0, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["xyzabc"], candidates)
+            assert 0 == completor.complete(buffer, buffer.length(), candidates)
+            assert ["xyzabc"] == candidates
         }
     }
 
@@ -101,14 +101,14 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         idCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens.collect{it.getText()} == ["Foo", ".", "bar", "(", "xyz"]); candidates << "xyzabc"; true}
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "Foo.bar(xyz"
-            assertEquals(8, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["xyzabc"], candidates)
+            assert 8 == completor.complete(buffer, buffer.length(), candidates)
+            assert ["xyzabc"] == candidates
         }
     }
 
@@ -116,29 +116,43 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         idCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens.collect{it.getText()} == ["Foo", ".", "bar", "(", "xyz"]); candidates << "xyzabc"; true}
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             // cursor is BEFORE dot
-            assertEquals(8, completor.complete("Foo.bar(xyz.", "Foo.bar(xyz".length(), candidates))
-            assertEquals(["xyzabc"], candidates)
+            assert 8 == completor.complete("Foo.bar(xyz.", "Foo.bar(xyz".length(), candidates)
+            assert ["xyzabc"] == candidates
         }
     }
 
     void testDoubleIdentifier() {
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "String jav"
-            assertEquals(-1, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals([], candidates)
+            assert -1 == completor.complete(buffer, buffer.length(), candidates)
+            assert [] == candidates
         }
     }
+
+    void testInfixKeyword() {
+        IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
+            GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
+            def candidates = []
+            String buffer = "class Foo ext"
+            assert 10 == completor.complete(buffer, buffer.length(), candidates)
+            assert ['extends'] == candidates
+        }
+    }
+
 
     void testAfterSemi() {
         // evaluation of all is dangerous, but the reflectionCompletor has to deal with this
@@ -146,15 +160,15 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
             assert(tokens.collect{it.getText()} == ["deletehardDisk", "(", ")", ";", "foo", ".", "subs"]); candidates << "substring("; 22}
 
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         // mock doing the right thing
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "deletehardDisk(); foo.subs"
-            assertEquals(22, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["substring("], candidates)
+            assert 22 == completor.complete(buffer, buffer.length(), candidates)
+            assert ["substring("] == candidates
         }
     }
 
@@ -164,52 +178,51 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
             assert(tokens.collect{it.getText()} == ["a", "=", "foo", ".", "subs"]); candidates << "substring("; 9}
 
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         // mock doing the right thing
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "a = foo.subs"
-            assertEquals(9, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["substring("], candidates)
+            assert 9 == completor.complete(buffer, buffer.length(), candidates)
+            assert ["substring("] == candidates
         }
     }
 
     void testDontEvaluateAfterCommand() {
         CommandRegistry registry = new CommandRegistry()
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         // mock asserting nothing gets evaluated
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             // import command prevents reflection completion
-            registry << new ImportCommand(groovyshMock)
+            registry.register(new ImportCommand(groovyshMock))
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "import foo"
-            assertEquals(-1, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals([], candidates)
+            assert -1 == completor.complete(buffer, buffer.length(), candidates)
+            assert [] == candidates
         }
     }
 
     void testAfterGString() {
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         // mock asserting GString is not evaluated
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "\"\${foo.delete()}\".subs"
-            assertEquals(-1, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals([], candidates)
+            assert -1 == completor.complete(buffer, buffer.length(), candidates)
+            assert [] == candidates
         }
     }
 
     void testInStringFilename() {
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         MockFor filenameCompletorMocker = new MockFor(FileNameCompleter)
         String linestart = "foo('" // ends with single hyphen
         String pathstart = "/usr/foobar"
@@ -221,17 +234,17 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.use { filenameCompletorMocker.use {
             FileNameCompleter mockFileComp = new FileNameCompleter()
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], mockFileComp)
             def candidates = []
-            assertEquals("foo('/usr/".length(), completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["foobar"], candidates)
+            assert "foo('/usr/".length() == completor.complete(buffer, buffer.length(), candidates)
+            assert ["foobar"] == candidates
         }}
     }
 
     void testInStringFilenameBlanks() {
         // test with blanks (non-tokens) before the first hyphen
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         MockFor filenameCompletorMocker = new MockFor(FileNameCompleter)
         String linestart = "x = '" // ends with single hyphen
         String pathstart = "/usr/foobar"
@@ -243,10 +256,11 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.use { filenameCompletorMocker.use {
             FileNameCompleter mockFileComp = new FileNameCompleter()
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], mockFileComp)
             def candidates = []
-            assertEquals("x = '/usr/".length(), completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["foobar"], candidates)
+            assert "x = '/usr/".length() == completor.complete(buffer, buffer.length(), candidates)
+            assert ["foobar"] == candidates
         }}
     }
 
@@ -254,15 +268,15 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         idCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens.collect{it.getText()} == ["", "{", "foo"]); candidates << "foobar"; true}
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         // mock asserting GString is not evaluated
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "\"\${foo"
-            assertEquals(3, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["foobar"], candidates)
+            assert 3 == completor.complete(buffer, buffer.length(), candidates)
+            assert ["foobar"] == candidates
         }
     }
 
@@ -272,14 +286,14 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         bufferManager.buffers.add(["\"\"\"xyz"])
         bufferManager.setSelected(1)
         IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
-        ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance()
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
             GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
             def candidates = []
             String buffer = "abc\"\"\".subs"
-            assertEquals(7, completor.complete(buffer, buffer.length(), candidates))
-            assertEquals(["substring("], candidates)
+            assert 7 == completor.complete(buffer, buffer.length(), candidates)
+            assert ["substring("] == candidates
         }
     }
 }

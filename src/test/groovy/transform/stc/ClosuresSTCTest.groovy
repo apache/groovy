@@ -19,6 +19,7 @@ package groovy.transform.stc
  * Unit tests for static type checking : closures.
  *
  * @author Cedric Champeau
+ * @author Jochen Theodorou
  */
 class ClosuresSTCTest extends StaticTypeCheckingTestCase {
 
@@ -274,6 +275,207 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             }
 
             new Test().test()
+        '''
+    }
+
+    // GROOVY-6219
+    void testShouldFailBecauseClosureReturnTypeDoesnMatchMethodSignature() {
+        shouldFailWithMessages '''
+            void printMessage(Closure<String> messageProvider) {
+                println "Received message : ${messageProvider()}"
+            }
+
+            void testMessage() {
+                printMessage { int x, int y -> x+y }
+            }
+        ''', 'Cannot find matching method'
+    }
+    
+    //GROOVY-6189
+    void testSAMsInMethodSelection(){
+        // simple direct case
+        assertScript """
+            interface MySAM {
+                def someMethod()
+            }
+            def foo(MySAM sam) {sam.someMethod()}
+            assert foo {1} == 1
+        """
+  
+        // overloads with classes implemented by Closure
+        ["java.util.concurrent.Callable", "Object", "Closure", "GroovyObjectSupport", "Cloneable", "Runnable", "GroovyCallable", "Serializable", "GroovyObject"].each {
+            className ->
+            assertScript """
+                interface MySAM {
+                    def someMethod()
+                }
+                def foo(MySAM sam) {sam.someMethod()}
+                def foo($className x) {2}
+                assert foo {1} == 2
+            """
+        }
+    }
+    
+    void testSAMVariable() {
+        assertScript """
+            interface SAM { def foo(); }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).name == 'SAM'
+            })
+            SAM s = {1}
+            assert s.foo() == 1
+            def t = (SAM) {2}
+            assert t.foo() == 2
+        """
+    }
+    
+    void testSAMProperty() {
+        assertScript """
+            interface SAM { def foo(); }
+            class X {
+                SAM s
+            }
+            def x = new X(s:{1})
+            assert x.s.foo() == 1
+        """
+    }
+    
+    void testSAMAttribute() {
+        assertScript """
+            interface SAM { def foo(); }
+            class X {
+                public SAM s
+            }
+            def x = new X()
+            x.s = {1}
+            assert x.s.foo() == 1
+            x = new X()
+            x.@s = {2}
+            assert x.s.foo() == 2
+        """
+    }
+
+    void testMultipleSAMSignature() {
+        assertScript '''
+            interface SAM { def foo() }
+            def method(SAM a, SAM b) {
+                a.foo()
+                b.foo()
+            }
+            method({println 'a'}, {println 'b'})
+        '''
+    }
+
+    void testMultipleSAMSignature2() {
+        assertScript '''
+            interface SAM { def foo() }
+            def method(Object o, SAM a, SAM b) {
+                a.foo()
+                b.foo()
+            }
+            method(new Object(), {println 'a'}, {println 'b'})
+        '''
+    }
+
+    void testMultipleSAMMethodWithClosure() {
+        assertScript '''
+            interface SAM { def foo() }
+            def method(SAM a, SAM b) {
+                a.foo()
+                b.foo()
+            }
+            def method(Closure a, SAM b) {
+                b.foo()
+            }
+            def called = false
+            method({called = true;println 'a'}, {println 'b'})
+            assert !called
+        '''
+    }
+
+    void testMultipleSAMMethodWithClosureInverted() {
+        assertScript '''
+            interface SAM { def foo() }
+            def method(SAM a, SAM b) {
+                a.foo()
+                b.foo()
+            }
+            def method(SAM a, Closure b) {
+                a.foo()
+            }
+            def called = false
+            method({println 'a'}, {called=true;println 'b'})
+            assert !called
+        '''
+    }
+
+    void testAmbiguousSAMOverload() {
+        shouldFailWithMessages '''
+            interface Sammy { def sammy() }
+            interface Sam { def sam() }
+            def method(Sam sam) { sam.sam() }
+            def method(Sammy sammy) { sammy.sammy() }
+            method {
+                println 'foo'
+            }
+        ''', 'Reference to method is ambiguous. Cannot choose between'
+    }
+    
+    void testSAMType() {
+        assertScript """
+            interface Foo {int foo()}
+            Foo f = {1}
+            assert f.foo() == 1
+            abstract class Bar implements Foo {}
+            Bar b = {2}
+            assert b.foo() == 2
+        """
+        shouldFailWithMessages """
+            interface Foo2 {
+                String toString()
+            }
+            Foo2 f2 = {int i->"hi"}
+        """, "Cannot assign"
+        shouldFailWithMessages """
+            interface Foo2 {
+                String toString()
+            }
+            abstract class Bar2 implements Foo2 {}
+            Bar2 b2 = {"there"}
+        """, "Cannot assign"
+        assertScript """
+            interface Foo3 {
+                boolean equals(Object)
+                int f()
+            }
+            Foo3 f3 = {1}
+            assert f3.f() == 1
+        """
+        shouldFailWithMessages """
+            interface Foo3 {
+                boolean equals(Object)
+                int f()
+            }
+            abstract class Bar3 implements Foo3 {
+                int f(){2}
+            }
+            Bar3 b3 = {2}
+        """, "Cannot assign"
+    }
+
+    // GROOVY-6238
+    void testDirectMethodCallOnClosureExpression() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def dit = node.getNodeMetaData(INFERRED_TYPE)
+                def irt = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert irt == CLOSURE_TYPE
+                assert dit == CLOSURE_TYPE
+            })
+            def cl = { it }.curry(42)
+            def val = cl.call()
+            assert val == 42
         '''
     }
 }

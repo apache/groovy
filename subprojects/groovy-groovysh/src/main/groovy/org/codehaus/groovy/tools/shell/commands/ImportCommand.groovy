@@ -39,7 +39,7 @@ class ImportCommand
     extends CommandSupport
 {
     ImportCommand(final Groovysh shell) {
-        super(shell, 'import', '\\i')
+        super(shell, 'import', ':i')
     }
 
     @Override
@@ -49,27 +49,37 @@ class ImportCommand
         Completer asCompleter = new StringsCompleter('as')
         PackageHelper packageHelper = shell.packageHelper
         Interpreter interp = shell.interp
-        return new AggregateCompleter([
-                new ArgumentCompleter([
+        Collection<Completer> argCompleters = [
+                (Completer) new ArgumentCompleter([
                         impCompleter,
                         new ImportCompleter(packageHelper, interp, false),
                         asCompleter,
                         null]),
-                new ArgumentCompleter([
+                (Completer) new ArgumentCompleter([
                         impCompleter,
                         new StringsCompleter('static'),
                         new ImportCompleter(packageHelper, interp, true),
                         asCompleter,
-                        null])])
+                        null])]
+        return new AggregateCompleter(argCompleters)
 
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assert args != null
 
         if (args.isEmpty()) {
             fail("Command 'import' requires one or more arguments") // TODO: i18n
         }
+
+        def importSpec = args.join(' ')
+        if (! (importSpec ==~ '[a-zA-Z_. *]+;?$')) {
+            def msg = "Invalid import definition: '${importSpec}'" // TODO: i18n
+            log.debug(msg)
+            fail(msg)
+        }
+        // remove last semicolon
+        importSpec = importSpec.replaceAll(';', '')
 
         def buff = [ 'import ' + args.join(' ') ]
         buff << 'def dummp = false'
@@ -81,22 +91,23 @@ class ImportCommand
             // No need to keep duplicates, but order may be important so remove the previous def, since
             // the last defined import will win anyways
             
-            if (imports.remove(buff[0])) {
+            if (imports.remove(importSpec)) {
                 log.debug("Removed duplicate import from list")
             }
             
-            log.debug("Adding import: ${buff[0]}")
+            log.debug("Adding import: $importSpec")
             
-            imports << buff[0]
+            imports.add(importSpec)
+            return imports.join(', ')
         }
         catch (CompilationFailedException e) {
-            def msg = "Invalid import definition: '${buff[0]}'; reason: $e.message" // TODO: i18n
+            def msg = "Invalid import definition: '${importSpec}'; reason: $e.message" // TODO: i18n
             log.debug(msg, e)
             fail(msg)
         }
         finally {
             // Remove the class generated while testing the import syntax
-            classLoader.classCache.remove(type?.name)
+            classLoader.removeClassCacheEntry(type?.name)
         }
     }
 }
@@ -105,7 +116,7 @@ class ImportCompleter implements Completer {
 
     PackageHelper packageHelper
     Groovysh shell
-    protected final Logger log = Logger.create(ImportCompleter.class)
+    protected final Logger log = Logger.create(ImportCompleter)
     /*
      * The following rules do not need to work for all thinkable situations,just for all reasonable situations.
      * In particular the underscore and dollar signs in Class or method names usually indicate something internal,

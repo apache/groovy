@@ -1,5 +1,27 @@
 apply from: 'gradle/filter.gradle'
-apply from: "gradle/indy.gradle"
+apply from: 'gradle/indy.gradle'
+if (JavaVersion.current().java6Compatible) {
+    apply from: 'gradle/bintray.gradle'
+}
+
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            name 'Bintray Asciidoctor repo'
+            url 'http://dl.bintray.com/content/aalmiray/asciidoctor'
+        }
+    }
+
+    dependencies {
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.7.0'
+        classpath 'net.saliman:gradle-cobertura-plugin:1.1.2'
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:2.2.3'
+    }
+}
+
+File javaHome = new File(System.getProperty('java.home'))
+logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
 
 // TODO use antlr plugin
 //apply plugin: 'antlr'
@@ -14,7 +36,7 @@ allprojects {
     group = 'org.codehaus.groovy'
     version = groovyVersion
     repositories {
-        mavenCentral()
+        jcenter()
     }
 
     apply plugin: 'checkstyle'
@@ -22,6 +44,60 @@ allprojects {
     apply plugin: 'codenarc'
     apply from: "${rootProject.projectDir}/gradle/groovydoc.gradle"
     apply from: "${rootProject.projectDir}/gradle/indy.gradle"
+
+    if (isJava15()) {
+        // do nothing on JDK 5 as gradle fails to create a proxy for the AsciidoctorTask
+        logger.warn 'You must run on JDK 6+ to be able to generate the Asciidoc documentation.'
+    } else {
+        apply plugin: 'asciidoctor'
+
+        asciidoctor {
+            def (full, major, minor, patch, flavor) = (groovyVersion =~ /(\d+)\.(\d++)\.(\d+)-?(.+)/)[0]
+            logDocuments = true
+            sourceDir = project.file('src/spec/doc')
+            options = [
+                    attributes: [
+                            'source-highlighter': 'prettify',
+                            groovyversion: groovyVersion,
+                            'groovy-major-version': major,
+                            'groovy-minor-version': minor,
+                            'groovy-patch-version': patch,
+                            'groovy-full-version': groovyVersion,
+                            'groovy-short-version': "${major}.${minor}",
+                            doctype: 'book',
+                            revnumber : groovyVersion,
+                            icons : 'font',
+                            toc2: '',
+                            subprojroot: 'subprojects/groovy-',
+                            specfolder: 'src/spec/doc',
+                            'linkcss!': '',
+                            encoding: 'utf-8'
+                    ]
+            ]
+        }
+
+        // skip the asciidoctor task if there's no directory with asciidoc files
+        asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
+
+        asciidoctor.doLast {
+            outputDir.eachFileMatch(~'.*html') { File file ->
+                def text = file.getText('UTF-8')
+                text = text.replaceAll(/gapi::([a-zA-Z0-9$.#]+)/) { m->
+                    def cName = m[1]
+                    def cPath = m[1].replace('.','/')
+                    def anchor = ''
+                    int anchorIdx = cPath.indexOf('#')
+                    if (anchorIdx>0) {
+                        anchor = cPath.substring(anchorIdx)
+                        cPath = cPath.substring(0, anchorIdx)
+                    }
+
+                    "<a href='http://groovy.codehaus.org/gapi/index.html?${cPath}.html${anchor}' target='_blank'><code>$cName</code></a>"
+                }
+                file.write(text,'UTF-8')
+            }
+        }
+    }
 
     // don't fail build on CodeNarc tasks
     tasks.withType(CodeNarc) {
@@ -31,27 +107,12 @@ allprojects {
     tasks.withType(Checkstyle) {
         ignoreFailures = true
         configFile = file("$rootProject.projectDir/config/checkstyle/checkstyle.xml")
+        configProperties = ['rootProject.projectDir': rootProject.projectDir]
     }
-    
+
     if (useIndy()) {
-        def indyGroovy = {
-            options.useAnt = true
-            // todo: when Gradle includes support for "indy" option, replace this
-            // with groovyOptions.indy = true
-            groovyOptions.metaClass.optionMap = {
-                ['indy':true,
-                        memoryMaximumSize:'384m',
-                        fork:true,
-                        includeJavaRuntime:false,
-                        verbose:false,
-                        encoding:'UTF-8',
-                        failonerror:true,
-                        stacktrace:false,
-                        listfiles:false]
-            }
-            groovyOptions.useAnt = true
-            sourceCompatibility = 1.7
-            targetCompatibility = 1.7
+        tasks.withType(GroovyCompile) {
+            groovyOptions.optimizationOptions.indy = true
             groovyClasspath = files(
                     rootProject.compileJava.destinationDir,
                     rootProject.compileJava.classpath,
@@ -61,10 +122,6 @@ allprojects {
                     { project(':groovy-templates').compileJava.destinationDir },
             )
         }
-        // add tasks to compile the invokedynamic version
-
-        compileGroovy indyGroovy.clone()
-        compileTestGroovy indyGroovy.clone()
 
         compileJava.sourceCompatibility = 1.7
         compileJava.targetCompatibility = 1.7
@@ -72,20 +129,19 @@ allprojects {
             classifier = 'indy'
         }
     }
-
 }
 
 // todo: use the conventional "resources" directory for classpath resources
 task(copyResources, type: Copy) {
     destinationDir = file("$buildDir/classes")
     // text files requiring filtering
-    into("main") {
+    into('main') {
         from('src/main')
         include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
         filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
     }
     // other resources
-    into("main") {
+    into('main') {
         from 'src/main'
         include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
     }
@@ -107,14 +163,13 @@ subprojects {
         classifier = 'sources'
         from sourceSets.main.allSource
     }
-
 }
 
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
 //    mavenCentral() // default, tools
-    maven { url "http://www.aQute.biz/repo" } // tools
-    maven { url "http://repository.jboss.org/maven2" } // examples, tools
+    maven { url 'http://www.aQute.biz/repo' } // tools
+    maven { url 'http://repository.jboss.org/maven2' } // examples, tools
 }
 
 // todo do we need compile and runtime scope for examples?
@@ -124,84 +179,112 @@ configurations {
     examplesCompile.extendsFrom compile
     examplesRuntime.extendsFrom examplesCompile
     antlr
+    spec
+}
+
+ext {
+    antVersion = '1.9.2'
+    asmVersion = '4.1'
+    antlrVersion = '2.7.7'
+    bndVersion = '0.0.401'
+    checkstyleVersion = '4.4'
+    coberturaVersion = '1.9.4.1'
+    commonsCliVersion = '1.2'
+    commonsHttpClientVersion = '3.1'
+    eclipseOsgiVersion = '3.5.0.v20090520'
+    gparsVersion = '1.1.0'
+    ivyVersion = '2.3.0'
+    jansiVersion = '1.11'
+    jarjarVersion = '1.3'
+    jlineVersion = '2.11'
+    jmockVersion = '1.2.0'
+    logbackVersion = '1.0.13'
+    log4jVersion = '1.2.17'
+    log4j2Version = '2.0-beta9'
+    luceneVersion = '4.3.1'
+    openejbVersion = '1.0'
+    qdoxVersion = '1.12.1'
+    simianVersion = '2.2.4'
+    slf4jVersion = '1.7.5'
+    xmlunitVersion = '1.3'
+    xstreamVersion = '1.4.4'
 }
 
 dependencies {
-    compilerCompile "antlr:antlr:2.7.7"
-    compilerCompile "org.ow2.asm:asm:4.0"
-    compilerCompile "org.ow2.asm:asm-analysis:4.0"
-    compilerCompile "org.ow2.asm:asm-commons:4.0"
-    compilerCompile "org.ow2.asm:asm-tree:4.0"
-    compilerCompile "org.ow2.asm:asm-util:4.0"
+    compilerCompile "antlr:antlr:$antlrVersion"
+    compilerCompile "org.ow2.asm:asm:$asmVersion"
+    compilerCompile "org.ow2.asm:asm-analysis:$asmVersion"
+    compilerCompile "org.ow2.asm:asm-commons:$asmVersion"
+    compilerCompile "org.ow2.asm:asm-tree:$asmVersion"
+    compilerCompile "org.ow2.asm:asm-util:$asmVersion"
 
-    compilerCompile "commons-cli:commons-cli:1.2"
-    compilerCompile "org.apache.ant:ant:1.9.1"
-    compilerCompile("com.thoughtworks.xstream:xstream:1.4.4") {
+    compilerCompile "commons-cli:commons-cli:$commonsCliVersion"
+    compilerCompile "org.apache.ant:ant:$antVersion"
+    compilerCompile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compilerCompile("jline:jline:2.10") {
-        exclude(group: 'junit', module: 'junit')
-    }
-    compilerCompile "org.fusesource.jansi:jansi:1.10"
-    compilerCompile("org.apache.ivy:ivy:2.3.0") {
+    compilerCompile "org.fusesource.jansi:jansi:$jansiVersion"
+    compilerCompile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
     }
     compilerCompile files("$buildDir/classes/compiler")
 
     groovy files("$buildDir/classes/compiler")
-    groovy "antlr:antlr:2.7.7"
-    groovy "org.ow2.asm:asm:4.0"
-    groovy "org.ow2.asm:asm-analysis:4.0"
-    groovy "org.ow2.asm:asm-commons:4.0"
-    groovy "org.ow2.asm:asm-tree:4.0"
-    groovy "org.ow2.asm:asm-util:4.0"
+    groovy "antlr:antlr:$antlrVersion"
+    groovy "org.ow2.asm:asm:$asmVersion"
+    groovy "org.ow2.asm:asm-analysis:$asmVersion"
+    groovy "org.ow2.asm:asm-commons:$asmVersion"
+    groovy "org.ow2.asm:asm-tree:$asmVersion"
+    groovy "org.ow2.asm:asm-util:$asmVersion"
 
-    compile "commons-cli:commons-cli:1.2"
-    compile("com.thoughtworks.xstream:xstream:1.4.4") {
+    compile "commons-cli:commons-cli:$commonsCliVersion"
+    compile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compile("jline:jline:2.10") {
-        exclude(group: 'junit', module: 'junit')
-    }
-    compile "org.fusesource.jansi:jansi:1.10"
-    compile("org.apache.ivy:ivy:2.3.0") {
+    compile "org.fusesource.jansi:jansi:$jansiVersion"
+    compile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
     }
-    runtime "org.codehaus.gpars:gpars:1.0.0"
-    testCompile "jmock:jmock:1.2.0"
-    testCompile "jmock:jmock-cglib:1.2.0"
-    testCompile "xmlunit:xmlunit:1.3"
-    testCompile "ch.qos.logback:logback-classic:0.9.21"
-    testCompile "log4j:log4j:1.2.16"
-    testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
-    testCompile "com.thoughtworks.qdox:qdox:1.12.1"
+    runtime "org.codehaus.gpars:gpars:$gparsVersion"
+    testCompile "jmock:jmock:$jmockVersion"
+    testCompile "jmock:jmock-cglib:$jmockVersion"
+    testCompile "xmlunit:xmlunit:$xmlunitVersion"
+    testCompile "ch.qos.logback:logback-classic:$logbackVersion"
+    testCompile "log4j:log4j:$log4jVersion"
+    testCompile "org.apache.logging.log4j:log4j-core:$log4j2Version"
+    testCompile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+    testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
-    tools "com.googlecode.jarjar:jarjar:1.3"
-    tools("checkstyle:checkstyle:4.4") {
+    tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
+    tools("checkstyle:checkstyle:$checkstyleVersion") {
         exclude(module: 'junit')
     }
-    tools "redhill:simian:2.2.4"
-    tools("net.sourceforge.cobertura:cobertura:1.9.4.1") {
+    tools "redhill:simian:$simianVersion"
+    tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
         exclude(module: 'asm')
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
-    tools "org.ow2.asm:asm-all:4.0"
-    tools "com.thoughtworks.qdox:qdox:1.12.1"
-    tools "biz.aQute:bnd:0.0.401"
+    tools "org.ow2.asm:asm-all:$asmVersion"
+    tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    tools "biz.aQute:bnd:$bndVersion"
 
-    examplesCompile "lucene:lucene:1.4.3"
-    examplesCompile "org.eclipse:osgi:3.5.0.v20090520"
-    examplesRuntime("commons-httpclient:commons-httpclient:3.1") {
+    examplesCompile project(':groovy-test')
+    examplesCompile project(':groovy-swing')
+    examplesCompile "org.apache.lucene:lucene-core:$luceneVersion"
+    examplesCompile "org.apache.lucene:lucene-analyzers-common:$luceneVersion"
+    examplesCompile "org.apache.lucene:lucene-queryparser:$luceneVersion"
+    examplesCompile "org.eclipse:osgi:$eclipseOsgiVersion"
+    examplesRuntime("commons-httpclient:commons-httpclient:$commonsHttpClientVersion") {
         exclude(module: 'junit')
         exclude(module: 'commons-logging')
         exclude(module: 'commons-codec')
     }
-    examplesRuntime("openejb:openejb-loader:1.0") {
+    examplesRuntime("openejb:openejb-loader:$openejbVersion") {
         exclude(module: 'log4j')
         exclude(module: 'openejb-core')
         exclude(module: 'geronimo-jta_1.0.1B_spec')
@@ -211,8 +294,8 @@ dependencies {
     }
 
 // TODO use antlr plugin
-//    antlr "antlr:antlr:2.7.7"
-    antlr "org.apache.ant:ant-antlr:1.9.1"
+//    antlr "antlr:antlr:$antlrVersion"
+    antlr "org.apache.ant:ant-antlr:$antVersion"
 
     // TODO remove once M12N refactoring finished
     testCompile project(':groovy-ant')
@@ -227,12 +310,7 @@ sourceSets {
         // which will be used by the build itself to compile the groovy files
         java {
             srcDirs = [
-                    "src/main",
-                    "subprojects/groovy-ant/src/main",
-                    "subprojects/groovy-groovydoc/src/main",
-                    "subprojects/groovy-templates/src/main",
-                    "subprojects/groovy-xml/src/main",
-                    "subprojects/groovy-jmx/src/main",
+                    'src/main',
                     "$generatedDirectory/src/main"
             ]
             if (!useIndy()) {
@@ -245,12 +323,12 @@ sourceSets {
     main {
         java {
             srcDirs = [
-                    "src/main",
+                    'src/main',
                     "$generatedDirectory/src/main"
             ]
-            fileTree("src/main/groovy/ui").matching {
+            fileTree('src/main/groovy/ui').matching {
                 exclude 'GroovyMain.java', 'GroovySocketServer.java'
-            }.visit {details ->
+            }.visit { details ->
                 exclude "groovy/ui/$details.path"
             }
             if (!useIndy()) {
@@ -261,7 +339,7 @@ sourceSets {
         }
         groovy {
             srcDirs = [
-                    "src/main",
+                    'src/main',
                     "$generatedDirectory/src/main"
             ]
             if (!useIndy()) {
@@ -271,37 +349,34 @@ sourceSets {
             }
         }
         resources {
-            srcDirs = ["src/main", "src/tools", "src/resources"]
-            include "META-INF/services/*", "META-INF/groovy-release-info.properties",
-                    "groovy/grape/*.xml", "groovy/ui/*.properties", "groovy/ui/**/*.png",
-                    "groovy/inspect/swingui/AstBrowserProperties.groovy",
-                    "org/codehaus/groovy/tools/shell/**/*.properties",
-                    "org/codehaus/groovy/tools/shell/**/*.xml",
-                    "org/codehaus/groovy/tools/groovydoc/gstringTemplates/**/*.*",
-                    "org/codehaus/groovy/tools/groovy.ico"
+            srcDirs = ['src/main', 'src/tools', 'src/resources']
+            include 'META-INF/services/*',
+                    'META-INF/groovy-release-info.properties',
+                    'groovy/grape/*.xml',
+                    'groovy/ui/*.properties',
+                    'groovy/ui/**/*.png',
+                    'groovy/inspect/swingui/AstBrowserProperties.groovy',
+                    'org/codehaus/groovy/tools/shell/**/*.properties',
+                    'org/codehaus/groovy/tools/shell/**/*.xml',
+                    'org/codehaus/groovy/tools/groovydoc/gstringTemplates/**/*.*',
+                    'org/codehaus/groovy/tools/groovy.ico'
         }
     }
     test {
         groovy {
-            srcDirs = [
-                    "src/test",
-            ]
-            if (isJava15()) {
-                exclude "groovy/**/vm6/*Test.groovy"
-                exclude "org/codehaus/groovy/**/vm6/*Test.groovy"
-            }
+            srcDirs = ['src/test']
         }
         resources {
-            srcDirs = ["src/test-resources"]
+            srcDirs = ['src/test-resources']
         }
         output.classesDir = "$buildDir/test-classes" as File
     }
     tools {
         groovy {
-            srcDirs = ["src/tools"]
+            srcDirs = ['src/tools']
         }
         resources {
-            srcDirs = ["src/tools"]
+            srcDirs = ['src/tools']
         }
         compileClasspath = configurations.tools + sourceSets.main.runtimeClasspath
         runtimeClasspath = output + compileClasspath
@@ -309,29 +384,35 @@ sourceSets {
     }
     examples {
         groovy {
-            srcDirs = ["src/examples"]
+            srcDirs = ['src/examples']
         }
         resources {
-            srcDirs = ["src/examples"]
+            srcDirs = ['src/examples']
         }
         compileClasspath = configurations.examplesRuntime + sourceSets.main.output
         output.classesDir = "$buildDir/examples-classes" as File
     }
 }
 
+// make sure examples can be compiled, even if we don't run them
+// todo: reorganize examples so that we can run them too
+check {
+    dependsOn examplesClasses
+}
+
 // remove this from config once GRADLE-854 is fixed.
 processResources.doLast {
     copy {
-        from("src/main") {
-            include "groovy/inspect/swingui/AstBrowserProperties.groovy",
-                    "org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java"
+        from('src/main') {
+            include 'groovy/inspect/swingui/AstBrowserProperties.groovy',
+                    'org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java'
         }
         into sourceSets.main.output.classesDir
     }
 }
 
 task ensureGrammars {
-    description = "Ensure all the Antlr generated files are up to date."
+    description = 'Ensure all the Antlr generated files are up to date.'
     ext.antlrDirectory = "$projectDir/src/main/org/codehaus/groovy/antlr"
     ext.groovyParserDirectory = "$ext.antlrDirectory/parser"
     ext.javaParserDirectory = "$ext.antlrDirectory/java"
@@ -365,11 +446,13 @@ apply from: 'gradle/utils.gradle'
 def isJava16() {
     System.properties['java.version'].contains('1.6')
 }
+
 def isJava15() {
     System.properties['java.version'].contains('1.5')
 }
+
 def modules() {
-    subprojects.findAll { it.name =~ /groovy-(?!all-tests)/ }
+    subprojects
 }
 
 // provide to other build scripts
@@ -409,7 +492,7 @@ compileCompilerJava {
 }
 
 compileJava {
-    dependsOn compilerClasses,compilerDgmConverter,ensureGrammars
+    dependsOn compilerClasses, compilerDgmConverter, ensureGrammars
     options.fork(memoryMaximumSize: javacMain_mx)
 }
 
@@ -437,25 +520,50 @@ task checkstyleTest(overwrite: true) << {}
 task checkstyleTools(overwrite: true) << {}
 task codenarcExamples(overwrite: true) << {}
 
-apply from: "gradle/test.gradle"
-apply from: "gradle/docs.gradle"
-apply from: "gradle/assemble.gradle"
-apply from: "gradle/upload.gradle"
-apply from: "gradle/idea.gradle"
+apply from: 'gradle/test.gradle'
+apply from: 'gradle/docs.gradle'
+apply from: 'gradle/assemble.gradle'
+apply from: 'gradle/upload.gradle'
+apply from: 'gradle/idea.gradle'
+apply from: 'gradle/eclipse.gradle'
 // Define a GroovyDoc task which depends on the generated groovydoc tool
-apply from: "gradle/groovydoc.gradle"
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '1.5'
+apply from: 'gradle/groovydoc.gradle'
+if (isJava15()) {
+    // do nothing on JDK 5 as sardine is built for Java 6
+    logger.warn 'You must run on JDK 6+ to be able to deploy to codehaus.'
+} else {
+    apply from: 'gradle/codehaus.gradle'
 }
 
 classes {
     doFirst {
-        logger.lifecycle "InvokeDynamic support ${useIndy()?'on':'off'}"
+        logger.lifecycle "InvokeDynamic support ${useIndy() ? 'on' : 'off'}"
     }
 }
 
 // If a local configuration file for tweaking the build is present, apply it
 if (file('user.gradle').exists()) {
     apply from: 'user.gradle'
+}
+
+allprojects {
+    apply plugin: 'cobertura'
+    cobertura {
+        coverageFormats = ['xml', 'html']
+        coverageReportDir = file("$buildDir/reports/cobertura")
+    }
+}
+
+wrapper {
+    gradleVersion = '1.10'
+}
+
+// produce warning if running on 1.5 or 1.6
+if (isJava15() || isJava16()) {
+    logger.lifecycle '''
+    **************************************** WARNING **********************************************
+    ****** You are running the build with an older JDK. NEVER try to release with 1.5 or 1.6 ******
+    ****** You must use a JDK 1.7+ in order to compile all features of the language.         ******
+    ***********************************************************************************************
+'''
 }

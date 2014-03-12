@@ -19,11 +19,11 @@ import groovy.beans.Bindable
 
 class BindPathTest extends GroovySwingTestCase {
 
-    public void testClosureBindingProperties() {
+    void testClosureBindingProperties() {
       testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
-        swing.actions() {
+        swing.actions {
             beanA = new BeanPathTestA(foo:'x', bar:'y', bif:'z', qux:'w')
             beanC = new BeanPathTestA(foo:beanA, bar:'a')
             beanB = bean(new BeanPathTestB(), foo:bind {beanA.foo}, baz:bind {beanA.bar * 2}, bif: bind {beanC.foo.bar})
@@ -52,14 +52,14 @@ class BindPathTest extends GroovySwingTestCase {
       }
     }
 
-    public void testClosureBindingLocalVariables() {
+    void testClosureBindingLocalVariables() {
       testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         def beanA = null
         def beanB = null
         def beanC = null
-        swing.actions() {
+        swing.actions {
             beanA = new BeanPathTestA(foo:'x', bar:'y', bif:'z', qux:'w')
             beanC = new BeanPathTestA(foo:beanA, bar:'a')
             beanB = bean(new BeanPathTestB(), foo:bind {beanA.foo}, baz:bind {beanA.bar * 2}, bif: bind {beanC.foo.bar})
@@ -85,11 +85,11 @@ class BindPathTest extends GroovySwingTestCase {
       }
     }
 
-    public void testSyntheticBindings() {
+    void testSyntheticBindings() {
       testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
-        swing.panel() {
+        swing.panel {
             tweetBox = textField()
             tweetButton = button(enabled:bind {tweetBox.text.length() in  1..140})
             tweetLimit = progressBar(value:bind {Math.min(140, tweetBox.text.length())},
@@ -113,14 +113,14 @@ class BindPathTest extends GroovySwingTestCase {
     }
 }
 
-public class BeanPathTestA {
+class BeanPathTestA {
     @Bindable Object foo
     @Bindable Object bar
     Object bif
     @Bindable Object qux
 }
 
-public class BeanPathTestB {
+class BeanPathTestB {
     @Bindable Object foo
     @Bindable Object baz
     @Bindable Object  bif

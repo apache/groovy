@@ -30,6 +30,7 @@ import java.util.List;
  */
 public class MethodNode extends AnnotatedNode implements Opcodes {
 
+    public static final String SCRIPT_BODY_METHOD_KEY = "org.codehaus.groovy.ast.MethodNode.isScriptBody";
     private final String name;
     private int modifiers;
     private boolean syntheticPublic;
@@ -209,10 +210,16 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
      * @return true if this method is the run method from a script
      */
     public boolean isScriptBody() {
-        return getDeclaringClass() != null &&
-                getDeclaringClass().isScript() &&
-                getName().equals("run") &&
-                getColumnNumber() == -1;
+        return getNodeMetaData(SCRIPT_BODY_METHOD_KEY) != null;
+    }
+
+    /**
+     * Set the metadata flag for this method to indicate that it is a script body implementation.
+     * @see ModuleNode createStatementsClass().
+     * @return
+     */
+    public void setIsScriptBody() {
+        setNodeMetaData(SCRIPT_BODY_METHOD_KEY, true);
     }
 
     public String toString() {

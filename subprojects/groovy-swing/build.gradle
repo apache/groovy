@@ -1,6 +1,3 @@
-
-evaluationDependsOn(':')
-
 dependencies {
     compile project(':')
     groovy project(':')

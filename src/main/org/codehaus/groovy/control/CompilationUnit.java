@@ -18,6 +18,7 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 
+import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.classgen.*;
@@ -221,6 +222,9 @@ public class CompilationUnit extends ProcessingUnit {
         if (configuration != null) {
             final List<CompilationCustomizer> customizers = configuration.getCompilationCustomizers();
             for (CompilationCustomizer customizer : customizers) {
+                if (customizer instanceof CompilationUnitAware) {
+                    ((CompilationUnitAware) customizer).setCompilationUnit(this);
+                }
                 addPhaseOperation(customizer, customizer.getPhase().getPhaseNumber());
             }
         }
@@ -702,7 +706,7 @@ public class CompilationUnit extends ProcessingUnit {
                     String name = (String) iter.next();
                     SourceUnit su = ast.getScriptSourceLocation(name);
                     List<ClassNode> classesInSourceUnit = su.ast.getClasses();
-                    StringBuffer message = new StringBuffer();
+                    StringBuilder message = new StringBuilder();
                     message
                             .append("Compilation incomplete: expected to find the class ")
                             .append(name)
@@ -1038,7 +1042,9 @@ public class CompilationUnit extends ProcessingUnit {
             } catch (CompilationFailedException e) {
                 // fall through, getErrorReporter().failIfErrors() will trigger
             } catch (NullPointerException npe) {
-                throw npe;
+                GroovyBugError gbe = new GroovyBugError("unexpected NullpointerException", npe);
+                changeBugText(gbe, context);
+                throw gbe;
             } catch (GroovyBugError e) {
                 changeBugText(e, context);
                 throw e;

@@ -115,6 +115,10 @@ import java.lang.annotation.Target;
  * {@code java.util.Date} is treated as "effectively immutable" but is not final so it isn't strictly immutable.
  * Use at your own risk.
  * </li>
+ * <li>
+ * Groovy's normal map-style naming conventions will not be available if the first property
+ * has type {@code LinkedHashMap} or if there is a single Map, AbstractMap or HashMap property.
+ * </li>
  * </ul>
  *
  * @author Paul King
@@ -168,4 +172,31 @@ public @interface Immutable {
      * @since 2.1.0
      */
     String[] knownImmutables() default {};
+
+    /**
+     * If {@code true}, this adds a method {@code copyWith} which takes a Map of
+     * new property values and returns a new instance of the Immutable class with
+     * these values set.
+     * Example:
+     * <pre>
+     * {@code @groovy.transform.Immutable}(copyWith = true)
+     * class Person {
+     *     String first, last
+     * }
+     *
+     * def tim   = new Person( 'tim', 'yates' )
+     * def alice = tim.copyWith( first:'alice' )
+     *
+     * assert tim.first   == 'tim'
+     * assert alice.first == 'alice'
+     * </pre>
+     * Unknown keys in the map are ignored, and if the values would not change
+     * the object, then the original object is returned.
+     *
+     * If a method called {@code copyWith} that takes a single parameter already
+     * exists in the class, then this setting is ignored, and no method is generated.
+     *
+     * @since 2.2.0
+     */
+    boolean copyWith() default false;
 }

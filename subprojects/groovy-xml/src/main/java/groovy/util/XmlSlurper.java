@@ -33,6 +33,7 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Stack;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -87,20 +88,44 @@ public class XmlSlurper extends DefaultHandler {
     private boolean keepWhitespace = false;
 
     /**
-     * Uses the defaults of not validating and namespace aware.
+     * Creates a non-validating and non-namespace-aware <code>XmlSlurper</code> which does not allow DOCTYPE declarations in documents.
      *
-     * @throws ParserConfigurationException if a parser cannot
-     *   be created which satisfies the requested configuration.
+     * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
      * @throws SAXException for SAX errors.
      */
     public XmlSlurper() throws ParserConfigurationException, SAXException {
         this(false, true);
     }
-
+    
+    /**
+     * Creates a <code>XmlSlurper</code> which does not allow DOCTYPE declarations in documents.
+     * 
+     * @param validating <code>true</code> if the parser should validate documents as they are parsed; false otherwise.
+     * @param namespaceAware <code>true</code> if the parser should provide support for XML namespaces; <code>false</code> otherwise.
+     *
+     * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
+     * @throws SAXException for SAX errors.
+     */
     public XmlSlurper(final boolean validating, final boolean namespaceAware) throws ParserConfigurationException, SAXException {
+        this(validating, namespaceAware, false);
+    }
+
+    /**
+     * Creates a <code>XmlSlurper</code>.
+     * 
+     * @param validating <code>true</code> if the parser should validate documents as they are parsed; false otherwise.
+     * @param namespaceAware <code>true</code> if the parser should provide support for XML namespaces; <code>false</code> otherwise.
+     * @param allowDocTypeDeclaration <code>true</code> if the parser should provide support for DOCTYPE declarations; <code>false</code> otherwise.
+     *
+     * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
+     * @throws SAXException for SAX errors.
+     */
+    public XmlSlurper(final boolean validating, final boolean namespaceAware, boolean allowDocTypeDeclaration) throws ParserConfigurationException, SAXException {
         SAXParserFactory factory = FactorySupport.createSaxParserFactory();
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
+        setQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        setQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         reader = factory.newSAXParser().getXMLReader();
     }
 
@@ -110,6 +135,15 @@ public class XmlSlurper extends DefaultHandler {
 
     public XmlSlurper(final SAXParser parser) throws SAXException {
         this(parser.getXMLReader());
+    }
+    
+    private void setQuietly(SAXParserFactory factory, String feature, boolean value) {
+        try {
+            factory.setFeature(feature, value);
+        }
+        catch (ParserConfigurationException ignored) { }
+        catch (SAXNotRecognizedException ignored) { }
+        catch (SAXNotSupportedException ignored) { }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,20 +30,19 @@ import antlr.TokenStreamException
 
 
 interface Parsing {
-    ParseStatus parse(final List<String> buffer);
+    ParseStatus parse(final Collection<String> buffer);
 }
 
 /**
  * Provides a facade over the parser to recognize valid Groovy syntax.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class Parser
 {
     static final String NEWLINE = System.getProperty('line.separator')
 
-    private static final Logger log = Logger.create(Parser.class)
+    private static final Logger log = Logger.create(Parser)
 
     private final Parsing delegate
 
@@ -68,7 +67,7 @@ class Parser
         }
     }
     
-    ParseStatus parse(final List<String> buffer) {
+    ParseStatus parse(final Collection<String> buffer) {
         return delegate.parse(buffer)
     }
 }
@@ -84,7 +83,7 @@ final class RelaxedParser implements Parsing
 
     private String[] tokenNames
 
-    ParseStatus parse(final List buffer) {
+    ParseStatus parse(final Collection<String> buffer) {
         assert buffer
 
         sourceBuffer = new SourceBuffer()
@@ -101,15 +100,15 @@ final class RelaxedParser implements Parsing
             return new ParseStatus(ParseCode.COMPLETE)
         }
         catch (e) {
-            switch (e.class) {
+            switch (e.getClass()) {
                 case TokenStreamException:
                 case RecognitionException:
-                    log.debug("Parse incomplete: $e (${e.class.name})")
+                    log.debug("Parse incomplete: $e (${e.getClass().getName()})")
     
                     return new ParseStatus(ParseCode.INCOMPLETE)
 
                 default:
-                    log.debug("Parse error: $e (${e.class.name})")
+                    log.debug("Parse error: $e (${e.getClass().getName()})")
 
                     return new ParseStatus(e)
             }
@@ -138,7 +137,7 @@ final class RigidParser implements Parsing
 
     private final Logger log = Logger.create(this.class)
 
-    ParseStatus parse(final List<String> buffer) {
+    ParseStatus parse(final Collection<String> buffer) {
         assert buffer
 
         String source = buffer.join(Parser.NEWLINE)
@@ -165,23 +164,10 @@ final class RigidParser implements Parsing
             //
 
             if (parser.errorCollector.errorCount > 1 || !parser.failedWithUnexpectedEOF()) {
-                //
-                // HACK: Super insane hack... if we detect a syntax error, but the last line of the
-                //       buffer ends with a {, [, ''', """ or \ then ignore...
-                //       and pretend its okay, cause it might be...
-                //
-                //       This seems to get around the problem with things like:
-                //
-                //       class a { def b() {
-                //
-
-                String tmp = buffer[-1].trim()
-
-                if (tmp.endsWith('{')
-                    || tmp.endsWith('[')
-                    || tmp.endsWith("'''")
-                    || tmp.endsWith('"""')
-                    || tmp.endsWith('\\')) {
+ 
+                // HACK: Super insane hack... we detect a syntax error, but might still ignore
+                // it depending on the line ending
+                if (ignoreSyntaxErrorForLineEnding(buffer[-1].trim())) {
                     log.debug("Ignoring parse failure; might be valid: $e")
                 }
                 else {
@@ -198,11 +184,16 @@ final class RigidParser implements Parsing
 
             return new ParseStatus(error)
         }
-        else {
-            log.debug('Parse incomplete')
-
-            return new ParseStatus(ParseCode.INCOMPLETE)
+        log.debug('Parse incomplete')
+        return new ParseStatus(ParseCode.INCOMPLETE)
+    }
+    
+    private boolean ignoreSyntaxErrorForLineEnding(String line) {
+        def lineEndings = ['{', '[', '(', ',', '.', '-', '+', '/', '*', '%', '&', '|', '?', '<', '>', '=', ':', "'''", '"""', '\\']
+        for(String lineEnding in lineEndings) {
+            if(line.endsWith(lineEnding)) return true
         }
+        return false
     }
 }
 
@@ -250,3 +241,4 @@ final class ParseStatus
         this(ParseCode.ERROR, cause)
     }
 }
+

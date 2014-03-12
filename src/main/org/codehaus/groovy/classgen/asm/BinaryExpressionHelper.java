@@ -16,10 +16,12 @@
 package org.codehaus.groovy.classgen.asm;
 
 import groovy.lang.GroovyRuntimeException;
+
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -27,6 +29,7 @@ import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -269,7 +272,14 @@ public class BinaryExpressionHelper {
         // return value of assignment
         rhsValueLoader.visit(controller.getAcg());
     }
-    
+
+    private static boolean isNull(Expression exp) {
+        if (exp instanceof ConstantExpression){
+            return ((ConstantExpression) exp).getValue()==null;
+        } else {
+            return false;
+        }
+    }
 
     public void evaluateEqual(BinaryExpression expression, boolean defineVariable) {
         AsmClassGenerator acg = controller.getAcg();
@@ -277,8 +287,9 @@ public class BinaryExpressionHelper {
         OperandStack operandStack = controller.getOperandStack();
         Expression rightExpression = expression.getRightExpression();
         Expression leftExpression = expression.getLeftExpression();
-        
-        if (    defineVariable && 
+        ClassNode lhsType = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
+
+        if (    defineVariable &&
                 rightExpression instanceof EmptyExpression && 
                 !(leftExpression instanceof TupleExpression) )
         {
@@ -287,32 +298,50 @@ public class BinaryExpressionHelper {
             operandStack.loadOrStoreVariable(var, false);
             return;
         }
-        
+
         // let's evaluate the RHS and store the result
         ClassNode rhsType;
-        if (rightExpression instanceof EmptyExpression) {
+        if (rightExpression instanceof ListExpression && lhsType.isArray()) {
+            ListExpression list = (ListExpression) rightExpression;
+            ArrayExpression array = new ArrayExpression(lhsType.getComponentType(), list.getExpressions());
+            array.setSourcePosition(list);
+            array.visit(acg);
+        } else if (rightExpression instanceof EmptyExpression) {
             rhsType = leftExpression.getType();
             loadInitValue(rhsType);
         } else {
             rightExpression.visit(acg);
-            //rhsType = getCastType(rightExpression);
-            rhsType = controller.getOperandStack().getTopOperand();
         }
+        rhsType = operandStack.getTopOperand();
+
         boolean directAssignment = defineVariable && !(leftExpression instanceof TupleExpression);
         int rhsValueId;
         if (directAssignment) {
             VariableExpression var = (VariableExpression) leftExpression;
-            rhsType = controller.getTypeChooser().resolveType(var, controller.getClassNode());
             if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(rhsType)) {
                 // GROOVY-5570: if a closure shared variable is a primitive type, it must be boxed
                 rhsType = ClassHelper.getWrapper(rhsType);
+                operandStack.box();
             }
-            if (!(rightExpression instanceof ConstantExpression) || (((ConstantExpression) rightExpression).getValue()!=null)) {
-                operandStack.doGroovyCast(rhsType);
+
+            // ensure we try to unbox null to cause a runtime NPE in case we assign 
+            // null to a primitive typed variable, even if it is used only in boxed 
+            // form as it is closure shared
+            if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(var.getOriginType()) && isNull(rightExpression)) {
+                operandStack.doGroovyCast(var.getOriginType());
+                // these two are never reached in bytecode and only there 
+                // to avoid verifyerrors and compiler infrastructure hazzle
+                operandStack.box(); 
+                operandStack.doGroovyCast(lhsType);
+            }
+            // normal type transformation 
+            if (!ClassHelper.isPrimitiveType(lhsType) && isNull(rightExpression)) {
+                operandStack.replace(lhsType);
             } else {
-                operandStack.replace(rhsType);
+                operandStack.doGroovyCast(lhsType);
             }
-            rhsValueId = compileStack.defineVariable(var, rhsType, true).getIndex();
+            rhsType = lhsType;
+            rhsValueId = compileStack.defineVariable(var, lhsType, true).getIndex();
         } else {
             rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
         }

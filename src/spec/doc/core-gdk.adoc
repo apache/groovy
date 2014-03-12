@@ -1,0 +1,125 @@
+= Groovy Development Kit (TBD)
+
+== Working with IO (TBD)
+
+== Working with collections (TBD)
+
+== Handy utilities
+
+=== ConfigSlurper
+
+`ConfigSlurper` is a utility class for reading configuration files defined in the form of Groovy scripts. Like it is
+the case with Java `*.properties` files, `ConfigSlurper` allows a dot notation. But in addition, it allows for Closure scoped
+configuration values and arbitrary object types.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=arbitrary_types,indent=0]
+----
+<1> Usage of the dot notation
+<2> Usage of Closure scopes as an alternative to the dot notation
+
+As can be seen in the above example, the `parse` method can be used to retrieve `groovy.util.ConfigObject` instances. The
+`ConfigObject` is a specialized `java.util.Map` implementation that either returns the configured value or a new `ConfigObject`
+instance but never `null`.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=never_null,indent=0]
+----
+<1> `config.test` has not been specified yet it returns a `ConfigObject` when being called.
+
+In the case of a dot being part of a configuration variable name, it can be escaped by using single or double quotes.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=escape_dot,indent=0]
+----
+
+In addition, `ConfigSlurper` comes with support for `environments`. The `environments` method can be used to hand over
+a Closure instance that itself may consist of a several sections. Let's say we wanted to create a particular configuration
+value for the development environment. When creating the `ConfigSlurper` instance we can use the `ConfigSlurper(String)`
+constructor to specify the target environment.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=environments,indent=0]
+----
+
+[NOTE]
+The `ConfigSlurper` environments aren't restricted to any particular environment names. It solely depends on the
+`ConfigSlurper` client code what value are supported and interpreted accordingly.
+
+The `environments` method is built-in but the `registerConditionalBlock` method can be used to register other method names
+in addition to the `environments` name.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=custom_environments,indent=0]
+----
+<1> Once the new block is registered `ConfigSlurper` can parse it.
+
+For Java integration purposes the `toProperies` method can be used to convert the `ConfigObject` to a `java.util.Properties`
+object that might be stored to a `*.properties` text file. Be aware though that the configuration values are converted to
+`String` instances during adding them to the newly created `Properties` instance.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=properties,indent=0]
+----
+
+=== Expando
+
+The `Expando` class can be used to create a dynamically expandable object. Despite its name it does not use the
+`ExpandoMetaClass` underneath. Each `Expando` object represents a standalone, dynamically-crafted instance that can be
+extended with properties (or methods) at runtime.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/ExpandoTest.groovy[tags=expando_property,indent=0]
+----
+
+A special case occurs when a dynamic property registers a `Closure` code block. Once being registered it can be invoked
+as it would be done with a method call.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/ExpandoTest.groovy[tags=expando_method,indent=0]
+----
+
+=== Observable list, map and set
+
+Groovy comes with observable lists, maps and sets. Each of these collections trigger `java.beans.PropertyChangeEvent` events when elements
+are added, removed or changed. Note that a `PropertyChangeEvent` is not only signaling that a certain event has
+ occurred, moreover, it holds information on the property name and the old/new value a certain property has been changed to.
+
+Depending on the type of change that has happened, observable collections might fire more specialized `PropertyChangeEvent`
+ types. For example, adding an element to an observable list fires an `ObservableList.ElementAddedEvent` event.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/ObservableTest.groovy[tags=observable_list,indent=0]
+----
+<1> Declares a `PropertyChangeEventListener` that is capturing the fired events
+<2> `ObservableList.ElementEvent` and its descendant types are relevant for this listener
+<3> Registers the listener
+<4> Creates an `ObservableList` from the given list
+<5> Triggers an `ObservableList.ElementAddedEvent` event
+
+[NOTE]
+Be aware that adding an element in fact causes two events to be triggered. The first is of type `ObservableList.ElementAddedEvent`,
+the second is a plain `PropertyChangeEvent` that informs listeners about the change of property `size`.
+
+The `ObservableList.ElementClearedEvent` event type is another interesting one. Whenever multiple
+ elements are removed, for example when calling `clear()`, it holds the elements being removed from the list.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/gdk/ObservableTest.groovy[tags=observable_list_clear,indent=0]
+----
+
+To get an overview of all the supported event types the reader is encouraged to have a look at the JavaDoc documentation
+or the source code of the observable collection in use.
+
+`ObservableMap` and `ObservableSet` come with the same concepts as we have seen for `ObservableList` in this section.
+

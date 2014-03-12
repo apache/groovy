@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 
 import java.lang.annotation.Annotation;
@@ -50,6 +51,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -260,9 +262,13 @@ public class Java5 implements VMPlugin {
                         new ClassExpression(ClassHelper.ELEMENT_TYPE_TYPE), element.name()));
             }
             node.setMember("value", elementExprs);
-        }
-        else {
-            Method[] declaredMethods = type.getDeclaredMethods();
+        } else {
+            Method[] declaredMethods;
+            try {
+                declaredMethods = type.getDeclaredMethods();
+            } catch (SecurityException se) {
+                declaredMethods = new Method[0];
+            }
             for (Method declaredMethod : declaredMethods) {
                 try {
                     Object value = declaredMethod.invoke(annotation);
@@ -386,10 +392,19 @@ public class Java5 implements VMPlugin {
         if (interfaceTypes.length == 0) {
             classNode.setInterfaces(ClassNode.EMPTY_ARRAY);
         } else {
-            Class[] interfaceClasses = clazz.getInterfaces();
             ClassNode[] ret = new ClassNode[interfaceTypes.length];
             for (int i = 0; i < interfaceTypes.length; i++) {
-                ret[i] = makeClassNode(cu, interfaceTypes[i], interfaceClasses[i]);
+                Type type = interfaceTypes[i];
+                while (!(type instanceof Class)) {
+                    ParameterizedType pt = (ParameterizedType) type;
+                    Type t2 = pt.getRawType();
+                    if (t2==type) {
+                        throw new GroovyBugError("Cannot transform generic signature of "+clazz+
+                                " with generic interface "+interfaceTypes[i]+" to a class.");
+                    }
+                    type = t2;
+                }
+                ret[i] = makeClassNode(cu, interfaceTypes[i], (Class) type);
             }
             classNode.setInterfaces(ret);
         }

@@ -20,6 +20,7 @@ import groovy.lang.IntRange;
 import groovy.lang.EmptyRange;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
+import org.codehaus.groovy.runtime.RangeInfo;
 
 import java.util.Arrays;
 import java.lang.reflect.Method;

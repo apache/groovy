@@ -192,5 +192,82 @@ class CategoryAnnotationTest extends GroovyTestCase {
             }
         """
     }
+
+    // GROOVY-6120
+    void testFieldShouldNotBeAllowedInCategory() {
+        def message = shouldFail(RuntimeException) {
+            assertScript '''
+            @Mixin(Foo)
+            class Bar {  }
+
+            @Category(Bar)
+            class Foo {
+                public x = 5
+                def foo() {
+                    x
+                }
+            }
+
+            assert new Bar().foo() == 5
+            '''
+        }
+        assert message.contains('The @Category transformation does not support instance fields')
+    }
+
+    // GROOVY-6120
+    void testPropertyShouldNotBeAllowedInCategory() {
+        def message = shouldFail(RuntimeException) {
+            assertScript '''
+            @Mixin(Foo)
+            class Bar {  }
+
+            @Category(Bar)
+            class Foo {
+                int x = 5
+                def foo() {
+                    x
+                }
+            }
+
+            assert new Bar().foo() == 5
+            '''
+        }
+        assert message.contains('The @Category transformation does not support instance properties')
+    }
+
+    // GROOVY-6120
+    void testShouldNotThrowVerifyError() {
+        assertScript '''
+            @Mixin(Foo)
+            class Bar { int x = 5 }
+
+            @Category(Bar)
+            class Foo {
+                def foo() {
+                    x
+                }
+            }
+
+            assert new Bar().foo() == 5
+        '''
+    }
+
+    // GROOVY-6120
+    void testCategoryShouldBeCompatibleWithCompileStatic() {
+        assertScript '''
+            @Mixin(Foo)
+            class Bar { int x = 5 }
+
+            @Category(Bar)
+            @groovy.transform.CompileStatic
+            class Foo {
+                def foo() {
+                    x
+                }
+            }
+
+            assert new Bar().foo() == 5
+        '''
+    }
 }
 

@@ -1,0 +1,807 @@
+= Domain-Specific Languages
+
+== Command chains
+
+Groovy lets you omit parentheses around the arguments of a
+method call for top-level statements. ``command chain'' feature extends this by allowing us to chain such
+parentheses-free method calls, requiring neither parentheses around arguments, nor dots between the chained calls.
+The general idea is that a call like `a b c d` will actually be equivalent to `a(b).c(d)`. This
+also works with multiple arguments, closure arguments, and even named arguments. Furthermore, such command chains can
+also appear on the right-hand side of assignments. Let’s have a look at some examples
+supported by this new syntax:
+
+[source,groovy]
+---------------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_1,indent=0]
+
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_2,indent=0]
+
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_3,indent=0]
+
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_4,indent=0]
+
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_5,indent=0]
+---------------------------------------------------------------------------------------------------------------
+
+It is also possible to use methods in the chain which take no arguments,
+but in that case, the parentheses are needed:
+
+[source,groovy]
+-------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_6,indent=0]
+-------------------------------------------------------------------------------------------------
+
+If your command chain contains an odd number of elements, the chain will
+be composed of method / arguments, and will finish by a final property
+access:
+
+[source,groovy]
+-------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_7,indent=0]
+-------------------------------------------------------------------------------------
+
+This command chain approach opens up interesting possibilities in terms of the much wider range of DSLs which
+can now be written in Groovy.
+
+The above examples illustrate using a command chain based DSL but not how to create one. There are various strategies
+that you can use, but to illustrate creating such a DSL, we will show a couple of examples - first using maps and Closures:
+
+[source,groovy]
+------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl1,indent=0]
+------------------------------------------------------------------------------------------------------
+
+As a second example, consider how you might write a DSL for simplifying
+one of your existing APIs. Maybe you need to put this code in front of
+customers, business analysts or testers who might be not hard-core Java
+developers. We’ll use the `Splitter` from the Google
+http://code.google.com/p/guava-libraries/[Guava libraries] project as it
+already has a nice Fluent API. Here is how we might use it out of the
+box:
+
+[source,groovy]
+----------------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl2,indent=0]
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl2_assert,indent=0]
+----------------------------------------------------------------------------------------------------------------
+
+It reads fairly well for a Java developer but if that is not your target
+audience or you have many such statements to write, it could be
+considered a little verbose. Again, there are many options for writing a
+DSL. We’ll keep it simple with Maps and Closures. We’ll first write a
+helper method:
+
+[source,groovy]
+------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl3,indent=0]
+------------------------------------------------------------------------------------------------------
+
+now instead of this line from our original example:
+
+[source,groovy]
+----------------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl2_assert,indent=0]
+----------------------------------------------------------------------------------------------------------------
+
+we can write this:
+
+[source,groovy]
+-----------------------------------------------------
+include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl3_assert,indent=0]
+-----------------------------------------------------
+
+
+== Operator overloading (TBD)
+== Script base classes (TBD)
+== Adding properties to numbers (TBD)
+[[section-delegatesto]]
+== @DelegatesTo
+
+[[TheDelegatesToannotation-DSLsmadeeasy]]
+=== Explaining delegation strategy at compile time
+
+`@groovy.lang.DelegatesTo` is a documentation and compile-time annotation aimed at:
+
+ * documenting APIs that use closures as arguments
+ * providing type information for the static type checker and compiler
+
+The Groovy language is a platform of choice for building DSLs. Using
+closures, it’s quite easy to create custom control structures, as well
+as it is simple to create builders. Imagine that you have the following
+code:
+
+[source,groovy]
+---------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
+---------------------------------------
+
+One way of implementing this is using the builder strategy, which
+implies a method, named `email` which accepts a closure as an argument.
+The method may delegate subsequent calls to an object that implements
+the `from`, `to`, `subject` and `body` methods. Again, `body` is a
+method which accepts a closure as an argument and that uses the builder
+strategy.
+
+Implementing such a builder is usually done the following way:
+
+[source,groovy]
+----------------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_method_no_delegatesto,indent=0]
+----------------------------------------------
+
+the `EmailSpec` class implements the `from`, `to`, … methods. By
+calling `rehydrate`, we’re creating a copy of the closure for which we
+set the `delegate`, `owner` and `thisObject` values. Setting the owner
+and the `this` object is not very important here since we will use the
+`DELEGATE_ONLY` strategy which says that the method calls will be
+resolved only against the delegate of the closure.
+
+[source,groovy]
+----------------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=emailspec_no_delegatesto,indent=0]
+----------------------------------------------
+
+The `EmailSpec` class has itself a `body` method accepting a closure that is cloned and executed. This is what
+we call the builder pattern in Groovy.
+
+One of the problems with the code that we’ve shown is that the user of
+the `email` method doesn’t have any information about the methods that
+he’s allowed to call inside the closure. The only possible information
+is from the method documentation. There are two issues with this: first
+of all, documentation is not always written, and if it is, it’s not
+always available (javadoc not downloaded, for example). Second, it
+doesn’t help IDEs. What would be really interesting, here, is for IDEs
+to help the developper by suggesting, once they are in the closure body,
+methods that exist on the `email` class.
+
+Moreover, if the user calls a method in the closure which is not defined
+by the `EmailSpec` class, the IDE should at least issue a warning (because
+it’s very likely that it will break at runtime).
+
+One more problem with the code above is that it is not compatible with static type checking. Type checking would let
+the user know if a method call is authorized at compile time instead of runtime, but if you try to perform type
+checking on this code:
+
+[source,groovy]
+---------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
+---------------------------------------
+
+Then the type checker will know that there’s an `email` method accepting
+a `Closure`, but it will complain for every method call *inside* the
+closure, because `from`, for example, is not a method which is defined
+in the class. Indeed, it’s defined in the `EmailSpec` class and it has
+absolutely no hint to help it knowing that the closure delegate will, at
+runtime, be of type `EmailSpec`:
+
+[source,groovy]
+---------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_nodelegatesto,indent=0]
+---------------------------------------
+
+will fail compilation with errors like this one:
+
+----
+[Static type checking] - Cannot find matching method MyScript#from(java.lang.String). Please check if the declared type is right and if the method exists.
+ @ line 31, column 21.
+                       from 'dsl-guru@mycompany.com'
+----
+
+[[TheDelegatesToannotation-DelegatesTo]]
+=== @DelegatesTo
+
+For those reasons, Groovy 2.1 introduced a new annotation
+named `@DelegatesTo`. The goal of this annotation is to solve both the
+documentation issue, that will let your IDE know about the expected
+methods in the closure body, and it will also solve the type checking
+issue, by giving hints to the compiler about what are the potential
+receivers of method calls in the closure body.
+
+The idea is to annotate the `Closure` parameter of the `email` method:
+
+[source,groovy]
+---------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto,indent=0]
+---------------------------------------
+
+What we’ve done here is telling the compiler (or the IDE) that when the
+method will be called with a closure, the delegate of this closure will
+be set to an object of type `email`. But there is still a problem: the
+defaut delegation strategy is not the one which is used in our method.
+So we will give more information and tell the compiler (or the IDE) that
+the delegation strategy is also changed:
+
+[source,groovy]
+---------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto_strategy,indent=0]
+---------------------------------------
+
+Now, both the IDE and the type checker (if you are using `@TypeChecked`)
+will be aware of the delegate and the delegation strategy. This is very
+nice because it will both allow the IDE to provide smart completion, but
+it will also remove errors at compile time that exist only because the
+behaviour of the program is normally only known at runtime!
+
+The following code will now pass compilation:
+
+[source,groovy]
+---------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_pass,indent=0]
+---------------------------------------
+
+[[TheDelegatesToannotation-DelegatesTomodes]]
+=== DelegatesTo modes
+
+`@DelegatesTo` supports multiple modes that we will describe with examples
+in this section.
+
+[[TheDelegatesToannotation-Simpledelegation]]
+==== Simple delegation
+
+In this mode, the only mandatory parameter is the _value_ which says to
+which class we delegate calls. Nothing more. We’re telling the compiler
+that the type of the delegate will *always* be of the type documented
+by `@DelegatesTo` (note that it can be a subclass, but if it is, the
+methods defined by the subclass will not be visible to the type
+checker).
+
+[source,groovy]
+-----------------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=simple_delegation,indent=0]
+-----------------------------------------------
+
+[[TheDelegatesToannotation-Delegationstrategy]]
+==== Delegation strategy
+
+In this mode, you must specify both the delegate class *and* a
+delegation strategy. This must be used if the closure will not be called
+with the default delegation strategy, which is `Closure.OWNER_FIRST`.
+
+[source,groovy]
+----------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegation_with_strategy,indent=0]
+----------------------------------------------------------------------------------
+
+[[TheDelegatesToannotation-Delegatetoparameter]]
+==== Delegate to parameter
+
+In this variant, we will tell the compiler that we are delegating to
+another parameter of the method. Take the following code:
+
+[source,groovy]
+-------------------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=exec_method_no_delegatesto,indent=0]
+-------------------------------------------------
+
+Here, the delegate which will be used is *not* created inside the `exec`
+method. In fact, we take an argument of the method and delegate to it.
+Usage may look like this:
+
+[source,groovy]
+-----------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=exec_usage,indent=0]
+-----------------------
+
+Each of the method calls are delegated to the `email` parameter. This is
+a widely used pattern which is also supported by `@DelegatesTo` using a
+companion annotation:
+
+[source,groovy]
+---------------------------------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=exec_method_with_delegatesto,indent=0]
+---------------------------------------------------------------
+
+A closure is annotated with `@DelegatesTo`, but this time, without
+specifying any class. Instead, we’re annotating another parameter
+with `@DelegatesTo.Target`. The type of the delegate is then determined
+at compile time. One could think that we are using the parameter type,
+which in this case is `Object` but this is not true. Take this code:
+
+[source,groovy]
+--------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_header,indent=0]
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_footer,indent=0]
+--------------------------------------
+
+Remember that this works out of the box *without* having to annotate
+with `@DelegatesTo`. However, to make the IDE aware of the delegate
+type, or the *type checker* aware of it, we need to add `@DelegatesTo`.
+And in this case, it will now that the `Greeter` variable is of
+type `Greeter`, so it will not report errors on the _sayHello_
+method *even if the exec method doesn’t explicitely define the target as
+of type Greeter*. This is a very powerful feature, because it prevents
+you from writing multiple versions of the same `exec` method for
+different receiver types!
+
+In this mode, the `@DelegatesTo` annotation also supports the `strategy`
+parameter that we’ve described upper.
+
+[[TheDelegatesToannotation-Multipleclosures]]
+==== Multiple closures
+
+In the previous example, the `exec` method accepted only one closure,
+but you may have methods that take multiple closures:
+
+[source,groovy]
+--------------------------------------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_no_delegatesto,indent=0]
+--------------------------------------------------------------------
+
+Then nothing prevents you from annotating each closure
+with `@DelegatesTo`:
+
+[source,groovy]
+--------------------------------------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_classes,indent=0]
+
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_header,indent=0]
+   ...
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_footer,indent=0]
+--------------------------------------------------------------------
+
+But more importantly, if you have multiple closures *and* multiple
+arguments, you can use several targets:
+
+[source,groovy]
+-----------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_multitarget,indent=0]
+
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=multitarget_test,indent=0]
+-----------------------------------------------------------------------------
+
+NOTE: At this point, you may wonder why we don’t use the parameter names as
+references. The reason is that the information (the parameter name) is
+not always available (it’s a debug-only information), so it’s a
+limitation of the JVM.
+
+==== Delegating to a generic type
+
+In some situations, it is interesting to instruct the IDE or the compiler that the delegate type will not be a parameter
+but a generic type. Imagine a configurator that runs on a list of elements:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=configure_list_method,indent=0]
+----
+
+Then this method can be called with any list like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=configure_list_usage,indent=0]
+----
+
+To let the type checker and the IDE know that the `configure` method calls the closure on each element of the list, you
+ need to use `@DelegatesTo` differently:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=configure_list_with_delegatesto,indent=0]
+----
+
+`@DelegatesTo` takes an optional `genericTypeIndex` argument that tells what is the index of the generic type that will
+be used as the delegate type. This *must* be used in conjunction with `@DelegatesTo.Target` and the index starts at 0. In
+the example above, that means that the delegate type is resolved against `List<T>`, and since the generic type at index
+0 is `T` and inferred as a `Realm`, the type checker infers that the delegate type will be of type `Realm`.
+
+NOTE: We're using a `genericTypeIndex` instead of a placeholder (`T`) because of JVM limitations.
+
+[[compilation-customizers]]
+== Compilation customizers
+=== Introduction
+
+Whether you are using `groovyc` to compile classes or a `GroovyShell`,
+for example, to execute scripts, under the hood, a _compiler configuration_ is used. This configuration holds information
+like the source encoding or the classpath but it can also be used to perform more operations like adding imports by
+default, applying AST transformations transparently or disabling global AST transformations.
+
+The goal of compilation customizers is to make those common tasks easy to implement. For that, the `CompilerConfiguration`
+class is the entry point. The general schema will always be based on the following code:
+
+[source,groovy]
+--------------------------------------------------------
+import org.codehaus.groovy.control.CompilerConfiguration
+// create a configuration
+def config = new CompilerConfiguration()
+// tweak the configuration
+config.addCompilationCustomizers(...)
+// run your script
+def shell = new GroovyShell(config)
+shell.evaluate(script)
+--------------------------------------------------------
+
+Compilation customizers must extend the _org.codehaus.groovy.control.customizers.CompilationCustomizer_ class. A customizer works:
+
+* on a specific compilation phase
+* on _every_ class node being compiled
+
+You can implement your own compilation customizer but Groovy includes some of the most common operations.
+
+=== Import customizer
+
+Using this compilation customizer, your code will have imports added
+transparently. This is in particular useful for scripts implementing a
+DSL where you want to avoid users from having to write imports. The
+import customizer will let you add all the variants of imports the
+Groovy language allows, that is:
+
+* class imports, optionally aliased
+* star imports
+* static imports, optionally aliased
+* static star imports
+
+[source,groovy]
+-----------------------------------------------------------------------------------------------------
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=import_cz,indent=0]
+-----------------------------------------------------------------------------------------------------
+
+A detailed description of all shortcuts can be found in gapi::org.codehaus.groovy.control.customizers.ImportCustomizer
+
+=== AST transformation customizer
+
+The AST transformation customizer is meant to apply AST transformations
+transparently. Unlike global AST transformations that apply on every
+class beeing compiled as long as the transform is found on classpath
+(which has drawbacks like increasing the compilation time or side
+effects due to transformations applied where they should not), the
+customizer will allow you to selectively apply a transform only for
+specific scripts or classes.
+
+As an example, let’s say you want to be able to use `@Log` in a script.
+The problem is that `@Log` is normally applied on a class node and a
+script, by definition, doesn’t require one. But implementation wise,
+scripts are classes, it’s just that you cannot annotate this implicit
+class node with `@Log`. Using the AST customizer, you have a workaround
+to do it:
+
+[source,groovy]
+--------------------------------------------------------------------------
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import groovy.util.logging.Log
+
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_simple,indent=0]
+--------------------------------------------------------------------------
+
+That’s all! Internally, the `@Log` AST transformation is applied to
+every class node in the compilation unit. This means that it will be
+applied to the script, but also to classes defined within the script.
+
+If the AST transformation that you are using accepts parameters, you can
+use parameters in the constructor too:
+
+[source,groovy]
+-----------------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_customname,indent=0]
+-----------------------------------------------------------------------------------------------------------------
+
+As the AST transformation customizers works with objects instead of AST
+nodes, not all values can be converted to AST transformation parameters.
+For example, primitive types are converted to `ConstantExpression` (that
+is `LOGGER` is converted to `new ConstantExpression('LOGGER')`, but if
+your AST transformation takes a closure as an argument, then you have to
+give it a `ClosureExpression`, like in the following example:
+
+[source,groovy]
+--------------------------------------------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_closure,indent=0]
+--------------------------------------------------------------------------------------------------------------
+
+For a complete list of options, please refer to gapi::org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+
+=== Secure AST customizer
+
+This customizer will allow the developer of a DSL to restrict the
+*grammar* of the language, to prevent users from using some constructs,
+for example. It is only ``secure'' in that sense only and it is very
+important to understand that it does *not* replace a security manager.
+The only reason for it to exist is to limit the expressiveness of the
+language. This customizer only works at the AST (abstract syntax tree)
+level, not at runtime! It can be strange at first glance, but it makes
+much more sense if you think of Groovy as a platform to build DSLs. You
+may not want a user to have a complete language at hand. In the example
+below, we will demonstrate it using an example of language that only
+allows arithmetic operations, but this customizer allows you to:
+
+* allow/disallow creation of closures
+* allow/disallow imports
+* allow/disallow package definition
+* allow/disallow definition of methods
+* restrict the receivers of method calls
+* restrict the kind of AST expressions a user can use
+* restrict the tokens (grammar-wise) a user can use
+* restrict the types of the constants that can be used in code
+
+For all those features, the secure AST customizer works using either a
+whitelist (list of elements that are allowed) *or* a blacklist (list of
+elements that are disallowed). For each type of feature (imports,
+tokens, …) you have the choice to use either a whitelist or a blacklist,
+but you can mix whitelists and blacklists for distinct features. In
+general, you will choose whitelists (disallow all, allow selected).
+
+[source,groovy]
+-------------------------------------------------------------------------------------
+import org.codehaus.groovy.control.customizers.SecureASTCustomizer
+import static org.codehaus.groovy.syntax.Types.* <1>
+
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz,indent=0]
+-------------------------------------------------------------------------------------
+<1> use for token types from gapi::org.codehaus.groovy.syntax.Types
+<2> you can use class literals here
+
+If what the secure AST customizer provides out of the box isn’t enough
+for your needs, before creating your own compilation customizer, you
+might be interested in the expression and statement checkers that the
+AST customizer supports. Basically, it allows you to add custom checks
+on the AST tree, on expressions (expression checkers) or statements
+(statement checkers). For this, you must
+implement `org.codehaus.groovy.control.customizers.SecureASTCustomizer.StatementChecker`
+or `org.codehaus.groovy.control.customizers.SecureASTCustomizer.ExpressionChecker`.
+
+Those interfaces define a single method called `isAuthorized`, returning
+a boolean, and taking a `Statement` (or `Expression`) as a parameter. It
+allows you to perform complex logic over expressions or statements to
+tell if a user is allowed to do it or not.
+
+For example, there's no predefined configuration flag in the customizer which
+will let you prevent people from using an attribute expression. Using a custom
+checker, it is trivial:
+
+[source,groovy]
+----------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz_custom,indent=0]
+----------------------------------------------------------------------
+
+Then we can make sure that this works by evaluating a simple script:
+
+[source,groovy]
+----
+new GroovyShell(config).evaluate '''
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz_custom_assert,indent=4]
+'''
+----
+<1> will fail compilation
+
+Statements can be checked using gapi::org.codehaus.groovy.control.customizers.SecureASTCustomizer.StatementChecker
+Expressions can be checked using gapi::org.codehaus.groovy.control.customizers.SecureASTCustomizer.ExpressionChecker
+
+=== Source aware customizer
+
+This customizer may be used as a filter on other customizers. The
+filter, in that case, is the `org.codehaus.groovy.control.SourceUnit`.
+For this, the source aware customizer takes another customizer as a
+delegate, and it will apply customization of that delegate only and only
+if predicates on the source unit match.
+
+`SourceUnit` gives you access to multiple things but in particular the
+file being compiled (if compiling from a file, of course). It gives
+you the potential to perform operation based on the file name, for
+example. Here is how you would create a source aware customizer:
+
+[source,groovy]
+--------------------------------------------------------------------
+import org.codehaus.groovy.control.customizers.SourceAwareCustomizer
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=source_cz,indent=0]
+--------------------------------------------------------------------
+
+Then you can use predicates on the source aware customizer:
+
+[source,groovy]
+--------------------------------------------------------------------------
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=source_cz_predicates,indent=0]
+--------------------------------------------------------------------------
+
+=== Customizer builder
+
+If you are using compilation customizers in Groovy code (like the
+examples above) then you can use an alternative syntax to customize compilation.
+A builder (`org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder`)
+simplifies the creation of customizers using a hierarchical DSL.
+
+[source,groovy]
+-----------------------------------------------------------------------------------------------------
+import org.codehaus.groovy.control.CompilerConfiguration
+import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig <1>
+
+include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=customizer_withconfig,indent=0]
+-----------------------------------------------------------------------------------------------------
+<1> static import of the builder method
+<2> configuration goes here
+
+The code sample above shows how to use the builder. A static
+method, _withConfig_, takes a closure corresponding to the builder code,
+and automatically registers compilation customizers to the
+configuration. Every compilation customizer available in the distribution
+can be configured this way:
+
+==== Import customizer
+
+[source,groovy]
+----------------------------------------------------------------------------------
+withConfig(configuration) {
+   imports { // imports customizer
+      normal 'my.package.MyClass' // a normal import
+      alias 'AI', 'java.util.concurrent.atomic.AtomicInteger' // an aliased import
+      star 'java.util.concurrent' // star imports
+      staticMember 'java.lang.Math', 'PI' // static import
+      staticMember 'pi', 'java.lang.Math', 'PI' // aliased static import
+   }
+}
+----------------------------------------------------------------------------------
+
+==== AST transformation customizer
+
+[source,groovy]
+-------------------------------------------
+withConfig(conf) {
+   ast(Log) <1>
+}
+
+withConfig(conf) {
+   ast(Log, value: 'LOGGER') <2>
+}
+-------------------------------------------
+<1> apply @Log transparently
+<2> apply @Log with a different name for the logger
+
+==== Secure AST customizer
+
+[source,groovy]
+--------------------------------------
+withConfig(conf) {
+   secureAst {
+       closuresAllowed = false
+       methodDefinitionAllowed = false
+   }
+}
+--------------------------------------
+
+==== Source aware customizer
+
+[source,groovy]
+--------------------------------------------------------------------------------------
+withConfig(configuration){
+    source(extension: 'sgroovy') {
+        ast(CompileStatic) <1>
+    }
+}
+
+withConfig(configuration){
+    source(extensions: ['sgroovy','sg']) {
+        ast(CompileStatic) <2>
+    }
+}
+
+withConfig(configuration) {
+    source(extensionValidator: { it.name in ['sgroovy','sg']}) {
+        ast(CompileStatic) <2>
+    }
+}
+
+withConfig(configuration) {
+    source(basename: 'foo') {
+        ast(CompileStatic) <3>
+    }
+}
+
+withConfig(configuration) {
+    source(basenames: ['foo', 'bar']) {
+        ast(CompileStatic) <4>
+    }
+}
+
+withConfig(configuration) {
+    source(basenameValidator: { it in ['foo', 'bar'] }) {
+        ast(CompileStatic) <4>
+    }
+}
+
+withConfig(configuration) {
+    source(unitValidator: { unit -> !unit.AST.classes.any { it.name == 'Baz' } }) {
+        ast(CompileStatic) <5>
+    }
+}
+--------------------------------------------------------------------------------------
+<1> apply CompileStatic AST annotation on .sgroovy files
+<2> apply CompileStatic AST annotation on .sgroovy or .sg files
+<3> apply CompileStatic AST annotation on files whose name is 'foo'
+<4> apply CompileStatic AST annotation on files whose name is 'foo' or 'bar'
+<5> apply CompileStatic AST annotation on files that do not contain a class named 'Baz'
+
+==== Inlining a customizer
+
+Inlined customizer allows you to write a compilation customizer
+directly, without having to create a class for it.
+
+[source,groovy]
+--------------------------------------------------------------
+withConfig(configuration) {
+    inline(phase:'CONVERSION') { source, context, classNode ->  <1>
+        println "visiting $classNode"                           <2>
+    }
+}
+--------------------------------------------------------------
+<1> define an inlined customizer which will execute at the CONVERSION phase
+<2> prints the name of the class node being compiled
+
+==== Multiple customizers
+
+Of course, the builder allows you to define multiple customizers at
+once:
+
+[source,groovy]
+---------------------------
+withConfig(configuration) {
+   ast(ToString)
+   ast(EqualsAndHashCode)
+}
+---------------------------
+
+=== Config script flag
+
+So far, we have described how you can customize compilation using
+a `CompilationConfiguration` class, but this is only possible if you
+embed Groovy and that you create your own instances
+of `CompilerConfiguration` (then use it to create a
+`GroovyShell`, `GroovyScriptEngine`, …).
+
+If you want it to be applied on the classes you compile with the normal
+Groovy compiler (that is to say with  `groovyc`, `ant` or `gradle`,
+for example), it is possible to use a compilation flag named `configscript`
+that takes a Groovy configuration script as argument.
+
+This script gives you access to the `CompilerConfiguration` instance *before*
+the files are compiled (exposed into the configuration script as a variable named `configuration`),
+so that you can tweak it.
+
+It also transparently integrates the compiler configuration builder above. As an example, let's see
+how you would activate static compilation by default on all classes.
+
+==== Static compilation by default
+
+Normally, classes in Groovy are compiled with a dynamic runtime. You can activate static compilation
+by placing an annotation named `@CompileStatic` on any class. Some people would like to have this
+mode activated by default, that is to say not having to annotated classes. Using `configscript`,
+this is possible. First of all, you need to create a file named `config.groovy` into `src/conf` with
+the following contents:
+
+[source,groovy]
+--------------------------------------
+withConfig(configuration) { <1>
+   ast(groovy.transform.CompileStatic)
+}
+--------------------------------------
+<1> _configuration_ references a `CompilerConfiguration` instance
+
+That is actually all you need. You don’t have to import the builder, it’s automatically
+exposed in the script. Then, compile your files using the following command line:
+
+---------------------------------------------------------------------------
+groovyc -configscript src/conf/config.groovy src/main/groovy/MyClass.groovy
+---------------------------------------------------------------------------
+
+We strongly recommand you to separate configuration files from classes,
+hence why we suggest using the `src/main` and `src/conf` directories above.
+
+=== AST transformations (TBD)
+== Custom type checking extensions (TBD)
+== Builders (TBD)
+=== Creating a builder (TBD)
+==== BuilderSupport (TBD)
+==== FactoryBuilderSupport (TBD)
+=== Existing builders (TBD)
+==== MarkupBuilder (TBD)
+==== StreamingMarkupBuilder (TBD)
+==== SaxBuilder (TBD)
+==== StaxBuilder (TBD)
+==== DomBuilder (TBD)
+==== NodeBuilder (TBD)
+==== JsonBuilder (TBD)
+==== StreamingJsonBuilder (TBD)
+==== SwingBuilder (TBD)
+==== AntBuilder (TBD)
+==== CliBuilder (TBD)
+==== ObjectGraphBuilder (TBD)

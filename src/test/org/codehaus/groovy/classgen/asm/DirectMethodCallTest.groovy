@@ -23,4 +23,15 @@ class DirectMethodCallTest extends AbstractBytecodeTestCase {
               "INVOKEVIRTUAL java/lang/Integer.toString ()Ljava/lang/String;"
       ])
   }
+  
+  //GROOVY-6384
+  void testClassForNameAutomaticDirectCall() {
+      ['"Foo"',1,null,"println(x)"].each { arg ->
+          assert compile (method:"run", """
+              Class.forName($arg)
+          """).hasSequence([
+              "INVOKESTATIC java/lang/Class.forName (Ljava/lang/String;)Ljava/lang/Class;"
+          ])
+      }
+  }
 }

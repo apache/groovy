@@ -16,9 +16,9 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * The 'record' command.
@@ -30,7 +30,7 @@ class RecordCommand
     extends ComplexCommandSupport
 {
     RecordCommand(final Groovysh shell) {
-        super(shell, 'record', '\\r', [ 'start', 'stop', 'status' ], 'status')
+        super(shell, ':record', ':r', [ 'start', 'stop', 'status' ], 'status')
 
         addShutdownHook {
             if (isRecording()) {
@@ -60,8 +60,7 @@ class RecordCommand
         // result maybe null
 
         if (isRecording()) {
-            // Using String.valueOf() to prevent crazy exceptions
-            writer.println("// RESULT: ${String.valueOf(result)}")
+            writer.println("// RESULT: ${InvokerHelper.toString(result)}")
             writer.flush()
         }
     }
@@ -80,7 +79,7 @@ class RecordCommand
         }
     }
 
-    def do_start = {args ->
+    def do_start = {List<String> args ->
         if (isRecording()) {
             fail("Already recording to: $file")
         }

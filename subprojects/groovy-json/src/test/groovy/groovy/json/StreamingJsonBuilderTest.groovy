@@ -15,6 +15,7 @@
  */
 package groovy.json
 
+
 /**
  * @author Tim Yates
  * @author Guillaume Laforge
@@ -23,7 +24,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
 
     void testJsonBuilderConstructor() {
         new StringWriter().with { w ->
-            def json = new StreamingJsonBuilder( w, [a: 1, b: true])
+            new StreamingJsonBuilder( w, [a: 1, b: true])
             assert w.toString() == '{"a":1,"b":true}'
         }
     }
@@ -157,6 +158,51 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             }
 
             assert w.toString() == '{"response":{"results":[1,{"a":2}]}}'
+        }
+    }
+
+    private class Author {
+        String name
+    }
+
+    void testCollectionAndClosure() {
+        def authors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
+
+        new StringWriter().with { w ->
+            def json = new StreamingJsonBuilder( w )
+            json authors, { Author author ->
+                name author.name
+            }
+
+            assert w.toString() == '[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]'
+        }
+    }
+
+    void testMethodWithCollectionAndClosure() {
+        def authors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
+
+        new StringWriter().with { w ->
+            def json = new StreamingJsonBuilder( w )
+            json.authors authors, { Author author ->
+                name author.name
+            }
+
+            assert w.toString() == '{"authors":[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]}'
+        }
+    }
+
+    void testNestedMethodWithCollectionAndClosure() {
+        def theAuthors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
+
+        new StringWriter().with { w ->
+            def json = new StreamingJsonBuilder( w )
+            json {
+                authors theAuthors, { Author author ->
+                    name author.name
+                }
+            }
+
+            assert w.toString() == '{"authors":[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Paul"}]}'
         }
     }
 
@@ -297,4 +343,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             }
         }
     }
+
+
+
 }

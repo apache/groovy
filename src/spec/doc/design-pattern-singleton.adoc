@@ -1,0 +1,140 @@
+= Singleton Pattern
+
+
+The http://en.wikipedia.org/wiki/Singleton_pattern[Singleton Pattern] is used to make sure only one object of a particular class is ever created. This can be useful when when exactly one object is needed to coordinate actions across a system; perhaps for efficiency where creating lots of identical objects would be wasteful, perhaps because a particular algorithm needing a single point of control is required or perhaps when an object is used to interact with a non-shareable resource.
+
+Weaknesses of the Singleton pattern include:
+
+- It can reduce reuse. For instance, there are issues if you want to use inheritance with Singletons. If ++SingletonB++ extends ++SingletonA++, should there be exactly (at most) one instance of each or should the creation of an object from one of the classes prohibit creation from the other. Also, if you decide both classes can have an instance, how do you override the ++getInstance()++ method which is static?
+- It is also hard to test singletons in general because of the static methods but Groovy can support that if required.
+
+== Example: The Classic Java Singleton
+
+Suppose we wish to create a class for collecting votes. Because getting the right number of votes may be very important, we decide to use the singleton pattern. There will only ever be one ++VoteCollector++ object, so it makes it easier for us to reason about that objects creation and use.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_vote_collector,indent=0]
+----
+
+Some points of interest about this code:
+
+- it has a private constructor, so no ++VoteCollector++ objects can be created in our system (except for the ++INSTANCE++ we create)
+- the ++INSTANCE++ is also private, so it can't be changed once set
+- we haven't made the updating of votes thread-safe at this point (it doesn't add to this example)
+- the vote collector instance is not lazyily created (if we never reference the class, the instance won't be created; however, as soon as we reference the class, the instance will be created even if not needed initially)
+
+We can use this singleton class in some script code as follows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_vote_collector_usage,indent=0]
+----
+
+Here we used the instance 3 times. The second usage was even in a different thread (but don't try this in a scenario with a new class loader).
+
+Running this script yields (your hashcode value will vary):
+
+----
+Collector:15959960, Votes:0
+Collector:15959960, Votes:1
+Collector:15959960, Votes:2
+----
+
+Variations to this pattern:
+
+- To support lazy-loading and multi-threading, we could just use the ++synchronized++ keyword with the ++getInstance()++ method. This has a performance hit but will work.
+- We can consider variations involving double-checked locking and the ++volatile++ keyword (for Java 5 and above), but see the limitations of this approach http://www.ibm.com/developerworks/java/library/j-dcl/index.html[here].
+
+== Example: Singleton via MetaProgramming
+
+Groovy's meta-programming capabilities allow concepts like the singleton pattern to be enacted in a far more fundamental way. This example illustrates a simple way to use Groovy's meta-programming capabilities to achieve the singleton pattern but not necessarily the most efficient way.
+
+Suppose we want to keep track of the total number of calculations that a calculator performs. One way to do that is to use a singleton for the calculator class and keep a variable in the class with the count.
+
+First we define some base classes. A ++Calculator++ class which performs calculations and records how many such calculations it performs and a ++Client++ class which acts as a facade to the calculator.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_meta_programming_classes,indent=0]
+----
+
+Now we can define and register a __MetaClass__ which intercepts all attempts to create a ++Calculator++ object and always provides a pre-created instance instead. We also register this MetaClass with the Groovy system:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_meta_programming_meta_class,indent=0]
+----
+
+Now we use instances of our ++Client++ class from within a script. The client class will attempt to create new instances of the calculator but will always get the singleton.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_meta_programming_usage,indent=0]
+----
+
+Here is the result of running this script (your hashcode values may vary):
+
+----
+Client: 7306473, Calc: 24230857, Total Calculations: 1
+Client: 31436753, Calc: 24230857, Total Calculations: 2
+----
+
+== Guice Example
+
+We can also implement the Singleton Pattern using http://code.google.com/p/google-guice/[Guice]. This example relies on annotations. Annotations are a Groovy 1.1 feature and will need to be run on a Java 5 or above JVM.
+
+Consider the Calculator example again.
+
+Guice is a Java-oriented framework that supports Interface-Oriented design. Hence we create a ++Calculator++ interface first. We can then create our ++CalculatorImpl++ implementation and a ++Client++ object which our script will interact with. The ++Client++ class isn't strictly needed for this example but allows us to show that non-singleton instances are the default. Here is the code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_guice,indent=0]
+----
+
+Note the ++@Inject++ annotation in the ++Client++ class. We can always tell right in the source code which fields will be injected.
+
+In this example we chose to use an __explicit__ binding. All of our dependencies (ok, only one in this example at the moment) are configured in the binding. The Guide injector knows about the binding and injects the dependencies as required when we create objects. For the singleton pattern to hold, you must always use Guice to create your instances. Nothing shown so far would stop you creating another instance of the calculator manually using ++new CalculatorImpl()++ which would of course violate the desired singleton behaviour.
+
+In other scenarios (though probably not in large systems), we could choose to express dependencies using annotations, such as the following example shows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_guice2,indent=0]
+----
+
+Note the ++@Singleton++ annotation on the ++CalculatorImpl++ class and the ++@ImplementedBy++ annotation in the ++Calculator++ interface.
+
+When run, the above example (using either approach) yields (your hashcode values will vary):
+
+----
+Client: 8897128, Calc: 17431955, Total Calculations: 1
+Client: 21145613, Calc: 17431955, Total Calculations: 2
+----
+
+You can see that we obtained a new client object whenever we asked for an instance but it was injected with the same calculator object.
+
+== Spring Example
+
+We can do the Calculator example again using Spring as follows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_spring,indent=0]
+----
+
+And here is the result (your hashcode values will vary):
+
+----
+Client: 29418586, Calc: 10580099, Total Calculations: 1
+Client: 14800362, Calc: 10580099, Total Calculations: 2
+----
+
+== Further information
+
+- http://www.javaworld.com/javaworld/jw-04-2003/jw-0425-designpatterns.html?page=1[Simply Singleton]
+- http://www.ibm.com/developerworks/webservices/library/co-single/index.html[Use your singletons wisely]
+- http://www.ibm.com/developerworks/java/library/j-dcl/index.html[Double-checked locking and the Singleton pattern]
+- http://crazybob.org/2007/01/lazy-loading-singletons.html[Lazy Loading Singletons]
+- http://www.yoda.arachsys.com/csharp/singleton.html[Implementing the Singleton Pattern in C#]

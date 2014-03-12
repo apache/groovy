@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,10 +126,6 @@ class SqlCompleteTest extends SqlHelperTestCase {
             results.put(it.firstname, it['lastname'])
         }
         assert results == ["Bob": "Mcwhirter"]
-    }
-
-    void testCastingNotConfusedWithNamedParameters_5111() {
-        assert !sql.preCheckForNamedParams("select * from TABLE where TEXTFIELD::integer = 3")
     }
 
     void testEachRowWithNamedOrdinalParams() {
@@ -512,6 +508,16 @@ class SqlCompleteTest extends SqlHelperTestCase {
         def args2 = [url: url2, driver: driver, properties: props]
         Sql.newInstance(args2)
         assert args2 == [url: url2, driver:  driver, properties: [user: user, password:  password]]
+    }
+
+    void testWithQuoteEmbeddedInInlineComment_Groovy5898() {
+        def query = """select *
+from FOOD
+-- An ' apostrophe
+where type=:foo
+"""
+        def rows = sql.rows(query, foo: 'drink')
+        assert rows.size() == 2
     }
 
 }

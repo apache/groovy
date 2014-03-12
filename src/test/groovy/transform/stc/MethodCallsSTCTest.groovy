@@ -188,7 +188,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             B c = new B<Integer>()
             String[] args = ['a','b','c']
             assert c.identity(args) == args
-        ''', 'Cannot call groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2#identity(java.lang.Integer[]) with arguments [java.lang.String[]]'
+        ''', 'Cannot find matching method groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2#identity(java.lang.String[])'
     }
 
     void testMethodCallFromSuperOwner() {
@@ -753,7 +753,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
             new SpreadInCtor(*['A', 'B'])
         ''',
-                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
+                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+                'Cannot find matching method SpreadInCtor#<init>(java.util.List <E extends java.lang.Object>)'
     }
 
     void testSpreadArgsForbiddenInClosureCall() {
@@ -770,10 +771,21 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             int foo(int x) { 1 }
             int foo(Integer x) { 2 }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                lookup('mce').each {
+                    def call = it.expression
+                    def target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                    assert target.parameters[0].type == int_TYPE
+                }
+            })
             int bar() {
-                foo(1)
+                mce: foo(1)
             }
-            assert bar() == 1
+            bar()
+            // commented out the next line because this is something
+            // the dynamic runtime cannot ensure
+            //assert bar() == 1
         '''
     }
 
@@ -932,6 +944,48 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             Object[] arr = list.toArray()
             println arr
         '''
+    }
+
+    void testOverloadedMethodWithVargs() {
+        assertScript '''import org.codehaus.groovy.classgen.asm.sc.support.Groovy6235SupportSub as Support
+            def b = new Support()
+            assert b.overload() == 1
+            assert b.overload('a') == 1
+            assert b.overload('a','b') == 2
+        '''
+    }
+    
+    // GROOVY-5883 and GROOVY-6270
+    void testClosureUpperBound() {
+        assertScript '''
+            class Test<T> {
+                def map(Closure<T> mapper) { 1 }
+                def m1(Closure<Boolean> predicate) {
+                    map { T it -> return predicate(it) ? it : null }
+                }
+                def m2(Closure<Boolean> predicate) {
+                    map { T it -> return predicate(it) ? it : (T) null }
+                }
+                def m3(Closure<Boolean> predicate) {
+                    Closure<T> c = { T it -> return predicate(it) ? it : null }
+                    map(c)
+                }
+            }
+            def t = new Test<String>()
+            assert t.m1{true} == 1
+            assert t.m2{true} == 1
+            assert t.m3{true} == 1
+        '''
+    }
+
+    // GROOVY-6569, GROOVY-6528
+    void testMoreExplicitErrorMessageOnStaticMethodNotFound() {
+        shouldFailWithMessages '''
+            Double.isFiniteMissing(2.0d)
+        ''', 'Cannot find matching method java.lang.Double#isFiniteMissing(double)'
+        shouldFailWithMessages '''
+            String.doSomething()
+        ''', 'Cannot find matching method java.lang.String#doSomething()'
     }
 
     static class MyMethodCallTestClass {

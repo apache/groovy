@@ -42,8 +42,8 @@ import org.codehaus.groovy.ast.ClassNode
 */
 class TransformTestHelper {
 
-    private ASTTransformation transform
-    private CompilePhase phase
+    private final ASTTransformation transform
+    private final CompilePhase phase
 
     /**
      * Creates the test helper.
@@ -85,8 +85,8 @@ class TransformTestHelper {
 */
 @groovy.transform.PackageScope class TestHarnessClassLoader extends GroovyClassLoader {
 
-    private ASTTransformation transform
-    private CompilePhase phase
+    private final ASTTransformation transform
+    private final CompilePhase phase
 
     TestHarnessClassLoader(ASTTransformation transform, CompilePhase phase) {
         this.transform = transform
@@ -94,7 +94,6 @@ class TransformTestHelper {
     }
 
     protected CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource codeSource) {
-
         CompilationUnit cu = super.createCompilationUnit(config, codeSource)
         cu.addPhaseOperation(new TestHarnessOperation(transform), phase.getPhaseNumber())
         return cu
@@ -108,7 +107,7 @@ class TransformTestHelper {
 */
 @groovy.transform.PackageScope class TestHarnessOperation extends PrimaryClassNodeOperation {
 
-    private ASTTransformation transform
+    private final ASTTransformation transform
 
     def TestHarnessOperation(transform) {
         this.transform = transform;

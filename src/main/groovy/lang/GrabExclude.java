@@ -21,7 +21,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Used to exclude an indirectly referenced artifact from the classpath.
+ * Used to exclude an indirectly referenced artifact (a transitive dependency) from the classpath.
+ * <p>
+ * Examples:<br>
+ * {@code @GrabExclude(group='mysql', module='mysql-connector-java') // group/module form}<br>
+ * {@code @GrabExclude('mysql:mysql-connector-java') // compact form}<br>
  * <p>
  * Further information about customising grape behavior can be found on the Grape documentation page:
  * <a href="http://groovy.codehaus.org/Grape">http://groovy.codehaus.org/Grape</a>.
@@ -35,19 +39,20 @@ import java.lang.annotation.Target;
         ElementType.PARAMETER,
         ElementType.TYPE})
 public @interface GrabExclude {
+
     /**
-     * The organisation or group, e.g.: "org.apache.ant"
+     * The organisation or group, e.g.: "org.apache.ant"; required unless the compact form is used.
      */
     String group() default "";
 
     /**
-     * The module or artifact, e.g.: "ant-junit"
+     * The module or artifact, e.g.: "ant-junit"; required unless the compact form is used.
      */
-    String module();
+    String module() default "";
 
     /**
-     * Allows a more compact convenience format in one of two formats,
-     * e.g.: "org.apache.ant:ant-junit" or "org.apache.ant#ant-junit".
+     * Allows to specify the group (organisation) and the module (artifact) in a two compact convenience formats,
+     * e.g.: <code>@GrabExclude('org.apache.ant:ant-junit')</code> or <code>@GrabExclude('org.apache.ant#ant-junit')</code>
      */
     String value() default "";
 }

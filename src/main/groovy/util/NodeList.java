@@ -153,7 +153,7 @@ public class NodeList extends ArrayList {
      */
     public String text() {
         String previousText = null;
-        StringBuffer buffer = null;
+        StringBuilder buffer = null;
         for (Object child : this) {
             String text = null;
             if (child instanceof String) {
@@ -166,7 +166,7 @@ public class NodeList extends ArrayList {
                     previousText = text;
                 } else {
                     if (buffer == null) {
-                        buffer = new StringBuffer();
+                        buffer = new StringBuilder();
                         buffer.append(previousText);
                     }
                     buffer.append(text);

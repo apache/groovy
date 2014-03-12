@@ -1,0 +1,28 @@
+= Pimp my Library Pattern
+
+
+The http://www.artima.com/weblogs/viewpost.jsp?thread=179766[Pimp my Library] Pattern suggests an approach for extending a library that nearly does everything that you need but just needs a little more. It assumes that you do not have source code for the library of interest.
+
+== Example
+
+Suppose we want to make use of the built-in Integer facilities in Groovy (which build upon the features already in Java). Those libraries have nearly all of the features we want but not quite everything. We may not have all of the source code to the Groovy and Java libraries so we can't just change the library. Instead we augment the library. Groovy has a number of ways to do this. One way is to use a Category.
+
+First, we'll define a suitable category.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=pimp_my_library_example,indent=0]
+----
+
+We have added two methods which augment the Integer methods by providing the ++greaterThanAll++ method. Categories follow conventions where they are defined as static methods with a special first parameter representing the class we wish to extend. The ++greaterThanAll(Integer self, others)++ static method becomes the ++greaterThanAll(other)++ instance method.
+
+We defined two versions of ++greaterThanAll++. One which works for collections, ranges etc. The other which works with a variable number of ++Integer++ arguments.
+
+Here is how you would use the category.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=pimp_my_library_example2,indent=0]
+----
+
+As you can see, using this technique you can effectively enrich an original class without having access to its source code. Moreover, you can apply different enrichments in different parts of the system as well as work with un-enriched objects if we need to.

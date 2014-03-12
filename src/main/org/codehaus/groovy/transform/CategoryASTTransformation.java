@@ -19,6 +19,7 @@ package org.codehaus.groovy.transform;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -30,11 +31,7 @@ import org.objectweb.asm.Opcodes;
 
 import groovy.lang.Reference;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Handles generation of code for the @Category annotation.
@@ -49,11 +46,14 @@ import java.util.Set;
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class CategoryASTTransformation implements ASTTransformation, Opcodes {
-    private static final VariableExpression THIS_EXPRESSION;
+    // should not use a static variable because of possible changes to node metadata
+    // which would be visible to other compilation units
+    private final VariableExpression thisExpression = createThisExpression();
 
-    static {
-        THIS_EXPRESSION = new VariableExpression("$this");
-        THIS_EXPRESSION.setClosureSharedVariable(true);
+    private static VariableExpression createThisExpression() {
+        VariableExpression expr = new VariableExpression("$this");
+        expr.setClosureSharedVariable(true);
+        return expr;
     }
 
     /**
@@ -62,20 +62,29 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
      */
     public void visit(ASTNode[] nodes, final SourceUnit source) {
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof ClassNode)) {
-            throw new RuntimeException("Internal error: expecting [AnnotationNode, ClassNode] but got: " + Arrays.asList(nodes));
+            source.getErrorCollector().addError(
+                    new SyntaxErrorMessage(new SyntaxException("@Category can only be added to a ClassNode but got: " + (nodes.length==2?nodes[1]:"nothing"),
+                        nodes[0].getLineNumber(), nodes[0].getColumnNumber()), source));
         }
 
         AnnotationNode annotation = (AnnotationNode) nodes[0];
         ClassNode parent = (ClassNode) nodes[1];
 
         ClassNode targetClass = getTargetClass(source, annotation);
+        thisExpression.setType(targetClass);
 
         final LinkedList<Set<String>> varStack = new LinkedList<Set<String>>();
+        if (!ensureNoInstanceFieldOrProperty(source, parent)) return;
+
         Set<String> names = new HashSet<String>();
         for (FieldNode field : parent.getFields()) {
             names.add(field.getName());
         }
+        for (PropertyNode field : parent.getProperties()) {
+            names.add(field.getName());
+        }
         varStack.add(names);
+
         final Reference parameter = new Reference();
         final ClassCodeExpressionTransformer expressionTransformer = new ClassCodeExpressionTransformer() {
             protected SourceUnit getSourceUnit() {
@@ -163,10 +172,10 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 if (exp instanceof VariableExpression) {
                     VariableExpression ve = (VariableExpression) exp;
                     if (ve.getName().equals("this"))
-                        return THIS_EXPRESSION;
+                        return thisExpression;
                     else {
                         if (!varStack.getLast().contains(ve.getName())) {
-                            return new PropertyExpression(THIS_EXPRESSION, ve.getName());
+                            return new PropertyExpression(thisExpression, ve.getName());
                         }
                     }
                 } else if (exp instanceof PropertyExpression) {
@@ -174,7 +183,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                     if (pe.getObjectExpression() instanceof VariableExpression) {
                         VariableExpression vex = (VariableExpression) pe.getObjectExpression();
                         if (vex.isThisExpression()) {
-                            pe.setObjectExpression(THIS_EXPRESSION);
+                            pe.setObjectExpression(thisExpression);
                             return pe;
                         }
                     }
@@ -212,6 +221,44 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 expressionTransformer.visitMethod(method);
             }
         }
+    }
+
+    private boolean ensureNoInstanceFieldOrProperty(final SourceUnit source, final ClassNode parent) {
+        boolean valid = true;
+        for (FieldNode fieldNode : parent.getFields()) {
+            if (!fieldNode.isStatic() && fieldNode.getLineNumber()>0) {
+                // if <0, probably an AST transform or internal code (like generated metaclass field, ...)
+                addUnsupportedError(fieldNode,  source);
+                valid = false;
+            }
+        }
+        for (PropertyNode propertyNode : parent.getProperties()) {
+            if (!propertyNode.isStatic() && propertyNode.getLineNumber()>0) {
+                // if <0, probably an AST transform or internal code (like generated metaclass field, ...)
+                addUnsupportedError(propertyNode, source);
+                valid = false;
+            }
+        }
+        return valid;
+    }
+
+    private static void addUnsupportedError(ASTNode node, SourceUnit unit) {
+        unit.getErrorCollector().addErrorAndContinue(
+                new SyntaxErrorMessage(
+                        new SyntaxException("The @Category transformation does not support instance "+
+                                (node instanceof FieldNode?"fields":"properties")
+                                + " but found ["+getName(node)+"]",
+                                node.getLineNumber(),
+                                node.getColumnNumber()
+
+                        ), unit
+                ));
+    }
+
+    private static String getName(ASTNode node) {
+        if (node instanceof FieldNode) return ((FieldNode) node).getName();
+        if (node instanceof PropertyNode) return ((PropertyNode) node).getName();
+        return node.getText();
     }
 
     private ClassNode getTargetClass(SourceUnit source, AnnotationNode annotation) {

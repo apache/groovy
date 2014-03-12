@@ -18,6 +18,8 @@ package org.codehaus.groovy.control.io;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 
@@ -49,5 +51,18 @@ public class StringReaderSource extends AbstractReaderSource {
    public Reader getReader() throws IOException {
        return new StringReader( string );
    }
+
+    /**
+     * Returns a Data URI (RFC 2397) containing the literal value of this source string.
+     *
+     * @return Data URI containing the literal value of this source string.
+     */
+    public URI getURI() {
+        try {
+            return new URI("data", "," + string, null);
+        } catch (URISyntaxException e) {
+            return null;
+        }
+    }
 
 }

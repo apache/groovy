@@ -72,7 +72,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = []
             list << 1
-        ''', 'Cannot find matching method java.util.List#leftShift(int)'
+        ''', 'Cannot call <T> java.util.List <String>#leftShift(T) with arguments [int]'
     }
 
     void testAddOnList2UsingLeftShift() {
@@ -119,7 +119,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list << 'Hello'
-        ''', 'Cannot find matching method java.util.LinkedList#leftShift(java.lang.String)'
+        ''', 'Cannot call <T> java.util.LinkedList <java.lang.Integer>#leftShift(T) with arguments [java.lang.String]'
     }
 
     void testAddOnListWithDiamondAndNullUsingLeftShift() {
@@ -422,7 +422,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new Test()
-        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+        ''', 'Cannot find matching method java.lang.Object#getAt(int)'
     }
 
     void testAssignmentOfNewInstance() {
@@ -484,7 +484,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<String> list = ['a','b','c']
             Collection<Integer> e = (Collection<Integer>) [1,2,3]
             boolean r = list.addAll(e)
-        ''', 'Cannot call org.codehaus.groovy.runtime.DefaultGroovyMethods#addAll(java.util.Collection <java.lang.String>, java.lang.String[]) with arguments [java.util.List <java.lang.String>, java.util.Collection <Integer>]'
+        ''', 'Cannot call <T> java.util.List <java.lang.String>#addAll(T[]) with arguments [java.util.Collection <Integer>]'
     }
 
     // GROOVY-5528
@@ -725,7 +725,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             })
             Map<Date, Date> map = new HashMap<>()
             map['foo'] = new Date()
-        ''', 'Cannot call org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map <java.util.Date, java.util.Date>, java.util.Date, java.util.Date) with arguments [java.util.HashMap <java.util.Date, java.util.Date>, java.lang.String, java.util.Date]'
+        ''', 'Cannot call <K,V> java.util.HashMap <java.util.Date, java.util.Date>#putAt(java.util.Date, java.util.Date) with arguments [java.lang.String, java.util.Date]'
     }
     void testInferDiamondForAssignmentWithDatesAndIllegalValueUsingPut() {
         shouldFailWithMessages '''
@@ -763,7 +763,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             })
             Map<Date, Date> map = new HashMap<>()
             map[new Date()] = 'foo'
-        ''', 'Cannot assign value of type java.lang.String to variable of type java.util.Date'
+        ''', 'Cannot call <K,V> java.util.HashMap <java.util.Date, java.util.Date>#putAt(java.util.Date, java.util.Date) with arguments [java.util.Date, java.lang.String]'
     }
 
     void testCallMethodWithParameterizedArrayList() {
@@ -861,7 +861,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 println arg1 == arg2
             }
             printEqual(1, 'foo')
-        ''', '#printEqual(java.lang.Object <T>, java.lang.Object <T>) with arguments [int, java.lang.String]'
+        ''', '#printEqual(T, T) with arguments [int, java.lang.String]'
     }
     void testIncompatibleGenericsForTwoArgumentsUsingEmbeddedPlaceholder() {
         shouldFailWithMessages '''
@@ -869,7 +869,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 println arg1 == arg2
             }
             printEqual(1, ['foo'])
-        ''', '#printEqual(java.lang.Object <T>, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
+        ''', '#printEqual(T, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
     }
 
     void testGroovy5748() {
@@ -969,7 +969,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
         //---------------------------
 
-        List<Double> list2 = new MyList<>()
+        List<Double> list2 = new MyList()
         list2 << 0.0d
 
         //Groovyc: [Static type checking] - Cannot assign value of type java.lang.Object to variable of type java.lang.Double
@@ -1131,6 +1131,251 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def map = new HashMap<>()
             map.put(1, 'foo')
             map.put('bar', new Date())
+        '''
+    }
+
+    // GROOVY-6232
+    void testDiamond() {
+        assertScript '''
+            class Foo<T>{  Foo(T a, T b){} }
+            def bar() {
+                Foo<Object> f = new Foo<>("a",new Object())
+            }
+            bar()
+        '''
+    }
+
+    // GROOVY-6233
+    void testConstructorArgumentsAgainstGenerics() {
+        shouldFailWithMessages '''
+            class Foo<T>{  Foo(T a, T b){} }
+            def bar() {
+                Foo<Map> f = new Foo<Map>("a",1)
+            }
+            bar()
+        ''', '[Static type checking] - Cannot find matching method Foo#<init>(java.lang.String, int)'
+    }
+    
+    // Groovy-5742
+    void testNestedGenerics() {
+        assertScript '''
+            import static Next.*
+
+            abstract class Base<A extends Base<A>> {}
+            class Done extends Base<Done> { }
+            class Next<H, T extends Base<T>> extends Base<Next<H, T>> {
+                H head; T tail
+                static Next<H, T> next(H h, T t) { new Next<H, T>(head:h, tail:t) }
+                String toString() { "Next($head, ${tail.toString()})" }
+            }
+
+            Next<Integer, Next<String, Done>> x = next(3, next("foo", new Done()))
+        '''
+    }
+
+    void testMethodLevelGenericsFromInterface() {
+        assertScript '''
+            interface A {
+                public <T> T getBean(Class<T> c)
+            }
+            interface B extends A {}
+            interface C extends B {}
+
+            void foo(C c) {
+                String s = c?.getBean("".class)
+            }
+            foo(null)
+            true
+        '''
+    }
+        
+    // Groovy-5610
+    void testMethodWithDefaultArgument() {
+        assertScript '''
+            class A{}
+            class B extends A{}
+            def foo(List<? extends A> arg, String value='default'){1}
+
+            List<B> b = new ArrayList<>()
+            assert foo(b) == 1
+            List<A> a = new ArrayList<>()
+            assert foo(a) == 1
+        '''
+
+        shouldFailWithMessages '''
+            class A{}
+            class B extends A{}
+            def foo(List<? extends A> arg, String value='default'){1}
+
+            List<Object> l = new ArrayList<>()
+            assert foo(l) == 1
+        ''',
+        'Cannot find matching method'
+    }
+    
+    void testMethodLevelGenericsForMethodCall() {
+        // Groovy-5891
+        assertScript '''
+            public <T extends List<Integer>> T foo(Class<T> type, def x) {
+                return type.cast(x)
+            }
+            def l = [1,2,3]
+            assert foo(l.class, l) == l
+        '''
+        assertScript '''
+            public <T extends Runnable> T foo(Class<T> type, def x) {
+                return type.cast(x)
+            }
+            def cl = {1}
+            assert foo(cl.class, cl) == cl
+         '''
+         assertScript '''
+            public <T extends Runnable> T foo(Class<T> type, def x) {
+                return type.cast(x) as T
+            }
+            def cl = {1}
+            assert foo(cl.class, cl) == cl
+         '''
+         //GROOVY-5885
+         assertScript '''
+            class Test {
+                public <X extends Test> X castToMe(Class<X> type, Object o) {
+                    return type.cast(o);
+                }
+            }
+            def t = new Test()
+            assert t.castToMe(Test, t)  == t
+         '''
+    }
+
+    // Groovy-5839
+    void testMethodShadowGenerics() {
+        shouldFailWithMessages '''
+            public class GoodCodeRed<T> {
+                Collection<GoodCodeRed<T>> attached = []
+                public <T> void attach(GoodCodeRed<T> toAttach) {
+                    attached.add(toAttach)
+                }
+                static void foo() {
+                    def g1 = new GoodCodeRed<Long>()
+                    def g2 = new GoodCodeRed<Integer>()
+                    g1.attach(g2);
+                }
+            }
+            GoodCodeRed.foo()
+        ''',
+        "Cannot find matching method"
+    }
+    
+    void testHiddenGenerics() {
+        // Groovy-6237
+        assertScript '''
+            class MyList extends LinkedList<Object> {}
+            List<Object> o = new MyList()
+        '''
+
+        shouldFailWithMessages '''
+            class Blah {}
+            class MyList extends LinkedList<Object> {}
+            List<Blah> o = new MyList()
+        ''','Incompatible generic argument types. Cannot assign MyList to: java.util.List <Blah>'
+        
+        // Groovy-5873
+        assertScript """
+            abstract class Parent<T> {
+                public T value
+            }
+            class Impl extends Parent<Integer> {}
+            Impl impl = new Impl()
+            Integer i = impl.value
+        """
+        
+        // GROOVY-5920
+        assertScript """
+            class Data<T> {
+              T value
+            }
+
+            class StringDataIterator implements Iterator<Data<String>> {
+              boolean hasNext() { true }
+              void    remove()  {}
+              Data<String> next() {
+                new Data<String>( value: 'tim' )
+              }
+            }
+
+            class Runner {
+              static main( args ) {
+                Data<String> elem = new StringDataIterator().next()
+                assert elem.value.length() == 3
+              }
+            }
+            Runner.main(null);
+        """
+    }
+
+    void testReturnTypeInferenceRemovalWithGenerics() {
+        assertScript '''
+            class SynchronousPromise<T> {
+                Closure<T> callable
+                Object value
+
+                SynchronousPromise(Closure<T> callable) {
+                    this.callable = callable
+                }
+
+                T get() throws Throwable {
+                    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                        assert node.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
+                    })
+                    value=callable.call()
+                    return value
+                }
+            }
+
+            def promise = new SynchronousPromise({ "Hello" })
+            promise.get()
+        '''
+    }
+    
+    // GROOVY-6455
+    // TODO reinstate (temporarily disabled)
+    void _testDelegateWithGenerics() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class IntList {
+                @Delegate List<Integer> delegate = new ArrayList<Integer>()
+            }
+            def l = new IntList()
+            assert l == []
+        '''
+    }
+
+    // GROOVY-6504
+    void testInjectMethodWithInitialValueChoosesTheCollectionVersion() {
+        assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def method = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert method.name == 'inject'
+                assert method instanceof ExtensionMethodNode
+                method = method.extensionMethodNode
+                assert method.parameters[0].type == make(Collection)
+            })
+            def result = ['a','bb','ccc'].inject(0) { int acc, String str -> acc += str.length(); acc }
+            assert  result == 6
+        '''
+    }
+
+    // GROOVY-6504
+    void testInjectMethodWithInitialValueChoosesTheCollectionVersionUsingDGM() {
+        assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def method = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert method.name == 'inject'
+                assert method.parameters[0].type == make(Collection)
+            })
+            def result = DefaultGroovyMethods.inject(['a','bb','ccc'],0, { int acc, String str -> acc += str.length(); acc })
+            assert  result == 6
         '''
     }
 

@@ -1,0 +1,1 @@
+yield 'Default text'

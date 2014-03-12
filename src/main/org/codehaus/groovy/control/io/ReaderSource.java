@@ -17,6 +17,7 @@ package org.codehaus.groovy.control.io;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URI;
 
 import org.codehaus.groovy.control.HasCleanup;
 import org.codehaus.groovy.control.Janitor;
@@ -58,4 +59,11 @@ public interface ReaderSource extends HasCleanup {
     *  Cleans up any cached resources used by getLine().
     */
     void cleanup();
+
+    /**
+     * Returns a URI for this source.
+     *
+     * @since 2.3.0
+     */
+    URI getURI();
 }

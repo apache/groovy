@@ -169,7 +169,42 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         checkReturnInObjectInitializer(node.getObjectInitializerStatements());
         node.getObjectInitializerStatements().clear();
         node.visitContents(this);
+        checkForDuplicateMethods(node);
         addCovariantMethods(node);
+    }
+    
+    private String makeDescriptorWithoutReturnType(MethodNode mn) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(mn.getName()).append(':');
+        for (Parameter p : mn.getParameters()) {
+            sb.append(p.getType()).append(',');
+        }
+        return sb.toString();
+    }
+    
+    private void checkForDuplicateMethods(ClassNode cn) {
+        HashSet<String> descriptors = new HashSet<String>();
+        for (MethodNode mn : cn.getMethods()) {
+            if (mn.isSynthetic()) continue;
+            String mySig = makeDescriptorWithoutReturnType(mn);
+            if (descriptors.contains(mySig)) {
+                if (mn.isScriptBody() || mySig.equals(scriptBodySignatureWithoutReturnType(cn))) {
+                    throw new RuntimeParserException("The method " + mn.getText() +
+                            " is a duplicate of the one declared for this script's body code", mn);
+                } else {
+                    throw new RuntimeParserException("The method " + mn.getText() +
+                            " duplicates another method of the same signature", mn);
+                }
+            }
+            descriptors.add(mySig);
+        }
+    }
+
+    private String scriptBodySignatureWithoutReturnType(ClassNode cn) {
+        for (MethodNode mn : cn.getMethods()) {
+            if (mn.isScriptBody()) return makeDescriptorWithoutReturnType(mn);
+        }
+        return null;
     }
 
     private FieldNode checkFieldDoesNotExist(ClassNode node, String fieldName) {
@@ -1214,21 +1249,20 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         ClassNode mr = overridingMethod.getReturnType();
         ClassNode omr = oldMethod.getReturnType();
         boolean equalReturnType = mr.equals(omr);
-        if (equalReturnType && normalEqualParameters) return null;
 
-        // if we reach this point we have at least one parameter or return type, that
-        // is different in its specified form. That means we have to create a bridge method!
         ClassNode testmr = correctToGenericsSpec(genericsSpec, omr);
         if (!isAssignable(mr, testmr)) {
             throw new RuntimeParserException(
                     "The return type of " +
                             overridingMethod.getTypeDescriptor() +
                             " in " + overridingMethod.getDeclaringClass().getName() +
-                            " is incompatible with " +
-                            oldMethod.getTypeDescriptor() +
+                            " is incompatible with " + testmr.getName() +
                             " in " + oldMethod.getDeclaringClass().getName(),
                     overridingMethod);
         }
+
+        if (equalReturnType && normalEqualParameters) return null;
+
         if ((oldMethod.getModifiers() & ACC_FINAL) != 0) {
             throw new RuntimeParserException(
                     "Cannot override final method " +
@@ -1253,7 +1287,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     message = " with old and new method having different primitive return types";
                 } else if (newM) {
                     message = " with new method having a primitive return type and old method not";
-                } else if (oldM) {
+                } else /* oldM */ {
                     message = " with old method having a primitive return type and new method not";
                 }
                 throw new RuntimeParserException(
@@ -1265,6 +1299,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
 
+        // if we reach this point we have at least one parameter or return type, that
+        // is different in its specified form. That means we have to create a bridge method!
         MethodNode newMethod = new MethodNode(
                 oldMethod.getName(),
                 overridingMethod.getModifiers() | ACC_SYNTHETIC | ACC_BRIDGE,

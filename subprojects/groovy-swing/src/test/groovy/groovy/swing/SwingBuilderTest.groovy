@@ -86,13 +86,11 @@ class SwingBuilderTest extends GroovySwingTestCase {
                     flowLayout: FlowLayout,
                     gridBagLayout: GridBagLayout,
                     gridLayout: GridLayout,
-//            overlayLayout: OverlayLayout,
-                    springLayout: SpringLayout,
-//            boxLayout: BoxLayout
+                    springLayout: SpringLayout
             ]
             def swing = new SwingBuilder()
             layouts.each { name, expectedLayoutClass ->
-                def frame = swing.frame() {
+                def frame = swing.frame {
                     "$name"()
                 }
                 assert frame.contentPane.layout.class == expectedLayoutClass
@@ -194,7 +192,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
             ]
             def swing = new SwingBuilder()
             widgets.each { name, expectedLayoutClass ->
-                def frame = swing.frame() {
+                def frame = swing.frame {
                     "$name"(id: "${name}Id".toString())
                 }
                 assert swing."${name}Id".class == expectedLayoutClass
@@ -263,7 +261,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
 
             def swing = new SwingBuilder()
             def buttonGroup = swing.buttonGroup()
-            def frame = swing.frame() {
+            def frame = swing.frame {
                 splitPane(id: 'hsplit', orientation: JSplitPane.HORIZONTAL_SPLIT) {
                     button(id: 'left', buttonGroup: buttonGroup)
                     button(id: 'right', buttonGroup: buttonGroup)
@@ -357,15 +355,15 @@ class SwingBuilderTest extends GroovySwingTestCase {
         testInEDT {
 
             def swing = new SwingBuilder()
-            def frame = swing.frame() {
+            def frame = swing.frame {
                 // 4 valid parameter combinations
                 button()
                 button('Text')
                 button(label: 'Label')
                 button(label: 'Label', 'Text')
             }
-            shouldFail() {
-                frame = swing.frame() {
+            shouldFail {
+                frame = swing.frame {
                     // invalid parameter
                     button(new Date())
                 }
@@ -1402,12 +1400,12 @@ class SwingBuilderTest extends GroovySwingTestCase {
 
                 // test alternate invocations...
                 swing.lookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel())
-                shouldFail() {
+                shouldFail {
                     swing.lookAndFeel(this)
                 }
                 swing.lookAndFeel('javax.swing.plaf.metal.MetalLookAndFeel')
                 swing.lookAndFeel("${'j'}avax.swing.plaf.metal.MetalLookAndFeel")
-                shouldFail() {
+                shouldFail {
                     swing.lookAndFeel('BogusLookAndFeel')
                 }
 

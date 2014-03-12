@@ -14,9 +14,6 @@ import jline.console.completer.Completer
 
 import jline.internal.Configuration;
 
-import java.io.File;
-import java.util.List;
-
 import static jline.internal.Preconditions.checkNotNull;
 
 /**

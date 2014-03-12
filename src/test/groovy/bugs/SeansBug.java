@@ -51,7 +51,7 @@ public class SeansBug extends TestSupport {
      * Converts the array of lines of text into one string with newlines
      */
     protected String asCode(String[] lines) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < lines.length; i++) {
             buffer.append(lines[i]);
             buffer.append("\n");

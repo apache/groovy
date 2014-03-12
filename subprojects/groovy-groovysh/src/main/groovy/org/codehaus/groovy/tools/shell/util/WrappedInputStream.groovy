@@ -25,7 +25,7 @@ class WrappedInputStream extends InputStream {
     InputStream wrapped;
     // observed sometimes ClassNotFoundException when not qualifying with java.io
     java.io.ByteArrayInputStream inserted = new java.io.ByteArrayInputStream();
-    protected final Logger log = Logger.create(WrappedInputStream.class)
+    protected final Logger log = Logger.create(WrappedInputStream)
 
     /**
      * Construct a new IO container using system streams.

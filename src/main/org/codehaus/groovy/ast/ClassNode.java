@@ -111,6 +111,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 map.put(key, list);
             }
         }
+        public void remove(Object key, MethodNode value) {
+            get(key).remove(value);
+        }
     }
 
     public static final ClassNode[] EMPTY_ARRAY = new ClassNode[0];
@@ -588,6 +591,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         redirect().methods.put(node.getName(), node);
     }
 
+    public void removeMethod(MethodNode node) {
+        redirect().methodsList.remove(node);
+        redirect().methods.remove(node.getName(), node);
+    }
+
     /**
      * If a method with the given name and parameters is already defined then it is returned
      * otherwise the given method is added to this node. This method is useful for
@@ -757,7 +765,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public List<Statement> getObjectInitializerStatements() {
         if (objectInitializers == null)
-            objectInitializers = new ArrayList<Statement> ();
+            objectInitializers = new LinkedList<Statement> ();
         return objectInitializers;
     }
 
@@ -1125,7 +1133,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             return componentType.toString(showRedirect)+"[]";
         }
         String ret = getName();
-        if (genericsTypes != null) {
+        if (placeholder) ret = getUnresolvedName();
+        if (!placeholder && genericsTypes != null) {
             ret += " <";
             for (int i = 0; i < genericsTypes.length; i++) {
                 if (i != 0) ret += ", ";
@@ -1145,7 +1154,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * in GenericsType calls ClassNode.toString(), which calls GenericsType.toString(), etc. 
      * @param genericsType
      * @param showRedirect
-     * @return
+     * @return the string representing the generic type
      */
     private String genericTypeAsString(GenericsType genericsType, boolean showRedirect) {
         String ret = genericsType.getName();

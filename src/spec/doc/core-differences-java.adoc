@@ -1,0 +1,200 @@
+= Differences with Java
+
+Groovy tries to be as natural as possible for Java developers. We’ve
+tried to follow the principle of least surprise when designing Groovy,
+particularly for developers learning Groovy who’ve come from a Java
+background.
+
+Here we list all the major differences between Java and Groovy.
+
+== Default imports
+
+All these packages and classes are imported by default, i.e. you do not
+have to use an explicit `import` statement to use them:
+
+* java.io.*
+* java.lang.*
+* java.math.BigDecimal
+* java.math.BigInteger
+* java.net.*
+* java.util.*
+* groovy.lang.*
+* groovy.util.*
+
+== Multi-methods
+
+In Groovy, the methods which will be invoked are chosen at runtime. This is called runtime dispatch or multi-methods. It
+means that the method will be chosen based on the types of the arguments at runtime. In Java, this is the opposite: methods
+are chosen at compile time, based on the declared types.
+
+The following code, written as Java code, can be compiled in both Java and Groovy, but it will behave differently:
+
+[source,java]
+----
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=multimethods,indent=0]
+----
+
+In Java, you would have:
+
+[source,java]
+----
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=multimethods_java,indent=0]
+----
+
+Whereas in Groovy:
+
+[source,java]
+----
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=multimethods_groovy,indent=0]
+----
+
+That is because Java will use the static information type, which is that `o` is declared as an `Object`, whereas
+Groovy will choose at runtime, when the method is actually called. Since it is called with a `String`, then the
+`String` version is called.
+
+== Array initializers
+
+In Groovy, the `{ ... }` block is reserved for closures. That means that you cannot create array literals with this
+syntax:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=arraycreate_fail,indent=0]
+----
+
+You actually have to use:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=arraycreate_success,indent=0]
+----
+
+== Package scope visibility
+
+In Groovy, omitting a modifier on a field doesn't result in a package-private field like in Java:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=packageprivate_property,indent=0]
+----
+
+Instead, it is used to create a _property_, that is to say a _private field_, an associated _getter_ and an associated
+_setter.
+
+It is possible to create a package-private field by annotating it with `@PackageScope`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=packageprivate_field,indent=0]
+----
+
+== ARM blocks
+
+ARM (Automatic Resource Management) block from Java 7 are not supported in Groovy. Instead, Groovy provides various
+methods relying on closures, which have the same effect while being more idiomatic. For example:
+
+[source,java]
+----
+Path file = Paths.get("/path/to/file");
+Charset charset = Charset.forName("UTF-8");
+try (BufferedReader reader = Files.newBufferedReader(file, charset)) {
+    String line;
+    while ((line = reader.readLine()) != null) {
+        System.out.println(line);
+    }
+
+} catch (IOException e) {
+    e.printStackTrace();
+}
+----
+
+can be written like this:
+
+[source,groovy]
+----
+new File('/path/to/file').eachLine('UTF-8') {
+   println it
+}
+----
+
+or, if you want a version closer to Java:
+
+[source,groovy]
+----
+new File('/path/to/file').withReader('UTF-8') { reader ->
+   reader.eachLine {
+       println it
+   }
+}
+----
+
+== Inner classes
+
+WARNING: The implementation of anonymous inner classes and nested classes follows the Java lead, but
+you should not take out the Java Language Spec and keep shaking the head
+about things that are different. The implementation done looks much like
+what we do for `groovy.lang.Closure`, with some benefits and some
+differences. Accessing private fields and methods for example can become
+a problem, but on the other hand local variables don’t have to be final.
+
+=== Static inner classes
+
+Here’s an example of static inner class:
+
+[source,groovy]
+---------------------
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=innerclass_1,indent=0]
+---------------------
+
+The usage of static inner classes is the best supported one. If you
+absolutely need an inner class, you should make it a static one.
+
+=== Anonymous Inner Classes
+
+[source,groovy]
+---------------------
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=innerclass_2,indent=0]
+---------------------
+
+=== Creating Instances of Non-Static Inner Classes
+
+In Java you can do this:
+
+[source,java]
+----------------------------------
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=innerclass_3_java,indent=0]
+----------------------------------
+
+Groovy doesn't support the `y.new X()` syntax. Instead, you have to write `new X(y)`, like in the code below:
+
+[source,groovy]
+----------------------------------
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=innerclass_3,indent=0]
+----------------------------------
+
+[WARNING]
+Caution though, Groovy supports calling methods with one
+parameter without giving an argument. The parameter will then have the
+value null. Basically the same rules apply to calling a constructor.
+There is a danger that you will write new X() instead of new X(this) for
+example. Since this might also be the regular way we have not yet found
+a good way to prevent this problem.
+
+== Lambdas
+
+Java 8 supports lambdas and method references:
+
+[source,groovy]
+----
+Runnable run = () -> System.out.println("Run");
+list.forEach(System.out::println);
+----
+
+Java 8 lambdas can be more or less considered as anonymous inner classes. Groovy doesn't support that syntax, but has closures
+instead:
+
+[source,groovy]
+----
+Runnable run = { println 'run' }
+list.each { println it } // or list.each(this.&println)
+----

@@ -43,6 +43,10 @@ class InteractiveShellRunner
     WrappedInputStream wrappedInputStream
 
     InteractiveShellRunner(final Groovysh shell, final Closure prompt) {
+        this(shell, prompt, 0)
+    }
+
+    InteractiveShellRunner(final Groovysh shell, final Closure prompt, int metaclass_completion_prefix_length) {
         super(shell)
         
         this.prompt = prompt
@@ -57,7 +61,8 @@ class InteractiveShellRunner
         reader.addCompleter(this.completer)
 
         reader.addCompleter(new GroovySyntaxCompletor(shell,
-                new ReflectionCompletor(shell),
+                new ReflectionCompletor(shell,
+                        metaclass_completion_prefix_length),
                 [new KeywordSyntaxCompletor(),
                         new VariableSyntaxCompletor(shell),
                         new CustomClassSyntaxCompletor(shell),
@@ -66,8 +71,8 @@ class InteractiveShellRunner
     }
     
     void run() {
-        for (command in shell.registry) {
-            completer << command
+        for (Command command in shell.registry.commands()) {
+            completer.add(command)
         }
 
         // Force things to become clean
@@ -152,7 +157,7 @@ class CommandsMultiCompleter
     
     private boolean dirty = false
     
-    def leftShift(final Command command) {
+    def add(final Command command) {
         assert command
         
         //

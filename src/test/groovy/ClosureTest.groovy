@@ -15,6 +15,8 @@
  */
 package groovy
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+
 import static groovy.lang.Closure.IDENTITY
 
 /** 
@@ -390,9 +392,134 @@ class ClosureTest extends GroovyTestCase {
             '''
         }
     }
+
+    // GROOVY-5875
+    void testStaticInnerClassDelegateFirstAccess() {
+        assertScript '''
+             class Owner {
+                 Object delegate
+                 String ownerProp = "owner"
+
+                 void run() {
+                     def c = {
+                         delegateProp = ownerProp
+                     }
+                     c.delegate = delegate
+                     c.resolveStrategy = Closure.DELEGATE_FIRST
+                     c()
+                     assert c.delegate.delegateProp == ownerProp
+                 }
+             }
+
+             class Container {
+                 static class Delegate {
+                      String delegateProp = "delegate"
+                 }
+             }
+
+             def owner = new Owner()
+             owner.delegate = new Container.Delegate()
+             owner.run()
+        '''
+    }
+
+    void testStaticInnerClassOwnerFirstAccess() {
+        assertScript '''
+             class Owner {
+                 Object delegate
+                 String ownerProp = "owner"
+
+                 void run() {
+                     def c = {
+                         delegateProp = ownerProp
+                     }
+                     c.delegate = delegate
+                     c.resolveStrategy = Closure.OWNER_FIRST
+                     c()
+                     assert c.delegate.delegateProp == ownerProp
+                 }
+             }
+
+             class Container {
+                 static class Delegate {
+                      String delegateProp = "delegate"
+                 }
+             }
+
+             def owner = new Owner()
+             owner.delegate = new Container.Delegate()
+             owner.run()
+        '''
+    }
+
+    void testStaticInnerClassOwnerWithPropertyMissingImplementation() {
+        def gcl = new GroovyClassLoader()
+        def msg = shouldFail MultipleCompilationErrorsException, {
+            gcl.parseClass('''
+                public class ClosureTestA {
+                    static class ClosureTestB {
+                        def propertyMissing(String myName, Object myValue) {
+                            return myValue
+                        }
+
+                        def propertyMissing(String myName) {
+                            return 42
+                        }
+
+                        def methodMissing(String myName, Object myArgs) {
+                            return 42
+                        }
+                    }
+                }
+            ''')
+        }
+
+        assert msg.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
+        assert msg.contains('"propertyMissing" implementations are not supported on static inner classes as a synthetic version of "propertyMissing" is added during compilation for the purpose of outer class delegation.')
+    }
+
+    void testInnerClassOwnerWithPropertyMissingImplementation() {
+        def gcl = new GroovyClassLoader()
+        gcl.parseClass('''
+                public class ClosureTestA {
+                    class ClosureTestB {
+                        def propertyMissing(String myName, Object myValue) {
+                            return myValue
+                        }
+
+                        def propertyMissing(String myName) {
+                            return 42
+                        }
+
+                        def methodMissing(String myName, Object myArgs) {
+                            return 42
+                        }
+                    }
+                }
+        ''')
+    }
+
+    void testStaticInnerClassHierarchyWithMethodMissing() {
+        def gcl = new GroovyClassLoader()
+        def msg = shouldFail MultipleCompilationErrorsException, {
+            gcl.parseClass('''
+                    public class ClosureTestA {
+                        static class ClosureTestB {
+                            def methodMissing(String myName, Object myArgs) {
+                                return 42
+                            }
+                        }
+
+                        static class ClosureTestB1 extends ClosureTestB {
+
+                        }
+                    }
+            ''')
+        }
+        assert msg.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
+    }
 }
 
 public class TinyAgent {
     int x
 }
-

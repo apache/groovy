@@ -20,16 +20,16 @@ import javax.swing.JApplet
 /**
  * ConsoleApplet
  */
-public class ConsoleApplet extends JApplet {
+class ConsoleApplet extends JApplet {
 
     Console console
 
-    public void start() {
+    void start() {
         console = new Console()
         console.run this
     }
 
-    public void stop() {
+    void stop() {
         console.exit()
     }
 }

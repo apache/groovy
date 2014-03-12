@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
+
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.objectweb.asm.*;
@@ -26,6 +27,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -148,7 +151,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             Collections.addAll(this.classList, interfaces);
         }
         this.proxyName = proxyName();
-        this.loader = proxyLoader!=null?new InnerLoader(proxyLoader):findClassLoader(superClass);
+        this.loader = proxyLoader!=null?createInnerLoader(proxyLoader):findClassLoader(superClass);
         this.emptyBody = emptyBody;
 
         // generate bytecode
@@ -167,11 +170,19 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         cachedNoArgConstructor = constructor;
     }
+    
+    private static InnerLoader createInnerLoader(final ClassLoader parent) {
+        return AccessController.doPrivileged(new PrivilegedAction<InnerLoader>() {
+            public InnerLoader run() {
+                return new InnerLoader(parent);
+            }
+        });
+    }
 
     private InnerLoader findClassLoader(Class clazz) {
         ClassLoader cl = clazz.getClassLoader();
         if (cl==null) cl = this.getClass().getClassLoader();
-        return new InnerLoader(cl);
+        return createInnerLoader(cl);
     }
 
     private static Set<String> createDelegateMethodList(Class superClass, Class[] interfaces) {

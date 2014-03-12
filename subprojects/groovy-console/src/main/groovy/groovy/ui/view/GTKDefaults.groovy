@@ -20,11 +20,16 @@ import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
 import org.codehaus.groovy.runtime.InvokerHelper
 
+import java.util.prefs.Preferences
+
 build(Defaults)
 
+def prefs = Preferences.userNodeForPackage(groovy.ui.Console)
+def fontFamily = prefs.get("fontName", "DejaVu Sans Mono")
+
 // change font to DejaVu Sans Mono, much clearer
-styles.regular[StyleConstants.FontFamily] = 'DejaVu Sans Mono'
-styles[StyleContext.DEFAULT_STYLE][StyleConstants.FontFamily] = 'DejaVu Sans Mono'
+styles.regular[StyleConstants.FontFamily] = fontFamily
+styles[StyleContext.DEFAULT_STYLE][StyleConstants.FontFamily] = fontFamily
 
 // possibly change look and feel
 if (System.properties['java.version'] =~ /^1\.5/) {

@@ -28,9 +28,7 @@ allprojects {
 }
 
 idea {
-
     project {
-
         ipr {
             withXml { provider ->
                 def node = provider.asNode()
@@ -46,8 +44,8 @@ idea {
 
                 // license header
                 def copyrightManager = node.component.find { it.'@name' == 'CopyrightManager' }
-                copyrightManager.@default = "ASL2"
-                def aslCopyright = copyrightManager.copyright.find { it.option.find { it.@name == "myName" }?.@value == "ASL2" }
+                copyrightManager.@default = 'ASL2'
+                def aslCopyright = copyrightManager.copyright.find { it.option.find { it.@name == 'myName' }?.@value == 'ASL2' }
                 if (aslCopyright == null) {
                     appendNode(copyrightManager, '''
                       <copyright>

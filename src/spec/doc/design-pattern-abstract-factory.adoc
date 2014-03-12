@@ -1,0 +1,76 @@
+= Abstract Factory Pattern
+
+The http://en.wikipedia.org/wiki/Abstract_factory_pattern[Abstract Factory Pattern] provides a way to encapsulate a group of individual factories that have a common theme. It embodies the intent of a normal factory, i.e. remove the need for code using an interface to know the concrete implementation behind the interface, but applies to a set of interfaces and selects an entire family of concrete classes which implement those interfaces.
+
+As an example, I might have interfaces Button, TextField and Scrollbar. I might have WindowsButton, MacButton, FlashButton as concrete classes for Button. I might have WindowsScrollBar, MacScrollBar and FlashScrollBar as concrete implementations for ScrollBar. Using the Abstract Factory Pattern should allow me to select which windowing system (i.e. Windows, Mac, Flash) I want to use once and from then on should be able to write code that references the interfaces but is always using the appropriate concrete classes (all from the one windowing system) under the covers.
+
+== Example
+
+Suppose we want to write a game system. We might note that many games have very similar features and control.
+
+We decide to try to split the common and game-specific code into separate classes.
+
+First let's look at the game-specific code for a http://en.wikipedia.org/wiki/Two-Up[Two-up] game:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=abstract_factory_example1,indent=0]
+----
+
+Now, let's look at the game-specific code for a number guessing game:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=abstract_factory_example2,indent=0]
+----
+
+Now, let's write our factory code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=abstract_factory_code,indent=0]
+----
+
+The important aspect of this factory is that it allows selection of an entire family of concrete classes.
+
+Here is how we would use the factory:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=abstract_factory_usage,indent=0]
+----
+
+Note that the first line configures which family of concrete game classes we will use. It's not important that we selected which family to use by using the factory property as shown in the first line. Other ways would be equally valid examples of this pattern. For example, we may have asked the user which game they wanted to play or determined which game from an environment setting.
+
+With the code as shown, the game might look like this when run:
+
+----
+Welcome to the twoup game, you start with $1000
+You have 1000, how much would you like to bet?
+300
+Draw
+You have 1000, how much would you like to bet?
+700
+You win
+You have 1700, how much would you like to bet?
+1700
+You lose
+Sorry, you have no money left, goodbye
+----
+
+If we change the first line of the script to ++GameFactory.factory = guessFactory++, then the sample run might look like this:
+
+-------------------------------------------------------------------
+Welcome to the guessing game, my secret number is between 1 and 100
+Enter a number between 1 and 100
+75
+Enter a number between 1 and 75
+35
+Enter a number between 1 and 35
+15
+Enter a number between 1 and 15
+5
+Enter a number between 5 and 15
+10
+Correct
+-------------------------------------------------------------------

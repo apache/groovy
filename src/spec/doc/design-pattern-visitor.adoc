@@ -1,0 +1,93 @@
+= Visitor Pattern
+
+
+The http://en.wikipedia.org/wiki/Visitor_pattern[Visitor Pattern] is one of those well-known but not often used patterns. I think this is strange, as it is really a nice thing.
+
+The goal of the pattern is to separate an algorithm from an object structure. A practical result of this separation is the ability to add new operations to existing object structures without modifying those structures.
+
+== Simple Example
+
+This example considers how to calculate the bounds of shapes (or collections of shapes). Our first attempt uses the traditional visitor pattern. We will see a more Groovy way to do this shortly.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=visitor_simple_example,indent=0]
+----
+
+That took quite a bit of code.
+
+We can improve the clarity of our code (and make it about half the size) by making use of Groovy Closures as follows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=visitor_simple_example2,indent=0]
+----
+
+== Advanced Example
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=visitor_advanced_example,indent=0]
+----
+
+If we now use ++NodeType1Counter++ on a tree like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=visitor_advanced_example2,indent=0]
+----
+
+Then we have one ++NodeType1++ object as root and one of the children is also a ++NodeType1++ instance. The other child is a ++NodeType2++ instance. That means using ++NodeType1Counter++ here should count 2 ++NodeType1++ objects.
+
+=== Why to use this
+
+As you can see here very good we have a visitor that has a state while the tree of objects is not changed. That's pretty useful in different areas, for example you could have a visitor counting all node types, or how many different types are used, or you could use methods special to the node to gather information about the tree and much more.
+
+=== What happens if we add a new type?
+
+In this case we have to do much work.. we have to change Visitor to accept the new type, we have to write the new type itself of course and we have to change every Visitor we have already implemented. After very few changes you will modify all your Visitors to extend a default implementation of the visitor, so you don't need to change every Visitor each time you add a new type.
+
+=== What if we want to have different iteration patterns?
+
+Then you have a problem. since the node describes how to iterate, you have no influence and stop iteration at a point or change the order. So maybe we should change this a little to this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=visitor_advanced_example3,indent=0]
+----
+
+Some small changes but with big effect... the visitor is now recursive and tells me how to iterate. The implementation in the Nodes is minimized to ++visitor.visit(this)++, ++DefaultVisitor++ is now able to catch the new types, we can stop iteration by not delegating to super. Of course the big disadvantage now is that it is no longer iterative, but you can't get all the benefits.
+
+=== Make it Groovy
+
+The question now is how to make that a bit more Groovy. Didn't you find this ++visitor.visit(this)++ strange? Why is it there? The answer is to simulate double dispatch. In Java the compile time type is used, so when I ++visitor.visit(children[i])++ then the compiler won't be able to find the correct method, because ++Visitor++ does not contain a method ++visit(Visitable)++. And even if it would, we would like to visit the more special methods with ++NodeType1++ or ++NodeType2++.
+
+Now Groovy is not using the static type, Groovy uses the runtime type. This means I could do ++visitor.visit(children[i])++ directly. Hmm.. since we minimized the accept method to just do the double dispatch part and since the runtime type system of Groovy will already cover that.. do we need the accept method? I think you can guess that I would answer no. But we can do more. We had the disadvantage of not knowing how to handle unknown tree elements. We had to extends the interface ++Visitor++ for that, resulting in changes to ++DefaultVisitor++ and then we have the task to provide a useful default like iterating the node or not doing anything at all. Now with Groovy we can catch that case by adding a ++visit(Visitable)++ method that does nothing. That would be the same in Java btw.
+
+But don't let us stop here... do we need the Visitor interface? If we don't have the accept method, then we don't need the ++Visitor++ interface at all. So the new code would be:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=visitor_advanced_example4,indent=0]
+----
+
+Looks like we saved a few lines of code here. But we made more. The Visitable nodes now do not refer to any ++Visitor++ class or interface. For me this is the best level of separation you could get here. But do we really need to stop here? No. Let us change the ++Visitable++ interface a little and let it return the children we want to visit next. This allows us a general iteration method.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=visitor_advanced_example5,indent=0]
+----
+
+++DefaultVisitor++ now looks a bit different. I added a ++doIteration++ method that will get the children it should iterate over and then call visit on each element. Per default this will call ++visit(Visitable)++ which then iterates over the children of this child. I changed ++Visitable++ to ensure that any node will be able to return children (even if empty). I didn't have to change the ++NodeType1++ and ++NodeType2++ class, because the way the children filed was defined already made them a property, which means Groovy is so nice to generate a get method for us. No the really interesting part is ++NodeType1Counter++, it is interesting because we have not changed it. ++super.visit(n1)++ will now call ++visit(Visitable)++ which will call ++doIteration++ which will start the next level of iteration. So no change. But ++visit(it)++ will call ++visit(NodeType1)++ if it is of type ++NodeType1++. In fact we don't need the ++doIteration++ method, we could do that in ++visit(Visitable)++ too, but I thought this variant is better, because it allows us to write a new ++Visitor++ that overwrites visit(++Visitable++) for error cases which of course means we must not do ++super.visit(n1)++ but ++doIteration(n1)++.
+
+=== Summary
+
+In the end we got ~40% less code, a robust and stable architecture and we completely removed the Visitor from the Visitable. I heard about visitor implementations based on Reflection to get a more generic version. Well, with this you see there is really no need to do such thing. If we add new types we don't need to change anything. It is said that the visitor pattern doesn't fit extreme programming techniques very well because you need to make changes to so many classes all the time. I think I proved that this is because of Java not because the pattern is bad or something.
+
+There are variants of the Visitor pattern, like the acyclic visitor pattern, that tries to solve the problem of adding new node types with special visitors. I don't like that very much, it works with casts, catches the ++ClassCastException++ and other nasty things. In the end it tries to solve something we don't even get with the Groovy version.
+
+One more thing. ++NodeType1Counter++ could be implemented in Java as well. Groovy will recognize the visit methods and call them as needed because ++DefaultVisitor++ is still Groovy and does all the magic.
+
+== Further Information
+
+- http://se.ethz.ch/~meyer/publications/computer/visitor.pdf[Componentization: the Visitor example]

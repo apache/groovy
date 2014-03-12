@@ -17,7 +17,7 @@
     boolean hasElements = classDoc.isAnnotationType() && visibleFields
     boolean methodSummaryShown = visibleMethods
     boolean fieldSummaryShown = hasFields
-    boolean hasEnumConstants = classDoc.enumConstants().findAll(isVisible)
+    boolean hasEnumConstants = classDoc.enumConstants()
     def dolink = { t, boolean b ->
         boolean isArray = false
         if (!t || t instanceof String) {
@@ -256,7 +256,7 @@ ${classDoc.commentText()}
     <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
     <B>Enum Constant Summary</B></FONT></TH>
     </TR>
-    <% for (ec in classDoc.enumConstants().findAll(isVisible)) { %>
+    <% for (ec in classDoc.enumConstants()) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
         <TD>
             <CODE><B><A HREF="#${ec.name()}">${ec.name()}</A></B></CODE>

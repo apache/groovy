@@ -21,7 +21,7 @@ import javax.swing.JInternalFrame
 class InternalFrameFactory extends groovy.swing.factory.RootPaneContainerFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (FactoryBuilderSupport.checkValueIsType(value, name, JInternalFrame.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, JInternalFrame)) {
             return value;
         }
         JInternalFrame frame = new JInternalFrame();

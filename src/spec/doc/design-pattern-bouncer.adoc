@@ -1,0 +1,53 @@
+= Bouncer Pattern
+
+The http://www.c2.com/cgi/wiki?BouncerPattern[Bouncer Pattern] describes usage of a method whose sole purpose is to either throw an exception (when particular conditions hold) or do nothing. Such methods are often used to defensively guard pre-conditions of a method.
+
+When writing utility methods, you should always guard against faulty input arguments. When writing internal methods, you may be able to ensure that certain pre-conditions always hold by having sufficient unit tests in place. Under such circumstances, you may reduce the desirability to have guards on your methods.
+
+Groovy differs from other languages in that you frequently use the ++assert++ method within your methods rather than having a large number of utility checker methods or classes.
+
+== Null Checking Example
+
+We might have a utility method such as:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_null_check,indent=0]
+----
+
+And we would use it like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_null_check_usage,indent=0]
+----
+
+But a more Groovy way to do this would simply be like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_null_check_usage_groovy_way,indent=0]
+----
+
+== Validation Example
+
+As an alternative example, we might have this utility method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_validation,indent=0]
+----
+
+And we would use it like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_validation_usage,indent=0]
+----
+
+But with Groovy we could just as easily use:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_validation_usage_groovy_way,indent=0]
+----

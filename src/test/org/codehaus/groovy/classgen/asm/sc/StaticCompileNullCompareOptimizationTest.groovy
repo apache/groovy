@@ -1,6 +1,7 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
 
 /**
  * Unit tests for static compilation: null test optimizations.
@@ -104,6 +105,9 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
                 }
             }
         ''')
+        if (Boolean.valueOf(System.getProperty('groovy.target.indy','false'))) {
+            return
+        }
         assert bytecode.hasStrictSequence(['ALOAD 1', 'DUP', 'IFNONNULL', 'POP', 'ICONST_0', 'GOTO', 'L1', 'INVOKEVIRTUAL', 'L2', 'IFEQ'])
     }
 
@@ -116,11 +120,24 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
                 }
             }
         ''')
-        assert bytecode.hasStrictSequence([
+        if (config.optimizationOptions.indy) {
+            assert bytecode.hasStrictSequence([
                 'ALOAD 1',
-                'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
+                'INVOKEDYNAMIC cast(Ljava/lang/String;)Z',
+                '',
+                '',
+                '',
+                '',
+                ']',
                 'IFEQ'
-        ])
+            ])
+        } else {
+            assert bytecode.hasStrictSequence([
+                    'ALOAD 1',
+                    'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
+                    'IFEQ'
+            ])
+        }
     }
 
     void testGroovyTruthOptimizationWithObjectShouldNotBeTriggered() {
@@ -132,11 +149,24 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
                 }
             }
         ''')
-        assert bytecode.hasStrictSequence([
+        if (config.optimizationOptions.indy) {
+            assert bytecode.hasStrictSequence([
                 'ALOAD 1',
-                'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
+                'INVOKEDYNAMIC cast(Ljava/lang/Object;)Z',
+                '',
+                '',
+                '',
+                '',
+                ']',
                 'IFEQ'
-        ])
+            ])
+        } else {
+            assert bytecode.hasStrictSequence([
+                    'ALOAD 1',
+                    'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
+                    'IFEQ'
+            ])
+        }
     }
 
     void testGroovyTruthOptimizationWithFinalClass() {
@@ -185,11 +215,24 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
                 }
             }
         ''')
-        assert bytecode.hasStrictSequence([
+        if (config.optimizationOptions.indy) {
+            assert bytecode.hasStrictSequence([
                 'ALOAD 1',
-                'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
+                'INVOKEDYNAMIC cast(LA$B;)Z',
+                '',
+                '',
+                '',
+                '',
+                ']',
                 'IFEQ'
-        ])
+            ])
+        } else {
+            assert bytecode.hasStrictSequence([
+                    'ALOAD 1',
+                    'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
+                    'IFEQ'
+            ])
+        }
     }
 
     void testCompare() {

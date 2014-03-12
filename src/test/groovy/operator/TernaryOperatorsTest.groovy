@@ -31,12 +31,15 @@ class TernaryOperatorsTest extends GroovyTestCase {
         def y = a!=1 ? a!=2 : a!=1
         assert y == false
     }
-    
+
     void testElvisOperator() {
         def a = 1
         def x = a?:2
         assert x==a
-        
+        x = a
+          ?: 2
+        assert x==a
+
         a = null
         x = a?:2
         assert x==2
@@ -46,6 +49,9 @@ class TernaryOperatorsTest extends GroovyTestCase {
         def ret = list[index++]?:"something else"
         assert index==1
         assert ret=='a'
+        def ret2 = list[index]
+          ?: "something else entirely"
+        assert ret2 == 'b'
     }
     
     void testForType() {
@@ -77,6 +83,11 @@ class TernaryOperatorsTest extends GroovyTestCase {
         bar = 0 ?
             "moo" :
             "cow"
+        assert bar == 'cow'
+
+        bar = 0
+            ? "moo"
+            : "cow"
         assert bar == 'cow'
 
         bar = 0 ? "moo"         \

@@ -123,8 +123,8 @@ abstract class BuilderTestSupport extends GroovyTestCase {
         def list = ['first', 'second', 'third']
 
         def m = {
-            ELEM1() {
-                list.each() {r ->
+            ELEM1 {
+                list.each {r ->
                     ELEM2(id: r, type: '2') {
                         ELEM3A(id: r)
                         ELEM3B(type: '3', 'text')

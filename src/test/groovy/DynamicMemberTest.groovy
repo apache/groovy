@@ -45,5 +45,11 @@ class DynamicMemberTest extends GroovyTestCase {
     cl = this.&"$name"
     assert cl("String") == "String"
   }
-  
+
+  void testNewLine() {
+      def x = 1
+      def y = x
+               .&toString
+      assert y() == '1'
+  }
 }

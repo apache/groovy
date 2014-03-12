@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Note: This annotation is currently experimental! Use at your own risk!
- * <p>
  * Class annotation used to assist in the creation of {@code Cloneable} classes.
  * The {@code @AutoClone} annotation instructs the compiler to execute an
  * AST transformation which adds a public {@code clone()} method and adds
@@ -228,8 +226,8 @@ import java.lang.annotation.Target;
  * </ul>
  *
  * @author Paul King
- * @see groovy.transform.AutoCloneStyle
- * @see groovy.transform.AutoExternalize
+ * @see AutoCloneStyle
+ * @see ExternalizeMethods
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
@@ -274,5 +272,5 @@ public @interface AutoClone {
     /**
      * Style to use when cloning.
      */
-    groovy.transform.AutoCloneStyle style() default AutoCloneStyle.CLONE;
+    AutoCloneStyle style() default AutoCloneStyle.CLONE;
 }

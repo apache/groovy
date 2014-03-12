@@ -17,6 +17,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
+
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.reflection.ParameterTypes;
@@ -276,7 +277,10 @@ public class MetaClassHelper {
         if (parameter.getTheClass() == argument) return 0;
 
         if (parameter.isInterface()) {
-            return getMaximumInterfaceDistance(argument, parameter.getTheClass()) << INTERFACE_SHIFT;
+            int dist = getMaximumInterfaceDistance(argument, parameter.getTheClass()) << INTERFACE_SHIFT;
+            if (dist>-1 || !(argument!=null && Closure.class.isAssignableFrom(argument))) {
+                return dist;
+            } // else go to object case
         }
 
         long objectDistance = 0;
@@ -311,7 +315,7 @@ public class MetaClassHelper {
             if (clazz.isPrimitive()) {
                 objectDistance += 2;
             } else {
-                while (clazz != Object.class) {
+                while (clazz != Object.class && clazz != null) {
                     clazz = clazz.getSuperclass();
                     objectDistance += 2;
                 }
@@ -489,9 +493,12 @@ public class MetaClassHelper {
     }
 
     /**
+     * Warning: this method does not choose properly if multiple methods with
+     * the same distance are encountered
      * @param methods the methods to choose from
      * @return the method with 1 parameter which takes the most general type of
      *         object (e.g. Object) ignoring primitive types
+     * @deprecated
      */
     public static Object chooseMostGeneralMethodWith1NullParam(FastArray methods) {
         // let's look for methods with 1 argument which matches the type of the
@@ -795,7 +802,7 @@ public class MetaClassHelper {
         String logname = "methodCalls." + className + "." + methodName;
         Logger objLog = Logger.getLogger(logname);
         if (!objLog.isLoggable(Level.FINER)) return;
-        StringBuffer msg = new StringBuffer(methodName);
+        StringBuilder msg = new StringBuilder(methodName);
         msg.append("(");
         if (arguments != null) {
             for (int i = 0; i < arguments.length;) {

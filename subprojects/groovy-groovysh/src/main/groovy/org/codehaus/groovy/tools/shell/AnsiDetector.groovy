@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,13 @@
 
 package org.codehaus.groovy.tools.shell
 
-
-import jline.Terminal
+import jline.TerminalFactory
 
 import java.util.concurrent.Callable
 
-class AnsiDetector
-implements Callable<Boolean>
+class AnsiDetector implements Callable<Boolean>
 {
     public Boolean call() throws Exception {
-        return Terminal.getTerminal().isANSISupported()
+        return TerminalFactory.create().isAnsiSupported()
     }
 }

@@ -314,7 +314,7 @@ public class CallSiteWriter {
         if (numberOfArguments > 4) {
             final String createArraySignature = getCreateArraySignature(numberOfArguments);
             mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", createArraySignature);
-            //TODO: use pregenerated Object[]
+            //TODO: use pre-generated Object[]
             operandStack.replace(ClassHelper.OBJECT_TYPE.makeArray(),numberOfArguments);
             operandsToReplace = operandsToReplace-numberOfArguments+1;
         }

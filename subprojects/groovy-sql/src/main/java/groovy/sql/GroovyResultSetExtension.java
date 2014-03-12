@@ -69,7 +69,7 @@ public class GroovyResultSetExtension extends GroovyObjectSupport {
 
     public String toString() {
         try {
-            StringBuffer sb = new StringBuffer("[");
+            StringBuilder sb = new StringBuilder("[");
             ResultSetMetaData metaData = resultSet.getMetaData();
             int count = metaData.getColumnCount();
             for (int i = 1; i <= count; i++) {

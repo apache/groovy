@@ -1,4 +1,4 @@
-package somepackage
+package stubgenerator.propertyUsageFromJava.somepackage
 
 class GroovyPogo {
     String name

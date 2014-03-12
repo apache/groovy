@@ -776,7 +776,7 @@ public abstract class FactoryBuilderSupport extends Binding {
             return explicitResult.get();
         } else {
             try {
-                return dispathNodeCall(name, args);
+                return dispatchNodeCall(name, args);
             } catch(MissingMethodException mme) {
                 if(mme.getMethod().equals(methodName) && methodMissingDelegate != null) {
                     return methodMissingDelegate.call(new Object[]{methodName, args});
@@ -801,7 +801,15 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
+    /**
+     * Use {@link FactoryBuilderSupport#dispatchNodeCall(Object, Object)} instead.
+     */
+    @Deprecated
     protected Object dispathNodeCall(Object name, Object args) {
+        return dispatchNodeCall(name, args);
+    }
+
+    protected Object dispatchNodeCall(Object name, Object args) {
         Object node;
         Closure closure = null;
         List list = InvokerHelper.asList(args);
@@ -991,7 +999,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * Removes the last context from the stack.
      *
-     * @return the contet just removed
+     * @return the content just removed
      */
     protected Map<String, Object> popContext() {
         if (!getProxyBuilder().getContexts().isEmpty()) {
@@ -1269,6 +1277,10 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     public void addDisposalClosure(Closure closure) {
         disposalClosures.add(closure);
+    }
+
+    public List<Closure> getDisposalClosures() {
+        return Collections.unmodifiableList(disposalClosures);
     }
 
     public void dispose() {

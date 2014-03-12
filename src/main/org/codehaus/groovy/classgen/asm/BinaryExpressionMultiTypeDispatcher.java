@@ -188,6 +188,18 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             } else {
                 super.evaluateBinaryExpression(message, binExp);
             }
+        } else if (operation == DIVIDE) { 
+            int operationType = getOperandType(getController().getTypeChooser().resolveType(binExp, current));
+            BinaryExpressionWriter bew = binExpWriter[operationType];
+            if (bew.writeDivision(true)) {
+                leftExp.visit(acg);
+                os.doGroovyCast(bew.getDevisionOpResultType());
+                rightExp.visit(acg);
+                os.doGroovyCast(bew.getDevisionOpResultType());
+                bew.writeDivision(false);
+            } else {
+                super.evaluateBinaryExpression(message, binExp);
+            }
         } else {
             int operationType = getOperandConversionType(leftType,rightType);
             BinaryExpressionWriter bew = binExpWriter[operationType];
@@ -200,12 +212,6 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
                 rightExp.visit(acg);
                 os.doGroovyCast(int_TYPE);
                 bew.write(operation, false);
-            } else if (operation==DIVIDE && bew.writeDivision(true)) {
-                leftExp.visit(acg);
-                os.doGroovyCast(bew.getDevisionOpResultType());
-                rightExp.visit(acg);
-                os.doGroovyCast(bew.getDevisionOpResultType());
-                bew.writeDivision(false);
             } else if (bew.write(operation, true)) {
                 leftExp.visit(acg);
                 os.doGroovyCast(bew.getNormalOpResultType());
@@ -271,7 +277,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         Expression rightExp = binExp.getRightExpression();
         ClassNode rightType = getController().getTypeChooser().resolveType(rightExp, current);
         
-        int operationType = getOperandConversionType(leftType,rightType);
+        int operationType = getOperandType(leftType);
         BinaryExpressionWriter bew = binExpWriter[operationType];
         
         boolean simulationSuccess = bew.arrayGet(LEFT_SQUARE_BRACKET, true);
@@ -305,7 +311,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         
         // load array: load x and DUP [load sub, call arrayGet, load b, call operation, load sub, call arraySet] 
         arrayWithSubscript.getLeftExpression().visit(acg);
-        operandStack.doGroovyCast(bew.getNormalOpResultType().makeArray());
+        operandStack.doGroovyCast(leftType.makeArray());
         operandStack.dup();
         
         // array get: load sub, call arrayGet [load b, call operation, load sub, call arraySet]

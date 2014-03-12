@@ -4,12 +4,12 @@ import org.codehaus.groovy.control.*
 import org.codehaus.groovy.control.io.*
 import org.codehaus.groovy.ast.stmt.*
 
-class SourceBaseTestCase extends GroovyTestCase {
+abstract class SourceBaseTestCase extends GroovyTestCase {
 
     private classNode
     public classNode() {
       if (classNode!=null) return node
-      def cu = new CompilationUnit(null,null,this.class.classLoader)
+      def cu = new CompilationUnit(null,null, new GroovyClassLoader(this.class.classLoader))
       def source = new StringReaderSource(script,cu.configuration)
       def su = cu.addSource(new SourceUnit("Script_"+this.name, source, cu.configuration, cu.classLoader, cu.errorCollector))
       cu.compile(Phases.CONVERSION)

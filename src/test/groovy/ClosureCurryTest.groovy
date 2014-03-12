@@ -15,6 +15,8 @@
  */
 package groovy
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
+
 /**
  * @author Hallvard Tr�tteberg
  * @version $Revision$
@@ -173,7 +175,11 @@ class ClosureCurryTest extends GroovyTestCase {
         // Collections#binarySearch(List list, Object key, Comparator c)
         def catSearcher = Collections.&binarySearch.ncurry(1, "cat")
         def combos = [[animals1, animals2], [caseInsensitive, caseSensitive]].combinations()
-        assert combos.collect{ a, c -> catSearcher(a.sort(c), c) } == [-3, 2, -3, -4]
+        assert combos.collect{ List a, Comparator c ->
+            // make use we use DGM#sort, not JDK8 sort
+            def sorted = DefaultGroovyMethods.sort(a,c)
+            catSearcher(sorted, c)
+        } == [-3, 2, -3, -4]
     }
 
     void testNestedNcurryRcurry() {

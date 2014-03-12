@@ -19,6 +19,7 @@ package org.codehaus.groovy.transform.stc;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -77,6 +78,14 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
     public boolean handleIncompatibleAssignment(final ClassNode lhsType, final ClassNode rhsType, final Expression assignmentExpression) {
         for (TypeCheckingExtension handler : handlers) {
             if (handler.handleIncompatibleAssignment(lhsType, rhsType, assignmentExpression)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean handleIncompatibleReturnType(ReturnStatement returnStatement, ClassNode inferredReturnType) {
+        for (TypeCheckingExtension handler : handlers) {
+            if (handler.handleIncompatibleReturnType(returnStatement, inferredReturnType)) return true;
         }
         return false;
     }

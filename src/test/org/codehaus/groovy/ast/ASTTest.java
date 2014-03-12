@@ -11,7 +11,7 @@ import org.codehaus.groovy.control.SourceUnit;
  *
  * @author <a href="mailto:martin.kempf@gmail.com">Martin Kempf</a>
  */
-public class ASTTest extends TestCase {
+public abstract class ASTTest extends TestCase {
 
     public ModuleNode getAST(String source, int untilPhase) {
         SourceUnit unit = SourceUnit.create("Test", source);

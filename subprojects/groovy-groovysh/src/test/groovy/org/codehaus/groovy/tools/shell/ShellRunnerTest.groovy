@@ -92,7 +92,7 @@ class ShellRunnerTest extends GroovyTestCase {
 
     private MockFor primedMockForConsoleReader() {
         def readerMocker = new MockFor(ConsoleReader)
-        readerMocker.demand.setExpandEvents() {}
+        readerMocker.demand.setExpandEvents {}
         readerMocker.demand.addCompleter(2) {}
         readerMocker
     }
@@ -112,7 +112,7 @@ class ShellRunnerTest2 extends GroovyTestCase {
         groovysh.buffers.select(1)
 
         MockFor readerMocker = new MockFor(ConsoleReader)
-        readerMocker.demand.setExpandEvents() {}
+        readerMocker.demand.setExpandEvents {}
         readerMocker.demand.addCompleter(2) {}
         readerMocker.demand.readLine(1) {'Foo { {'}
         MockFor preferencesMocker = new MockFor(Preferences)

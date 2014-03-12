@@ -29,6 +29,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Locale;
 
 /**
  * This local transform adds a logging ability to your program using
@@ -64,6 +65,7 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Log {
     String value() default "log";
+    String category() default LogASTTransformation.DEFAULT_CATEGORY_NAME;
     Class<? extends LoggingStrategy> loggingStrategy() default JavaUtilLoggingStrategy.class;
 
     /**
@@ -78,14 +80,14 @@ public @interface Log {
             super(loader);
         }
 
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName) {
             return classNode.addField(logFieldName,
                         Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
                         LOGGER_CLASSNODE,
                         new MethodCallExpression(
                                 new ClassExpression(LOGGER_CLASSNODE),
                                 "getLogger",
-                                new ConstantExpression(classNode.getName())));
+                                new ConstantExpression(getCategoryName(classNode, categoryName))));
         }
 
         public boolean isLoggingMethod(String methodName) {
@@ -95,7 +97,7 @@ public @interface Log {
         public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
             AttributeExpression logLevelExpression = new AttributeExpression(
                     new ClassExpression(LEVEL_CLASSNODE),
-                    new ConstantExpression(methodName.toUpperCase()));
+                    new ConstantExpression(methodName.toUpperCase(Locale.ENGLISH)));
 
             ArgumentListExpression args = new ArgumentListExpression();
             args.addExpression(logLevelExpression);

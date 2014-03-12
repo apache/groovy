@@ -27,6 +27,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Locale;
 
 /**
  * This local transform adds a logging ability to your program using
@@ -56,6 +57,7 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Log4j {
     String value() default "log";
+    String category() default LogASTTransformation.DEFAULT_CATEGORY_NAME;
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Log4jLoggingStrategy.class;
 
     public static class Log4jLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
@@ -66,14 +68,14 @@ public @interface Log4j {
             super(loader);
         }
 
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName) {
             return classNode.addField(logFieldName,
                     Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
                     classNode(LOGGER_NAME),
                     new MethodCallExpression(
                             new ClassExpression(classNode(LOGGER_NAME)),
                             "getLogger",
-                            new ClassExpression(classNode)));
+                            new ConstantExpression(getCategoryName(classNode, categoryName))));
         }
 
         public boolean isLoggingMethod(String methodName) {
@@ -85,7 +87,7 @@ public @interface Log4j {
             if (!"trace".equals(methodName)) {
                 AttributeExpression logLevelExpression = new AttributeExpression(
                         new ClassExpression(classNode(PRIORITY_NAME)),
-                        new ConstantExpression(methodName.toUpperCase()));
+                        new ConstantExpression(methodName.toUpperCase(Locale.ENGLISH)));
                 ArgumentListExpression args = new ArgumentListExpression();
                 args.addExpression(logLevelExpression);
                 condition = new MethodCallExpression(logVariable, "isEnabledFor", args);
@@ -93,7 +95,7 @@ public @interface Log4j {
                 // log4j api is inconsistent, so trace requires special handling
                 condition = new MethodCallExpression(
                         logVariable,
-                        "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
+                        "is" + methodName.substring(0, 1).toUpperCase(Locale.ENGLISH) + methodName.substring(1, methodName.length()) + "Enabled",
                         ArgumentListExpression.EMPTY_ARGUMENTS);
             }
 

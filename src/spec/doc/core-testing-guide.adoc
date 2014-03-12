@@ -1,0 +1,664 @@
+= Testing Guide
+
+== Introduction
+
+The Groovy programming language comes with great support for writing tests. In addition to the language
+features and test integration with state-of-the-art testing libraries and frameworks, the Groovy ecosystem has born
+a rich set of testing libraries and frameworks.
+
+This chapter will start with language specific testing features and continue with a closer look at JUnit integration,
+Spock for specifications and Geb for functional tests. Finally, we an overview of other testing libraries known to
+be working with Groovy.
+
+== Language Features
+
+Besides integrated support for JUnit, the Groovy programming language comes with features that have proven
+to be very valuable for test-driven development. This section gives insight on them.
+
+=== Power Assertions
+
+Writing tests means formulating assumptions by using assertions. In Java this can be done by using the `assert`
+keyword that has been added in J2SE 1.4. In Java, `assert` statements can be enabled via the JVM parameters `-ea`
+(or `-enableassertions`) and `-da` (or `-disableassertions`). Assertion statements in Java are disabled by default.
+
+Groovy comes with a rather _powerful variant_ of `assert` also known as _power assertion statement_. Groovy's power
+`assert` differs from the Java version in its output given the boolean expression validates to `false`:
+
+[source,groovy]
+------------------------------------------
+def x = 1
+assert x == 2
+
+// Output:             <1>
+//
+// Assertion failed:
+// assert x == 2
+//        | |
+//        1 false
+------------------------------------------
+<1> This section shows the std-err output
+
+The `java.lang.AssertionError` that is thrown whenever the assertion can not be validated successfully, contains
+an extended version of the original exception message. The power assertion output shows evaluation results from
+the outer to the inner expression.
+
+The power assertion statements true power unleashes in complex Boolean statements, or statements with
+collections or other `toString`-enabled classes:
+
+[source,groovy]
+------------------------------------
+def x = [1,2,3,4,5]
+assert (x << 6) == [6,7,8,9,10]
+
+// Output:
+//
+// Assertion failed:
+// assert (x << 6) == [6,7,8,9,10]
+//         | |     |
+//         | |     false
+//         | [1, 2, 3, 4, 5, 6]
+//         [1, 2, 3, 4, 5, 6]
+------------------------------------
+
+Another important difference from Java is that in Groovy assertions are _enabled by default_. It has been a language design
+decision to remove the possibility to deactivate assertions. Or, as Bertrand Meyer stated, ``it makes no sense to take
+off your swim ring if you put your feet into real water``.
+
+One thing to be aware of are methods with side-effects inside Boolean expressions in power assertion statements. As
+the internal error message construction mechanism does only store references to instances under target,
+ it happens that the error message text is invalid at rendering time in case of side-effecting methods involved:
+
+[source,groovy]
+----------------------------------------------------------
+assert [[1,2,3,3,3,3,4]].first().unique() == [1,2,3]
+
+// Output:
+//
+// Assertion failed:
+// assert [[1,2,3,3,3,3,4]].first().unique() == [1,2,3]
+//                          |       |        |
+//                          |       |        false
+//                          |       [1, 2, 3, 4]
+//                          [1, 2, 3, 4]           // <1>
+----------------------------------------------------------
+<1> The error message shows the actual state of the collection, not the state before the `unique` method was applied
+
+[NOTE]
+If you choose to provide a custom assertion error message this can be done by using the Java syntax +assert
+expression1 : expression2+ where +expression1+ is the Boolean expression and +expression2+ is the custom error message.
+ Be aware though that this will disable the power assert and will fully fallback to custom
+ error messages on assertion errors.
+
+=== Mocking and Stubbing
+
+Groovy has excellent built-in support for a range of mocking and stubbing alternatives. When using Java, dynamic mocking
+frameworks are very popular. A key reason for this is that it is hard work creating custom hand-crafted mocks using Java.
+Such frameworks can be used easily with Groovy if you choose but creating custom mocks is much easier in Groovy. You
+can often get away with simple maps or closures to build your custom mocks.
+
+The following sections show ways to create mocks and stubs with Groovy language features only.
+
+==== Map Coercion
+
+By using maps or expandos, we can incorporate desired behaviour of a collaborator very easily as shown here:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=map_coercion,indent=0]
+----
+
+The `as` operator can be used to coerce a map to a particular class. The given map keys are interpreted as
+method names and the values, being `groovy.lang.Closure` blocks, are interpreted as method code blocks.
+
+[NOTE]
+Be aware that map coercion can get into the way if you deal with custom `java.util.Map` descendant classes in combination
+with the `as` operator. The map coercion mechanism is targeted directly at certain collection classes, it doesn't take
+custom classes into account.
+
+==== Closure Coercion
+
+The 'as' operator can be used with closures in a neat way which is great for developer testing in simple scenarios.
+We haven't found this technique to be so powerful that we want to do away with dynamic mocking, but it can be very
+useful in simple cases none-the-less.
+
+Classes or interfaces holding a single method, including SAM (single abstract method) classes, can be used to coerce
+a closure block to be an object of the given type. Be aware that for doing this, Groovy internally create a proxy object
+descending for the given class. So the object will not be a direct instance of the given class. This important if, for
+example, the generated proxy object's meta-class is altered afterwards.
+
+Let's have an example on coercing a closure to be of a specific type:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=closure_coercion,indent=0]
+----
+
+Groovy supports a feature called implicit SAM coercion. This means that the `as` operator is not necessary in situations
+where the runtime can infer the target SAM type. This type of coercion might be useful in tests to mock entire SAM
+classes:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=sam_coercion,indent=0]
+----
+
+==== MockFor and StubFor
+
+The Groovy mocking and stubbing classes can be found in the `groovy.mock.interceptor` package.
+
+The `MockFor` class supports (typically unit) testing of classes in isolation by allowing a _strictly ordered_ expectation
+of the behavior of collaborators to be defined. A typical test scenario involves a class under test and one or more collaborators. In such a scenario it is
+often desirable to just test the business logic of the class under test. One strategy for doing that is to replace
+the collaborator instances with simplified mock objects to help isolate out the logic in the test target. MockFor
+allows such mocks to be created using meta-programming. The desired behavior of collaborators is defined as a behavior
+specification. The behavior is enforced and checked automatically.
+
+Let's assume our target classes looked like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=collaborators,indent=0]
+----
+
+With `MockFor`, a mock expectation is always sequence dependent and its use automatically ends with a call to `verify`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=mockFor,indent=0]
+----
+<1> a new mock is created by a new instance of `MockFor`
+<2> a `Closure` is passed to `use` which enables the mocking functionality
+<3> a call to `verify` checks whether the sequence and number of method calls is as expected
+
+The `StubFor` class supports (typically unit) testing of classes in isolation by allowing a _loosely-ordered_ expectation
+of the behavior of collaborators to be defined. A typical test scenario involves a class under test and one or more
+collaborators. In such a scenario it is often desirable to just test the business logic of the CUT. One strategy for
+doing that is to replace the collaborator instances with simplified stub objects to help isolate out the logic
+in the target class. `StubFor` allows such stubs to be created using meta-programming. The desired behavior of
+collaborators is defined as a behavior specification.
+
+In contrast to `MockFor` the stub expectation checked with `verify` is sequence independent and its use is optional:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=stubFor,indent=0]
+----
+<1> a new stub is created by a new instance of `StubFor`
+<2> the `with` method is used for delegating all calls inside the closure to the `StubFor` instance
+<3> a `Closure` is passed to `use` which enables the stubbing functionality
+<4> a call to `verify` (optional) checks whether the number of method calls is as expected
+
+`MockFor` and `StubFor` can not be used to test statically compiled classes e.g for Java classes or Groovy classes that
+make use of +@CompileStatic+. To stub and/or mock these classes you can use Spock or one of the Java mocking libraries.
+
+[[testing_guide_emc]]
+==== Expando Meta-Class (EMC)
+
+Groovy includes a special `MetaClass` the so-called `ExpandoMetaClass` (EMC). It allows to dynamically add methods,
+constructors, properties and static methods using a neat closure syntax.
+
+Every `java.lang.Class` is supplied with a special `metaClass` property that will give a reference to an
+`ExpandoMetaClass` instance. The expando meta-class is not restricted to custom classes, it can be used for
+JDK classes like for example `java.lang.String` as well:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=emc,indent=0]
+----
+
+The `ExpandoMetaClass` is a rather good candidate for mocking functionality as it allows for more advanced stuff
+like mocking static methods
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=emc2,indent=0]
+----
+
+or even constructors
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=emc3,indent=0]
+----
+
+[NOTE]
+Mocking constructors might seem like a hack that's better not even to be considered but even there might be valid
+use cases. An example can be found in Grails where domain class constructors are added at run-time with the
+help of `ExpandoMetaClass`. This lets the domain object register itself in the Spring application context and allows
+for injection of services or other beans controlled by the dependency-injection container.
+
+If you want to change the `metaClass` property on a per test method level you need to remove the changes that were
+done to the meta-class, otherwise those changes would be persistent across test method calls. Changes are removed by
+replacing the meta-class in the `GroovyMetaClassRegistry`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=emc4,indent=0]
+----
+
+Another alternative is to register a `MetaClassRegistryChangeEventListener`, track the changed classes and remove
+the changes in the cleanup method of your chosen testing runtime. A good example can be found https://github.com/grails/grails-core/blob/master/grails-bootstrap/src/main/groovy/org/codehaus/groovy/grails/cli/support/MetaClassRegistryCleaner.java[in the Grails web
+development framework].
+
+Besides using the `ExpandoMetaClass` on a class-level, there is also support for using the meta-class on a per-object
+level:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=emc5,indent=0]
+----
+
+In this case the meta-class change is related to the instance only. Depending on the test scenario this might be a better
+fit than the global meta-class change.
+
+=== GDK Methods
+
+The following section gives a brief overview on GDK methods that can be leveraged in test case scenarios, for example for
+test data generation.
+
+==== Iterable#combinations
+
+The `combinations` method that is added on `java.lang.Iterable` compliant classes can be used to get a list of
+combinations from a list containing two or more sub-lists:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/GDKMethodTests.groovy[tags=combinations,indent=0]
+----
+
+The method could be used in test case scenarios to generate all possible argument combinations for a specific method
+call.
+
+==== Iterable#eachCombination
+
+The `eachCombination` method that is added on `java.lang.Iterable` can be used to apply a function (or in this
+ case a `groovy.lang.Closure`) to each if the combinations that has been built by the `combinations` method:
+
+`eachCombination` is a GDK method that is added to all classes conforming to the `java.lang.Iterable` interface.
+It applies a function on each combination of the input lists:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/GDKMethodTests.groovy[tags=each_combination,indent=0]
+----
+
+The method could be used in the testing context to call methods with each of the generated combinations.
+
+=== Tool Support
+
+==== Test Code Coverage
+
+Code coverage is a useful measure of the effectiveness of (unit) tests. A program with high code coverage has a
+lower chance to hold critical bugs than a program with no or low coverage. To get code coverage metrics,
+the generated byte-code usually needs to be instrumented before the tests are executed. One tool with Groovy support
+ for this task is http://cobertura.github.io/cobertura/[Cobertura].
+
+Various frameworks and build tools come with Cobertura integration. For Grails, there is the http://grails.org/plugin/code-coverage[code coverage plugin] based
+on Cobertura, for Gradle there is the https://github.com/eriwen/gradle-cobertura-plugin[gradle-cobertura plugin], to name only two of them.
+
+The following code listing shows an example on how to enable Cobertura test coverage reports in a Gradle build script from
+a Groovy project:
+
+[source,groovy]
+---------------------------------------------------------------------
+def pluginVersion = '<plugin version>'
+def groovyVersion = '<groovy version>'
+def junitVersion = '<junit version>'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.eriwen:gradle-cobertura-plugin:${pluginVersion}'
+    }
+}
+
+apply plugin: 'groovy'
+apply plugin: 'cobertura'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.codehaus.groovy:groovy-all:${groovyVersion}"
+    testCompile "junit:junit:${junitVersion}"
+}
+
+cobertura {
+    format = 'html'
+    includes = ['**/*.java', '**/*.groovy']
+    excludes = ['com/thirdparty/**/*.*']
+}
+---------------------------------------------------------------------
+
+Several output formats can be chosen for Cobertura coverage reports and test code coverage reports can be added to
+continuous integration build tasks.
+
+== Unit Tests with JUnit 3 and 4
+
+Groovy simplifies JUnit testing, making it more Groovy. In the following sections we will have a closer look at
+JUnit 3/4 Groovy integration.
+
+=== JUnit 3
+
+Maybe one of the most prominent Groovy classes supporting JUnit 3 tests is the `GroovyTestCase` class. Being
+derived from `junit.framework.TestCase` it offers a bunch of additional methods that make testing in Groovy a breeze.
+
+[NOTE]
+Although `GroovyTestCase` inherits from `TestCase` doesn't mean you can't use JUnit 4 features in your project. In fact,
+the most recent Groovy versions come with a bundled JUnit 4 and that comes with a backwards compatible `TestCase`
+implementation. There have been some discussion on the Groovy mailing-list on whether to use `GroovyTestCase` or JUnit 4
+with the result that it is mostly a matter of taste, but with `GroovyTestCase` you get a bunch of methods for free that
+make certain types of tests easier to write.
+
+
+In this section, we will have a look at some of the methods provided by `GroovyTestCase`. A full list of these can be
+found in the JavaDoc documentation for http://groovy.codehaus.org/api/groovy/util/GroovyTestCase.html[groovy.util.GroovyTestCase],
+don't forget it is inherited from `junit.framework.TestCase` which inherits all the `assert*` methods.
+
+==== Assertion Methods
+
+`GroovyTestCase` is inherited from `junit.framework.TestCase` therefore it inherits a large number of assertion methods
+being available to be called in every test method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=assertions,indent=0]
+----
+
+As can be seen above, in contrast to Java it is possible to leave out the parenthesis in most situations which
+leads to even more readability of JUnit assertion method call expressions.
+
+An interesting assertion method that is added by `GroovyTestCase` is `assertScript`. It ensures that the given Groovy
+code string succeeds without any exception:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=assertScript,indent=0]
+----
+
+==== shouldFail Methods
+
+`shouldFail` can be used to check whether the given code block fails or not. In case it fails, the assertion does hold,
+otherwise the assertion fails:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=should_fail_without_class,indent=0]
+----
+
+The example above uses the basic `shouldFail` method interface that takes a `groovy.lang.Closure` as a single argument.
+ The `Closure` instance holds the code that is supposed to be breaking during run-time.
+
+If we wanted to assert `shouldFail` on a specific `java.lang.Exception` type we could have done so by using the `shouldFail`
+implementation that takes the `Exception` class as first argument and the `Closure` as second argument:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=should_fail_with_class,indent=0]
+----
+
+If anything other than `IndexOutOfBoundsException` (or a descendant class of it) is thrown, the test case will fail.
+
+A pretty nice feature of `shouldFail` hasn't been visible so far: it returns the exception message. This is really
+useful if you want to assert on the exception error message:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=should_fail_with_msg,indent=0]
+----
+
+==== notYetImplemented Method
+
+The `notYetImplemented` method has been greatly influenced by HtmlUnit. It allows to write a test method but mark it
+as not yet implemented. As long as the test method fails and is marked with `notYetImplemented` the test goes green:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=not_yet_implemented,indent=0]
+----
+<1> a call to `notYetImplemented` is necessary for `GroovyTestCase` to get the current method stack.
+<2> as long as the test evaluates to `false` the test execution will be successful.
+
+An alternative to the `notYetImplemented` method is the `@NotYetImplemented` annotation. It allows for annotating a
+method as not yet implemented, with the exact same behavior as `GroovyTestCase#notYetImplemented` but without the need
+for the `notYetImplemented` method call:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=not_yet_implemented_ast,indent=0]
+----
+
+=== JUnit 4
+
+Groovy can be used to write JUnit 4 test cases without any restrictions. The `groovy.test.GroovyAssert` holds
+various static methods that can be used as replacement for the `GroovyTestCase` methods in JUnit 4 tests:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/testingguide/JUnit4ExampleTests.groovy[tags=junit4_example,indent=0]
+----
+
+As can be seen in the example above, the static methods found in `GroovyAssert` are imported at the beginning of the
+ class definition thus `shouldFail` can be used the same way it can be used in a `GroovyTestCase`.
+
+[NOTE]
+`groovy.test.GroovyAssert` descends from `org.junit.Assert` that means it inherits all JUnit assertion methods. However,
+with the introduction of the power assertion statement, it turned out to be _good practice to rely on assertion statements_
+instead of using the JUnit assertion methods with the improved message being the main reason.
+
+== Testing with Spock
+
+Spock is a testing and specification framework for Java and Groovy applications. What makes it stand out from the
+crowd is its beautiful and highly expressive specification DSL. In practice, Spock specifications are written as
+Groovy classes. Although written in Groovy they can be used to test Java classes. Spock can be used for unit,
+integration or BDD (behavior-driven-development) testing, it doesn't put itself into a specific category of testing
+frameworks or libraries.
+
+[NOTE]
+Beside these awesome features Spock is a good example on how to leverage advanced Groovy programming
+language features in third party libraries, for example, by using Groovy AST transformations.
+
+[NOTE]
+This section should not serve as detailed guide on how to use Spock, it should rather give an impression what Spock
+is about and how it can be leveraged for unit, integration, functional or any other type of testing.
+
+The next section we will have an first look at the anatomy of a Spock specification. It should give a
+pretty good feeling on what Spock is up to.
+
+=== Specifications
+
+Spock lets you write specifications that describe features (properties, aspects) exhibited by a system of
+interest. The "system" can be anything between a single class and an entire application, a more advanced term for it is
+_system under specification_. The _feature description_ starts from a specific snapshot of the system and its
+collaborators, this snapshot is called the _feature's fixture_.
+
+Spock specification classes are derived from `spock.lang.Specification`. A concrete specification class might consist
+of fields, fixture methods, features methods and helper methods.
+
+Let's have a look at a simple specification with a single feature method for an imaginary `Stack` class:
+
+[source,groovy]
+---------------------------------------------------------------
+class StackSpec extends Specification {
+
+    def "adding an element leads to size increase"() {  // <1>
+        setup: "a new stack instance is created"        // <2>
+            def stack = new Stack()
+
+        when:                                           // <3>
+            stack.push 42
+
+        then:                                           // <4>
+            stack.size() == 1
+    }
+}
+---------------------------------------------------------------
+<1> Feature method, is by convention named with a String literal.
+<2> Setup block, here is where any setup work for this feature needs to be done.
+<3> When block describes a stimulus, a certain action under target by this feature specification.
+<4> Then block any expressions that can be used to validate the result of the code that was triggered by the when block.
+
+Spock feature specifications are defined as methods inside a `spock.lang.Specification` class. They describe the feature
+by using a String literal instead of a method name.
+
+A feature method holds multiple blocks, in our example we used `setup`, `when` and `then`. The `setup` block is special
+in that it is optional and allows to configure local variables visible inside the feature method. The `when` block
+defines the stimulus and is a companion of the `then` block which describes the response to the stimulus.
+
+Note that the `setup` method in the `StackSpec` above additionally
+  has a description String. Description Strings are optional and can be added after block labels (like `setup`, `when`,
+  `then`).
+
+=== More Spock
+
+Spock provides much more features like data tables or advanced mocking capabilities. Feel free to consult the
+https://github.com/spockframework/spock[Spock GitHub page] for more documentation and download information.
+
+== Functional Tests with Geb
+
+Geb is a functional web testing and scraper library that integrates with JUnit and Spock. It is based upon the
+Selenium web drivers and, like Spock, provides a Groovy DSL to write functional tests for web applications.
+
+Geb has great features that make it a good fit for a functional testing library:
+
+* DOM access via a JQuery-like `$` function
+* implements the _page pattern_
+* support for modularization of certain web components (e.g. menu-bars, etc.) with _modules_
+* integration with JavaScript via the JS variable
+
+[NOTE]
+This section should not serve as detailed guide on how to use Geb, it should rather give an impression what Geb
+is about and how it can be leveraged functional testing.
+
+The next section will give an example on how Geb can be used to write a functional test for a simple
+ web page with a single search field.
+
+=== A Geb Script
+
+Although Geb can be used standalone in a Groovy script, in many scenarios it's used in combination with other testing
+frameworks. Geb comes with various base classes that can be used in JUnit 3, 4, TestNG or Spock tests. The base classes
+are part of additional Geb modules that need to be added as a dependency.
+
+For example, the following `@Grab` dependencies have to be used to run Geb with the Selenium Firefox driver in
+JUnit4 tests. The module that is needed for JUnit 3/4 support is `geb-junit`:
+
+[source,groovy]
+--------------------------------------------------------------------
+@Grapes([
+    @Grab("org.gebish:geb-core:0.9.2"),
+    @Grab("org.gebish:geb-junit:0.9.2"),
+    @Grab("org.seleniumhq.selenium:selenium-firefox-driver:2.26.0"),
+    @Grab("org.seleniumhq.selenium:selenium-support:2.26.0")
+])
+--------------------------------------------------------------------
+
+The central class in Geb is the `geb.Browser` class. As its name implies it is used
+ to browse pages and access DOM elements:
+
+[source,groovy]
+---------------------------------------------------------------------------------------------------
+def browser = new Browser(driver: new FirefoxDriver(), baseUrl: 'http://myhost:8080/myapp')  // <1>
+browser.drive {
+    go "/login"                        // <2>
+
+    $("#username").text = 'John'       // <3>
+    $("#password").text = 'Doe'
+
+    $("#loginButton").click()
+
+    assert title == "My Application - Dashboard"
+}
+---------------------------------------------------------------------------------------------------
+<1> A new `Browser` instance is created. In this case it uses the Selenium `FirefoxDriver` and sets the `baseUrl`.
+<2> `go` is used to navigate to an URL or relative URI
+<3> `$` together with CSS selectors is used to access the `username` and `password` DOM fields.
+
+The `Browser` class comes with a `drive` method that delegates all method/property calls to the current
+`browser` instance. The `Browser` configuration must not be done inline, it can also be externalized in a
+`GebConfig.groovy` configuration file for example. In practice, the usage of the `Browser` class is mostly hidden
+by Geb test base classes. They delegate all missing properties and method calls to the current `browser` instance
+that exists in the background:
+
+[source,groovy]
+---------------------------------------------------------------
+class SearchTests extends geb.junit4.GebTest {
+
+    @Test
+    void executeSeach() {
+        go 'http://somehost/mayapp/search'              // <1>
+        $('#searchField').text = 'John Doe'             // <2>
+        $('#searchButton').click()                      // <3>
+
+        assert $('.searchResult a').first().text() == 'Mr. John Doe' // <4>
+    }
+}
+---------------------------------------------------------------
+<1> `Browser#go` takes a relative or absolute link and calls the page.
+<2> `Browser#$` is used to access DOM content. Any CSS selectors supported by the underlying Selenium drivers are allowed
+<3> `click` is used to click a button.
+<4> `$` is used to get the first link out of the `searchResult` block
+
+The example above shows a simple Geb web test with the JUnit 4 base class `geb.junit4.GebTest`. Note that in this case
+the `Browser` configuration is externalized. `GebTest` delegates methods like `go` and `$` to the underlying `browser`
+ instance.
+
+=== More Geb
+
+In the previous section we only scratched the surface of the available Geb features. More information on Geb can be found
+at the http://gebish.org[project homepage].
+
+== Other Testing Libraries and Frameworks
+
+=== TestNG
+
+http://testng.org/[TestNG] is a testing framework inspired from JUnit and NUnit but with new functionality to make
+it more powerful and easier to use. Features include:
+
+* JDK 5 Annotations
+* Flexible test configuration
+* Support for data-driven testing (with `@DataProvider`)
+* Support for parameters
+* Allows distribution of tests on slave machines
+* Powerful execution model (no more TestSuite)
+* Supported by a variety of tools and plug-ins (Eclipse, IDEA, Maven, etc...)
+* Embeds `BeanShell` for further flexibility
+* Default JDK functions for runtime and logging (no dependencies)
+* Dependent methods for application server testing
+
+=== Mockito
+
+https://code.google.com/p/mockito/[Mockito] is a Java mocking library. It has very slim API, almost no time is needed
+to start mocking. Features include:
+
+* Mocks concrete classes as well as interfaces
+* Little annotation syntax sugar - `@Mock`
+* Verification errors are clean - click on stack trace to see failed verification in test; click on exception's cause
+to navigate to actual interaction in code. Stack trace is always clean.
+* Allows flexible verification in order (e.g: verify in order what you want, not every single interaction)
+* Supports exact-number-of-times and at-least-once verification
+* Flexible verification or stubbing using argument matchers (`anyObject()`, `anyString()` or `refEq()` for reflection-based
+equality matching)
+* Allows creating custom argument matchers or using existing Hamcrest matchers
+
+=== EasyMock
+
+http://easymock.org/[EasyMock] is a mocking library for Java. Features include:
+
+* Hand-writing classes for Mock Objects is not needed.
+* Supports refactoring-safe Mock Objects: test code will not break at runtime when renaming methods or reordering method parameters
+* Supports return values and exceptions.
+* Supports checking the order of method calls, for one or more Mock Objects.
+
+=== JBehave
+
+http://jbehave.org/[JBehave] is a framework for Behaviour-Driven Development (BDD). BDD is an evolution of test-driven
+development and acceptance-test driven design, and is intended to make these practices more accessible and intuitive
+to newcomers and experts alike. It shifts the vocabulary from being test-based to behaviour-based, and positions itself
+as a design philosophy.
+
+=== JMockit
+
+https://code.google.com/p/jmockit/[jmockit] is a mocking library for Java.

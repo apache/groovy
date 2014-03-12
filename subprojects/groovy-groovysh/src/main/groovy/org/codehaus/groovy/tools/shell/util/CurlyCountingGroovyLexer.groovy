@@ -19,7 +19,8 @@ package org.codehaus.groovy.tools.shell.util
 import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.antlr.SourceBuffer
 import org.codehaus.groovy.antlr.UnicodeEscapingReader
-import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyLexer
+import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
 /**
  * patching GroovyLexer to get access to Paren level
@@ -27,7 +28,7 @@ import org.codehaus.groovy.antlr.parser.GroovyLexer;
  */
 public class CurlyCountingGroovyLexer extends GroovyLexer {
 
-    public endReached = false
+    private endReached = false
 
     protected CurlyCountingGroovyLexer(Reader reader) {
         super(reader);
@@ -48,7 +49,7 @@ public class CurlyCountingGroovyLexer extends GroovyLexer {
     @Override
     public void uponEOF() {
         super.uponEOF()
-        endReached=true
+        endReached = true
     }
 
     public List<GroovySourceToken> toList() {
@@ -57,7 +58,7 @@ public class CurlyCountingGroovyLexer extends GroovyLexer {
         while (! endReached) {
             token = nextToken() as GroovySourceToken
             tokens.add(token)
-            if (token.getType() == CurlyCountingGroovyLexer.EOF) {
+            if (token.getType() == GroovyTokenTypes.EOF) {
                 break
             }
         }

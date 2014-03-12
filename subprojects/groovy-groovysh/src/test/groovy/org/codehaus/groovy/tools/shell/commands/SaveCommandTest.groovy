@@ -25,7 +25,7 @@ class SaveCommandTest
     extends CommandTestSupport
 {
     void testSave() {
-        shell << 'save'
+        shell << ':save'
 
     }
 }

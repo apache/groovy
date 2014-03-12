@@ -1,0 +1,44 @@
+= Object orientation
+
+This chapter covers the object orientation of the Groovy programming language.
+
+== Types (TBD)
+
+=== Primitive types (TBD)
+
+=== Class (TBD)
+==== Normal class (TBD)
+==== Static class (TBD)
+==== Inner class (TBD)
+===== Anonymous inner class (TBD)
+==== Abstract class (TBD)
+
+=== Interface (TBD)
+
+=== Annotation (TBD)
+
+==== Closure annotation parameters (TBD)
+==== Meta-annotations (TBD)
+==== Annotation placement (TBD)
+
+=== Constructors (TBD)
+
+==== Named argument constructor (TBD)
+
+=== Methods (TBD)
+
+==== Method definition (TBD)
+==== Named arguments (TBD)
+==== Default arguments (TBD)
+==== Varargs (TBD)
+==== Method selection algorithm (TBD)
+==== Exception declaration (TBD)
+
+=== Fields and properties (TBD)
+
+==== Fields (TBD)
+==== Properties (TBD)
+
+=== Inheritance (TBD)
+
+=== Generics (TBD)

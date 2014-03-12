@@ -19,6 +19,7 @@ package groovy.util
 
  * @author Graeme Rocher
  * @author Guillaume Laforge
+ * @author Andres Almiray
  * @since 0.6
  *
  * Created: Jun 19, 2007
@@ -566,5 +567,130 @@ log4j {
         """)
 
         assert config == [a:1, blah:[c: 3]]
+    }
+
+    void testVariableAssignments() {
+        def conf = '''
+          griffon.cli.verbose = true
+          griffon.rt.verbose = true
+          projects {
+              custom {
+                  this."griffon.cli.verbose" = false
+                  griffon{rt{verbose = false}}
+              }
+          }
+        '''
+
+        def config = new ConfigSlurper().parse(conf)
+        assert config.griffon.cli.verbose
+        assert !config.projects.custom.griffon.cli.verbose
+        assert config.griffon.rt.verbose
+        assert !config.projects.custom.griffon.rt.verbose
+    }
+
+    void testCustomConditionalBlocks() {
+        def conf = '''
+          griffon.cli.verbose = true
+          projects {
+              custom {
+                  //griffon{cli{verbose = false}}  // OK
+                  //this."griffon.cli.verbose" = false  // fails
+                  griffon {
+                      cli.verbose = false
+                  }
+              }
+          }
+        '''
+
+        ConfigSlurper slurper = new ConfigSlurper()
+        slurper.registerConditionalBlock('projects', 'bogus')
+        def config = slurper.parse(conf)
+        assert config.griffon.cli.verbose
+        slurper.registerConditionalBlock('projects', 'custom')
+        config = slurper.parse(conf)
+        assert !config.griffon.cli.verbose
+    }
+
+    void testNestedConditionaBlocks() {
+        def conf = '''
+          var = 1
+          projects {
+              custom {
+                  var = 2
+                  environments {
+                      development {
+                          var = 3
+                      }
+                      local {
+                          var = 4
+                      }
+                  }
+              }
+              extension {
+                  var = 7
+              }
+          }
+          environments {
+               development {
+                   var = 5
+               }
+               production {
+                   var = 6
+               }
+           }
+        '''
+
+        ConfigSlurper slurper = new ConfigSlurper()
+        slurper.binding = [slurper:slurper]
+        def config = slurper.parse(conf)
+        assert config.var == 1
+
+        slurper.registerConditionalBlock('environments', 'production')
+        config = slurper.parse(conf)
+        assert config.var == 6
+
+        slurper.registerConditionalBlock('environments', 'test')
+        config = slurper.parse(conf)
+        assert config.var == 1
+
+        slurper.registerConditionalBlock('projects', 'custom')
+        config = slurper.parse(conf)
+        assert config.var == 2
+
+        slurper.registerConditionalBlock('environments', 'local')
+        config = slurper.parse(conf)
+        assert config.var == 4
+
+        slurper.registerConditionalBlock('projects', 'bogus')
+        config = slurper.parse(conf)
+        assert config.var == 1
+    }
+
+    void testConditionalOverrides() {
+        def conf = '''
+          environments {
+               development {
+                   var1 = 1
+                   var2 = 2
+               }
+               production {
+                   var1 = 3
+                   var2 = 4
+               }
+           }
+           var1 = 5
+           var2 = 6
+        '''
+
+        ConfigSlurper slurper = new ConfigSlurper()
+        slurper.binding = [slurper:slurper]
+        def config = slurper.parse(conf)
+        assert config.var1 == 5
+        assert config.var2 == 6
+
+        slurper.registerConditionalBlock('environments', 'development')
+        config = slurper.parse(conf)
+        assert config.var1 == 1
+        assert config.var2 == 2
     }
 }

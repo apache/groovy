@@ -84,7 +84,7 @@ import java.lang.annotation.Target;
  * {@code @Canonical} class IntPair { int x, y }
  * def p1 = new IntPair(1, 2)
  *
- * // overriden getter but deemed an IntPair as far as domain is concerned
+ * // overridden getter but deemed an IntPair as far as domain is concerned
  * def p2 = new IntPair(1, 1) { int getY() { 2 } }
  *
  * // additional helper method added through inheritance but

@@ -26,7 +26,7 @@ import groovy.swing.impl.TableLayoutRow
 public class TableLayoutFactory extends AbstractFactory {
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (FactoryBuilderSupport.checkValueIsType(value, name, TableLayout.class)) {
+        if (FactoryBuilderSupport.checkValueIsType(value, name, TableLayout)) {
             return value;
         }
         return new TableLayout();

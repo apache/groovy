@@ -80,6 +80,8 @@ menuBar {
         menuItem(replaceAction, icon:null)
         separator()
         menuItem(selectAllAction, icon:null)
+	separator()
+	menuItem(commentAction, icon:null)
     }
 
     menu(text: 'View', mnemonic: 'V') {

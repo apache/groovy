@@ -17,6 +17,23 @@ package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyResourceLoader;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GroovyInternalPosixParser;
@@ -41,22 +58,6 @@ import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
 import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
 
 /**
  * Compiles Groovy source files. This task can take the following arguments:
@@ -1217,8 +1218,14 @@ public class Groovyc extends MatchingTask {
                  * seems like AntClassLoader doesn't check if the file
                  * may not exist in the classpath yet
                  */
-                if (!found && new File(cpEntry).exists())
-                    antLoader.addPathElement(cpEntry);
+                if (!found && new File(cpEntry).exists()) {
+                	try {
+                		antLoader.addPathElement(cpEntry);
+                	}
+                	catch(BuildException e) {
+                		log.warn("The classpath entry " + cpEntry + " is not a valid Java resource");
+                	}
+                }
             }
         }
 

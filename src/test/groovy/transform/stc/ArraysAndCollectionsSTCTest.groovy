@@ -380,7 +380,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             String[] arr = ['abc']
             arr.putAt(0, new Object())
-        ''', 'Cannot find matching method [Ljava.lang.String;#putAt(int, java.lang.Object)'
+        ''', 'Cannot call <T,U extends T> java.lang.String[]#putAt(int, U) with arguments [int, java.lang.Object]'
     }
 
     void testStringArrayPutWithSubType() {
@@ -401,7 +401,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Serializable[] arr = ['abc']
             arr.putAt(0, new XmlSlurper())
-        ''', 'Cannot find matching method [Ljava.io.Serializable;#putAt(int, groovy.util.XmlSlurper)'
+        ''', 'Cannot call <T,U extends T> java.io.Serializable[]#putAt(int, U) with arguments [int, groovy.util.XmlSlurper]'
     }
 
     void testArrayGetOnPrimitiveArray() {
@@ -503,5 +503,44 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.util.Collection#putAt(int, java.lang.Object)'
     }
 
+    // GROOVY-6266
+    void testMapKeyGenerics() {
+        assertScript """
+            HashMap<String,List<List>> AR=new HashMap<String,List<List>>()
+            AR.get('key',[['val1'],['val2']])
+            assert AR.'key'[0] == ['val1']
+        """
+    }
+    
+    // GROOVY-6311
+    void testSetSpread() {
+        assertScript """
+            class Inner {Set<String> strings}
+            class Outer {Set<Inner> inners}
+            Outer outer = new Outer(inners: [ new Inner(strings: ['abc', 'def'] as Set), new Inner(strings: ['ghi'] as Set) ] as Set)
+            def res = outer.inners*.strings
+            assert res[1].contains('ghi')
+            assert res[0].contains('abc')
+            assert res[0].contains('def')
+        """
+    }
+    
+    // GROOVY-6241
+    void testAsImmutable() {
+        assertScript """
+            List<Integer> list = [1, 2, 3]
+            List<Integer> immutableList = [1, 2, 3].asImmutable()
+            Map<String, Integer> map = [foo: 123, bar: 456]
+            Map<String, Integer> immutableMap = [foo: 123, bar: 456].asImmutable()
+        """
+    }
+    
+    // GROOVY-6350
+    void testListPlusList() {
+        assertScript """
+            def foo = [] + []
+            assert foo==[]
+        """
+    }
 }
 

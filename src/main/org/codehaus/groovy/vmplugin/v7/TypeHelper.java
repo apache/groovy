@@ -30,7 +30,7 @@ public class TypeHelper {
     /**
      * Get wrapper class for a given class. 
      * If the class is for a primitive number type, then the wrapper class
-     * will be returned. If it is no primtive number type, we return the 
+     * will be returned. If it is no primitive number type, we return the
      * class itself.
      */
     protected static Class getWrapperClass(Class c) {
@@ -84,9 +84,8 @@ public class TypeHelper {
     }
 
     protected static boolean isIntCategory(Class x) {
-        return  x==Integer.class    ||  x==int.class    ||
+        return x==Integer.class    ||  x==int.class    ||
                 x==Byte.class       ||  x==byte.class   ||
-                x==Character.class  ||  x==char.class   ||
                 x==Short.class      ||  x==short.class;
     }
 

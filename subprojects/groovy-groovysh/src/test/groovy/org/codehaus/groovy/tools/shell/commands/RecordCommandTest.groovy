@@ -27,15 +27,15 @@ class RecordCommandTest
     extends CommandTestSupport
 {
     void testStopNotStarted() {
-        shell << 'record stop'
+        shell << ':record stop'
     }
 
     void testStartAlreadyStarted() {
-        shell << 'record start'
+        shell << ':record start'
 
-        shell << 'record start'
+        shell << ':record start'
 
-        File file = shell << 'record stop'
+        File file = shell << ':record stop'
 
         file.delete()
     }

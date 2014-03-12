@@ -22,11 +22,10 @@ import groovy.xml.QName
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
- * @version $Revision$
  */
 public class NodeTest extends GroovyTestCase {
 
-    public void testSimpleAttribute() {
+    void testSimpleAttribute() {
         Node attribute = new Node(null, "transactional");
         assertEquals("name", "transactional", attribute.name());
         assertEquals("attributes", 0, attribute.attributes().size());
@@ -36,7 +35,7 @@ public class NodeTest extends GroovyTestCase {
         dump(attribute);
     }
 
-    public void testAttributeWithAttributes() {
+    void testAttributeWithAttributes() {
         Map attributes = new HashMap();
         attributes.put("a", "xyz");
 
@@ -49,7 +48,7 @@ public class NodeTest extends GroovyTestCase {
         dump(attribute);
     }
 
-    public void testAttributeWithText() {
+    void testAttributeWithText() {
         Node attribute = new Node(null, "foo", "the text");
         assertEquals("name", "foo", attribute.name());
         assertEquals("attributes", 0, attribute.attributes().size());
@@ -59,7 +58,7 @@ public class NodeTest extends GroovyTestCase {
         dump(attribute);
     }
 
-    public void testAttributeWithAttributesAndChildren() {
+    void testAttributeWithAttributesAndChildren() {
         Map attributes = new HashMap();
         attributes.put("a", "xyz");
 
@@ -77,7 +76,7 @@ public class NodeTest extends GroovyTestCase {
         dump(attribute);
     }
 
-    public void testAttributeWithAttributesAndChildrenWithMixedText() {
+    void testAttributeWithAttributesAndChildrenWithMixedText() {
         Map attributes = new HashMap();
         attributes.put("a", "xyz");
 
@@ -106,7 +105,7 @@ public class NodeTest extends GroovyTestCase {
         dump(attribute);
     }
 
-    public void testNavigationUsingQNames() throws Exception {
+    void testNavigationUsingQNames() {
         QName name1 = new QName("http://something", "foo", "f");
 
         Node node = new Node(null, null, new ArrayList());
@@ -138,7 +137,7 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("namespace of grandchild[0]", "http://something", gc[0].name().namespaceURI);
     }
 
-    public void testRemove() {
+    void testRemove() {
         def xml = '''
         <foo>
             <bar id="1" />
@@ -169,7 +168,7 @@ public class NodeTest extends GroovyTestCase {
         assert !foo.bar.contains(bar3)
     }
 
-    public void testMove() {
+    void testMove() {
         def xml = '''
         <foo>
             <bar id="1" />
@@ -192,33 +191,33 @@ public class NodeTest extends GroovyTestCase {
         assert foo.baz.bar[0] == bar2
     }
 
-    public void testPlus() {
+    void testPlus() {
         Node root = new Node(null, 'root')
-        Node first = new Node(root, 'first')
+        new Node(root, 'first')
         root.first + { second('some text') }
         assert 2 == root.children().size()
         assert 'some text' == root.second.text()
     }
 
-    public void testUnsupportedReplaceForRootNode() {
+    void testUnsupportedReplaceForRootNode() {
         Node root = new Node(null, 'root')
         shouldFail(UnsupportedOperationException) {
             root.replaceNode{}
         }
     }
 
-    public void testUnsupportedPlusOnRootNode() {
+    void testUnsupportedPlusOnRootNode() {
         Node root = new Node(null, 'root')
         shouldFail(UnsupportedOperationException) {
             root.plus{}
         }
     }
 
-    public void testPlusWithMixedContent() {
+    void testPlusWithMixedContent() {
         Node root = new Node(null, 'root')
-        Node beforeString = new Node(root, 'beforeString')
+        new Node(root, 'beforeString')
         root.children().add('some text')
-        Node afterString = new Node(root, 'afterString')
+        new Node(root, 'afterString')
         assert 3 == root.children().size()
 
         root.afterString + { foo() }

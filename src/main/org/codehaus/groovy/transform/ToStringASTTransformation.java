@@ -97,7 +97,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, true);
     }
-    
+
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, false);
     }
@@ -145,8 +145,8 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            String getterName = "get" + Verifier.capitalize(pNode.getName());
-            Expression getter = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, MethodCallExpression.NO_ARGUMENTS);
+            Expression getter = new StaticMethodCallExpression(INVOKER_TYPE, "getProperty",
+                    new TupleExpression(new VariableExpression("this"), new ConstantExpression(pNode.getName())));
             appendValue(body, result, first, getter, pNode.getName(), includeNames, ignoreNulls);
         }
 
@@ -208,9 +208,4 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         append.setImplicitThis(false);
         return new ExpressionStatement(append);
     }
-
-    private static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
-        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
-    }
-
 }

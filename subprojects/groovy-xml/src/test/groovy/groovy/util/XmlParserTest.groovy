@@ -58,7 +58,7 @@ class XmlParserTest extends GroovyTestCase {
 <p>Please read the <a href="index.html">Home</a> page</p>
 """
         def node = new XmlParser().parseText(text)
-        def StringWriter sw = new StringWriter()
+        StringWriter sw = new StringWriter()
         new NodePrinter(new PrintWriter(sw)).print(node)
         def result = fixEOLs(sw.toString())
         def expected = '''\
@@ -78,7 +78,7 @@ p() {
 <p>Please read the <a href="index.html">Home</a> page</p>
 """
         def node = new XmlParser().parseText(text)
-        def StringWriter sw = new StringWriter()
+        StringWriter sw = new StringWriter()
         new XmlNodePrinter(new PrintWriter(sw)).print(node)
         def result = fixEOLs(sw.toString())
         def expected = '''\
@@ -95,7 +95,7 @@ p() {
 
     void testXmlNodePrinterNamespaces() {
         def html = new XmlParser().parseText(bookXml)
-        def StringWriter sw = new StringWriter()
+        StringWriter sw = new StringWriter()
         new XmlNodePrinter(new PrintWriter(sw)).print(html)
         def result = fixEOLs(sw.toString())
         def expected = '''\
@@ -206,6 +206,7 @@ p() {
         GpathSyntaxTestSupport.checkElementTypes(getRoot)
         GpathSyntaxTestSupport.checkElementClosureInteraction(getRoot)
         GpathSyntaxTestSupport.checkElementTruth(getRoot)
+        GpathSyntaxTestSupport.checkCDataText(getRoot)
     }
 
     void testAttribute() {
@@ -275,6 +276,28 @@ p() {
   <child attr="child attr">
     child text
   </child>
+</root>
+'''
+    }
+
+    void testReplaceNode() {
+        def xml = '<root><old/></root>'
+        def parser = new XmlParser()
+        def root = parser.parseText(xml)
+        def old = root.old[0]
+        def replacement = '<new><child/></new>'
+        def replacementNode = parser.parseText(replacement)
+        def removed = old.replaceNode(replacementNode)
+        assert removed.name() == 'old'
+
+        def writer = new StringWriter()
+        new XmlNodePrinter(new PrintWriter(writer)).print(root)
+        def result = writer.toString()
+        assert result == '''\
+<root>
+  <new>
+    <child/>
+  </new>
 </root>
 '''
     }

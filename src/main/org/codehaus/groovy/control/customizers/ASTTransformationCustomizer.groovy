@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.control.customizers
 
+import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.transform.GroovyASTTransformation
@@ -90,6 +91,55 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
     /**
      * Creates an AST transformation customizer using the specified annotation. The transformation classloader can
      * be used if the transformation class cannot be loaded from the same class loader as the annotation class.
+     * It's assumed that the annotation is not annotated with {@code GroovyASTTransformationClass} and so the
+     * second argument supplies the link to the ASTTransformation class that should be used.
+     * @param transformationAnnotation
+     * @param astTransformationClassName
+     * @param transformationClassLoader
+     */
+    ASTTransformationCustomizer(final Class<? extends Annotation> transformationAnnotation, String astTransformationClassName, ClassLoader transformationClassLoader) {
+        super(findPhase(transformationAnnotation, astTransformationClassName, transformationClassLoader))
+        final Class<ASTTransformation> clazz = findASTTranformationClass(transformationAnnotation, astTransformationClassName, transformationClassLoader)
+        this.transformation = clazz.newInstance()
+        this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
+    }
+
+    /**
+     * Creates an AST transformation customizer using the specified annotation. It's assumed that the annotation
+     * is not annotated with {@code GroovyASTTransformationClass} and so the second argument supplies the link to
+     * the ASTTransformation class that should be used.
+     * @param transformationAnnotation
+     * @param astTransformationClassName
+     */
+    ASTTransformationCustomizer(final Class<? extends Annotation> transformationAnnotation, String astTransformationClassName) {
+        this(transformationAnnotation, astTransformationClassName, transformationAnnotation.classLoader)
+    }
+
+    /**
+     * Creates an AST transformation customizer using the specified annotation. The transformation classloader can
+     * be used if the transformation class cannot be loaded from the same class loader as the annotation class.
+     * Additionally, you can pass a map of parameters that will be used to parameterize the annotation.
+     * It's assumed that the annotation is not annotated with {@code GroovyASTTransformationClass} and so the
+     * second argument supplies the link to the ASTTransformation class that should be used.
+     * @param transformationAnnotation
+     * @param astTransformationClassName
+     * @param transformationClassLoader
+     */
+    ASTTransformationCustomizer(final Map annotationParams, final Class<? extends Annotation> transformationAnnotation, String astTransformationClassName, ClassLoader transformationClassLoader) {
+        super(findPhase(transformationAnnotation, astTransformationClassName, transformationClassLoader))
+        final Class<ASTTransformation> clazz = findASTTranformationClass(transformationAnnotation, astTransformationClassName, transformationClassLoader)
+        this.transformation = clazz.newInstance()
+        this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
+        setAnnotationParameters(annotationParams)
+    }
+
+    ASTTransformationCustomizer(final Map annotationParams, final Class<? extends Annotation> transformationAnnotation, String astTransformationClassName) {
+        this(annotationParams, transformationAnnotation, transformationAnnotation.classLoader)
+    }
+
+    /**
+     * Creates an AST transformation customizer using the specified annotation. The transformation classloader can
+     * be used if the transformation class cannot be loaded from the same class loader as the annotation class.
      * @param transformationAnnotation
      * @param transformationClassLoader
      */
@@ -157,6 +207,10 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
         return classes?classes[0]:Class.forName(classesAsStrings[0], true, transformationClassLoader?:anAnnotationClass.classLoader)
     }
 
+    private static Class<ASTTransformation> findASTTranformationClass(Class<? extends Annotation> anAnnotationClass, String astTransformationClassName, ClassLoader transformationClassLoader) {
+        return Class.forName(astTransformationClassName, true, transformationClassLoader?:anAnnotationClass.classLoader) as Class<ASTTransformation>
+    }
+
     private static CompilePhase findPhase(ASTTransformation transformation) {
         if (transformation==null) throw new IllegalArgumentException("Provided transformation must not be null")
         final Class<?> clazz = transformation.class
@@ -168,6 +222,12 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
 
     private static CompilePhase findPhase(Class<? extends Annotation> annotationClass, ClassLoader transformationClassLoader) {
         Class<ASTTransformation> clazz = findASTTranformationClass(annotationClass, transformationClassLoader);
+
+        findPhase(clazz.newInstance())
+    }
+
+    private static CompilePhase findPhase(Class<? extends Annotation> annotationClass, String astTransformationClassName, ClassLoader transformationClassLoader) {
+        Class<ASTTransformation> clazz = findASTTranformationClass(annotationClass, astTransformationClassName, transformationClassLoader);
 
         findPhase(clazz.newInstance())
     }
@@ -204,7 +264,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
             if (value instanceof Closure) {
                 throw new IllegalArgumentException("Direct usage of closure is not supported by the AST " +
                 "compilation customizer. Please use ClosureExpression instead.")
-            } else if (value instanceof ClosureExpression) {
+            } else if (value instanceof Expression) {
                 // avoid NPEs due to missing source code
                 value.setLineNumber(0)
                 value.setLastLineNumber(0)

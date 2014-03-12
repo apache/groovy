@@ -18,8 +18,11 @@ package org.codehaus.groovy.control.io;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
+import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 
 /**
@@ -47,6 +50,19 @@ public class URLReaderSource extends AbstractReaderSource {
     */
     public Reader getReader() throws IOException {
        return new InputStreamReader( url.openStream(), configuration.getSourceEncoding() );
+    }
+
+    /**
+     * Returns a URI for the URL of this source.
+     *
+     * @return URI for the URL of this source.
+     */
+    public URI getURI() {
+        try {
+            return url.toURI();
+        } catch (URISyntaxException e) {
+            throw new GroovyRuntimeException("Unable to convert the URL <" + url + "> to a URI!", e);
+        }
     }
 
 }

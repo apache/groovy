@@ -311,7 +311,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
         assertScript '''
                 Closure c = { Integer x, Integer y -> x <=> y }
                 def list = [ 3,1,5,2,4 ]
-                assert list.sort(c) == [1,2,3,4,5]
+                assert ((Collection)list).sort(c) == [1,2,3,4,5]
             '''
     }
 
@@ -891,7 +891,7 @@ import groovy.transform.TypeCheckingMode
                 assert x == Closure.DELEGATE_FIRST
             '''
         } finally {
-            println astTrees
+//            println astTrees
         }
     }
 
@@ -935,6 +935,235 @@ import groovy.transform.TypeCheckingMode
         assert isCaseNullCS(1,2) == false
         assert isCaseNullCS(2,1) == false
         '''
+    }
+
+    // GROOVY-6242
+    void testGetAtBigInt() {
+        assertScript '''
+class Sequence {
+    public Sequence() {}
+    static BigInteger getAt(final int index) { 1G }
+    static BigInteger getAt(final BigInteger index) { getAt(index as int) }
+}
+
+class Iterator implements java.util.Iterator {
+    private BigInteger currentIndex = 0G
+    private final Sequence sequence
+    Iterator(final Sequence s) { sequence = s }
+    boolean hasNext() { return true }
+    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+        def expr = node.code.statements[0].expression
+        def indexType = expr.rightExpression.getNodeMetaData(INFERRED_TYPE)
+        assert indexType == make(BigInteger)
+    })
+    BigInteger next() { sequence[currentIndex++] }
+    void remove() { throw new UnsupportedOperationException() }
+}
+
+def it = new Iterator(new Sequence())
+assert it.next() == 1G
+'''
+    }
+
+    // GROOVY-6243
+    void testSwapUsingMultipleAssignment() {
+        assertScript '''
+        def swap(result,next) {
+            print "($result,$next) -> "
+            (result, next) =  [next, result]
+            println "($result,$next)"
+            [result, next]
+        }
+
+        assert swap(0,1) == [1,0]
+        assert swap('a','b') == ['b','a']
+        assert swap('a', 1) == [1, 'a']
+        def o1 = new Object()
+        def o2 = new Date()
+        assert swap(o1,o2) == [o2, o1]
+        '''
+    }
+
+    // GROOVY-5882
+    void testMod() {
+        assertScript """
+            int foo(Map<Integer, Object> markers, int i) {
+                int res = 0
+                for (e in markers.entrySet()) {
+                    res += i % e.key
+                }
+                return res
+            }
+            assert foo([(1):null,(2):null,(3):null],2)==2
+        """
+
+        assertScript """
+            int foo(Map<Integer, Object> markers, int i) {
+                int res = 0
+                for (e in markers.entrySet()) {
+                    int intKey = e.key
+                    res += i % intKey
+                }
+                return res
+            }
+            assert foo([(1):null,(2):null,(3):null],2)==2
+        """
+        assertScript """
+            int foo(Map<Integer, Object> markers, int i) {
+                int res = 0
+                for (e in markers.entrySet()) {
+                    res += i % e.key.intValue()
+                }
+                return res
+            }
+            assert foo([(1):null,(2):null,(3):null],2)==2
+        """
+    }
+
+    void testSuperCallShouldBeDirect() {
+        try {
+            assertScript '''
+                class TwoException extends Exception {
+                    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                        def superCall = node.code.statements[0].expression
+                        assert superCall.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)!=null
+                    })
+                    public TwoException(Throwable t) {
+                        super(t)
+                    }
+                }
+                def e = new TwoException(null) // will not throw an exception
+            '''
+        } finally {
+            assert !astTrees.TwoException.contains('selectConstructorAndTransformArguments')
+        }
+    }
+
+    void testNullSafeOperatorShouldNotCallMethodTwice() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public Long getNext() {
+                return sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.next?.longValue()
+            }
+            assert seq.next == 5
+'''
+    }
+
+    void testNullSafeOperatorShouldNotCallMethodTwiceWithPrimitive() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public long getNext() {
+                sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.next?.longValue()
+            }
+            assert seq.next == 5
+'''
+    }
+
+    void testNullSafeOperatorShouldNotCallMethodTwice1Arg() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public Long getNext(int factor) {
+                factor*sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.getNext(2)?.longValue()
+            }
+            assert seq.getNext(2) == 10
+'''
+    }
+
+    void testNullSafeOperatorShouldNotCallMethodTwiceWithPrimitive1Arg() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            class Sequencer {
+              private final AtomicLong sequenceNumber = new AtomicLong(0)
+
+              public long getNext(int factor) {
+                factor*sequenceNumber.getAndIncrement()
+              }
+            }
+
+            final seq = new Sequencer()
+            (1..5).each {
+              println seq.getNext(2)?.longValue()
+            }
+            assert seq.getNext(2) == 10
+'''
+    }
+
+    void testShouldAllowSubscriptOperatorOnSet() {
+        assertScript '''
+            def map = new LinkedHashMap<>([a:1,b:2])
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def ift = node.getNodeMetaData(INFERRED_TYPE)
+                assert ift == make(Set)
+                assert ift.isUsingGenerics()
+                assert ift.genericsTypes[0].type==STRING_TYPE
+            })
+            def set = map.keySet()
+            def key = set[0]
+            assert key=='a'
+        '''
+        assertScript '''
+            def map = new LinkedHashMap([a:1,b:2])
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def ift = node.getNodeMetaData(INFERRED_TYPE)
+                assert ift == make(Set)
+                assert ift.isUsingGenerics()
+                assert ift.genericsTypes[0].name=='K'
+            })
+            def set = map.keySet()
+            def key = set[0]
+            assert key=='a'
+        '''
+    }
+
+    // GROOVY-6552
+    void testShouldNotThrowClassCastException() {
+        assertScript '''import java.util.concurrent.Callable
+
+    String text(Class clazz) {
+        new Callable<String>() {
+            String call() throws Exception {
+                new Callable<String>() {
+                    String call() throws Exception {
+                        clazz.getName()
+                    }
+                }.call()
+            }
+        }.call()
+    }
+
+    assert text(String) == 'java.lang.String'
+    '''
     }
 }
 

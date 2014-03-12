@@ -16,13 +16,14 @@
 package groovy.lang;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Represents the variable bindings of a script which can be altered
  * from outside the script object or created outside of a script and passed
  * into it.
- * <p> Binding instances are not supposed to be used in a multithreaded context.
+ * <p> Binding instances are not supposed to be used in a multi-threaded context.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$

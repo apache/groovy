@@ -134,7 +134,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             foo.with {
                 name = 'Error'
             }
-        ''', 'The variable [name] is undeclared.' // todo: can we provide a better error message ?
+        ''', 'Cannot set read-only property: name'
     }
 
     void testFindMethodFromSameClass() {
@@ -182,15 +182,6 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testMethodReturnTypeInferenceShouldWorkBecauseInSameSourceUnit() {
-        assertScript '''
-            class A {
-                static def foo() { '123' }
-            }
-            A.foo().toInteger()
-        '''
-    }
-
     void testMethodReturnTypeInferenceShouldNotWorkBecauseNotSameSourceUnit() {
         shouldFailWithMessages '''
             import groovy.transform.stc.MiscSTCTest.MiscSTCTestSupport as A
@@ -202,21 +193,6 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             void lookup(Class clazz) { }
             lookup(Date)
-        '''
-    }
-
-    // GROOVY-5699
-    void testIntRangeInference() {
-        assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == make(IntRange)
-            })
-            def range = 1..10
-
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
-            })
-            def from = range.fromInt
         '''
     }
 
@@ -269,28 +245,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-6124
-    void testInferrenceOfIntRange() {
-        assertScript '''
-            String[] args = ['a','b','c','d']
-
-            @ASTTest(phase=INSTRUCTION_SELECTION,value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == make(IntRange)
-            })
-            def range = 1..-1
-
-            @ASTTest(phase=INSTRUCTION_SELECTION,value={
-                def irt = node.getNodeMetaData(INFERRED_TYPE)
-                assert irt == LIST_TYPE
-                assert irt.isUsingGenerics()
-                assert irt.genericsTypes[0].type == STRING_TYPE
-            })
-            def arr = args[range]
-            assert arr == ['b','c','d']
-        '''
-    }
-
-    // GROOVY-6165
+    // GROOVY-6165 && GROOVY-6196
     void testPropertyNameFromMethodName() {
         // too bad we're not using Spock!
 
@@ -306,7 +261,8 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
                 ['get', 'get_foo', '_foo'],
                 [null, 'foo', null],
                 ['foo', null, null],
-                [null,null,null]
+                [null,null,null],
+                ['get', 'getaList', 'aList']
         ]
         tests.each { prefix, methodName, expectation ->
             assert StaticTypeCheckingVisitor.extractPropertyNameFromMethodName(prefix, methodName) == expectation

@@ -1,0 +1,361 @@
+= The Groovy Eclipse Maven plugin
+
+
+Groovy-Eclipse provides a compiler plugin for Maven. Using the compiler
+plugin, it is possible to compile your maven projects using the
+Groovy-Eclipse compiler.
+
+The most recent version of the Groovy-Eclipse-Compiler plugin for maven
+is 2.8.0-01.2.9.0-01-SNAPSHOT is now available from
+http://nexus.codehaus.org/snapshots/ .The most recent version of the
+groovy-eclipse-batch artifact is 2.1.5-03 (for Groovy 2.1) and 2.0.7-03
+(for Groovy 2.0). They are both available from maven central. 
+
+[[Groovy-EclipsecompilerpluginforMaven-Howtousethecompilerplugin---SettingupthePOM]]
+== How to use the compiler plugin—Setting up the POM
+
+In your plugin section, you must change the compiler used by the
+http://maven.apache.org/plugins/maven-compiler-plugin/[maven-compiler-plugin].
+Like the http://ant.apache.org/manual/Tasks/javac.html[javac ant task],
+the maven-compiler-plugin does not actually compile, but rather
+delegates the compilation to a different artifact (in our case, the
+`groovy-eclipse-batch` artifact):
+
+[source,xml]
+--------------------------------------------------------------------------------------------------
+<build>
+...
+<plugins>
+  <plugin>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <!-- 2.8.0-01 and later require maven-compiler-plugin 3.0 or higher -->
+    <version>3.0</version>
+    <configuration>
+      <compilerId>groovy-eclipse-compiler</compilerId>
+      <!-- set verbose to be true if you want lots of uninteresting messages -->
+      <!-- <verbose>true</verbose> -->
+    </configuration>
+    <dependencies>
+      <dependency>
+        <groupId>org.codehaus.groovy</groupId>
+        <artifactId>groovy-eclipse-compiler</artifactId>
+        <version>2.8.0-01</version>
+      </dependency>
+      <!-- for 2.8.0-01 and later you must have an explicit dependency on groovy-eclipse-batch -->
+      <dependency>
+        <groupId>org.codehaus.groovy</groupId>
+        <artifactId>groovy-eclipse-batch</artifactId>
+        <version>2.1.5-03</version>
+        <!-- or choose a different compiler version -->
+        <!-- <version>1.8.6-01</version> -->
+        <!-- <version>1.7.10-06</version> -->
+</dependency>
+ </dependencies>
+  </plugin>
+  ...
+</plugins>
+</build>
+--------------------------------------------------------------------------------------------------
+
+This will allow Groovy files to be compiled. The groovy-eclipse-compiler
+recognizes all settings supported by the
+http://maven.apache.org/plugins/maven-compiler-plugin/[maven-compiler-plugin].
+
+Remember that you still need to specify a groovy artifact as a build
+dependency in addition to the `maven-compiler-plugin` dependency.  The
+groovy dependency version should match the compiler version.  Something
+like this:
+
+[source,xml]
+------------------------------------------
+<dependencies>
+  ...
+  <dependency>
+    <groupId>org.codehaus.groovy</groupId>
+    <artifactId>groovy-all</artifactId>
+    <version>1.8.6</version>
+  </dependency>
+  ...
+</dependencies>
+------------------------------------------
+
+Note that the groovy-eclipse-compiler and groovy-eclipse-batch artifacts
+are available in Maven-central, so there is no need to explicitly
+declare any extra repositories.
+
+[[Groovy-EclipsecompilerpluginforMaven-Settingupthesourcefolders]]
+== Setting up the source folders
+
+
+There are several ways to set up your maven project to recognize Groovy
+source files
+
+[[Groovy-EclipsecompilerpluginforMaven-Donothing]]
+=== Do nothing
+
+The simplest way to set up your source folders is to do nothing at all:
+add all of your Groovy files to `src/main/java` and `src/test/java`.
+This requires absolutely no extra configuration and is easy to
+implement. However, this is not a standard maven approach to setting up
+your project. If you require a more standard maven approach, then it is
+possible to put your Groovy files in `src/main/groovy` and
+`src/test/groovy` and you Java files in `src/main/java` and
+`src/test/java`. There are several ways of doing this.
+
+[[Groovy-EclipsecompilerpluginforMaven-Doalmostnothing]]
+=== Do almost nothing
+
+If there is _at least one_ file (Java or not) in `src/main/java`, then
+all files in `src/main/groovy` will be found. If, however,
+`src/main/java` is empty, then `src/main/groovy` will be ignored. You
+can get around this by placing an empty file in `src/main/java` just so
+that `src/main/groovy` will be recognized. The same is true for
+`src/test/java` and `src/test/groovy`. This is actually a workaround for
+http://jira.codehaus.org/browse/GRECLIPSE-1221[GRECLIPSE-1221].
+
+[[Groovy-EclipsecompilerpluginforMaven-Usethegroovy-eclipse-compilermojoforconfiguringsourcefolders]]
+=== Use the `groovy-eclipse-compiler` mojo for configuring source folders
+
+(You only need this approach if your project has an empty
+`src/main/java` or `src/test/java`.)
+
+If your project has no Java files and you don’t want to add an empty
+file in `src/main/java`, then you can configure source files by
+referencing the groovy-eclipse-compiler mojo. Just add this to the
+`plugins` section of your pom:
+
+[source,xml]
+----------------------------------------------------
+<build>
+  ...
+  <plugin>
+    <groupId>org.codehaus.groovy</groupId>
+    <artifactId>groovy-eclipse-compiler</artifactId>
+    <version>2.8.0-01</version>
+    <extensions>true</extensions>
+  </plugin>
+  ...
+</build>
+----------------------------------------------------
+
+The `<extensions>true</extensions>` section is important because this
+redefines the default lifecycle of your project so that an extra phase
+is added. This phase has an extra goal attached to it that adds the two
+Groovy source folders.
+
+[[Groovy-EclipsecompilerpluginforMaven-Usethebuild-helper-maven-plugin]]
+=== Use the `build-helper-maven-plugin`
+
+(You only need this approach if your project has an empty
+`src/main/java` or `src/test/java`.)
+
+The `build-helper-maven-plugin` allows you to do things like adding
+extra source folders to your project without needing to redefine the
+default lifecycle. You need to add this configuration to your build
+plugin section:
+
+[source,xml]
+------------------------------------------------------
+<build>
+  ...
+  <plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>build-helper-maven-plugin</artifactId>
+    <version>1.5</version>
+    <executions>
+      <execution>
+        <id>add-source</id>
+        <phase>generate-sources</phase>
+        <goals>
+          <goal>add-source</goal>
+        </goals>
+        <configuration>
+          <sources>
+            <source>src/main/groovy</source>
+          </sources>
+        </configuration>
+      </execution>
+      <execution>
+        <id>add-test-source</id>
+        <phase>generate-test-sources</phase>
+        <goals>
+          <goal>add-test-source</goal>
+        </goals>
+        <configuration>
+          <sources>
+            <source>src/test/groovy</source>
+          </sources>
+        </configuration>
+      </execution>
+    </executions>
+  </plugin>
+  ...
+</build>
+------------------------------------------------------
+
+The benefit of using this approach is that you do not need to make any
+changes to the default lifecycle. The downside is, of course, that you
+need 31 lines of configuration to do this!
+
+[[Groovy-EclipsecompilerpluginforMaven-Sampleprojectandsourcecode]]
+== Sample project and source code
+
+There is an archetype available for this project. You can use it through
+a command like this:
+
+[source,xml]
+------------------------------------------------------------------------------------
+mvn archetype:generate \
+    -DarchetypeGroupId=org.codehaus.groovy \
+    -DarchetypeArtifactId=groovy-eclipse-quickstart \
+    -DarchetypeVersion=2.5.2-01 \
+    -DgroupId=foo \
+    -DartifactId=bar \
+    -Dversion=1 \
+    -DinteractiveMode=false \
+    -DarchetypeRepository=https://nexus.codehaus.org/content/repositories/snapshots/
+------------------------------------------------------------------------------------
+
+_(This archetype is not actively maintained.)_
+
+A
+https://svn.codehaus.org/groovy/eclipse/trunk/extras/groovy-eclipse-maven-tests[sample
+project] using the compiler plugin as well as the source code for the
+plugin itself are available from the
+https://github.com/groovy/groovy-eclipse/[github repository]:
+
+The full URL to the maven projects
+is:https://github.com/groovy/groovy-eclipse/tree/master/extrasThere are
+several projects in the repository:groovy-eclipse-compiler : the
+compiler plugin itself (an m2eclipse
+project).groovy-eclipse-batch-builder : a set of ant scripts and
+configuration files used to build the groovy-eclipse-batch artifact.
+This artifact is an amalgamation of all jars required for compiling
+Groovy and Java code in Eclipse, including ecj (the Eclipse compiler for
+Java), the non-UI components of Groovy-Eclipse, the Groovy jars, and
+various required Eclipse bundles.groovy-eclipse-maven-tests : a sample
+project that uses the compiler plugin (an m2eclipse
+project).org.codehaus.groovy.m2eclipse : an Eclipse plugin that provides
+integration between Groovy-Eclipse and m2eclipse (the Maven tooling for
+Eclipse).Feature org.codehaus.groovy.m2eclipse : an Eclipse feature that
+is required for building and releasing the org.codehaus.groovy.m2eclipse
+plugin.
+
+The sample project and archetype is not maintained as well as we would
+like. Some community help with this would be greatly appreciated. Please
+see http://jira.codehaus.org/browse/GRECLIPSE-1285[GRECLIPSE-1285].
+
+[[Groovy-EclipsecompilerpluginforMaven-WhyanotherGroovycompilerforMavenWhataboutGMaven]]
+== Why another Groovy compiler for Maven? What about GMaven?
+
+GMaven 2.0 and later no longer supports compilation.  You can read more
+about this on the http://groovy.github.io/gmaven/[GMaven 2 project
+page]. <<section-gmaven,GMaven 1.x>> is now deprecated.
+
+GMaven 1.x had limitations over the groovy-eclipse-compiler and for the
+following reasons GMaven 2.0 compilation is no longer supported:
+
+1.  The compiler plugin does not require the creation of Java stubs so
+that your Groovy files can compile against Java files. This will prevent
+some arcane compile errors from appearing.
+2.  The Groovy-Eclipse compiler is the same inside Eclipse and inside
+Maven, and so configuration across the two platforms can be simplified.
+3.  The compiler plugin is a
+http://maven.apache.org/plugins/maven-compiler-plugin/non-javac-compilers.html[standard
+compiler plugin] for Maven. It therefore follows all allows all the same
+standard configuration that the Javac compiler plugin uses. This makes
+it simpler to introduce Groovy into an existing Maven project. All you
+need to do is change the compiler plugin that the pom references.
+
+There are still some reasons to use GMaven:
+
+1.  GroovyDoc tool is not supported because the compiler plugin does not
+produce stubs.
+2.  Groovy Mojos are not supported.
+3.  Groovy scripts cannot be executed in your poms.
+
+Whether or not the Groovy-Eclipse compiler plugin for Maven is
+appropriate for your project will depend on your requirements.
+
+[[Groovy-EclipsecompilerpluginforMaven-ProjectLombok]]
+== Project Lombok
+
+http://projectlombok.org/[Project Lombok] is compatible with the
+groovy-eclipse-compiler.  There is some extra configuration that you
+need to do.  The lombok jar needs to be added to _both the build and
+compile dependencies sections_:
+
+[source,xml]
+--------------------------------------
+<dependency>
+  <groupId>org.projectlombok</groupId>
+  <artifactId>lombok</artifactId>
+  <version>0.10.4</version>
+</dependency>
+--------------------------------------
+
+Also, the following configuration needs to be added to the
+maven-compiler-plugin configuration:
+
+[source,xml]
+------------------------------------------------------
+<configuration>
+  <compilerId>groovy-eclipse-compiler</compilerId>
+  <verbose>true</verbose>
+  <compilerArguments>
+    <javaAgentClass>lombok.core.Agent</javaAgentClass>
+  </compilerArguments>
+  <fork>true</fork>
+</configuration>
+------------------------------------------------------
+
+[[Groovy-EclipsecompilerpluginforMaven-Groovy-Eclipseconfiguratorform2Eclipse]]
+== Groovy-Eclipse configurator for m2Eclipse
+
+If you are going to be working with your maven project inside of
+Eclipse, it is strongly recommended that you use
+http://eclipse.org/m2e[m2eclipse]. And to use your Groovy projects with
+m2eclipse, you will need to install the Groovy-Eclipse configurator for
+m2eclipse. This feature is available any of the Groovy-Eclipse update
+sites (e.g., nightly, milestone, or release). Just go to your Eclipse
+update manager and add the Groovy-Eclipse update sites (if you haven’t
+done so already). Select the _Groovy-Eclipse M2E integration_.
+
+[[Groovy-EclipsecompilerpluginforMaven-ReleaseBuilds]]
+== Release Builds
+
+[cols="<,<",]
+|=================================================================
+|Eclipse level |Release update site
+|4.2 (Juno) |http://dist.springsource.org/release/GRECLIPSE/e4.2
+|3.7 (Indigo) |http://dist.springsource.org/release/GRECLIPSE/e3.7
+|=================================================================
+
+[[Groovy-EclipsecompilerpluginforMaven-DevelopmentBuilds]]
+== Development Builds
+
+
+[cols="<,<",]
+|==================================================================
+|Eclipse level |Development update site
+|4.2 (Juno) |http://dist.springsource.org/snapshot/GRECLIPSE/e4.2
+|3.7 (Indigo) |http://dist.springsource.org/snapshot/GRECLIPSE/e3.7
+|==================================================================
+
+The Groovy-Eclipse configurator for m2eclipse is not compatible with
+AspectJ or Scala.  So you cannot use a joint AspectJ/Scala/Groovy
+project in Eclipse. These languages must be separated into separate
+sub-projects.
+
+[[Groovy-EclipsecompilerpluginforMaven-Wheretofindmoreinformationandaskquestions]]
+== Where to find more information and ask questions
+
+Please ask all questions on the Groovy-Eclipse mailing list. Any bugs or
+feature enhancements should go on Groovy-Eclipse’s jira.
+
+The compiler plugin was originally described
+http://contraptionsforprogramming.blogspot.com/2010/09/where-are-all-my-stubs.html[here]
+and
+http://contraptionsforprogramming.blogspot.com/2010/10/more-on-groovy-eclipse-and-maven.html[here],
+but these posts are no longer updated and this page will always contain
+the more recent information.

@@ -160,7 +160,7 @@ public class Groovy extends Java {
      * Set an inline command to execute.
      * NB: Properties are not expanded in this text.
      *
-     * @param txt the inline groovy ommands to execute
+     * @param txt the inline groovy commands to execute
      */
     public void addText(String txt) {
         log("addText('" + txt + "')", Project.MSG_VERBOSE);
@@ -324,7 +324,7 @@ public class Groovy extends Java {
     }
 
     private static String getText(BufferedReader reader) throws IOException {
-        StringBuffer answer = new StringBuffer();
+        StringBuilder answer = new StringBuilder();
         // reading the content of the file within a char buffer allow to keep the correct line endings
         char[] charBuffer = new char[4096];
         int nbCharRead = 0;
@@ -350,7 +350,7 @@ public class Groovy extends Java {
     protected void runStatements(Reader reader, PrintStream out)
             throws IOException {
         log.debug("runStatements()");
-        StringBuffer txt = new StringBuffer();
+        StringBuilder txt = new StringBuilder();
         String line = "";
         BufferedReader in = new BufferedReader(reader);
 
@@ -633,7 +633,7 @@ public class Groovy extends Java {
      */
     protected void printResults(PrintStream out) {
         log.debug("printResults()");
-        StringBuffer line = new StringBuffer();
+        StringBuilder line = new StringBuilder();
         out.println(line);
         out.println();
     }

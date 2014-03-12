@@ -20,7 +20,11 @@ import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.Command
 
 /**
- * Registers {@link Command} instances from and XML file.
+ * Registers {@link Command} classes from an XML file like:
+ * <commands>
+ *  <command>org.codehaus.groovy.tools.shell.commands.HelpCommand</command>
+ * ...
+ * </commands>
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.transform;
 
+import groovy.lang.Lazy;
 import groovy.transform.Field;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
@@ -46,6 +47,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
 
     private static final Class MY_CLASS = Field.class;
     private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    private static final ClassNode LAZY_TYPE = ClassHelper.make(Lazy.class);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode ASTTRANSFORMCLASS_TYPE = ClassHelper.make(GroovyASTTransformationClass.class);
     private SourceUnit sourceUnit;
@@ -89,6 +91,10 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             // GROOVY-6112 : also copy acceptable Groovy transforms
             final List<AnnotationNode> annotations = de.getAnnotations();
             for (AnnotationNode annotation : annotations) {
+                // GROOVY-6337 HACK: in case newly created field is @Lazy
+                if (annotation.getClassNode().equals(LAZY_TYPE)) {
+                    LazyASTTransformation.visitField(annotation, fieldNode);
+                }
                 final ClassNode annotationClassNode = annotation.getClassNode();
                 if (notTransform(annotationClassNode) || acceptableTransform(annotation)) {
                     fieldNode.addAnnotation(annotation);

@@ -56,17 +56,17 @@ class ScriptToTreeNodeAdapter {
 
     static {
         try {
-            URL url =  ClassLoader.getSystemResource("groovy/inspect/swingui/AstBrowserProperties.groovy")
+            URL url =  ClassLoader.getSystemResource('groovy/inspect/swingui/AstBrowserProperties.groovy')
             if (!url) {
-                url = ScriptToTreeNodeAdapter.class.classLoader.getResource("groovy/inspect/swingui/AstBrowserProperties.groovy")
+                url = ScriptToTreeNodeAdapter.class.classLoader.getResource('groovy/inspect/swingui/AstBrowserProperties.groovy')
             }
     
             def config = new ConfigSlurper().parse(url)
             classNameToStringForm = config.toProperties()
     
-            String home = System.getProperty("user.home")
+            String home = System.getProperty('user.home')
             if (home) {
-                File userFile = new File(home + File.separator + ".groovy/AstBrowserProperties.groovy")
+                File userFile = new File(home + File.separator + '.groovy/AstBrowserProperties.groovy')
                 if (userFile.exists()) {
                     def customConfig = new ConfigSlurper().parse(userFile.toURL())
                     // layer custom string forms onto defaults with putAll, do not replace them
@@ -97,26 +97,26 @@ class ScriptToTreeNodeAdapter {
      *      the int based CompilePhase to compile it to.
     */
     def compile(String script, int compilePhase) {
-        def scriptName = "script" + System.currentTimeMillis() + ".groovy"
-        GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, "/groovy/script")
+        def scriptName = 'script' + System.currentTimeMillis() + '.groovy'
+        GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, '/groovy/script')
         CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
         cu.setClassgenCallback(classLoader.createCollector(cu, null))
 
         TreeNodeBuildingNodeOperation operation = new TreeNodeBuildingNodeOperation(this, showScriptFreeForm, showScriptClass, showClosureClasses)
         cu.addPhaseOperation(operation, compilePhase)
-        cu.addSource(codeSource.getName(), script);
+        cu.addSource(codeSource.getName(), script)
         try {
             cu.compile(compilePhase)
         } catch (CompilationFailedException cfe) {
-            operation.root.add(nodeMaker.makeNode("Unable to produce AST for this phase due to earlier compilation error:"))
+            operation.root.add(nodeMaker.makeNode('Unable to produce AST for this phase due to earlier compilation error:'))
             cfe.message.eachLine {
                 operation.root.add(nodeMaker.makeNode(it))
             }
-            operation.root.add(nodeMaker.makeNode("Fix the above error(s) and then press Refresh"))
+            operation.root.add(nodeMaker.makeNode('Fix the above error(s) and then press Refresh'))
         } catch (Throwable t) {
-            operation.root.add(nodeMaker.makeNode("Unable to produce AST for this phase due to an error:"))
+            operation.root.add(nodeMaker.makeNode('Unable to produce AST for this phase due to an error:'))
             operation.root.add(nodeMaker.makeNode(t))
-            operation.root.add(nodeMaker.makeNode("Fix the above error(s) and then press Refresh"))
+            operation.root.add(nodeMaker.makeNode('Fix the above error(s) and then press Refresh'))
         }
         return operation.root
     }
@@ -166,7 +166,7 @@ class ScriptToTreeNodeAdapter {
                 def type = it.type.simpleName.toString()
                 [name, value, type]
             }?.
-            sort() { it[0] }
+            sort { it[0] }
     }
 
     /**
@@ -193,31 +193,31 @@ class ScriptToTreeNodeAdapter {
  */
 class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
-    final def root
-    final def sourceCollected = new AtomicBoolean(false)
+    final root
+    final sourceCollected = new AtomicBoolean(false)
     final ScriptToTreeNodeAdapter adapter
 
-    final def showScriptFreeForm
-    final def showScriptClass
-    final def showClosureClasses
+    final showScriptFreeForm
+    final showScriptClass
+    final showClosureClasses
 
-    final def nodeMaker
+    final nodeMaker
 
     def TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter, showScriptFreeForm, showScriptClass) {
         this(adapter, showScriptFreeForm, showScriptClass, false)
     }
 
     def TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter, showScriptFreeForm, showScriptClass, showClosureClasses) {
-        if (!adapter) throw new IllegalArgumentException("Null: adapter")
+        if (!adapter) throw new IllegalArgumentException('Null: adapter')
         this.adapter = adapter
         this.showScriptFreeForm = showScriptFreeForm
         this.showScriptClass = showScriptClass
         this.showClosureClasses = showClosureClasses
         nodeMaker = adapter.nodeMaker
-        root = nodeMaker.makeNode("root")
+        root = nodeMaker.makeNode('root')
     }
 
-    public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+    void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         // module node
         if (!sourceCollected.getAndSet(true) && showScriptFreeForm) {
             // display the source unit AST
@@ -225,7 +225,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
             ast.getStatementBlock().visit(visitor)
             if (visitor.currentNode) root.add(visitor.currentNode)
-            collectModuleNodeMethodData("Methods", ast.getMethods())
+            collectModuleNodeMethodData('Methods', ast.getMethods())
         }
 
         if(classNode.isScript() && !showScriptClass) return
@@ -233,11 +233,11 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         def child = adapter.make(classNode)
         root.add(child)
 
-        collectConstructorData(child, "Constructors", classNode)
-        collectMethodData(child, "Methods", classNode)
-        collectFieldData(child, "Fields", classNode)
-        collectPropertyData(child, "Properties", classNode)
-        collectAnnotationData(child, "Annotations", classNode)
+        collectConstructorData(child, 'Constructors', classNode)
+        collectMethodData(child, 'Methods', classNode)
+        collectFieldData(child, 'Fields', classNode)
+        collectPropertyData(child, 'Properties', classNode)
+        collectAnnotationData(child, 'Annotations', classNode)
 
         if (showClosureClasses)  {
             makeClosureClassTreeNodes(classNode)
@@ -256,11 +256,11 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             def child = adapter.make(innerClassNode)
             root.add(child)
 
-            collectConstructorData(child, "Constructors", innerClassNode)
-            collectMethodData(child, "Methods", innerClassNode)
-            collectFieldData(child, "Fields", innerClassNode)
-            collectPropertyData(child, "Properties", innerClassNode)
-            collectAnnotationData(child, "Annotations", innerClassNode)
+            collectConstructorData(child, 'Constructors', innerClassNode)
+            collectMethodData(child, 'Methods', innerClassNode)
+            collectFieldData(child, 'Fields', innerClassNode)
+            collectPropertyData(child, 'Properties', innerClassNode)
+            collectAnnotationData(child, 'Annotations', innerClassNode)
         }
     }
 
@@ -366,15 +366,15 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 @groovy.transform.PackageScope class TreeNodeBuildingVisitor extends CodeVisitorSupport {
 
     def currentNode
-    private adapter
+    private final adapter
 
     /**
      * Creates the visitor. A file named AstBrowserProperties.groovy is located which is
      * a property files the describes how to represent ASTNode types as Strings.
      */
     private TreeNodeBuildingVisitor(adapter) {
-        if (!adapter) throw new IllegalArgumentException("Null: adapter")
-        this.adapter = adapter;
+        if (!adapter) throw new IllegalArgumentException('Null: adapter')
+        this.adapter = adapter
     }
 
     /**
@@ -393,7 +393,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             } else {
                 // visitor works off void methods... so we have to
                 // perform a swap to get accumulation like behavior.
-                def temp = currentNode;
+                def temp = currentNode
                 currentNode = adapter.make(node)
 
                 temp.add(currentNode)
@@ -406,243 +406,243 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
-    public void visitBlockStatement(BlockStatement node) {
-        addNode(node, BlockStatement, { super.visitBlockStatement(it) });
+    void visitBlockStatement(BlockStatement node) {
+        addNode(node, BlockStatement, { super.visitBlockStatement(it) })
     }
 
-    public void visitForLoop(ForStatement node) {
-        addNode(node, ForStatement, { super.visitForLoop(it) });
+    void visitForLoop(ForStatement node) {
+        addNode(node, ForStatement, { super.visitForLoop(it) })
     }
 
-    public void visitWhileLoop(WhileStatement node) {
-        addNode(node, WhileStatement, { super.visitWhileLoop(it) });
+    void visitWhileLoop(WhileStatement node) {
+        addNode(node, WhileStatement, { super.visitWhileLoop(it) })
     }
 
-    public void visitDoWhileLoop(DoWhileStatement node) {
-        addNode(node, DoWhileStatement, { super.visitDoWhileLoop(it) });
+    void visitDoWhileLoop(DoWhileStatement node) {
+        addNode(node, DoWhileStatement, { super.visitDoWhileLoop(it) })
     }
 
-    public void visitIfElse(IfStatement node) {
-        addNode(node, IfStatement, { super.visitIfElse(it) });
+    void visitIfElse(IfStatement node) {
+        addNode(node, IfStatement, { super.visitIfElse(it) })
     }
 
-    public void visitExpressionStatement(ExpressionStatement node) {
-        addNode(node, ExpressionStatement, { super.visitExpressionStatement(it) });
+    void visitExpressionStatement(ExpressionStatement node) {
+        addNode(node, ExpressionStatement, { super.visitExpressionStatement(it) })
     }
 
-    public void visitReturnStatement(ReturnStatement node) {
-        addNode(node, ReturnStatement, { super.visitReturnStatement(it) });
+    void visitReturnStatement(ReturnStatement node) {
+        addNode(node, ReturnStatement, { super.visitReturnStatement(it) })
     }
 
-    public void visitAssertStatement(AssertStatement node) {
-        addNode(node, AssertStatement, { super.visitAssertStatement(it) });
+    void visitAssertStatement(AssertStatement node) {
+        addNode(node, AssertStatement, { super.visitAssertStatement(it) })
     }
 
-    public void visitTryCatchFinally(TryCatchStatement node) {
-        addNode(node, TryCatchStatement, { super.visitTryCatchFinally(it) });
+    void visitTryCatchFinally(TryCatchStatement node) {
+        addNode(node, TryCatchStatement, { super.visitTryCatchFinally(it) })
     }
     
     protected void visitEmptyStatement(EmptyStatement node) {
-        addNode(node, EmptyStatement, { super.visitEmptyStatement(it) });
+        addNode(node, EmptyStatement, { super.visitEmptyStatement(it) })
     }
 
-    public void visitSwitch(SwitchStatement node) {
-        addNode(node, SwitchStatement, { super.visitSwitch(it) });
+    void visitSwitch(SwitchStatement node) {
+        addNode(node, SwitchStatement, { super.visitSwitch(it) })
     }
 
-    public void visitCaseStatement(CaseStatement node) {
-        addNode(node, CaseStatement, { super.visitCaseStatement(it) });
+    void visitCaseStatement(CaseStatement node) {
+        addNode(node, CaseStatement, { super.visitCaseStatement(it) })
     }
 
-    public void visitBreakStatement(BreakStatement node) {
-        addNode(node, BreakStatement, { super.visitBreakStatement(it) });
+    void visitBreakStatement(BreakStatement node) {
+        addNode(node, BreakStatement, { super.visitBreakStatement(it) })
     }
 
-    public void visitContinueStatement(ContinueStatement node) {
-        addNode(node, ContinueStatement, { super.visitContinueStatement(it) });
+    void visitContinueStatement(ContinueStatement node) {
+        addNode(node, ContinueStatement, { super.visitContinueStatement(it) })
     }
 
-    public void visitSynchronizedStatement(SynchronizedStatement node) {
-        addNode(node, SynchronizedStatement, { super.visitSynchronizedStatement(it) });
+    void visitSynchronizedStatement(SynchronizedStatement node) {
+        addNode(node, SynchronizedStatement, { super.visitSynchronizedStatement(it) })
     }
 
-    public void visitThrowStatement(ThrowStatement node) {
-        addNode(node, ThrowStatement, { super.visitThrowStatement(it) });
+    void visitThrowStatement(ThrowStatement node) {
+        addNode(node, ThrowStatement, { super.visitThrowStatement(it) })
     }
 
-    public void visitMethodCallExpression(MethodCallExpression node) {
-        addNode(node, MethodCallExpression, { super.visitMethodCallExpression(it) });
+    void visitMethodCallExpression(MethodCallExpression node) {
+        addNode(node, MethodCallExpression, { super.visitMethodCallExpression(it) })
     }
 
-    public void visitStaticMethodCallExpression(StaticMethodCallExpression node) {
-        addNode(node, StaticMethodCallExpression, { super.visitStaticMethodCallExpression(it) });
+    void visitStaticMethodCallExpression(StaticMethodCallExpression node) {
+        addNode(node, StaticMethodCallExpression, { super.visitStaticMethodCallExpression(it) })
     }
 
-    public void visitConstructorCallExpression(ConstructorCallExpression node) {
-        addNode(node, ConstructorCallExpression, { super.visitConstructorCallExpression(it) });
+    void visitConstructorCallExpression(ConstructorCallExpression node) {
+        addNode(node, ConstructorCallExpression, { super.visitConstructorCallExpression(it) })
     }
 
-    public void visitBinaryExpression(BinaryExpression node) {
-        addNode(node, BinaryExpression, { super.visitBinaryExpression(it) });
+    void visitBinaryExpression(BinaryExpression node) {
+        addNode(node, BinaryExpression, { super.visitBinaryExpression(it) })
     }
 
-    public void visitTernaryExpression(TernaryExpression node) {
-        addNode(node, TernaryExpression, { super.visitTernaryExpression(it) });
+    void visitTernaryExpression(TernaryExpression node) {
+        addNode(node, TernaryExpression, { super.visitTernaryExpression(it) })
     }
 
-    public void visitShortTernaryExpression(ElvisOperatorExpression node) {
-        addNode(node, ElvisOperatorExpression, { super.visitShortTernaryExpression(it) });
+    void visitShortTernaryExpression(ElvisOperatorExpression node) {
+        addNode(node, ElvisOperatorExpression, { super.visitShortTernaryExpression(it) })
     }
 
-    public void visitPostfixExpression(PostfixExpression node) {
-        addNode(node, PostfixExpression, { super.visitPostfixExpression(it) });
+    void visitPostfixExpression(PostfixExpression node) {
+        addNode(node, PostfixExpression, { super.visitPostfixExpression(it) })
     }
 
-    public void visitPrefixExpression(PrefixExpression node) {
-        addNode(node, PrefixExpression, { super.visitPrefixExpression(it) });
+    void visitPrefixExpression(PrefixExpression node) {
+        addNode(node, PrefixExpression, { super.visitPrefixExpression(it) })
     }
 
-    public void visitBooleanExpression(BooleanExpression node) {
-        addNode(node, BooleanExpression, { super.visitBooleanExpression(it) });
+    void visitBooleanExpression(BooleanExpression node) {
+        addNode(node, BooleanExpression, { super.visitBooleanExpression(it) })
     }
 
-    public void visitNotExpression(NotExpression node) {
-        addNode(node, NotExpression, { super.visitNotExpression(it) });
+    void visitNotExpression(NotExpression node) {
+        addNode(node, NotExpression, { super.visitNotExpression(it) })
     }
 
-    public void visitClosureExpression(ClosureExpression node) {
+    void visitClosureExpression(ClosureExpression node) {
         addNode(node, ClosureExpression, { 
           it.parameters?.each { parameter -> visitParameter(parameter) }
           super.visitClosureExpression(it) 
-        });
+        })
     }
 
     /**
      * Makes walking parameters look like others in the visitor.
      */
-    public void visitParameter(Parameter node) {
+    void visitParameter(Parameter node) {
         addNode(node, Parameter, {
           if (node.initialExpression) {
             node.initialExpression?.visit(this)
           }
-        });
+        })
     }
 
-    public void visitTupleExpression(TupleExpression node) {
-        addNode(node, TupleExpression, { super.visitTupleExpression(it) });
+    void visitTupleExpression(TupleExpression node) {
+        addNode(node, TupleExpression, { super.visitTupleExpression(it) })
     }
 
-    public void visitListExpression(ListExpression node) {
-        addNode(node, ListExpression, { super.visitListExpression(it) });
+    void visitListExpression(ListExpression node) {
+        addNode(node, ListExpression, { super.visitListExpression(it) })
     }
 
-    public void visitArrayExpression(ArrayExpression node) {
-        addNode(node, ArrayExpression, { super.visitArrayExpression(it) });
+    void visitArrayExpression(ArrayExpression node) {
+        addNode(node, ArrayExpression, { super.visitArrayExpression(it) })
     }
 
-    public void visitMapExpression(MapExpression node) {
-        addNode(node, MapExpression, { super.visitMapExpression(it) });
+    void visitMapExpression(MapExpression node) {
+        addNode(node, MapExpression, { super.visitMapExpression(it) })
     }
 
-    public void visitMapEntryExpression(MapEntryExpression node) {
-        addNode(node, MapEntryExpression, { super.visitMapEntryExpression(it) });
+    void visitMapEntryExpression(MapEntryExpression node) {
+        addNode(node, MapEntryExpression, { super.visitMapEntryExpression(it) })
     }
 
-    public void visitRangeExpression(RangeExpression node) {
-        addNode(node, RangeExpression, { super.visitRangeExpression(it) });
+    void visitRangeExpression(RangeExpression node) {
+        addNode(node, RangeExpression, { super.visitRangeExpression(it) })
     }
 
-    public void visitSpreadExpression(SpreadExpression node) {
-        addNode(node, SpreadExpression, { super.visitSpreadExpression(it) });
+    void visitSpreadExpression(SpreadExpression node) {
+        addNode(node, SpreadExpression, { super.visitSpreadExpression(it) })
     }
 
-    public void visitSpreadMapExpression(SpreadMapExpression node) {
-        addNode(node, SpreadMapExpression, { super.visitSpreadMapExpression(it) });
+    void visitSpreadMapExpression(SpreadMapExpression node) {
+        addNode(node, SpreadMapExpression, { super.visitSpreadMapExpression(it) })
     }
 
-    public void visitMethodPointerExpression(MethodPointerExpression node) {
-        addNode(node, MethodPointerExpression, { super.visitMethodPointerExpression(it) });
+    void visitMethodPointerExpression(MethodPointerExpression node) {
+        addNode(node, MethodPointerExpression, { super.visitMethodPointerExpression(it) })
     }
 
-    public void visitUnaryMinusExpression(UnaryMinusExpression node) {
-        addNode(node, UnaryMinusExpression, { super.visitUnaryMinusExpression(it) });
+    void visitUnaryMinusExpression(UnaryMinusExpression node) {
+        addNode(node, UnaryMinusExpression, { super.visitUnaryMinusExpression(it) })
     }
 
-    public void visitUnaryPlusExpression(UnaryPlusExpression node) {
-        addNode(node, UnaryPlusExpression, { super.visitUnaryPlusExpression(it) });
+    void visitUnaryPlusExpression(UnaryPlusExpression node) {
+        addNode(node, UnaryPlusExpression, { super.visitUnaryPlusExpression(it) })
     }
 
-    public void visitBitwiseNegationExpression(BitwiseNegationExpression node) {
-        addNode(node, BitwiseNegationExpression, { super.visitBitwiseNegationExpression(it) });
+    void visitBitwiseNegationExpression(BitwiseNegationExpression node) {
+        addNode(node, BitwiseNegationExpression, { super.visitBitwiseNegationExpression(it) })
     }
 
-    public void visitCastExpression(CastExpression node) {
-        addNode(node, CastExpression, { super.visitCastExpression(it) });
+    void visitCastExpression(CastExpression node) {
+        addNode(node, CastExpression, { super.visitCastExpression(it) })
     }
 
-    public void visitConstantExpression(ConstantExpression node) {
-        addNode(node, ConstantExpression, { super.visitConstantExpression(it) });
+    void visitConstantExpression(ConstantExpression node) {
+        addNode(node, ConstantExpression, { super.visitConstantExpression(it) })
     }
 
-    public void visitClassExpression(ClassExpression node) {
-        addNode(node, ClassExpression, { super.visitClassExpression(it) });
+    void visitClassExpression(ClassExpression node) {
+        addNode(node, ClassExpression, { super.visitClassExpression(it) })
     }
 
-    public void visitVariableExpression(VariableExpression node) {
+    void visitVariableExpression(VariableExpression node) {
         addNode(node, VariableExpression, { VariableExpression it ->
             if (it.accessedVariable) {
                 if (it.accessedVariable instanceof Parameter) {
                     visitParameter((Parameter)it.accessedVariable)
                 } else if (it.accessedVariable instanceof DynamicVariable) {
-                    addNode(it.accessedVariable, DynamicVariable,{ it.initialExpression?.visit(this)});
+                    addNode(it.accessedVariable, DynamicVariable,{ it.initialExpression?.visit(this)})
                 }
             }
-        });
+        })
     }
 
-    public void visitDeclarationExpression(DeclarationExpression node) {
-        addNode(node, DeclarationExpression, { super.visitDeclarationExpression(it) });
+    void visitDeclarationExpression(DeclarationExpression node) {
+        addNode(node, DeclarationExpression, { super.visitDeclarationExpression(it) })
     }
 
-    public void visitPropertyExpression(PropertyExpression node) {
-        addNode(node, PropertyExpression, { super.visitPropertyExpression(it) });
+    void visitPropertyExpression(PropertyExpression node) {
+        addNode(node, PropertyExpression, { super.visitPropertyExpression(it) })
     }
 
-    public void visitAttributeExpression(AttributeExpression node) {
-        addNode(node, AttributeExpression, { super.visitAttributeExpression(it) });
+    void visitAttributeExpression(AttributeExpression node) {
+        addNode(node, AttributeExpression, { super.visitAttributeExpression(it) })
     }
 
-    public void visitFieldExpression(FieldExpression node) {
-        addNode(node, FieldExpression, { super.visitFieldExpression(it) });
+    void visitFieldExpression(FieldExpression node) {
+        addNode(node, FieldExpression, { super.visitFieldExpression(it) })
     }
 
-    public void visitGStringExpression(GStringExpression node) {
-        addNode(node, GStringExpression, { super.visitGStringExpression(it) });
+    void visitGStringExpression(GStringExpression node) {
+        addNode(node, GStringExpression, { super.visitGStringExpression(it) })
     }
 
-    public void visitCatchStatement(CatchStatement node) {
+    void visitCatchStatement(CatchStatement node) {
         addNode(node, CatchStatement, { 
             if (it.variable) visitParameter(it.variable) 
             super.visitCatchStatement(it) 
-        });
+        })
     }
 
-    public void visitArgumentlistExpression(ArgumentListExpression node) {
-        addNode(node, ArgumentListExpression, { super.visitArgumentlistExpression(it) });
+    void visitArgumentlistExpression(ArgumentListExpression node) {
+        addNode(node, ArgumentListExpression, { super.visitArgumentlistExpression(it) })
     }
 
-    public void visitClosureListExpression(ClosureListExpression node) {
-        addNode(node, ClosureListExpression, { super.visitClosureListExpression(it) });
+    void visitClosureListExpression(ClosureListExpression node) {
+        addNode(node, ClosureListExpression, { super.visitClosureListExpression(it) })
     }
 
-    public void visitBytecodeExpression(BytecodeExpression node) {
-        addNode(node, BytecodeExpression, { super.visitBytecodeExpression(it) });
+    void visitBytecodeExpression(BytecodeExpression node) {
+        addNode(node, BytecodeExpression, { super.visitBytecodeExpression(it) })
     }
 
     protected void visitListOfExpressions(List<? extends Expression> list) {
         list.each { Expression node ->
             if (node instanceof NamedArgumentListExpression ) {
-                addNode(node, NamedArgumentListExpression, { it.visit(this) });
+                addNode(node, NamedArgumentListExpression, { it.visit(this) })
             } else {
                 node.visit(this)
             }

@@ -39,13 +39,13 @@ class Main
         Ansi.setDetector(new AnsiDetector())
     }
 
-    private static final MessageSource messages = new MessageSource(Main.class)
+    private static final MessageSource messages = new MessageSource(Main)
 
     static void main(final String[] args) {
         IO io = new IO()
         Logger.io = io
 
-        def cli = new CliBuilder(usage : 'groovysh [options] [...]', formatter: new HelpFormatter(), writer: io.out)
+        CliBuilder cli = new CliBuilder(usage : 'groovysh [options] [...]', formatter: new HelpFormatter(), writer: io.out)
 
         cli.classpath(messages['cli.option.classpath.description'])
         cli.cp(longOpt: 'classpath', messages['cli.option.cp.description'])
@@ -100,7 +100,7 @@ class Main
             setColor(value)
         }
 
-        def code
+        int code
 
         // Boot up the shell... :-)
         final Groovysh shell = new Groovysh(io)
@@ -175,7 +175,7 @@ class Main
         }
     }
 
-    static void setColor(value) {
+    static void setColor(Boolean value) {
         if (value == null) {
             value = true // --color is the same as --color=true
         }
@@ -203,5 +203,4 @@ class Main
         System.setProperty(name, value)
     }
 }
-
 

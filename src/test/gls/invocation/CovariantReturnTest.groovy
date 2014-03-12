@@ -238,7 +238,32 @@ public class CovariantReturnTest extends CompilableTestSupport {
             }
         """
     }
-    
+
+    void testCovariantMethodGenerics_groovy6330() {
+        shouldNotCompile """
+            class StringIterator implements Iterator<String> {
+                void remove() { }
+                boolean hasNext() { false }
+                def next() { 'dummy' }
+            }
+        """
+        shouldNotCompile """
+            class StringIterator implements Iterator<String> {
+                void remove() { }
+                boolean hasNext() { false }
+                CharSequence next() { null }
+            }
+        """
+        assertScript """
+            class StringIterator implements Iterator<CharSequence> {
+                void remove() { }
+                boolean hasNext() { false }
+                String next() { 'dummy' }
+            }
+            assert new StringIterator().next() == 'dummy'
+        """
+    }
+
     void testCovariantParameter() {
         assertScript """
           interface Interface<SomeType> {

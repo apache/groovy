@@ -55,7 +55,7 @@ import org.objectweb.asm.util.TraceClassVisitor
  * @author Roshan Dawrani - separated out the swing UI related code from the model part so model could be used for various UIs
  */
 
-public class AstBrowser {
+class AstBrowser {
 
     private inputArea, rootElement, decompiledSource, jTree, propertyTable, splitterPane, mainSplitter, bytecodeView
     boolean showScriptFreeForm, showScriptClass, showClosureClasses, showTreeView
@@ -71,16 +71,16 @@ public class AstBrowser {
     SwingBuilder swing
     def frame
 
-    public static void main(args) {
+    static void main(args) {
 
         if (!args) {
-            println "Usage: java groovy.inspect.swingui.AstBrowser [filename]\nwhere [filename] is a Groovy script"
+            println 'Usage: java groovy.inspect.swingui.AstBrowser [filename]\nwhere [filename] is a Groovy script'
         } else {
             def file = new File((String) args[0])
             if (!file.exists()) {
                 println "File $args[0] cannot be found."
             } else {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
                 new AstBrowser(null, null, new GroovyClassLoader()).run({file.text}, file.path)
             }
         }
@@ -127,9 +127,9 @@ public class AstBrowser {
                     }
                 }
                 menu(text: 'View', mnemonic: 'V') {
-                    menuItem() {action(name: 'Larger Font', closure: this.&largerFont, mnemonic: 'L', accelerator: shortcut('shift L'))}
-                    menuItem() {action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))}
-                    menuItem() {
+                    menuItem {action(name: 'Larger Font', closure: this.&largerFont, mnemonic: 'L', accelerator: shortcut('shift L'))}
+                    menuItem {action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))}
+                    menuItem {
                         action(name: 'Refresh', closure: {
                             decompile(phasePicker.selectedItem.phaseId, script())
                             compile(jTree, script(), phasePicker.selectedItem.phaseId)
@@ -137,12 +137,12 @@ public class AstBrowser {
                     }
                 }
                 menu(text: 'Help', mnemonic: 'H') {
-                    menuItem() {action(name: 'About', closure: this.&showAbout, mnemonic: 'A')}
+                    menuItem {action(name: 'About', closure: this.&showAbout, mnemonic: 'A')}
                 }
             }
             panel {
                 gridBagLayout()
-                label(text: "At end of Phase: ",
+                label(text: 'At end of Phase: ',
                         constraints: gbc(gridx: 0, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: WEST, fill: HORIZONTAL, insets: [2, 2, 2, 2]))
                 phasePicker = comboBox(items: CompilePhaseAdapter.values(),
                         selectedItem: prefs.selectedPhase,
@@ -162,13 +162,13 @@ public class AstBrowser {
                         constraints: gbc(gridx: 2, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: NORTHEAST, fill: NONE, insets: [2, 2, 2, 3]))
                 splitterPane = splitPane(
                         visible: showTreeView, 
-                        leftComponent: scrollPane() {
+                        leftComponent: scrollPane {
                             jTree = tree(
-                                    name: "AstTreeView",
-                                    model: new DefaultTreeModel(new DefaultMutableTreeNode("Loading..."))) {}
+                                    name: 'AstTreeView',
+                                    model: new DefaultTreeModel(new DefaultMutableTreeNode('Loading...'))) {}
                         },
-                        rightComponent: scrollPane() {
-                            propertyTable = table() {
+                        rightComponent: scrollPane {
+                            propertyTable = table {
                                 tableModel(list: [[:]]) {
                                     propertyColumn(header: 'Name', propertyName: 'name')
                                     propertyColumn(header: 'Value', propertyName: 'value')
@@ -193,8 +193,8 @@ public class AstBrowser {
 
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
 
-        jTree.cellRenderer.setLeafIcon(swing.imageIcon(groovy.ui.Console.NODE_ICON_PATH));
-        jTree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION;
+        jTree.cellRenderer.setLeafIcon(swing.imageIcon(groovy.ui.Console.NODE_ICON_PATH))
+        jTree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
         jTree.addTreeSelectionListener({ TreeSelectionEvent e ->
 
             propertyTable.model.rows.clear()
@@ -202,7 +202,7 @@ public class AstBrowser {
             if (node instanceof TreeNodeWithProperties) {
 
                 node.properties.each {
-                    propertyTable.model.rows << ["name": it[0], "value": it[1], "type": it[2]]
+                    propertyTable.model.rows << ['name': it[0], 'value': it[1], 'type': it[2]]
                 }
 
                 if (inputArea && rootElement) {
@@ -233,7 +233,7 @@ public class AstBrowser {
                         def bytecode = classLoader.getBytecode(className)
                         if (bytecode) {
                             def writer = new StringWriter()
-                            def visitor = new TraceClassVisitor(new PrintWriter(writer));
+                            def visitor = new TraceClassVisitor(new PrintWriter(writer))
                             def reader = new ClassReader(bytecode)
                             reader.accept(visitor, 0)
 
@@ -293,7 +293,7 @@ public class AstBrowser {
         updateFontSize(decompiledSource.textEditor.font.size - 2)
     }
 
-    private updateFontSize = {newFontSize ->
+    private final updateFontSize = { newFontSize ->
         if (newFontSize > 40) {
             newFontSize = 40
         } else if (newFontSize < 4) {
@@ -344,8 +344,8 @@ public class AstBrowser {
 
     void decompile(phaseId, source) {
 
-        decompiledSource.textEditor.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        decompiledSource.textEditor.text = 'Loading...';
+        decompiledSource.textEditor.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
+        decompiledSource.textEditor.text = 'Loading...'
 
         swing.doOutside {
             try {
@@ -354,13 +354,13 @@ public class AstBrowser {
                 swing.doLater {
                     decompiledSource.textEditor.text = result 
                     decompiledSource.textEditor.setCaretPosition(0)
-                    decompiledSource.textEditor.setCursor(Cursor.defaultCursor);
+                    decompiledSource.textEditor.setCursor(Cursor.defaultCursor)
                 }
             } catch (Throwable t) {
                 swing.doLater {
-                    decompiledSource.textEditor.text = t.getMessage();
+                    decompiledSource.textEditor.text = t.getMessage()
                     decompiledSource.textEditor.setCaretPosition(0)
-                    decompiledSource.textEditor.setCursor(Cursor.defaultCursor);
+                    decompiledSource.textEditor.setCursor(Cursor.defaultCursor)
                 }
                 throw t
             }
@@ -371,10 +371,10 @@ public class AstBrowser {
         jTree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
         def model = jTree.model
         swing.edt {
-            def root = model.getRoot();
+            def root = model.getRoot()
             root.removeAllChildren()
-            root.add(new DefaultMutableTreeNode(new DefaultMutableTreeNode('Loading...')));
-            model.reload(root);
+            root.add(new DefaultMutableTreeNode(new DefaultMutableTreeNode('Loading...')))
+            model.reload(root)
         }
         swing.doOutside {
             try {
@@ -404,10 +404,10 @@ public class AstBrowser {
  */
 class AstBrowserUiPreferences {
 
-    final def frameLocation
-    final def frameSize
-    final def verticalDividerLocation
-    final def horizontalDividerLocation
+    final frameLocation
+    final frameSize
+    final verticalDividerLocation
+    final horizontalDividerLocation
     final boolean showScriptFreeForm
     final boolean showTreeView
     final boolean showScriptClass
@@ -418,19 +418,19 @@ class AstBrowserUiPreferences {
     def AstBrowserUiPreferences() {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         frameLocation = [
-                prefs.getInt("frameX", 200),
-                prefs.getInt("frameY", 200)]
+                prefs.getInt('frameX', 200),
+                prefs.getInt('frameY', 200)]
         frameSize = [
-                prefs.getInt("frameWidth", 800),
-                prefs.getInt("frameHeight", 600)]
+                prefs.getInt('frameWidth', 800),
+                prefs.getInt('frameHeight', 600)]
 
-        decompiledSourceFontSize = prefs.getInt("decompiledFontSize", 12)
-        verticalDividerLocation = Math.max(prefs.getInt("verticalSplitterLocation", 100), 100)
-        horizontalDividerLocation = Math.max(prefs.getInt("horizontalSplitterLocation", 100), 100)
-        showScriptFreeForm = prefs.getBoolean("showScriptFreeForm", false)
-        showScriptClass = prefs.getBoolean("showScriptClass", true)
-        showClosureClasses = prefs.getBoolean("showClosureClasses", false)
-        showTreeView = prefs.getBoolean("showTreeView", true)
+        decompiledSourceFontSize = prefs.getInt('decompiledFontSize', 12)
+        verticalDividerLocation = Math.max(prefs.getInt('verticalSplitterLocation', 100), 100)
+        horizontalDividerLocation = Math.max(prefs.getInt('horizontalSplitterLocation', 100), 100)
+        showScriptFreeForm = prefs.getBoolean('showScriptFreeForm', false)
+        showScriptClass = prefs.getBoolean('showScriptClass', true)
+        showClosureClasses = prefs.getBoolean('showClosureClasses', false)
+        showTreeView = prefs.getBoolean('showTreeView', true)
         int phase = prefs.getInt('compilerPhase', Phases.SEMANTIC_ANALYSIS)
         selectedPhase = CompilePhaseAdapter.values().find {
             it.phaseId == phase
@@ -439,17 +439,17 @@ class AstBrowserUiPreferences {
 
     def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, closureClassesPref, CompilePhaseAdapter phase, showTreeView) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
-        prefs.putInt("decompiledFontSize", decompiledSourceFontSize as int)
-        prefs.putInt("frameX", frame.location.x as int)
-        prefs.putInt("frameY", frame.location.y as int)
-        prefs.putInt("frameWidth", frame.size.width as int)
-        prefs.putInt("frameHeight", frame.size.height as int)
-        prefs.putInt("verticalSplitterLocation", vSplitter.dividerLocation)
-        prefs.putInt("horizontalSplitterLocation", hSplitter.dividerLocation)
-        prefs.putBoolean("showScriptFreeForm", scriptFreeFormPref)
-        prefs.putBoolean("showScriptClass", scriptClassPref)
-        prefs.putBoolean("showClosureClasses", closureClassesPref)
-        prefs.putBoolean("showTreeView", showTreeView)
+        prefs.putInt('decompiledFontSize', decompiledSourceFontSize as int)
+        prefs.putInt('frameX', frame.location.x as int)
+        prefs.putInt('frameY', frame.location.y as int)
+        prefs.putInt('frameWidth', frame.size.width as int)
+        prefs.putInt('frameHeight', frame.size.height as int)
+        prefs.putInt('verticalSplitterLocation', vSplitter.dividerLocation)
+        prefs.putInt('horizontalSplitterLocation', hSplitter.dividerLocation)
+        prefs.putBoolean('showScriptFreeForm', scriptFreeFormPref)
+        prefs.putBoolean('showScriptClass', scriptClassPref)
+        prefs.putBoolean('showClosureClasses', closureClassesPref)
+        prefs.putBoolean('showTreeView', showTreeView)
         prefs.putInt('compilerPhase', phase.phaseId)
     }
 }
@@ -460,15 +460,15 @@ class AstBrowserUiPreferences {
  * @author Hamlet D'Arcy
  */
 enum CompilePhaseAdapter {
-    INITIALIZATION(Phases.INITIALIZATION, "Initialization"),
-    PARSING(Phases.PARSING, "Parsing"),
-    CONVERSION(Phases.CONVERSION, "Conversion"),
-    SEMANTIC_ANALYSIS(Phases.SEMANTIC_ANALYSIS, "Semantic Analysis"),
-    CANONICALIZATION(Phases.CANONICALIZATION, "Canonicalization"),
-    INSTRUCTION_SELECTION(Phases.INSTRUCTION_SELECTION, "Instruction Selection"),
-    CLASS_GENERATION(Phases.CLASS_GENERATION, "Class Generation"),
-    OUTPUT(Phases.OUTPUT, "Output"),
-    FINALIZATION(Phases.FINALIZATION, "Finalization")
+    INITIALIZATION(Phases.INITIALIZATION, 'Initialization'),
+    PARSING(Phases.PARSING, 'Parsing'),
+    CONVERSION(Phases.CONVERSION, 'Conversion'),
+    SEMANTIC_ANALYSIS(Phases.SEMANTIC_ANALYSIS, 'Semantic Analysis'),
+    CANONICALIZATION(Phases.CANONICALIZATION, 'Canonicalization'),
+    INSTRUCTION_SELECTION(Phases.INSTRUCTION_SELECTION, 'Instruction Selection'),
+    CLASS_GENERATION(Phases.CLASS_GENERATION, 'Class Generation'),
+    OUTPUT(Phases.OUTPUT, 'Output'),
+    FINALIZATION(Phases.FINALIZATION, 'Finalization')
 
     final int phaseId
     final String string
@@ -561,7 +561,7 @@ class BytecodeCollector extends ClassCollector {
 
 class GeneratedBytecodeAwareGroovyClassLoader extends GroovyClassLoader {
 
-    private final Map<String, byte[]> bytecode = new HashMap<String, byte[]>();
+    private final Map<String, byte[]> bytecode = new HashMap<String, byte[]>()
 
     GeneratedBytecodeAwareGroovyClassLoader(final GroovyClassLoader parent) {
         super(parent)

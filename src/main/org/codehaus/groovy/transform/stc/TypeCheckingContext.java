@@ -20,6 +20,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -73,11 +74,13 @@ public class TypeCheckingContext {
     // this map is used to ensure that two errors are not reported on the same line/column
     protected final Set<Long> reportedErrors = new TreeSet<Long>();
 
-    // stores the current binary expresssion. This is used when assignments are made with a null object, for type
+    // stores the current binary expression. This is used when assignments are made with a null object, for type
     // inference
     protected final LinkedList<BinaryExpression> enclosingBinaryExpressions = new LinkedList<BinaryExpression>();
 
     protected final StaticTypeCheckingVisitor visitor;
+
+    protected CompilationUnit compilationUnit;
 
     public TypeCheckingContext(final StaticTypeCheckingVisitor staticTypeCheckingVisitor) {
         this.visitor = staticTypeCheckingVisitor;
@@ -294,6 +297,18 @@ public class TypeCheckingContext {
 
     public ErrorCollector popErrorCollector() {
         return errorCollectors.removeFirst();
+    }
+
+    public CompilationUnit getCompilationUnit() {
+        return compilationUnit;
+    }
+
+    public void setCompilationUnit(final CompilationUnit compilationUnit) {
+        this.compilationUnit = compilationUnit;
+    }
+
+    public SourceUnit getSource() {
+        return source;
     }
 
     /**

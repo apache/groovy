@@ -18,8 +18,9 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Command
-import org.codehaus.groovy.tools.shell.Shell
+import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.CommandRegistry
+import org.codehaus.groovy.tools.shell.completion.CommandNameCompleter
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
@@ -31,20 +32,20 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 class HelpCommand
     extends CommandSupport
 {
-    HelpCommand(final Shell shell) {
-        super(shell, 'help', '\\h')
+    HelpCommand(final Groovysh shell) {
+        super(shell, ':help', ':h')
 
-        alias('?', '\\?')
+        alias('?', ':?')
     }
 
-    protected List createCompletors() {
+    protected List createCompleters() {
         return [
-            new HelpCommandCompletor(registry),
+            new CommandNameCompleter(registry),
             null
         ]
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assert args != null
 
         if (args.size() > 1) {
@@ -62,7 +63,7 @@ class HelpCommand
     private void help(final String name) {
         assert name
         
-        Command command = registry[name]
+        Command command = registry.find(name)
         if (!command) {
             fail("No such command: $name") // TODO: i18n
         }
@@ -79,7 +80,7 @@ class HelpCommand
         int maxName = 0
         int maxShortcut
         
-        for (command in registry) {
+        for (Command command in registry.commands()) {
             if (command.hidden) {
                 continue
             }
@@ -101,7 +102,7 @@ class HelpCommand
         // List the commands we know about
         io.out.println('Available commands:') // TODO: i18n
 
-        for (command in registry) {
+        for (Command command in registry.commands()) {
             if (command.hidden) {
                 continue
             }
@@ -120,40 +121,8 @@ class HelpCommand
         
         io.out.println()
         io.out.println('For help on a specific command type:') // TODO: i18n
-        io.out.println('    help @|bold command|@ ')
+        io.out.println('    :help @|bold command|@ ')
         io.out.println()
     }
 }
 
-/**
- * Completor for the 'help' command.
- *
- * @version $Id$
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- */
-class HelpCommandCompletor
-    extends SimpleCompletor
-{
-    private final CommandRegistry registry
-
-    HelpCommandCompletor(final CommandRegistry registry) {
-        assert registry
-
-        this.registry = registry
-    }
-
-    SortedSet getCandidates() {
-        def set = new TreeSet()
-
-        for (command in registry) {
-            if (command.hidden) {
-                continue
-            }
-            
-            set << command.name
-            set << command.shortcut
-        }
-
-        return set
-    }
-}

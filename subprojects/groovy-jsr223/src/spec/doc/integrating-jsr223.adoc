@@ -1,0 +1,47 @@
+[[jsr223]]
+= JSR 223 javax.script API (TBD)
+
+WARNING: JSR-223 is a standard API for calling scripting frameworks in Java. It is available since Java 6 and aims at
+providing a common framework for calling multiple languages from Java. Groovy provides its own richer integration mechanisms,
+and if you don't plan to use multiple languages in the same application, it is recommanded that you use the Groovy
+integration mechanisms instead of the limited JSR-223 API.
+
+Here is how you need to initialize the JSR-223 engine to talk to Groovy from Java:
+
+[source,java]
+--------------------------------------------------------------------------------------
+include::{rootDir}/subprojects/groovy-jsr223/src/spec/test/JSR223SpecTest.java[tags=jsr223_imports,indent=0]
+...
+include::{rootDir}/subprojects/groovy-jsr223/src/spec/test/JSR223SpecTest.java[tags=jsr223_init,indent=0]
+--------------------------------------------------------------------------------------
+
+Then you can execute Groovy scripts easily:
+
+[source,java]
+----
+include::{rootDir}/subprojects/groovy-jsr223/src/spec/test/JSR223SpecTest.java[tags=jsr223_basic,indent=0]
+----
+
+It is also possible to share variables:
+
+[source,java]
+----
+include::{rootDir}/subprojects/groovy-jsr223/src/spec/test/JSR223SpecTest.java[tags=jsr223_variables,indent=0]
+----
+
+This next example illustrates calling an invokable function:
+
+[source,java]
+-------------------------------------------------------------------------------
+import javax.script.Invocable;
+...
+include::{rootDir}/subprojects/groovy-jsr223/src/spec/test/JSR223SpecTest.java[tags=jsr223_invocable,indent=0]
+-------------------------------------------------------------------------------
+
+The engine keeps per default hard references to the script functions. To
+change this you should set a engine level scoped attribute to the script
+context of the name `#jsr223.groovy.engine.keep.globals` with a
+String being `phantom` to use phantom references, `weak` to use weak
+references or `soft` to use soft references - casing is ignored. Any
+other string will cause the use of hard references.
+

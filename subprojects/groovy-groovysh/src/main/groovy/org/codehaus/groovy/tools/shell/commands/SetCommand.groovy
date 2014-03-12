@@ -18,7 +18,6 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 import org.codehaus.groovy.tools.shell.util.Preferences
@@ -33,7 +32,7 @@ class SetCommand
     extends CommandSupport
 {
     SetCommand(final Groovysh shell) {
-        super(shell, 'set', '\\=')
+        super(shell, ':set', ':=')
     }
 
     protected List createCompleters() {
@@ -50,6 +49,7 @@ class SetCommand
             set << Preferences.SANITIZE_STACK_TRACE_KEY
             set << Preferences.SHOW_LAST_RESULT_KEY
             set << Groovysh.AUTOINDENT_PREFERENCE_KEY
+            set << Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY
             set << PackageHelper.IMPORT_COMPLETION_PREFERENCE_KEY
 
             return set.toList()
@@ -61,7 +61,7 @@ class SetCommand
         ]
     }
 
-    Object execute(final List args) {
+    Object execute(final List<String> args) {
         assert args != null
         
         if (args.size() == 0) {
@@ -71,12 +71,11 @@ class SetCommand
                 io.out.println('No preferences are set')
                 return
             }
-            else {
-                io.out.println('Preferences:')
-                keys.each { String key ->
-                    def keyvalue = Preferences.get(key, null)
-                    println("    $key=$keyvalue")
-                }
+
+            io.out.println('Preferences:')
+            keys.each { String key ->
+                def keyvalue = Preferences.get(key, null)
+                println("    $key=$keyvalue")
             }
             return
         }

@@ -128,7 +128,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         // append classpath if not already defined
         if (!hadClasspath) {
             // add all classpaths that compilation unit sees
-            StringBuffer resultPath = new StringBuffer(DefaultGroovyMethods.join(config.getClasspath(), File.pathSeparator));
+            StringBuilder resultPath = new StringBuilder(DefaultGroovyMethods.join(config.getClasspath(), File.pathSeparator));
             ClassLoader cl = parentClassLoader;
             while (cl != null) {
                 if (cl instanceof URLClassLoader) {

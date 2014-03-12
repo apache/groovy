@@ -1,0 +1,26 @@
+= Chain of Responsibility Pattern
+
+In the Chain of Responsibility Pattern, objects using and implementing an interface (one or more methods) are intentionally loosely coupled. A set of objects that __implement__ the interface are organised in a list (or in rare cases a tree). Objects using the interface make requests from the first __implementor__ object. It will decide whether to perform any action itself and whether to pass the request further down the line in the list (or tree). Sometimes a default implementation for some request is also coded into the pattern if none of the implementors respond to the request.
+
+== Example
+
+In this example, the script sends requests to the ++lister++ object. The ++lister++ points to a ++UnixLister++ object. If it can't handle the request, it sends the request to the ++WindowsLister++. If it can't handle the request, it sends the request to the ++DefaultLister++.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=chain_of_responsibility,indent=0]
+----
+
+The output will be a list of files (with slightly different format depending on the operating system).
+
+Here is a UML representation:
+
+image::assets/img/ChainOfResponsibilityClasses.gif[]
+
+Variations to this pattern:
+
+* we could have an explicit interface, e.g. ++Lister++, to statically type the implementations but because of _duck-typing_ this is optional
+* we could use a chain tree instead of a list, e.g. ++if (animal.hasBackbone())++ delegate to ++VertebrateHandler++ else delegate to ++InvertebrateHandler++
+* we could always pass down the chain even if we processed a request
+* we could decide at some point to not respond and not pass down the chain
+* we could use Groovy’s meta-programming capabilities to pass unknown methods down the chain

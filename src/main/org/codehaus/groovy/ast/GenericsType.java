@@ -19,6 +19,7 @@ package org.codehaus.groovy.ast;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 
+import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -68,10 +69,14 @@ public class GenericsType extends ASTNode {
         if (placeholder) visited.add(name);
         String ret = wildcard?"?":((type == null || placeholder) ? name : genericsBounds(type, visited));
         if (upperBounds != null) {
-            ret += " extends ";
-            for (int i = 0; i < upperBounds.length; i++) {
-                ret += genericsBounds(upperBounds[i], visited);
-                if (i + 1 < upperBounds.length) ret += " & ";
+            if (placeholder && upperBounds.length==1 && !upperBounds[0].isGenericsPlaceHolder() && upperBounds[0].getName().equals("java.lang.Object")) {
+                // T extends Object should just be printed as T
+            } else {
+                ret += " extends ";
+                for (int i = 0; i < upperBounds.length; i++) {
+                    ret += genericsBounds(upperBounds[i], visited);
+                    if (i + 1 < upperBounds.length) ret += " & ";
+                }
             }
         } else if (lowerBound != null) {
             ret += " super " + genericsBounds(lowerBound, visited);
@@ -89,7 +94,11 @@ public class GenericsType extends ASTNode {
         } else if (theType.redirect() instanceof InnerClassNode) {
             InnerClassNode innerClassNode = (InnerClassNode) theType.redirect();
             String parentClassNodeName = innerClassNode.getOuterClass().getName();
-            ret.append(genericsBounds(innerClassNode.getOuterClass(), new HashSet<String>()));
+            if (Modifier.isStatic(innerClassNode.getModifiers()) || innerClassNode.isInterface()) {
+                ret.append(innerClassNode.getOuterClass().getName());
+            } else {
+                ret.append(genericsBounds(innerClassNode.getOuterClass(), new HashSet<String>()));
+            }
             ret.append(".");
             String typeName = theType.getName();
             ret.append(typeName.substring(parentClassNodeName.length() + 1));
@@ -210,10 +219,12 @@ public class GenericsType extends ASTNode {
          * @return true iff the classnode is compatible with this generics specification
          */
         public boolean matches(ClassNode classNode) {
+            GenericsType[] genericsTypes = classNode.getGenericsTypes();
+            // diamond always matches
+            if (genericsTypes!=null && genericsTypes.length==0) return true;
             if (classNode.isGenericsPlaceHolder()) {
                 // if the classnode we compare to is a generics placeholder (like <E>) then we
                 // only need to check that the names are equal
-                GenericsType[] genericsTypes = classNode.getGenericsTypes();
                 if (genericsTypes==null) return true;
                 if (isWildcard()) {
                     if (lowerBound!=null) return genericsTypes[0].getName().equals(lowerBound.getUnresolvedName());
@@ -290,7 +301,7 @@ public class GenericsType extends ASTNode {
          */
         private boolean compareGenericsWithBound(final ClassNode classNode, final ClassNode bound) {
             if (classNode==null) return false;
-            if (!bound.isUsingGenerics()) {
+            if (!bound.isUsingGenerics() || (classNode.getGenericsTypes()==null && classNode.redirect().getGenericsTypes()!=null)) {
                 // if the bound is not using generics, there's nothing to compare with
                 return true;
             }
@@ -423,7 +434,8 @@ public class GenericsType extends ASTNode {
                             match = redirectBoundType.isCompatibleWith(classNodeType.getType());
                         }
                     } else {
-                        match = classNodeType.isCompatibleWith(redirectBoundType.getType());
+                        // todo: the check for isWildcard should be replaced with a more complete check
+                        match = redirectBoundType.isWildcard() || classNodeType.isCompatibleWith(redirectBoundType.getType());
                     }
                 }
             }

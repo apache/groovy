@@ -52,6 +52,26 @@ class DelegateTransformTest extends CompilableTestSupport {
         """
     }
 
+    /** test for GROOVY-GROOVY-5974 */
+    void testDelegateExcludes() {
+        assertScript """
+          class MapSet {
+            @Delegate(interfaces=false, excludes=['remove','clear']) Map m = [a: 1]
+            @Delegate Set s = new LinkedHashSet([2, 3, 4] as Set) // HashSet not good enough in JDK 1.5
+            String toString() { m.toString() + ' ' + s }
+          }
+
+          def ms = new MapSet()
+          assert ms.size() == 1
+          assert ms.toString() == '[a:1] [2, 3, 4]'
+          ms.remove(3)
+          assert ms.size() == 1
+          assert ms.toString() == '[a:1] [2, 4]'
+          ms.clear()
+          assert ms.toString() == '[a:1] []'
+        """
+    }
+
     void testLock() {
         def res = new GroovyShell().evaluate("""
               import java.util.concurrent.locks.*
@@ -460,6 +480,50 @@ class DelegateTransformTest extends CompilableTestSupport {
 
             assert new B().foo(10) == 20
         """
+    }
+
+    // GROOVY-6542
+    void testLineNumberInStackTrace() {
+        try {
+            assertScript '''import groovy.transform.ASTTest
+    import org.codehaus.groovy.control.CompilePhase
+
+    @ASTTest(phase=CompilePhase.CANONICALIZATION, value={
+        def fieldNode = node.getDeclaredField('thingie')
+        def blowupMethod = node.getDeclaredMethod('blowup')
+        def mce = blowupMethod.code.expression
+        assert mce.lineNumber==fieldNode.lineNumber
+        assert mce.lineNumber>0
+    })
+    class Upper {
+      @Delegate Lower thingie
+
+      Upper() {
+        thingie = new Lower()
+      }
+    }
+
+    class Lower {
+      def foo() {
+        println("Foo!")
+      }
+
+      def blowup(String a) {
+        throw new Exception("blow up with ${a}")
+      }
+
+      def blowup() {
+        throw new Exception("blow up")
+      }
+    }
+
+    def up = new Upper()
+    up.foo()
+    up.blowup("bar")
+    '''
+        } catch (e) {
+            // ok
+        }
     }
 }
 

@@ -17,7 +17,6 @@
 package org.codehaus.groovy.tools.shell.util;
 
 import java.security.Permission;
-import org.codehaus.groovy.tools.shell.util.Logger;
 
 /**
  * Custom security manager to {@link System#exit} (and related) from being used.

@@ -1,4 +1,4 @@
-package somepackage;
+package stubgenerator.propertyUsageFromJava.somepackage;
 
 public class JavaBean {
     public void usePogo() {
