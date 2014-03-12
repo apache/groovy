@@ -50,7 +50,7 @@ class StringProducer1 implements G4410Producer1 {
     }
 }
 
-class HackProducer2 implements G4410Producer2<String> {
+class HackProducer2 implements G4410Producer2<Object> {
     Object gimme(String[] a1) {
         "Hello World"
     }
