@@ -209,6 +209,9 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     public static ClassNode makeClassSafeWithGenerics(ClassNode type, ClassNode... genericTypes) {
+        if (type.isArray()) {
+            return makeClassSafeWithGenerics(type.getComponentType(), genericTypes).makeArray();
+        }
         GenericsType[] gtypes = new GenericsType[0];
         if (genericTypes != null) {
             gtypes = new GenericsType[genericTypes.length];
@@ -216,7 +219,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
                 gtypes[i] = new GenericsType(newClass(genericTypes[i]));
             }
         }
-        return AbstractASTTransformation.makeClassSafe0(type, gtypes);
+        return makeClassSafe0(type, gtypes);
     }
 
     static ClassNode correctToGenericsSpecRecurse(Map genericsSpec, ClassNode type) {
@@ -235,10 +238,4 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         }
         return makeClassSafeWithGenerics(type, newgTypes);
     }
-
-    static ClassNode getCorrectedType(ClassNode fromType, ClassNode toType) {
-        Map genericsSpec = Verifier.createGenericsSpec(fromType, new HashMap());
-        return correctToGenericsSpecRecurse(genericsSpec, toType);
-    }
-
 }

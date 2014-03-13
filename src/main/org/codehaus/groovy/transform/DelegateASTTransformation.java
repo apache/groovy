@@ -237,6 +237,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
                 break;
             }
         }
+        Map genericsSpec = Verifier.createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap());
+        genericsSpec = Verifier.createGenericsSpec(fieldNode.getType(), genericsSpec);
         if (existingNode == null || existingNode.getCode() == null) {
 
             final boolean includeParameterAnnotations = hasBooleanValue(node.getMember(MEMBER_PARAMETER_ANNOTATIONS), true);
@@ -245,7 +247,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
             final Parameter[] params = candidate.getParameters();
             final Parameter[] newParams = new Parameter[params.length];
             for (int i = 0; i < newParams.length; i++) {
-                Parameter newParam = new Parameter(getCorrectedType(fieldNode.getType(), params[i].getType()), getParamName(params, i, fieldNode.getName()));
+                Parameter newParam = new Parameter(correctToGenericsSpecRecurse(genericsSpec, params[i].getType()), getParamName(params, i, fieldNode.getName()));
                 newParam.setInitialExpression(params[i].getInitialExpression());
 
                 if (includeParameterAnnotations) newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i].getAnnotations(), newParam));
@@ -255,11 +257,11 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
             }
             // addMethod will ignore attempts to override abstract or static methods with same signature on self
             MethodCallExpression mce = new MethodCallExpression(
-                    new VariableExpression(fieldNode.getName(), nonGeneric(fieldNode.getOriginType())),
+                    new VariableExpression(fieldNode.getName(), nonGeneric(fieldNode.getType())),
                     candidate.getName(),
                     args);
             mce.setSourcePosition(fieldNode);
-            ClassNode returnType = getCorrectedType(fieldNode.getType(), candidate.getReturnType());
+            ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, candidate.getReturnType());
             MethodNode newMethod = owner.addMethod(candidate.getName(),
                     candidate.getModifiers() & (~ACC_ABSTRACT) & (~ACC_NATIVE),
                     returnType,
