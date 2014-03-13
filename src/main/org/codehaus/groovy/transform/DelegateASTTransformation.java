@@ -245,7 +245,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
             final Parameter[] params = candidate.getParameters();
             final Parameter[] newParams = new Parameter[params.length];
             for (int i = 0; i < newParams.length; i++) {
-                Parameter newParam = new Parameter(nonGeneric(params[i].getType()), getParamName(params, i, fieldNode.getName()));
+                Parameter newParam = new Parameter(getCorrectedType(fieldNode.getType(), params[i].getType()), getParamName(params, i, fieldNode.getName()));
                 newParam.setInitialExpression(params[i].getInitialExpression());
 
                 if (includeParameterAnnotations) newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i].getAnnotations(), newParam));
