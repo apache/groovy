@@ -126,7 +126,55 @@ These operators into action in simple number comparisons:
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=simple_relational_op,indent=0]
 ----
 
-== Logical operators (TBD)
+== Logical operators
+
+Groovy offers three logical operators for boolean expressions:
+
+* `&&`: logical "and"
+* `||`: logical "or"
+* `!`: logical "not"
+
+Let's illustrate them with the following examples:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_op,indent=0]
+----
+<1> "not" false is true
+<2> true "and" true is true
+<3> true "or" false is true
+
+=== Precedence
+
+The logical "not" has a higher priority than the logical "and".
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_precendence_1,indent=0]
+----
+<1> Here, the assertion is true, because "not" has a higher precedence than "and", otherwise, the assertion would have failed
+
+The logical "and" has a higher priority than the logical "or".
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_precendence_2,indent=0]
+----
+<1> Here, the assertion is true, because "and" has a higher precedence than "or", otherwise, the assertion would have failed
+
+=== Short-circuiting for `||`
+
+The logical "or" operator is supporting short-circuiting: if the left operand is true, it won't evaluate the right operand.
+The right operand will be evaluated only if the left operand is false.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_or_shortcircuit,indent=0]
+----
+<1> We create a function that returns its boolean argument, but it sets the `called` flag 
+<2> In the first case, we confirm that the function is not called, as `||` short-circuits the evaluation of the right operand.
+<3> In the second case, the right operand is called, as indicated by the fact our flag is now true
+
 
 == Bitwise operators (TBD)
 

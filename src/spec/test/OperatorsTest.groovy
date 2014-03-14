@@ -84,4 +84,41 @@ class OperatorsTest extends CompilableTestSupport {
         assert 5 >= -2
         // end::simple_relational_op[]
     }
+
+    void testLogicalOperators() {
+        // tag::logical_op[]
+        assert !false           // <1>
+        assert true && true     // <2>
+        assert true || false    // <3>
+        // end::logical_op[]
+    }
+
+    void testLogicalOperatorPrecedence() {
+        // tag::logical_precendence_1[]
+        assert !false && true    // <1>
+        // end::logical_precendence_1[]
+
+        // tag::logical_precendence_2[]
+        assert false || true && true    // <1>
+        // end::logical_precendence_2[]
+    }
+
+    void testLogicalOrShortCircuit() {
+        assertScript '''
+            // tag::logical_or_shortcircuit[]
+            called = false
+
+            boolean somethingTrueOrFalse(boolean b) {  // <1>
+                called = true
+                return b
+            }
+
+            assert true || somethingTrueOrFalse(false)
+            assert !called                              // <2>
+
+            assert false || somethingTrueOrFalse(true)
+            assert called                               // <3>
+            // end::logical_or_shortcircuit[]
+        '''
+    }
 }
