@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,15 +170,14 @@ public @interface Delegate {
     String[] excludes() default {};
 
 
-    /* *
+    /**
      * List of interfaces containing method signatures to exclude when delegating.
      * Only one of 'includes', 'includeTypes', 'excludes', 'excludeTypes' should be used.
      * If interfaces is true (the default), you will need to manually supply any methods excluded
      * from delegation that are required for the interface.
-     * @since ???
+     * @since 2.3.0
      */
-    // GROOVY-6329: awaiting resolution of GROOVY-6330
-//    Class[] excludeTypes() default {};
+    Class[] excludeTypes() default {};
 
     /**
      * List of method and/or property names to include when delegating.
@@ -190,13 +189,12 @@ public @interface Delegate {
      */
     String[] includes() default {};
 
-    /* *
+    /**
      * List of interfaces containing method signatures to exclude when delegating.
      * Only one of 'includes', 'includeTypes', 'excludes', 'excludeTypes' should be used.
      * If interfaces is true (the default), you will need to manually supply any methods excluded
      * from delegation that are required for the interface.
-     * @since ???
+     * @since 2.3.0
      */
-    // GROOVY-6329: awaiting resolution of GROOVY-6330
-//    Class[] includeTypes() default {};
+    Class[] includeTypes() default {};
 }
