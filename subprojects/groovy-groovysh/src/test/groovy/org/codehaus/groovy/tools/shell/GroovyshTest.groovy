@@ -291,11 +291,11 @@ int compareTo(Object) {0}; int priv; static int priv2; public int foo; public st
         assert [] == result.findAll({it.startsWith("_")})
         assert [] == result.findAll({it.startsWith("super\$")})
         assert [] == result.findAll({it.startsWith("this\$")})
-        assert 'bar' in result
+        assert ! ('bar' in result)
         assert ! ('priv' in result)
         assert ! ('priv2' in result)
         assert 'foom()' in result
-        assert 'barm()' in result
+        assert !('barm()' in result)
     }
 
     void testImportedClassStaticMember() {
@@ -307,6 +307,8 @@ int compareTo(Object) {0}; int priv; static int priv2; public int foo; public st
         ReflectionCompletor compl = new ReflectionCompletor(groovysh)
         def candidates = []
         compl.complete(TokenUtilTest.tokenList("GroovyException."), candidates)
+        assert candidates.size() == 0
+        compl.complete(TokenUtilTest.tokenList("GroovyException.find"), candidates)
         assert candidates.size() > 0
     }
 

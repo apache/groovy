@@ -82,7 +82,7 @@ class ReflectionCompletorTest extends GroovyTestCase {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods("foo", "").collect({it.value})
         assert 'charAt(' in result
         assert 'contains(' in result
-        assert 'format(' in result
+        assert ! ('format(' in result)
         result = ReflectionCompletor.getMetaclassMethods("foo", "", true)
         assert 'normalize()' in result
         int foo = 3
@@ -97,9 +97,9 @@ class ReflectionCompletorTest extends GroovyTestCase {
     void testGetFieldsAndMethodsPrimitive() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(3, "").collect({it.value})
         assert "byteValue()" in result
-        assert "MAX_VALUE" in result
-        assert "valueOf(" in result
-        assert "bitCount(" in result
+        assert ! ("MAX_VALUE" in result)
+        assert ! ("valueOf(" in result)
+        assert ! ("bitCount(" in result)
         result = ReflectionCompletor.getMetaclassMethods(3, "", true)
         assert "abs()" in result
         result = ReflectionCompletor.getMetaclassMethods(3, "una", true)
@@ -125,7 +125,7 @@ class ReflectionCompletorTest extends GroovyTestCase {
             @Override
             int compareTo(Object o) {return 0}
         }, "").collect({it.value})
-        assert 'FOR_TEST_FIELD' in result
+        assert ! ('FOR_TEST_FIELD' in result)
         assert 'forTestMethod()' in result
         assert 'compareTo(' in result
         GroovyLexer
@@ -151,7 +151,7 @@ class ReflectionCompletorTest extends GroovyTestCase {
         // User will probably not want this
         assert ! ( 'val1' in result)
         assert 'enumMethod()' in result
-        assert 'staticMethod()' in result
+        assert ! ('staticMethod()' in result)
     }
 
     void testGetAbstractClassFields() {
@@ -163,17 +163,21 @@ class ReflectionCompletorTest extends GroovyTestCase {
         assert 'collect()' in result
         result = ReflectionCompletor.getPublicFieldsAndMethods(new GroovyLexer(new ByteArrayInputStream()), "")
         result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
-        assert 'ABSTRACT' in result
-        assert 'tracing' in result
+        assert ! ('ABSTRACT' in result)
+        assert ! ('tracing' in result)
         result = ReflectionCompletor.getMetaclassMethods(new GroovyLexer(new ByteArrayInputStream()), "", true)
         assert 'isCase(' in result
         result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "LITERAL_as")
         result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
-        assert ["LITERAL_as", "LITERAL_assert"]== result
+        assert ["LITERAL_as", "LITERAL_assert"] == result
+        // static members only shown for prefix of sufficient length
         GroovyLexer lexer = new GroovyLexer(new ByteArrayInputStream("".getBytes()))
+        result = ReflectionCompletor.getPublicFieldsAndMethods(lexer, "LI")
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
+        assert !("LITERAL_as" in result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(lexer, "LITERAL_as")
         result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
-        assert ["LITERAL_as", "LITERAL_assert"]== result
+        assert ["LITERAL_as", "LITERAL_assert"] == result
     }
 
     void testGetFieldsAndMethodsClass() {
@@ -182,13 +186,13 @@ class ReflectionCompletorTest extends GroovyTestCase {
         assert 'sort(' in result
         result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "pro")
         result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
-        assert []== result
-        result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "toA")
+        assert [] == result
+        result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "to")
         result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
-        assert []== result
+        assert !("toArray(" in result)
         result = ReflectionCompletor.getPublicFieldsAndMethods(new HashSet(), "toA")
         result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
-        assert ["toArray(", "toArray()"]== result
+        assert ["toArray(", "toArray()"] == result
     }
 
     void testSuppressMetaAndDefaultMethods() {

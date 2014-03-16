@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.completion
 
+import org.codehaus.groovy.GroovyException
 import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -334,9 +335,12 @@ class ReflectionCompletor {
         }
 
         Class loopclazz = clazz
+        // render immediate class members bold when completing an instance
         boolean renderBold = ! isClass
+        // hide static members for instances unless user typed a prefix
+        boolean showStatic = isClass || (prefix.length() >= Integer.valueOf(Preferences.get(Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')));
         while (loopclazz != null && loopclazz != Object && loopclazz != GroovyObject) {
-            addClassFieldsAndMethods(loopclazz, isClass, prefix, rv, renderBold)
+            addClassFieldsAndMethods(loopclazz, showStatic, !isClass, prefix, rv, renderBold)
             renderBold = false;
             loopclazz = loopclazz.superclass
         }
@@ -481,17 +485,19 @@ class ReflectionCompletor {
 
 
     private static Collection<ReflectionCompletionCandidate> addClassFieldsAndMethods(final Class clazz,
-                                                                            final boolean staticOnly,
+                                                                            final boolean includeStatic,
+                                                                            final boolean includeNonStatic,
                                                                             final String prefix,
                                                                             Collection<ReflectionCompletionCandidate> rv,
                                                                             boolean renderBold) {
-        Field[] fields = staticOnly ? clazz.fields : clazz.getDeclaredFields()
+
+        Field[] fields = (includeStatic && ! includeNonStatic) ? clazz.fields : clazz.getDeclaredFields()
         fields.each { Field fit ->
             if (acceptName(fit.name, prefix)) {
                 int modifiers = fit.getModifiers()
-                if (Modifier.isPublic(modifiers) && (!staticOnly || Modifier.isStatic(modifiers))) {
+                if (Modifier.isPublic(modifiers) && (Modifier.isStatic(modifiers) ? includeStatic : includeNonStatic)) {
                     if (!clazz.isEnum()
-                            || !(!staticOnly && Modifier.isPublic(modifiers) && Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers) && fit.getType() == clazz)) {
+                            || !(!includeStatic && Modifier.isPublic(modifiers) && Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers) && fit.getType() == clazz)) {
                         ReflectionCompletionCandidate candidate = new ReflectionCompletionCandidate(fit.name)
                         if (!Modifier.isStatic(modifiers)) {
                             if (renderBold) {
@@ -503,27 +509,27 @@ class ReflectionCompletor {
                 }
             }
         }
-        Method[] methods = staticOnly ? clazz.methods : clazz.getDeclaredMethods()
-        methods.each { Method methIt ->
+        Method[] methods = (includeStatic && ! includeNonStatic) ? clazz.methods : clazz.getDeclaredMethods()
+        for (Method methIt in methods) {
             String name = methIt.getName()
             if (name.startsWith("super\$")) {
                 name = name.substring(name.find("^super\\\$.*\\\$").length())
             }
             if (acceptName(name, prefix)) {
                 int modifiers = methIt.getModifiers()
-                if (Modifier.isPublic(modifiers) && (!staticOnly || Modifier.isStatic(modifiers))) {
+                if (Modifier.isPublic(modifiers) && (Modifier.isStatic(modifiers) ? includeStatic : includeNonStatic)) {
                     ReflectionCompletionCandidate candidate = new ReflectionCompletionCandidate(name + (methIt.parameterTypes.length == 0 ? "()" : "("))
-                    if (! Modifier.isStatic(modifiers)) {
+                    if (!Modifier.isStatic(modifiers)) {
                         if (renderBold) {
                             candidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())
                         }
                     }
-                    rv << candidate
+                    rv.add(candidate)
                 }
             }
         }
         for (interface_ in clazz.getInterfaces()) {
-            addClassFieldsAndMethods(interface_, staticOnly, prefix, rv, false)
+            addClassFieldsAndMethods(interface_, includeStatic, includeNonStatic, prefix, rv, false)
         }
     }
 
