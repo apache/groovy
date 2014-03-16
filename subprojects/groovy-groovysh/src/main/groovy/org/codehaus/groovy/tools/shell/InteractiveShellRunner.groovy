@@ -42,10 +42,6 @@ class InteractiveShellRunner
     WrappedInputStream wrappedInputStream
 
     InteractiveShellRunner(final Groovysh shell, final Closure prompt) {
-        this(shell, prompt, 0)
-    }
-
-    InteractiveShellRunner(final Groovysh shell, final Closure prompt, int metaclass_completion_prefix_length) {
         super(shell)
         
         this.prompt = prompt
@@ -61,8 +57,7 @@ class InteractiveShellRunner
         reader.addCompleter(this.completer)
 
         reader.addCompleter(new GroovySyntaxCompletor(shell,
-                new ReflectionCompletor(shell,
-                        metaclass_completion_prefix_length),
+                new ReflectionCompletor(shell),
                 [new KeywordSyntaxCompletor(),
                         new VariableSyntaxCompletor(shell),
                         new CustomClassSyntaxCompletor(shell),

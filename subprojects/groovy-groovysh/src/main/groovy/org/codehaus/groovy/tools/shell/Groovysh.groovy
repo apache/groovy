@@ -481,8 +481,7 @@ class Groovysh extends Shell {
             // Setup the interactive runner
             runner = new InteractiveShellRunner(
                     this,
-                    this.&renderPrompt as Closure,
-                    Integer.valueOf(Preferences.get(METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
+                    this.&renderPrompt as Closure)
 
             // if args were passed in, just execute as a command
             // (but cygwin gives an empty string, so ignore that)

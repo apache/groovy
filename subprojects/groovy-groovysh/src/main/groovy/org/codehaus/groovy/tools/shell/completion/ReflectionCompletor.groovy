@@ -39,20 +39,14 @@ class ReflectionCompletor {
 
     Groovysh shell
     static NavigablePropertiesCompleter propertiesCompleter = new NavigablePropertiesCompleter()
-    int metaclass_completion_prefix_length
-
-    ReflectionCompletor(Groovysh shell) {
-        this(shell, 0)
-    }
 
     /**
      *
      * @param shell
      * @param metaclass_completion_prefix_length how long the prefix must be to disaply candidates from metaclass
      */
-    ReflectionCompletor(Groovysh shell, int metaclass_completion_prefix_length) {
+    ReflectionCompletor(Groovysh shell) {
         this.shell = shell
-        this.metaclass_completion_prefix_length = metaclass_completion_prefix_length
     }
 
     public int complete(final List<GroovySourceToken> tokens, List<String> candidates) {
@@ -88,7 +82,7 @@ class ReflectionCompletor {
         // look for public methods/fields that match the prefix
         Collection<ReflectionCompletionCandidate> myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
 
-        boolean showAllMethods = identifierPrefix.length() >= this.metaclass_completion_prefix_length
+        boolean showAllMethods = (identifierPrefix.length() >= Integer.valueOf(Preferences.get(Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
         // Also add metaclass methods if prefix is long enough (user would usually not care about those)
         myCandidates.addAll(getMetaclassMethods(
                 instance,
