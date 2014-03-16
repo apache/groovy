@@ -91,7 +91,8 @@ class ShellRunnerTest extends GroovyTestCase {
     }
 
     private MockFor primedMockForConsoleReader() {
-        def readerMocker = new MockFor(ConsoleReader)
+        def readerMocker = new MockFor(PatchedConsoleReader)
+        readerMocker.demand.setCompletionHandler {}
         readerMocker.demand.setExpandEvents {}
         readerMocker.demand.addCompleter(2) {}
         readerMocker
@@ -111,7 +112,8 @@ class ShellRunnerTest2 extends GroovyTestCase {
         groovysh.buffers.buffers.add(["Foo { {"])
         groovysh.buffers.select(1)
 
-        MockFor readerMocker = new MockFor(ConsoleReader)
+        MockFor readerMocker = new MockFor(PatchedConsoleReader)
+        readerMocker.demand.setCompletionHandler {}
         readerMocker.demand.setExpandEvents {}
         readerMocker.demand.addCompleter(2) {}
         readerMocker.demand.readLine(1) {'Foo { {'}

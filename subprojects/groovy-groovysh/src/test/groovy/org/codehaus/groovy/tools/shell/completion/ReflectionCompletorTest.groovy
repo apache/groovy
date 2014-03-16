@@ -25,34 +25,30 @@ import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokensStr
 class ReflectionCompletorTest extends GroovyTestCase {
 
     void testAddDefaultMethods() {
-        List<String> result = []
-        ReflectionCompletor.addDefaultMethods(3, '', result)
+        List<String> result = ReflectionCompletor.getDefaultMethods(3, '')
         assert 'abs()' in result
         assert 'times(' in result
 
-        result = []
-        ReflectionCompletor.addDefaultMethods([1, 2, 3], '', result)
+        result = ReflectionCompletor.getDefaultMethods([1, 2, 3], '')
         assert 'any(' in result
         assert 'count(' in result
         assert 'take(' in result
         assert 'unique()' in result
 
-        result = []
-        ReflectionCompletor.addDefaultMethods(new String[2], '', result)
+        result = ReflectionCompletor.getDefaultMethods(new String[2], '')
         assert 'any(' in result
         assert 'collect(' in result
         assert 'count(' in result
         assert 'take(' in result
 
-        result = []
-        ReflectionCompletor.addDefaultMethods(['a': 1, 'b': 2], '', result)
+        result = ReflectionCompletor.getDefaultMethods(['a': 1, 'b': 2], '')
         assert 'any(' in result
         assert 'spread()' in result
     }
 
 
     void testGetFieldsAndMethodsArray() {
-        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(([] as String[]), "")
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(([] as String[]), "").collect({it.value})
         assert 'length' in result
         assert 'clone()' in result
         result = ReflectionCompletor.getMetaclassMethods(([] as String[]), "", true)
@@ -61,36 +57,36 @@ class ReflectionCompletorTest extends GroovyTestCase {
         assert 'take(' in result
         result = ReflectionCompletor.getMetaclassMethods([] as String[], "size", true)
         assert ["size()"] == result
-        result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "le")
+        result = ReflectionCompletor.getPublicFieldsAndMethods([] as String[], "le").collect({it.value})
         assert ["length"] == result
     }
 
     void testGetFieldsAndMethodsMap() {
-        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "")
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "").collect({it.value})
         assert 'clear()' in result
         assert 'containsKey(' in result
         assert 'clear()' in result
         // 'class' as key can cause bugs where .class is used instead of getClass()
-        result = ReflectionCompletor.getPublicFieldsAndMethods(['class': '42', 'club': 53], "")
+        result = ReflectionCompletor.getPublicFieldsAndMethods(['class': '42', 'club': 53], "").collect({it.value})
         assert 'clear()' in result
         assert 'containsKey(' in result
         assert 'clear()' in result
         assert 'class' in result
         assert 'club' in result
-        result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "size")
+        result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "size").collect({it.value})
         // e.g. don't show non-public inherited size field
         assert ["size()"] == result
     }
 
     void testGetFieldsAndMethodsString() {
-        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods("foo", "")
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods("foo", "").collect({it.value})
         assert 'charAt(' in result
         assert 'contains(' in result
         assert 'format(' in result
         result = ReflectionCompletor.getMetaclassMethods("foo", "", true)
         assert 'normalize()' in result
         int foo = 3
-        result = ReflectionCompletor.getPublicFieldsAndMethods("$foo", "")
+        result = ReflectionCompletor.getPublicFieldsAndMethods("$foo", "").collect({it.value})
         assert 'build(' in result
         result = ReflectionCompletor.getMetaclassMethods("foo", "tok", true)
         assert ["tokenize(", "tokenize()"] == result
@@ -99,7 +95,7 @@ class ReflectionCompletorTest extends GroovyTestCase {
     }
 
     void testGetFieldsAndMethodsPrimitive() {
-        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(3, "")
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(3, "").collect({it.value})
         assert "byteValue()" in result
         assert "MAX_VALUE" in result
         assert "valueOf(" in result
@@ -110,9 +106,9 @@ class ReflectionCompletorTest extends GroovyTestCase {
         assert ["unaryMinus()", "unaryPlus()"] == result
         result = ReflectionCompletor.getMetaclassMethods(Integer, "una", true)
         assert ["unaryMinus()", "unaryPlus()"] == result
-        result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "MA")
+        result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "MA").collect({it.value})
         assert ["MAX_VALUE"] == result
-        result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "getI")
+        result = ReflectionCompletor.getPublicFieldsAndMethods(Integer, "getI").collect({it.value})
         assert ["getInteger("] == result
     }
 
@@ -128,7 +124,7 @@ class ReflectionCompletorTest extends GroovyTestCase {
 
             @Override
             int compareTo(Object o) {return 0}
-        }, "")
+        }, "").collect({it.value})
         assert 'FOR_TEST_FIELD' in result
         assert 'forTestMethod()' in result
         assert 'compareTo(' in result
@@ -146,10 +142,12 @@ class ReflectionCompletorTest extends GroovyTestCase {
 
     void testEnum() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(ForTestEnum, "")
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert 'val1' in result
         assert ! ( 'enumMethod()' in result)
         assert 'staticMethod()' in result
         result = ReflectionCompletor.getPublicFieldsAndMethods(ForTestEnum.val1, "")
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         // User will probably not want this
         assert ! ( 'val1' in result)
         assert 'enumMethod()' in result
@@ -158,30 +156,38 @@ class ReflectionCompletorTest extends GroovyTestCase {
 
     void testGetAbstractClassFields() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "")
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert 'ABSTRACT' in result
         assert 'tracing' in result
         result = ReflectionCompletor.getMetaclassMethods(GroovyLexer, "", true)
         assert 'collect()' in result
         result = ReflectionCompletor.getPublicFieldsAndMethods(new GroovyLexer(new ByteArrayInputStream()), "")
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert 'ABSTRACT' in result
         assert 'tracing' in result
         result = ReflectionCompletor.getMetaclassMethods(new GroovyLexer(new ByteArrayInputStream()), "", true)
         assert 'isCase(' in result
         result = ReflectionCompletor.getPublicFieldsAndMethods(GroovyLexer, "LITERAL_as")
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert ["LITERAL_as", "LITERAL_assert"]== result
         GroovyLexer lexer = new GroovyLexer(new ByteArrayInputStream("".getBytes()))
         result = ReflectionCompletor.getPublicFieldsAndMethods(lexer, "LITERAL_as")
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert ["LITERAL_as", "LITERAL_assert"]== result
     }
 
     void testGetFieldsAndMethodsClass() {
         Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(Arrays, "")
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert 'sort(' in result
         result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "pro")
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert []== result
         result = ReflectionCompletor.getPublicFieldsAndMethods(HashSet, "toA")
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert []== result
         result = ReflectionCompletor.getPublicFieldsAndMethods(new HashSet(), "toA")
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert ["toArray(", "toArray()"]== result
     }
 
@@ -190,6 +196,7 @@ class ReflectionCompletorTest extends GroovyTestCase {
         assert 'getMetaClass()' in result
         assert 'asBoolean()' in result
         result = ReflectionCompletor.getMetaclassMethods("foo", "", false)
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert ! ('getMetaClass()' in result)
         assert ! ('asBoolean()' in result)
     }
@@ -197,10 +204,10 @@ class ReflectionCompletorTest extends GroovyTestCase {
     void testGetFieldsAndMethodsCustomClass() {
         Interpreter interp = new Interpreter(Thread.currentThread().contextClassLoader, new Binding())
         Object instance = interp.evaluate(["class Foo extends HashSet implements Comparable {int compareTo(Object) {0}}; Foo"])
-        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(instance, "")
+        Collection<String> result = ReflectionCompletor.getPublicFieldsAndMethods(instance, "").collect({it.value})
         assertFalse('compareTo(' in result)
         instance = interp.evaluate(["class Foo extends HashSet implements Comparable {int compareTo(Object) {0}}; new Foo()"])
-        result = ReflectionCompletor.getPublicFieldsAndMethods(instance, "")
+        result = ReflectionCompletor.getPublicFieldsAndMethods(instance, "").collect({it.value})
         assert 'compareTo(' in result
     }
 }

@@ -20,6 +20,9 @@ import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.Groovysh
+import org.codehaus.groovy.tools.shell.util.Preferences
+import org.fusesource.jansi.Ansi
+import org.fusesource.jansi.AnsiRenderer
 
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -83,23 +86,37 @@ class ReflectionCompletor {
         }
 
         // look for public methods/fields that match the prefix
-        Collection<String> myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
+        Collection<ReflectionCompletionCandidate> myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
+
         boolean showAllMethods = identifierPrefix.length() >= this.metaclass_completion_prefix_length
         // Also add metaclass methods if prefix is long enough (user would usually not care about those)
         myCandidates.addAll(getMetaclassMethods(
                 instance,
                 identifierPrefix,
-                showAllMethods))
+                showAllMethods).collect({String it -> new ReflectionCompletionCandidate(it)}))
+
         if (!showAllMethods) {
             // user probably does not care to see default Object / GroovyObject Methods,
             // they obfuscate the business logic
             removeStandardMethods(myCandidates)
         }
+
         // specific DefaultGroovyMethods only suggested for suitable instances
-        addDefaultMethods(instance, identifierPrefix, myCandidates)
+        myCandidates.addAll(getDefaultMethods(instance,
+                identifierPrefix).collect({String it -> new ReflectionCompletionCandidate(it, AnsiRenderer.Code.BLUE.name())}))
 
         if (myCandidates.size() > 0) {
-            candidates.addAll(myCandidates.sort())
+            myCandidates = myCandidates.sort()
+            if (Boolean.valueOf(Preferences.get(Groovysh.COLORS_PREFERENCE_KEY, 'true'))) {
+                candidates.addAll(myCandidates.collect(
+                        { ReflectionCompletionCandidate it ->
+                            AnsiRenderer.render(it.value,
+                                    it.jAnsiCodes.toArray(new String[it.jAnsiCodes.size()]))
+                        }))
+            } else {
+                candidates.addAll(myCandidates.collect({ReflectionCompletionCandidate it -> it.value}))
+            }
+
             int lastDot
             // dot could be on previous line
             if (currentElementToken && dotToken.getLine() != currentElementToken.getLine()) {
@@ -310,8 +327,8 @@ class ReflectionCompletor {
      * @param prefix the prefix that must be matched
      * @return the list of public methods and fields that begin with the prefix
      */
-    static Collection<String> getPublicFieldsAndMethods(Object instance, String prefix) {
-        Set<String> rv = new HashSet<String>()
+    static Collection<ReflectionCompletionCandidate> getPublicFieldsAndMethods(Object instance, String prefix) {
+        Set<ReflectionCompletionCandidate> rv = new HashSet<ReflectionCompletionCandidate>()
         Class clazz = instance.getClass()
         if (clazz == null) {
             return rv;
@@ -323,22 +340,26 @@ class ReflectionCompletor {
         }
 
         Class loopclazz = clazz
+        boolean renderBold = ! isClass
         while (loopclazz != null && loopclazz != Object && loopclazz != GroovyObject) {
-            addClassFieldsAndMethods(loopclazz, isClass, prefix, rv)
+            addClassFieldsAndMethods(loopclazz, isClass, prefix, rv, renderBold)
+            renderBold = false;
             loopclazz = loopclazz.superclass
         }
         if (clazz.isArray() && !isClass) {
             // Arrays are special, these public members cannot be found via Reflection
             for (String member in ['length', 'clone()']) {
                 if (member.startsWith(prefix)) {
-                    rv.add(member)
+                    rv.add(new ReflectionCompletionCandidate(member, Ansi.Attribute.INTENSITY_BOLD.name()))
                 }
             }
         }
 
         // other completions that are commonly possible with properties
         if (!isClass) {
-            propertiesCompleter.addCompletions(instance, prefix, rv)
+            Set<String> candidates = new HashSet<String>()
+            propertiesCompleter.addCompletions(instance, prefix, candidates)
+            rv.addAll(candidates.collect({String it -> new ReflectionCompletionCandidate(it, AnsiRenderer.Code.MAGENTA.name())}))
         }
 
         return rv.sort()
@@ -348,13 +369,18 @@ class ReflectionCompletor {
      * removes candidates that, most of the times, a programmer does not want to see in completion
      * @param candidates
      */
-    static removeStandardMethods(Collection<String> candidates) {
+    static removeStandardMethods(Collection<ReflectionCompletionCandidate> candidates) {
         for (String defaultMethod in [
                 'clone()', 'finalize()', 'getClass()',
                 'getMetaClass()', 'getProperty(',  'invokeMethod(', 'setMetaClass(', 'setProperty(',
                 'equals(', 'hashCode()', 'toString()',
                 'notify()', 'notifyAll()', 'wait(', 'wait()']) {
-            candidates.remove(defaultMethod)
+            for (ReflectionCompletionCandidate candidate in candidates) {
+                if (defaultMethod.equals(candidate.value)) {
+                    candidates.remove(candidate)
+                    break
+                }
+            }
         }
     }
 
@@ -364,7 +390,8 @@ class ReflectionCompletor {
      * if the instance is of a suitable type.
      * This does not need to be strictly complete, only the most useful functions may appear.
      */
-    static addDefaultMethods(Object instance, String prefix, Collection<String> candidates) {
+    static List<String> getDefaultMethods(Object instance, String prefix) {
+        List<String> candidates = []
         if (instance instanceof Iterable) {
             [
                     'any()', 'any(',
@@ -452,20 +479,32 @@ class ReflectionCompletor {
                     'take(', 'takeWhile('
             ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
         }
+        return candidates
     }
 
 
 
 
 
-    private static Collection<String> addClassFieldsAndMethods(final Class clazz, final boolean staticOnly, final String prefix, Collection rv) {
+    private static Collection<ReflectionCompletionCandidate> addClassFieldsAndMethods(final Class clazz,
+                                                                            final boolean staticOnly,
+                                                                            final String prefix,
+                                                                            Collection<ReflectionCompletionCandidate> rv,
+                                                                            boolean renderBold) {
         Field[] fields = staticOnly ? clazz.fields : clazz.getDeclaredFields()
         fields.each { Field fit ->
             if (acceptName(fit.name, prefix)) {
                 int modifiers = fit.getModifiers()
                 if (Modifier.isPublic(modifiers) && (!staticOnly || Modifier.isStatic(modifiers))) {
-                    if (!clazz.isEnum() || !(!staticOnly && Modifier.isPublic(modifiers) && Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers) && fit.getType() == clazz)) {
-                        rv << fit.name
+                    if (!clazz.isEnum()
+                            || !(!staticOnly && Modifier.isPublic(modifiers) && Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers) && fit.getType() == clazz)) {
+                        ReflectionCompletionCandidate candidate = new ReflectionCompletionCandidate(fit.name)
+                        if (!Modifier.isStatic(modifiers)) {
+                            if (renderBold) {
+                                candidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())
+                            }
+                        }
+                        rv << candidate
                     }
                 }
             }
@@ -479,12 +518,18 @@ class ReflectionCompletor {
             if (acceptName(name, prefix)) {
                 int modifiers = methIt.getModifiers()
                 if (Modifier.isPublic(modifiers) && (!staticOnly || Modifier.isStatic(modifiers))) {
-                    rv << name + (methIt.parameterTypes.length == 0 ? "()" : "(")
+                    ReflectionCompletionCandidate candidate = new ReflectionCompletionCandidate(name + (methIt.parameterTypes.length == 0 ? "()" : "("))
+                    if (! Modifier.isStatic(modifiers)) {
+                        if (renderBold) {
+                            candidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())
+                        }
+                    }
+                    rv << candidate
                 }
             }
         }
         for (interface_ in clazz.getInterfaces()) {
-            addClassFieldsAndMethods(interface_, staticOnly, prefix, rv)
+            addClassFieldsAndMethods(interface_, staticOnly, prefix, rv, false)
         }
     }
 

@@ -44,6 +44,7 @@ class Groovysh extends Shell {
     final List<String> imports = []
 
     public static final String AUTOINDENT_PREFERENCE_KEY = "autoindent"
+    public static final String COLORS_PREFERENCE_KEY = "colors"
     // after how many prefix characters we start displaying all metaclass methods
     public static final String METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY = "meta-completion-prefix-length"
     int indentSize = 2

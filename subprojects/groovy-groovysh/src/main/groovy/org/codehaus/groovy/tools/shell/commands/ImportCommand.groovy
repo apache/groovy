@@ -25,6 +25,7 @@ import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Interpreter
+import org.codehaus.groovy.tools.shell.completion.ReflectionCompletionCandidate
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.PackageHelper
@@ -184,8 +185,8 @@ class ImportCompleter implements Completer {
             } else if (staticImport && currentImportExpression ==~ QUALIFIED_CLASS_DOT_PATTERN) {
                 Class clazz = interpreter.evaluate([currentImportExpression[0..-2]]) as Class
                 if (clazz != null) {
-                    Collection<String> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, "")
-                    result.addAll(members.collect({ String it -> it.replace('(', '').replace(')', '') + " " }))
+                    Collection<ReflectionCompletionCandidate> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, "")
+                    result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + " " }))
                 }
                 result.add('* ')
                 return currentImportExpression.length()
@@ -224,9 +225,9 @@ class ImportCompleter implements Completer {
         } else if (staticImport) {
             Class clazz = interpreter.evaluate([baseString]) as Class
             if (clazz != null) {
-                Collection<String> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, prefix)
+                Collection<ReflectionCompletionCandidate> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, prefix)
                 if (members) {
-                    result.addAll(members.collect({ String it -> it.replace('(', '').replace(')', '') + " " }))
+                    result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + " " }))
                     return lastDot <= 0 ? 0 : lastDot + 1
                 }
             }
