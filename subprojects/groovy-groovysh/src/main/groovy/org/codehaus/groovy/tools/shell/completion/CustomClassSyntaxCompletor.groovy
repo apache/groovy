@@ -31,7 +31,7 @@ public class CustomClassSyntaxCompletor implements IdentifierCompletor {
     }
 
     @Override
-    public boolean complete(final List<GroovySourceToken> tokens, List candidates) {
+    public boolean complete(final List<GroovySourceToken> tokens, List<String> candidates) {
         String prefix = tokens.last().getText()
         boolean foundMatch = false
         Class[] classes = shell.interp.classLoader.loadedClasses

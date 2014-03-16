@@ -32,7 +32,7 @@ public class InfixKeywordSyntaxCompletor implements IdentifierCompletor {
             ]
 
     @Override
-    public boolean complete(final List<GroovySourceToken> tokens, List candidates) {
+    public boolean complete(final List<GroovySourceToken> tokens, List<String> candidates) {
         String prefix = tokens.last().getText()
         boolean foundMatch = false
         for (String varName in INFIX_KEYWORDS) {

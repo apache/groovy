@@ -52,7 +52,7 @@ class ReflectionCompletor {
         this.metaclass_completion_prefix_length = metaclass_completion_prefix_length
     }
 
-    public int complete(final List<GroovySourceToken> tokens, List candidates) {
+    public int complete(final List<GroovySourceToken> tokens, List<String> candidates) {
         GroovySourceToken currentElementToken = null
         GroovySourceToken dotToken
         List<GroovySourceToken> previousTokens

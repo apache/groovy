@@ -31,6 +31,6 @@ public interface IdentifierCompletor {
      * @param candidates
      * @return
      */
-    boolean complete(List<GroovySourceToken> tokens, List candidates);
+    boolean complete(List<GroovySourceToken> tokens, List<String> candidates);
 
 }
