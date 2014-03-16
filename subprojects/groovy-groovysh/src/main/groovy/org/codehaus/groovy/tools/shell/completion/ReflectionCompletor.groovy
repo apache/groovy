@@ -403,11 +403,18 @@ class ReflectionCompletor {
         if (instance instanceof Map) {
             [
                     'any(',
+                    'collect(',
+                    'collectEntries(',
+                    'collectMany(',
+                    'count(',
                     'drop(',
                     'each(',
+                    'every(',
                     'find(', 'findAll(', 'findResult(', 'findResults(',
                     'groupEntriesBy(', 'groupBy(',
                     'inject(', 'intersect(',
+                    'max(', 'min(',
+                    'sort(',
                     'spread()',
                     'subMap(',
                     'take(', 'takeWhile('
