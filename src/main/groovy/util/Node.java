@@ -329,13 +329,21 @@ public class Node implements Serializable, Cloneable {
         if (value instanceof String) {
             return (String) value;
         }
+        if (value instanceof NodeList) {
+            return ((NodeList) value).text();
+        }
         if (value instanceof Collection) {
             Collection coll = (Collection) value;
             String previousText = null;
             StringBuilder sb = null;
             for (Object child : coll) {
+                String childText = null;
                 if (child instanceof String) {
-                    String childText = (String) child;
+                    childText = (String) child;
+                } else if (child instanceof Node) {
+                    childText = ((Node) child).text();
+                }
+                if (childText != null) {
                     if (previousText == null) {
                         previousText = childText;
                     } else {
