@@ -22,10 +22,10 @@ package groovy.json
  */
 class JsonSlurperTest extends GroovyTestCase {
 
-    def parser;
+    def parser
 
-    public JsonSlurperTest () {
-           parser = new JsonSlurper();
+    void setUp() {
+        parser = new JsonSlurper();
     }
 
     void testJsonShouldStartWithCurlyOrBracket() {
