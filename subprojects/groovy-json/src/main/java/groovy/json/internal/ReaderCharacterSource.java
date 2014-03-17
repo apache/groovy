@@ -26,7 +26,6 @@ import java.io.StringReader;
  */
 public class ReaderCharacterSource implements CharacterSource {
 
-
     private static final int MAX_TOKEN_SIZE = 5;
 
     private final Reader reader;
@@ -35,63 +34,60 @@ public class ReaderCharacterSource implements CharacterSource {
 
     private boolean foundEscape;
 
-
     private char[] readBuf;
 
     private int index;
 
     private int length;
 
-
     boolean more = true;
     private boolean done = false;
 
-    public ReaderCharacterSource( final Reader reader, final int readAheadSize ) {
+    public ReaderCharacterSource(final Reader reader, final int readAheadSize) {
         this.reader = reader;
         this.readBuf = new char[readAheadSize + MAX_TOKEN_SIZE];
         this.readAheadSize = readAheadSize;
     }
 
-    public ReaderCharacterSource( final Reader reader ) {
+    public ReaderCharacterSource(final Reader reader) {
         this.reader = reader;
         this.readAheadSize = 10000;
         this.readBuf = new char[readAheadSize + MAX_TOKEN_SIZE];
     }
 
-    public ReaderCharacterSource( final String string ) {
-        this( new StringReader( string ) );
+    public ReaderCharacterSource(final String string) {
+        this(new StringReader(string));
     }
-
 
     private void readForToken() {
         try {
-            length += reader.read( readBuf, readBuf.length - MAX_TOKEN_SIZE, MAX_TOKEN_SIZE );
-        } catch ( IOException e ) {
-            Exceptions.handle( e );
+            length += reader.read(readBuf, readBuf.length - MAX_TOKEN_SIZE, MAX_TOKEN_SIZE);
+        } catch (IOException e) {
+            Exceptions.handle(e);
         }
     }
 
     private void ensureBuffer() {
 
         try {
-            if ( index >= length && !done ) {
+            if (index >= length && !done) {
                 readNextBuffer();
-            } else if ( done && index >= length ) {
+            } else if (done && index >= length) {
                 more = false;
             } else {
                 more = true;
             }
-        } catch ( Exception ex ) {
-            String str = CharScanner.errorDetails( "ensureBuffer issue", readBuf, index, ch );
-            Exceptions.handle( str, ex );
+        } catch (Exception ex) {
+            String str = CharScanner.errorDetails("ensureBuffer issue", readBuf, index, ch);
+            Exceptions.handle(str, ex);
         }
     }
 
     private void readNextBuffer() throws IOException {
-        length = reader.read( readBuf, 0, readAheadSize );
+        length = reader.read(readBuf, 0, readAheadSize);
 
         index = 0;
-        if ( length == -1 ) {
+        if (length == -1) {
             ch = -1;
             length = 0;
             more = false;
@@ -101,26 +97,22 @@ public class ReaderCharacterSource implements CharacterSource {
         }
     }
 
-
     public final int nextChar() {
         ensureBuffer();
         return ch = readBuf[index++];
     }
-
 
     public final int currentChar() {
         ensureBuffer();
         return readBuf[index];
     }
 
-
     public final boolean hasChar() {
         ensureBuffer();
         return more;
     }
 
-
-    public final boolean consumeIfMatch( char[] match ) {
+    public final boolean consumeIfMatch(char[] match) {
         try {
 
             char[] _chars = readBuf;
@@ -128,28 +120,27 @@ public class ReaderCharacterSource implements CharacterSource {
             int idx = index;
             boolean ok = true;
 
-            if ( idx + match.length > length ) {
+            if (idx + match.length > length) {
                 readForToken();
             }
 
-            for (; i < match.length; i++, idx++ ) {
-                ok &= ( match[i] == _chars[idx] );
-                if ( !ok ) break;
+            for (; i < match.length; i++, idx++) {
+                ok &= (match[i] == _chars[idx]);
+                if (!ok) break;
             }
 
-            if ( ok ) {
+            if (ok) {
                 index = idx;
                 return true;
             } else {
                 return false;
             }
-        } catch ( Exception ex ) {
-            String str = CharScanner.errorDetails( "consumeIfMatch issue", readBuf, index, ch );
-            return Exceptions.handle( boolean.class, str, ex );
+        } catch (Exception ex) {
+            String str = CharScanner.errorDetails("consumeIfMatch issue", readBuf, index, ch);
+            return Exceptions.handle(boolean.class, str, ex);
         }
 
     }
-
 
     public final int location() {
         return index;
@@ -159,17 +150,15 @@ public class ReaderCharacterSource implements CharacterSource {
         try {
             ensureBuffer();
             return index + 1 < readBuf.length ? readBuf[index++] : -1;
-        } catch ( Exception ex ) {
-            String str = CharScanner.errorDetails( "safeNextChar issue", readBuf, index, ch );
-            return Exceptions.handle( int.class, str, ex );
+        } catch (Exception ex) {
+            String str = CharScanner.errorDetails("safeNextChar issue", readBuf, index, ch);
+            return Exceptions.handle(int.class, str, ex);
         }
     }
 
-
     private final char[] EMPTY_CHARS = new char[0];
 
-
-    public char[] findNextChar( int match, int esc ) {
+    public char[] findNextChar(int match, int esc) {
         try {
             ensureBuffer();
 
@@ -177,139 +166,129 @@ public class ReaderCharacterSource implements CharacterSource {
             char[] _chars = readBuf;
 
             int ch = this.ch;
-            if ( ch == '"' ) {
+            if (ch == '"') {
 
-            } else if ( idx < length - 1 ) {
+            } else if (idx < length - 1) {
                 ch = _chars[idx];
 
-                if ( ch == '"' ) {
+                if (ch == '"') {
                     idx++;
                 }
             }
 
-
-            if ( idx < length ) {
+            if (idx < length) {
                 ch = _chars[idx];
             }
 
-            if ( ch == '"' ) {
+            if (ch == '"') {
                 index = idx;
                 index++;
                 return EMPTY_CHARS;
             }
             int start = idx;
 
-
             foundEscape = false;
 
             boolean foundEnd = false;
             char[] results;
 
-
-            for (; idx < length; idx++ ) {
+            for (; idx < length; idx++) {
                 ch = _chars[idx];
-                if ( ch == match || ch == esc ) {
-                    if ( ch == match ) {
+                if (ch == match || ch == esc) {
+                    if (ch == match) {
                         foundEnd = true;
 
                         break;
-                    } else if ( ch == esc ) {
+                    } else if (ch == esc) {
                         foundEscape = true;
                         /** if we are dealing with an escape then see if the escaped char is a match
                          *  if so, skip it.
                          */
-                        if ( idx + 1 < length ) {
+                        if (idx + 1 < length) {
                             idx++;
                         }
                     }
                 }
             }
 
-
-            if ( idx == 0 ) {
+            if (idx == 0) {
                 results = EMPTY_CHARS;
             } else {
-                results = ArrayUtils.copyRange( _chars, start, idx );
+                results = ArrayUtils.copyRange(_chars, start, idx);
             }
             index = idx;
 
-
-            if ( foundEnd ) {
+            if (foundEnd) {
                 index++;
-                if ( index < length ) {
+                if (index < length) {
                     ch = _chars[index];
                     this.ch = ch;
                 }
                 return results;
             } else {
 
-                if ( index >= length && !done ) {
+                if (index >= length && !done) {
                     ensureBuffer();
-                    char results2[] = findNextChar( match, esc );
-                    return Chr.add( results, results2 );
+                    char results2[] = findNextChar(match, esc);
+                    return Chr.add(results, results2);
                 } else {
-                    return Exceptions.die( char[].class, "Unable to find close char " + ( char ) match + " " + new String( results ) );
+                    return Exceptions.die(char[].class, "Unable to find close char " + (char) match + " " + new String(results));
                 }
             }
-        } catch ( Exception ex ) {
-            String str = CharScanner.errorDetails( "findNextChar issue", readBuf, index, ch );
-            return Exceptions.handle( char[].class, str, ex );
+        } catch (Exception ex) {
+            String str = CharScanner.errorDetails("findNextChar issue", readBuf, index, ch);
+            return Exceptions.handle(char[].class, str, ex);
         }
 
-
     }
-
 
     public boolean hadEscape() {
         return foundEscape;
     }
 
-
     public void skipWhiteSpace() {
         try {
-            index = CharScanner.skipWhiteSpace( readBuf, index, length );
-            if ( index >= length && more ) {
+            index = CharScanner.skipWhiteSpace(readBuf, index, length);
+            if (index >= length && more) {
 
                 ensureBuffer();
 
                 skipWhiteSpace();
             }
-        } catch ( Exception ex ) {
-            String str = CharScanner.errorDetails( "skipWhiteSpace issue", readBuf, index, ch );
-            Exceptions.handle( str, ex );
+        } catch (Exception ex) {
+            String str = CharScanner.errorDetails("skipWhiteSpace issue", readBuf, index, ch);
+            Exceptions.handle(str, ex);
         }
     }
-
 
     public char[] readNumber() {
         try {
             ensureBuffer();
 
-            char[] results = CharScanner.readNumber( readBuf, index, length );
+            char[] results = CharScanner.readNumber(readBuf, index, length);
             index += results.length;
 
-            if ( index >= length && more ) {
+            if (index >= length && more) {
                 ensureBuffer();
-                if ( length != 0 ) {
+                if (length != 0) {
                     char results2[] = readNumber();
-                    return Chr.add( results, results2 );
+                    return Chr.add(results, results2);
                 } else {
                     return results;
                 }
             } else {
                 return results;
             }
-        } catch ( Exception ex ) {
-            String str = CharScanner.errorDetails( "readNumber issue", readBuf, index, ch );
-            return Exceptions.handle( char[].class, str, ex );
+        } catch (Exception ex) {
+            String str = CharScanner.errorDetails("readNumber issue", readBuf, index, ch);
+            return Exceptions.handle(char[].class, str, ex);
         }
 
     }
 
+    public String errorDetails(String message) {
 
-    public String errorDetails( String message ) {
-
-        return CharScanner.errorDetails( message, readBuf, index, ch );
+        return CharScanner.errorDetails(message, readBuf, index, ch);
     }
 
 }

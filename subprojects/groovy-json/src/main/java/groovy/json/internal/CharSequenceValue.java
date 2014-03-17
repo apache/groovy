@@ -42,17 +42,17 @@ public class CharSequenceValue implements Value, CharSequence {
     private int endIndex;
     private Object value;
 
-    public CharSequenceValue( boolean chop, Type type, int startIndex, int endIndex, char[] buffer,
-                              boolean encoded, boolean checkDate ) {
+    public CharSequenceValue(boolean chop, Type type, int startIndex, int endIndex, char[] buffer,
+                             boolean encoded, boolean checkDate) {
         this.type = type;
         this.checkDate = checkDate;
         this.decodeStrings = encoded;
 
-        if ( chop ) {
+        if (chop) {
             try {
-                this.buffer = ArrayUtils.copyRange( buffer, startIndex, endIndex );
-            } catch ( Exception ex ) {
-                Exceptions.handle( ex );
+                this.buffer = ArrayUtils.copyRange(buffer, startIndex, endIndex);
+            } catch (Exception ex) {
+                Exceptions.handle(ex);
             }
             this.startIndex = 0;
             this.endIndex = this.buffer.length;
@@ -66,53 +66,50 @@ public class CharSequenceValue implements Value, CharSequence {
     }
 
     public String toString() {
-        if ( startIndex == 0 && endIndex == buffer.length ) {
-            return FastStringUtils.noCopyStringFromChars( buffer );
+        if (startIndex == 0 && endIndex == buffer.length) {
+            return FastStringUtils.noCopyStringFromChars(buffer);
         } else {
-            return new String( buffer, startIndex, ( endIndex - startIndex ) );
+            return new String(buffer, startIndex, (endIndex - startIndex));
         }
     }
 
-
     public final Object toValue() {
-        return value != null ? value : ( value = doToValue() );
+        return value != null ? value : (value = doToValue());
     }
 
+    public <T extends Enum> T toEnum(Class<T> cls) {
 
-    public <T extends Enum> T toEnum( Class<T> cls ) {
-
-        switch ( type ) {
+        switch (type) {
             case STRING:
-                return toEnum( cls, stringValue() );
+                return toEnum(cls, stringValue());
             case INTEGER:
-                return toEnum( cls, intValue() );
+                return toEnum(cls, intValue());
             case NULL:
                 return null;
         }
-        die( "toEnum " + cls + " value was " + stringValue() );
+        die("toEnum " + cls + " value was " + stringValue());
         return null;
     }
 
-    public static <T extends Enum> T toEnum( Class<T> cls, String value ) {
+    public static <T extends Enum> T toEnum(Class<T> cls, String value) {
         try {
-            return ( T ) Enum.valueOf( cls, value );
-        } catch ( Exception ex ) {
-            return ( T ) Enum.valueOf( cls, value.toUpperCase().replace( '-', '_' ) );
+            return (T) Enum.valueOf(cls, value);
+        } catch (Exception ex) {
+            return (T) Enum.valueOf(cls, value.toUpperCase().replace('-', '_'));
         }
     }
 
-    public static <T extends Enum> T toEnum( Class<T> cls, int value ) {
+    public static <T extends Enum> T toEnum(Class<T> cls, int value) {
 
         T[] enumConstants = cls.getEnumConstants();
-        for ( T e : enumConstants ) {
-            if ( e.ordinal() == value ) {
+        for (T e : enumConstants) {
+            if (e.ordinal() == value) {
                 return e;
             }
         }
-        die( "Can't convert ordinal value " + value + " into enum of type " + cls );
+        die("Can't convert ordinal value " + value + " into enum of type " + cls);
         return null;
     }
-
 
     public boolean isContainer() {
         return false;
@@ -120,29 +117,29 @@ public class CharSequenceValue implements Value, CharSequence {
 
     private final Object doToValue() {
 
-        switch ( type ) {
+        switch (type) {
             case DOUBLE:
                 return doubleValue();
             case INTEGER:
 
-                if ( isInteger( buffer, startIndex, endIndex - startIndex ) ) {
-                    return intValue() ;
+                if (isInteger(buffer, startIndex, endIndex - startIndex)) {
+                    return intValue();
                 } else {
-                    return longValue() ;
+                    return longValue();
                 }
             case STRING:
-                if ( checkDate ) {
+                if (checkDate) {
                     Date date = null;
-                    if ( Dates.isISO8601QuickCheck( buffer, startIndex, endIndex ) ) {
-                        if ( Dates.isJsonDate( buffer, startIndex, endIndex ) ) {
-                            date = Dates.fromJsonDate( buffer, startIndex, endIndex );
-                        } else if ( Dates.isISO8601( buffer, startIndex, endIndex ) ) {
-                            date = Dates.fromISO8601( buffer, startIndex, endIndex );
+                    if (Dates.isISO8601QuickCheck(buffer, startIndex, endIndex)) {
+                        if (Dates.isJsonDate(buffer, startIndex, endIndex)) {
+                            date = Dates.fromJsonDate(buffer, startIndex, endIndex);
+                        } else if (Dates.isISO8601(buffer, startIndex, endIndex)) {
+                            date = Dates.fromISO8601(buffer, startIndex, endIndex);
                         } else {
                             return stringValue();
                         }
 
-                        if ( date == null ) {
+                        if (date == null) {
                             return stringValue();
                         } else {
                             return date;
@@ -155,148 +152,134 @@ public class CharSequenceValue implements Value, CharSequence {
         return null;
     }
 
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Value)) return false;
 
-    public boolean equals( Object o ) {
-        if ( this == o ) return true;
-        if ( !( o instanceof Value ) ) return false;
+        CharSequenceValue value1 = (CharSequenceValue) o;
 
-        CharSequenceValue value1 = ( CharSequenceValue ) o;
-
-        if ( endIndex != value1.endIndex ) return false;
-        if ( startIndex != value1.startIndex ) return false;
-        if ( !Arrays.equals( buffer, value1.buffer ) ) return false;
-        if ( type != value1.type ) return false;
-        if ( value != null ? !value.equals( value1.value ) : value1.value != null ) return false;
+        if (endIndex != value1.endIndex) return false;
+        if (startIndex != value1.startIndex) return false;
+        if (!Arrays.equals(buffer, value1.buffer)) return false;
+        if (type != value1.type) return false;
+        if (value != null ? !value.equals(value1.value) : value1.value != null) return false;
 
         return true;
     }
 
-
     public int hashCode() {
         int result = type != null ? type.hashCode() : 0;
-        result = 31 * result + ( buffer != null ? Arrays.hashCode( buffer ) : 0 );
+        result = 31 * result + (buffer != null ? Arrays.hashCode(buffer) : 0);
         result = 31 * result + startIndex;
         result = 31 * result + endIndex;
-        result = 31 * result + ( value != null ? value.hashCode() : 0 );
+        result = 31 * result + (value != null ? value.hashCode() : 0);
         return result;
     }
-
 
     public final int length() {
         return buffer.length;
     }
 
-
-    public final char charAt( int index ) {
+    public final char charAt(int index) {
         return buffer[index];
     }
 
-
-    public final CharSequence subSequence( int start, int end ) {
-        return new CharSequenceValue( false, type, start, end, buffer, decodeStrings, checkDate );
+    public final CharSequence subSequence(int start, int end) {
+        return new CharSequenceValue(false, type, start, end, buffer, decodeStrings, checkDate);
     }
 
     public BigDecimal bigDecimalValue() {
-        return new BigDecimal( buffer, startIndex, endIndex - startIndex );
+        return new BigDecimal(buffer, startIndex, endIndex - startIndex);
     }
 
-
     public BigInteger bigIntegerValue() {
-        return new BigInteger( toString() );
+        return new BigInteger(toString());
     }
 
     public String stringValue() {
-        if ( this.decodeStrings ) {
-            return JsonStringDecoder.decodeForSure( buffer, startIndex, endIndex );
+        if (this.decodeStrings) {
+            return JsonStringDecoder.decodeForSure(buffer, startIndex, endIndex);
         } else {
             return toString();
         }
     }
 
-
     public String stringValueEncoded() {
-        return JsonStringDecoder.decode( buffer, startIndex, endIndex );
+        return JsonStringDecoder.decode(buffer, startIndex, endIndex);
     }
-
 
     public Date dateValue() {
 
+        if (type == Type.STRING) {
 
-        if ( type == Type.STRING ) {
+            if (Dates.isISO8601QuickCheck(buffer, startIndex, endIndex)) {
 
-            if ( Dates.isISO8601QuickCheck( buffer, startIndex, endIndex ) ) {
+                if (Dates.isJsonDate(buffer, startIndex, endIndex)) {
+                    return Dates.fromJsonDate(buffer, startIndex, endIndex);
 
-                if ( Dates.isJsonDate( buffer, startIndex, endIndex ) ) {
-                    return Dates.fromJsonDate( buffer, startIndex, endIndex );
-
-                } else if ( Dates.isISO8601( buffer, startIndex, endIndex ) ) {
-                    return Dates.fromISO8601( buffer, startIndex, endIndex );
+                } else if (Dates.isISO8601(buffer, startIndex, endIndex)) {
+                    return Dates.fromISO8601(buffer, startIndex, endIndex);
                 } else {
-                    throw new JsonException( "Unable to convert " + stringValue() + " to date " );
+                    throw new JsonException("Unable to convert " + stringValue() + " to date ");
                 }
             } else {
 
-                throw new JsonException( "Unable to convert " + stringValue() + " to date " );
+                throw new JsonException("Unable to convert " + stringValue() + " to date ");
             }
         } else {
 
-            return new Date( Dates.utc( longValue() ) );
+            return new Date(Dates.utc(longValue()));
         }
     }
 
-
     public int intValue() {
         int sign = 1;
-        if ( buffer[startIndex] == '-' ) {
+        if (buffer[startIndex] == '-') {
             startIndex++;
             sign = -1;
 
         }
-        return parseIntFromTo( buffer, startIndex, endIndex  ) * sign;
+        return parseIntFromTo(buffer, startIndex, endIndex) * sign;
     }
-
 
     public long longValue() {
 
-        if ( isInteger( buffer, startIndex, endIndex - startIndex ) ) {
-            return parseIntFromTo( buffer, startIndex, endIndex  ) ;
+        if (isInteger(buffer, startIndex, endIndex - startIndex)) {
+            return parseIntFromTo(buffer, startIndex, endIndex);
         } else {
-            return parseLongFromTo( buffer, startIndex, endIndex  ) ;
+            return parseLongFromTo(buffer, startIndex, endIndex);
         }
     }
 
     public byte byteValue() {
-        return ( byte ) intValue();
+        return (byte) intValue();
     }
 
     public short shortValue() {
-        return ( short ) intValue();
+        return (short) intValue();
     }
 
     public double doubleValue() {
-        return CharScanner.parseDouble( this.buffer, startIndex, endIndex );
+        return CharScanner.parseDouble(this.buffer, startIndex, endIndex);
     }
-
 
     public boolean booleanValue() {
-        return Boolean.parseBoolean( toString() );
+        return Boolean.parseBoolean(toString());
     }
-
 
     public float floatValue() {
 
-        return CharScanner.parseFloat( this.buffer, startIndex, endIndex );
+        return CharScanner.parseFloat(this.buffer, startIndex, endIndex);
     }
 
     public final void chop() {
-        if ( !chopped ) {
+        if (!chopped) {
             this.chopped = true;
-            this.buffer = ArrayUtils.copyRange( buffer, startIndex, endIndex );
+            this.buffer = ArrayUtils.copyRange(buffer, startIndex, endIndex);
             this.startIndex = 0;
             this.endIndex = this.buffer.length;
         }
     }
-
 
     public char charValue() {
         return buffer[startIndex];

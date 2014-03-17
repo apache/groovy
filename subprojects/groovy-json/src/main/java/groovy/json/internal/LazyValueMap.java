@@ -21,7 +21,6 @@ import java.util.*;
 
 import static groovy.json.internal.Exceptions.die;
 
-
 /**
  * This class is important to the performance of the parser.
  * It stores Value objects in a map where they are evaluated lazily.
@@ -66,14 +65,13 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      */
     boolean mapChopped = false;
 
-
-    public LazyValueMap( boolean lazyChop ) {
+    public LazyValueMap(boolean lazyChop) {
 
         this.items = new Entry[5];
         this.lazyChop = lazyChop;
     }
 
-    public LazyValueMap( boolean lazyChop, int initialSize ) {
+    public LazyValueMap(boolean lazyChop, int initialSize) {
         this.items = new Entry[initialSize];
         this.lazyChop = lazyChop;
     }
@@ -83,15 +81,14 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      *
      * @param miv miv we are adding.
      */
-    public final void add( MapItemValue miv ) {
-        if ( len >= items.length ) {
-            items = LazyMap.grow( items );
+    public final void add(MapItemValue miv) {
+        if (len >= items.length) {
+            items = LazyMap.grow(items);
         }
         items[len] = miv;
         len++;
 
     }
-
 
     /**
      * Gets the item by key from the mapping.
@@ -100,17 +97,17 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      * @return the item for the given key
      */
 
-    public final Object get( Object key ) {
+    public final Object get(Object key) {
 
         Object object = null;
 
         /* if the map is null, then we create it. */
-        if ( map == null ) {
+        if (map == null) {
             buildMap();
         }
-        object = map.get( key );
+        object = map.get(key);
 
-        lazyChopIfNeeded( object );
+        lazyChopIfNeeded(object);
         return object;
     }
 
@@ -118,13 +115,13 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      * If in lazy chop mode, and the object is a Lazy Value Map or a ValueList
      * then we force a chop operation for each of its items.
      */
-    private void lazyChopIfNeeded( Object object ) {
-        if ( lazyChop ) {
-            if ( object instanceof LazyValueMap ) {
-                LazyValueMap m = ( LazyValueMap ) object;
+    private void lazyChopIfNeeded(Object object) {
+        if (lazyChop) {
+            if (object instanceof LazyValueMap) {
+                LazyValueMap m = (LazyValueMap) object;
                 m.chopMap();
-            } else if ( object instanceof ValueList ) {
-                ValueList list = ( ValueList ) object;
+            } else if (object instanceof ValueList) {
+                ValueList list = (ValueList) object;
                 list.chopList();
             }
         }
@@ -136,42 +133,42 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      */
     public final void chopMap() {
         /* if it has been chopped then you have to return. */
-        if ( mapChopped ) {
+        if (mapChopped) {
             return;
         }
         mapChopped = true;
 
 
         /* If the internal map was not create yet, don't. We can chop the value w/o creating the internal map.*/
-        if ( this.map == null ) {
-            for ( int index = 0; index < len; index++ ) {
-                MapItemValue entry = ( MapItemValue ) items[index];
+        if (this.map == null) {
+            for (int index = 0; index < len; index++) {
+                MapItemValue entry = (MapItemValue) items[index];
 
                 Value value = entry.getValue();
-                if ( value == null ) continue;
-                if ( value.isContainer() ) {
-                    chopContainer( value );
+                if (value == null) continue;
+                if (value.isContainer()) {
+                    chopContainer(value);
                 } else {
                     value.chop();
                 }
             }
         } else {
             /* Iterate through the map and do the same thing. Make sure children and children of children are chopped.  */
-            for ( Map.Entry<String, Object> entry : map.entrySet() ) {
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
 
                 Object object = entry.getValue();
-                if ( object instanceof Value ) {
-                    Value value = ( Value ) object;
-                    if ( value.isContainer() ) {
-                        chopContainer( value );
+                if (object instanceof Value) {
+                    Value value = (Value) object;
+                    if (value.isContainer()) {
+                        chopContainer(value);
                     } else {
                         value.chop();
                     }
-                } else if ( object instanceof LazyValueMap ) {
-                    LazyValueMap m = ( LazyValueMap ) object;
+                } else if (object instanceof LazyValueMap) {
+                    LazyValueMap m = (LazyValueMap) object;
                     m.chopMap();
-                } else if ( object instanceof ValueList ) {
-                    ValueList list = ( ValueList ) object;
+                } else if (object instanceof ValueList) {
+                    ValueList list = (ValueList) object;
                     list.chopList();
                 }
             }
@@ -180,26 +177,24 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
     }
 
     /* We need to chop up this child container. */
-    private void chopContainer( Value value ) {
+    private void chopContainer(Value value) {
         Object obj = value.toValue();
-        if ( obj instanceof LazyValueMap ) {
-            LazyValueMap map = ( LazyValueMap ) obj;
+        if (obj instanceof LazyValueMap) {
+            LazyValueMap map = (LazyValueMap) obj;
             map.chopMap();
-        } else if ( obj instanceof ValueList ) {
-            ValueList list = ( ValueList ) obj;
+        } else if (obj instanceof ValueList) {
+            ValueList list = (ValueList) obj;
             list.chopList();
         }
     }
 
-
-    public Value put( String key, Object value ) {
-        die( "Not that kind of map" );
+    public Value put(String key, Object value) {
+        die("Not that kind of map");
         return null;
     }
 
-
     public Set<Entry<String, Object>> entrySet() {
-        if ( map == null ) {
+        if (map == null) {
             buildMap();
         }
         return map.entrySet();
@@ -207,34 +202,32 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
 
     private final void buildMap() {
 
-        map = new HashMap<String, Object>( items.length );
+        map = new HashMap<String, Object>(items.length);
 
-        for ( Entry<String, Value> miv : items ) {
-            if ( miv == null ) {
+        for (Entry<String, Value> miv : items) {
+            if (miv == null) {
                 break;
             }
-            map.put( miv.getKey(), miv.getValue().toValue() );
+            map.put(miv.getKey(), miv.getValue().toValue());
         }
 
         len = 0;
         items = null;
     }
 
-
     public Collection<Object> values() {
-        if ( map == null ) buildMap();
+        if (map == null) buildMap();
         return map.values();
     }
 
-
     public int size() {
-        if ( map == null ) buildMap();
+        if (map == null) buildMap();
         return map.size();
     }
 
     public String toString() {
 
-        if ( map == null ) buildMap();
+        if (map == null) buildMap();
         return map.toString();
 
     }
@@ -243,11 +236,9 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
         return len;
     }
 
-
     public boolean hydrated() {
         return map != null;
     }
-
 
     public Entry<String, Value>[] items() {
         return items;

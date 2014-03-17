@@ -17,7 +17,6 @@
  */
 package groovy.json.internal;
 
-
 import groovy.json.JsonException;
 import groovy.json.JsonParser;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
@@ -35,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class BaseJsonParser implements JsonParser {
 
-
     protected static final int COLON = ':';
     protected static final int COMMA = ',';
     protected static final int CLOSED_CURLY = '}';
@@ -49,7 +47,6 @@ public abstract class BaseJsonParser implements JsonParser {
 
     protected static final int DECIMAL_POINT = '.';
 
-
     protected static final int ALPHA_0 = '0';
     protected static final int ALPHA_1 = '1';
     protected static final int ALPHA_2 = '2';
@@ -61,119 +58,106 @@ public abstract class BaseJsonParser implements JsonParser {
     protected static final int ALPHA_8 = '8';
     protected static final int ALPHA_9 = '9';
 
-
     protected static final int DOUBLE_QUOTE = '"';
 
     protected static final int ESCAPE = '\\';
 
-    protected static final boolean internKeys = Boolean.parseBoolean( System.getProperty( "groovy.json.internKeys", "false" ) );
+    protected static final boolean internKeys = Boolean.parseBoolean(System.getProperty("groovy.json.internKeys", "false"));
     protected static ConcurrentHashMap<String, String> internedKeysCache;
 
     protected String charset = Charsets.UTF_8.name();
 
-
     private CharBuf fileInputBuf;
-
 
     protected int bufSize = 256;
 
-
     static {
-        if ( internKeys ) {
+        if (internKeys) {
             internedKeysCache = new ConcurrentHashMap<String, String>();
         }
     }
 
-
-    protected String charDescription( int c ) {
+    protected String charDescription(int c) {
         String charString;
-        if ( c == ' ' ) {
+        if (c == ' ') {
             charString = "[SPACE]";
-        } else if ( c == '\t' ) {
+        } else if (c == '\t') {
             charString = "[TAB]";
 
-        } else if ( c == '\n' ) {
+        } else if (c == '\n') {
             charString = "[NEWLINE]";
 
         } else {
-            charString = "'" + ( char ) c + "'";
+            charString = "'" + (char) c + "'";
         }
 
-        charString = charString + " with an int value of " + ( ( int ) c );
+        charString = charString + " with an int value of " + ((int) c);
         return charString;
     }
 
-
-    public void setCharset( String charset ) {
+    public void setCharset(String charset) {
         this.charset = charset;
     }
 
-
-    public Object parse( String jsonString ) {
-        return parse( FastStringUtils.toCharArray( jsonString ) );
+    public Object parse(String jsonString) {
+        return parse(FastStringUtils.toCharArray(jsonString));
     }
 
-    public Object parse( byte[] bytes ) {
-        return parse( bytes, charset );
+    public Object parse(byte[] bytes) {
+        return parse(bytes, charset);
     }
 
-
-    public Object parse( byte[] bytes, String charset ) {
-        return parse( bytes, charset );
+    public Object parse(byte[] bytes, String charset) {
+        return parse(bytes, charset);
     }
 
-    public Object parse( CharSequence charSequence ) {
-        return parse( FastStringUtils.toCharArray( charSequence ) );
+    public Object parse(CharSequence charSequence) {
+        return parse(FastStringUtils.toCharArray(charSequence));
     }
 
-    public Object parse( Reader reader ) {
+    public Object parse(Reader reader) {
 
-        fileInputBuf = IO.read( reader, fileInputBuf, bufSize );
-        return parse( fileInputBuf.readForRecycle() );
+        fileInputBuf = IO.read(reader, fileInputBuf, bufSize);
+        return parse(fileInputBuf.readForRecycle());
 
     }
 
-
-    public Object parse( InputStream input ) {
-        return parse( input, charset );
+    public Object parse(InputStream input) {
+        return parse(input, charset);
     }
 
-
-    public Object parse( InputStream input, String charset ) {
+    public Object parse(InputStream input, String charset) {
         try {
-            return parse( new InputStreamReader( input, charset ) );
-        } catch ( UnsupportedEncodingException e ) {
-            return Exceptions.handle( Object.class, e );
+            return parse(new InputStreamReader(input, charset));
+        } catch (UnsupportedEncodingException e) {
+            return Exceptions.handle(Object.class, e);
         }
     }
 
-    private final CharBuf builder = CharBuf.create( 20 );
+    private final CharBuf builder = CharBuf.create(20);
 
-
-    public Object parse( File file, String charset ) {
-
+    public Object parse(File file, String charset) {
 
         Reader reader = null;
         try {
-            if ( charset == null || charset.length() == 0 ) {
-                reader = ResourceGroovyMethods.newReader( file );
+            if (charset == null || charset.length() == 0) {
+                reader = ResourceGroovyMethods.newReader(file);
             } else {
-                reader = ResourceGroovyMethods.newReader( file, charset );
+                reader = ResourceGroovyMethods.newReader(file, charset);
             }
-            return parse( reader );
-        } catch ( IOException ioe ) {
-            throw new JsonException( "Unable to process file: " + file.getPath(), ioe );
+            return parse(reader);
+        } catch (IOException ioe) {
+            throw new JsonException("Unable to process file: " + file.getPath(), ioe);
         } finally {
-            if ( reader != null ) {
-                DefaultGroovyMethodsSupport.closeWithWarning( reader );
+            if (reader != null) {
+                DefaultGroovyMethodsSupport.closeWithWarning(reader);
             }
         }
 
     }
 
-
-    protected static boolean isDecimalChar( int currentChar ) {
-        switch ( currentChar ) {
+    protected static boolean isDecimalChar(int currentChar) {
+        switch (currentChar) {
             case MINUS:
             case PLUS:
             case LETTER_E:
@@ -185,35 +169,31 @@ public abstract class BaseJsonParser implements JsonParser {
 
     }
 
-    protected static boolean isDelimiter( int c ) {
+    protected static boolean isDelimiter(int c) {
 
         return c == COMMA || c == CLOSED_CURLY || c == CLOSED_BRACKET;
     }
 
-
-    protected static final boolean isNumberDigit( int c ) {
+    protected static final boolean isNumberDigit(int c) {
         return c >= ALPHA_0 && c <= ALPHA_9;
     }
 
-
-    protected static final boolean isDoubleQuote( int c ) {
+    protected static final boolean isDoubleQuote(int c) {
         return c == DOUBLE_QUOTE;
     }
 
-
-    protected static final boolean isEscape( int c ) {
+    protected static final boolean isEscape(int c) {
         return c == ESCAPE;
     }
 
-
-    protected static boolean hasEscapeChar( char[] array, int index, int[] indexHolder ) {
+    protected static boolean hasEscapeChar(char[] array, int index, int[] indexHolder) {
         char currentChar;
-        for (; index < array.length; index++ ) {
+        for (; index < array.length; index++) {
             currentChar = array[index];
-            if ( isDoubleQuote( currentChar ) ) {
+            if (isDoubleQuote(currentChar)) {
                 indexHolder[0] = index;
                 return false;
-            } else if ( isEscape( currentChar ) ) {
+            } else if (isEscape(currentChar)) {
                 indexHolder[0] = index;
                 return true;
             }
@@ -226,20 +206,19 @@ public abstract class BaseJsonParser implements JsonParser {
 
     int[] indexHolder = new int[1];
 
-
-    protected static int findEndQuote( final char[] array, int index ) {
+    protected static int findEndQuote(final char[] array, int index) {
         char currentChar;
         boolean escape = false;
 
-        for (; index < array.length; index++ ) {
+        for (; index < array.length; index++) {
             currentChar = array[index];
-            if ( isDoubleQuote( currentChar ) ) {
-                if ( !escape ) {
+            if (isDoubleQuote(currentChar)) {
+                if (!escape) {
                     break;
                 }
             }
-            if ( isEscape( currentChar ) ) {
-                if ( !escape ) {
+            if (isEscape(currentChar)) {
+                if (!escape) {
                     escape = true;
                 } else {
                     escape = false;
@@ -250,6 +229,5 @@ public abstract class BaseJsonParser implements JsonParser {
         }
         return index;
     }
-
 
 }

@@ -17,15 +17,11 @@
  */
 package groovy.json.internal;
 
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 
-
 /**
- * Created by Richard on 2/1/14.
- *
  * @author Rick Hightower
  */
 public class IO {
@@ -34,73 +30,66 @@ public class IO {
 
     private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 
+    public static CharBuf read(Reader input, CharBuf charBuf, final int bufSize) {
 
-    public static CharBuf read( Reader input, CharBuf charBuf, final int bufSize ) {
-
-        if ( charBuf == null ) {
-            charBuf = CharBuf.create( bufSize );
+        if (charBuf == null) {
+            charBuf = CharBuf.create(bufSize);
         } else {
             charBuf.readForRecycle();
         }
 
         try {
 
-
             char[] buffer = charBuf.toCharArray();
-            int size = input.read( buffer );
-            if ( size != -1 ) {
-                charBuf._len( size );
+            int size = input.read(buffer);
+            if (size != -1) {
+                charBuf._len(size);
             }
-            if ( size < buffer.length ) {
+            if (size < buffer.length) {
                 return charBuf;
             }
 
-            copy( input, charBuf );
+            copy(input, charBuf);
 
-        } catch ( IOException e ) {
-            Exceptions.handle( e );
+        } catch (IOException e) {
+            Exceptions.handle(e);
         } finally {
             try {
                 input.close();
-            } catch ( IOException e ) {
-                Exceptions.handle( e );
+            } catch (IOException e) {
+                Exceptions.handle(e);
             }
         }
 
         return charBuf;
 
-
     }
 
-
-    public static int copy( Reader input, Writer output ) {
-        long count = copyLarge( input, output );
-        if ( count > Integer.MAX_VALUE ) {
+    public static int copy(Reader input, Writer output) {
+        long count = copyLarge(input, output);
+        if (count > Integer.MAX_VALUE) {
             return -1;
         }
-        return ( int ) count;
+        return (int) count;
     }
 
-
-    public static long copyLarge( Reader reader, Writer writer ) {
-        return copyLarge( reader, writer, new char[DEFAULT_BUFFER_SIZE] );
+    public static long copyLarge(Reader reader, Writer writer) {
+        return copyLarge(reader, writer, new char[DEFAULT_BUFFER_SIZE]);
     }
 
-
-    public static long copyLarge( Reader reader, Writer writer, char[] buffer ) {
+    public static long copyLarge(Reader reader, Writer writer, char[] buffer) {
         long count = 0;
         int n;
 
         try {
-            while ( EOF != ( n = reader.read( buffer ) ) ) {
-                writer.write( buffer, 0, n );
+            while (EOF != (n = reader.read(buffer))) {
+                writer.write(buffer, 0, n);
                 count += n;
             }
-        } catch ( IOException e ) {
-            Exceptions.handle( e );
+        } catch (IOException e) {
+            Exceptions.handle(e);
         }
         return count;
     }
-
 
 }

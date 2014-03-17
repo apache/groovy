@@ -43,36 +43,31 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
     /* The current length of the map. */
     private int len = 0;
 
-
     /**
      * Add a MapItemValue to the map.
      *
      * @param miv map value item.
      */
 
-    public void add( MapItemValue miv ) {
-        if ( len >= items.length ) {
-            items = LazyMap.grow( items );
+    public void add(MapItemValue miv) {
+        if (len >= items.length) {
+            items = LazyMap.grow(items);
         }
         items[len] = miv;
         len++;
     }
 
-
     public int len() {
         return len;
     }
-
 
     public boolean hydrated() {
         return map != null;
     }
 
-
     public Entry<String, Value>[] items() {
         return items;
     }
-
 
     /**
      * Get the items for the key.
@@ -81,28 +76,26 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
      * @return the items for the given key
      */
 
-    public Value get( Object key ) {
+    public Value get(Object key) {
         /* If the length is under and we are asking for the key, then just look for the key. Don't build the map. */
-        if ( map == null && items.length < 20 ) {
-            for ( Object item : items ) {
-                MapItemValue miv = ( MapItemValue ) item;
-                if ( key.equals( miv.name.toValue() ) ) {
+        if (map == null && items.length < 20) {
+            for (Object item : items) {
+                MapItemValue miv = (MapItemValue) item;
+                if (key.equals(miv.name.toValue())) {
                     return miv.value;
                 }
             }
             return null;
         } else {
-            if ( map == null ) buildIfNeededMap();
-            return map.get( key );
+            if (map == null) buildIfNeededMap();
+            return map.get(key);
         }
     }
 
-
-    public Value put( String key, Value value ) {
-        die( "Not that kind of map" );
+    public Value put(String key, Value value) {
+        die("Not that kind of map");
         return null;
     }
-
 
     /**
      * If the map has not been built yet, then we just return a fake entry set.
@@ -117,18 +110,17 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
      * Build the map if requested to, it does this lazily.
      */
     private final void buildIfNeededMap() {
-        if ( map == null ) {
-            map = new HashMap<String, Value>( items.length );
+        if (map == null) {
+            map = new HashMap<String, Value>(items.length);
 
-            for ( Entry<String, Value> miv : items ) {
-                if ( miv == null ) {
+            for (Entry<String, Value> miv : items) {
+                if (miv == null) {
                     break;
                 }
-                map.put( miv.getKey(), miv.getValue() );
+                map.put(miv.getKey(), miv.getValue());
             }
         }
     }
-
 
     /**
      * Return a collection of values.
@@ -137,7 +129,6 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
         this.buildIfNeededMap();
         return map.values();
     }
-
 
     /**
      * Return the size of the map. Use the map if it has already been created.

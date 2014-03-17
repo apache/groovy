@@ -17,7 +17,6 @@
  */
 package groovy.json.internal;
 
-
 /**
  * @author Richard Hightower
  */
@@ -46,7 +45,7 @@ public interface CharacterSource {
     /**
      * Useful for finding constants in a string like true, false, etc.
      */
-    boolean consumeIfMatch( char[] match );
+    boolean consumeIfMatch(char[] match);
 
     /**
      * This is mostly for debugging and testing.
@@ -68,7 +67,7 @@ public interface CharacterSource {
      * @param esc escape character to avoid next char if escaped
      * @return list of chars until this is found.
      */
-    char[] findNextChar( int ch, int esc );
+    char[] findNextChar(int ch, int esc);
 
     boolean hadEscape();
 
@@ -77,6 +76,5 @@ public interface CharacterSource {
      */
     char[] readNumber();
 
-    String errorDetails( String message );
-
+    String errorDetails(String message);
 }
