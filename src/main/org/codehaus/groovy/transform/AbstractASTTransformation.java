@@ -208,16 +208,14 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return plainNodeReference;
     }
 
-    public static ClassNode makeClassSafeWithGenerics(ClassNode type, ClassNode... genericTypes) {
+    public static ClassNode makeClassSafeWithGenerics(ClassNode type, GenericsType... genericTypes) {
         if (type.isArray()) {
             return makeClassSafeWithGenerics(type.getComponentType(), genericTypes).makeArray();
         }
         GenericsType[] gtypes = new GenericsType[0];
         if (genericTypes != null) {
             gtypes = new GenericsType[genericTypes.length];
-            for (int i = 0; i < gtypes.length; i++) {
-                gtypes[i] = new GenericsType(newClass(genericTypes[i]));
-            }
+            System.arraycopy(genericTypes, 0, gtypes, 0, gtypes.length);
         }
         return makeClassSafe0(type, gtypes);
     }
@@ -229,11 +227,28 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         }
         if (type == null) type = ClassHelper.OBJECT_TYPE;
         GenericsType[] oldgTypes = type.getGenericsTypes();
-        ClassNode[] newgTypes = new ClassNode[0];
+        GenericsType[] newgTypes = new GenericsType[0];
         if (oldgTypes != null) {
-            newgTypes = new ClassNode[oldgTypes.length];
+            newgTypes = new GenericsType[oldgTypes.length];
             for (int i = 0; i < newgTypes.length; i++) {
-                newgTypes[i] = Verifier.correctToGenericsSpec(genericsSpec, oldgTypes[i]);
+                GenericsType oldgType = oldgTypes[i];
+                if (oldgType.isWildcard()) {
+                    ClassNode oldLower = oldgType.getLowerBound();
+                    ClassNode lower = oldLower!=null?correctToGenericsSpecRecurse(genericsSpec, oldLower):null;
+                    ClassNode[] oldUpper = oldgType.getUpperBounds();
+                    ClassNode[] upper = null;
+                    if (oldUpper!=null) {
+                        upper = new ClassNode[oldUpper.length];
+                        for (int j = 0; j < oldUpper.length; j++) {
+                            upper[j] = correctToGenericsSpecRecurse(genericsSpec,oldUpper[j]);
+                        }
+                    }
+                    GenericsType fixed = new GenericsType(oldgType.getType(), upper, lower);
+                    fixed.setWildcard(true);
+                    newgTypes[i] = fixed;
+                } else {
+                    newgTypes[i] = new GenericsType(Verifier.correctToGenericsSpec(genericsSpec, oldgType));
+                }
             }
         }
         return makeClassSafeWithGenerics(type, newgTypes);
