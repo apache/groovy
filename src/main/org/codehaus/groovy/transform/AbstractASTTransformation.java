@@ -21,8 +21,9 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-//import org.codehaus.groovy.ast.MethodNode;
-//import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -36,7 +37,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -92,8 +92,6 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return list;
     }
 
-    // GROOVY-6329: awaiting resolution of GROOVY-6330
-/*
     protected List<ClassNode> getClassList(AnnotationNode anno, String name) {
         List<ClassNode> list = new ArrayList<ClassNode>();
         Expression expr = anno.getMember(name);
@@ -111,7 +109,6 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         }
         return list;
     }
-*/
 
     protected void addError(String msg, ASTNode expr) {
         sourceUnit.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
@@ -141,11 +138,10 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
     }
 
-    // GROOVY-6329: awaiting resolution of GROOVY-6330
-/*
     public static boolean shouldSkipOnDescriptor(String descriptor, List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
         if (excludeTypes != null) {
             for (ClassNode cn : excludeTypes) {
+                // TODO correct to generics spec?
                 for (MethodNode mn : nonGeneric(cn).getMethods()) {
                     if (mn.getTypeDescriptor().equals(descriptor)) return true;
                 }
@@ -162,7 +158,6 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         }
         return false;
     }
-*/
 
     protected void checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
         if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
@@ -170,8 +165,6 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         }
     }
 
-    // GROOVY-6329: awaiting resolution of GROOVY-6330
-/*
     protected void checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, List<ClassNode> excludeTypes, List<ClassNode> includeTypes, String typeName) {
         int found = 0;
         if (includes != null && !includes.isEmpty()) found++;
@@ -182,7 +175,6 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
             addError("Error during " + typeName + " processing: Only one of 'includes', 'excludes', 'includeTypes' and 'excludeTypes' should be supplied.", node);
         }
     }
-*/
 
     public static ClassNode nonGeneric(ClassNode type) {
         if (type.isUsingGenerics()) {
@@ -208,8 +200,10 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return plainNodeReference;
     }
 
+
     public static ClassNode makeClassSafeWithGenerics(ClassNode type, GenericsType... genericTypes) {
-        if (type.isArray()) {
+        if (type.isArray() /*&& type.getComponentType().isUsingGenerics()*/) {
+
             return makeClassSafeWithGenerics(type.getComponentType(), genericTypes).makeArray();
         }
         GenericsType[] gtypes = new GenericsType[0];
@@ -218,6 +212,17 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
             System.arraycopy(genericTypes, 0, gtypes, 0, gtypes.length);
         }
         return makeClassSafe0(type, gtypes);
+    }
+
+    static MethodNode correctToGenericsSpec(Map genericsSpec, MethodNode mn) {
+        ClassNode correctedType = correctToGenericsSpecRecurse(genericsSpec, mn.getReturnType());
+        Parameter[] origParameters = mn.getParameters();
+        Parameter[] newParameters = new Parameter[origParameters.length];
+        for (int i = 0; i < origParameters.length; i++) {
+            Parameter origParameter = origParameters[i];
+            newParameters[i] = new Parameter(correctToGenericsSpecRecurse(genericsSpec, origParameter.getType()), origParameter.getName(), origParameter.getInitialExpression());
+        }
+        return new MethodNode(mn.getName(), mn.getModifiers(), correctedType, newParameters, mn.getExceptions(), mn.getCode());
     }
 
     static ClassNode correctToGenericsSpecRecurse(Map genericsSpec, ClassNode type) {

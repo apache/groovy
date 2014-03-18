@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -464,6 +464,31 @@ class DelegateTransformTest extends CompilableTestSupport {
             def f = new Foo()
             f.foo()
             assert f.bar + f.baz == 'barbaz'
+        """
+    }
+
+    // GROOVY-6330
+    void testIncludeAndExcludeByType() {
+        assertScript """
+            interface AddAllCollectionSelector {
+                boolean addAll(Collection<? extends Integer> c)
+                Integer remove(int index)
+            }
+
+            class SplitNumberList {
+                // collection variant of addAll and remove will work on odd list, all other methods on even list
+                @Delegate(excludeTypes=AddAllCollectionSelector) List<Integer> evens = [2, 4, 6]
+                @Delegate(includeTypes=AddAllCollectionSelector) List<Integer> odds = [1, 3, 5]
+                def getEvensThenOdds() { evens + odds }
+            }
+
+            def list = new SplitNumberList()
+            assert list.evensThenOdds == [2, 4, 6, 1, 3, 5]
+            list.addAll([7, 9])
+            list.addAll(1, [8])
+            list.remove(0)
+            assert list.indexOf(8) == 1
+            assert list.evensThenOdds == [2, 8, 4, 6, 3, 5, 7, 9]
         """
     }
 

@@ -54,9 +54,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
     private static final String MEMBER_INTERFACES = "interfaces";
     private static final String MEMBER_INCLUDES = "includes";
     private static final String MEMBER_EXCLUDES = "excludes";
-    // GROOVY-6329: awaiting resolution of GROOVY-6330
-//    private static final String MEMBER_INCLUDE_TYPES = "includeTypes";
-//    private static final String MEMBER_EXCLUDE_TYPES = "excludeTypes";
+    private static final String MEMBER_INCLUDE_TYPES = "includeTypes";
+    private static final String MEMBER_EXCLUDE_TYPES = "excludeTypes";
     private static final String MEMBER_PARAMETER_ANNOTATIONS = "parameterAnnotations";
     private static final String MEMBER_METHOD_ANNOTATIONS = "methodAnnotations";
 
@@ -89,20 +88,14 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
             final boolean includeDeprecated = hasBooleanValue(node.getMember(MEMBER_DEPRECATED), true) || (type.isInterface() && !skipInterfaces);
             List<String> excludes = getMemberList(node, MEMBER_EXCLUDES);
             List<String> includes = getMemberList(node, MEMBER_INCLUDES);
-            // GROOVY-6329: awaiting resolution of GROOVY-6330
-/*
             List<ClassNode> excludeTypes = getClassList(node, MEMBER_EXCLUDE_TYPES);
             List<ClassNode> includeTypes = getClassList(node, MEMBER_INCLUDE_TYPES);
             checkIncludeExclude(node, excludes, includes, excludeTypes, includeTypes, MY_TYPE_NAME);
-*/
-            checkIncludeExclude(node, excludes, includes, MY_TYPE_NAME);
 
             final List<MethodNode> ownerMethods = getAllMethods(owner);
             for (MethodNode mn : fieldMethods) {
-                // GROOVY-6329: awaiting resolution of GROOVY-6330
-//                addDelegateMethod(node, fieldNode, owner, ownerMethods, mn, includeDeprecated, includes, excludes, includeTypes, excludeTypes);
-                addDelegateMethod(node, fieldNode, owner, ownerMethods, mn, includeDeprecated, includes, excludes);
-            }
+               addDelegateMethod(node, fieldNode, owner, ownerMethods, mn, includeDeprecated, includes, excludes, includeTypes, excludeTypes);
+           }
 
             for (PropertyNode prop : getAllProperties(type)) {
                 if (prop.isStatic() || !prop.isPublic())
@@ -199,7 +192,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
         }
     }
 
-    private void addDelegateMethod(AnnotationNode node, FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated, List<String> includes, List<String> excludes/*, List<ClassNode> includeTypes, List<ClassNode> excludeTypes*/) {
+    private void addDelegateMethod(AnnotationNode node, FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated, List<String> includes, List<String> excludes, List<ClassNode> includeTypes, List<ClassNode> excludeTypes) {
         if (!candidate.isPublic() || candidate.isStatic() || 0 != (candidate.getModifiers () & Opcodes.ACC_SYNTHETIC))
             return;
 
@@ -207,12 +200,12 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
             return;
 
         if (shouldSkip(candidate.getName(), excludes, includes)) return;
-        checkIncludeExclude(node, excludes, includes, MY_TYPE_NAME);
-        // GROOVY-6329: awaiting resolution of GROOVY-6330
-/*
-        checkIncludeExclude(node, excludes, includes, excludeTypes, includeTypes, MY_TYPE_NAME);
-        if (shouldSkipOnDescriptor(candidate.getTypeDescriptor(), excludeTypes, includeTypes)) return;
-*/
+
+        Map genericsSpec = Verifier.createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap());
+        genericsSpec = Verifier.createGenericsSpec(fieldNode.getType(), genericsSpec);
+
+        String correctedTypeDescriptor = correctToGenericsSpec(genericsSpec, candidate).getTypeDescriptor();
+        if (shouldSkipOnDescriptor(correctedTypeDescriptor, excludeTypes, includeTypes)) return;
 
         // ignore methods from GroovyObject
         for (MethodNode mn : GROOVYOBJECT_TYPE.getMethods()) {
@@ -237,8 +230,6 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
                 break;
             }
         }
-        Map genericsSpec = Verifier.createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap());
-        genericsSpec = Verifier.createGenericsSpec(fieldNode.getType(), genericsSpec);
         if (existingNode == null || existingNode.getCode() == null) {
 
             final boolean includeParameterAnnotations = hasBooleanValue(node.getMember(MEMBER_PARAMETER_ANNOTATIONS), true);
