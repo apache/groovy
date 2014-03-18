@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,4 +210,39 @@ and 3 = (12 / 4)
         assert !ExtractIndexAndSql.hasNamedParameters("select * from TABLE where TEXTFIELD::integer = 3")
     }
 
+    void testGROOVY6625() {
+        String query = """SELECT
+    'select count(*) as cnt, '''|| table_name || ''' as tab from ' || :schema || '.' || table_name ||
+    '@base_cc a where a.id not in (select b.id from replica.' || table_name || ' b )  union all ' as tabsel
+FROM
+    dba_all_tables
+WHERE
+    owner = 'REPLICA'
+    and substr(table_name, 1, :len) = :prefix
+    and table_name in (
+        select table_name from all_tables@base_cc where owner = :schema )
+ORDER BY
+    table_name ASC"""
+
+        String expected = """SELECT
+    'select count(*) as cnt, '''|| table_name || ''' as tab from ' || ? || '.' || table_name ||
+    '@base_cc a where a.id not in (select b.id from replica.' || table_name || ' b )  union all ' as tabsel
+FROM
+    dba_all_tables
+WHERE
+    owner = 'REPLICA'
+    and substr(table_name, 1, ?) = ?
+    and table_name in (
+        select table_name from all_tables@base_cc where owner = ? )
+ORDER BY
+    table_name ASC"""
+
+        assert expected == ExtractIndexAndSql.from(query).newSql
+    }
+
+    void testConsecutiveQuotes() {
+        String query = "select '''' from dual"
+
+        assert query == ExtractIndexAndSql.from(query).newSql
+    }
 }
