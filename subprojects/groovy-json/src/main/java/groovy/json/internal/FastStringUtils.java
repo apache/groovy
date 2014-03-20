@@ -32,19 +32,19 @@ public class FastStringUtils {
     public static final long STRING_OFFSET_FIELD_OFFSET;
     public static final long STRING_COUNT_FIELD_OFFSET;
     public static final boolean ENABLED;
-    private static final boolean WRITE_TO_FINAL_FIELDS = Boolean.parseBoolean( System.getProperty( "groovy.json.faststringutils.write.to.final.fields", "false" ) );
-    private static final boolean DISABLE = Boolean.parseBoolean( System.getProperty( "groovy.json.faststringutils.disable", "false" ) );
+    private static final boolean WRITE_TO_FINAL_FIELDS = Boolean.parseBoolean(System.getProperty("groovy.json.faststringutils.write.to.final.fields", "false"));
+    private static final boolean DISABLE = Boolean.parseBoolean(System.getProperty("groovy.json.faststringutils.disable", "false"));
 
     /**
      * @return Unsafe
      */
     private static Unsafe loadUnsafe() {
         try {
-            Field unsafeField = Unsafe.class.getDeclaredField( "theUnsafe" );
-            unsafeField.setAccessible( true );
-            return ( Unsafe ) unsafeField.get( null );
+            Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+            unsafeField.setAccessible(true);
+            return (Unsafe) unsafeField.get(null);
 
-        } catch ( Exception e ) {
+        } catch (Exception e) {
             return null;
         }
     }
@@ -58,11 +58,11 @@ public class FastStringUtils {
      * @param fieldName name of field
      * @return offset
      */
-    private static long getFieldOffset( String fieldName ) {
-        if ( ENABLED ) {
+    private static long getFieldOffset(String fieldName) {
+        if (ENABLED) {
             try {
-                return UNSAFE.objectFieldOffset( String.class.getDeclaredField( fieldName ) );
-            } catch ( NoSuchFieldException e ) {
+                return UNSAFE.objectFieldOffset(String.class.getDeclaredField(fieldName));
+            } catch (NoSuchFieldException e) {
                 // field undefined
             }
         }
@@ -70,32 +70,32 @@ public class FastStringUtils {
     }
 
     static {
-        STRING_VALUE_FIELD_OFFSET = getFieldOffset( "value" );
-        STRING_OFFSET_FIELD_OFFSET = getFieldOffset( "offset" );
-        STRING_COUNT_FIELD_OFFSET = getFieldOffset( "count" );
+        STRING_VALUE_FIELD_OFFSET = getFieldOffset("value");
+        STRING_OFFSET_FIELD_OFFSET = getFieldOffset("offset");
+        STRING_COUNT_FIELD_OFFSET = getFieldOffset("count");
     }
 
     /**
      * @author Stéphane Landelle
      */
-    private enum StringImplementation {
+    protected enum StringImplementation {
         /**
          * JDK 7 drops offset and count so there is special handling for later version of JDK 7.
          */
         DIRECT_CHARS {
             @Override
-            public char[] toCharArray( String string ) {
-                return ( char[] ) UNSAFE.getObject( string, STRING_VALUE_FIELD_OFFSET );
+            public char[] toCharArray(String string) {
+                return (char[]) UNSAFE.getObject(string, STRING_VALUE_FIELD_OFFSET);
             }
 
             @Override
-            public String noCopyStringFromChars( char[] chars ) {
-                if ( WRITE_TO_FINAL_FIELDS ) {
+            public String noCopyStringFromChars(char[] chars) {
+                if (WRITE_TO_FINAL_FIELDS) {
                     String string = new String();
-                    UNSAFE.putObject( string, STRING_VALUE_FIELD_OFFSET, chars );
+                    UNSAFE.putObject(string, STRING_VALUE_FIELD_OFFSET, chars);
                     return string;
                 } else {
-                    return new String( chars );
+                    return new String(chars);
                 }
             }
         },
@@ -104,11 +104,11 @@ public class FastStringUtils {
          */
         OFFSET {
             @Override
-            public char[] toCharArray( String string ) {
-                char[] value = ( char[] ) UNSAFE.getObject( string, STRING_VALUE_FIELD_OFFSET );
-                int offset = UNSAFE.getInt( string, STRING_OFFSET_FIELD_OFFSET );
-                int count = UNSAFE.getInt( string, STRING_COUNT_FIELD_OFFSET );
-                if ( offset == 0 && count == value.length ) {
+            public char[] toCharArray(String string) {
+                char[] value = (char[]) UNSAFE.getObject(string, STRING_VALUE_FIELD_OFFSET);
+                int offset = UNSAFE.getInt(string, STRING_OFFSET_FIELD_OFFSET);
+                int count = UNSAFE.getInt(string, STRING_COUNT_FIELD_OFFSET);
+                if (offset == 0 && count == value.length) {
                     // no need to copy
                     return value;
                 } else {
@@ -117,32 +117,32 @@ public class FastStringUtils {
             }
 
             @Override
-            public String noCopyStringFromChars( char[] chars ) {
-                if ( WRITE_TO_FINAL_FIELDS ) {
+            public String noCopyStringFromChars(char[] chars) {
+                if (WRITE_TO_FINAL_FIELDS) {
                     String string = new String();
-                    UNSAFE.putObject( string, STRING_VALUE_FIELD_OFFSET, chars );
-                    UNSAFE.putInt( string, STRING_COUNT_FIELD_OFFSET, chars.length );
+                    UNSAFE.putObject(string, STRING_VALUE_FIELD_OFFSET, chars);
+                    UNSAFE.putInt(string, STRING_COUNT_FIELD_OFFSET, chars.length);
                     return string;
                 } else {
-                    return new String( chars );
+                    return new String(chars);
                 }
             }
         },
         UNKNOWN {
             @Override
-            public char[] toCharArray( String string ) {
+            public char[] toCharArray(String string) {
                 return string.toCharArray();
             }
 
             @Override
-            public String noCopyStringFromChars( char[] chars ) {
-                return new String( chars );
+            public String noCopyStringFromChars(char[] chars) {
+                return new String(chars);
             }
         };
 
-        public abstract char[] toCharArray( String string );
+        public abstract char[] toCharArray(String string);
 
-        public abstract String noCopyStringFromChars( char[] chars );
+        public abstract String noCopyStringFromChars(char[] chars);
     }
 
     public static StringImplementation STRING_IMPLEMENTATION = computeStringImplementation();
@@ -152,11 +152,11 @@ public class FastStringUtils {
      */
     private static StringImplementation computeStringImplementation() {
 
-        if ( STRING_VALUE_FIELD_OFFSET != -1L ) {
-            if ( STRING_OFFSET_FIELD_OFFSET != -1L && STRING_COUNT_FIELD_OFFSET != -1L ) {
+        if (STRING_VALUE_FIELD_OFFSET != -1L) {
+            if (STRING_OFFSET_FIELD_OFFSET != -1L && STRING_COUNT_FIELD_OFFSET != -1L) {
                 return StringImplementation.OFFSET;
 
-            } else if ( STRING_OFFSET_FIELD_OFFSET == -1L && STRING_COUNT_FIELD_OFFSET == -1L ) {
+            } else if (STRING_OFFSET_FIELD_OFFSET == -1L && STRING_COUNT_FIELD_OFFSET == -1L) {
                 return StringImplementation.DIRECT_CHARS;
             } else {
                 // WTF this is a French abbreviation for unknown.
@@ -167,35 +167,33 @@ public class FastStringUtils {
         }
     }
 
-
     /**
      * @param string string to grab array from.
      * @return char array from string
      */
-    public static char[] toCharArray( final String string ) {
-        return STRING_IMPLEMENTATION.toCharArray( string );
+    public static char[] toCharArray(final String string) {
+        return STRING_IMPLEMENTATION.toCharArray(string);
 
     }
-
 
     /**
      * @param charSequence to grab array from.
      * @return char array from char sequence
      */
-    public static char[] toCharArray( final CharSequence charSequence ) {
-        return toCharArray( charSequence.toString() );
+    public static char[] toCharArray(final CharSequence charSequence) {
+        return toCharArray(charSequence.toString());
     }
 
     /**
      * @param chars to shove array into.
      * @return new string with chars copied into it
      */
-    public static String noCopyStringFromChars( final char[] chars ) {
+    public static String noCopyStringFromChars(final char[] chars) {
         /*
         J'ai écrit JSON parser du Boon. Sans Stéphane, l'analyseur n'existerait pas. Stéphane est la muse de Boon JSON,
          et mon entraîneur pour l'open source, github, et plus encore. Stéphane n'est pas le créateur directe, mais il
          est le maître architecte et je l'appelle mon ami. It is Step-eff-on not Stef-fa-nee.. Ok?
          */
-        return STRING_IMPLEMENTATION.noCopyStringFromChars( chars );
+        return STRING_IMPLEMENTATION.noCopyStringFromChars(chars);
     }
 }

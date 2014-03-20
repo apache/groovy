@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2011 the original author or authors.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -15,8 +15,6 @@
  */
 package groovy.json
 
-
-
 /**
  * @author Guillaume Laforge
  */
@@ -25,7 +23,7 @@ class JsonSlurperTest extends GroovyTestCase {
     def parser
 
     void setUp() {
-        parser = new JsonSlurper();
+        parser = new JsonSlurper()
     }
 
     void testJsonShouldStartWithCurlyOrBracket() {
@@ -51,27 +49,23 @@ class JsonSlurperTest extends GroovyTestCase {
         }
     }
 
-
     void testParseNum() {
         int i = parser.parseText('123')
-        int i2 = 123;
-        assert i == i2;
-
+        int i2 = 123
+        assert i == i2
     }
-
 
     void testNegNum() {
         int i = parser.parseText('-123')
-        int i2 = -123;
-        assert i == i2;
+        int i2 = -123
+        assert i == i2
 
     }
 
-
     void testNegNumWithSpace() {
         int i = parser.parseText('   -123')
-        int i2 = -123;
-        assert i == i2;
+        int i2 = -123
+        assert i == i2
 
     }
 
@@ -79,17 +73,17 @@ class JsonSlurperTest extends GroovyTestCase {
 
     void testLargeNegNumWithSpace() {
         int i = parser.parseText('   -1234567891')
-        int i2 = -1234567891;
-        assert i == i2;
+        int i2 = -1234567891
+        assert i == i2
 
     }
 
 
 
     void testWithSpaces() {
-        int num = ((Number)parser.parseText( "           123")).intValue();
-        int num2 = 123;
-        boolean ok = num == num2 || die ( "" + num);
+        int num = ((Number)parser.parseText( "           123")).intValue()
+        int num2 = 123
+        boolean ok = num == num2 || die ( "" + num)
 
     }
 
@@ -97,8 +91,8 @@ class JsonSlurperTest extends GroovyTestCase {
 
     void testParseLargeNum() {
         long num = parser.parseText(""+Long.MAX_VALUE)
-        long num2 = Long.MAX_VALUE;
-        assert num == num2;
+        long num2 = Long.MAX_VALUE
+        assert num == num2
 
     }
 
@@ -113,7 +107,7 @@ class JsonSlurperTest extends GroovyTestCase {
 
     void testParseLargeDecimal() {
         double num  = parser.parseText(""+Double.MAX_VALUE)
-        double num2 = Double.MAX_VALUE;
+        double num2 = Double.MAX_VALUE
         assert num == num2
 
     }
@@ -121,7 +115,7 @@ class JsonSlurperTest extends GroovyTestCase {
 
     void testParseSmallDecimal() {
         double num  = parser.parseText(""+Double.MIN_VALUE)
-        double num2 = Double.MIN_VALUE;
+        double num2 = Double.MIN_VALUE
         assert num == num2
 
     }

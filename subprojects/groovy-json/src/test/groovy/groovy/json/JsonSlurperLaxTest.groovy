@@ -88,7 +88,7 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
             }
         """
 
-        Map <String, Object> map = parser.parseText(jsonString);
+        Map <String, Object> map = parser.parseText(jsonString)
         assert map.foo == "bar"
         assert map.foo1 == "bar1"
         assert map.foo2 == "bar2"

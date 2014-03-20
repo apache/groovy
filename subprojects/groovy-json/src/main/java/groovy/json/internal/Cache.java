@@ -17,7 +17,6 @@
  */
 package groovy.json.internal;
 
-
 /**
  * Cache
  *
@@ -26,13 +25,13 @@ package groovy.json.internal;
  * @author Rick Hightower
  */
 public interface Cache<KEY, VALUE> {
-    void put( KEY key, VALUE value );
+    void put(KEY key, VALUE value);
 
-    VALUE get( KEY key );
+    VALUE get(KEY key);
 
-    VALUE getSilent( KEY key );
+    VALUE getSilent(KEY key);
 
-    void remove( KEY key );
+    void remove(KEY key);
 
     int size();
 }

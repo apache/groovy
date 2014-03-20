@@ -22,84 +22,74 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-
 /**
  * @author Rick Hightower
  */
 public class ValueList extends AbstractList<Object> implements List<Object> {
 
-    List<Object> list = new ArrayList<Object>( 5 );
+    List<Object> list = new ArrayList<Object>(5);
 
     private final boolean lazyChop;
     boolean converted = false;
 
-
-    public ValueList( boolean lazyChop ) {
+    public ValueList(boolean lazyChop) {
         this.lazyChop = lazyChop;
     }
 
+    public Object get(int index) {
 
-    public Object get( int index ) {
+        Object obj = list.get(index);
 
-        Object obj = list.get( index );
-
-        if ( obj instanceof Value ) {
-            obj = convert( ( Value ) obj );
-            list.set( index, obj );
+        if (obj instanceof Value) {
+            obj = convert((Value) obj);
+            list.set(index, obj);
         }
 
-        chopIfNeeded( obj );
+        chopIfNeeded(obj);
         return obj;
 
     }
 
-
-    private Object convert( Value value ) {
+    private Object convert(Value value) {
         return value.toValue();
     }
-
 
     public int size() {
         return list.size();
     }
-
 
     public Iterator<Object> iterator() {
         convertAllIfNeeded();
         return list.iterator();
     }
 
-
     private void convertAllIfNeeded() {
-        if ( !converted ) {
+        if (!converted) {
             converted = true;
-            for ( int index = 0; index < list.size(); index++ ) {
-                this.get( index );
+            for (int index = 0; index < list.size(); index++) {
+                this.get(index);
             }
         }
 
     }
 
-
     public void clear() {
         list.clear();
     }
 
-
-    public boolean add( Object obj ) {
-        return list.add( obj );
+    public boolean add(Object obj) {
+        return list.add(obj);
     }
-
 
     public void chopList() {
 
-        for ( Object obj : list ) {
-            if ( obj == null ) continue;
+        for (Object obj : list) {
+            if (obj == null) continue;
 
-            if ( obj instanceof Value ) {
-                Value value = ( Value ) obj;
-                if ( value.isContainer() ) {
-                    chopContainer( value );
+            if (obj instanceof Value) {
+                Value value = (Value) obj;
+                if (value.isContainer()) {
+                    chopContainer(value);
                 } else {
                     value.chop();
                 }
@@ -107,27 +97,26 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
         }
     }
 
-    private void chopIfNeeded( Object object ) {
-        if ( lazyChop ) {
-            if ( object instanceof LazyValueMap ) {
-                LazyValueMap m = ( LazyValueMap ) object;
+    private void chopIfNeeded(Object object) {
+        if (lazyChop) {
+            if (object instanceof LazyValueMap) {
+                LazyValueMap m = (LazyValueMap) object;
                 m.chopMap();
-            } else if ( object instanceof ValueList ) {
-                ValueList list = ( ValueList ) object;
+            } else if (object instanceof ValueList) {
+                ValueList list = (ValueList) object;
                 list.chopList();
             }
         }
 
     }
 
-
-    void chopContainer( Value value ) {
+    void chopContainer(Value value) {
         Object obj = value.toValue();
-        if ( obj instanceof LazyValueMap ) {
-            LazyValueMap map = ( LazyValueMap ) obj;
+        if (obj instanceof LazyValueMap) {
+            LazyValueMap map = (LazyValueMap) obj;
             map.chopMap();
-        } else if ( obj instanceof ValueList ) {
-            ValueList list = ( ValueList ) obj;
+        } else if (obj instanceof ValueList) {
+            ValueList list = (ValueList) obj;
             list.chopList();
         }
     }

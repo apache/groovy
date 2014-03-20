@@ -24,80 +24,73 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 
 /**
- * .
- * * @author Rick Hightower
+ * @author Rick Hightower
  */
 public class Exceptions {
 
     public static boolean die() {
-        throw new JsonInternalException( "died" );
+        throw new JsonInternalException("died");
     }
 
-    public static boolean die( String message ) {
-        throw new JsonInternalException( message );
+    public static boolean die(String message) {
+        throw new JsonInternalException(message);
     }
 
-
-    public static <T> T die( Class<T> clazz, String message ) {
-        throw new JsonInternalException( message );
+    public static <T> T die(Class<T> clazz, String message) {
+        throw new JsonInternalException(message);
     }
 
-    public static void handle( java.lang.Exception e ) {
-        throw new JsonInternalException( e );
+    public static void handle(java.lang.Exception e) {
+        throw new JsonInternalException(e);
     }
 
+    public static <T> T handle(Class<T> clazz, java.lang.Exception e) {
 
-    public static <T> T handle( Class<T> clazz, java.lang.Exception e ) {
-
-        if ( e instanceof JsonInternalException ) {
-            throw ( JsonInternalException ) e;
+        if (e instanceof JsonInternalException) {
+            throw (JsonInternalException) e;
         }
-        throw new JsonInternalException( e );
+        throw new JsonInternalException(e);
     }
 
-    public static <T> T handle( Class<T> clazz, String message, Throwable e ) {
+    public static <T> T handle(Class<T> clazz, String message, Throwable e) {
 
-        throw new JsonInternalException( message, e );
+        throw new JsonInternalException(message, e);
     }
 
-
-    public static void handle( String message, Throwable e ) {
-        throw new JsonInternalException( message, e );
+    public static void handle(String message, Throwable e) {
+        throw new JsonInternalException(message, e);
     }
-
 
     public static class JsonInternalException extends JsonException {
 
-        public JsonInternalException( String message ) {
-            super( message );
+        public JsonInternalException(String message) {
+            super(message);
         }
 
-        public JsonInternalException( String message, Throwable cause ) {
-            super( message, cause );
+        public JsonInternalException(String message, Throwable cause) {
+            super(message, cause);
         }
 
-        public JsonInternalException( Throwable cause ) {
-            super( "Wrapped Exception", cause );
+        public JsonInternalException(Throwable cause) {
+            super("Wrapped Exception", cause);
         }
 
+        public void printStackTrace(PrintStream s) {
 
-        public void printStackTrace( PrintStream s ) {
-
-            s.println( this.getMessage() );
-            if ( getCause() != null ) {
-                s.println( "This Exception was wrapped, the original exception\n" +
-                        "stack trace is:\n" );
-                getCause().printStackTrace( s );
+            s.println(this.getMessage());
+            if (getCause() != null) {
+                s.println("This Exception was wrapped, the original exception\n" +
+                        "stack trace is:\n");
+                getCause().printStackTrace(s);
             } else {
-                super.printStackTrace( s );
+                super.printStackTrace(s);
             }
 
         }
 
-
         public String getMessage() {
-            return super.getMessage() + ( getCause() == null ? "" :
-                    getCauseMessage() );
+            return super.getMessage() + (getCause() == null ? "" :
+                    getCauseMessage());
         }
 
         private String getCauseMessage() {
@@ -105,14 +98,12 @@ public class Exceptions {
                     getCause().getMessage();
         }
 
-
         public String getLocalizedMessage() {
             return this.getMessage();
         }
 
-
         public StackTraceElement[] getStackTrace() {
-            if ( getCause() != null ) {
+            if (getCause() != null) {
                 return getCause().getStackTrace();
             } else {
                 return super.getStackTrace();
@@ -120,33 +111,30 @@ public class Exceptions {
 
         }
 
-
         public Throwable getCause() {
             return super.getCause();
         }
 
+        public void printStackTrace(PrintWriter s) {
 
-        public void printStackTrace( PrintWriter s ) {
+            s.println(this.getMessage());
 
-            s.println( this.getMessage() );
-
-            if ( getCause() != null ) {
-                s.println( "This Exception was wrapped, the original exception\n" +
-                        "stack trace is:\n" );
-                getCause().printStackTrace( s );
+            if (getCause() != null) {
+                s.println("This Exception was wrapped, the original exception\n" +
+                        "stack trace is:\n");
+                getCause().printStackTrace(s);
             } else {
-                super.printStackTrace( s );
+                super.printStackTrace(s);
             }
         }
 
-
         public void printStackTrace() {
 
-            System.err.println( this.getMessage() );
+            System.err.println(this.getMessage());
 
-            if ( getCause() != null ) {
-                System.err.println( "This Exception was wrapped, the original exception\n" +
-                        "stack trace is:\n" );
+            if (getCause() != null) {
+                System.err.println("This Exception was wrapped, the original exception\n" +
+                        "stack trace is:\n");
                 getCause().printStackTrace();
             } else {
                 super.printStackTrace();
@@ -154,50 +142,47 @@ public class Exceptions {
         }
     }
 
-
-    public static String toString( Exception ex ) {
-        CharBuf buffer = CharBuf.create( 255 );
-        buffer.addLine( ex.getLocalizedMessage() );
+    public static String toString(Exception ex) {
+        CharBuf buffer = CharBuf.create(255);
+        buffer.addLine(ex.getLocalizedMessage());
 
         final StackTraceElement[] stackTrace = ex.getStackTrace();
-        for ( StackTraceElement element : stackTrace ) {
-            buffer.add( element.getClassName() );
-            sputs( buffer, "class", element.getClassName(),
-                    "method", element.getMethodName(), "line", element.getLineNumber() );
+        for (StackTraceElement element : stackTrace) {
+            buffer.add(element.getClassName());
+            sputs(buffer, "class", element.getClassName(),
+                    "method", element.getMethodName(), "line", element.getLineNumber());
         }
 
         return buffer.toString();
 
     }
 
-
-    public static String sputs( CharBuf buf, Object... messages ) {
+    public static String sputs(CharBuf buf, Object... messages) {
 
         int index = 0;
-        for ( Object message : messages ) {
-            if ( index != 0 ) {
-                buf.add( ' ' );
+        for (Object message : messages) {
+            if (index != 0) {
+                buf.add(' ');
             }
             index++;
 
-            if ( message == null ) {
-                buf.add( "<NULL>" );
-            } else if ( message.getClass().isArray() ) {
-                buf.add( Arrays.asList( message ).toString() );
+            if (message == null) {
+                buf.add("<NULL>");
+            } else if (message.getClass().isArray()) {
+                buf.add(Arrays.asList(message).toString());
             } else {
-                buf.add( message.toString() );
+                buf.add(message.toString());
             }
         }
-        buf.add( '\n' );
+        buf.add('\n');
 
         return buf.toString();
 
     }
 
-
-    public static String sputs( Object... messages ) {
-        CharBuf buf = CharBuf.create( 100 );
-        return sputs( buf, messages );
+    public static String sputs(Object... messages) {
+        CharBuf buf = CharBuf.create(100);
+        return sputs(buf, messages);
     }
 
 }

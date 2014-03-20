@@ -28,7 +28,6 @@ import java.util.*;
  */
 public class LazyMap extends AbstractMap<String, Object> {
 
-
     /* Holds the actual map that will be lazily created. */
     private Map<String, Object> map;
     /* The size of the map. */
@@ -38,114 +37,102 @@ public class LazyMap extends AbstractMap<String, Object> {
     /* The values stored in the map. */
     private Object[] values;
 
-
     public LazyMap() {
         keys = new String[5];
         values = new Object[5];
     }
 
-    public LazyMap( int initialSize ) {
+    public LazyMap(int initialSize) {
         keys = new String[initialSize];
         values = new Object[initialSize];
 
     }
 
-    public Object put( String key, Object value ) {
-        if ( map == null ) {
+    public Object put(String key, Object value) {
+        if (map == null) {
             keys[size] = key;
             values[size] = value;
             size++;
-            if ( size == keys.length ) {
-                keys = grow( keys );
-                values = grow( values );
+            if (size == keys.length) {
+                keys = grow(keys);
+                values = grow(values);
             }
             return null;
         } else {
-            return map.put( key, value );
+            return map.put(key, value);
         }
     }
-
 
     public Set<Entry<String, Object>> entrySet() {
         buildIfNeeded();
         return map.entrySet();
     }
 
-
     public int size() {
-        if ( map == null ) {
+        if (map == null) {
             return size;
         } else {
             return map.size();
         }
     }
 
-
     public boolean isEmpty() {
-        if ( map == null ) {
+        if (map == null) {
             return size == 0;
         } else {
             return map.isEmpty();
         }
     }
 
-
-    public boolean containsValue( Object value ) {
+    public boolean containsValue(Object value) {
         buildIfNeeded();
-        return map.containsValue( value );
+        return map.containsValue(value);
     }
 
-
-    public boolean containsKey( Object key ) {
+    public boolean containsKey(Object key) {
         buildIfNeeded();
-        return map.containsKey( key );
+        return map.containsKey(key);
     }
 
-
-    public Object get( Object key ) {
+    public Object get(Object key) {
         buildIfNeeded();
-        return map.get( key );
+        return map.get(key);
     }
 
     private void buildIfNeeded() {
-        if ( map == null ) {
-            map = new LinkedHashMap<String, Object>( size, 0.01f );
-            for ( int index = 0; index < size; index++ ) {
-                map.put( keys[index], values[index] );
+        if (map == null) {
+            map = new LinkedHashMap<String, Object>(size, 0.01f);
+            for (int index = 0; index < size; index++) {
+                map.put(keys[index], values[index]);
             }
             this.keys = null;
             this.values = null;
         }
     }
 
-
-    public Object remove( Object key ) {
+    public Object remove(Object key) {
         buildIfNeeded();
-        return map.remove( key );
+        return map.remove(key);
     }
 
-
-    public void putAll( Map m ) {
+    public void putAll(Map m) {
         buildIfNeeded();
-        map.putAll( m );
+        map.putAll(m);
     }
-
 
     public void clear() {
-        if ( map == null ) {
+        if (map == null) {
             size = 0;
         } else {
             map.clear();
         }
     }
 
-
     public Set<String> keySet() {
         buildIfNeeded();
         return map.keySet();
 
     }
-
 
     public Collection<Object> values() {
 
@@ -155,18 +142,15 @@ public class LazyMap extends AbstractMap<String, Object> {
 
     }
 
-
-    public boolean equals( Object o ) {
+    public boolean equals(Object o) {
         buildIfNeeded();
-        return map.equals( o );
+        return map.equals(o);
     }
-
 
     public int hashCode() {
         buildIfNeeded();
         return map.hashCode();
     }
-
 
     public String toString() {
 
@@ -174,34 +158,33 @@ public class LazyMap extends AbstractMap<String, Object> {
         return map.toString();
     }
 
-
     protected Object clone() throws CloneNotSupportedException {
 
-        if ( map == null ) {
+        if (map == null) {
             return null;
         } else {
-            if ( map instanceof LinkedHashMap ) {
-                return ( ( LinkedHashMap ) map ).clone();
+            if (map instanceof LinkedHashMap) {
+                return ((LinkedHashMap) map).clone();
             } else {
-                return new LinkedHashMap( this );
+                return new LinkedHashMap(this);
             }
         }
     }
 
     public LazyMap clearAndCopy() {
         LazyMap map = new LazyMap();
-        for ( int index = 0; index < size; index++ ) {
-            map.put( keys[index], values[index] );
+        for (int index = 0; index < size; index++) {
+            map.put(keys[index], values[index]);
         }
         size = 0;
         return map;
     }
 
-    public static <V> V[] grow( V[] array ) {
-        Object newArray = Array.newInstance( array.getClass().getComponentType(),
-                array.length * 2 );
-        System.arraycopy( array, 0, newArray, 0, array.length );
-        return ( V[] ) newArray;
+    public static <V> V[] grow(V[] array) {
+        Object newArray = Array.newInstance(array.getClass().getComponentType(),
+                array.length * 2);
+        System.arraycopy(array, 0, newArray, 0, array.length);
+        return (V[]) newArray;
     }
 
 }
