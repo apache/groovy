@@ -73,6 +73,15 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("value", 3, attribute.children().size());
         assertEquals("text", "someText", attribute.text());
 
+        StringWriter stringWriter = new StringWriter();
+        XmlNodePrinter printer = new XmlNodePrinter(new PrintWriter(stringWriter));
+        printer.print(attribute);
+        String attributeStr = stringWriter.toString();
+        
+        ByteArrayInputStream bais = new ByteArrayInputStream(attributeStr.getBytes("utf-8"))
+        org.w3c.dom.Document document = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(bais);
+        assertEquals(document.getFirstChild().getTextContent(), attribute.text());
+
         dump(attribute);
     }
 
