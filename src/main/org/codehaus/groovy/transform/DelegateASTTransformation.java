@@ -185,10 +185,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
                     nonGeneric(prop.getType()),
                     Parameter.EMPTY_ARRAY,
                     null,
-                    new ReturnStatement(
-                            new PropertyExpression(
-                                    new VariableExpression(fieldNode),
-                                    name)));
+                    new ReturnStatement(new PropertyExpression(new VariableExpression(fieldNode), name)));
         }
     }
 
@@ -204,8 +201,10 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
         Map genericsSpec = Verifier.createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap());
         genericsSpec = Verifier.createGenericsSpec(fieldNode.getType(), genericsSpec);
 
-        String correctedTypeDescriptor = correctToGenericsSpec(genericsSpec, candidate).getTypeDescriptor();
-        if (shouldSkipOnDescriptor(correctedTypeDescriptor, excludeTypes, includeTypes)) return;
+        if (!excludeTypes.isEmpty() || !includeTypes.isEmpty()) {
+            String correctedTypeDescriptor = correctToGenericsSpec(genericsSpec, candidate).getTypeDescriptor();
+            if (shouldSkipOnDescriptor(genericsSpec, correctedTypeDescriptor, excludeTypes, includeTypes)) return;
+        }
 
         // ignore methods from GroovyObject
         for (MethodNode mn : GROOVYOBJECT_TYPE.getMethods()) {

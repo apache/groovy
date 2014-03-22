@@ -467,28 +467,36 @@ class DelegateTransformTest extends CompilableTestSupport {
         """
     }
 
-    // GROOVY-6330
+    // GROOVY-6329
     void testIncludeAndExcludeByType() {
         assertScript """
-            interface AddAllCollectionSelector {
+            interface OddInclusions {
                 boolean addAll(Collection<? extends Integer> c)
                 Integer remove(int index)
             }
+            interface OtherInclusions {
+                void clear()
+            }
+            interface EvenExclusions extends OddInclusions, OtherInclusions { }
 
-            class SplitNumberList {
-                // collection variant of addAll and remove will work on odd list, all other methods on even list
-                @Delegate(excludeTypes=AddAllCollectionSelector) List<Integer> evens = [2, 4, 6]
-                @Delegate(includeTypes=AddAllCollectionSelector) List<Integer> odds = [1, 3, 5]
-                def getEvensThenOdds() { evens + odds }
+            class MixedNumbers {
+                // collection variant of addAll and remove will work on odd list
+                @Delegate(includeTypes=OddInclusions) List<Integer> odds = [1, 3, 5]
+                // clear will work on other list
+                @Delegate(includeTypes=OtherInclusions) List<Integer> others = [0]
+                // all other methods will work on even list
+                @Delegate(excludeTypes=EvenExclusions) List<Integer> evens = [2, 4, 6]
+                def getAll() { evens + odds + others }
             }
 
-            def list = new SplitNumberList()
-            assert list.evensThenOdds == [2, 4, 6, 1, 3, 5]
+            def list = new MixedNumbers()
+            assert list.all == [2, 4, 6, 1, 3, 5, 0]
             list.addAll([7, 9])
             list.addAll(1, [8])
             list.remove(0)
             assert list.indexOf(8) == 1
-            assert list.evensThenOdds == [2, 8, 4, 6, 3, 5, 7, 9]
+            list.clear()
+            assert list.all == [2, 8, 4, 6, 3, 5, 7, 9]
         """
     }
 

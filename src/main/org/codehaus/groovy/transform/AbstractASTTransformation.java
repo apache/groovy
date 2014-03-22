@@ -37,6 +37,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -134,29 +135,45 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return rawExcludes == null ? new ArrayList<String>() : StringGroovyMethods.tokenize(rawExcludes, ", ");
     }
 
-    public static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
-        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
+    public static boolean deemedInternalName(String name) {
+        return name.contains("$");
     }
 
-    public static boolean shouldSkipOnDescriptor(String descriptor, List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
-        if (excludeTypes != null) {
+    public static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
+        return excludes.contains(name) || deemedInternalName(name) || (!includes.isEmpty() && !includes.contains(name));
+    }
+
+    public static boolean shouldSkipOnDescriptor(Map genericsSpec, String descriptor, List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
             for (ClassNode cn : excludeTypes) {
-                // TODO correct to generics spec?
-                for (MethodNode mn : nonGeneric(cn).getMethods()) {
-                    if (mn.getTypeDescriptor().equals(descriptor)) return true;
+                List<ClassNode> remaining = new LinkedList<ClassNode>();
+                remaining.add(cn);
+                while (!remaining.isEmpty()) {
+                    ClassNode next = remaining.remove(0);
+                    if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                        for (MethodNode mn : next.getMethods()) {
+                            String md = correctToGenericsSpec(genericsSpec, mn).getTypeDescriptor();
+                            if (md.equals(descriptor)) return true;
+                        }
+                        remaining.addAll(Arrays.asList(next.getInterfaces()));
+                    }
                 }
             }
-            return false;
-        }
-        if (includeTypes != null) {
+            if (includeTypes.isEmpty()) return false;
             for (ClassNode cn : includeTypes) {
-                for (MethodNode mn : nonGeneric(cn).getMethods()) {
-                    if (mn.getTypeDescriptor().equals(descriptor)) return false;
+                List<ClassNode> remaining = new LinkedList<ClassNode>();
+                remaining.add(cn);
+                while (!remaining.isEmpty()) {
+                    ClassNode next = remaining.remove(0);
+                    if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                        for (MethodNode mn : next.getMethods()) {
+                            String md = correctToGenericsSpec(genericsSpec, mn).getTypeDescriptor();
+                            if (md.equals(descriptor)) return false;
+                        }
+                        remaining.addAll(Arrays.asList(next.getInterfaces()));
+                    }
                 }
             }
             return true;
-        }
-        return false;
     }
 
     protected void checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
@@ -202,8 +219,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
 
 
     public static ClassNode makeClassSafeWithGenerics(ClassNode type, GenericsType... genericTypes) {
-        if (type.isArray() /*&& type.getComponentType().isUsingGenerics()*/) {
-
+        if (type.isArray()) {
             return makeClassSafeWithGenerics(type.getComponentType(), genericTypes).makeArray();
         }
         GenericsType[] gtypes = new GenericsType[0];
