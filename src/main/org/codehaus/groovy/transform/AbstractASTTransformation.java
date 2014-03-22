@@ -140,7 +140,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     public static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
-        return excludes.contains(name) || deemedInternalName(name) || (!includes.isEmpty() && !includes.contains(name));
+        return (excludes != null && excludes.contains(name)) || deemedInternalName(name) || (includes != null && !includes.isEmpty() && !includes.contains(name));
     }
 
     public static boolean shouldSkipOnDescriptor(Map genericsSpec, String descriptor, List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
