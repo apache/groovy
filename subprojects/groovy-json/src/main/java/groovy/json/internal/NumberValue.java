@@ -31,7 +31,6 @@ import static groovy.json.internal.Exceptions.sputs;
  */
 public class NumberValue extends java.lang.Number implements Value {
 
-
     private char[] buffer;
     private boolean chopped;
     private int startIndex;
@@ -39,8 +38,7 @@ public class NumberValue extends java.lang.Number implements Value {
     private Type type;
     private Object value;
 
-
-    public NumberValue( Type type ) {
+    public NumberValue(Type type) {
         this.type = type;
     }
 
@@ -48,14 +46,13 @@ public class NumberValue extends java.lang.Number implements Value {
 
     }
 
-    public NumberValue( boolean chop, Type type, int startIndex, int endIndex, char[] buffer ) {
+    public NumberValue(boolean chop, Type type, int startIndex, int endIndex, char[] buffer) {
         this.type = type;
 
-
         try {
-            if ( chop ) {
+            if (chop) {
 
-                this.buffer = ArrayUtils.copyRange( buffer, startIndex, endIndex );
+                this.buffer = ArrayUtils.copyRange(buffer, startIndex, endIndex);
                 this.startIndex = 0;
                 this.endIndex = this.buffer.length;
                 chopped = true;
@@ -64,46 +61,41 @@ public class NumberValue extends java.lang.Number implements Value {
                 this.endIndex = endIndex;
                 this.buffer = buffer;
             }
-        } catch ( Exception ex ) {
-            Exceptions.handle( sputs( "exception", ex, "start", startIndex, "end", endIndex ),
-                    ex );
+        } catch (Exception ex) {
+            Exceptions.handle(sputs("exception", ex, "start", startIndex, "end", endIndex),
+                    ex);
 
         }
     }
-
 
     public String toString() {
-        if ( startIndex == 0 && endIndex == buffer.length ) {
-            return FastStringUtils.noCopyStringFromChars( buffer );
+        if (startIndex == 0 && endIndex == buffer.length) {
+            return FastStringUtils.noCopyStringFromChars(buffer);
         } else {
-            return new String( buffer, startIndex, ( endIndex - startIndex ) );
+            return new String(buffer, startIndex, (endIndex - startIndex));
         }
     }
 
-
     public final Object toValue() {
-        return value != null ? value : ( value = doToValue() );
+        return value != null ? value : (value = doToValue());
     }
 
+    public <T extends Enum> T toEnum(Class<T> cls) {
 
-    public <T extends Enum> T toEnum( Class<T> cls ) {
-
-        return toEnum( cls, intValue() );
+        return toEnum(cls, intValue());
     }
 
-
-    public static <T extends Enum> T toEnum( Class<T> cls, int value ) {
+    public static <T extends Enum> T toEnum(Class<T> cls, int value) {
 
         T[] enumConstants = cls.getEnumConstants();
-        for ( T e : enumConstants ) {
-            if ( e.ordinal() == value ) {
+        for (T e : enumConstants) {
+            if (e.ordinal() == value) {
                 return e;
             }
         }
-        die( "Can't convert ordinal value " + value + " into enum of type " + cls );
+        die("Can't convert ordinal value " + value + " into enum of type " + cls);
         return null;
     }
-
 
     public boolean isContainer() {
         return false;
@@ -111,22 +103,21 @@ public class NumberValue extends java.lang.Number implements Value {
 
     private final Object doToValue() {
 
-        switch ( type ) {
+        switch (type) {
             case DOUBLE:
                 return doubleValue();
             case INTEGER:
 
                 int sign = 1;
                 boolean negative = false;
-                if ( buffer[startIndex] == '-' ) {
+                if (buffer[startIndex] == '-') {
                     startIndex++;
                     sign = -1;
                     negative = true;
 
                 }
 
-
-                if ( isInteger( buffer, startIndex, endIndex - startIndex ) ) {
+                if (isInteger(buffer, startIndex, endIndex - startIndex)) {
                     return intValue() * sign;
                 } else {
                     return longValue() * sign;
@@ -136,86 +127,76 @@ public class NumberValue extends java.lang.Number implements Value {
         return null;
     }
 
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Value)) return false;
 
-    public boolean equals( Object o ) {
-        if ( this == o ) return true;
-        if ( !( o instanceof Value ) ) return false;
+        NumberValue value1 = (NumberValue) o;
 
-        NumberValue value1 = ( NumberValue ) o;
-
-        if ( endIndex != value1.endIndex ) return false;
-        if ( startIndex != value1.startIndex ) return false;
-        if ( !Arrays.equals( buffer, value1.buffer ) ) return false;
-        if ( type != value1.type ) return false;
-        if ( value != null ? !value.equals( value1.value ) : value1.value != null ) return false;
+        if (endIndex != value1.endIndex) return false;
+        if (startIndex != value1.startIndex) return false;
+        if (!Arrays.equals(buffer, value1.buffer)) return false;
+        if (type != value1.type) return false;
+        if (value != null ? !value.equals(value1.value) : value1.value != null) return false;
 
         return true;
     }
 
-
     public int hashCode() {
         int result = type != null ? type.hashCode() : 0;
-        result = 31 * result + ( buffer != null ? Arrays.hashCode( buffer ) : 0 );
+        result = 31 * result + (buffer != null ? Arrays.hashCode(buffer) : 0);
         result = 31 * result + startIndex;
         result = 31 * result + endIndex;
-        result = 31 * result + ( value != null ? value.hashCode() : 0 );
+        result = 31 * result + (value != null ? value.hashCode() : 0);
         return result;
     }
 
-
     public BigDecimal bigDecimalValue() {
-        return new BigDecimal( buffer, startIndex, endIndex - startIndex );
+        return new BigDecimal(buffer, startIndex, endIndex - startIndex);
     }
 
-
     public BigInteger bigIntegerValue() {
-        return new BigInteger( toString() );
+        return new BigInteger(toString());
     }
 
     public String stringValue() {
         return toString();
     }
 
-
     public String stringValueEncoded() {
         return toString();
     }
 
-
     public Date dateValue() {
-        return new Date( Dates.utc( longValue() ) );
+        return new Date(Dates.utc(longValue()));
     }
-
 
     public int intValue() {
         int sign = 1;
-        if ( buffer[startIndex] == '-' ) {
+        if (buffer[startIndex] == '-') {
             startIndex++;
             sign = -1;
 
         }
-        return parseIntFromTo( buffer, startIndex, endIndex ) * sign;
+        return parseIntFromTo(buffer, startIndex, endIndex) * sign;
     }
-
 
     public long longValue() {
 
-        if ( isInteger( buffer, startIndex, endIndex - startIndex ) ) {
-            return parseIntFromTo( buffer, startIndex, endIndex  );
+        if (isInteger(buffer, startIndex, endIndex - startIndex)) {
+            return parseIntFromTo(buffer, startIndex, endIndex);
         } else {
-            return parseLongFromTo( buffer, startIndex, endIndex  );
+            return parseLongFromTo(buffer, startIndex, endIndex);
         }
     }
 
-
     public byte byteValue() {
-        return ( byte ) intValue();
+        return (byte) intValue();
     }
 
     public short shortValue() {
-        return ( short ) intValue();
+        return (short) intValue();
     }
-
 
     private static float fpowersOf10[] = {
             1.0f,
@@ -230,31 +211,27 @@ public class NumberValue extends java.lang.Number implements Value {
             1000000000.0f,
     };
 
-
     public double doubleValue() {
-        return CharScanner.parseDouble( this.buffer, startIndex, endIndex );
+        return CharScanner.parseDouble(this.buffer, startIndex, endIndex);
 
     }
-
 
     public boolean booleanValue() {
-        return Boolean.parseBoolean( toString() );
+        return Boolean.parseBoolean(toString());
     }
 
-
     public float floatValue() {
-        return CharScanner.parseFloat( this.buffer, startIndex, endIndex );
+        return CharScanner.parseFloat(this.buffer, startIndex, endIndex);
     }
 
     public final void chop() {
-        if ( !chopped ) {
+        if (!chopped) {
             this.chopped = true;
-            this.buffer = ArrayUtils.copyRange( buffer, startIndex, endIndex );
+            this.buffer = ArrayUtils.copyRange(buffer, startIndex, endIndex);
             this.startIndex = 0;
             this.endIndex = this.buffer.length;
         }
     }
-
 
     public char charValue() {
         return buffer[startIndex];

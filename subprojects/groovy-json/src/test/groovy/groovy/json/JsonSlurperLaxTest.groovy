@@ -4,11 +4,11 @@ package groovy.json
 /**
  * Created by Richard on 2/2/14.
  */
-class JsonSlurperLaxTest extends JsonSlurperTest{
-    public JsonSlurperLaxTest () {
-        parser = new JsonSlurper().setType( JsonParserType.LAX );
-    }
+class JsonSlurperLaxTest extends JsonSlurperTest {
 
+    void setUp() {
+        parser = new JsonSlurper().setType(JsonParserType.LAX)
+    }
 
     void testNullEmptyMalformedPayloads() {
         shouldFail(IllegalArgumentException) { parser.parseText(null)   }
@@ -23,7 +23,6 @@ class JsonSlurperLaxTest extends JsonSlurperTest{
 
     }
 
-
     void testObjectWithSimpleValues() {
         assert parser.parseText('{"a": 1, "b" : true , "c":false, "d": null}') == [a: 1, b: true, c: false, d: null]
 
@@ -34,8 +33,6 @@ class JsonSlurperLaxTest extends JsonSlurperTest{
          shouldFail {parser.parseText('{"a":"b":"c"}') }
          parser.parseText('{:true}')
     }
-
-
 
     void testArrayOfArrayWithSimpleValues() {
         assert parser.parseText('[1, 2, 3, ["a", "b", "c", [true, false], "d"], 4]') ==
@@ -48,7 +45,6 @@ class JsonSlurperLaxTest extends JsonSlurperTest{
         shouldFail(JsonException) { parser.parseText('[1, 2') }
         parser.parseText('[1, 2, [3, 4]')
     }
-
 
     void testBackSlashEscaping() {
         def json = new JsonBuilder()
@@ -72,7 +68,6 @@ class JsonSlurperLaxTest extends JsonSlurperTest{
         parser.parseText('{"a":"c:\\\"}')
     }
 
-
     void testLaxCommentsAndKeys() {
 
         String jsonString = """
@@ -93,7 +88,7 @@ class JsonSlurperLaxTest extends JsonSlurperTest{
             }
         """
 
-        Map <String, Object> map = parser.parseText(jsonString);
+        Map <String, Object> map = parser.parseText(jsonString)
         assert map.foo == "bar"
         assert map.foo1 == "bar1"
         assert map.foo2 == "bar2"
@@ -104,12 +99,5 @@ class JsonSlurperLaxTest extends JsonSlurperTest{
         assert map.strings == ["we", "are", "string", "here", "us", "roar"]
         assert map["he said"] == '"fire all your guns at once baby, and explode into the night"'
         assert map.the == "end"
-
-
-
-
-
     }
-
-
 }

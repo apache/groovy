@@ -19,11 +19,13 @@ package groovy.json.internal;
 
 import java.util.Map;
 
-
+/**
+ * @author Richard Hightower
+ */
 public interface ValueMap<K, V> extends Map<K, V> {
 
     /* add a map item value. */
-    void add( MapItemValue miv );
+    void add(MapItemValue miv);
 
     /**
      * Return size w/o hydrating the map.

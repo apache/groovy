@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -464,6 +464,39 @@ class DelegateTransformTest extends CompilableTestSupport {
             def f = new Foo()
             f.foo()
             assert f.bar + f.baz == 'barbaz'
+        """
+    }
+
+    // GROOVY-6329
+    void testIncludeAndExcludeByType() {
+        assertScript """
+            interface OddInclusions {
+                boolean addAll(Collection<? extends Integer> c)
+                Integer remove(int index)
+            }
+            interface OtherInclusions {
+                void clear()
+            }
+            interface EvenExclusions extends OddInclusions, OtherInclusions { }
+
+            class MixedNumbers {
+                // collection variant of addAll and remove will work on odd list
+                @Delegate(includeTypes=OddInclusions) List<Integer> odds = [1, 3, 5]
+                // clear will work on other list
+                @Delegate(includeTypes=OtherInclusions) List<Integer> others = [0]
+                // all other methods will work on even list
+                @Delegate(excludeTypes=EvenExclusions) List<Integer> evens = [2, 4, 6]
+                def getAll() { evens + odds + others }
+            }
+
+            def list = new MixedNumbers()
+            assert list.all == [2, 4, 6, 1, 3, 5, 0]
+            list.addAll([7, 9])
+            list.addAll(1, [8])
+            list.remove(0)
+            assert list.indexOf(8) == 1
+            list.clear()
+            assert list.all == [2, 8, 4, 6, 3, 5, 7, 9]
         """
     }
 

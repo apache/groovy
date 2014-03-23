@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static groovy.json.internal.Exceptions.die;
 
-
 /**
  * This holds a mapping from value key to value value to maximize laziness.
  *
@@ -35,36 +34,32 @@ public class MapItemValue implements Map.Entry<String, Value> {
 
     private String key = null;
 
-    private static final boolean internKeys = Boolean.parseBoolean( System.getProperty( "groovy.json.implementation.internKeys", "false" ) );
-
+    private static final boolean internKeys = Boolean.parseBoolean(System.getProperty("groovy.json.implementation.internKeys", "false"));
 
     protected static ConcurrentHashMap<String, String> internedKeysCache;
 
-
     static {
-        if ( internKeys ) {
+        if (internKeys) {
             internedKeysCache = new ConcurrentHashMap<String, String>();
         }
     }
 
-
-    public MapItemValue( Value name, Value value ) {
+    public MapItemValue(Value name, Value value) {
         this.name = name;
         this.value = value;
 
     }
 
-
     public String getKey() {
-        if ( key == null ) {
-            if ( internKeys ) {
+        if (key == null) {
+            if (internKeys) {
 
                 key = name.toString();
 
-                String keyPrime = internedKeysCache.get( key );
-                if ( keyPrime == null ) {
+                String keyPrime = internedKeysCache.get(key);
+                if (keyPrime == null) {
                     key = key.intern();
-                    internedKeysCache.put( key, key );
+                    internedKeysCache.put(key, key);
                 } else {
                     key = keyPrime;
                 }
@@ -76,14 +71,12 @@ public class MapItemValue implements Map.Entry<String, Value> {
         return key;
     }
 
-
     public Value getValue() {
         return value;
     }
 
-
-    public Value setValue( Value value ) {
-        die( "not that kind of Entry" );
+    public Value setValue(Value value) {
+        die("not that kind of Entry");
         return null;
     }
 
