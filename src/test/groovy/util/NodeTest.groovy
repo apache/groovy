@@ -71,16 +71,7 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("name", "foo", attribute.name());
         assertEquals("attributes", 1, attribute.attributes().size());
         assertEquals("value", 3, attribute.children().size());
-        assertEquals("text", "someText", attribute.text());
-
-        StringWriter stringWriter = new StringWriter();
-        XmlNodePrinter printer = new XmlNodePrinter(new PrintWriter(stringWriter));
-        printer.print(attribute);
-        String attributeStr = stringWriter.toString();
-        
-        ByteArrayInputStream bais = new ByteArrayInputStream(attributeStr.getBytes("utf-8"))
-        org.w3c.dom.Document document = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(bais);
-        assertEquals(document.getFirstChild().getTextContent(), attribute.text());
+        assertEquals("text", "JamesBobsomeText", attribute.text());
 
         dump(attribute);
     }
@@ -102,7 +93,7 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("name", "foo", attribute.name());
         assertEquals("attributes", 1, attribute.attributes().size());
         assertEquals("value", 5, attribute.children().size());
-        assertEquals("text", "someTextmoreTextmoreText", attribute.text());
+        assertEquals("text", "someTextJamesmoreTextBobmoreText", attribute.text());
 
         // let's test get
         List list = (List) attribute.get("person");
