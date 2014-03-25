@@ -921,7 +921,7 @@ public class GroovyClassLoader extends URLClassLoader {
 
     // RFC2396
     // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
-    private static final Pattern uriPattern = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:.*");
+    private static final Pattern uriPattern = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:[^\\\\]*");
 
     /**
      * <p>Returns all Groovy classes loaded by this class loader.
