@@ -1,41 +1,25 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML>
-<HEAD>
-<TITLE>
-Overview ${props.docTitle ? ("(" + props.docTitle + ")") : ""}
-</TITLE>
+<html>
+<head>
+<title>Overview ${props.docTitle ? ("(" + props.docTitle + ")") : ""}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=${props.charset}">
-<META NAME="keywords" CONTENT="Overview">
+<meta name="keywords" content="Overview">
 
-<LINK REL ="stylesheet" TYPE="text/css" HREF="stylesheet.css" TITLE="Style">
+<link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
 
-</HEAD>
+</head>
 
-<BODY BGCOLOR="white">
+<body class="left">
+<div class="indexHeader"><a href="allclasses-frame.html" target="packageFrame">All Classes</a></div>
+<div class="indexContainer">
+    <h2 title="Packages">Packages</h2>
+    <ul title="Packages">
+        <% for (packageDoc in rootDoc.specifiedPackages()) { %>
+        <li><a href="${packageDoc.name()}/package-frame.html"
+               target="packageFrame">${packageDoc.nameWithDots()}</a></li>
+        <% } %>
+    </ul>
+</div>
+</body>
+</html>
 
-<TABLE BORDER="0" WIDTH="100%" SUMMARY="">
-<TR>
-<TH ALIGN="left" NOWRAP><FONT size="+1" CLASS="FrameTitleFont">
-<B>${props.docTitle}</B></FONT></TH>
-</TR>
-</TABLE>
-
-<TABLE BORDER="0" WIDTH="100%" SUMMARY="">
-<TR>
-<TD NOWRAP><FONT CLASS="FrameItemFont"><A HREF="allclasses-frame.html" target="packageFrame">All Classes</A></FONT>
-<P>
-<FONT size="+1" CLASS="FrameHeadingFont">
-Packages</FONT>
-<BR>
-<% for (packageDoc in rootDoc.specifiedPackages()) { %>
-<FONT CLASS="FrameItemFont"><A HREF="${packageDoc.name()}/package-frame.html" target="packageFrame">${packageDoc.nameWithDots()}</A></FONT>
-<BR>
-<% } %>
-</TD>
-</TR>
-</TABLE>
-
-<P>
-&nbsp;
-</BODY>
-</HTML>
