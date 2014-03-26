@@ -80,6 +80,11 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         }
     }
 
+    private static void fixGenerics(MethodNode mn, ClassNode cNode) {
+        if (!cNode.isUsingGenerics()) return;
+        mn.setGenericsTypes(cNode.getGenericsTypes());
+    }
+
     private void createHelperClass(final ClassNode cNode) {
         ClassNode helper = new InnerClassNode(
                 cNode,
@@ -105,6 +110,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 ClassNode.EMPTY_ARRAY,
                 new BlockStatement()
         );
+        fixGenerics(initializer, cNode);
         helper.addMethod(initializer);
 
         // apply the verifier to have the property nodes generated
@@ -220,6 +226,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             MethodNode getter =
                     new MethodNode(getterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
             getter.setSynthetic(true);
+            fixGenerics(getter, cNode);
             cNode.addMethod(getter);
 
             if (ClassHelper.boolean_TYPE == node.getType() || ClassHelper.Boolean_TYPE == node.getType()) {
@@ -227,6 +234,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 MethodNode secondGetter =
                         new MethodNode(secondGetterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
                 secondGetter.setSynthetic(true);
+                fixGenerics(secondGetter, cNode);
                 cNode.addMethod(secondGetter);
             }
         }
@@ -237,6 +245,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             MethodNode setter =
                     new MethodNode(setterName, propNodeModifiers, ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
             setter.setSynthetic(true);
+            fixGenerics(setter, cNode);
             cNode.addMethod(setter);
         }
     }

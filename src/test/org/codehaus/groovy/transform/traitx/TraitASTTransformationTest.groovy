@@ -389,6 +389,149 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    void testTraitWithGenerics1() {
+        assertScript '''
+            trait Provider<T> {
+                T get() {
+                    null
+                }
+            }
+            class StringProvider implements Provider<String> {}
+            def c = new StringProvider()
+            assert c.get() == null
+        '''
+
+        assertScript '''
+            @groovy.transform.CompileStatic
+            trait Provider<T> {
+                T get() {
+                    null
+                }
+            }
+            @groovy.transform.CompileStatic
+            class StringProvider implements Provider<String> {}
+            def c = new StringProvider()
+            assert c.get() == null
+        '''
+    }
+
+    void testTraitWithGenerics2() {
+        assertScript '''
+            trait Provider<T> {
+                T get(T ref) {
+                    ref
+                }
+            }
+            class StringProvider implements Provider<String> {}
+            def c = new StringProvider()
+            assert c.get('foo') == 'foo'
+        '''
+
+        assertScript '''
+            @groovy.transform.CompileStatic
+            trait Provider<T> {
+                T get(T ref) {
+                    ref
+                }
+            }
+            @groovy.transform.CompileStatic
+            class StringProvider implements Provider<String> {}
+            def c = new StringProvider()
+            assert c.get('foo') == 'foo\'
+        '''
+    }
+
+    void testTraitWithGenericProperty() {
+        assertScript '''
+            trait PropertyProvider<T> {
+                T foo
+            }
+            class StringProperty implements PropertyProvider<String> {}
+            def c = new StringProperty()
+            c.foo = 'foo'
+            assert c.foo == 'foo'
+        '''
+
+        assertScript '''
+            @groovy.transform.CompileStatic
+            trait PropertyProvider<T> {
+                T foo
+            }
+            @groovy.transform.CompileStatic
+            class StringProperty implements PropertyProvider<String> {}
+            def c = new StringProperty()
+            c.foo = 'foo'
+            assert c.foo == 'foo'
+        '''
+    }
+
+    void testTraitWithComplexGenericProperty() {
+        assertScript '''
+            trait PropertyProvider<T> {
+                List<T> foo
+            }
+            class StringProperty implements PropertyProvider<String> {}
+            def c = new StringProperty()
+            c.foo = ['foo']
+            assert c.foo == ['foo']
+        '''
+
+        assertScript '''
+            @groovy.transform.CompileStatic
+            trait PropertyProvider<T> {
+                List<T> foo
+            }
+            @groovy.transform.CompileStatic
+            class StringProperty implements PropertyProvider<String> {}
+            def c = new StringProperty()
+            c.foo = ['foo']
+            assert c.foo == ['foo']
+        '''
+
+        assertScript '''
+            trait PropertyProvider<T> {
+                List<T> foo
+            }
+            class StringProperty implements PropertyProvider<String> {}
+
+            @groovy.transform.CompileStatic
+            void test() {
+                def c = new StringProperty()
+                c.foo = ['foo']
+                assert c.foo == ['foo']
+            }
+            test()
+        '''
+    }
+
+    void testTraitWithGenericField() {
+        assertScript '''
+            trait PropertyProvider<T> {
+                private T foo
+                void set(T t) { foo = t}
+                T get() { foo }
+            }
+            class StringProperty implements PropertyProvider<String> {}
+            def c = new StringProperty()
+            c.set('foo')
+            assert c.get() == 'foo'
+        '''
+
+        assertScript '''
+            @groovy.transform.CompileStatic
+            trait PropertyProvider<T> {
+                private T foo
+                void set(T t) { foo = t}
+                T get() { foo }
+            }
+            @groovy.transform.CompileStatic
+            class StringProperty implements PropertyProvider<String> {}
+            def c = new StringProperty()
+            c.set('foo')
+            assert c.get() == 'foo'
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

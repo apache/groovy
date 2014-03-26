@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -32,19 +33,23 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -123,6 +128,8 @@ public abstract class TraitComposer {
     private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers) {
         ClassNode helperClassNode = helpers.getHelper();
         ClassNode fieldHelperClassNode = helpers.getFieldHelper();
+        Map genericsSpec = Verifier.createGenericsSpec(cNode, new HashMap());
+        genericsSpec = Verifier.createGenericsSpec(trait, genericsSpec);
 
         for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
             String name = methodNode.getName();
@@ -137,7 +144,8 @@ public abstract class TraitComposer {
                 Parameter[] params = new Parameter[argumentTypes.length - 1];
                 for (int i = 1; i < argumentTypes.length; i++) {
                     Parameter parameter = argumentTypes[i];
-                    params[i - 1] = new Parameter(parameter.getOriginType(), "arg" + i);
+                    ClassNode fixedType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, parameter.getOriginType());
+                    params[i - 1] = new Parameter(fixedType, "arg" + i);
                     argList.addExpression(new VariableExpression(params[i - 1]));
                 }
                 MethodNode existingMethod = cNode.getDeclaredMethod(name, params);
@@ -153,13 +161,15 @@ public abstract class TraitComposer {
                         argList
                 );
                 mce.setImplicitThis(false);
+                ClassNode fixedReturnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, returnType);
+                Expression forwardExpression = genericsSpec.isEmpty()?mce:new CastExpression(fixedReturnType,mce);
                 MethodNode forwarder = new MethodNode(
                         name,
                         access ^ Opcodes.ACC_STATIC,
-                        returnType,
+                        fixedReturnType,
                         params,
                         exceptionNodes,
-                        new ExpressionStatement(mce)
+                        new ExpressionStatement(forwardExpression)
                 );
                 cNode.addMethod(forwarder);
             }
@@ -183,12 +193,20 @@ public abstract class TraitComposer {
                     fieldName = fieldName.substring(0, suffixIdx);
                     String operation = methodNode.getName().substring(suffixIdx + 1);
                     boolean getter = "get".equals(operation);
+                    ClassNode returnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, methodNode.getReturnType());
                     if (getter) {
                         // add field
-                        cNode.addField(TraitConstants.remappedFieldName(trait, fieldName), Opcodes.ACC_PRIVATE, methodNode.getReturnType(), null);
+                        cNode.addField(TraitConstants.remappedFieldName(trait, fieldName), Opcodes.ACC_PRIVATE, returnType, null);
                     }
-                    Parameter[] newParams = getter ? Parameter.EMPTY_ARRAY :
-                            new Parameter[]{new Parameter(methodNode.getParameters()[0].getOriginType(), "val")};
+                    Parameter[] newParams;
+                    if (getter) {
+                        newParams = Parameter.EMPTY_ARRAY;
+                    } else {
+                        ClassNode originType = methodNode.getParameters()[0].getOriginType();
+                        ClassNode fixedType = originType.isGenericsPlaceHolder()?ClassHelper.OBJECT_TYPE:AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, originType);
+                        newParams = new Parameter[]{new Parameter(fixedType, "val")};
+                    }
+
                     Expression fieldExpr = new VariableExpression(cNode.getField(TraitConstants.remappedFieldName(trait, fieldName)));
                     Statement body =
                             getter ? new ReturnStatement(fieldExpr) :
@@ -202,7 +220,7 @@ public abstract class TraitComposer {
                     MethodNode impl = new MethodNode(
                             methodNode.getName(),
                             Opcodes.ACC_PUBLIC,
-                            methodNode.getReturnType(),
+                            returnType,
                             newParams,
                             ClassNode.EMPTY_ARRAY,
                             body
@@ -232,6 +250,9 @@ public abstract class TraitComposer {
             return false;
         }
         if (!getter && params.length!=1) {
+            return false;
+        }
+        if (propertyName.length()==0) {
             return false;
         }
         propertyName = MetaClassHelper.convertPropertyName(propertyName);
