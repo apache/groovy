@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.ClassNodeResolver.LookupResult;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.transform.trait.TraitConstants;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Retention;
@@ -792,18 +793,34 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ret;
     }
 
+    private boolean directlyImplementsTrait(ClassNode trait) {
+        ClassNode[] interfaces = currentClass.getInterfaces();
+        if (interfaces==null) {
+            return false;
+        }
+        for (ClassNode node : interfaces) {
+            if (node.equals(trait)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void checkThisAndSuperAsPropertyAccess(PropertyExpression expression) {
         if (expression.isImplicitThis()) return;
         String prop = expression.getPropertyAsString();
         if (prop == null) return;
         if (!prop.equals("this") && !prop.equals("super")) return;
 
+        ClassNode type = expression.getObjectExpression().getType();
         if (expression.getObjectExpression() instanceof ClassExpression) {
-            if (!(currentClass instanceof InnerClassNode)) {
+            if (!(currentClass instanceof InnerClassNode) && !TraitConstants.isTrait(type)) {
                 addError("The usage of 'Class.this' and 'Class.super' is only allowed in nested/inner classes.", expression);
                 return;
             }
-            ClassNode type = expression.getObjectExpression().getType();
+            if (!currentScope.isInStaticContext() && TraitConstants.isTrait(type) && "super".equals(prop) && directlyImplementsTrait(type)) {
+                return;
+            }
             ClassNode iterType = currentClass;
             while (iterType != null) {
                 if (iterType.equals(type)) break;

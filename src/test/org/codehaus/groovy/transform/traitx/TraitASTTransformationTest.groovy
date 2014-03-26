@@ -353,6 +353,42 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
 '''
     }
 
+    void testClassImplementingTraitWithSameMethod() {
+        assertScript '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class AB implements A,B {
+                int foo() {
+                    B.super.foo()
+                }
+            }
+            def x = new AB()
+            assert x.foo() == 2
+        '''
+
+        // make sure it is compatible with @CompileStatic
+        assertScript '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            @groovy.transform.CompileStatic
+            class AB implements A,B {
+                int foo() {
+                    B.super.foo()
+                }
+            }
+            def x = new AB()
+            assert x.foo() == 2
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

@@ -75,6 +75,7 @@ public abstract class TraitComposer {
      */
     public static void doExtendTraits(final ClassNode cNode, final SourceUnit unit) {
         boolean isItselfTrait = TraitConstants.isTrait(cNode);
+        SuperCallTraitTransformer superCallTransformer = new SuperCallTraitTransformer(unit);
         if (isItselfTrait) {
             checkTraitAllowed(cNode, unit);
             return;
@@ -82,23 +83,9 @@ public abstract class TraitComposer {
         if (!cNode.getNameWithoutPackage().endsWith(TraitConstants.TRAIT_HELPER)) {
             List<ClassNode> traits = findTraits(cNode);
             for (ClassNode trait : traits) {
-                Iterator<InnerClassNode> innerClasses = trait.redirect().getInnerClasses();
-                if (innerClasses != null && innerClasses.hasNext()) {
-                    // trait defined in same source unit
-                    ClassNode helperClassNode = null;
-                    ClassNode fieldHelperClassNode = null;
-                    while (innerClasses.hasNext()) {
-                        ClassNode icn = innerClasses.next();
-                        if (icn.getName().endsWith(TraitConstants.FIELD_HELPER)) {
-                            fieldHelperClassNode = icn;
-                        } else if (icn.getName().endsWith(TraitConstants.TRAIT_HELPER)) {
-                            helperClassNode = icn;
-                        }
-                    }
-                    applyTrait(trait, cNode, helperClassNode, fieldHelperClassNode);
-                } else {
-                    applyPrecompiledTrait(trait, cNode);
-                }
+                TraitHelpersTuple helpers = TraitConstants.findHelpers(trait);
+                applyTrait(trait, cNode, helpers);
+                superCallTransformer.visitClass(cNode);
             }
         }
     }
@@ -118,8 +105,7 @@ public abstract class TraitComposer {
         collectAllInterfaces(cNode, interfaces);
         List<ClassNode> traits = new LinkedList<ClassNode>();
         for (ClassNode candidate : interfaces) {
-            List<AnnotationNode> traitAnn = candidate.getAnnotations(TraitConstants.TRAIT_CLASSNODE);
-            if (traitAnn != null && !traitAnn.isEmpty()) {
+            if (TraitConstants.isAnnotatedWithTrait(candidate)) {
                 traits.add(candidate);
             }
         }
@@ -134,25 +120,10 @@ public abstract class TraitComposer {
         }
     }
 
-    private static void applyPrecompiledTrait(final ClassNode trait, final ClassNode cNode) {
-        try {
-            final ClassLoader classLoader = trait.getTypeClass().getClassLoader();
-            String helperClassName = TraitConstants.helperClassName(trait);
-            final ClassNode helperClassNode = ClassHelper.make(classLoader.loadClass(helperClassName));
-            ClassNode fieldHelperClassNode;
-            try {
-                fieldHelperClassNode = ClassHelper.make(classLoader.loadClass(TraitConstants.fieldHelperClassName(trait)));
-            } catch (ClassNotFoundException e) {
-                fieldHelperClassNode = null;
-            }
+    private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers) {
+        ClassNode helperClassNode = helpers.getHelper();
+        ClassNode fieldHelperClassNode = helpers.getFieldHelper();
 
-            applyTrait(trait, cNode, helperClassNode, fieldHelperClassNode);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void applyTrait(final ClassNode trait, final ClassNode cNode, final ClassNode helperClassNode, final ClassNode fieldHelperClassNode) {
         for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
             String name = methodNode.getName();
             int access = methodNode.getModifiers();

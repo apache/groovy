@@ -16,9 +16,15 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.transform.Trait;
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
+
+import java.util.Iterator;
+import java.util.List;
 
 public abstract class TraitConstants {
     static final Class TRAIT_CLASS = Trait.class;
@@ -51,7 +57,47 @@ public abstract class TraitConstants {
         return traitNode.getName().replace('.','_')+"__"+name;
     }
 
-    public static boolean isTrait(final ClassNode cNode) {
-        return cNode!=null && cNode.isInterface() && !cNode.getAnnotations(TRAIT_CLASSNODE).isEmpty();
+    static TraitHelpersTuple findHelpers(final ClassNode trait) {
+        ClassNode helperClassNode = null;
+        ClassNode fieldHelperClassNode = null;
+        Iterator<InnerClassNode> innerClasses = trait.redirect().getInnerClasses();
+        if (innerClasses != null && innerClasses.hasNext()) {
+            // trait defined in same source unit
+            while (innerClasses.hasNext()) {
+                ClassNode icn = innerClasses.next();
+                if (icn.getName().endsWith(TraitConstants.FIELD_HELPER)) {
+                    fieldHelperClassNode = icn;
+                } else if (icn.getName().endsWith(TraitConstants.TRAIT_HELPER)) {
+                    helperClassNode = icn;
+                }
+            }
+        } else {
+            // precompiled trait
+            try {
+                final ClassLoader classLoader = trait.getTypeClass().getClassLoader();
+                String helperClassName = TraitConstants.helperClassName(trait);
+                helperClassNode = ClassHelper.make(classLoader.loadClass(helperClassName));
+                try {
+                    fieldHelperClassNode = ClassHelper.make(classLoader.loadClass(TraitConstants.fieldHelperClassName(trait)));
+                } catch (ClassNotFoundException e) {
+                    // not a problem, the field helper may be absent
+                }
+            } catch (ClassNotFoundException e) {
+                throw new GroovyBugError("Couldn't find trait helper classes on compile classpath!",e);
+            }
+        }
+        return new TraitHelpersTuple(helperClassNode,  fieldHelperClassNode);
     }
+
+    public static boolean isTrait(final ClassNode cNode) {
+        return cNode!=null
+                && ((cNode.isInterface() && !cNode.getAnnotations(TRAIT_CLASSNODE).isEmpty())
+                    || isAnnotatedWithTrait(cNode));
+    }
+
+    public static boolean isAnnotatedWithTrait(final ClassNode cNode) {
+        List<AnnotationNode> traitAnn = cNode.getAnnotations(TraitConstants.TRAIT_CLASSNODE);
+        return traitAnn != null && !traitAnn.isEmpty();
+    }
+
 }
