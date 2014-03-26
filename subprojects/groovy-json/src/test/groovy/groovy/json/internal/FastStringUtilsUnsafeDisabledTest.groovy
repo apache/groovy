@@ -16,27 +16,41 @@
 package groovy.json.internal
 
 class FastStringUtilsUnsafeDisabledTest extends GroovyTestCase {
+    FastStringUtils.StringImplementation oldStringImplementation
 
     void setUp() {
         // to disable Unsafe usage, we set the StringImplementation to the very safe UNKNOWN
+
+        oldStringImplementation = FastStringUtils.STRING_IMPLEMENTATION
         FastStringUtils.STRING_IMPLEMENTATION = FastStringUtils.StringImplementation.UNKNOWN
     }
 
+    @Override
+    void tearDown() {
+        FastStringUtils.STRING_IMPLEMENTATION = oldStringImplementation
+    }
+
     void testToCharArray() {
-        def str = "some test"
-        assert !FastStringUtils.toCharArray(str).is(str.value)
+        synchronized (FastStringUtils) {
+            def str = "some test"
+            assert !FastStringUtils.toCharArray(str).is(str.value)
+        }
     }
 
     void testToCharArrayWithStringBuilder() {
-        def str = new StringBuilder().append("some test")
-        // StringBuilder#toString() returns a new String object
-        assert FastStringUtils.toCharArray(str) == "some test".toCharArray()
+        synchronized (FastStringUtils) {
+            def str = new StringBuilder().append("some test")
+            // StringBuilder#toString() returns a new String object
+            assert FastStringUtils.toCharArray(str) == "some test".toCharArray()
+        }
     }
 
     void testNoCopyStringFromChars() {
-        def source = "äöüliu"
-        def chars = source.toCharArray()
+        synchronized (FastStringUtils) {
+            def source = "äöüliu"
+            def chars = source.toCharArray()
 
-        assert FastStringUtils.noCopyStringFromChars(chars) == source
+            assert FastStringUtils.noCopyStringFromChars(chars) == source
+        }
     }
 }

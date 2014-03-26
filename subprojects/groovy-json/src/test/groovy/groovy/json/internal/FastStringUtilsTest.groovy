@@ -18,21 +18,27 @@ package groovy.json.internal
 class FastStringUtilsTest extends GroovyTestCase {
 
     void testToCharArray() {
-        def str = "some test"
-        // FastStringUtils accesses the underlying char array directly
-        assert FastStringUtils.toCharArray(str).is(str.value)
+        synchronized (FastStringUtils) {
+            def str = "some test"
+            // FastStringUtils accesses the underlying char array directly
+            assert FastStringUtils.toCharArray(str).is(str.value) : FastStringUtils.STRING_IMPLEMENTATION.toString()
+        }
     }
 
     void testToCharArrayWithStringBuilder() {
-        def str = new StringBuilder().append("some test")
-        // StringBuilder#toString() returns a new String object
-        assert FastStringUtils.toCharArray(str) == "some test".toCharArray()
+        synchronized (FastStringUtils) {
+            def str = new StringBuilder().append("some test")
+            // StringBuilder#toString() returns a new String object
+            assert FastStringUtils.toCharArray(str) == "some test".toCharArray()
+        }
     }
 
     void testNoCopyStringFromChars() {
-        def source = "äöüliu"
-        def chars = source.toCharArray()
+        synchronized (FastStringUtils) {
+            def source = "äöüliu"
+            def chars = source.toCharArray()
 
-        assert FastStringUtils.noCopyStringFromChars(chars) == source
+            assert FastStringUtils.noCopyStringFromChars(chars) == source
+        }
     }
 }
