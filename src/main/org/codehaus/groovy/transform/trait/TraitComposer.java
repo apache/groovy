@@ -42,6 +42,8 @@ import org.objectweb.asm.Opcodes;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -77,10 +79,9 @@ public abstract class TraitComposer {
             checkTraitAllowed(cNode, unit);
             return;
         }
-        Set<ClassNode> interfaces = cNode.getAllInterfaces();
-        for (ClassNode trait : interfaces) {
-            List<AnnotationNode> traitAnn = trait.getAnnotations(TraitConstants.TRAIT_CLASSNODE);
-            if (traitAnn != null && !traitAnn.isEmpty() && !cNode.getNameWithoutPackage().endsWith(TraitConstants.TRAIT_HELPER)) {
+        if (!cNode.getNameWithoutPackage().endsWith(TraitConstants.TRAIT_HELPER)) {
+            List<ClassNode> traits = findTraits(cNode);
+            for (ClassNode trait : traits) {
                 Iterator<InnerClassNode> innerClasses = trait.redirect().getInnerClasses();
                 if (innerClasses != null && innerClasses.hasNext()) {
                     // trait defined in same source unit
@@ -100,6 +101,29 @@ public abstract class TraitComposer {
                 }
             }
         }
+    }
+
+    private static void collectAllInterfaces(ClassNode cNode, LinkedHashSet<ClassNode> interfaces) {
+        if (cNode.isInterface())
+            interfaces.add(cNode);
+
+        for (ClassNode anInterface : cNode.getInterfaces()) {
+            interfaces.add(anInterface);
+            collectAllInterfaces(anInterface, interfaces);
+        }
+    }
+
+    private static List<ClassNode> findTraits(ClassNode cNode) {
+        LinkedHashSet<ClassNode> interfaces = new LinkedHashSet<ClassNode>();
+        collectAllInterfaces(cNode, interfaces);
+        List<ClassNode> traits = new LinkedList<ClassNode>();
+        for (ClassNode candidate : interfaces) {
+            List<AnnotationNode> traitAnn = candidate.getAnnotations(TraitConstants.TRAIT_CLASSNODE);
+            if (traitAnn != null && !traitAnn.isEmpty()) {
+                traits.add(candidate);
+            }
+        }
+        return traits;
     }
 
     private static void checkTraitAllowed(final ClassNode bottomTrait, final SourceUnit unit) {

@@ -303,17 +303,19 @@ assert f.methodFromB() == 'B'
     }
 
     void testSimpleTraitInheritanceWithTraitOverridingMethodFromParent() {
-        assertScript '''
-trait Top { String methodFromA() { 'A' } }
-trait Bottom extends Top {
-    String methodFromA() { 'B' }
-    String methodFromB() { 'B' }
-}
-class Foo implements Bottom {}
-def f = new Foo()
-assert f.methodFromA() == 'B'
-assert f.methodFromB() == 'B'
-'''
+        10.times {
+            assertScript '''
+                trait Top { String methodFromA() { 'A' } }
+                trait Bottom extends Top {
+                    String methodFromA() { 'B' }
+                    String methodFromB() { 'B' }
+                }
+                class Foo implements Bottom {}
+                def f = new Foo()
+                assert f.methodFromA() == 'B'
+                assert f.methodFromB() == 'B'
+                '''
+        }
     }
 
     void testSimpleTraitInheritanceWithTraitOverridingMethodFromParentAndClass() {
