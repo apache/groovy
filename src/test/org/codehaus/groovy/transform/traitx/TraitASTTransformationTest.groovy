@@ -222,6 +222,22 @@ class TraitASTTransformationTest extends GroovyTestCase {
         '''
     }
 
+    void testUpdatePropertyFromSelf() {
+        assertScript '''
+        trait Updater {
+            void update() {
+                config.key = 'value'
+            }
+        }
+        class Foo implements Updater {
+            def config = [:]
+        }
+        def foo = new Foo()
+        foo.update()
+        assert foo.config.key == 'value'
+        '''
+    }
+
     void testPrivateFieldInTraitShouldBeRemapped() {
         assertScript '''import groovy.transform.ASTTest
 import org.codehaus.groovy.control.CompilePhase

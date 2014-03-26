@@ -17,7 +17,9 @@ package org.codehaus.groovy.transform.trait;
 
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
@@ -126,15 +128,21 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             return mce;
         } else if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;
-            if (vexp.getAccessedVariable() instanceof FieldNode) {
+            Variable accessedVariable = vexp.getAccessedVariable();
+            if (accessedVariable instanceof FieldNode) {
                 MethodCallExpression mce = new MethodCallExpression(
                         new CastExpression(fieldHelper,weaved),
-                        TraitConstants.helperGetterName((FieldNode) vexp.getAccessedVariable()),
+                        TraitConstants.helperGetterName((FieldNode) accessedVariable),
                         ArgumentListExpression.EMPTY_ARGUMENTS
                 );
                 mce.setSourcePosition(exp);
                 mce.setImplicitThis(false);
                 return mce;
+            } else if (accessedVariable instanceof DynamicVariable) {
+                return new PropertyExpression(
+                        new VariableExpression(weaved),
+                        accessedVariable.getName()
+                );
             }
             if (vexp.isThisExpression()) {
                 VariableExpression res = new VariableExpression(weaved);
