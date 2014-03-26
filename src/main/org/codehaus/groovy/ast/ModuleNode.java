@@ -27,6 +27,7 @@ import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.transform.BaseScriptASTTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.io.File;
@@ -259,6 +260,8 @@ public class ModuleNode extends ASTNode implements Opcodes {
         if (baseClassName != null) {
             if (!cn.getSuperClass().getName().equals(baseClassName)) {
                 cn.setSuperClass(ClassHelper.make(baseClassName));
+                AnnotationNode annotationNode = new AnnotationNode(BaseScriptASTTransformation.MY_TYPE);
+                cn.addAnnotation(annotationNode);
             }
         }
     }
