@@ -470,18 +470,25 @@ class DelegateTransformTest extends CompilableTestSupport {
     // GROOVY-6329
     void testIncludeAndExcludeByType() {
         assertScript """
-            interface OddInclusions {
-                boolean addAll(Collection<? extends Integer> c)
-                Integer remove(int index)
+            interface OddInclusionsTU<T, U> {
+                boolean addAll(Collection<? extends T> t)
+                boolean add(U u)
+                T remove(int index)
             }
+
+            interface OddInclusionsU<U> extends OddInclusionsTU<Integer, U> { }
+
+            interface OddInclusions extends OddInclusionsU<Integer> { }
+
             interface OtherInclusions {
                 void clear()
             }
+
             interface EvenExclusions extends OddInclusions, OtherInclusions { }
 
             class MixedNumbers {
                 // collection variant of addAll and remove will work on odd list
-                @Delegate(includeTypes=OddInclusions) List<Integer> odds = [1, 3, 5]
+                @Delegate(includeTypes=OddInclusions) List<Integer> odds = [1, 3]
                 // clear will work on other list
                 @Delegate(includeTypes=OtherInclusions) List<Integer> others = [0]
                 // all other methods will work on even list
@@ -490,7 +497,8 @@ class DelegateTransformTest extends CompilableTestSupport {
             }
 
             def list = new MixedNumbers()
-            assert list.all == [2, 4, 6, 1, 3, 5, 0]
+            assert list.all == [2, 4, 6, 1, 3, 0]
+            list.add(5)
             list.addAll([7, 9])
             list.addAll(1, [8])
             list.remove(0)

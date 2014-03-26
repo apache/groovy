@@ -37,6 +37,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -147,11 +148,13 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
             for (ClassNode cn : excludeTypes) {
                 List<ClassNode> remaining = new LinkedList<ClassNode>();
                 remaining.add(cn);
+                Map updatedGenericsSpec = new HashMap(genericsSpec);
                 while (!remaining.isEmpty()) {
                     ClassNode next = remaining.remove(0);
                     if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                        updatedGenericsSpec = Verifier.createGenericsSpec(next, updatedGenericsSpec);
                         for (MethodNode mn : next.getMethods()) {
-                            String md = correctToGenericsSpec(genericsSpec, mn).getTypeDescriptor();
+                            String md = correctToGenericsSpec(updatedGenericsSpec, mn).getTypeDescriptor();
                             if (md.equals(descriptor)) return true;
                         }
                         remaining.addAll(Arrays.asList(next.getInterfaces()));
@@ -162,11 +165,13 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
             for (ClassNode cn : includeTypes) {
                 List<ClassNode> remaining = new LinkedList<ClassNode>();
                 remaining.add(cn);
+                Map updatedGenericsSpec = new HashMap(genericsSpec);
                 while (!remaining.isEmpty()) {
                     ClassNode next = remaining.remove(0);
                     if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                        updatedGenericsSpec = Verifier.createGenericsSpec(next, updatedGenericsSpec);
                         for (MethodNode mn : next.getMethods()) {
-                            String md = correctToGenericsSpec(genericsSpec, mn).getTypeDescriptor();
+                            String md = correctToGenericsSpec(updatedGenericsSpec, mn).getTypeDescriptor();
                             if (md.equals(descriptor)) return false;
                         }
                         remaining.addAll(Arrays.asList(next.getInterfaces()));
