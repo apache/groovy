@@ -919,9 +919,11 @@ public class GroovyClassLoader extends URLClassLoader {
         });
     }
 
+    // TODO remove duplication with GroovyMain#uriPattern
     // RFC2396
     // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
-    private static final Pattern uriPattern = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:.*");
+    // match URIs but not Windows filenames, e.g.: http://cnn.com but not C:\xxx\file.ext
+    private static final Pattern uriPattern = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:[^\\\\]*");
 
     /**
      * <p>Returns all Groovy classes loaded by this class loader.

@@ -454,9 +454,11 @@ public class GroovyMain {
         }
     }
 
+    // TODO remove duplication with GroovyClassLoader#uriPattern
     // RFC2396
     // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
-    private static final Pattern uriPattern = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:.*");
+    // match URIs but not Windows filenames, e.g.: http://cnn.com but not C:\xxx\file.ext
+    private static final Pattern uriPattern = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:[^\\\\]*");
 
     /**
      * Search for the script file, doesn't bother if it is named precisely.

@@ -199,7 +199,7 @@ html {
 '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
-        assert rendered.toString() == '<?xml-stylesheet href=\'mystyle.css\' type=\'text/css\'?>\n<html><body>Hello, PI!</body></html>'
+        assert rendered.toString().normalize() == '<?xml-stylesheet href=\'mystyle.css\' type=\'text/css\'?>\n<html><body>Hello, PI!</body></html>'
     }
 
     void testXmlDeclaration() {
@@ -212,7 +212,7 @@ html {
 '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
-        assert rendered.toString() == '<?xml version=\'1.0\'?>\n<html><body>Hello, PI!</body></html>'
+        assert rendered.toString().normalize() == '<?xml version=\'1.0\'?>\n<html><body>Hello, PI!</body></html>'
     }
 
     void testXmlDeclarationWithEncoding() {
@@ -227,7 +227,7 @@ html {
 '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
-        assert rendered.toString() == '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<html><body>Hello, PI!</body></html>'
+        assert rendered.toString().normalize() == '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<html><body>Hello, PI!</body></html>'
     }
 
     void testNewLine() {
