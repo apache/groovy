@@ -354,7 +354,34 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
     }
 
     void testClassImplementingTraitWithSameMethod() {
-        assertScript '''
+        10.times {
+            assertScript '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class AB implements A,B {
+            }
+            def x = new AB()
+            assert x.foo() == 1 // default order, A is first
+            '''
+
+            assertScript '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class AB implements B,A {
+            }
+            def x = new AB()
+            assert x.foo() == 2 // default order, B is first
+            '''
+
+            assertScript '''
             trait A {
                 int foo() { 1 }
             }
@@ -363,12 +390,29 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
             }
             class AB implements A,B {
                 int foo() {
-                    B.super.foo()
+                    B.super.foo() // explicit take of B
                 }
             }
             def x = new AB()
             assert x.foo() == 2
-        '''
+            '''
+
+            assertScript '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class AB implements A,B {
+                int foo() {
+                    A.super.foo()  // explicit take of A
+                }
+            }
+            def x = new AB()
+            assert x.foo() == 1
+            '''
+        }
 
         // make sure it is compatible with @CompileStatic
         assertScript '''
@@ -529,6 +573,78 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
             def c = new StringProperty()
             c.set('foo')
             assert c.get() == 'foo'
+        '''
+    }
+
+    void testRuntimeTrait() {
+        assertScript '''
+            trait Flying {
+                String fly() {
+                    "I'm flying!"
+                }
+            }
+            class Duck {}
+            def d = new Duck()
+            try {
+                d.fly()
+            } catch (MissingMethodException e) {
+                // doesn't implement Flying
+            }
+            d = d as Flying
+            assert d instanceof Flying
+            assert d.fly() == "I'm flying!"
+        '''
+    }
+
+    void testRuntimeDoubleTrait() {
+        assertScript '''
+            trait Flying {
+                String fly() {
+                    "I'm flying!"
+                }
+            }
+            trait Speaking {
+                String speak() {
+                    "I'm speaking!"
+                }
+            }
+            class Duck {}
+            def d = new Duck()
+            try {
+                d.fly()
+                d.speak()
+            } catch (MissingMethodException e) {
+                // doesn't implement Flying
+            }
+            d = d as Flying
+            assert d instanceof Flying
+            assert d.fly() == "I'm flying!"
+            d = d as Speaking
+            assert d instanceof Speaking
+            assert d.speak() == "I'm speaking!"
+            // but still Flying!
+            assert d instanceof Flying
+            assert d.fly() == "I'm flying!"
+        '''
+    }
+
+    void testRuntimeTraitWithMethodOfTheSameSignature() {
+        assertScript '''
+            trait Flying {
+                String ability() { 'fly' }
+                String fly() {
+                    "I'm flying!"
+                }
+            }
+            class Duck {
+                String fly() {
+                    "Duck flying!"
+                }
+            }
+            def d = new Duck() as Flying
+            assert d.fly() == 'Duck flying!'
+            assert d.ability() == 'fly'
+
         '''
     }
 
