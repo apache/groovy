@@ -290,56 +290,12 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
      */
     private List<AnnotationNode> copyAnnotatedNodeAnnotations(final List<AnnotationNode> candidateAnnotations, final AnnotatedNode annotatedNode) {
         final ArrayList<AnnotationNode> delegateAnnotations = new ArrayList<AnnotationNode>();
-        final ClassNode retentionClassNode = ClassHelper.makeWithoutCaching(Retention.class);
-
-        for (AnnotationNode annotation : candidateAnnotations)  {
-
-            List<AnnotationNode> annotations = annotation.getClassNode().getAnnotations(retentionClassNode);
-            if (annotations.isEmpty()) continue;
-
-            if (hasClosureMember(annotation)) {
-                addError(MY_TYPE_NAME + " does not support keeping Closure annotation members.", annotation);
-                continue;
-            }
-
-            AnnotationNode retentionPolicyAnnotation = annotations.get(0);
-            Expression valueExpression = retentionPolicyAnnotation.getMember("value");
-            if (!(valueExpression instanceof PropertyExpression)) continue;
-
-            PropertyExpression propertyExpression = (PropertyExpression) valueExpression;
-            boolean processAnnotation =
-                    propertyExpression.getProperty() instanceof ConstantExpression &&
-                            (
-                                    "RUNTIME".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue()) ||
-                                    "CLASS".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue())
-                            );
-
-            if (processAnnotation)  {
-                AnnotationNode newAnnotation = new AnnotationNode(annotation.getClassNode());
-                for (Map.Entry<String, Expression> member : annotation.getMembers().entrySet())  {
-                    newAnnotation.addMember(member.getKey(), member.getValue());
-                }
-                newAnnotation.setSourcePosition(annotatedNode);
-
-                delegateAnnotations.add(newAnnotation);
-            }
+        final ArrayList<AnnotationNode> notCopied = new ArrayList<AnnotationNode>();
+        copyAnnotatedNodeAnnotations(candidateAnnotations, annotatedNode, delegateAnnotations, notCopied);
+        for (AnnotationNode annotation : notCopied) {
+            addError(MY_TYPE_NAME + " does not support keeping Closure annotation members.", annotation);
         }
         return delegateAnnotations;
     }
 
-    private boolean hasClosureMember(AnnotationNode annotation) {
-
-        Map<String, Expression> members = annotation.getMembers();
-        for (Map.Entry<String, Expression> member : members.entrySet())  {
-            if (member.getValue() instanceof ClosureExpression) return true;
-
-            if (member.getValue() instanceof ClassExpression)  {
-                ClassExpression classExpression = (ClassExpression) member.getValue();
-                Class<?> typeClass = classExpression.getType().isResolved() ? classExpression.getType().redirect().getTypeClass() : null;
-                if (typeClass != null && GeneratedClosure.class.isAssignableFrom(typeClass)) return true;
-            }
-        }
-
-        return false;
-    }
 }

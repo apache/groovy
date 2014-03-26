@@ -664,6 +664,29 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    void testTraitWithDelegatesTo() {
+        assertScript '''
+            trait Route {
+                void from(@DelegatesTo(To) Closure c) {
+                    c.delegate = new To()
+
+                }
+            }
+            class To {
+               void test() { println 'Test' }
+            }
+            class Foo implements Route {}
+            @groovy.transform.CompileStatic
+            void exec() {
+               def f = new Foo()
+               f.from {
+                  test()
+               }
+            }
+            exec()
+            '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

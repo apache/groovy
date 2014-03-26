@@ -144,8 +144,14 @@ public abstract class TraitComposer {
                 Parameter[] params = new Parameter[argumentTypes.length - 1];
                 for (int i = 1; i < argumentTypes.length; i++) {
                     Parameter parameter = argumentTypes[i];
-                    ClassNode fixedType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, parameter.getOriginType());
-                    params[i - 1] = new Parameter(fixedType, "arg" + i);
+                    ClassNode originType = parameter.getOriginType();
+                    ClassNode fixedType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, originType);
+                    Parameter newParam = new Parameter(fixedType, "arg" + i);
+                    List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
+                    List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
+                    AbstractASTTransformation.copyAnnotatedNodeAnnotations(parameter.getAnnotations(), parameter, copied, notCopied);
+                    newParam.addAnnotations(copied);
+                    params[i - 1] = newParam;
                     argList.addExpression(new VariableExpression(params[i - 1]));
                 }
                 MethodNode existingMethod = cNode.getDeclaredMethod(name, params);
