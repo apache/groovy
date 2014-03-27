@@ -235,7 +235,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return makeClassSafe0(type, gtypes);
     }
 
-    static MethodNode correctToGenericsSpec(Map genericsSpec, MethodNode mn) {
+    public static MethodNode correctToGenericsSpec(Map genericsSpec, MethodNode mn) {
         ClassNode correctedType = correctToGenericsSpecRecurse(genericsSpec, mn.getReturnType());
         Parameter[] origParameters = mn.getParameters();
         Parameter[] newParameters = new Parameter[origParameters.length];
@@ -246,7 +246,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return new MethodNode(mn.getName(), mn.getModifiers(), correctedType, newParameters, mn.getExceptions(), mn.getCode());
     }
 
-    static ClassNode correctToGenericsSpecRecurse(Map genericsSpec, ClassNode type) {
+    public static ClassNode correctToGenericsSpecRecurse(Map genericsSpec, ClassNode type) {
         if (type.isGenericsPlaceHolder()) {
             String name = type.getGenericsTypes()[0].getName();
             type = (ClassNode) genericsSpec.get(name);
