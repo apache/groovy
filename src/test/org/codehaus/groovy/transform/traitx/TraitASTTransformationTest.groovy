@@ -812,6 +812,22 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    void testShouldNotThrowNPEWithInheritanceUsingExtends() {
+        assertScript '''
+trait Named {
+    String name
+}
+
+trait NameSpeakable extends Named {
+    String speak() { "My name is $name" }
+}
+
+class Phone implements NameSpeakable {}
+
+def phone = new Phone(name: 'Galaxy S3')
+assert phone.speak() == 'My name is Galaxy S3\''''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

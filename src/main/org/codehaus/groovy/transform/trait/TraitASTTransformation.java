@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform.trait;
 
+import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -34,8 +35,11 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
@@ -69,7 +73,20 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             ClassNode cNode = (ClassNode) parent;
             checkNotInterface(cNode, TraitConstants.TRAIT_TYPE_NAME);
             checkNoConstructor(cNode);
+            replaceExtendsByImplements(cNode);
             createHelperClass(cNode);
+        }
+    }
+
+    private void replaceExtendsByImplements(final ClassNode cNode) {
+        ClassNode superClass = cNode.getSuperClass();
+        if (TraitConstants.isTrait(superClass)) {
+            // move from super class to interface;
+            cNode.setSuperClass(ClassHelper.OBJECT_TYPE);
+            cNode.addInterface(superClass);
+            // we need to resolve again!
+            VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(unit);
+            scopeVisitor.visitClass(cNode);
         }
     }
 
@@ -95,12 +112,6 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 null
         );
         cNode.setModifiers(ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT);
-        ClassNode superClass = cNode.getSuperClass();
-        if (TraitConstants.isTrait(superClass)) {
-            // move from super class to interface
-            cNode.setSuperClass(ClassHelper.OBJECT_TYPE.getPlainNodeReference());
-            cNode.addInterface(superClass);
-        }
 
         MethodNode initializer = new MethodNode(
                 TraitConstants.STATIC_INIT_METHOD,
