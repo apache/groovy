@@ -644,6 +644,121 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    void testRuntimeWithTraitsDGM() {
+        assertScript '''
+            trait Flying {
+                String fly() {
+                    "I'm flying!"
+                }
+            }
+            trait Speaking {
+                String speak() {
+                    "I'm speaking!"
+                }
+            }
+            class Duck {}
+            def d = new Duck()
+            try {
+                d.fly()
+                d.speak()
+            } catch (MissingMethodException e) {
+                // doesn't implement Flying
+            }
+            d = d.withTraits(Flying, Speaking)
+            assert d instanceof Flying
+            assert d.fly() == "I'm flying!"
+            assert d instanceof Speaking
+            assert d.speak() == "I'm speaking!"
+        '''
+    }
+
+   void testRuntimeWithTraitsDGMAndExplicitOverride() {
+        assertScript '''
+            trait Flying {
+                String fly() {
+                    "I'm flying!"
+                }
+            }
+            trait Speaking {
+                String speak() {
+                    "I'm speaking!"
+                }
+            }
+            class Duck {
+                String speak() { "I'm a special duck!" }
+            }
+            def d = new Duck()
+            try {
+                d.fly()
+                d.speak()
+            } catch (MissingMethodException e) {
+                // doesn't implement Flying
+            }
+            d = d.withTraits(Flying, Speaking)
+            assert d instanceof Flying
+            assert d.fly() == "I'm flying!"
+            assert d instanceof Speaking
+            assert d.speak() == "I'm a special duck!"
+        '''
+    }
+
+   void testRuntimeWithTraitsDGMAndExplicitOverrideAndCompileStatic() {
+        assertScript '''
+            trait Flying {
+                String fly() {
+                    "I'm flying!"
+                }
+            }
+            trait Speaking {
+                String speak() {
+                    "I'm speaking!"
+                }
+            }
+            class Duck {
+                String speak() { "I'm a special duck!" }
+            }
+
+            @groovy.transform.CompileStatic
+            void test() {
+                def d = new Duck()
+                d = d.withTraits(Flying, Speaking)
+                assert d.fly() == "I'm flying!"
+                assert d.speak() == "I'm a special duck!"
+            }
+            test()
+        '''
+    }
+
+   void testRuntimeWithTraitsDGMAndExtraMethodCompileStatic() {
+        assertScript '''
+            trait Flying {
+                String fly() {
+                    "I'm flying!"
+                }
+            }
+            trait Speaking {
+                String speak() {
+                    "I'm speaking!"
+                }
+            }
+            interface Quack { String quack() }
+            class Duck implements Quack {
+                String quack() { 'Quack!' } // requires an interface to be called statically
+                String speak() { "I'm a special duck!"}
+            }
+
+            @groovy.transform.CompileStatic
+            void test() {
+                def d = new Duck()
+                d = d.withTraits(Flying, Speaking)
+                assert d.fly() == "I'm flying!"
+                assert d.speak() == "I'm a special duck!"
+                assert d.quack() == "Quack!"
+            }
+            test()
+        '''
+    }
+
     void testRuntimeTraitWithMethodOfTheSameSignature() {
         assertScript '''
             trait Flying {

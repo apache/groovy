@@ -14885,4 +14885,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return ResourceGroovyMethods.readBytes(file);
     }
 
+    /**
+     * Dynamically wraps an instance into something which implements the
+     * supplied trait classes. It is guaranteed that the returned object
+     * will implement the trait interfaces, but the original type of the
+     * object is lost (replaced with a proxy).
+     * @param self object to be wrapped
+     * @param traits a list of trait classes
+     * @return a proxy implementing the trait interfaces
+     */
+    public static Object withTraits(Object self, Class<?>... traits) {
+        List<Class> interfaces = new ArrayList<Class>();
+        Collections.addAll(interfaces, traits);
+        return ProxyGenerator.INSTANCE.instantiateDelegate(interfaces, self);
+    }
 }

@@ -137,7 +137,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         this.hasWildcard = wildcard;
 
-        Class fixedSuperClass = adjustSuperClass(superClass);
+        Class fixedSuperClass = adjustSuperClass(superClass, interfaces);
         // if we have to delegate to another object, generate the appropriate delegate field
         // and collect the name of the methods for which delegation is active
         this.generateDelegateField = delegateClass!=null;
@@ -179,19 +179,32 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         cachedNoArgConstructor = constructor;
     }
 
-    private Class adjustSuperClass(Class superClass) {
+    private Class adjustSuperClass(Class superClass, final Class[] interfaces) {
         boolean isSuperClassAnInterface = superClass.isInterface();
         if (!isSuperClassAnInterface) {
             return superClass;
         }
         Class result = Object.class;
+        Set<String> traits = new LinkedHashSet<String>();
         // check if it's a trait
-        Annotation annotation = superClass.getAnnotation(Trait.class);
-        if (annotation!=null) {
+        collectTraits(superClass, traits);
+        if (interfaces!=null) {
+            for (Class anInterface : interfaces) {
+                collectTraits(anInterface, traits);
+            }
+        }
+        if (!traits.isEmpty()) {
             String name = superClass.getName() + "$TraitAdapter";
-            result = loader.parseClass("class "+name+" implements "+superClass.getName()+" {}");
+            result = loader.parseClass("abstract class "+name+" implements "+DefaultGroovyMethods.join((Iterable)traits,",")+" {}");
         }
         return result;
+    }
+
+    private void collectTraits(final Class superClass, final Set<String> traits) {
+        Annotation annotation = superClass.getAnnotation(Trait.class);
+        if (annotation!=null) {
+            traits.add(superClass.getName());
+        }
     }
 
     private static InnerLoader createInnerLoader(final ClassLoader parent) {

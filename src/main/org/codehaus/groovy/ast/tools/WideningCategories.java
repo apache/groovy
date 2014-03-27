@@ -588,8 +588,9 @@ public class WideningCategories {
                 usesGenerics |= anInterface.isUsingGenerics();
                 genericsTypesList.add(anInterface.getGenericsTypes());
 				for (MethodNode methodNode : anInterface.getMethods()) {
-					addMethod(methodNode.getName(), methodNode.getModifiers(), methodNode.getReturnType(), methodNode.getParameters(), methodNode.getExceptions(), methodNode.getCode());
-				}
+                    MethodNode method = addMethod(methodNode.getName(), methodNode.getModifiers(), methodNode.getReturnType(), methodNode.getParameters(), methodNode.getExceptions(), methodNode.getCode());
+                    method.setDeclaringClass(anInterface); // important for static compilation!
+                }
 			}
             setUsingGenerics(usesGenerics);
             if (usesGenerics) {
