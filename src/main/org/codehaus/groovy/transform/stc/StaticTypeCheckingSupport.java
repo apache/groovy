@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
@@ -1373,7 +1374,7 @@ public abstract class StaticTypeCheckingSupport {
         CompilerConfiguration copyConf = new CompilerConfiguration(config);
         CompilationUnit cu = new CompilationUnit(copyConf);
         cu.addClassNode(node);
-        cu.compile();
+        cu.compile(Phases.CLASS_GENERATION);
         @SuppressWarnings("unchecked")
         List<GroovyClass> classes = (List<GroovyClass>)cu.getClasses();
         Class aClass = cu.getClassLoader().defineClass(className, classes.get(0).getBytes());
