@@ -802,6 +802,16 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
             '''
     }
 
+    void testProxyGenerationShouldNotFail() {
+        assertScript '''
+            trait Foo { }
+            class A {}
+            def o = new A()
+            def a = o.withTraits(Foo)
+            def b = a.withTraits(Foo) // shouldn't fail
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

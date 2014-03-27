@@ -160,7 +160,7 @@ public class ProxyGenerator {
         for (Object o : map.keySet()) {
             keys.add(o.toString());
         }
-        CacheKey key = new CacheKey(base, keys, intfs, emptyMethods, false);
+        CacheKey key = new CacheKey(base, Object.class, keys, intfs, emptyMethods, false);
         ProxyGeneratorAdapter adapter = (ProxyGeneratorAdapter) adapterCache.get(key);
         if (adapter==null) {
             adapter = new ProxyGeneratorAdapter(map, base, intfs, base.getClassLoader(), emptyMethods, null);
@@ -215,7 +215,7 @@ public class ProxyGenerator {
         for (Object o : map.keySet()) {
             keys.add(o.toString());
         }
-        CacheKey key = new CacheKey(base, keys, intfs, emptyMethods, true);
+        CacheKey key = new CacheKey(base, delegate.getClass(), keys, intfs, emptyMethods, true);
         ProxyGeneratorAdapter adapter = (ProxyGeneratorAdapter) adapterCache.get(key);
         if (adapter==null) {
             adapter = new ProxyGeneratorAdapter(map, base, intfs, delegate.getClass().getClassLoader(), emptyMethods, delegate.getClass());
@@ -243,12 +243,14 @@ public class ProxyGenerator {
         private final boolean emptyMethods;
         private final boolean useDelegate;
         private final Set<String> methods;
+        private final ClassReference delegateClass;
         private final ClassReference baseClass;
         private final ClassReference[] interfaces;
 
-        private CacheKey(final Class baseClass, final Set<String> methods, final Class[] interfaces, final boolean emptyMethods, final boolean useDelegate) {
+        private CacheKey(final Class baseClass, final Class delegateClass, final Set<String> methods, final Class[] interfaces, final boolean emptyMethods, final boolean useDelegate) {
             this.useDelegate = useDelegate;
             this.baseClass = new ClassReference(baseClass);
+            this.delegateClass = new ClassReference(delegateClass);
             this.emptyMethods = emptyMethods;
             this.interfaces = interfaces == null ? null : new ClassReference[interfaces.length];
             if (interfaces != null) {
@@ -271,6 +273,7 @@ public class ProxyGenerator {
             if (emptyMethods != cacheKey.emptyMethods) return false;
             if (useDelegate != cacheKey.useDelegate) return false;
             if (baseClass != null ? !baseClass.equals(cacheKey.baseClass) : cacheKey.baseClass != null) return false;
+            if (delegateClass != null ? !delegateClass.equals(cacheKey.delegateClass) : cacheKey.delegateClass != null) return false;
             if (!Arrays.equals(interfaces, cacheKey.interfaces)) return false;
             if (methods != null ? !methods.equals(cacheKey.methods) : cacheKey.methods != null) return false;
 
@@ -283,6 +286,7 @@ public class ProxyGenerator {
             result = 31 * result + (useDelegate ? 1 : 0);
             result = 31 * result + (methods != null ? methods.hashCode() : 0);
             result = 31 * result + (baseClass != null ? baseClass.hashCode() : 0);
+            result = 31 * result + (delegateClass != null ? delegateClass.hashCode() : 0);
             result = 31 * result + (interfaces != null ? Arrays.hashCode(interfaces) : 0);
             return result;
         }
