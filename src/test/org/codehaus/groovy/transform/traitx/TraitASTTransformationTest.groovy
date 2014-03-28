@@ -828,6 +828,68 @@ def phone = new Phone(name: 'Galaxy S3')
 assert phone.speak() == 'My name is Galaxy S3\''''
     }
 
+    void testStaticInnerClassInTrait() {
+        assertScript '''
+            trait Outer {
+                Inner doSomething() {
+                    new Inner()
+                }
+                static class Inner {
+                    void foo() {
+                        println 'Foo'
+                    }
+                }
+            }
+            class Foo implements Outer {
+            }
+            def f = new Foo()
+            f.doSomething()
+        '''
+    }
+
+    void testNonStaticInnerClassInTrait() {
+        shouldFail {
+            assertScript '''
+                trait Outer {
+                    Inner doSomething() {
+                        new Inner()
+                    }
+                }
+                class Foo implements Outer {}
+                def f = new Foo()
+            '''
+        }
+    }
+
+    void testClosureInsideTrait() {
+        assertScript '''
+        trait Doubler {
+            int foo(int x) {
+                { -> 2*x }.call()
+            }
+        }
+        class Foo implements Doubler {}
+        def f = new Foo()
+        assert f.foo(4) == 8
+        '''
+    }
+
+    void testClosureInsideTraitAccessingProperty() {
+        assertScript '''
+
+        trait Doubler {
+            int x
+            int foo() {
+                { -> 2*x }.call()
+            }
+        }
+        class Foo implements Doubler {}
+        def f = new Foo()
+        f.x = 4
+        assert f.foo() == 8
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

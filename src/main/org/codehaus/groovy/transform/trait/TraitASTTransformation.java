@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.transform.trait;
 
-import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -37,9 +36,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.Verifier;
-import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
-import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
@@ -49,6 +46,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -84,10 +82,14 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             // move from super class to interface;
             cNode.setSuperClass(ClassHelper.OBJECT_TYPE);
             cNode.addInterface(superClass);
-            // we need to resolve again!
-            VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(unit);
-            scopeVisitor.visitClass(cNode);
+            resolveScope(cNode);
         }
+    }
+
+    private void resolveScope(final ClassNode cNode) {
+        // we need to resolve again!
+        VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(unit);
+        scopeVisitor.visitClass(cNode);
     }
 
     private void checkNoConstructor(final ClassNode cNode) {
@@ -112,6 +114,8 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 null
         );
         cNode.setModifiers(ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT);
+
+        checkInnerClasses(cNode);
 
         MethodNode initializer = new MethodNode(
                 TraitConstants.STATIC_INIT_METHOD,
@@ -174,6 +178,16 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         unit.getAST().addClass(helper);
         if (fieldHelper != null) {
             unit.getAST().addClass(fieldHelper);
+        }
+    }
+
+    private void checkInnerClasses(final ClassNode cNode) {
+        Iterator<InnerClassNode> it = cNode.getInnerClasses();
+        while (it.hasNext()) {
+            InnerClassNode origin = it.next();
+            if ((origin.getModifiers() & ACC_STATIC) == 0) {
+                unit.addError(new SyntaxException("Cannot have non-static inner class inside a trait ("+origin.getName()+")", origin.getLineNumber(), origin.getColumnNumber()));
+            }
         }
     }
 
