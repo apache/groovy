@@ -46,8 +46,11 @@ import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Handles generation of code for the @Trait annotation. A class annotated with @Trait will generate, instead: <ul>
@@ -133,9 +136,11 @@ public class TraitASTTransformation extends AbstractASTTransformation {
 
         // prepare fields
         List<FieldNode> fields = new ArrayList<FieldNode>();
+        Set<String> fieldNames = new HashSet<String>();
         for (FieldNode field : cNode.getFields()) {
             if (!"metaClass".equals(field.getName()) && (!field.isSynthetic() || field.getName().indexOf('$') < 0)) {
                 fields.add(field);
+                fieldNames.add(field.getName());
             }
         }
         ClassNode fieldHelper = null;
@@ -158,7 +163,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                             methodNode.getLineNumber(), methodNode.getColumnNumber()));
                     return;
                 }
-                helper.addMethod(processMethod(cNode, methodNode, fieldHelper));
+                helper.addMethod(processMethod(cNode, methodNode, fieldHelper, fieldNames));
             }
         }
 
@@ -319,7 +324,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         );
     }
 
-    private MethodNode processMethod(final ClassNode traitClass, final MethodNode methodNode, final ClassNode fieldHelper) {
+    private MethodNode processMethod(final ClassNode traitClass, final MethodNode methodNode, final ClassNode fieldHelper, final Collection<String> knownFields) {
         Parameter[] initialParams = methodNode.getParameters();
         Parameter[] newParams = new Parameter[initialParams.length + 1];
         newParams[0] = new Parameter(traitClass.getPlainNodeReference(), TraitConstants.THIS_OBJECT);
@@ -330,7 +335,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 methodNode.getReturnType(),
                 newParams,
                 methodNode.getExceptions(),
-                processBody(new VariableExpression(newParams[0]), methodNode.getCode(), fieldHelper)
+                processBody(new VariableExpression(newParams[0]), methodNode.getCode(), fieldHelper, knownFields)
         );
 
         if (methodNode.isAbstract()) {
@@ -342,9 +347,9 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         return mNode;
     }
 
-    private Statement processBody(VariableExpression thisObject, Statement code, ClassNode fieldHelper) {
+    private Statement processBody(VariableExpression thisObject, Statement code, ClassNode fieldHelper, Collection<String> knownFields) {
         if (code == null) return null;
-        TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, unit, fieldHelper);
+        TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, unit, fieldHelper, knownFields);
         code.visit(trn);
         return code;
     }

@@ -890,6 +890,56 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    void testThisDotClassInTrait() {
+        assertScript '''
+            trait Classic {
+                Class clazz() {
+                    this.class
+                }
+            }
+            class Foo implements Classic {}
+            def f = new Foo()
+            assert f.clazz() == Foo
+        '''
+    }
+
+    void testShouldNotThrowStackOverflow() {
+        assertScript '''
+            trait TestTrait {
+                private String message = 'Hello'
+                String getMessage() { this.message }
+                String blah() { message }
+                void update(String msg ) { message = msg}
+            }
+            class Foo implements TestTrait{}
+            def foo = new Foo()
+            assert foo.message == 'Hello'
+            assert foo.blah() == 'Hello'
+            foo.update('Groovy')
+            assert foo.blah() == 'Groovy'
+        '''
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic
+            trait TestTrait {
+                private String message = 'Hello'
+                String getMessage() { this.message }
+                String blah() { message }
+                void update(String msg ) { message = msg}
+            }
+            @CompileStatic
+            class Foo implements TestTrait{}
+            @CompileStatic
+            void test() {
+                def foo = new Foo()
+                assert foo.message == 'Hello'
+                assert foo.blah() == 'Hello'
+                foo.update('Groovy')
+                assert foo.blah() == 'Groovy'
+            }
+            test()
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

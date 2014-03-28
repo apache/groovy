@@ -35,6 +35,8 @@ import org.codehaus.groovy.runtime.ExceptionUtils;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 
+import java.util.Collection;
+
 /**
  * This expression transformer is used internally by the {@link org.codehaus.groovy.transform.trait.TraitASTTransformation trait}
  * AST transformation to change the receiver of a message on "this" into a static method call on the trait helper class.
@@ -52,11 +54,13 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     private final VariableExpression weaved;
     private final SourceUnit unit;
     private final ClassNode fieldHelper;
+    private final Collection<String> knownFields;
 
-    public TraitReceiverTransformer(VariableExpression thisObject, SourceUnit unit, ClassNode fieldHelper) {
+    public TraitReceiverTransformer(VariableExpression thisObject, SourceUnit unit, ClassNode fieldHelper, Collection<String> knownFields) {
         this.weaved = thisObject;
         this.unit = unit;
         this.fieldHelper = fieldHelper;
+        this.knownFields = knownFields;
     }
 
     @Override
@@ -154,15 +158,20 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                         new SyntaxException("Call to super is not allowed in a trait", vexp.getLineNumber(), vexp.getColumnNumber()));
             }
         } else if (exp instanceof PropertyExpression) {
-            if (((PropertyExpression) exp).isImplicitThis() || "this".equals(((PropertyExpression) exp).getObjectExpression().getText())) {
-                MethodCallExpression mce = new MethodCallExpression(
-                        new CastExpression(fieldHelper,weaved),
-                        ((PropertyExpression) exp).getPropertyAsString() + TraitConstants.DIRECT_GETTER_SUFFIX,
-                        ArgumentListExpression.EMPTY_ARGUMENTS
-                );
-                mce.setSourcePosition(exp);
-                mce.setImplicitThis(false);
-                return mce;
+            PropertyExpression pexp = (PropertyExpression) exp;
+            Expression object = pexp.getObjectExpression();
+            if (pexp.isImplicitThis() || "this".equals(object.getText())) {
+                String propName = pexp.getPropertyAsString();
+                if (knownFields.contains(propName)) {
+                    MethodCallExpression mce = new MethodCallExpression(
+                            new CastExpression(fieldHelper,weaved),
+                            propName + TraitConstants.DIRECT_GETTER_SUFFIX,
+                            ArgumentListExpression.EMPTY_ARGUMENTS
+                    );
+                    mce.setSourcePosition(exp);
+                    mce.setImplicitThis(false);
+                    return mce;
+                }
             }
         } else if (exp instanceof ClosureExpression) {
             MethodCallExpression mce = new MethodCallExpression(
