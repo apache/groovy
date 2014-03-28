@@ -22,14 +22,5 @@ import groovy.transform.stc.ClosureParamTypeInferenceSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class ClosureParamTypeInferrenceStaticCompileTest extends ClosureParamTypeInferenceSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
-
-}
+class ClosureParamTypeInferrenceStaticCompileTest extends ClosureParamTypeInferenceSTCTest  implements StaticCompilationTestSupport { }
 

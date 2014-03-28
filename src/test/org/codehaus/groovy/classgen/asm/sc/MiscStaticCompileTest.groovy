@@ -22,14 +22,7 @@ import groovy.transform.stc.MiscSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class MiscStaticCompileTest extends MiscSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class MiscStaticCompileTest extends MiscSTCTest implements StaticCompilationTestSupport {
 
     void testEachFileRecurse() {
         assertScript '''import groovy.io.FileType

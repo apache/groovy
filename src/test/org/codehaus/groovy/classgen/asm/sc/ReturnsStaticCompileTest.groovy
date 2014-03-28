@@ -22,14 +22,7 @@ import groovy.transform.stc.ReturnsSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class ReturnsStaticCompileTest extends ReturnsSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class ReturnsStaticCompileTest extends ReturnsSTCTest implements StaticCompilationTestSupport {
 
     void testReturnTypeInferenceWithInheritance() {
         assertScript '''

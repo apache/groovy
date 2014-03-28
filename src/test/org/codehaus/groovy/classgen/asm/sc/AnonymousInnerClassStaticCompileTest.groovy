@@ -23,14 +23,5 @@ import groovy.transform.stc.AnonymousInnerClassSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class AnonymousInnerClassStaticCompileTest extends AnonymousInnerClassSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
-
-}
+class AnonymousInnerClassStaticCompileTest extends AnonymousInnerClassSTCTest implements StaticCompilationTestSupport {}
 

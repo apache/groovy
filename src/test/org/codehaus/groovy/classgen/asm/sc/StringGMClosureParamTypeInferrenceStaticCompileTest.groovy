@@ -24,14 +24,7 @@ import groovy.transform.stc.StringGMClosureParamTypeInferenceSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class StringGMClosureParamTypeInferrenceStaticCompileTest extends StringGMClosureParamTypeInferenceSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class StringGMClosureParamTypeInferrenceStaticCompileTest extends StringGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 
 }
 

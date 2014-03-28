@@ -23,14 +23,7 @@ import groovy.transform.stc.SocketGMClosureParamTypeInferenceSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class SocketGMClosureParamTypeInferrenceStaticCompileTest extends SocketGMClosureParamTypeInferenceSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class SocketGMClosureParamTypeInferrenceStaticCompileTest extends SocketGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 
 }
 

@@ -22,14 +22,7 @@ import groovy.transform.stc.BugsSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class BugsStaticCompileTest extends BugsSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilationTestSupport {
 
     void testGroovy5498PropertyAccess() {
         assertScript '''

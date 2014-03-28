@@ -26,14 +26,7 @@ import groovy.transform.stc.IOGMClosureParamTypeInferenceSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class IOGMClosureParamTypeInferrenceStaticCompileTest extends IOGMClosureParamTypeInferenceSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class IOGMClosureParamTypeInferrenceStaticCompileTest extends IOGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 
 }
 

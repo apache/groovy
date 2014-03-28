@@ -19,12 +19,10 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
-@Mixin(StaticCompilationTestSupport)
-class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase {
+class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
     @Override
     protected void setUp() {
         super.setUp()
-        extraSetup()
         removeCustomizer()
     }
 

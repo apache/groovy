@@ -21,15 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-@Mixin(StaticCompilationTestSupport)
-class Groovy6475Bug extends StaticTypeCheckingTestCase {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
-
+class Groovy6475Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testShouldNotSayThatDiamondIsInUse() {
         assertScript '''import org.codehaus.groovy.classgen.asm.sc.bugs.Groovy6475Bug.TypeReference

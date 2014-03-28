@@ -3,13 +3,7 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-@Mixin(StaticCompilationTestSupport)
-class Groovy6411Bug extends StaticTypeCheckingTestCase {
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class Groovy6411Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testShouldNotThrowInvokerInvocationException() {
             assertScript '''

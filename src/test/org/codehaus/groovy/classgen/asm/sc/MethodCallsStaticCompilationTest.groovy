@@ -18,13 +18,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 import groovy.transform.stc.MethodCallsSTCTest
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
-@Mixin(StaticCompilationTestSupport)
-public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest implements StaticCompilationTestSupport {
 
     void testCallToSuper() {
         assertScript '''

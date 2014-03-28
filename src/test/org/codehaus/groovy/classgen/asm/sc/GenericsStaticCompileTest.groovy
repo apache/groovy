@@ -22,14 +22,7 @@ import groovy.transform.stc.GenericsSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class GenericsStaticCompileTest extends GenericsSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class GenericsStaticCompileTest extends GenericsSTCTest implements StaticCompilationTestSupport {
 
 }
 

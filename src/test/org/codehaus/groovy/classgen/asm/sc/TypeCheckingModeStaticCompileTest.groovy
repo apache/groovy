@@ -22,14 +22,7 @@ import groovy.transform.stc.TypeCheckingModeTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest implements StaticCompilationTestSupport {
 
     void testEnsureBytecodeIsDifferentWhenSkipped() {
         assertScript '''
