@@ -349,6 +349,8 @@ public class TraitASTTransformation extends AbstractASTTransformation {
 
     private Statement processBody(VariableExpression thisObject, Statement code, ClassNode fieldHelper, Collection<String> knownFields) {
         if (code == null) return null;
+        SuperCallTraitTransformer superTrn = new SuperCallTraitTransformer(unit);
+        code.visit(superTrn);
         TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, unit, fieldHelper, knownFields);
         code.visit(trn);
         return code;

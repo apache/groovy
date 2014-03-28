@@ -940,6 +940,37 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    void testSuperCallInTraitExtendingAnotherTrait() {
+        assertScript '''
+            trait Foo {
+                int foo() { 1 }
+            }
+            trait Bar extends Foo {
+                int foo() {
+                    2*Foo.super.foo()
+                }
+            }
+            class Baz implements Bar {}
+            def b = new Baz()
+            assert b.foo() == 2
+        '''
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic
+            trait Foo {
+                int foo() { 1 }
+            }
+            @CompileStatic
+            trait Bar extends Foo {
+                int foo() {
+                    2*Foo.super.foo()
+                }
+            }
+            class Baz implements Bar {}
+            def b = new Baz()
+            assert b.foo() == 2
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

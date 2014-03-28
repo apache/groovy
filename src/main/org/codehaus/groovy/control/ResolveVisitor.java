@@ -796,14 +796,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean directlyImplementsTrait(ClassNode trait) {
         ClassNode[] interfaces = currentClass.getInterfaces();
         if (interfaces==null) {
-            return false;
+            return currentClass.getSuperClass().equals(trait);
         }
         for (ClassNode node : interfaces) {
             if (node.equals(trait)) {
                 return true;
             }
         }
-        return false;
+        return currentClass.getSuperClass().equals(trait);
     }
 
     private void checkThisAndSuperAsPropertyAccess(PropertyExpression expression) {
