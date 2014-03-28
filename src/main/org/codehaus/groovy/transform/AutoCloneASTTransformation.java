@@ -137,7 +137,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             cNode.addConstructor(ACC_PUBLIC, new Parameter[0], ClassNode.EMPTY_ARRAY, initBody);
             initBody = new BlockStatement();
         }
-        Parameter initParam = new Parameter(cNode, "other");
+        Parameter initParam = new Parameter(nonGeneric(cNode), "other");
         final Expression other = new VariableExpression(initParam);
         boolean hasParent = cNode.getSuperClass() != ClassHelper.OBJECT_TYPE;
         if (hasParent) {
