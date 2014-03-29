@@ -105,10 +105,12 @@ public abstract class TraitConstants {
     }
 
     public static boolean isForceOverride(final MethodNode methodNode) {
-        return !methodNode.getAnnotations(FORCEOVERRIDE_CLASSNODE).isEmpty();
+        return !methodNode.getAnnotations(FORCEOVERRIDE_CLASSNODE).isEmpty()
+                || !methodNode.getDeclaringClass().getAnnotations(FORCEOVERRIDE_CLASSNODE).isEmpty();
     }
 
     public static boolean isForceOverride(final Method methodNode) {
-        return methodNode.getAnnotation(ForceOverride.class)!=null;
+        return methodNode.getAnnotation(ForceOverride.class)!=null ||
+                methodNode.getDeclaringClass().getAnnotation(ForceOverride.class)!=null ;
     }
 }

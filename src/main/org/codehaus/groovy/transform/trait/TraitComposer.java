@@ -16,6 +16,7 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.transform.CompileStatic;
+import groovy.transform.ForceOverride;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -123,13 +124,14 @@ public abstract class TraitComposer {
     }
 
     private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers) {
+        boolean isTraitForceOverride = !trait.getAnnotations(TraitConstants.FORCEOVERRIDE_CLASSNODE).isEmpty();
         ClassNode helperClassNode = helpers.getHelper();
         ClassNode fieldHelperClassNode = helpers.getFieldHelper();
         Map genericsSpec = Verifier.createGenericsSpec(cNode, new HashMap());
         genericsSpec = Verifier.createGenericsSpec(trait, genericsSpec);
 
         for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
-            boolean isForceOverride = TraitConstants.isForceOverride(methodNode);
+            boolean isForceOverride = isTraitForceOverride || TraitConstants.isForceOverride(methodNode);
             String name = methodNode.getName();
             int access = methodNode.getModifiers();
             Parameter[] argumentTypes = methodNode.getParameters();

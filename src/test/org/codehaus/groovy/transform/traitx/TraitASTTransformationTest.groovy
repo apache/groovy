@@ -1085,6 +1085,35 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    void testForceOverrideOnFullTrait() {
+        assertScript '''import groovy.transform.ForceOverride
+
+            @ForceOverride // force all
+            trait TestTrait {
+                String foo() { 'from Trait' }
+                String bar() { 'from Trait' }
+            }
+            class Top implements TestTrait {} // top has default implementation
+            class Middle extends Top {
+                String foo() { 'from Middle' } // middle overrides default implementation
+                String bar() { 'from Middle' } // middle overrides default implementation
+            }
+            class Bottom extends Middle implements TestTrait {} // bottom restores default implementation
+            def top = new Top()
+            def middle = new Middle()
+            def bottom = new Bottom()
+
+            assert top.foo() == 'from Trait'
+            assert top.bar() == 'from Trait'
+
+            assert middle.foo() == 'from Middle'
+            assert middle.bar() == 'from Middle'
+
+            assert bottom.foo() == 'from Trait'
+            assert bottom.bar() == 'from Trait'
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }
