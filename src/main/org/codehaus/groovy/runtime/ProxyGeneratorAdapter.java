@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.transform.trait.TraitConstants;
 import org.objectweb.asm.*;
 
 import java.lang.annotation.Annotation;
@@ -233,7 +234,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             for (Method method : interfaceMethods) {
                 if (!containsEquivalentMethod(OBJECT_METHODS, method) &&
                         !containsEquivalentMethod(GROOVYOBJECT_METHODS, method) &&
-                        !(containsEquivalentMethod(superClassMethods, method) && !isImplemented(delegateClass, method.getName(), Type.getMethodDescriptor(method)))) {
+                        !(containsEquivalentMethod(superClassMethods, method) &&
+                                shouldOverrideMethod(delegateClass, method))) {
                     selectedMethods.add(method.getName());
                 }
             }
@@ -249,6 +251,10 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             }
         }
         return selectedMethods;
+    }
+
+    private static boolean shouldOverrideMethod(final Class delegateClass, final Method method) {
+        return (TraitConstants.isForceOverride(method) || !isImplemented(delegateClass, method.getName(), Type.getMethodDescriptor(method)));
     }
 
     private static List<Method> getInheritedMethods(Class baseClass, List<Method> methods) {

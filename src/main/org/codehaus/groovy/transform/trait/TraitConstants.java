@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform.trait;
 
+import groovy.transform.ForceOverride;
 import groovy.transform.Trait;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -22,11 +23,14 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 
+import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 
 public abstract class TraitConstants {
+    public static final ClassNode FORCEOVERRIDE_CLASSNODE = ClassHelper.make(ForceOverride.class);
     static final Class TRAIT_CLASS = Trait.class;
     static final ClassNode TRAIT_CLASSNODE = ClassHelper.make(TRAIT_CLASS);
     static final String TRAIT_TYPE_NAME = "@" + TRAIT_CLASSNODE.getNameWithoutPackage();
@@ -100,4 +104,11 @@ public abstract class TraitConstants {
         return traitAnn != null && !traitAnn.isEmpty();
     }
 
+    public static boolean isForceOverride(final MethodNode methodNode) {
+        return !methodNode.getAnnotations(FORCEOVERRIDE_CLASSNODE).isEmpty();
+    }
+
+    public static boolean isForceOverride(final Method methodNode) {
+        return methodNode.getAnnotation(ForceOverride.class)!=null;
+    }
 }

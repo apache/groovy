@@ -298,8 +298,9 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
      * <p>
      * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported by now.
      */
-    public static void copyAnnotatedNodeAnnotations(final List<AnnotationNode> candidateAnnotations, final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, List<AnnotationNode> notCopied) {
-        for (AnnotationNode annotation : candidateAnnotations)  {
+    public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, List<AnnotationNode> notCopied) {
+        List<AnnotationNode> annotationList = annotatedNode.getAnnotations();
+        for (AnnotationNode annotation : annotationList)  {
 
             List<AnnotationNode> annotations = annotation.getClassNode().getAnnotations(RETENTION_CLASSNODE);
             if (annotations.isEmpty()) continue;

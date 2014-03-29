@@ -29,7 +29,6 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.annotation.Retention;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
@@ -291,7 +290,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
     private List<AnnotationNode> copyAnnotatedNodeAnnotations(final List<AnnotationNode> candidateAnnotations, final AnnotatedNode annotatedNode) {
         final ArrayList<AnnotationNode> delegateAnnotations = new ArrayList<AnnotationNode>();
         final ArrayList<AnnotationNode> notCopied = new ArrayList<AnnotationNode>();
-        copyAnnotatedNodeAnnotations(candidateAnnotations, annotatedNode, delegateAnnotations, notCopied);
+        copyAnnotatedNodeAnnotations(annotatedNode, delegateAnnotations, notCopied);
         for (AnnotationNode annotation : notCopied) {
             addError(MY_TYPE_NAME + " does not support keeping Closure annotation members.", annotation);
         }

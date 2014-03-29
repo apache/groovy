@@ -19,7 +19,6 @@ import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -45,12 +44,10 @@ import org.objectweb.asm.Opcodes;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * This class contains a static utility method {@link #doExtendTraits(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.control.SourceUnit)}
@@ -132,6 +129,7 @@ public abstract class TraitComposer {
         genericsSpec = Verifier.createGenericsSpec(trait, genericsSpec);
 
         for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
+            boolean isForceOverride = TraitConstants.isForceOverride(methodNode);
             String name = methodNode.getName();
             int access = methodNode.getModifiers();
             Parameter[] argumentTypes = methodNode.getParameters();
@@ -149,13 +147,13 @@ public abstract class TraitComposer {
                     Parameter newParam = new Parameter(fixedType, "arg" + i);
                     List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
                     List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
-                    AbstractASTTransformation.copyAnnotatedNodeAnnotations(parameter.getAnnotations(), parameter, copied, notCopied);
+                    AbstractASTTransformation.copyAnnotatedNodeAnnotations(parameter, copied, notCopied);
                     newParam.addAnnotations(copied);
                     params[i - 1] = newParam;
                     argList.addExpression(new VariableExpression(params[i - 1]));
                 }
-                MethodNode existingMethod = cNode.getDeclaredMethod(name, params);
-                if (existingMethod != null || isExistingProperty(name, cNode, params)) {
+                MethodNode existingMethod = cNode.getMethod(name, params);
+                if (!isForceOverride && (existingMethod != null || isExistingProperty(name, cNode, params))) {
                     // override exists in the weaved class
                     continue;
                 }

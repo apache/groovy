@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,19 @@
  */
 package groovy.transform;
 
-import org.codehaus.groovy.transform.GroovyASTTransformationClass;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Used to mark a class as being a trait.
+ * This annotation can be used on trait methods to make sure that a class which
+ * explicitely implements a trait will get the trait method behavior if it defines
+ * or any superclass defines an equivalent method.
  *
  * @since 2.3.0
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.trait.TraitASTTransformation")
-public @interface Trait {
-}
+@Target({ElementType.METHOD})
+public @interface ForceOverride {}

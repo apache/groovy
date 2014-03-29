@@ -971,6 +971,120 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    void testTraitShouldNotTakeOverSuperClassMethod() {
+        assertScript '''
+            trait TestTrait {
+                String foo() { 'from Trait' }
+            }
+            class Bar {
+                String foo() { 'from Bar' }
+            }
+            class Baz extends Bar implements TestTrait {}
+            def b = new Baz()
+            assert b.foo() == 'from Bar'
+        '''
+    }
+
+    void testTraitShouldTakeOverSuperClassMethodBecauseOfForceOverride() {
+        assertScript '''import groovy.transform.ForceOverride
+
+            trait TestTrait {
+                @ForceOverride
+                String foo() { 'from Trait' }
+            }
+            class Bar {
+                String foo() { 'from Bar' }
+            }
+            class Baz extends Bar implements TestTrait {}
+            def b = new Baz()
+            assert b.foo() == 'from Trait'
+        '''
+    }
+
+    void testOverrideUsingRuntimeTrait() {
+        assertScript '''
+            trait TestTrait {
+                String foo() { 'from Trait' }
+            }
+            class Bar {
+                String foo() { 'from Bar' }
+            }
+            def b = new Bar() as TestTrait
+            assert b.foo() == 'from Bar' // method shouldn't be overriden because not @ForceOverride
+        '''
+
+        assertScript '''
+            trait TestTrait {
+                String foo() { 'from Trait' }
+            }
+            class Bar {
+                String foo() { 'from Bar' }
+            }
+            class Baz extends Bar {}
+            def b = new Baz() as TestTrait
+            assert b.foo() == 'from Bar' // method shouldn't be overriden because not @ForceOverride
+        '''
+    }
+
+    void testForceOverrideUsingRuntimeTrait() {
+        assertScript '''import groovy.transform.ForceOverride
+
+            trait TestTrait {
+                @ForceOverride
+                String foo() { 'from Trait' }
+            }
+            class Bar {
+                String foo() { 'from Bar' }
+            }
+            def b = new Bar() as TestTrait
+            assert b.foo() == 'from Trait'
+        '''
+
+        assertScript '''import groovy.transform.ForceOverride
+
+            trait TestTrait {
+                @ForceOverride
+                String foo() { 'from Trait' }
+            }
+            class Bar {
+                String foo() { 'from Bar' }
+            }
+            class Baz extends Bar {}
+            def b = new Baz() as TestTrait
+            assert b.foo() == 'from Trait'
+        '''
+    }
+
+    void testForceOverrideExtended() {
+        assertScript '''import groovy.transform.ForceOverride
+
+            trait TestTrait {
+                String foo() { 'from Trait' } // no force override!
+
+                @ForceOverride
+                String bar() { 'from Trait' }
+            }
+            class Top implements TestTrait {} // top has default implementation
+            class Middle extends Top {
+                String foo() { 'from Middle' } // middle overrides default implementation
+                String bar() { 'from Middle' } // middle overrides default implementation
+            }
+            class Bottom extends Middle implements TestTrait {} // bottom restores default implementation only for "bar"
+            def top = new Top()
+            def middle = new Middle()
+            def bottom = new Bottom()
+
+            assert top.foo() == 'from Trait'
+            assert top.bar() == 'from Trait'
+
+            assert middle.foo() == 'from Middle'
+            assert middle.bar() == 'from Middle'
+
+            assert bottom.foo() == 'from Middle'
+            assert bottom.bar() == 'from Trait'
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

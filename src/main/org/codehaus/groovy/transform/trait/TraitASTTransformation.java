@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -337,7 +338,10 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 methodNode.getExceptions(),
                 processBody(new VariableExpression(newParams[0]), methodNode.getCode(), fieldHelper, knownFields)
         );
-
+        List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
+        List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
+        AbstractASTTransformation.copyAnnotatedNodeAnnotations(methodNode, copied, notCopied);
+        mNode.addAnnotations(copied);
         if (methodNode.isAbstract()) {
             mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         }
