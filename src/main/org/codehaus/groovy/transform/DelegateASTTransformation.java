@@ -239,7 +239,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
                 Parameter newParam = new Parameter(correctToGenericsSpecRecurse(genericsSpec, params[i].getType()), getParamName(params, i, fieldNode.getName()));
                 newParam.setInitialExpression(params[i].getInitialExpression());
 
-                if (includeParameterAnnotations) newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i].getAnnotations(), newParam));
+                if (includeParameterAnnotations) newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i]));
 
                 newParams[i] = newParam;
                 args.addExpression(new VariableExpression(newParam));
@@ -260,7 +260,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
             newMethod.setGenericsTypes(candidate.getGenericsTypes());
 
             if (hasBooleanValue(node.getMember(MEMBER_METHOD_ANNOTATIONS), true)) {
-                newMethod.addAnnotations(copyAnnotatedNodeAnnotations(candidate.getAnnotations(), newMethod));
+                newMethod.addAnnotations(copyAnnotatedNodeAnnotations(candidate));
             }
         }
     }
@@ -287,7 +287,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
      * <p>
      * Annotations with {@link GeneratedClosure} members are not supported by now.
      */
-    private List<AnnotationNode> copyAnnotatedNodeAnnotations(final List<AnnotationNode> candidateAnnotations, final AnnotatedNode annotatedNode) {
+    private List<AnnotationNode> copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode) {
         final ArrayList<AnnotationNode> delegateAnnotations = new ArrayList<AnnotationNode>();
         final ArrayList<AnnotationNode> notCopied = new ArrayList<AnnotationNode>();
         copyAnnotatedNodeAnnotations(annotatedNode, delegateAnnotations, notCopied);
