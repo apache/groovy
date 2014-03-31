@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Token;
@@ -137,7 +138,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             cNode.addConstructor(ACC_PUBLIC, new Parameter[0], ClassNode.EMPTY_ARRAY, initBody);
             initBody = new BlockStatement();
         }
-        Parameter initParam = new Parameter(nonGeneric(cNode), "other");
+        Parameter initParam = new Parameter(GenericsUtils.nonGeneric(cNode), "other");
         final Expression other = new VariableExpression(initParam);
         boolean hasParent = cNode.getSuperClass() != ClassHelper.OBJECT_TYPE;
         if (hasParent) {
@@ -179,7 +180,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
     }
 
     private void addSimpleCloneHelperMethod(ClassNode cNode, List<FieldNode> list, List<String> excludes) {
-        Parameter methodParam = new Parameter(nonGeneric(cNode), "other");
+        Parameter methodParam = new Parameter(GenericsUtils.nonGeneric(cNode), "other");
         final Expression other = new VariableExpression(methodParam);
         boolean hasParent = cNode.getSuperClass() != ClassHelper.OBJECT_TYPE;
         BlockStatement methodBody = new BlockStatement();

@@ -18,9 +18,18 @@ package org.codehaus.groovy.transform;
 import groovy.lang.Delegate;
 import groovy.lang.GroovyObject;
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -31,7 +40,18 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Retention;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllMethods;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
 /**
  * Handles generation of code for the <code>@Delegate</code> annotation
@@ -121,40 +141,6 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
         }
     }
 
-    private Set<ClassNode> getInterfacesAndSuperInterfaces(ClassNode type) {
-        Set<ClassNode> res = new HashSet<ClassNode>();
-        if (type.isInterface()) {
-            res.add(type);
-            return res;
-        }
-        ClassNode next = type;
-        while (next != null) {
-            Collections.addAll(res, next.getInterfaces());
-            next = next.getSuperClass();
-        }
-        return res;
-    }
-
-    private List<MethodNode> getAllMethods(ClassNode type) {
-        ClassNode node = type;
-        List<MethodNode> result = new ArrayList<MethodNode>();
-        while (node != null) {
-            result.addAll(node.getMethods());
-            node = node.getSuperClass();
-        }
-        return result;
-    }
-
-    private List<PropertyNode> getAllProperties(ClassNode type) {
-        ClassNode node = type;
-        List<PropertyNode> result = new ArrayList<PropertyNode>();
-        while (node != null) {
-            result.addAll(node.getProperties());
-            node = node.getSuperClass();
-        }
-        return result;
-    }
-
     private boolean hasBooleanValue(Expression expression, boolean bool) {
         return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue().equals(bool);
     }
@@ -165,7 +151,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
             owner.addMethod(setterName,
                     ACC_PUBLIC,
                     ClassHelper.VOID_TYPE,
-                    new Parameter[]{new Parameter(nonGeneric(prop.getType()), "value")},
+                    new Parameter[]{new Parameter(GenericsUtils.nonGeneric(prop.getType()), "value")},
                     null,
                     new ExpressionStatement(
                             new BinaryExpression(
@@ -182,7 +168,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
         if (owner.getGetterMethod(getterName) == null) {
             owner.addMethod(getterName,
                     ACC_PUBLIC,
-                    nonGeneric(prop.getType()),
+                    GenericsUtils.nonGeneric(prop.getType()),
                     Parameter.EMPTY_ARRAY,
                     null,
                     new ReturnStatement(new PropertyExpression(new VariableExpression(fieldNode), name)));
@@ -198,8 +184,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
 
         if (shouldSkip(candidate.getName(), excludes, includes)) return;
 
-        Map genericsSpec = Verifier.createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap());
-        genericsSpec = Verifier.createGenericsSpec(fieldNode.getType(), genericsSpec);
+        Map genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap());
+        genericsSpec = createGenericsSpec(fieldNode.getType(), genericsSpec);
 
         if (!excludeTypes.isEmpty() || !includeTypes.isEmpty()) {
             String correctedTypeDescriptor = correctToGenericsSpec(genericsSpec, candidate).getTypeDescriptor();
