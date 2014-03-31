@@ -20,16 +20,20 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ExceptionUtils;
@@ -37,6 +41,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * This expression transformer is used internally by the {@link org.codehaus.groovy.transform.trait.TraitASTTransformation trait}
@@ -54,12 +59,14 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
     private final VariableExpression weaved;
     private final SourceUnit unit;
+    private final ClassNode traitClass;
     private final ClassNode fieldHelper;
     private final Collection<String> knownFields;
 
-    public TraitReceiverTransformer(VariableExpression thisObject, SourceUnit unit, ClassNode fieldHelper, Collection<String> knownFields) {
+    public TraitReceiverTransformer(VariableExpression thisObject, SourceUnit unit, final ClassNode traitClass, ClassNode fieldHelper, Collection<String> knownFields) {
         this.weaved = thisObject;
         this.unit = unit;
+        this.traitClass = traitClass;
         this.fieldHelper = fieldHelper;
         this.knownFields = knownFields;
     }
@@ -112,10 +119,41 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             MethodCallExpression call = (MethodCallExpression) exp;
             Expression obj = call.getObjectExpression();
             if (call.isImplicitThis() || obj.getText().equals("this")) {
+                Expression method = call.getMethod();
+                Expression arguments = call.getArguments();
+                if (method instanceof ConstantExpression) {
+                    String methodName = method.getText();
+                    List<MethodNode> methods = traitClass.getMethods(methodName);
+                    for (MethodNode methodNode : methods) {
+                        if (methodName.equals(methodNode.getName()) && methodNode.isPrivate()) {
+                            ArgumentListExpression newArgs = new ArgumentListExpression();
+                            newArgs.addExpression(new VariableExpression(weaved));
+                            if (arguments instanceof ArgumentListExpression) {
+                                List<Expression> expressions = ((ArgumentListExpression) arguments).getExpressions();
+                                for (Expression expression : expressions) {
+                                    newArgs.addExpression(expression);
+                                }
+                            } else {
+                                newArgs.addExpression(arguments);
+                            }
+                            MethodCallExpression transformed = new MethodCallExpression(
+                                    new VariableExpression("this"),
+                                    methodName,
+                                    newArgs
+                            );
+                            transformed.setSourcePosition(call);
+                            transformed.setSafe(call.isSafe());
+                            transformed.setSpreadSafe(call.isSpreadSafe());
+                            transformed.setImplicitThis(true);
+                            return transformed;
+                        }
+                    }
+                }
+
                 MethodCallExpression transformed = new MethodCallExpression(
                         weaved,
-                        call.getMethod(),
-                        transform(call.getArguments())
+                        method,
+                        transform(arguments)
                 );
                 transformed.setSourcePosition(call);
                 transformed.setSafe(call.isSafe());

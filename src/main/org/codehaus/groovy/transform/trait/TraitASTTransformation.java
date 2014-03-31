@@ -156,16 +156,25 @@ public class TraitASTTransformation extends AbstractASTTransformation {
 
         // add methods
         List<MethodNode> methods = cNode.getMethods();
+        List<MethodNode> privateMethods = new LinkedList<MethodNode>();
         for (final MethodNode methodNode : methods) {
             boolean declared = methodNode.getDeclaringClass() == cNode;
             if (declared) {
-                if (!methodNode.isSynthetic() && (methodNode.isPrivate() || methodNode.isProtected())) {
-                    unit.addError(new SyntaxException("Cannot have " + (methodNode.isPrivate() ? "private" : "protected") + " method in a trait (" + cNode.getName() + "#" + methodNode.getTypeDescriptor() + ")",
+                if (!methodNode.isSynthetic() && methodNode.isProtected()) {
+                    unit.addError(new SyntaxException("Cannot have protected method in a trait (" + cNode.getName() + "#" + methodNode.getTypeDescriptor() + ")",
                             methodNode.getLineNumber(), methodNode.getColumnNumber()));
                     return;
                 }
                 helper.addMethod(processMethod(cNode, methodNode, fieldHelper, fieldNames));
+                if (methodNode.isPrivate()) {
+                    privateMethods.add(methodNode);
+                }
             }
+        }
+
+        // remove private methods
+        for (MethodNode privateMethod : privateMethods) {
+            cNode.removeMethod(privateMethod);
         }
 
         // add fields
@@ -336,19 +345,21 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         );
     }
 
-    private MethodNode processMethod(final ClassNode traitClass, final MethodNode methodNode, final ClassNode fieldHelper, final Collection<String> knownFields) {
+    private MethodNode processMethod(ClassNode traitClass, MethodNode methodNode, ClassNode fieldHelper, Collection<String> knownFields) {
         Parameter[] initialParams = methodNode.getParameters();
         Parameter[] newParams = new Parameter[initialParams.length + 1];
         newParams[0] = new Parameter(traitClass.getPlainNodeReference(), Traits.THIS_OBJECT);
         System.arraycopy(initialParams, 0, newParams, 1, initialParams.length);
+        final int mod = methodNode.isPrivate()?ACC_PRIVATE:ACC_PUBLIC;
         MethodNode mNode = new MethodNode(
                 methodNode.getName(),
-                ACC_PUBLIC | ACC_STATIC,
+                mod | ACC_STATIC,
                 methodNode.getReturnType(),
                 newParams,
                 methodNode.getExceptions(),
-                processBody(new VariableExpression(newParams[0]), methodNode.getCode(), fieldHelper, knownFields)
+                processBody(new VariableExpression(newParams[0]), methodNode.getCode(), traitClass, fieldHelper, knownFields)
         );
+        mNode.setSourcePosition(methodNode);
         List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
         List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
         AbstractASTTransformation.copyAnnotatedNodeAnnotations(methodNode, copied, notCopied);
@@ -360,15 +371,17 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         }
         methodNode.setCode(null);
 
-        methodNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
+        if (!methodNode.isPrivate()) {
+            methodNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
+        }
         return mNode;
     }
 
-    private Statement processBody(VariableExpression thisObject, Statement code, ClassNode fieldHelper, Collection<String> knownFields) {
+    private Statement processBody(VariableExpression thisObject, Statement code, ClassNode trait, ClassNode fieldHelper, Collection<String> knownFields) {
         if (code == null) return null;
         SuperCallTraitTransformer superTrn = new SuperCallTraitTransformer(unit);
         code.visit(superTrn);
-        TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, unit, fieldHelper, knownFields);
+        TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, unit, trait, fieldHelper, knownFields);
         code.visit(trn);
         return code;
     }

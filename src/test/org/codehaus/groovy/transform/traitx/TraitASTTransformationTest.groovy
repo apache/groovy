@@ -1216,6 +1216,74 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    void testPrivateMethodInTrait() {
+        assertScript '''
+            trait DoingSecretThings {
+                private String secret() { 'secret' }
+                String foo() { secret() }
+            }
+            class Foo implements DoingSecretThings {}
+            def foo = new Foo()
+            assert foo.foo() == 'secret'
+        '''
+    }
+
+    void testPrivateMethodInTraitAccessingPrivateField() {
+        assertScript '''
+            trait DoingSecretThings {
+                private int x = 0
+                private int secret() { ++x }
+                int foo() { secret() }
+            }
+            class Foo implements DoingSecretThings {}
+            def foo = new Foo()
+            assert foo.foo() == 1
+        '''
+    }
+
+    void testPrivateMethodInTraitWithCompileStatic() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            trait DoingSecretThings {
+                private String secret() { 'secret' }
+                String foo() { secret() }
+            }
+            class Foo implements DoingSecretThings {}
+            def foo = new Foo()
+            assert foo.foo() == 'secret'
+        '''
+    }
+
+    void testPrivateMethodInTraitAccessingPrivateFieldCompileStatic() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            trait DoingSecretThings {
+                private int x = 0
+                private int secret() { ++x }
+                int foo() { secret() }
+            }
+            class Foo implements DoingSecretThings {}
+            def foo = new Foo()
+            assert foo.foo() == 1
+        '''
+    }
+
+
+    void testMixPrivatePublicMethodsOfSameName() {
+        shouldFail {
+            assertScript '''
+            trait DoingSecretThings {
+                private String secret(String s) { s.toUpperCase() }
+                String secret() { 'public' }
+                String foo() { secret('secret') }
+            }
+            class Foo implements DoingSecretThings {}
+            def foo = new Foo()
+            assert foo.foo() == 'SECRET'
+        '''
+        } =~ 'Mixing private and public/protected methods of the same name causes multimethods to be disabled'
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }
