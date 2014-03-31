@@ -205,7 +205,7 @@ public abstract class TraitComposer {
                     ClassNode returnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, methodNode.getReturnType());
                     if (getter) {
                         // add field
-                        cNode.addField(Traits.remappedFieldName(trait, fieldName), Opcodes.ACC_PRIVATE, returnType, null);
+                        cNode.addField(fieldName, Opcodes.ACC_PRIVATE, returnType, null);
                     }
                     Parameter[] newParams;
                     if (getter) {
@@ -216,7 +216,7 @@ public abstract class TraitComposer {
                         newParams = new Parameter[]{new Parameter(fixedType, "val")};
                     }
 
-                    Expression fieldExpr = new VariableExpression(cNode.getField(Traits.remappedFieldName(trait, fieldName)));
+                    Expression fieldExpr = new VariableExpression(cNode.getField(fieldName));
                     Statement body =
                             getter ? new ReturnStatement(fieldExpr) :
                                     new ExpressionStatement(

@@ -1205,6 +1205,17 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    void testPrivateFieldNameConflict() {
+        assertScript '''
+            trait Trait1 { private int v = 111; int getValueFromTrait1() { v } }
+            trait Trait2 { private int v = 222; int getValueFromTrait2() { v } }
+            class Impl implements Trait1,Trait2 {}
+            def t = new Impl()
+            assert t.valueFromTrait1 == 111
+            assert t.valueFromTrait2 == 222
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

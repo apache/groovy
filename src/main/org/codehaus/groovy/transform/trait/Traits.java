@@ -58,11 +58,11 @@ public abstract class Traits {
     }
 
     static String helperGetterName(final FieldNode field) {
-        return field.getName() + DIRECT_GETTER_SUFFIX;
+        return remappedFieldName(field.getOwner(), field.getName()) + DIRECT_GETTER_SUFFIX;
     }
 
     static String helperSetterName(final FieldNode field) {
-        return field.getName() + DIRECT_SETTER_SUFFIX;
+        return remappedFieldName(field.getOwner(), field.getName()) + DIRECT_SETTER_SUFFIX;
     }
 
     static String helperClassName(final ClassNode traitNode) {

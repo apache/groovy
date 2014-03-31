@@ -16,6 +16,7 @@
 package org.codehaus.groovy.transform.trait;
 
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
@@ -86,9 +87,10 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     leftFieldName = ((PropertyExpression) leftExpression).getPropertyAsString();
                 }
                 if (leftFieldName!=null) {
+                    String method = Traits.helperSetterName(new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weaved.getOriginType(), null));
                     MethodCallExpression mce = new MethodCallExpression(
                             new CastExpression(fieldHelper,weaved),
-                            leftFieldName + Traits.DIRECT_SETTER_SUFFIX,
+                            method,
                             new ArgumentListExpression(super.transform(rightExpression))
                     );
                     mce.setSourcePosition(exp);
@@ -163,9 +165,10 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             if (pexp.isImplicitThis() || "this".equals(object.getText())) {
                 String propName = pexp.getPropertyAsString();
                 if (knownFields.contains(propName)) {
+                    String method = Traits.helperGetterName(new FieldNode(propName, 0, ClassHelper.OBJECT_TYPE, weaved.getOriginType(), null));
                     MethodCallExpression mce = new MethodCallExpression(
                             new CastExpression(fieldHelper,weaved),
-                            propName + Traits.DIRECT_GETTER_SUFFIX,
+                            method,
                             ArgumentListExpression.EMPTY_ARGUMENTS
                     );
                     mce.setSourcePosition(exp);
