@@ -1268,6 +1268,53 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    void testNoShadowingPrivateMethodInTraitAccessingPrivateFieldCompileStatic() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            trait DoingSecretThings {
+                private int x = 0
+                private int secret() { ++x }
+                int foo() { secret() }
+            }
+            class Foo implements DoingSecretThings {
+                int secret() { 666 }
+            }
+            def foo = new Foo()
+            assert foo.foo() == 1
+        '''
+    }
+
+    void testNoShadowingPrivateMethodInTraitAccessingPrivateField() {
+        assertScript '''
+            trait DoingSecretThings {
+                private int x = 0
+                private int secret() { ++x }
+                int foo() { secret() }
+            }
+            class Foo implements DoingSecretThings {
+                int secret() { 666 }
+            }
+            def foo = new Foo()
+            assert foo.foo() == 1
+        '''
+    }
+
+    void testNoShadowingPrivateMethodInTraitAccessingPrivateFieldForceOverride() {
+        assertScript '''import groovy.transform.ForceOverride
+            trait DoingSecretThings {
+                private int x = 0
+                @ForceOverride // make sure this has no effect
+                private int secret() { ++x }
+                int foo() { secret() }
+            }
+            class Foo implements DoingSecretThings {
+                int secret() { 666 }
+            }
+            def foo = new Foo()
+            assert foo.foo() == 1
+        '''
+    }
+
 
     void testMixPrivatePublicMethodsOfSameName() {
         shouldFail {
