@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.GeneratedClosure;
@@ -158,9 +159,9 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
                 while (!remaining.isEmpty()) {
                     ClassNode next = remaining.remove(0);
                     if (!next.equals(ClassHelper.OBJECT_TYPE)) {
-                        updatedGenericsSpec = Verifier.createGenericsSpec(next, updatedGenericsSpec);
+                        updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
                         for (MethodNode mn : next.getMethods()) {
-                            String md = correctToGenericsSpec(updatedGenericsSpec, mn).getTypeDescriptor();
+                            String md = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn).getTypeDescriptor();
                             if (md.equals(descriptor)) return true;
                         }
                         remaining.addAll(Arrays.asList(next.getInterfaces()));
@@ -175,9 +176,9 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
                 while (!remaining.isEmpty()) {
                     ClassNode next = remaining.remove(0);
                     if (!next.equals(ClassHelper.OBJECT_TYPE)) {
-                        updatedGenericsSpec = Verifier.createGenericsSpec(next, updatedGenericsSpec);
+                        updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
                         for (MethodNode mn : next.getMethods()) {
-                            String md = correctToGenericsSpec(updatedGenericsSpec, mn).getTypeDescriptor();
+                            String md = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn).getTypeDescriptor();
                             if (md.equals(descriptor)) return false;
                         }
                         remaining.addAll(Arrays.asList(next.getInterfaces()));
@@ -204,18 +205,12 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         }
     }
 
+    /**
+     * @deprecated use GenericsUtils#nonGeneric
+     */
+    @Deprecated
     public static ClassNode nonGeneric(ClassNode type) {
-        if (type.isUsingGenerics()) {
-            final ClassNode nonGen = ClassHelper.makeWithoutCaching(type.getName());
-            nonGen.setRedirect(type);
-            nonGen.setGenericsTypes(null);
-            nonGen.setUsingGenerics(false);
-            return nonGen;
-        }
-        if (type.isArray() && type.getComponentType().isUsingGenerics()) {
-            return type.getComponentType().getPlainNodeReference().makeArray();
-        }
-        return type;
+        return GenericsUtils.nonGeneric(type);
     }
 
     public static ClassNode newClass(ClassNode type) {
@@ -285,7 +280,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
                     fixed.setWildcard(true);
                     newgTypes[i] = fixed;
                 } else {
-                    newgTypes[i] = new GenericsType(Verifier.correctToGenericsSpec(genericsSpec, oldgType));
+                    newgTypes[i] = new GenericsType(GenericsUtils.correctToGenericsSpec(genericsSpec, oldgType));
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,21 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.ClassNodeSkip;
@@ -36,7 +49,19 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
 /**
  * Verifies the AST node and adds any defaulted AST code before
@@ -1371,25 +1396,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
-    public static ClassNode correctToGenericsSpec(Map genericsSpec, GenericsType type) {
-        ClassNode ret = null;
-        if (type.isPlaceholder()) {
-            String name = type.getName();
-            ret = (ClassNode) genericsSpec.get(name);
-        }
-        if (ret == null) ret = type.getType();
-        return ret;
-    }
-
-    public static ClassNode correctToGenericsSpec(Map genericsSpec, ClassNode type) {
-        if (type.isGenericsPlaceHolder()) {
-            String name = type.getGenericsTypes()[0].getName();
-            type = (ClassNode) genericsSpec.get(name);
-        }
-        if (type == null) type = ClassHelper.OBJECT_TYPE;
-        return type;
-    }
-
     private boolean equalParametersNormal(MethodNode m1, MethodNode m2) {
         Parameter[] p1 = m1.getParameters();
         Parameter[] p2 = m2.getParameters();
@@ -1413,34 +1419,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (!parameterType.equals(genericsType)) return false;
         }
         return true;
-    }
-
-    public static Map createGenericsSpec(ClassNode current, Map oldSpec) {
-        Map ret = new HashMap(oldSpec);
-        // ret contains the type specs, what we now need is the type spec for the
-        // current class. To get that we first apply the type parameters to the
-        // current class and then use the type names of the current class to reset
-        // the map. Example:
-        //   class A<V,W,X>{}
-        //   class B<T extends Number> extends A<T,Long,String> {}
-        // first we have:    T->Number
-        // we apply it to A<T,Long,String> -> A<Number,Long,String>
-        // resulting in:     V->Number,W->Long,X->String
-
-        GenericsType[] sgts = current.getGenericsTypes();
-        if (sgts != null) {
-            ClassNode[] spec = new ClassNode[sgts.length];
-            for (int i = 0; i < spec.length; i++) {
-                spec[i] = correctToGenericsSpec(ret, sgts[i]);
-            }
-            GenericsType[] newGts = current.redirect().getGenericsTypes();
-            if (newGts == null) return ret;
-            ret.clear();
-            for (int i = 0; i < spec.length; i++) {
-                ret.put(newGts[i].getName(), spec[i]);
-            }
-        }
-        return ret;
     }
 
     private boolean moveOptimizedConstantsInitialization(final ClassNode node) {

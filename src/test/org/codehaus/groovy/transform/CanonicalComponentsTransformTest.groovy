@@ -447,7 +447,7 @@ class Customer1 extends Person1 { final List favItems; final Date since }
 class Person2 { String first, last }
 
 @AutoClone(style=COPY_CONSTRUCTOR)
-class Customer2 extends Person2 { List favItems; Date since }
+class Customer2 extends Person2 { List favItems = []; Date since }
 
 @AutoClone(style=SERIALIZATION)
 @EqualsAndHashCode

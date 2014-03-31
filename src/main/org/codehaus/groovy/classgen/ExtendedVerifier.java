@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
@@ -34,8 +33,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.codehaus.groovy.classgen.Verifier.correctToGenericsSpec;
-import static org.codehaus.groovy.transform.AbstractASTTransformation.correctToGenericsSpecRecurse;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
 /**
  * A specialized Groovy AST visitor meant to perform additional verifications upon the
@@ -172,11 +172,11 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
             if (node instanceof MethodNode) {
                 MethodNode origMethod = (MethodNode) node;
                 ClassNode cNode = node.getDeclaringClass();
-                Map genericsSpec = Verifier.createGenericsSpec(cNode, new HashMap());
+                Map genericsSpec = createGenericsSpec(cNode, new HashMap());
                 ClassNode next = cNode;
                 outer:
                 while (next != null) {
-                    MethodNode mn = AbstractASTTransformation.correctToGenericsSpec(genericsSpec, origMethod);
+                    MethodNode mn = correctToGenericsSpec(genericsSpec, origMethod);
                     if (next != cNode) {
                         ClassNode correctedNext = correctToGenericsSpecRecurse(genericsSpec, next);
                         MethodNode found = getDeclaredMethodCorrected(genericsSpec, mn, correctedNext);
@@ -188,7 +188,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
                     while (!ifaces.isEmpty()) {
                         ClassNode origInterface = ifaces.remove(0);
                         if (!origInterface.equals(ClassHelper.OBJECT_TYPE)) {
-                            updatedGenericsSpec = Verifier.createGenericsSpec(origInterface, updatedGenericsSpec);
+                            updatedGenericsSpec = createGenericsSpec(origInterface, updatedGenericsSpec);
                             ClassNode iNode = correctToGenericsSpecRecurse(updatedGenericsSpec, origInterface);
                             MethodNode found2 = getDeclaredMethodCorrected(updatedGenericsSpec, mn, iNode);
                             if (found2 != null) break outer;
@@ -207,7 +207,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
 
     private MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {
         for (MethodNode orig :  correctedNext.getDeclaredMethods(mn.getName())) {
-            MethodNode method = AbstractASTTransformation.correctToGenericsSpec(genericsSpec, orig);
+            MethodNode method = correctToGenericsSpec(genericsSpec, orig);
             if (parametersEqual(method.getParameters(), mn.getParameters())) {
                 return method;
             }
@@ -228,6 +228,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
         }
         return false;
     }
+
     /**
      * Resolve metadata and details of the annotation.
      *

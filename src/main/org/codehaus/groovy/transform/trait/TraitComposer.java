@@ -32,7 +32,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -135,8 +135,8 @@ public abstract class TraitComposer {
         boolean isTraitForceOverride = !trait.getAnnotations(Traits.FORCEOVERRIDE_CLASSNODE).isEmpty();
         ClassNode helperClassNode = helpers.getHelper();
         ClassNode fieldHelperClassNode = helpers.getFieldHelper();
-        Map genericsSpec = Verifier.createGenericsSpec(cNode, new HashMap());
-        genericsSpec = Verifier.createGenericsSpec(trait, genericsSpec);
+        Map genericsSpec = GenericsUtils.createGenericsSpec(cNode, new HashMap());
+        genericsSpec = GenericsUtils.createGenericsSpec(trait, genericsSpec);
 
         for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
             boolean isForceOverride = isTraitForceOverride || Traits.isForceOverride(methodNode);

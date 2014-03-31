@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.codehaus.groovy.ast.tools;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +28,7 @@ import java.util.Map;
  * Utility methods to deal with generic types.
  *
  * @author Cedric Champeau
+ * @author Paul King
  */
 public class GenericsUtils {
     public static final GenericsType[] EMPTY_GENERICS_ARRAY = new GenericsType[0];
@@ -227,5 +230,139 @@ public class GenericsUtils {
         }
         node.setGenericsTypes(types);
         return node;
+    }
+
+    public static ClassNode nonGeneric(ClassNode type) {
+        if (type.isUsingGenerics()) {
+            final ClassNode nonGen = ClassHelper.makeWithoutCaching(type.getName());
+            nonGen.setRedirect(type);
+            nonGen.setGenericsTypes(null);
+            nonGen.setUsingGenerics(false);
+            return nonGen;
+        }
+        if (type.isArray() && type.getComponentType().isUsingGenerics()) {
+            return type.getComponentType().getPlainNodeReference().makeArray();
+        }
+        return type;
+    }
+
+    public static ClassNode newClass(ClassNode type) {
+        return type.getPlainNodeReference();
+    }
+
+    public static ClassNode makeClassSafe0(ClassNode type, GenericsType... genericTypes) {
+        ClassNode plainNodeReference = newClass(type);
+        if (genericTypes != null && genericTypes.length > 0) plainNodeReference.setGenericsTypes(genericTypes);
+        return plainNodeReference;
+    }
+
+    public static ClassNode makeClassSafeWithGenerics(ClassNode type, GenericsType... genericTypes) {
+        if (type.isArray()) {
+            return makeClassSafeWithGenerics(type.getComponentType(), genericTypes).makeArray();
+        }
+        GenericsType[] gtypes = new GenericsType[0];
+        if (genericTypes != null) {
+            gtypes = new GenericsType[genericTypes.length];
+            System.arraycopy(genericTypes, 0, gtypes, 0, gtypes.length);
+        }
+        return makeClassSafe0(type, gtypes);
+    }
+
+    public static MethodNode correctToGenericsSpec(Map genericsSpec, MethodNode mn) {
+        ClassNode correctedType = correctToGenericsSpecRecurse(genericsSpec, mn.getReturnType());
+        Parameter[] origParameters = mn.getParameters();
+        Parameter[] newParameters = new Parameter[origParameters.length];
+        for (int i = 0; i < origParameters.length; i++) {
+            Parameter origParameter = origParameters[i];
+            newParameters[i] = new Parameter(correctToGenericsSpecRecurse(genericsSpec, origParameter.getType()), origParameter.getName(), origParameter.getInitialExpression());
+        }
+        return new MethodNode(mn.getName(), mn.getModifiers(), correctedType, newParameters, mn.getExceptions(), mn.getCode());
+    }
+
+    public static ClassNode correctToGenericsSpecRecurse(Map genericsSpec, ClassNode type) {
+        if (type.isGenericsPlaceHolder()) {
+            String name = type.getGenericsTypes()[0].getName();
+            type = (ClassNode) genericsSpec.get(name);
+        }
+        if (type == null) type = ClassHelper.OBJECT_TYPE;
+        GenericsType[] oldgTypes = type.getGenericsTypes();
+        GenericsType[] newgTypes = new GenericsType[0];
+        if (oldgTypes != null) {
+            newgTypes = new GenericsType[oldgTypes.length];
+            for (int i = 0; i < newgTypes.length; i++) {
+                GenericsType oldgType = oldgTypes[i];
+                if (oldgType.isPlaceholder() ) {
+                    if (genericsSpec.get(oldgType.getName())!=null) {
+                        newgTypes[i] = new GenericsType((ClassNode) genericsSpec.get(oldgType.getName()));
+                    } else {
+                        newgTypes[i] = new GenericsType(ClassHelper.OBJECT_TYPE);
+                    }
+                } else if (oldgType.isWildcard()) {
+                    ClassNode oldLower = oldgType.getLowerBound();
+                    ClassNode lower = oldLower!=null?correctToGenericsSpecRecurse(genericsSpec, oldLower):null;
+                    ClassNode[] oldUpper = oldgType.getUpperBounds();
+                    ClassNode[] upper = null;
+                    if (oldUpper!=null) {
+                        upper = new ClassNode[oldUpper.length];
+                        for (int j = 0; j < oldUpper.length; j++) {
+                            upper[j] = correctToGenericsSpecRecurse(genericsSpec,oldUpper[j]);
+                        }
+                    }
+                    GenericsType fixed = new GenericsType(oldgType.getType(), upper, lower);
+                    fixed.setWildcard(true);
+                    newgTypes[i] = fixed;
+                } else {
+                    newgTypes[i] = new GenericsType(correctToGenericsSpec(genericsSpec, oldgType));
+                }
+            }
+        }
+        return makeClassSafeWithGenerics(type, newgTypes);
+    }
+
+    public static ClassNode correctToGenericsSpec(Map genericsSpec, GenericsType type) {
+        ClassNode ret = null;
+        if (type.isPlaceholder()) {
+            String name = type.getName();
+            ret = (ClassNode) genericsSpec.get(name);
+        }
+        if (ret == null) ret = type.getType();
+        return ret;
+    }
+
+    public static ClassNode correctToGenericsSpec(Map genericsSpec, ClassNode type) {
+        if (type.isGenericsPlaceHolder()) {
+            String name = type.getGenericsTypes()[0].getName();
+            type = (ClassNode) genericsSpec.get(name);
+        }
+        if (type == null) type = ClassHelper.OBJECT_TYPE;
+        return type;
+    }
+
+    public static Map createGenericsSpec(ClassNode current, Map oldSpec) {
+        Map ret = new HashMap(oldSpec);
+        // ret contains the type specs, what we now need is the type spec for the
+        // current class. To get that we first apply the type parameters to the
+        // current class and then use the type names of the current class to reset
+        // the map. Example:
+        //   class A<V,W,X>{}
+        //   class B<T extends Number> extends A<T,Long,String> {}
+        // first we have:    T->Number
+        // we apply it to A<T,Long,String> -> A<Number,Long,String>
+        // resulting in:     V->Number,W->Long,X->String
+
+        GenericsType[] sgts = current.getGenericsTypes();
+        if (sgts != null) {
+            ClassNode[] spec = new ClassNode[sgts.length];
+            for (int i = 0; i < spec.length; i++) {
+                spec[i] = correctToGenericsSpec(ret, sgts[i]);
+            }
+            GenericsType[] newGts = current.redirect().getGenericsTypes();
+            if (newGts == null) return ret;
+            ret.clear();
+            for (int i = 0; i < spec.length; i++) {
+                ret.put(newGts[i].getName(), spec[i]);
+            }
+        }
+        return ret;
     }
 }
