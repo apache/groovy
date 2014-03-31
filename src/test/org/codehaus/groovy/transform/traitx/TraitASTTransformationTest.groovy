@@ -1138,7 +1138,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
     }
 
     void testSAMCoercionOfTraitOnMethod() {
-       /* assertScript '''
+        assertScript '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
                 abstract String bar()
@@ -1147,7 +1147,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
                 assert sam.foo() == 'hellohello'
             }
             test { 'hello' } // SAM coercion
-        '''*/
+        '''
         assertScript '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
@@ -1161,6 +1161,32 @@ assert phone.speak() == 'My name is Galaxy S3\''''
                 test { 'hello' } // SAM coercion
             }
             doTest()
+        '''
+    }
+
+    void testMethodMissingInTrait() {
+        assertScript '''
+            trait MethodMissingProvider {
+                def methodMissing(String name, args) {
+                    name
+                }
+            }
+            class Foo implements MethodMissingProvider {}
+            def foo = new Foo()
+            assert foo.bar() == 'bar'
+        '''
+    }
+
+    void testPropertyMissingInTrait() {
+        assertScript '''
+            trait PropertyMissingProvider {
+                def propertyMissing(String name) {
+                    name
+                }
+            }
+            class Foo implements PropertyMissingProvider {}
+            def foo = new Foo()
+            assert foo.bar == 'bar'
         '''
     }
 
