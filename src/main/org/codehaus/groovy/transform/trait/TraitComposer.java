@@ -155,7 +155,11 @@ public abstract class TraitComposer {
                 }
                 MethodNode existingMethod = cNode.getMethod(name, params);
                 if (!isForceOverride && (existingMethod != null || isExistingProperty(name, cNode, params))) {
-                    // override exists in the weaved class
+                    // override exists in the weaved class or any parent
+                    continue;
+                }
+                if (isForceOverride && cNode.getDeclaredMethod(name, params)!=null) {
+                    // override exists in the weaved class itself
                     continue;
                 }
                 ClassNode[] exceptionNodes = new ClassNode[exceptions == null ? 0 : exceptions.length];

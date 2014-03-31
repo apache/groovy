@@ -1190,6 +1190,21 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    void testForceOverrideShouldNotBeAppliedIfMethodDefinedInClass() {
+        assertScript '''import groovy.transform.ForceOverride
+
+            trait TestTrait {
+                @ForceOverride
+                String foo() { 'from Trait' }
+            }
+            class Bar implements TestTrait {
+                String foo() { 'from Bar' }
+            }
+            def b = new Bar()
+            assert b.foo() == 'from Bar'
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }
