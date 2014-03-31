@@ -92,19 +92,28 @@ public abstract class TraitComposer {
         }
     }
 
-    private static void collectAllInterfaces(ClassNode cNode, LinkedHashSet<ClassNode> interfaces) {
+    /**
+     * Collects all interfaces of a class node, but reverses the order of the declaration of direct interfaces
+     * of this class node. This is used to make sure a trait implementing A,B where both A and B have the same
+     * method will take the method from B (latest), aligning the behavior with categories.
+     * @param cNode a class node
+     * @param interfaces ordered set of interfaces
+     */
+    private static void collectAllInterfacesReverseOrder(ClassNode cNode, LinkedHashSet<ClassNode> interfaces) {
         if (cNode.isInterface())
             interfaces.add(cNode);
 
-        for (ClassNode anInterface : cNode.getInterfaces()) {
+        ClassNode[] directInterfaces = cNode.getInterfaces();
+        for (int i = directInterfaces.length-1; i >=0 ; i--) {
+            final ClassNode anInterface = directInterfaces[i];
             interfaces.add(anInterface);
-            collectAllInterfaces(anInterface, interfaces);
+            collectAllInterfacesReverseOrder(anInterface, interfaces);
         }
     }
 
     private static List<ClassNode> findTraits(ClassNode cNode) {
         LinkedHashSet<ClassNode> interfaces = new LinkedHashSet<ClassNode>();
-        collectAllInterfaces(cNode, interfaces);
+        collectAllInterfacesReverseOrder(cNode, interfaces);
         List<ClassNode> traits = new LinkedList<ClassNode>();
         for (ClassNode candidate : interfaces) {
             if (Traits.isAnnotatedWithTrait(candidate)) {

@@ -381,7 +381,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
             class AB implements A,B {
             }
             def x = new AB()
-            assert x.foo() == 1 // default order, A is first
+            assert x.foo() == 2 // default order, B is first
             '''
 
             assertScript '''
@@ -394,7 +394,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
             class AB implements B,A {
             }
             def x = new AB()
-            assert x.foo() == 2 // default order, B is first
+            assert x.foo() == 1 // default order, A is first
             '''
 
             assertScript '''
@@ -406,11 +406,11 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
             }
             class AB implements A,B {
                 int foo() {
-                    B.super.foo() // explicit take of B
+                    A.super.foo() // explicit use of A
                 }
             }
             def x = new AB()
-            assert x.foo() == 2
+            assert x.foo() == 1
             '''
 
             assertScript '''
