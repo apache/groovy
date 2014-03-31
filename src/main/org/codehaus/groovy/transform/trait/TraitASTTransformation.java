@@ -68,12 +68,12 @@ public class TraitASTTransformation extends AbstractASTTransformation {
     public void visit(ASTNode[] nodes, SourceUnit source) {
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode anno = (AnnotationNode) nodes[0];
-        if (!TraitConstants.TRAIT_CLASSNODE.equals(anno.getClassNode())) return;
+        if (!Traits.TRAIT_CLASSNODE.equals(anno.getClassNode())) return;
         unit = source;
         init(nodes, source);
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
-            checkNotInterface(cNode, TraitConstants.TRAIT_TYPE_NAME);
+            checkNotInterface(cNode, Traits.TRAIT_TYPE_NAME);
             checkNoConstructor(cNode);
             replaceExtendsByImplements(cNode);
             createHelperClass(cNode);
@@ -82,7 +82,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
 
     private void replaceExtendsByImplements(final ClassNode cNode) {
         ClassNode superClass = cNode.getSuperClass();
-        if (TraitConstants.isTrait(superClass)) {
+        if (Traits.isTrait(superClass)) {
             // move from super class to interface;
             cNode.setSuperClass(ClassHelper.OBJECT_TYPE);
             cNode.addInterface(superClass);
@@ -111,7 +111,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
     private void createHelperClass(final ClassNode cNode) {
         ClassNode helper = new InnerClassNode(
                 cNode,
-                TraitConstants.helperClassName(cNode),
+                Traits.helperClassName(cNode),
                 ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_SYNTHETIC,
                 ClassHelper.OBJECT_TYPE,
                 ClassNode.EMPTY_ARRAY,
@@ -122,10 +122,10 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         checkInnerClasses(cNode);
 
         MethodNode initializer = new MethodNode(
-                TraitConstants.STATIC_INIT_METHOD,
+                Traits.STATIC_INIT_METHOD,
                 ACC_STATIC | ACC_PUBLIC | ACC_SYNTHETIC,
                 ClassHelper.VOID_TYPE,
-                new Parameter[]{new Parameter(cNode.getPlainNodeReference(), TraitConstants.THIS_OBJECT)},
+                new Parameter[]{new Parameter(cNode.getPlainNodeReference(), Traits.THIS_OBJECT)},
                 ClassNode.EMPTY_ARRAY,
                 new BlockStatement()
         );
@@ -148,7 +148,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         if (!fields.isEmpty()) {
             fieldHelper = new InnerClassNode(
                     cNode,
-                    TraitConstants.fieldHelperClassName(cNode),
+                    Traits.fieldHelperClassName(cNode),
                     ACC_STATIC | ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT,
                     ClassHelper.OBJECT_TYPE
             );
@@ -175,6 +175,17 @@ public class TraitASTTransformation extends AbstractASTTransformation {
 
         // clear properties to avoid generation of methods
         cNode.getProperties().clear();
+
+        // copy annotations
+        List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
+        List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
+        copyAnnotatedNodeAnnotations(cNode, copied, notCopied);
+        if (!notCopied.isEmpty()) {
+            for (AnnotationNode node : notCopied) {
+                unit.addError(new SyntaxException("Annotation not supported onto traits", node.getLineNumber(), node.getColumnNumber()));
+            }
+        }
+        helper.addAnnotations(copied);
 
         fields = new ArrayList<FieldNode>(cNode.getFields()); // reuse the full list of fields
         for (FieldNode field : fields) {
@@ -299,7 +310,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
             BlockStatement code = (BlockStatement) initializer.getCode();
             MethodCallExpression mce = new MethodCallExpression(
                     new CastExpression(fieldHelper, thisObject),
-                    TraitConstants.helperSetterName(field),
+                    Traits.helperSetterName(field),
                     initialExpression
             );
             mce.setImplicitThis(false);
@@ -308,7 +319,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         }
         // define setter/getter helper methods
         fieldHelper.addMethod(
-                TraitConstants.helperSetterName(field),
+                Traits.helperSetterName(field),
                 ACC_PUBLIC | ACC_ABSTRACT,
                 ClassHelper.VOID_TYPE,
                 new Parameter[]{new Parameter(field.getOriginType(), "val")},
@@ -316,7 +327,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 null
         );
         fieldHelper.addMethod(
-                TraitConstants.helperGetterName(field),
+                Traits.helperGetterName(field),
                 ACC_PUBLIC | ACC_ABSTRACT,
                 field.getOriginType(),
                 Parameter.EMPTY_ARRAY,
@@ -328,7 +339,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
     private MethodNode processMethod(final ClassNode traitClass, final MethodNode methodNode, final ClassNode fieldHelper, final Collection<String> knownFields) {
         Parameter[] initialParams = methodNode.getParameters();
         Parameter[] newParams = new Parameter[initialParams.length + 1];
-        newParams[0] = new Parameter(traitClass.getPlainNodeReference(), TraitConstants.THIS_OBJECT);
+        newParams[0] = new Parameter(traitClass.getPlainNodeReference(), Traits.THIS_OBJECT);
         System.arraycopy(initialParams, 0, newParams, 1, initialParams.length);
         MethodNode mNode = new MethodNode(
                 methodNode.getName(),
@@ -344,6 +355,8 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         mNode.addAnnotations(copied);
         if (methodNode.isAbstract()) {
             mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
+        } else {
+            methodNode.addAnnotation(new AnnotationNode(Traits.IMPLEMENTED_CLASSNODE));
         }
         methodNode.setCode(null);
 

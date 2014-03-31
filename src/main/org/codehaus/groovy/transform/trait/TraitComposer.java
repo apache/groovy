@@ -16,7 +16,6 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.transform.CompileStatic;
-import groovy.transform.ForceOverride;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -64,7 +63,7 @@ public abstract class TraitComposer {
      */
     private static final Comparator<MethodNode> GETTER_FIRST_COMPARATOR = new Comparator<MethodNode>() {
         public int compare(final MethodNode o1, final MethodNode o2) {
-            if (o1.getName().endsWith(TraitConstants.DIRECT_GETTER_SUFFIX)) return -1;
+            if (o1.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) return -1;
             return 1;
         }
     };
@@ -77,16 +76,16 @@ public abstract class TraitComposer {
      * @param unit the source unit
      */
     public static void doExtendTraits(final ClassNode cNode, final SourceUnit unit) {
-        boolean isItselfTrait = TraitConstants.isTrait(cNode);
+        boolean isItselfTrait = Traits.isTrait(cNode);
         SuperCallTraitTransformer superCallTransformer = new SuperCallTraitTransformer(unit);
         if (isItselfTrait) {
             checkTraitAllowed(cNode, unit);
             return;
         }
-        if (!cNode.getNameWithoutPackage().endsWith(TraitConstants.TRAIT_HELPER)) {
+        if (!cNode.getNameWithoutPackage().endsWith(Traits.TRAIT_HELPER)) {
             List<ClassNode> traits = findTraits(cNode);
             for (ClassNode trait : traits) {
-                TraitHelpersTuple helpers = TraitConstants.findHelpers(trait);
+                TraitHelpersTuple helpers = Traits.findHelpers(trait);
                 applyTrait(trait, cNode, helpers);
                 superCallTransformer.visitClass(cNode);
             }
@@ -108,7 +107,7 @@ public abstract class TraitComposer {
         collectAllInterfaces(cNode, interfaces);
         List<ClassNode> traits = new LinkedList<ClassNode>();
         for (ClassNode candidate : interfaces) {
-            if (TraitConstants.isAnnotatedWithTrait(candidate)) {
+            if (Traits.isAnnotatedWithTrait(candidate)) {
                 traits.add(candidate);
             }
         }
@@ -118,20 +117,20 @@ public abstract class TraitComposer {
     private static void checkTraitAllowed(final ClassNode bottomTrait, final SourceUnit unit) {
         ClassNode superClass = bottomTrait.getSuperClass();
         if (superClass==null || ClassHelper.OBJECT_TYPE.equals(superClass)) return;
-        if (!TraitConstants.isTrait(superClass)) {
+        if (!Traits.isTrait(superClass)) {
             unit.addError(new SyntaxException("A trait can only inherit from another trait", superClass.getLineNumber(), superClass.getColumnNumber()));
         }
     }
 
     private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers) {
-        boolean isTraitForceOverride = !trait.getAnnotations(TraitConstants.FORCEOVERRIDE_CLASSNODE).isEmpty();
+        boolean isTraitForceOverride = !trait.getAnnotations(Traits.FORCEOVERRIDE_CLASSNODE).isEmpty();
         ClassNode helperClassNode = helpers.getHelper();
         ClassNode fieldHelperClassNode = helpers.getFieldHelper();
         Map genericsSpec = Verifier.createGenericsSpec(cNode, new HashMap());
         genericsSpec = Verifier.createGenericsSpec(trait, genericsSpec);
 
         for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
-            boolean isForceOverride = isTraitForceOverride || TraitConstants.isForceOverride(methodNode);
+            boolean isForceOverride = isTraitForceOverride || Traits.isForceOverride(methodNode);
             String name = methodNode.getName();
             int access = methodNode.getModifiers();
             Parameter[] argumentTypes = methodNode.getParameters();
@@ -183,7 +182,7 @@ public abstract class TraitComposer {
         cNode.addObjectInitializerStatements(new ExpressionStatement(
                 new MethodCallExpression(
                         new ClassExpression(helperClassNode),
-                        TraitConstants.STATIC_INIT_METHOD,
+                        Traits.STATIC_INIT_METHOD,
                         new ArgumentListExpression(new VariableExpression("this")))
         ));
         if (fieldHelperClassNode != null) {
@@ -194,7 +193,7 @@ public abstract class TraitComposer {
             Collections.sort(declaredMethods, GETTER_FIRST_COMPARATOR);
             for (MethodNode methodNode : declaredMethods) {
                 String fieldName = methodNode.getName();
-                if (fieldName.endsWith(TraitConstants.DIRECT_GETTER_SUFFIX) || fieldName.endsWith(TraitConstants.DIRECT_SETTER_SUFFIX)) {
+                if (fieldName.endsWith(Traits.DIRECT_GETTER_SUFFIX) || fieldName.endsWith(Traits.DIRECT_SETTER_SUFFIX)) {
                     int suffixIdx = fieldName.lastIndexOf("$");
                     fieldName = fieldName.substring(0, suffixIdx);
                     String operation = methodNode.getName().substring(suffixIdx + 1);
@@ -202,7 +201,7 @@ public abstract class TraitComposer {
                     ClassNode returnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, methodNode.getReturnType());
                     if (getter) {
                         // add field
-                        cNode.addField(TraitConstants.remappedFieldName(trait, fieldName), Opcodes.ACC_PRIVATE, returnType, null);
+                        cNode.addField(Traits.remappedFieldName(trait, fieldName), Opcodes.ACC_PRIVATE, returnType, null);
                     }
                     Parameter[] newParams;
                     if (getter) {
@@ -213,7 +212,7 @@ public abstract class TraitComposer {
                         newParams = new Parameter[]{new Parameter(fixedType, "val")};
                     }
 
-                    Expression fieldExpr = new VariableExpression(cNode.getField(TraitConstants.remappedFieldName(trait, fieldName)));
+                    Expression fieldExpr = new VariableExpression(cNode.getField(Traits.remappedFieldName(trait, fieldName)));
                     Statement body =
                             getter ? new ReturnStatement(fieldExpr) :
                                     new ExpressionStatement(

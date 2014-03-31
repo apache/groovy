@@ -21,13 +21,13 @@ import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 
 import groovy.transform.Trait;
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.transform.trait.TraitConstants;
+import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.tools.GroovyClass;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.*;
 
 import java.lang.annotation.Annotation;
@@ -186,7 +186,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             return superClass;
         }
         Class result = Object.class;
-        Set<String> traits = new LinkedHashSet<String>();
+        Set<ClassNode> traits = new LinkedHashSet<ClassNode>();
         // check if it's a trait
         collectTraits(superClass, traits);
         if (interfaces!=null) {
@@ -196,15 +196,21 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         if (!traits.isEmpty()) {
             String name = superClass.getName() + "$TraitAdapter";
-            result = loader.parseClass("abstract class "+name+" implements "+DefaultGroovyMethods.join((Iterable)traits,",")+" {}");
+            ClassNode cn = new ClassNode(name, ACC_PUBLIC | ACC_ABSTRACT, ClassHelper.OBJECT_TYPE, traits.toArray(new ClassNode[traits.size()]), null);
+            CompilationUnit cu = new CompilationUnit(loader);
+            cu.addClassNode(cn);
+            cu.compile(Phases.CLASS_GENERATION);
+            @SuppressWarnings("unchecked")
+            List<GroovyClass> classes = (List<GroovyClass>) cu.getClasses();
+            result = loader.defineClass(name,classes.get(0).getBytes());
         }
         return result;
     }
 
-    private void collectTraits(final Class superClass, final Set<String> traits) {
-        Annotation annotation = superClass.getAnnotation(Trait.class);
+    private void collectTraits(final Class clazz, final Set<ClassNode> traits) {
+        Annotation annotation = clazz.getAnnotation(Trait.class);
         if (annotation!=null) {
-            traits.add(superClass.getName());
+            traits.add(ClassHelper.make(clazz));
         }
     }
 
@@ -254,7 +260,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     }
 
     private static boolean shouldOverrideMethod(final Class delegateClass, final Method method) {
-        return (TraitConstants.isForceOverride(method) || !isImplemented(delegateClass, method.getName(), Type.getMethodDescriptor(method)));
+        return (Traits.isForceOverride(method) || !isImplemented(delegateClass, method.getName(), Type.getMethodDescriptor(method)));
     }
 
     private static List<Method> getInheritedMethods(Class baseClass, List<Method> methods) {

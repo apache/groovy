@@ -1114,6 +1114,56 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    void testSAMCoercionOfTraitOnAssignment() {
+        assertScript '''
+            trait SAMTrait {
+                String foo() { bar()+bar() }
+                abstract String bar()
+            }
+            SAMTrait sam = { 'hello' }
+            assert sam.foo() == 'hellohello'
+        '''
+
+        assertScript '''
+            trait SAMTrait {
+                String foo() { bar()+bar() }
+                abstract String bar()
+            }
+            @groovy.transform.CompileStatic
+            void test() {
+                SAMTrait sam = { 'hello' }
+                assert sam.foo() == 'hellohello'
+            }
+        '''
+    }
+
+    void testSAMCoercionOfTraitOnMethod() {
+       /* assertScript '''
+            trait SAMTrait {
+                String foo() { bar()+bar() }
+                abstract String bar()
+            }
+            void test(SAMTrait sam) {
+                assert sam.foo() == 'hellohello'
+            }
+            test { 'hello' } // SAM coercion
+        '''*/
+        assertScript '''
+            trait SAMTrait {
+                String foo() { bar()+bar() }
+                abstract String bar()
+            }
+            void test(SAMTrait sam) {
+                assert sam.foo() == 'hellohello'
+            }
+            @groovy.transform.CompileStatic
+            void doTest() {
+                test { 'hello' } // SAM coercion
+            }
+            doTest()
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

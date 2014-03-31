@@ -24,7 +24,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.ClassNodeResolver.LookupResult;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.transform.trait.TraitConstants;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Retention;
@@ -814,11 +814,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         ClassNode type = expression.getObjectExpression().getType();
         if (expression.getObjectExpression() instanceof ClassExpression) {
-            if (!(currentClass instanceof InnerClassNode) && !TraitConstants.isTrait(type)) {
+            if (!(currentClass instanceof InnerClassNode) && !Traits.isTrait(type)) {
                 addError("The usage of 'Class.this' and 'Class.super' is only allowed in nested/inner classes.", expression);
                 return;
             }
-            if (!currentScope.isInStaticContext() && TraitConstants.isTrait(type) && "super".equals(prop) && directlyImplementsTrait(type)) {
+            if (!currentScope.isInStaticContext() && Traits.isTrait(type) && "super".equals(prop) && directlyImplementsTrait(type)) {
                 return;
             }
             ClassNode iterType = currentClass;

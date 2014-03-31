@@ -88,7 +88,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 if (leftFieldName!=null) {
                     MethodCallExpression mce = new MethodCallExpression(
                             new CastExpression(fieldHelper,weaved),
-                            leftFieldName + TraitConstants.DIRECT_SETTER_SUFFIX,
+                            leftFieldName + Traits.DIRECT_SETTER_SUFFIX,
                             new ArgumentListExpression(super.transform(rightExpression))
                     );
                     mce.setSourcePosition(exp);
@@ -124,7 +124,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         } else if (exp instanceof FieldExpression) {
             MethodCallExpression mce = new MethodCallExpression(
                     new CastExpression(fieldHelper,weaved),
-                    TraitConstants.helperGetterName(((FieldExpression) exp).getField()),
+                    Traits.helperGetterName(((FieldExpression) exp).getField()),
                     ArgumentListExpression.EMPTY_ARGUMENTS
             );
             mce.setSourcePosition(exp);
@@ -136,7 +136,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             if (accessedVariable instanceof FieldNode) {
                 MethodCallExpression mce = new MethodCallExpression(
                         new CastExpression(fieldHelper,weaved),
-                        TraitConstants.helperGetterName((FieldNode) accessedVariable),
+                        Traits.helperGetterName((FieldNode) accessedVariable),
                         ArgumentListExpression.EMPTY_ARGUMENTS
                 );
                 mce.setSourcePosition(exp);
@@ -165,7 +165,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 if (knownFields.contains(propName)) {
                     MethodCallExpression mce = new MethodCallExpression(
                             new CastExpression(fieldHelper,weaved),
-                            propName + TraitConstants.DIRECT_GETTER_SUFFIX,
+                            propName + Traits.DIRECT_GETTER_SUFFIX,
                             ArgumentListExpression.EMPTY_ARGUMENTS
                     );
                     mce.setSourcePosition(exp);

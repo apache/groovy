@@ -61,7 +61,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
         Expression objectExpression = transform(exp.getObjectExpression());
         ClassNode traitReceiver = objectExpression.getNodeMetaData(SuperCallTraitTransformer.class);
         if (traitReceiver!=null) {
-            TraitHelpersTuple helpers = TraitConstants.findHelpers(traitReceiver);
+            TraitHelpersTuple helpers = Traits.findHelpers(traitReceiver);
             // (SomeTrait.super).foo() --> SomeTrait$Helper.foo(this)
             ClassExpression receiver = new ClassExpression(
                     helpers.getHelper()
@@ -95,7 +95,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
         Expression objectExpression = expression.getObjectExpression();
         ClassNode type = objectExpression.getType();
         if (objectExpression instanceof ClassExpression) {
-            if (TraitConstants.isTrait(type) && "super".equals(expression.getPropertyAsString())) {
+            if (Traits.isTrait(type) && "super".equals(expression.getPropertyAsString())) {
                 // SomeTrait.super --> annotate to recognize later
                 expression.putNodeMetaData(SuperCallTraitTransformer.class, type);
             }

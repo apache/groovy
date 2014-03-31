@@ -19,6 +19,7 @@ package org.codehaus.groovy.ast;
 import groovy.lang.*;
 
 import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ManagedConcurrentMap;
 import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -398,6 +399,8 @@ public class ClassHelper {
             for (MethodNode mi : methods) {
                 // ignore methods, that are not abstract and from Object
                 if (!Modifier.isAbstract(mi.getModifiers())) continue;
+                // ignore trait methods which have a default implementation
+                if (Traits.hasDefaultImplementation(mi)) continue;
                 if (mi.getDeclaringClass().equals(OBJECT_TYPE)) continue;
                 if (OBJECT_TYPE.getDeclaredMethod(mi.getName(), mi.getParameters())!=null) continue;
 

@@ -25,14 +25,26 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 
-public abstract class TraitConstants {
+/**
+ * A collection of utility methods used to deal with traits.
+ *
+ * @author Cédric Champeau
+ * @since 2.3.0
+ */
+public abstract class Traits {
     public static final ClassNode FORCEOVERRIDE_CLASSNODE = ClassHelper.make(ForceOverride.class);
-    static final Class TRAIT_CLASS = Trait.class;
-    static final ClassNode TRAIT_CLASSNODE = ClassHelper.make(TRAIT_CLASS);
+    public static final ClassNode IMPLEMENTED_CLASSNODE = ClassHelper.make(Implemented.class);
+    public static final Class TRAIT_CLASS = Trait.class;
+    public static final ClassNode TRAIT_CLASSNODE = ClassHelper.make(TRAIT_CLASS);
+
     static final String TRAIT_TYPE_NAME = "@" + TRAIT_CLASSNODE.getNameWithoutPackage();
     static final String TRAIT_HELPER = "$Trait$Helper";
     static final String FIELD_HELPER = "$Trait$FieldHelper";
@@ -69,9 +81,9 @@ public abstract class TraitConstants {
             // trait defined in same source unit
             while (innerClasses.hasNext()) {
                 ClassNode icn = innerClasses.next();
-                if (icn.getName().endsWith(TraitConstants.FIELD_HELPER)) {
+                if (icn.getName().endsWith(Traits.FIELD_HELPER)) {
                     fieldHelperClassNode = icn;
-                } else if (icn.getName().endsWith(TraitConstants.TRAIT_HELPER)) {
+                } else if (icn.getName().endsWith(Traits.TRAIT_HELPER)) {
                     helperClassNode = icn;
                 }
             }
@@ -79,10 +91,10 @@ public abstract class TraitConstants {
             // precompiled trait
             try {
                 final ClassLoader classLoader = trait.getTypeClass().getClassLoader();
-                String helperClassName = TraitConstants.helperClassName(trait);
+                String helperClassName = Traits.helperClassName(trait);
                 helperClassNode = ClassHelper.make(classLoader.loadClass(helperClassName));
                 try {
-                    fieldHelperClassNode = ClassHelper.make(classLoader.loadClass(TraitConstants.fieldHelperClassName(trait)));
+                    fieldHelperClassNode = ClassHelper.make(classLoader.loadClass(Traits.fieldHelperClassName(trait)));
                 } catch (ClassNotFoundException e) {
                     // not a problem, the field helper may be absent
                 }
@@ -93,24 +105,71 @@ public abstract class TraitConstants {
         return new TraitHelpersTuple(helperClassNode,  fieldHelperClassNode);
     }
 
+    /**
+     * Returns true if the specified class node is a trait.
+     * @param cNode a class node to test
+     * @return true if the classnode represents a trait
+     */
     public static boolean isTrait(final ClassNode cNode) {
         return cNode!=null
                 && ((cNode.isInterface() && !cNode.getAnnotations(TRAIT_CLASSNODE).isEmpty())
                     || isAnnotatedWithTrait(cNode));
     }
 
+    /**
+     * Returns true if the specified class is a trait.
+     * @param clazz a class to test
+     * @return true if the classnode represents a trait
+     */
+    public static boolean isTrait(final Class clazz) {
+        return clazz!=null && clazz.getAnnotation(Trait.class)!=null;
+    }
+
+
+    /**
+     * Returns true if the specified class node is annotated with the {@link Trait} interface.
+     * @param cNode a class node
+     * @return true if the specified class node is annotated with the {@link Trait} interface.
+     */
     public static boolean isAnnotatedWithTrait(final ClassNode cNode) {
-        List<AnnotationNode> traitAnn = cNode.getAnnotations(TraitConstants.TRAIT_CLASSNODE);
+        List<AnnotationNode> traitAnn = cNode.getAnnotations(Traits.TRAIT_CLASSNODE);
         return traitAnn != null && !traitAnn.isEmpty();
     }
 
+    /**
+     * Returns true if the specified method node is annotated with {@link ForceOverride}
+     * @param methodNode a method node
+     * @return  true if the specified method node is annotated with {@link ForceOverride}
+     */
     public static boolean isForceOverride(final MethodNode methodNode) {
         return !methodNode.getAnnotations(FORCEOVERRIDE_CLASSNODE).isEmpty()
                 || !methodNode.getDeclaringClass().getAnnotations(FORCEOVERRIDE_CLASSNODE).isEmpty();
     }
 
+    /**
+     * Returns true if the specified method is annotated with {@link ForceOverride}
+     * @param methodNode a method
+     * @return  true if the specified method is annotated with {@link ForceOverride}
+     */
     public static boolean isForceOverride(final Method methodNode) {
         return methodNode.getAnnotation(ForceOverride.class)!=null ||
                 methodNode.getDeclaringClass().getAnnotation(ForceOverride.class)!=null ;
     }
+
+    /**
+     * Indicates whether a method in a trait interface has a default implementation.
+     * @param method a method node
+     * @return true if the method has a default implementation in the trait
+     */
+    public static boolean hasDefaultImplementation(final MethodNode method) {
+        return !method.getAnnotations(IMPLEMENTED_CLASSNODE).isEmpty();
+    }
+
+    /**
+     * Internal annotation used to indicate which methods in a trait interface have a
+     * default implementation.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public static @interface Implemented {}
 }
