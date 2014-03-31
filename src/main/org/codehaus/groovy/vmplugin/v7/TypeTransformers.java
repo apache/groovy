@@ -29,12 +29,14 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.transform.trait.Traits;
 
 /**
  * This class contains several transformers for used during method invocation.
@@ -45,7 +47,7 @@ public class TypeTransformers {
     private static final MethodHandle 
         TO_STRING, TO_BYTE,   TO_INT,     TO_LONG,    TO_SHORT,
         TO_FLOAT,  TO_DOUBLE, TO_BIG_INT, TO_BIG_DEC, AS_ARRAY,
-        TO_REFLECTIVE_PROXY, TO_GENERATED_PROXY;
+        TO_REFLECTIVE_PROXY, TO_GENERATED_PROXY, TO_SAMTRAIT_PROXY;
     static {
         try {
             TO_STRING   = LOOKUP.findVirtual(Object.class, "toString",      MethodType.methodType(String.class));
@@ -80,16 +82,30 @@ public class TypeTransformers {
             // execute fold:
             TO_REFLECTIVE_PROXY = MethodHandles.foldArguments(tmp, newConvertedClosure.asType(newConvertedClosure.type().changeReturnType(InvocationHandler.class)));
 
-            // generated proxy using a map to store the closure
-            MethodHandle map = LOOKUP.findStatic(Collections.class, "singletonMap", 
-                    MethodType.methodType(Map.class, Object.class, Object.class));
-            newProxyInstance = LOOKUP.findVirtual(ProxyGenerator.class, "instantiateAggregateFromBaseClass",
-                    MethodType.methodType(GroovyObject.class, Map.class, Class.class));
-            newOrder = newProxyInstance.type().dropParameterTypes(1, 2);
-            newOrder = newOrder.insertParameterTypes(0, Map.class, Object.class, Object.class);
-            tmp = MethodHandles.permuteArguments(newProxyInstance, newOrder, 3, 0, 4);
-            tmp = MethodHandles.foldArguments(tmp, map);
-            TO_GENERATED_PROXY = tmp;
+            {
+                // generated proxy using a map to store the closure
+                MethodHandle map = LOOKUP.findStatic(Collections.class, "singletonMap",
+                        MethodType.methodType(Map.class, Object.class, Object.class));
+                newProxyInstance = LOOKUP.findVirtual(ProxyGenerator.class, "instantiateAggregateFromBaseClass",
+                        MethodType.methodType(GroovyObject.class, Map.class, Class.class));
+                newOrder = newProxyInstance.type().dropParameterTypes(1, 2);
+                newOrder = newOrder.insertParameterTypes(0, Map.class, Object.class, Object.class);
+                tmp = MethodHandles.permuteArguments(newProxyInstance, newOrder, 3, 0, 4);
+                tmp = MethodHandles.foldArguments(tmp, map);
+                TO_GENERATED_PROXY = tmp;
+            }
+            {
+                // Trait SAM coercion generated proxy using a map to store the closure
+                MethodHandle map = LOOKUP.findStatic(Collections.class, "singletonMap",
+                        MethodType.methodType(Map.class, Object.class, Object.class));
+                newProxyInstance = LOOKUP.findVirtual(ProxyGenerator.class, "instantiateAggregate",
+                        MethodType.methodType(GroovyObject.class,Map.class, List.class));
+                newOrder = newProxyInstance.type().dropParameterTypes(1, 2);
+                newOrder = newOrder.insertParameterTypes(0, Map.class, Object.class, Object.class);
+                tmp = MethodHandles.permuteArguments(newProxyInstance, newOrder, 3, 0, 4);
+                tmp = MethodHandles.foldArguments(tmp, map);
+                TO_SAMTRAIT_PROXY = tmp;
+            }
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }
@@ -124,6 +140,19 @@ public class TypeTransformers {
         if (method == null) return null;
         // TODO: have to think about how to optimize this!
         if (parameter.isInterface()) {
+            if (Traits.isTrait(parameter)) {
+                // the following code will basically do this:
+                // Map<String,Closure> impl = Collections.singletonMap(method.getName(),arg);
+                // return ProxyGenerator.INSTANCE.instantiateAggregate(impl,Collections.singletonList(clazz));
+                // TO_SAMTRAIT_PROXY is a handle (Object,Object,ProxyGenerator,Class)GroovyObject
+                // where the second object is the input closure, everything else
+                // needs to be provide and is in remaining order: method name,
+                // ProxyGenerator.INSTANCE and singletonList(parameter)
+                MethodHandle ret = TO_SAMTRAIT_PROXY;
+                ret = MethodHandles.insertArguments(ret, 2, ProxyGenerator.INSTANCE, Collections.singletonList(parameter));
+                ret = MethodHandles.insertArguments(ret, 0, method.getName());
+                return ret;
+            }
             // the following code will basically do this:
             // return Proxy.newProxyInstance(
             //        arg.getClass().getClassLoader(),
