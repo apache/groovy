@@ -1005,7 +1005,9 @@ public abstract class StaticTypeCheckingSupport {
                         // (2) last argument is put in the vargs array
                         //      that case is handled above already
                         // (3) there is more than one argument for the vargs array
-                        dist += excessArgumentsMatchesVargsParameter(params, safeArgs);
+                        int excessArgumentsDistance = excessArgumentsMatchesVargsParameter(params, safeArgs);
+                        if (excessArgumentsDistance < 0) continue;
+                        dist += excessArgumentsDistance;
                         if (dist >= 0 && !actualReceiverForDistance.equals(declaringClassForDistance)) dist+=getDistance(actualReceiverForDistance, declaringClassForDistance);
                         // varargs methods must not be preferred to methods without varargs
                         // for example :
