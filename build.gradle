@@ -1,6 +1,7 @@
 
 apply plugin: 'groovy'
 apply plugin: 'application'
+apply plugin: 'base'
 
 version = '1.0'
 
@@ -10,20 +11,43 @@ task wrapper(type: Wrapper) {
     gradleVersion = '1.9'
 }
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.antlr:antlr4:4.2.1' // For antlr task.
+    }
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compile 'org.antlr:antlr4:4.2.1'
     runtime 'org.antlr:antlr4-runtime:4.2.1'
 
     compile 'org.codehaus.groovy:groovy-all:2.2.2'
 
-    compile 'com.thoughtworks.xstream:xstream:1.4.7' // For saveAsXML method in SourceUnit
+    compile 'com.thoughtworks.xstream:xstream:1.4.7' // For saveAsXML method in SourceUnit.
 
     testCompile 'org.spockframework:spock-core:0.7-groovy-2.0'
 }
 
-sourceSets.main.groovy.srcDirs = ['src']
+sourceSets.main.groovy.srcDirs = ['src', 'gen']
 sourceSets.test.groovy.srcDirs = ['test']
+
+// Setup antlr task
+def antlrOutputDir = file('gen/com/xseagullx/groovy/gsoc')
+def antlrInputFile = file('src/com/xseagullx/groovy/gsoc/groovy.g4')
+
+task antlr << {
+    org.antlr.v4.Tool.main(antlrInputFile.absolutePath, '-o', antlrOutputDir.absolutePath, '-package', 'com.xseagullx.groovy.gsoc')
+}
+antlr.outputs.dir antlrOutputDir
+antlr.inputs.file antlrInputFile
+
+// Setup antlr dependencies
+clean.dependsOn tasks.getByPath('cleanAntlr')
+classes.dependsOn antlr
+
