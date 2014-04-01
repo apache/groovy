@@ -16,6 +16,7 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.Binding;
+
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -30,6 +31,8 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 
 /**
@@ -373,8 +376,18 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     protected String extractClassFromFileDescription() {
-        // let's strip off everything after the last '.'
         String answer = getDescription();
+        try {
+            URI uri = new URI(answer);
+            String path = uri.getPath();
+            String schemeSpecific = uri.getSchemeSpecificPart();
+            if (path!=null) {
+                answer = path;
+            } else if (schemeSpecific!=null) {
+                answer = schemeSpecific;
+            }
+        } catch (URISyntaxException e) {}
+        // let's strip off everything after the last '.'
         int slashIdx = answer.lastIndexOf('/');
         int separatorIdx = answer.lastIndexOf(File.separatorChar);
         int dotIdx = answer.lastIndexOf('.');
