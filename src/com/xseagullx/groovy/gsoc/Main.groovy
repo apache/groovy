@@ -1,8 +1,80 @@
 
 package com.xseagullx.groovy.gsoc
 
+import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.ErrorCollector
+import org.codehaus.groovy.control.SourceUnit
+
+enum Configuration {
+    OLD,
+    NEW,
+}
+
 class Main {
+
+    private CompilerConfiguration configuration
+
+    Main(Configuration configuration) {
+        assert configuration
+        if (configuration == Configuration.OLD)
+            this.configuration = CompilerConfiguration.DEFAULT
+        else {
+            this.configuration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
+            this.configuration.pluginFactory = new Antlrv4PluginFactory()
+        }
+    }
+
     public static void main(String[] args) {
         println("GSoC started!")
+
+        if (args.size() != 2) {
+            displayHelp()
+            return
+        }
+
+        def configurationFlag = args[1]
+        Configuration configuration
+        if (configurationFlag == '-o')
+            configuration = Configuration.OLD
+        else if (configurationFlag == '-n')
+            configuration = Configuration.NEW
+        else
+            throw new RuntimeException("Unrecognized option: $configurationFlag. Use -o or -n.")
+
+        def main = new Main(configuration)
+        def file = new File(args[0])
+        if (!file.directory)
+            main.process(file)
+        else {
+            file.eachFileRecurse {
+                main.process(it)
+            }
+        }
+    }
+
+    ModuleNode process(File file) {
+        try {
+            GroovyClassLoader classLoader = new GroovyClassLoader()
+            def errorCollector = new ErrorCollector(configuration)
+            def su = new SourceUnit(file, configuration, classLoader, errorCollector)
+
+            System.setProperty('groovy.ast', 'xml')
+            su.parse()
+            su.completePhase()
+            su.nextPhase()
+            su.convert()
+            println("Processed $file")
+            return su.AST
+        } catch (any) {
+            println("Failed $file")
+            any.printStackTrace()
+            return null
+        }
+    }
+
+    static def displayHelp() {
+        println('Please specify path to *.groovy file or directory with them.\n' +
+                'Use -o for groovy parser and -n for Antlrv4 parser.')
     }
 }
