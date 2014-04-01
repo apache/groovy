@@ -33,6 +33,7 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
@@ -46,11 +47,13 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ArrayIterator;
 
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
@@ -8147,6 +8150,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static <T> T asType(Closure cl, Class<T> clazz) {
         if (clazz.isInterface() && !(clazz.isInstance(cl))) {
+            if (Traits.isTrait(clazz)) {
+                Method samMethod = CachedSAMClass.getSAMMethod(clazz);
+                if (samMethod!=null) {
+                    Map impl = Collections.singletonMap(samMethod.getName(),cl);
+                    return (T) ProxyGenerator.INSTANCE.instantiateAggregate(impl, Collections.<Class>singletonList(clazz));
+                }
+            }
             return (T) Proxy.newProxyInstance(
                     clazz.getClassLoader(),
                     new Class[]{clazz},

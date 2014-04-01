@@ -1164,6 +1164,28 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    void testImplicitSAMCoercionBug() {
+        assertScript '''
+trait Greeter {
+    String greet() { "Hello $name" }
+    abstract String getName()
+}
+Greeter greeter = { 'Alice' }
+assert greeter.greet() == 'Hello Alice'
+'''
+    }
+
+    void testExplicitSAMCoercionBug() {
+        assertScript '''
+trait Greeter {
+    String greet() { "Hello $name" }
+    abstract String getName()
+}
+Greeter greeter = { 'Alice' } as Greeter
+assert greeter.greet() == 'Hello Alice'
+'''
+    }
+
     void testMethodMissingInTrait() {
         assertScript '''
             trait MethodMissingProvider {
