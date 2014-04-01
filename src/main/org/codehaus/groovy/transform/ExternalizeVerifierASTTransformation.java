@@ -32,8 +32,8 @@ import java.io.Serializable;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.getInstanceNonPropertyFields;
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.getInstancePropertyFields;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 
 @GroovyASTTransformation(phase = CompilePhase.CLASS_GENERATION)
 public class ExternalizeVerifierASTTransformation extends AbstractASTTransformation {
