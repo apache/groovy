@@ -4176,7 +4176,7 @@ options {
             int ttype = testLiteralsTable(IDENT);
             // Java doesn't have the keywords 'as', 'in' or 'def so we make some allowances
             // for them in package names for better integration with existing Java packages
-            if ((ttype == LITERAL_as || ttype == LITERAL_def || ttype == LITERAL_in) &&
+            if ((ttype == LITERAL_as || ttype == LITERAL_def || ttype == LITERAL_in || ttype == LITERAL_trait) &&
                 (LA(1) == '.' || lastSigTokenType == DOT || lastSigTokenType == LITERAL_package)) {
                 ttype = IDENT;
             }
