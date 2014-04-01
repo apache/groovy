@@ -212,4 +212,277 @@ assert p.introduce() == 'Hello, I am Alice'         // <5>
 // end::trait_inherit[]
 '''
     }
+
+    void testMethodMissingInTrait() {
+        assertScript '''// tag::dynamicobject[]
+trait DynamicObject {                               // <1>
+    private Map props = [:]
+    def methodMissing(String name, args) {
+        name.toUpperCase()
+    }
+    def propertyMissing(String prop) {
+        props['prop']
+    }
+    void setProperty(String prop, Object value) {
+        props['prop'] = value
+    }
+}
+
+class Dynamic implements DynamicObject {
+    String existingProperty = 'ok'                  // <2>
+    String existingMethod() { 'ok' }                // <3>
+}
+def d = new Dynamic()
+assert d.existingProperty == 'ok'                   // <4>
+assert d.foo == null                                // <5>
+d.foo = 'bar'                                       // <6>
+assert d.foo == 'bar'                               // <7>
+assert d.existingMethod() == 'ok'                   // <8>
+assert d.someMethod() == 'SOMEMETHOD'               // <9>
+// end::dynamicobject[]'''
+    }
+
+    void testDefaultMultipleInheritanceResolution() {
+        assertScript '''// tag::multiple_inherit_default[]
+trait A {
+    String exec() { 'A' }               // <1>
+}
+trait B {
+    String exec() { 'B' }               // <2>
+}
+class C implements A,B {}               // <3>
+// end::multiple_inherit_default[]
+
+// tag::multiple_inherit_default_assert[]
+def c = new C()
+assert c.exec() == 'B'
+// end::multiple_inherit_default_assert[]'''
+    }
+
+    void testUserMultipleInheritanceResolution() {
+        assertScript '''trait A {
+    String exec() { 'A' }
+}
+trait B {
+    String exec() { 'B' }
+}
+// tag::multiple_inherit_user[]
+class C implements A,B {
+    String exec() { A.super.exec() }    // <1>
+}
+def c = new C()
+assert c.exec() == 'A'                  // <2>
+// end::multiple_inherit_user[]'''
+    }
+
+    void testRuntimeCoercion() {
+        assertScript '''
+// tag::runtime_header[]
+trait Extra {
+    String extra() { "I'm an extra method" }            // <1>
+}
+class Something {                                       // <2>
+    String doSomething() { 'Something' }                // <3>
+}
+// end::runtime_header[]
+
+try {
+// tag::runtime_fail[]
+def s = new Something()
+s.extra()
+// end::runtime_fail[]
+} catch (MissingMethodException e) {}
+
+// tag::runtime_success[]
+def s = new Something() as Extra                        // <1>
+s.extra()                                               // <2>
+s.doSomething()                                         // <3>
+// end::runtime_success[]'''
+    }
+
+    void testWithTraits() {
+        assertScript '''// tag::withtraits_header[]
+trait A { void methodFromA() {} }
+trait B { void methodFromB() {} }
+
+class C {}
+
+def c = new C()
+// end::withtraits_header[]
+try {
+// tag::withtraits_fail[]
+c.methodFromA()                     // <1>
+c.methodFromB()                     // <2>
+// end::withtraits_fail[]
+} catch (MissingMethodException e) {}
+// tag::withtraits_success[]
+def d = c.withTraits A, B           // <3>
+d.methodFromA()                     // <4>
+d.methodFromB()                     // <5>
+// end::withtraits_success[]
+'''
+    }
+
+    void testSAMCoercion() {
+        assertScript '''import org.codehaus.groovy.runtime.Greeter
+
+// tag::sam_trait[]
+trait Greeter {
+    String greet() { "Hello $name" }        // <1>
+    abstract String getName()               // <2>
+}
+// end::sam_trait[]
+
+// tag::sam_trait_assignment[]
+Greeter greeter = { 'Alice' }               // <1>
+// end::sam_trait_assignment[]
+
+// tag::sam_trait_method[]
+void greet(Greeter g) { println g.greet() } // <1>
+greet { 'Alice' }                           // <2>
+// end::sam_trait_method[]'''
+    }
+
+    void testForceOverride() {
+        assertScript '''
+// tag::forceoverride_header[]
+import groovy.transform.CompileStatic
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+
+class SomeTest extends GroovyTestCase {
+    def config
+    def shell
+
+    void setup() {
+        config = new CompilerConfiguration()
+        shell = new GroovyShell(config)
+    }
+    void testSomething() {
+        assert shell.evaluate('1+1') == 2
+    }
+    void otherTest() { /* ... */ }
+}
+// end::forceoverride_header[]
+
+class SomeTest2 extends SomeTest {}
+
+/*
+// tag::forceoverride_extends[]
+class AnotherTest extends SomeTest {
+    void setup() {
+        config = new CompilerConfiguration()
+        config.addCompilationCustomizers( ... )
+        shell = new GroovyShell(config)
+    }
+}
+// end::forceoverride_extends[]
+
+// tag::forceoverride_extends2[]
+class YetAnotherTest extends SomeTest {
+    void setup() {
+        config = new CompilerConfiguration()
+        config.addCompilationCustomizers( ... )
+        shell = new GroovyShell(config)
+    }
+}
+// end::forceoverride_extends2[]
+*/
+
+// tag::forceoverride_trait[]
+trait MyTestSupport {
+    void setup() {
+        config = new CompilerConfiguration()
+        config.addCompilationCustomizers( new ASTTransformationCustomizer(CompileStatic) )
+        shell = new GroovyShell(config)
+    }
+}
+// end::forceoverride_trait[]
+
+// tag::forceoverride_miss_header[]
+class AnotherTest extends SomeTest implements MyTestSupport {}
+class YetAnotherTest extends SomeTest2 implements MyTestSupport {}
+// end::forceoverride_miss_header[]
+
+def t = new AnotherTest()
+t.setup()
+assert t.config.compilationCustomizers.empty
+'''
+    }
+
+    void testForceOverrideFixed() {
+        assertScript '''
+import groovy.transform.CompileStatic
+import groovy.transform.ForceOverride
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+
+class SomeTest extends GroovyTestCase {
+    def config
+    def shell
+
+    void setup() {
+        config = new CompilerConfiguration()
+        shell = new GroovyShell(config)
+    }
+    void testSomething() {
+        assert shell.evaluate('1+1') == 2
+    }
+    void otherTest() { /* ... */ }
+}
+// tag::forceoverride_trait_fixed[]
+trait MyTestSupport {
+    @ForceOverride
+    void setup() {
+        config = new CompilerConfiguration()
+        config.addCompilationCustomizers( new ASTTransformationCustomizer(CompileStatic) )
+        shell = new GroovyShell(config)
+    }
+}
+// end::forceoverride_trait_fixed[]
+
+class AnotherTest extends SomeTest implements MyTestSupport {}
+
+def t = new AnotherTest()
+t.setup()
+assert !t.config.compilationCustomizers.empty
+'''
+    }
+
+    void testRuntimeForceOverride() {
+        assertScript '''import groovy.transform.ForceOverride
+// tag::runtime_forceoverride[]
+class Person {
+    String name                                         // <1>
+}
+trait BobNoOverride {
+    String getName() { 'Bob' }                          // <2>
+}
+trait BobForceOverride {
+    @ForceOverride String getName() { 'Bob' }           // <3>
+}
+
+def p = new Person(name: 'Alice')
+assert p.name == 'Alice'                                // <4>
+def p1 = p as BobNoOverride                             // <5>
+assert p1.name == 'Alice'                               // <6>
+def p2 = p as BobForceOverride                          // <7>
+assert p2.name == 'Bob'                                 // <8>
+// end::runtime_forceoverride[]'''
+    }
+
+    void testDifferenceWithMixin() {
+        assertScript '''// tag::diff_mixin[]
+class A { String methodFromA() { 'A' } }        // <1>
+class B { String methodFromB() { 'B' } }        // <2>
+A.metaClass.mixin B                             // <3>
+def o = new A()
+assert o.methodFromA() == 'A'                   // <4>
+assert o.methodFromB() == 'B'                   // <5>
+assert o instanceof A                           // <6>
+assert !(o instanceof B)                        // <7>
+// end::diff_mixin[]'''
+    }
 }
