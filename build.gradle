@@ -15,7 +15,13 @@ repositories {
 }
 
 dependencies {
-    compile 'org.codehaus.groovy:groovy:2.2.2'
+    compile 'org.antlr:antlr4:4.2.1'
+    runtime 'org.antlr:antlr4-runtime:4.2.1'
+
+    compile 'org.codehaus.groovy:groovy-all:2.2.2'
+
+    compile 'com.thoughtworks.xstream:xstream:1.4.7' // For saveAsXML method in SourceUnit
+
     testCompile 'org.spockframework:spock-core:0.7-groovy-2.0'
 }
 
