@@ -1,3 +1,5 @@
+import com.sun.tools.javac.resources.compiler
+import org.antlr.v4.Tool
 
 apply plugin: 'groovy'
 apply plugin: 'application'
@@ -25,7 +27,7 @@ repositories {
 }
 
 dependencies {
-    runtime 'org.antlr:antlr4-runtime:4.2.1'
+    compile 'org.antlr:antlr4-runtime:4.2.1'
 
     compile 'org.codehaus.groovy:groovy-all:2.2.2'
 
@@ -39,10 +41,10 @@ sourceSets.test.groovy.srcDirs = ['test']
 
 // Setup antlr task
 def antlrOutputDir = file('gen/com/xseagullx/groovy/gsoc')
-def antlrInputFile = file('src/com/xseagullx/groovy/gsoc/groovy.g4')
+def antlrInputFile = file('src/com/xseagullx/groovy/gsoc/Groovy.g4')
 
 task antlr << {
-    org.antlr.v4.Tool.main(antlrInputFile.absolutePath, '-o', antlrOutputDir.absolutePath, '-package', 'com.xseagullx.groovy.gsoc')
+    new Tool([antlrInputFile.absolutePath, '-o', antlrOutputDir.absolutePath, '-package', 'com.xseagullx.groovy.gsoc'] as String[]).processGrammarsOnCommandLine()
 }
 antlr.outputs.dir antlrOutputDir
 antlr.inputs.file antlrInputFile

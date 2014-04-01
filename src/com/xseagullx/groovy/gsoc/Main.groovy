@@ -1,11 +1,30 @@
 
 package com.xseagullx.groovy.gsoc
 
+import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.SourceUnit
 
+enum Configuration {
+    OLD,
+    NEW,
+}
+
 class Main {
+
+    private CompilerConfiguration configuration
+
+    Main(Configuration configuration) {
+        assert configuration
+        if (configuration == Configuration.OLD)
+            this.configuration = CompilerConfiguration.DEFAULT
+        else {
+            this.configuration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
+            this.configuration.pluginFactory = new Antlrv4PluginFactory()
+        }
+    }
+
     public static void main(String[] args) {
         println("GSoC started!")
 
@@ -14,27 +33,27 @@ class Main {
             return
         }
 
-        CompilerConfiguration configuration
-        if (args[1] == '-o')
-            configuration = CompilerConfiguration.DEFAULT
-        else if (args[1] == '-n') {
-            configuration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
-            configuration.pluginFactory = new Antlrv4PluginFactory()
-        }
+        def configurationFlag = args[1]
+        Configuration configuration
+        if (configurationFlag == '-o')
+            configuration = Configuration.OLD
+        else if (configurationFlag == '-n')
+            configuration = Configuration.NEW
         else
-            throw new RuntimeException("Unrecognized option: ${args[1]}. Use -o or -n.")
+            throw new RuntimeException("Unrecognized option: $configurationFlag. Use -o or -n.")
 
+        def main = new Main(configuration)
         def file = new File(args[0])
         if (!file.directory)
-            process(file, configuration)
+            main.process(file)
         else {
             file.eachFileRecurse {
-                process(it, configuration)
+                main.process(it)
             }
         }
     }
 
-    static void process(File file, CompilerConfiguration configuration) {
+    ModuleNode process(File file) {
         try {
             GroovyClassLoader classLoader = new GroovyClassLoader()
             def errorCollector = new ErrorCollector(configuration)
@@ -46,9 +65,11 @@ class Main {
             su.nextPhase()
             su.convert()
             println("Processed $file")
+            return su.AST
         } catch (any) {
             println("Failed $file")
             any.printStackTrace()
+            return null
         }
     }
 
