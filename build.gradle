@@ -1,0 +1,23 @@
+
+apply plugin: 'groovy'
+apply plugin: 'application'
+
+version = '1.0'
+
+mainClassName = 'com.xseagullx.groovy.gsoc.Main'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.9'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy:2.2.2'
+    testCompile 'org.spockframework:spock-core:0.7-groovy-2.0'
+}
+
+sourceSets.main.groovy.srcDirs = ['src']
+sourceSets.test.groovy.srcDirs = ['test']
