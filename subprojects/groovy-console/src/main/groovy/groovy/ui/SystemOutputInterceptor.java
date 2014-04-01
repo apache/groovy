@@ -17,16 +17,17 @@ package groovy.ui;
 
 import groovy.lang.Closure;
 
+import java.io.BufferedOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 
 /**
  * Intercepts System.out/System.err. Implementation helper for Console.groovy.
- *
- * @version $Id$
  */
 public class SystemOutputInterceptor extends FilterOutputStream {
+
+    private static final int BUFFER_SIZE = 2048;
 
     private Closure callback;
     private boolean output;
@@ -60,13 +61,15 @@ public class SystemOutputInterceptor extends FilterOutputStream {
     }
 
     /**
-     * Starts intercepting System.out/System.err
+     * Installs the stream intercepting System.out/System.err stream. This will turn {@code autoFlush} mode off as this
+     * interceptor uses a {@link BufferedOutputStream} stream for more control on when the actual flush is done.
+     * This way we can decrease the actual amount of document updates for the outputArea.
      */
     public void start() {
         if (output) {
-            System.setOut(new PrintStream(this));
+            System.setOut(new PrintStream(new BufferedOutputStream(this, BUFFER_SIZE), false));
         } else {
-            System.setErr(new PrintStream(this));
+            System.setErr(new PrintStream(new BufferedOutputStream(this, BUFFER_SIZE), false));
         }
     }
 
@@ -83,7 +86,7 @@ public class SystemOutputInterceptor extends FilterOutputStream {
     }
 
     /**
-     * Intercepts output - moret common case of byte[]
+     * Intercepts output - more common case of byte[]
      */
     public void write(byte[] b, int off, int len) throws IOException {
         Boolean result = (Boolean) callback.call(new String(b, off, len));

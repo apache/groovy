@@ -177,6 +177,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     SystemOutputInterceptor systemOutInterceptor
     SystemOutputInterceptor systemErrorInterceptor
     Thread runThread = null
+    OutputStreamSynchronisation outputStreamSynchronisation = new OutputStreamSynchronisation(prefs.getLong('outputStreamSyncDelay', 200l), prefs.getLong('outputStreamSyncPeriod', 250l))
     Closure beforeExecution
     Closure afterExecution
 
@@ -368,7 +369,8 @@ options:
         // as there is no point in showing the repeating details at the back 
         int offset = stackOverFlowError ? maxOutputChars : 0
         if (doc.length > maxOutputChars) {
-            doc.remove(offset, doc.length - maxOutputChars)
+            // if not a stackoverflow remove a quarter of the currently rendered screen
+            doc.remove(offset, stackOverFlowError ? doc.length - maxOutputChars : (int) (maxOutputChars * 1.0f / 4))
         }
     }
 
@@ -444,21 +446,12 @@ options:
     // Append a string to the output area on a new line
     void appendOutputNl(text, style) {
         def doc = outputArea.styledDocument
-        def len = doc.length
-        def alreadyNewLine = (len == 0 || doc.getText(len - 1, 1) == '\n')
         doc.insertString(doc.length, ' \n', style)
-        if (alreadyNewLine) {
-            doc.remove(len, 2) // windows hack to fix (improve?) line spacing
-        }
         appendOutput(text, style)
     }
 
     void appendOutputLines(text, style) {
         appendOutput(text, style)
-        def doc = outputArea.styledDocument
-        def len = doc.length
-        doc.insertString(len, ' \n', style)
-        doc.remove(len, 2) // windows hack to fix (improve?) line spacing
     }
 
     // Return false if use elected to cancel
@@ -691,6 +684,8 @@ options:
     }
 
     def finishException(Throwable t, boolean executing) {
+        stopOutputAreaSync()
+
         if(executing) {
             statusLabel.text = 'Execution terminated with exception.'
             history[-1].exception = t
@@ -712,23 +707,27 @@ options:
 
                     String scriptFileName = scriptFile?.name ?: DEFAULT_SCRIPT_NAME_START 
 
-                    def doc = outputArea.styledDocument
+                    SwingUtilities.invokeLater {
+                        def doc = outputArea.styledDocument
 
-                    def style = hyperlinkStyle
-                    def hrefAttr = new SimpleAttributeSet()
-                    // don't pass a GString as it won't be coerced to String as addAttribute takes an Object
-                    hrefAttr.addAttribute(HTML.Attribute.HREF, 'file://' + scriptFileName + ':' + errorLine)
-                    style.addAttribute(HTML.Tag.A, hrefAttr);
+                        def style = hyperlinkStyle
+                        def hrefAttr = new SimpleAttributeSet()
+                        // don't pass a GString as it won't be coerced to String as addAttribute takes an Object
+                        hrefAttr.addAttribute(HTML.Attribute.HREF, 'file://' + scriptFileName + ':' + errorLine)
+                        style.addAttribute(HTML.Tag.A, hrefAttr);
 
-                    doc.insertString(doc.length, message + ' at ', stacktraceStyle)
-                    doc.insertString(doc.length, "line: ${se.line}, column: ${se.startColumn}\n\n", style)
+                        doc.insertString(doc.length, message + ' at ', stacktraceStyle)
+                        doc.insertString(doc.length, "line: ${se.line}, column: ${se.startColumn}\n\n", style)
+                    }
                 } else if (error instanceof Throwable) {
                     reportException(error)
                 } else if (error instanceof ExceptionMessage) {
                     reportException(error.cause) 
                 } else if (error instanceof SimpleMessage) {
-                    def doc = outputArea.styledDocument
-                    doc.insertString(doc.length, "${error.message}\n", new SimpleAttributeSet())
+                    SwingUtilities.invokeLater {
+                        def doc = outputArea.styledDocument
+                        doc.insertString(doc.length, "${error.message}\n", new SimpleAttributeSet())
+                    }
                 }
             }
         } else {
@@ -753,25 +752,31 @@ options:
     }
 
     private reportException(Throwable t) {
-        appendOutputNl('Exception thrown\n', commandStyle)
+        SwingUtilities.invokeLater {
+            appendOutputNl('Exception thrown\n', commandStyle)
 
-        StringWriter sw = new StringWriter()
-        new PrintWriter(sw).withWriter {pw -> StackTraceUtils.deepSanitize(t).printStackTrace(pw) }
-        appendStacktrace("\n${sw.buffer}\n")
+            StringWriter sw = new StringWriter()
+            new PrintWriter(sw).withWriter {pw -> StackTraceUtils.deepSanitize(t).printStackTrace(pw) }
+            appendStacktrace("\n${sw.buffer}\n")
+        }
     }
 
     def finishNormal(Object result) {
+        stopOutputAreaSync()
+
         // Take down the wait/cancel dialog
         history[-1].result = result
         if (result != null) {
             statusLabel.text = 'Execution complete.'
-            appendOutputNl('Result: ', promptStyle)
-            def obj = (visualizeScriptResults
-                ? OutputTransforms.transformResult(result, shell.getContext()._outputTransforms)
-                : result.toString())
+            SwingUtilities.invokeLater {
+                appendOutputNl('Result: ', promptStyle)
+                def obj = (visualizeScriptResults
+                    ? OutputTransforms.transformResult(result, shell.getContext()._outputTransforms)
+                    : result.toString())
 
-            // multi-methods are magical!
-            appendOutput(obj, resultStyle)
+                // multi-methods are magical!
+                appendOutput(obj, resultStyle)
+            }
         } else {
             statusLabel.text = 'Execution complete. Result was null.'
         }
@@ -781,7 +786,27 @@ options:
             showOutputWindow()
         }
     }
-    
+
+    /**
+     * Start the {@code outputArea} synchronisation task.
+     */
+    void startOutputAreaSync() {
+        outputStreamSynchronisation.start()
+    }
+
+    /**
+     * Stops the {@code outputArea} synchronisation task and flushes all buffers. This method will block as long as
+     * all document updates have been completed.
+     */
+    void stopOutputAreaSync() {
+        // let's wait till all updates are completed
+        outputStreamSynchronisation.stop()
+
+        // flush the buffers once again to have clean buffers
+        System.out.flush()
+        System.err.flush()
+    }
+
     def compileFinishNormal() {
         statusLabel.text = 'Compilation complete.'
     }
@@ -969,6 +994,7 @@ options:
                 if(beforeExecution) {
                     beforeExecution()
                 }
+                startOutputAreaSync()
                 def result
                 if(useScriptClassLoaderForScriptExecution) {
                     ClassLoader savedThreadContextClassLoader = Thread.currentThread().contextClassLoader
@@ -998,6 +1024,7 @@ options:
                 runThread = null
                 scriptRunning = false
                 interruptAction.enabled = false
+                stopOutputAreaSync()
             }
         }
     }
