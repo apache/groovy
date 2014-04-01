@@ -987,6 +987,24 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             String.doSomething()
         ''', 'Cannot find matching method java.lang.String#doSomething()'
     }
+    
+    // GROOVY-6646
+    void testNPlusVargsCallInOverloadSituation() {
+        assertScript '''
+            def foo(Class... cs) { "Classes" }
+            def foo(String... ss) { "Strings" }
+
+            assert foo(List, Map) == "Classes"
+            assert foo("2","1") == "Strings"
+        '''
+        assertScript '''
+            def foo(Class<?>... cs) { "Classes" }
+            def foo(String... ss) { "Strings" }
+
+            assert foo(List, Map) == "Classes"
+            assert foo("2","1") == "Strings"
+        '''
+    }
 
     static class MyMethodCallTestClass {
 
