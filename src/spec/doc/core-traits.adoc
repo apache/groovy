@@ -1,0 +1,221 @@
+= Traits
+
+Traits are a a structural construct of the language which allow:
+
+* composition of behaviors
+* runtime implementation of interfaces
+* behavior overriding
+* compatibility with static type checking/compilation
+
+They can be seen as *interfaces* carrying both *default implementations* and *state*. A trait is defined using the
+`trait` keyword:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=flying_simple,indent=0]
+----
+<1> declaration of a trait
+<2> declaration of a method inside a trait
+
+Then it can be used like a normal interface using the `implements` keyword:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=bird,indent=0]
+----
+<1> Adds the trait `FlyingAbility` to the `Bird` class capabilities
+<2> instantiate a new `Bird`
+<3> the `Bird` class automatically gets the behavior of the `FlyingAbility` trait
+
+Traits allow a wide range of capabilities, from simple composition to testing, which are described throughfully in this section.
+
+== Methods
+=== Public methods
+
+Declaring a method in a trait can be done like any regular method in a class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=flying_simple,indent=0]
+----
+<1> declaration of a trait
+<2> declaration of a method inside a trait
+
+=== Abstract methods
+
+In addition, traits may declare _abstract_ methods too, which therefore need to be implemented in the class implementing the trait:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=greetable,indent=0]
+----
+<1> implementing class will have to declare the `name` method
+<2> can be mixed with a concrete method
+
+Then the trait can be used like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=greetable_person,indent=0]
+----
+<1> implement the trait `Greetable`
+<2> since `name` was abstract, it is required to implement it
+<3> then `greeting` can be called
+
+=== Private methods
+
+Traits may also define private methods. Those methods will not appear in the trait contract interface:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=private_method_in_trait,indent=0]
+----
+<1> define a private method `greetingMessage` in the trait
+<2> the public `greet` message calls `greetingMessage` by default
+<3> create a class implementing the trait
+<4> `greet` can be called
+<5> but not `greetingMessage`
+
+WARNING: Traits only support `public` and `private` methods. Neither `protected` nor `package private` scopes are
+supported.
+
+== Interfaces
+
+Traits may implement interfaces, in which case the interfaces are declared using the `implements` keyword:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_implementing_interface,indent=0]
+----
+<1> declaration of a normal interface
+<2> add `Named` to the list of implemented interfaces
+<3> declare a class that implements the `Greetable` trait
+<4> implement the missing `greet` method
+<5> the `greeting` implementation comes from the trait
+<6> make sure `Person` implements the `Named` interface
+<7> make sure `Person` implements the `Greetable` trait
+
+== Properties
+
+A trait may define properties, like in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_with_property,indent=0]
+----
+<1> declare a property `name` inside a trait
+<2> declare a class which implements the trait
+<3> the property is automatically made visible
+<4> it can be accessed using the regular property accessor
+<5> or using the regular getter syntax
+
+== Fields
+=== Private fields
+
+Since traits allow the use of private methods, it can also be interesting to use private fields to store state. Traits
+will let you do that:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_with_private_field,indent=0]
+----
+
+TIP: This is a major difference with http://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html[Java 8 virtual extension methods]. While virtual extension methods
+do not carry state, traits can. Also interesting traits in Groovy are supported starting with Java 6, but their implementation do not rely on virtual extension methods. This
+means that even if a trait can be seen from a Java class as a regular interface, this interface will *not* have default methods, only abstract ones.
+
+=== Public fields
+
+Public fields work the same way as private fields, but in order to avoid the http://en.wikipedia.org/wiki/Multiple_inheritance#The_diamond_problem[diamond problem],
+field names are remapped in the implementing class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_with_public_field,indent=0]
+----
+<1> declare a public *field* inside the trait
+<2> declare a class implementing the trait
+<3> create an instance of that class
+<4> the public field is available, but renamed
+
+The name of the field depends on the fully qualified name of the trait. All dots (`.`) in package are replaced with an underscore (`_`), and the final name includes a double underscore.
+So if the type of the field is `String`, the name of the package is `my.package`, the name of the trait is `Foo` and the name of the field is `bar`,
+in the implementing class, the public field will appear as:
+
+[source,groovy]
+----
+String my_package_Foo__bar
+----
+
+WARNING: While traits support public fields, it is not recommanded to use them and considered as a bad practice.
+
+== Composition of behaviors
+
+Traits can be used to implement multiple inheritance in a controlled way, avoiding the diamond issue. For example, we
+can have the following traits:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=flying_simple,indent=0]
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=speaking_simple,indent=0]
+----
+
+And a class implementing both traits:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=speakingduck,indent=0]
+----
+<1> the `Duck` class implements both `FlyingAbility` and `SpeakingAbility`
+<2> creates a new instance of `Duck`
+<3> we can call the method `fly` from `FlyingAbility`
+<4> but also the method `speak` from `SpeakingAbility`
+
+Traits encourage the reuse of capabilities among objects, and the creation of new classes by the composition of existing behavior.
+
+== Overriding default methods
+
+Traits provide default implementations for methods, but it is possible to override them in the implementing class. For example, we
+can slightly change the example above, by having a duck which quacks:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=quackingduck,indent=0]
+----
+<1> define a method specific to `Duck`, named `quack`
+<2> override the default implementation of `speak` so that we use `quack` instead
+<3> the duck is still flying, from the default implementation
+<4> `quack` comes from the `Duck` class
+<5> `speak` no longer uses the default implementation from `SpeakingAbility`
+
+== Extending traits
+
+Traits may extend another trait, in which case you must use the `extends` keyword:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_inherit,indent=0]
+-----
+<1> the `Named` trait defines a single `name` property
+<2> the `Polite` trait *extends* the `Named` trait
+<3> `Polite` adds a new method which has access to the `name` property of the super-trait
+<4> the `name` property is visible from the `Person` class implementing `Polite`
+<5> as is the `introduce` method
+
+== Duck typing and traits
+=== Dynamic code
+Traits can call any dynamic code, like a normal Groovy class. This means that you can, in the body of a method, call
+methods which are supposed to exist in an implementing class, without having to explicitly declare them in an interface.
+This means that traits are fully compatible with duck typing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=ducktyping,indent=0]
+----
+<1> the `SpeakingDuck` expects the `quack` method to be defined
+<2> the `Duck` class does implement the method using _methodMissing_
+<3> calling the `speak` method triggers a call to `quack` which is handled by `methodMissing`
+
+=== methodMissing and propertyMissing in traits
+
+
