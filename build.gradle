@@ -1,4 +1,4 @@
-import com.sun.tools.javac.resources.compiler
+
 import org.antlr.v4.Tool
 
 apply plugin: 'groovy'
