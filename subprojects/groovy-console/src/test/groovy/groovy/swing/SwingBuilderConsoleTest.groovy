@@ -432,47 +432,4 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             }
         }
     }
-
-    void testIterateOverLargeList() {
-        testInEDT {
-            SwingUtilities.metaClass.static.invokeLater = { Runnable runnable ->
-                runnable.run()
-            }
-            Thread.metaClass.static.start = { Runnable runnable ->
-                runnable.run()
-            }
-
-            // in case the static final var has been already initialized
-            Console.prefs = testPreferences
-
-            try {
-                final console = new Console()
-
-                def binding = new Binding()
-                binding.setVariable('controller', console)
-
-                final consoleActions = new ConsoleActions()
-
-                def swing = new SwingBuilder()
-                swing.controller = console
-
-                swing.build(consoleActions)
-                console.run()
-
-                console.inputArea.text = '(1..10000).each { println it }'
-                def start = System.currentTimeMillis()
-                console.runScript(new EventObject([:]))
-                def end = System.currentTimeMillis()
-
-                def doc = console.outputArea.document
-
-                assert (end - start) <= 10000
-                assert doc.getText(0, doc.length).contains('Result: 1..10000')
-            } finally {
-                GroovySystem.metaClassRegistry.removeMetaClass(Thread)
-                GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities)
-                GroovySystem.metaClassRegistry.removeMetaClass(Preferences)
-            }
-        }
-    }
 }
