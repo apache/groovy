@@ -76,6 +76,7 @@ public abstract class TraitComposer {
      * @param unit the source unit
      */
     public static void doExtendTraits(final ClassNode cNode, final SourceUnit unit) {
+        if (cNode.isInterface()) return;
         boolean isItselfTrait = Traits.isTrait(cNode);
         SuperCallTraitTransformer superCallTransformer = new SuperCallTraitTransformer(unit);
         if (isItselfTrait) {

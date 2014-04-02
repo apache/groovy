@@ -1353,6 +1353,26 @@ assert greeter.greet() == 'Hello Alice'
         } =~ 'Mixing private and public/protected methods of the same name causes multimethods to be disabled'
     }
 
+    void testInterfaceExtendingTraitShouldNotTriggerRuntimeError() {
+        assertScript '''
+            trait A {
+                void foo() { println 'A' }
+            }
+            trait B extends A {
+               void bar() {  println 'B'  }
+            }
+
+            interface C extends B {
+               void baz()
+            }
+            abstract class D implements C {}
+            def d = { println 'BAZ' } as D
+            d.foo()
+            d.bar()
+            d.baz()
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }
