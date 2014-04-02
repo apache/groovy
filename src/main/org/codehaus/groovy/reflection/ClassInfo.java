@@ -76,7 +76,10 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     }
 
     public ExpandoMetaClass getModifiedExpando() {
-        return strongMetaClass == null ? null : strongMetaClass instanceof ExpandoMetaClass ? (ExpandoMetaClass)strongMetaClass : null;
+        // safe value here to avoid multiple reads with possibly
+        // differing values due to concurrency
+        MetaClass strongRef = strongMetaClass;
+        return strongRef == null ? null : strongRef instanceof ExpandoMetaClass ? (ExpandoMetaClass)strongRef : null;
     }
 
     public static void clearModifiedExpandos() {
@@ -132,44 +135,58 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     public void setStrongMetaClass(MetaClass answer) {
         version++;
 
-        if (strongMetaClass instanceof ExpandoMetaClass) {
-          ((ExpandoMetaClass)strongMetaClass).inRegistry = false;
+        // safe value here to avoid multiple reads with possibly
+        // differing values due to concurrency
+        MetaClass strongRef = strongMetaClass;
+        
+        if (strongRef instanceof ExpandoMetaClass) {
+          ((ExpandoMetaClass)strongRef).inRegistry = false;
           modifiedExpandos.remove(this);
         }
 
         strongMetaClass = answer;
 
-        if (strongMetaClass instanceof ExpandoMetaClass) {
-          ((ExpandoMetaClass)strongMetaClass).inRegistry = true;
+        if (answer instanceof ExpandoMetaClass) {
+          ((ExpandoMetaClass)answer).inRegistry = true;
           modifiedExpandos.add(this);
         }
 
-        clearWeakMetaClass();
+        replaceWeakMetaClassRef(null);
     }
 
     public MetaClass getWeakMetaClass() {
-        return weakMetaClass == null ? null : weakMetaClass.get();
+        // safe value here to avoid multiple reads with possibly
+        // differing values due to concurrency
+        ManagedReference<MetaClass> weakRef = weakMetaClass;
+        return weakRef == null ? null : weakRef.get();
     }
 
     public void setWeakMetaClass(MetaClass answer) {
         version++;
 
         strongMetaClass = null;
-        clearWeakMetaClass();
+        ManagedReference<MetaClass> newRef = null;
         if (answer != null) {
-           weakMetaClass = new ManagedReference<MetaClass> (softBundle,answer);
+            newRef = new ManagedReference<MetaClass> (softBundle,answer);
         }
+        replaceWeakMetaClassRef(newRef);
     }
 
-    private void clearWeakMetaClass() {
-        if (weakMetaClass != null) {
-            weakMetaClass.clear();
+    private void replaceWeakMetaClassRef(ManagedReference<MetaClass> newRef) {
+        // safe value here to avoid multiple reads with possibly
+        // differing values due to concurrency
+        ManagedReference<MetaClass> weakRef = weakMetaClass;
+        if (weakRef != null) {
+            weakRef.clear();
         }
-        weakMetaClass = null;
+        weakMetaClass = newRef;
     }
 
     public MetaClass getMetaClassForClass() {
-        if (strongMetaClass!=null) return strongMetaClass;
+        // safe value here to avoid multiple reads with possibly
+        // differing values due to concurrency
+        MetaClass strongMc = strongMetaClass;
+        if (strongMc!=null) return strongMc;
         MetaClass weakMc = getWeakMetaClass();
         if (isValidWeakMetaClass(weakMc)) {
             return weakMc;
