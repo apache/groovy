@@ -185,7 +185,7 @@ public class CompilationUnit extends ProcessingUnit {
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context,
                              ClassNode classNode) throws CompilationFailedException {
-                TraitComposer.doExtendTraits(classNode, source);
+                TraitComposer.doExtendTraits(classNode, source, CompilationUnit.this);
             }
         }, Phases.CANONICALIZATION);
         addPhaseOperation(compileCompleteCheck, Phases.CANONICALIZATION);

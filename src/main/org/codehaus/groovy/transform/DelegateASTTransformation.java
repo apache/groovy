@@ -20,8 +20,6 @@ import groovy.lang.GroovyObject;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -48,8 +46,6 @@ import java.util.Set;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllMethods;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
 /**
@@ -128,11 +124,16 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
 
             final Set<ClassNode> allInterfaces = getInterfacesAndSuperInterfaces(type);
             final Set<ClassNode> ownerIfaces = owner.getAllInterfaces();
+            Map genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap());
+            genericsSpec = createGenericsSpec(fieldNode.getType(), genericsSpec);
             for (ClassNode iface : allInterfaces) {
                 if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface)) {
                     final ClassNode[] ifaces = owner.getInterfaces();
                     final ClassNode[] newIfaces = new ClassNode[ifaces.length + 1];
-                    System.arraycopy(ifaces, 0, newIfaces, 0, ifaces.length);
+                    for (int i = 0; i < ifaces.length; i++) {
+                        final ClassNode classNode = ifaces[i];
+                        newIfaces[i] = GenericsUtils.correctToGenericsSpecRecurse(genericsSpec, classNode);
+                    }
                     newIfaces[ifaces.length] = iface;
                     owner.setInterfaces(newIfaces);
                 }

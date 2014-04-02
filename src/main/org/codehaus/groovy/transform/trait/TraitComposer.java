@@ -15,10 +15,12 @@
  */
 package org.codehaus.groovy.transform.trait;
 
+import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -33,11 +35,15 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.objectweb.asm.Opcodes;
 
@@ -75,7 +81,7 @@ public abstract class TraitComposer {
      * @param cNode a class node
      * @param unit the source unit
      */
-    public static void doExtendTraits(final ClassNode cNode, final SourceUnit unit) {
+    public static void doExtendTraits(final ClassNode cNode, final SourceUnit unit, final CompilationUnit cu) {
         if (cNode.isInterface()) return;
         boolean isItselfTrait = Traits.isTrait(cNode);
         SuperCallTraitTransformer superCallTransformer = new SuperCallTraitTransformer(unit);
@@ -89,6 +95,10 @@ public abstract class TraitComposer {
                 TraitHelpersTuple helpers = Traits.findHelpers(trait);
                 applyTrait(trait, cNode, helpers);
                 superCallTransformer.visitClass(cNode);
+                if (unit!=null) {
+                    ASTTransformationCollectorCodeVisitor collector = new ASTTransformationCollectorCodeVisitor(unit, cu.getTransformLoader());
+                    collector.visitClass(cNode);
+                }
             }
         }
     }
@@ -219,7 +229,14 @@ public abstract class TraitComposer {
                     ClassNode returnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, methodNode.getReturnType());
                     if (getter) {
                         // add field
-                        cNode.addField(fieldName, Opcodes.ACC_PRIVATE, returnType, null);
+                        FieldNode fieldNode = cNode.addField(fieldName, Opcodes.ACC_PRIVATE, returnType, null);
+                        FieldNode helperField = fieldHelperClassNode.getField(fieldName);
+                        if (helperField!=null) {
+                            List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
+                            List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
+                            AbstractASTTransformation.copyAnnotatedNodeAnnotations(helperField, copied, notCopied);
+                            fieldNode.addAnnotations(copied);
+                        }
                     }
                     Parameter[] newParams;
                     if (getter) {

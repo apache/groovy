@@ -1373,6 +1373,21 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    void testTraitWithDelegate() {
+        assertScript '''
+trait ListTrait<T> {
+    private @Delegate ArrayList<T> list = new ArrayList<T>()
+}
+class Person implements ListTrait<String> {
+    void foo() {
+        add('bar')
+    }
+}
+def p = new Person()
+p.foo()
+assert p.get(0) == 'bar\''''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

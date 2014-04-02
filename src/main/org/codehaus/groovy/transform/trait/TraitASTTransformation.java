@@ -343,6 +343,21 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 ClassNode.EMPTY_ARRAY,
                 null
         );
+
+        // dummy fields are only used to carry annotations
+        FieldNode dummyField = new FieldNode(
+                Traits.remappedFieldName(field.getOwner(),field.getName()),
+                ACC_STATIC|ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC,
+                field.getOriginType(),
+                fieldHelper,
+                null
+        );
+        // copy annotations from field to dummy field
+        List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
+        List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
+        copyAnnotatedNodeAnnotations(field, copied, notCopied);
+        dummyField.addAnnotations(copied);
+        fieldHelper.addField(dummyField);
     }
 
     private MethodNode processMethod(ClassNode traitClass, MethodNode methodNode, ClassNode fieldHelper, Collection<String> knownFields) {

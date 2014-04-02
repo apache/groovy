@@ -123,7 +123,7 @@ import java.lang.annotation.Target;
  * @author Paul King
  */
 @java.lang.annotation.Documented
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.DelegateASTTransformation")
 public @interface Delegate {
