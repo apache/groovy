@@ -43,7 +43,11 @@ class JsonOutput {
      */
     @CompileStatic
     static String toJson(Boolean bool) {
-        bool.toString()
+        if (bool != null) {
+            bool.toString()
+        } else {
+            "null"
+        }
     }
 
     /**
@@ -51,10 +55,14 @@ class JsonOutput {
      * @throws JsonException if the number is infinite or not a number.
      */
     static String toJson(Number n) {
-        if (n.class in [Double, Float] && (n.isInfinite() || n.isNaN())) {
-            throw new JsonException("Number ${n} can't be serialized as JSON: infinite or NaN are not allowed in JSON.")
+        if (n != null) {
+            if (n.class in [Double, Float] && (n.isInfinite() || n.isNaN())) {
+                throw new JsonException("Number ${n} can't be serialized as JSON: infinite or NaN are not allowed in JSON.")
+            }
+            n.toString()
+        } else {
+            "null"
         }
-        n.toString()
     }
 
     /**
@@ -62,7 +70,11 @@ class JsonOutput {
      */
     @CompileStatic
     static String toJson(Character c) {
-        toJson(c.toString())
+        if (c != null) {
+            toJson(c.toString())
+        } else {
+            "null"
+        }
     }
 
     /**
@@ -70,7 +82,11 @@ class JsonOutput {
      */
     @CompileStatic
     static String toJson(String s) {
-        "\"${StringEscapeUtils.escapeJava(s)}\""
+        if (s != null) {
+            "\"${StringEscapeUtils.escapeJava(s)}\""
+        } else {
+            "null"
+        }
     }
 
     /**
@@ -81,7 +97,11 @@ class JsonOutput {
      */
     @CompileStatic
     static String toJson(Date date) {
-        "\"${dateFormatter.get().format(date)}\""
+        if (date != null) {
+            "\"${dateFormatter.get().format(date)}\""
+        } else {
+            "null"
+        }
     }
 
     /**
@@ -92,7 +112,11 @@ class JsonOutput {
      */
     @CompileStatic
     static String toJson(Calendar cal) {
-        "\"${dateFormatter.get().format(cal.time)}\""
+        if (cal != null) {
+            "\"${dateFormatter.get().format(cal.time)}\""
+        } else {
+            "null"
+        }
     }
 
     /**
@@ -100,7 +124,11 @@ class JsonOutput {
      */
     @CompileStatic
     static String toJson(UUID uuid) {
-        "\"${uuid.toString()}\""
+        if (uuid != null) {
+            "\"${uuid.toString()}\""
+        } else {
+            "null"
+        }
     }
 
     /**
@@ -108,21 +136,33 @@ class JsonOutput {
      */
     @CompileStatic
     static String toJson(URL url) {
-        toJson(url.toString())
+        if (url != null) {
+            toJson(url.toString())
+        } else {
+            "null"
+        }
     }
 
     /**
      * @return an object representation of a closure
      */
     static String toJson(Closure closure) {
-        toJson(JsonDelegate.cloneDelegateAndGetContent(closure))
+        if (closure != null) {
+            toJson(JsonDelegate.cloneDelegateAndGetContent(closure))
+        } else {
+            "null"
+        }
     }
 
     /**
      * @return an object representation of an Expando
      */
     static String toJson(Expando expando) {
-        toJson(expando.properties)
+        if (expando != null) {
+            toJson(expando.properties)
+        } else {
+            "null"
+        }
     }
 
     /**
@@ -151,12 +191,16 @@ class JsonOutput {
      * @return a JSON object representation for a map
      */
     static String toJson(Map m) {
-        "{" + m.collect { k, v ->
+        if (m != null) {
+            "{" + m.collect { k, v ->
                 if (k == null) {
                     throw new IllegalArgumentException('Maps with null keys can\'t be converted to JSON')
                 }
                 toJson(k.toString()) + ':' + toJson(v)
-        }.join(',') + "}"
+            }.join(',') + "}"
+        } else {
+            "null"
+        }
     }
 
     /**

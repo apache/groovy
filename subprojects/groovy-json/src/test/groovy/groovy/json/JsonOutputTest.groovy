@@ -41,6 +41,17 @@ class JsonOutputTest extends GroovyTestCase {
 
     void testNullValue() {
         assert toJson(null) == "null"
+        assert toJson((Boolean) null) == 'null'
+        assert toJson((Number) null) == 'null'
+        assert toJson((Character) null) == 'null'
+        assert toJson((String) null) == 'null'
+        assert toJson((Date) null) == 'null'
+        assert toJson((Calendar) null) == 'null'
+        assert toJson((UUID) null) == 'null'
+        assert toJson((URL) null) == 'null'
+        assert toJson((Closure) null) == 'null'
+        assert toJson((Expando) null) == 'null'
+        assert toJson((Map) null) == 'null'
     }
 
     void testNumbers() {
