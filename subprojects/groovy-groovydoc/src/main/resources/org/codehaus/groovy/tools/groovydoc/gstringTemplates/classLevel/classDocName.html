@@ -97,10 +97,10 @@ if (location.href.indexOf('is-external=true') == -1) {
         <li><a href="${classDoc.relativeRootPath}help-doc.html">Help</a></li>
     </ul>
 </div>
-<% if (props.header) { %><p>${props.header}</p><% } %>
+
 <div class="subNav">
     <ul class="navList">
-        <li><a href="${classDoc.relativeRootPath}/index.html?${classDoc.fullPathName}" target="_top">Frames</a></li>
+        <li><a href="${classDoc.relativeRootPath}index.html?${classDoc.fullPathName}" target="_top">Frames</a></li>
         <li><a href="${classDoc.name()}.html" target="_top">No Frames</a></li>
     </ul>
     <ul class="navList" id="allclasses_navbar_top">
@@ -125,37 +125,37 @@ if (location.href.indexOf('is-external=true') == -1) {
     if (classDoc.isAnnotationType()) {
         def hasReq = classDoc.fields().any{ isRequired(it, "true") }
         def hasOpt = classDoc.fields().any{ isRequired(it, "false") }
-        if (hasReq) { %><li><a href="#required_element_summary"><% } %>Required&nbsp;|&nbsp;<% if (hasReq) { %></a></li><% }
-        if (hasOpt) { %><li><a href="#optional_element_summary"><% } %>Optional&nbsp;|&nbsp;<% if (hasOpt) { %></a></li><% }
+        if (hasReq) { %><li><a href="#required_element_summary"><% } %>Required<% if (hasReq) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (hasOpt) { %><li><a href="#optional_element_summary"><% } %>Optional<% if (hasOpt) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
     } else {
-        if (visibleNested) { %><li><a href="#nested_summary"><% } %>Nested&nbsp;|&nbsp;<% if (visibleNested) { %></a></li><% }
+        if (visibleNested) { %><li><a href="#nested_summary"><% } %>Nested<% if (visibleNested) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
         if (classDoc.isEnum()) {
-            if (hasEnumConstants) { %><li><a href="#enum_constant_summary"><% } %>Enum constants&nbsp;|&nbsp;<% if (hasEnumConstants) { %></a></li><% }
+            if (hasEnumConstants) { %><li><a href="#enum_constant_summary"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
         }
-        if (hasFields) { %><li><a href="#field_summary"><% } %>Field&nbsp;|&nbsp;<% if (hasFields) { %></a></li><% }
-        if (hasProperties) { %><li><a href="#property_summary">Property&nbsp;|&nbsp;</a></li><% }
+        if (hasFields) { %><li><a href="#field_summary"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (hasProperties) { %><li><a href="#property_summary">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
         if (classDoc.isClass()) {
-            if (visibleConstructors) { %><li><a href="#constructor_summary"><% } %>Constr&nbsp;|&nbsp;<% if (visibleConstructors) { %></a></li><% }
+            if (visibleConstructors) { %><li><a href="#constructor_summary"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
         }
-        if (visibleMethods) { %><li><a href="#method_summary"><% } %>Method&nbsp;|&nbsp;<% if (visibleMethods) { %></a></li><% }
+        if (visibleMethods) { %><li><a href="#method_summary"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
     }
     %>
         </ul>
         <ul class="subNavList">
-            <li>Detail:&nbsp;</li>
+            <li>&nbsp;|&nbsp;Detail:&nbsp;</li>
             <%
             if (classDoc.isAnnotationType()) {
-                if (hasElements) { %><li><a href="#element_detail"><% } %>Element&nbsp;|&nbsp;<% if (hasElements) { %></a></li><% }
+                if (hasElements) { %><li><a href="#element_detail"><% } %>Element<% if (hasElements) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
             } else {
                 if (classDoc.isEnum()) {
-                    if (hasEnumConstants) { %><li><a href="#enum_constant_detail"><% } %>Enum constants&nbsp;|&nbsp;<% if (hasEnumConstants) { %></a></li><% }
+                    if (hasEnumConstants) { %><li><a href="#enum_constant_detail"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
                 }
-                if (hasFields) { %><li><a href="#field_detail"><% } %>Field&nbsp;|&nbsp;<% if (hasFields) { %></a></li><% }
-                if (hasProperties) { %><li><a href="#prop_detail">Property&nbsp;|&nbsp;</a></li><% }
+                if (hasFields) { %><li><a href="#field_detail"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                if (hasProperties) { %><li><a href="#prop_detail">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
                 if (classDoc.isClass()) {
-                    if (visibleConstructors) { %><li><a href="#constructor_detail"><% } %>Constr&nbsp;|&nbsp;<% if (visibleConstructors) { %></a></li><% }
+                    if (visibleConstructors) { %><li><a href="#constructor_detail"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
                 }
-                if (visibleMethods) { %><li><a href="#method_detail"><% } %>Method&nbsp;|&nbsp;<% if (visibleMethods) { %></a></li><% }
+                if (visibleMethods) { %><li><a href="#method_detail"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
             }
             %>
         </ul>
@@ -172,7 +172,7 @@ def pkg = classDoc.containingPackage().nameWithDots()
 String classDesc = "${classDoc.isGroovy() ? "[Groovy]" : "[Java]"} ${classDoc.typeDescription} ${classDoc.name()}"
 if (pkg != "DefaultPackage") {
 %>
-    <div class="subTitle">${pkg}</div>
+    <div class="subTitle">Package: <strong>${pkg}</strong></div>
 <%}%>
     <h2 title="${classDesc}" class="title">${classDesc}</h2>
 </div>
@@ -675,7 +675,7 @@ if (classDoc.isInterface()) {
 
 <div class="subNav">
     <ul class="navList">
-        <li><a href="${classDoc.relativeRootPath}/index.html?${classDoc.fullPathName}" target="_top">Frames</a></li>
+        <li><a href="${classDoc.relativeRootPath}index.html?${classDoc.fullPathName}" target="_top">Frames</a></li>
         <li><a href="${classDoc.name()}.html" target="_top">No Frames</a></li>
     </ul>
     <ul class="navList" id="allclasses_navbar_bottom">
@@ -700,37 +700,37 @@ if (classDoc.isInterface()) {
     if (classDoc.isAnnotationType()) {
         def hasReq = classDoc.fields().any{ isRequired(it, "true") }
         def hasOpt = classDoc.fields().any{ isRequired(it, "false") }
-        if (hasReq) { %><li><a href="#required_element_summary"><% } %>Required&nbsp;|&nbsp;<% if (hasReq) { %></a></li><% }
-        if (hasOpt) { %><li><a href="#optional_element_summary"><% } %>Optional&nbsp;|&nbsp;<% if (hasOpt) { %></a></li><% }
+        if (hasReq) { %><li><a href="#required_element_summary"><% } %>Required<% if (hasReq) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (hasOpt) { %><li><a href="#optional_element_summary"><% } %>Optional<% if (hasOpt) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
     } else {
-        if (visibleNested) { %><li><a href="#nested_summary"><% } %>Nested&nbsp;|&nbsp;<% if (visibleNested) { %></a></li><% }
+        if (visibleNested) { %><li><a href="#nested_summary"><% } %>Nested<% if (visibleNested) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
         if (classDoc.isEnum()) {
-            if (hasEnumConstants) { %><li><a href="#enum_constant_summary"><% } %>Enum constants&nbsp;|&nbsp;<% if (hasEnumConstants) { %></a></li><% }
+            if (hasEnumConstants) { %><li><a href="#enum_constant_summary"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
         }
-        if (hasFields) { %><li><a href="#field_summary"><% } %>Field&nbsp;|&nbsp;<% if (hasFields) { %></a></li><% }
-        if (hasProperties) { %><li><a href="#property_summary">Property&nbsp;|&nbsp;</a></li><% }
+        if (hasFields) { %><li><a href="#field_summary"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (hasProperties) { %><li><a href="#property_summary">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
         if (classDoc.isClass()) {
-            if (visibleConstructors) { %><li><a href="#constructor_summary"><% } %>Constr&nbsp;|&nbsp;<% if (visibleConstructors) { %></a></li><% }
+            if (visibleConstructors) { %><li><a href="#constructor_summary"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
         }
-        if (visibleMethods) { %><li><a href="#method_summary"><% } %>Method&nbsp;|&nbsp;<% if (visibleMethods) { %></a></li><% }
+        if (visibleMethods) { %><li><a href="#method_summary"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
     }
     %>
         </ul>
         <ul class="subNavList">
-            <li>Detail:&nbsp;</li>
+            <li>&nbsp;|&nbsp;Detail:&nbsp;</li>
             <%
             if (classDoc.isAnnotationType()) {
-                if (hasElements) { %><li><a href="#element_detail"><% } %>Element&nbsp;|&nbsp;<% if (hasElements) { %></a></li><% }
+                if (hasElements) { %><li><a href="#element_detail"><% } %>Element<% if (hasElements) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
             } else {
                 if (classDoc.isEnum()) {
-                    if (hasEnumConstants) { %><li><a href="#enum_constant_detail"><% } %>Enum constants&nbsp;|&nbsp;<% if (hasEnumConstants) { %></a></li><% }
+                    if (hasEnumConstants) { %><li><a href="#enum_constant_detail"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
                 }
-                if (hasFields) { %><li><a href="#field_detail"><% } %>Field&nbsp;|&nbsp;<% if (hasFields) { %></a></li><% }
-                if (hasProperties) { %><li><a href="#prop_detail">Property&nbsp;|&nbsp;</a></li><% }
+                if (hasFields) { %><li><a href="#field_detail"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                if (hasProperties) { %><li><a href="#prop_detail">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
                 if (classDoc.isClass()) {
-                    if (visibleConstructors) { %><li><a href="#constructor_detail"><% } %>Constr&nbsp;|&nbsp;<% if (visibleConstructors) { %></a></li><% }
+                    if (visibleConstructors) { %><li><a href="#constructor_detail"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
                 }
-                if (visibleMethods) { %><li><a href="#method_detail"><% } %>Method&nbsp;|&nbsp;<% if (visibleMethods) { %></a></li><% }
+                if (visibleMethods) { %><li><a href="#method_detail"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
             }
             %>
         </ul>
