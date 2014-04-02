@@ -186,7 +186,7 @@ public class StaticInvocationWriter extends InvocationWriter {
 
             String owner = BytecodeHelper.getClassInternalName(node.getDeclaringClass());
             String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), parameters);
-            mv.visitMethodInsn(INVOKESTATIC, owner, methodName, desc);
+            mv.visitMethodInsn(INVOKESTATIC, owner, methodName, desc, false);
             ClassNode ret = target.getReturnType().redirect();
             if (ret == ClassHelper.VOID_TYPE) {
                 ret = ClassHelper.OBJECT_TYPE;

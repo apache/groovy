@@ -45,7 +45,7 @@ public class CallSiteGenerator {
         
         // call for checking if method is still valid
         for (int i = 0; i < argumentCount; ++i) mv.visitVarInsn(Opcodes.ALOAD, i);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, superClass, "checkCall", "(Ljava/lang/Object;" + parameterDescription + ")Z");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, superClass, "checkCall", "(Ljava/lang/Object;" + parameterDescription + ")Z", false);
         Label l0 = new Label();
         mv.visitJumpInsn(Opcodes.IFEQ, l0);
         
@@ -86,7 +86,7 @@ public class CallSiteGenerator {
         }        
         
         // make call
-        mv.visitMethodInsn(invokeMethodCode, type, cachedMethod.getName(), descriptor);
+        mv.visitMethodInsn(invokeMethodCode, type, cachedMethod.getName(), descriptor, invokeMethodCode == Opcodes.INVOKEINTERFACE);
 
         // produce result
         BytecodeHelper.box(mv, cachedMethod.getReturnType());
@@ -101,9 +101,9 @@ public class CallSiteGenerator {
         mv.visitLabel(l0);
         for (int i = 0; i < argumentCount; ++i) mv.visitVarInsn(Opcodes.ALOAD, i);
         if (!useArray) {
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", "(" + parameterDescription + ")[Ljava/lang/Object;");
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", "(" + parameterDescription + ")[Ljava/lang/Object;", false);
         }
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCall" + name, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;L" + receiverType + ";[Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCall" + name, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;L" + receiverType + ";[Ljava/lang/Object;)Ljava/lang/Object;", false);
         mv.visitInsn(Opcodes.ARETURN);
         
         // exception unwrapping for stackless exceptions
@@ -111,7 +111,7 @@ public class CallSiteGenerator {
         mv.visitLabel(tryEnd);
         final Label catchStart = new Label();
         mv.visitLabel(catchStart);
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/ScriptBytecodeAdapter", "unwrap", "(Lgroovy/lang/GroovyRuntimeException;)Ljava/lang/Throwable;");
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/ScriptBytecodeAdapter", "unwrap", "(Lgroovy/lang/GroovyRuntimeException;)Ljava/lang/Throwable;", false);
         mv.visitInsn(Opcodes.ATHROW);        
         mv.visitTryCatchBlock(tryStart, tryEnd, catchStart, GRE);
         
@@ -144,7 +144,7 @@ public class CallSiteGenerator {
         mv.visitVarInsn(Opcodes.ALOAD, 2);
         mv.visitVarInsn(Opcodes.ALOAD, 3);
         mv.visitVarInsn(Opcodes.ALOAD, 4);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass, "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V");
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass, "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V", false);
 
         mv.visitVarInsn(Opcodes.ALOAD, 5);
         mv.visitFieldInsn(Opcodes.PUTSTATIC, internalName, "__constructor__", "Ljava/lang/reflect/Constructor;");

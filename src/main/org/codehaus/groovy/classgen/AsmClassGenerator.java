@@ -346,7 +346,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (!hasCallToSuper) {
                 // invokes the super class constructor
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", "()V");
+                mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", "()V", false);
             }
         }
 
@@ -975,7 +975,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 : BytecodeHelper.getClassInternalName(field.getOwner());
         if (holder) {
             mv.visitFieldInsn(GETSTATIC, ownerName, fldExp.getFieldName(), BytecodeHelper.getTypeDescription(type));
-            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;", false);
             controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
         } else {
             mv.visitFieldInsn(GETSTATIC, ownerName, fldExp.getFieldName(), BytecodeHelper.getTypeDescription(type));
@@ -1001,7 +1001,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitFieldInsn(GETFIELD, ownerName, fldExp.getFieldName(), BytecodeHelper.getTypeDescription(type));
 
         if (holder) {
-            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;", false);
             controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
         } else {
             controller.getOperandStack().push(field.getType());
@@ -1030,7 +1030,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD, 0);
             mv.visitFieldInsn(GETFIELD, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(field.getType()));
             mv.visitInsn(SWAP);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V");
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V", false);
         } else {
             // rhs is normal value, set normal value
             operandStack.doGroovyCast(field.getOriginType());
@@ -1054,7 +1054,7 @@ public class AsmClassGenerator extends ClassGenerator {
             controller.getOperandStack().box();
             mv.visitFieldInsn(GETSTATIC, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(field.getType()));
             mv.visitInsn(SWAP);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V");
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V", false);
         } else {
             mv.visitFieldInsn(PUTSTATIC, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(field.getType()));
         }
@@ -1107,12 +1107,7 @@ public class AsmClassGenerator extends ClassGenerator {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ALOAD, 0);
         if (controller.isInClosure() && !controller.getCompileStack().isImplicitThis()) {
-            mv.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    "groovy/lang/Closure",
-                    "getThisObject",
-                    "()Ljava/lang/Object;"
-            );
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
             controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
 //            controller.getOperandStack().push(controller.getClassNode().getOuterClass());
         } else {
@@ -1131,11 +1126,7 @@ public class AsmClassGenerator extends ClassGenerator {
             loadThisOrOwner();
             mv.visitLdcInsn(name);
 
-            mv.visitMethodInsn(
-                    INVOKESPECIAL,
-                    "org/codehaus/groovy/runtime/ScriptReference",
-                    "<init>",
-                    "(Lgroovy/lang/Script;Ljava/lang/String;)V");
+            mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/ScriptReference", "<init>", "(Lgroovy/lang/Script;Ljava/lang/String;)V", false);
         } else {
             PropertyExpression pexp = new PropertyExpression(VariableExpression.THIS_EXPRESSION, name);
             pexp.setImplicitThis(true);
@@ -1194,7 +1185,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitJumpInsn(IFNONNULL,l0);
             mv.visitInsn(POP);
             mv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(referencedClasses.get(staticFieldName)));
-            mv.visitMethodInsn(INVOKESTATIC,controller.getInternalClassName(),"class$","(Ljava/lang/String;)Ljava/lang/Class;");
+            mv.visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), "class$", "(Ljava/lang/String;)Ljava/lang/Class;", false);
             mv.visitInsn(DUP);
             mv.visitFieldInsn(PUTSTATIC,controller.getInternalClassName(),staticFieldName,"Ljava/lang/Class;");
             mv.visitLabel(l0);
@@ -1212,7 +1203,7 @@ public class AsmClassGenerator extends ClassGenerator {
         Label l0 = new Label();
         mv.visitLabel(l0);
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;");
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;", false);
         Label l1 = new Label();
         mv.visitLabel(l1);
         mv.visitInsn(ARETURN);
@@ -1222,8 +1213,8 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitTypeInsn(NEW, "java/lang/NoClassDefFoundError");
         mv.visitInsn(DUP);
         mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ClassNotFoundException", "getMessage", "()Ljava/lang/String;");
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/NoClassDefFoundError", "<init>", "(Ljava/lang/String;)V");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ClassNotFoundException", "getMessage", "()Ljava/lang/String;", false);
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/NoClassDefFoundError", "<init>", "(Ljava/lang/String;)V", false);
         mv.visitInsn(ATHROW);
         mv.visitTryCatchBlock(l0, l2, l2, "java/lang/ClassNotFoundException"); // br using l2 as the 2nd param seems create the right table entry
         mv.visitMaxs(3, 2);
@@ -1257,7 +1248,7 @@ public class AsmClassGenerator extends ClassGenerator {
             internalClassName = BytecodeHelper.getClassInternalName(controller.getInterfaceClassLoadingClass());
             mv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
         } else {
-            mv.visitMethodInsn(INVOKESTATIC, internalClassName, "$get$" + staticFieldName, "()Ljava/lang/Class;");
+            mv.visitMethodInsn(INVOKESTATIC, internalClassName, "$get$" + staticFieldName, "()Ljava/lang/Class;", false);
         }
         controller.getOperandStack().push(ClassHelper.CLASS_Type);
     }
@@ -1573,9 +1564,9 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitInsn(DUP);
             mv.visitInsn(ICONST_0);
             mv.visitLdcInsn(i);
-            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;");
+            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
             mv.visitInsn(AASTORE);
-            mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/CurriedClosure", "<init>", "(Lgroovy/lang/Closure;[Ljava/lang/Object;)V");
+            mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/CurriedClosure", "<init>", "(Lgroovy/lang/Closure;[Ljava/lang/Object;)V", false);
             // stack: closure,curriedClosure
 
             // we need to save the result
@@ -1677,7 +1668,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 controller.setMethodVisitor(mv);
                 for (String methodName : methods) {
                     mv.visitInsn(DUP);
-                    mv.visitMethodInsn(INVOKESTATIC,controller.getInternalClassName(),methodName,"([Ljava/lang/Object;)V");
+                    mv.visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), methodName, "([Ljava/lang/Object;)V", false);
                 }
             }
         } else {
@@ -1728,7 +1719,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         controller.getOperandStack().remove(size);
 
-        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/GStringImpl", "<init>", "([Ljava/lang/Object;[Ljava/lang/String;)V");
+        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/GStringImpl", "<init>", "([Ljava/lang/Object;[Ljava/lang/String;)V", false);
         controller.getOperandStack().push(ClassHelper.GSTRING_TYPE);
     }
 

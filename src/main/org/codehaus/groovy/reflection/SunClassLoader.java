@@ -68,7 +68,7 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
         MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "sun/reflect/MagicAccessorImpl", "<init>", "()V");
+        mv.visitMethodInsn(INVOKESPECIAL, "sun/reflect/MagicAccessorImpl", "<init>", "()V", false);
         mv.visitInsn(RETURN);
         mv.visitMaxs(0,0);
         mv.visitEnd();

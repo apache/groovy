@@ -189,7 +189,7 @@ public class OptimizingStatementWriter extends StatementWriter {
     @Override
     protected void writeIteratorHasNext(MethodVisitor mv) {
         if (controller.isFastPath()) {
-            mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "hasNext", "()Z");
+            mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "hasNext", "()Z", true);
         } else {
             super.writeIteratorHasNext(mv);
         }
@@ -198,7 +198,7 @@ public class OptimizingStatementWriter extends StatementWriter {
     @Override
     protected void writeIteratorNext(MethodVisitor mv) {
         if (controller.isFastPath()) {
-            mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "next", "()Ljava/lang/Object;");
+            mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "next", "()Ljava/lang/Object;", true);
         } else {
             super.writeIteratorNext(mv);
         }
