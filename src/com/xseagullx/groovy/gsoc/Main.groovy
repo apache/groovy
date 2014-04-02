@@ -2,6 +2,7 @@
 package com.xseagullx.groovy.gsoc
 
 import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.SourceUnit
@@ -71,6 +72,22 @@ class Main {
             any.printStackTrace()
             return null
         }
+    }
+
+    void compile(File file)
+    {
+        ClassLoader parent = getClass().getClassLoader()
+        GroovyClassLoader loader = new GroovyClassLoader(parent)
+        final GroovyClassLoader groovyClassLoader = new GroovyClassLoader(loader)
+        final CompilationUnit unit = new CompilationUnit(groovyClassLoader)
+        final CompilerConfiguration config = new CompilerConfiguration(configuration)
+
+        config.targetDirectory = file.parentFile
+
+        unit.configure(config)
+        unit.addSource(file)
+        unit.compile()
+        println(unit)
     }
 
     static def displayHelp() {

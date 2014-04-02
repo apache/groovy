@@ -30,8 +30,10 @@ class ASTBuilder extends GroovyBaseListener {
         new ParseTreeWalker().walk(this, tree);
     }
 
-    @Memoized static classNode(Class c) {
-        new ClassNode(c)
+    @Memoized classNode(Class c) {
+        def classNode = new ClassNode(c)
+        classNode.module = moduleNode
+        classNode
     }
 
     @Memoized classNode(String c) {
@@ -48,6 +50,8 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @Override void exitClassDeclaration(@NotNull GroovyParser.ClassDeclarationContext ctx) {
-        moduleNode.classes.add(new ClassNode("$moduleNode.packageName${ctx.IDENTIFIER()}", Modifier.PUBLIC, classNode("java.lang.Object")))
+        def classNode = new ClassNode("$moduleNode.packageName${ctx.IDENTIFIER()}", Modifier.PUBLIC, classNode("java.lang.Object"))
+        classNode.module = moduleNode
+        moduleNode.classes.add(classNode)
     }
 }

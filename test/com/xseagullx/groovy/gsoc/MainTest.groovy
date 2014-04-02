@@ -19,4 +19,13 @@ class MainTest extends Specification {
         assert moduleNodeOld.imports.collect { [it.alias, it.className] } == moduleNodeNew.imports.collect { [it.alias, it.className] }
         assert moduleNodeOld.classes.collect { [it.name, it.modifiers, it.superClass.name] } == moduleNodeNew.classes.collect { [it.name, it.modifiers, it.superClass.name] }
     }
+
+    def "test class file creation"() {
+        expect:
+        def sourceFile = new File("test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy")
+
+
+        def main = new Main(Configuration.NEW)
+        main.compile(sourceFile)
+    }
 }
