@@ -61,6 +61,8 @@ import java.util.SortedSet;
 import java.util.SortedMap;
 import java.util.Collections;
 
+import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createEquals;
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createHashCode;
@@ -104,26 +106,26 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             "java.util.UUID"
     );
     private static final Class MY_CLASS = groovy.transform.Immutable.class;
-    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
     static final String MEMBER_ADD_COPY_WITH = "copyWith";
     static final String COPY_WITH_METHOD = "copyWith";
 
-    private static final ClassNode DATE_TYPE = ClassHelper.make(Date.class);
-    private static final ClassNode CLONEABLE_TYPE = ClassHelper.make(Cloneable.class);
-    private static final ClassNode COLLECTION_TYPE = ClassHelper.makeWithoutCaching(Collection.class, false);
-    private static final ClassNode READONLYEXCEPTION_TYPE = ClassHelper.make(ReadOnlyPropertyException.class);
-    private static final ClassNode DGM_TYPE = ClassHelper.make(DefaultGroovyMethods.class);
-    private static final ClassNode SELF_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
-    private static final ClassNode HASHMAP_TYPE = ClassHelper.makeWithoutCaching(HashMap.class, false);
-    private static final ClassNode MAP_TYPE = ClassHelper.makeWithoutCaching(Map.class, false);
-    private static final ClassNode REFLECTION_INVOKER_TYPE = ClassHelper.make(ReflectionMethodInvoker.class);
-    private static final ClassNode SORTEDSET_CLASSNODE = ClassHelper.make(SortedSet.class);
-    private static final ClassNode SORTEDMAP_CLASSNODE = ClassHelper.make(SortedMap.class);
-    private static final ClassNode SET_CLASSNODE = ClassHelper.make(Set.class);
-    private static final ClassNode MAP_CLASSNODE = ClassHelper.make(Map.class);
+    private static final ClassNode DATE_TYPE = make(Date.class);
+    private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
+    private static final ClassNode COLLECTION_TYPE = makeWithoutCaching(Collection.class, false);
+    private static final ClassNode READONLYEXCEPTION_TYPE = make(ReadOnlyPropertyException.class);
+    private static final ClassNode DGM_TYPE = make(DefaultGroovyMethods.class);
+    private static final ClassNode SELF_TYPE = make(ImmutableASTTransformation.class);
+    private static final ClassNode HASHMAP_TYPE = makeWithoutCaching(HashMap.class, false);
+    private static final ClassNode MAP_TYPE = makeWithoutCaching(Map.class, false);
+    private static final ClassNode REFLECTION_INVOKER_TYPE = make(ReflectionMethodInvoker.class);
+    private static final ClassNode SORTEDSET_CLASSNODE = make(SortedSet.class);
+    private static final ClassNode SORTEDMAP_CLASSNODE = make(SortedMap.class);
+    private static final ClassNode SET_CLASSNODE = make(Set.class);
+    private static final ClassNode MAP_CLASSNODE = make(Map.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -269,7 +271,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         for (PropertyNode pNode : list) {
             Parameter param = new Parameter(pNode.getField().getType(), pNode.getField().getName());
             orderedParams[index++] = param;
-            argMap.addMapEntryExpression(new ConstantExpression(pNode.getName()), var(pNode.getName()));
+            argMap.addMapEntryExpression(constX(pNode.getName()), var(pNode.getName()));
         }
         final BlockStatement orderedBody = new BlockStatement();
         orderedBody.addStatement(stmt(
@@ -279,25 +281,29 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createGetterBodyDefault(FieldNode fNode) {
-        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression fieldExpr = var(fNode);
         return stmt(fieldExpr);
     }
 
     private Expression cloneCollectionExpr(Expression fieldExpr) {
-        Expression expression = createIfInstanceOfAsImmutableStatement(fieldExpr, SORTEDSET_CLASSNODE,
-                createIfInstanceOfAsImmutableStatement(fieldExpr, SORTEDMAP_CLASSNODE,
-                        createIfInstanceOfAsImmutableStatement(fieldExpr, SET_CLASSNODE,
-                                createIfInstanceOfAsImmutableStatement(fieldExpr, MAP_CLASSNODE,
-                                        createIfInstanceOfAsImmutableStatement(fieldExpr, ClassHelper.LIST_TYPE,
-                                                createAsImmutableExpression(fieldExpr, COLLECTION_TYPE))))));
+        Expression expression = createIfInstanceOfAsImmutableS(fieldExpr, SORTEDSET_CLASSNODE,
+                createIfInstanceOfAsImmutableS(fieldExpr, SORTEDMAP_CLASSNODE,
+                        createIfInstanceOfAsImmutableS(fieldExpr, SET_CLASSNODE,
+                                createIfInstanceOfAsImmutableS(fieldExpr, MAP_CLASSNODE,
+                                        createIfInstanceOfAsImmutableS(fieldExpr, ClassHelper.LIST_TYPE,
+                                                createAsImmutableX(fieldExpr, COLLECTION_TYPE))
+                                )
+                        )
+                )
+        );
         return expression;
     }
 
-    private Expression createIfInstanceOfAsImmutableStatement(Expression expr, ClassNode type, Expression elseStatement) {
-        return ternaryX(isInstanceOf(expr, type), createAsImmutableExpression(expr, type), elseStatement);
+    private Expression createIfInstanceOfAsImmutableS(Expression expr, ClassNode type, Expression elseStatement) {
+        return ternaryX(isInstanceOf(expr, type), createAsImmutableX(expr, type), elseStatement);
     }
 
-    private Expression createAsImmutableExpression(final Expression expr, final ClassNode type) {
+    private Expression createAsImmutableX(final Expression expr, final ClassNode type) {
         return callX(DGM_TYPE, "asImmutable", new CastExpression(type, expr));
     }
 
@@ -350,8 +356,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 body.addStatement(checkFinalArgNotOverridden(cNode, fNode));
             body.addStatement(createConstructorStatementDefault(fNode));
         }
-        final Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
-        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, body));
+        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, params(new Parameter(HASHMAP_TYPE, "args")), ClassNode.EMPTY_ARRAY, body));
     }
 
     private Statement checkFinalArgNotOverridden(ClassNode cNode, FieldNode fNode) {
@@ -365,11 +370,11 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createConstructorStatementMapSpecial(FieldNode fNode) {
-        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression fieldExpr = var(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
         Expression namedArgs = findArg(fNode.getName());
-        Expression baseArgs = new VariableExpression("args");
+        Expression baseArgs = var("args");
         return ifElseS(
                 equalsNullX(baseArgs),
                 ifS(
@@ -437,7 +442,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createConstructorStatementGuarded(ClassNode cNode, FieldNode fNode) {
-        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression fieldExpr = var(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
         Expression unknown = findArg(fNode.getName());
@@ -456,7 +461,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createConstructorStatementCollection(FieldNode fNode) {
-        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression fieldExpr = var(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
         Expression collection = findArg(fNode.getName());
@@ -492,7 +497,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createConstructorStatementArrayOrCloneable(FieldNode fNode) {
-        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression fieldExpr = var(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         ClassNode fieldType = fNode.getType();
         if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
@@ -508,7 +513,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createConstructorStatementDate(FieldNode fNode) {
-        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression fieldExpr = var(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
         final Expression date = findArg(fNode.getName());
@@ -568,13 +573,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createGetterBodyArrayOrCloneable(FieldNode fNode) {
-        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression fieldExpr = var(fNode);
         final Expression expression = cloneArrayOrCloneableExpr(fieldExpr, fNode.getType());
         return safeExpression(fieldExpr, expression);
     }
 
     private Statement createGetterBodyDate(FieldNode fNode) {
-        final Expression fieldExpr = new VariableExpression(fNode);
+        final Expression fieldExpr = var(fNode);
         final Expression expression = cloneDateExpr(fieldExpr);
         return safeExpression(fieldExpr, expression);
     }

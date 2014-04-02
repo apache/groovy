@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,65 +16,65 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.Synchronized;
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.objectweb.asm.Opcodes;
 
 import java.util.Arrays;
 
+import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
 
 /**
- * Handles generation of code for the {@code @}Synchronized annotation.
+ * Handles generation of code for the {@code @Synchronized} annotation.
  *
  * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-public class SynchronizedASTTransformation implements ASTTransformation, Opcodes {
+public class SynchronizedASTTransformation extends AbstractASTTransformation {
 
     private static final Class MY_CLASS = Synchronized.class;
-    private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    private static final ClassNode MY_TYPE = make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new RuntimeException("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
-        }
-
+        init(nodes, source);
+        init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(node.getClassNode())) return;
-        Expression valueExpr = node.getMember("value");
-        String value = null;
-        if (valueExpr instanceof ConstantExpression) {
-            ConstantExpression ce = (ConstantExpression) valueExpr;
-            Object valueObject = ce.getValue();
-            if (valueObject != null) value = valueObject.toString();
-        }
+        String value = getMemberStringValue(node, "value");
 
         if (parent instanceof MethodNode) {
             MethodNode mNode = (MethodNode) parent;
             ClassNode cNode = mNode.getDeclaringClass();
-            String lockExpr = determineLock(value, cNode, mNode.isStatic());
+            String lockExpr = determineLock(value, cNode, mNode);
             Statement origCode = mNode.getCode();
-            Statement newCode = new SynchronizedStatement(new VariableExpression(lockExpr), origCode);
+            Statement newCode = new SynchronizedStatement(var(lockExpr), origCode);
             mNode.setCode(newCode);
         }
     }
 
-    private String determineLock(String value, ClassNode cNode, boolean isStatic) {
+    private String determineLock(String value, ClassNode cNode, MethodNode mNode) {
+        boolean isStatic = mNode.isStatic();
         if (value != null && value.length() > 0 && !value.equalsIgnoreCase("$lock")) {
             if (cNode.getDeclaredField(value) == null) {
-                throw new RuntimeException("Error during " + MY_TYPE_NAME + " processing: lock field with name '" + value + "' not found in class " + cNode.getName());
+                addError("Error during " + MY_TYPE_NAME + " processing: lock field with name '" + value + "' not found in class " + cNode.getName(), mNode);
             }
-            if (cNode.getDeclaredField(value).isStatic() != isStatic) {
-                throw new RuntimeException("Error during " + MY_TYPE_NAME + " processing: lock field with name '" + value + "' should " + (isStatic ? "" : "not ") + "be static");
+            FieldNode field = cNode.getDeclaredField(value);
+            if (field.isStatic() != isStatic) {
+                addError("Error during " + MY_TYPE_NAME + " processing: lock field with name '" + value + "' should " + (isStatic ? "" : "not ") + "be static", field);
             }
             return value;
         }
@@ -84,7 +84,7 @@ public class SynchronizedASTTransformation implements ASTTransformation, Opcodes
                 int visibility = ACC_PRIVATE | ACC_STATIC | ACC_FINAL;
                 cNode.addField("$LOCK", visibility, ClassHelper.OBJECT_TYPE, zeroLengthObjectArray());
             } else if (!field.isStatic()) {
-                throw new RuntimeException("Error during " + MY_TYPE_NAME + " processing: $LOCK field must be static");
+                addError("Error during " + MY_TYPE_NAME + " processing: $LOCK field must be static", field);
             }
             return "$LOCK";
         }
@@ -93,13 +93,13 @@ public class SynchronizedASTTransformation implements ASTTransformation, Opcodes
             int visibility = ACC_PRIVATE | ACC_FINAL;
             cNode.addField("$lock", visibility, ClassHelper.OBJECT_TYPE, zeroLengthObjectArray());
         } else if (field.isStatic()) {
-            throw new RuntimeException("Error during " + MY_TYPE_NAME + " processing: $lock field must not be static");
+            addError("Error during " + MY_TYPE_NAME + " processing: $lock field must not be static", field);
         }
         return "$lock";
     }
 
     private Expression zeroLengthObjectArray() {
-        return new ArrayExpression(ClassHelper.OBJECT_TYPE, null, Arrays.asList((Expression)new ConstantExpression(0)));
+        return new ArrayExpression(ClassHelper.OBJECT_TYPE, null, Arrays.asList((Expression)constX(0)));
     }
 
 }

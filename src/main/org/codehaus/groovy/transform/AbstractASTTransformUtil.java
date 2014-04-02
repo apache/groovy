@@ -145,32 +145,32 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
 
     @Deprecated
     public static Statement returnFalseIfFieldNotEqual(FieldNode fNode, Expression other) {
-        return GeneralUtils.returnFalseIfFieldNotEqual(fNode, other);
+        return GeneralUtils.ifS(GeneralUtils.neFieldX(other, fNode), GeneralUtils.returnS(GeneralUtils.constX(Boolean.FALSE)));
     }
 
     @Deprecated
     public static Statement returnFalseIfNotInstanceof(ClassNode cNode, Expression other) {
-        return GeneralUtils.returnFalseIfNotInstanceof(cNode, other);
+        return GeneralUtils.ifS(GeneralUtils.not(GeneralUtils.isInstanceOf(other, cNode)), GeneralUtils.returnS(GeneralUtils.constX(Boolean.FALSE)));
     }
 
     @Deprecated
     public static IfStatement returnFalseIfNull(Expression other) {
-        return GeneralUtils.returnFalseIfNull(other);
+        return (IfStatement) GeneralUtils.ifS(GeneralUtils.equalsNullX(other), GeneralUtils.returnS(GeneralUtils.constX(Boolean.FALSE)));
     }
 
     @Deprecated
     public static Statement returnFalseIfPropertyNotEqual(PropertyNode pNode, Expression other) {
-        return GeneralUtils.returnFalseIfPropertyNotEqual(pNode, other);
+        return GeneralUtils.ifS(GeneralUtils.nePropertyX(pNode, other), GeneralUtils.returnS(GeneralUtils.constX(Boolean.FALSE)));
     }
 
     @Deprecated
     public static Statement returnFalseIfWrongType(ClassNode cNode, Expression other) {
-        return GeneralUtils.returnFalseIfWrongType(cNode, other);
+        return GeneralUtils.ifS(GeneralUtils.not(GeneralUtils.hasClassX(other, cNode)), GeneralUtils.returnS(GeneralUtils.constX(Boolean.FALSE)));
     }
 
     @Deprecated
     public static IfStatement returnTrueIfIdentical(Expression self, Expression other) {
-        return GeneralUtils.returnTrueIfIdentical(self, other);
+        return (IfStatement) GeneralUtils.ifS(GeneralUtils.identicalX(self, other), GeneralUtils.returnS(GeneralUtils.constX(Boolean.TRUE)));
     }
 
     @Deprecated

@@ -16,12 +16,18 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.EqualsAndHashCode;
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -33,16 +39,18 @@ import org.codehaus.groovy.util.HashCodeHelper;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe;
 
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = EqualsAndHashCode.class;
-    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode HASHUTIL_TYPE = ClassHelper.make(HashCodeHelper.class);
-    private static final ClassNode INVOKERHELPER_TYPE = ClassHelper.make(InvokerHelper.class);
-    private static final ClassNode OBJECT_TYPE = ClassHelper.make(Object.class);
+    private static final ClassNode HASHUTIL_TYPE = make(HashCodeHelper.class);
+    private static final ClassNode INVOKERHELPER_TYPE = make(InvokerHelper.class);
+    private static final ClassNode OBJECT_TYPE = makeClassSafe(Object.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -84,7 +92,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         // TODO use pList and fList
         if (cacheResult) {
             final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
-            final Expression hash = new VariableExpression(hashField);
+            final Expression hash = var(hashField);
             body.addStatement(ifS(
                     isZeroX(hash),
                     calculateHashStatements(cNode, hash, includeFields, callSuper, excludes, includes)
@@ -127,7 +135,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         for (FieldNode fNode : fList) {
             if (shouldSkip(fNode.getName(), excludes, includes)) continue;
             // _result = HashCodeHelper.updateHash(_result, field) // plus self-reference checking
-            final Expression fieldExpr = new VariableExpression(fNode);
+            final Expression fieldExpr = var(fNode);
             final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, fieldExpr));
             body.addStatement(ifS(
                     not(identicalX(fieldExpr, var("this"))),
@@ -174,17 +182,14 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         VariableExpression other = var("other");
 
         // some short circuit cases for efficiency
-        body.addStatement(returnFalseIfNull(other));
-        body.addStatement(returnTrueIfIdentical(VariableExpression.THIS_EXPRESSION, other));
+        body.addStatement(ifS(equalsNullX(other), returnS(constX(Boolean.FALSE))));
+        body.addStatement(ifS(identicalX(VariableExpression.THIS_EXPRESSION, other), returnS(constX(Boolean.TRUE))));
 
         if (useCanEqual) {
-            body.addStatement(returnFalseIfNotInstanceof(cNode, other));
-            body.addStatement(ifS(
-                    not(callX(other, "canEqual", VariableExpression.THIS_EXPRESSION)),
-                    returnS(ConstantExpression.FALSE)
-            ));
+            body.addStatement(ifS(not(isInstanceOf(other, cNode)), returnS(constX(Boolean.FALSE))));
+            body.addStatement(ifS(not(callX(other, "canEqual", var("this"))), returnS(constX(Boolean.FALSE))));
         } else {
-            body.addStatement(returnFalseIfWrongType(cNode, other));
+            body.addStatement(ifS(not(hasClassX(other, cNode)), returnS(constX(Boolean.FALSE))));
         }
 
         VariableExpression otherTyped = var("otherTyped");
@@ -195,10 +200,10 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             body.addStatement(
                     ifS(differentPropertyX(pNode, otherTyped),
-                            ifElseS(differentSelfRecursivePropertyExpr(pNode, otherTyped),
-                                    returnS(ConstantExpression.FALSE),
-                                    ifS(not(bothSelfRecursivePropertyExpr(pNode, otherTyped)),
-                                            returnFalseIfPropertyNotEqual(pNode, otherTyped))
+                            ifElseS(differentSelfRecursivePropertyX(pNode, otherTyped),
+                                    returnS(constX(Boolean.FALSE)),
+                                    ifS(not(bothSelfRecursivePropertyX(pNode, otherTyped)),
+                                            ifS(nePropertyX(pNode, otherTyped), returnS(constX(Boolean.FALSE))))
                             )
                     )
             );
@@ -211,21 +216,21 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             if (shouldSkip(fNode.getName(), excludes, includes)) continue;
             body.addStatement(
                     ifS(differentFieldX(fNode, otherTyped),
-                            ifElseS(differentSelfRecursiveFieldExpr(fNode, otherTyped),
-                                    returnS(ConstantExpression.FALSE),
-                                    ifS(not(bothSelfRecursiveFieldExpr(fNode, otherTyped)),
-                                            returnFalseIfFieldNotEqual(fNode, otherTyped)))
-             ));
+                            ifElseS(differentSelfRecursiveFieldX(fNode, otherTyped),
+                                    returnS(constX(Boolean.FALSE)),
+                                    ifS(not(bothSelfRecursiveFieldX(fNode, otherTyped)),
+                                            ifS(neFieldX(otherTyped, fNode), returnS(constX(Boolean.FALSE)))))
+                    ));
         }
         if (callSuper) {
             body.addStatement(ifS(
                     not(isTrueX(callSuperX("equals", other))),
-                    returnS(ConstantExpression.FALSE)
+                    returnS(constX(Boolean.FALSE))
             ));
         }
 
         // default
-        body.addStatement(returnS(ConstantExpression.TRUE));
+        body.addStatement(returnS(constX(Boolean.TRUE)));
 
         cNode.addMethod(new MethodNode(
                 hasExistingEquals ? "_equals" : "equals",
@@ -236,41 +241,41 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 body));
     }
 
-    private static BooleanExpression differentSelfRecursivePropertyExpr(PropertyNode pNode, Expression other) {
+    private static BinaryExpression differentSelfRecursivePropertyX(PropertyNode pNode, Expression other) {
         String getterName = getGetterName(pNode);
         Expression selfGetter = callThisX(getterName);
         Expression otherGetter = callX(other, getterName);
-        return new BooleanExpression(or(
+        return or(
                 and(identicalX(selfGetter, var("this")), differentX(otherGetter, other)),
                 and(differentX(selfGetter, var("this")), identicalX(otherGetter, other))
-        ));
+        );
     }
 
-    private static BooleanExpression bothSelfRecursivePropertyExpr(PropertyNode pNode, Expression other) {
+    private static BinaryExpression bothSelfRecursivePropertyX(PropertyNode pNode, Expression other) {
         String getterName = getGetterName(pNode);
         Expression selfGetter = callThisX(getterName);
         Expression otherGetter = callX(other, getterName);
-        return new BooleanExpression(and(
+        return and(
                 identicalX(selfGetter, var("this")),
                 identicalX(otherGetter, other)
-        ));
+        );
     }
 
-    private static BooleanExpression differentSelfRecursiveFieldExpr(FieldNode fNode, Expression other) {
-        final Expression fieldExpr = new VariableExpression(fNode);
-        final Expression otherExpr = new PropertyExpression(other, fNode.getName());
-        return new BooleanExpression(or(
+    private static BinaryExpression differentSelfRecursiveFieldX(FieldNode fNode, Expression other) {
+        final Expression fieldExpr = var(fNode);
+        final Expression otherExpr = prop(other, fNode.getName());
+        return or(
                 and(identicalX(fieldExpr, var("this")), differentX(otherExpr, other)),
                 and(differentX(fieldExpr, var("this")), identicalX(otherExpr, other))
-        ));
+        );
     }
 
-    private static BooleanExpression bothSelfRecursiveFieldExpr(FieldNode fNode, Expression other) {
-        final Expression fieldExpr = new VariableExpression(fNode);
-        final Expression otherExpr = new PropertyExpression(other, fNode.getName());
-        return new BooleanExpression(and(
+    private static BinaryExpression bothSelfRecursiveFieldX(FieldNode fNode, Expression other) {
+        final Expression fieldExpr = var(fNode);
+        final Expression otherExpr = prop(other, fNode.getName());
+        return and(
                 identicalX(fieldExpr, var("this")),
                 identicalX(otherExpr, other)
-        ));
+        );
     }
 }

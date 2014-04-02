@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -65,7 +66,6 @@ import java.util.Set;
 public class GeneralUtils {
     public static final Expression THIS = VariableExpression.THIS_EXPRESSION;
     public static final Expression SUPER = VariableExpression.SUPER_EXPRESSION;
-    public static final ArgumentListExpression NO_ARGS = ArgumentListExpression.EMPTY_ARGUMENTS;
     public static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
     public static final Token EQ = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
     public static final Token NE = Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1);
@@ -88,12 +88,12 @@ public class GeneralUtils {
         return new ArgumentListExpression(expressions);
     }
 
-    public static Expression assignX(Expression target, Expression value) {
-        return new BinaryExpression(target, ASSIGN, value);
-    }
-
     public static Statement assignS(Expression target, Expression value) {
         return new ExpressionStatement(assignX(target, value));
+    }
+
+    public static Expression assignX(Expression target, Expression value) {
+        return new BinaryExpression(target, ASSIGN, value);
     }
 
     public static BlockStatement block(VariableScope varScope, Statement... stmts) {
@@ -107,22 +107,6 @@ public class GeneralUtils {
         BlockStatement block = new BlockStatement();
         for (Statement stmt : stmts) block.addStatement(stmt);
         return block;
-    }
-
-    public static MethodCallExpression callX(Expression receiver, String methodName, Expression args) {
-        return new MethodCallExpression(receiver, methodName, args);
-    }
-
-    public static MethodCallExpression callX(Expression receiver, String methodName) {
-        return callX(receiver, methodName, MethodCallExpression.NO_ARGUMENTS);
-    }
-
-    public static StaticMethodCallExpression callX(ClassNode receiver, String methodName, Expression args) {
-        return new StaticMethodCallExpression(receiver, methodName, args);
-    }
-
-    public static StaticMethodCallExpression callX(ClassNode receiver, String methodName) {
-        return callX(receiver, methodName, MethodCallExpression.NO_ARGUMENTS);
     }
 
     public static MethodCallExpression callSuperX(String methodName, Expression args) {
@@ -139,6 +123,22 @@ public class GeneralUtils {
 
     public static MethodCallExpression callThisX(String methodName) {
         return callThisX(methodName, MethodCallExpression.NO_ARGUMENTS);
+    }
+
+    public static MethodCallExpression callX(Expression receiver, String methodName, Expression args) {
+        return new MethodCallExpression(receiver, methodName, args);
+    }
+
+    public static MethodCallExpression callX(Expression receiver, String methodName) {
+        return callX(receiver, methodName, MethodCallExpression.NO_ARGUMENTS);
+    }
+
+    public static StaticMethodCallExpression callX(ClassNode receiver, String methodName, Expression args) {
+        return new StaticMethodCallExpression(receiver, methodName, args);
+    }
+
+    public static StaticMethodCallExpression callX(ClassNode receiver, String methodName) {
+        return callX(receiver, methodName, MethodCallExpression.NO_ARGUMENTS);
     }
 
     public static BinaryExpression cmp(Expression lhv, Expression rhv) {
@@ -177,21 +177,19 @@ public class GeneralUtils {
         return new ExpressionStatement(new DeclarationExpression(target, ASSIGN, init));
     }
 
-    public static BooleanExpression differentX(Expression self, Expression other) {
-        return new NotExpression(new BooleanExpression(new MethodCallExpression(self, "is", new ArgumentListExpression(other))));
-    }
-
     public static BooleanExpression differentFieldX(FieldNode fNode, Expression other) {
-        final Expression fieldExpr = new VariableExpression(fNode);
-        final Expression otherExpr = new PropertyExpression(other, fNode.getName());
+        final Expression fieldExpr = var(fNode);
+        final Expression otherExpr = prop(other, fNode.getName());
         return differentX(fieldExpr, otherExpr);
     }
 
     public static BooleanExpression differentPropertyX(PropertyNode pNode, Expression other) {
-        String getterName = "get" + Verifier.capitalize(pNode.getName());
-        Expression selfGetter = new MethodCallExpression(new VariableExpression("this"), getterName, MethodCallExpression.NO_ARGUMENTS);
-        Expression otherGetter = new MethodCallExpression(other, getterName, MethodCallExpression.NO_ARGUMENTS);
-        return differentX(selfGetter, otherGetter);
+        String getterName = getGetterName(pNode);
+        return differentX(callThisX(getterName), callX(other, getterName));
+    }
+
+    public static BooleanExpression differentX(Expression self, Expression other) {
+        return not(new BooleanExpression(callX(self, "is", args(other))));
     }
 
     public static BinaryExpression eq(Expression lhv, Expression rhv) {
@@ -199,7 +197,7 @@ public class GeneralUtils {
     }
 
     public static BooleanExpression equalsNullX(Expression argExpr) {
-        return new BooleanExpression(new BinaryExpression(argExpr, EQ, new ConstantExpression(null)));
+        return new BooleanExpression(eq(argExpr, new ConstantExpression(null)));
     }
 
     public static FieldExpression field(FieldNode fieldNode) {
@@ -312,6 +310,10 @@ public class GeneralUtils {
         return result;
     }
 
+    public static BinaryExpression hasClassX(Expression instance, ClassNode cNode) {
+        return eq(new ClassExpression(cNode), callX(instance, "getClass"));
+    }
+
     public static boolean hasDeclaredMethod(ClassNode cNode, String name, int argsCount) {
         List<MethodNode> ms = cNode.getDeclaredMethods(name);
         for (MethodNode m : ms) {
@@ -327,6 +329,14 @@ public class GeneralUtils {
         return new BooleanExpression(new MethodCallExpression(self, "is", new ArgumentListExpression(other)));
     }
 
+    public static Statement ifElseS(Expression cond, Statement thenStmt, Statement elseStmt) {
+        return new IfStatement(
+                cond instanceof BooleanExpression ? (BooleanExpression) cond : new BooleanExpression(cond),
+                thenStmt,
+                elseStmt
+        );
+    }
+
     public static Statement ifS(Expression cond, Expression trueExpr) {
         return ifS(cond, new ExpressionStatement(trueExpr));
     }
@@ -336,14 +346,6 @@ public class GeneralUtils {
                 cond instanceof BooleanExpression ? (BooleanExpression) cond : new BooleanExpression(cond),
                 trueStmt,
                 EmptyStatement.INSTANCE
-        );
-    }
-
-    public static Statement ifElseS(Expression cond, Statement thenStmt, Statement elseStmt) {
-        return new IfStatement(
-                cond instanceof BooleanExpression ? (BooleanExpression) cond : new BooleanExpression(cond),
-                thenStmt,
-                elseStmt
         );
     }
 
@@ -371,26 +373,17 @@ public class GeneralUtils {
         return new BinaryExpression(lhv, NE, rhv);
     }
 
+    public static BinaryExpression neFieldX(Expression instance, FieldNode fNode) {
+        return ne(new VariableExpression(fNode), prop(instance, fNode.getName()));
+    }
+
+    public static BinaryExpression nePropertyX(PropertyNode pNode, Expression other) {
+        String getterName = getGetterName(pNode);
+        return ne(callThisX(getterName), callX(other, getterName));
+    }
+
     public static NotExpression not(Expression expr) {
         return new NotExpression(expr instanceof BooleanExpression ? expr : new BooleanExpression(expr));
-    }
-
-    private static BooleanExpression notEqualClasses(ClassNode cNode, Expression other) {
-        return new BooleanExpression(new BinaryExpression(new ClassExpression(cNode), NE,
-                new MethodCallExpression(other, "getClass", MethodCallExpression.NO_ARGUMENTS)));
-    }
-
-    public static BooleanExpression notEqualsFieldX(FieldNode fNode, Expression other) {
-        final Expression fieldExpr = new VariableExpression(fNode);
-        final Expression otherExpr = new PropertyExpression(other, fNode.getName());
-        return new BooleanExpression(new BinaryExpression(fieldExpr, NE, otherExpr));
-    }
-
-    public static BooleanExpression notEqualsPropertyX(PropertyNode pNode, Expression other) {
-        String getterName = "get" + Verifier.capitalize(pNode.getName());
-        Expression selfGetter = new MethodCallExpression(new VariableExpression("this"), getterName, MethodCallExpression.NO_ARGUMENTS);
-        Expression otherGetter = new MethodCallExpression(other, getterName, MethodCallExpression.NO_ARGUMENTS);
-        return new BooleanExpression(new BinaryExpression(selfGetter, NE, otherGetter));
     }
 
     public static BooleanExpression notNullExpr(Expression argExpr) {
@@ -425,59 +418,6 @@ public class GeneralUtils {
         return new PropertyExpression(owner, property);
     }
 
-    public static Statement returnFalseIfFieldNotEqual(FieldNode fNode, Expression other) {
-        return new IfStatement(
-                notEqualsFieldX(fNode, other),
-                new ReturnStatement(new ConstantExpression(Boolean.FALSE)),
-                EmptyStatement.INSTANCE
-        );
-    }
-
-    public static Statement returnFalseIfNotInstanceof(ClassNode cNode, Expression other) {
-        return new IfStatement(
-                isInstanceOf(other, cNode),
-                EmptyStatement.INSTANCE,
-                new ReturnStatement(new ConstantExpression(Boolean.FALSE))
-        );
-    }
-
-    public static IfStatement returnFalseIfNull(Expression other) {
-        return new IfStatement(
-                equalsNullX(other),
-                new ReturnStatement(new ConstantExpression(Boolean.FALSE)),
-                EmptyStatement.INSTANCE
-        );
-    }
-
-    @Deprecated
-    public static Statement returnFalseIfPropertyNotEqual(FieldNode fNode, Expression other) {
-        return returnFalseIfFieldNotEqual(fNode, other);
-    }
-
-    public static Statement returnFalseIfPropertyNotEqual(PropertyNode pNode, Expression other) {
-        return new IfStatement(
-                notEqualsPropertyX(pNode, other),
-                new ReturnStatement(new ConstantExpression(Boolean.FALSE)),
-                EmptyStatement.INSTANCE
-        );
-    }
-
-    public static Statement returnFalseIfWrongType(ClassNode cNode, Expression other) {
-        return new IfStatement(
-                notEqualClasses(cNode, other),
-                new ReturnStatement(new ConstantExpression(Boolean.FALSE)),
-                EmptyStatement.INSTANCE
-        );
-    }
-
-    public static IfStatement returnTrueIfIdentical(Expression self, Expression other) {
-        return new IfStatement(
-                identicalX(self, other),
-                new ReturnStatement(new ConstantExpression(Boolean.TRUE)),
-                EmptyStatement.INSTANCE
-        );
-    }
-
     public static Statement returnS(Expression expr) {
         return new ReturnStatement(new ExpressionStatement(expr));
     }
@@ -502,6 +442,10 @@ public class GeneralUtils {
 
     public static VariableExpression var(String name) {
         return new VariableExpression(name);
+    }
+
+    public static VariableExpression var(Variable variable) {
+        return new VariableExpression(variable);
     }
 
     public static VariableExpression var(String name, ClassNode type) {

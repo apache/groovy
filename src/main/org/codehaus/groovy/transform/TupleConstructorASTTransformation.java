@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -41,6 +40,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -55,6 +56,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.prop;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
 
@@ -67,11 +69,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
 public class TupleConstructorASTTransformation extends AbstractASTTransformation {
 
     static final Class MY_CLASS = TupleConstructor.class;
-    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode LHMAP_TYPE = ClassHelper.makeWithoutCaching(LinkedHashMap.class, false);
-    private static final ClassNode HMAP_TYPE = ClassHelper.makeWithoutCaching(HashMap.class, false);
-    private static final ClassNode CHECK_METHOD_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
+    private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
+    private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
+    private static final ClassNode CHECK_METHOD_TYPE = make(ImmutableASTTransformation.class);
     private static Map<Class<?>, Expression> primitivesInitialValues;
 
     static {
@@ -152,7 +154,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             if (callSuper) {
                 superParams.add(var(name));
             } else {
-                body.addStatement(assignS(new PropertyExpression(VariableExpression.THIS_EXPRESSION, name), var(name)));
+                body.addStatement(assignS(prop(var("this"), name), var(name)));
             }
         }
         if (callSuper) {
@@ -162,7 +164,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             String name = fNode.getName();
             if (shouldSkip(name, excludes, includes)) continue;
             params.add(createParam(fNode, name));
-            body.addStatement(assignS(new PropertyExpression(VariableExpression.THIS_EXPRESSION, name), var(name)));
+            body.addStatement(assignS(prop(var("this"), name), var(name)));
         }
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
         // add map constructor if needed, don't do it for LinkedHashMap for now (would lead to duplicate signature)
@@ -222,7 +224,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
     private static BlockStatement illegalArgumentBlock(String message) {
         return block(
-                new ThrowStatement(ctorX(ClassHelper.make(IllegalArgumentException.class), args(constX(message)))));
+                new ThrowStatement(ctorX(make(IllegalArgumentException.class), args(constX(message)))));
     }
 
     private static BlockStatement processArgsBlock(ClassNode cNode, VariableExpression namedArgs) {
@@ -231,10 +233,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             if (pNode.isStatic()) continue;
 
             // if namedArgs.containsKey(propertyName) setProperty(propertyName, namedArgs.get(propertyName));
-            Expression pExpr = new VariableExpression(pNode);
             Statement ifStatement = ifS(
                     callX(namedArgs, "containsKey", constX(pNode.getName())),
-                    assignS(pExpr, new PropertyExpression(namedArgs, pNode.getName())));
+                    assignS(var(pNode), prop(namedArgs, pNode.getName())));
             block.addStatement(ifStatement);
         }
         block.addStatement(stmt(callX(CHECK_METHOD_TYPE, "checkPropNames", args(var("this"), namedArgs))));

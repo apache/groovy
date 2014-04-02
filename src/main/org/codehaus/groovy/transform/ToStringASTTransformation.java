@@ -38,6 +38,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -67,10 +68,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
 public class ToStringASTTransformation extends AbstractASTTransformation {
 
     static final Class MY_CLASS = ToString.class;
-    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode STRINGBUILDER_TYPE = ClassHelper.make(StringBuilder.class);
-    private static final ClassNode INVOKER_TYPE = ClassHelper.make(InvokerHelper.class);
+    private static final ClassNode STRINGBUILDER_TYPE = make(StringBuilder.class);
+    private static final ClassNode INVOKER_TYPE = make(InvokerHelper.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -126,7 +127,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         Expression tempToString;
         if (cache) {
             final FieldNode cacheField = cNode.addField("$to$string", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.STRING_TYPE, null);
-            final Expression savedToString = new VariableExpression(cacheField);
+            final Expression savedToString = var(cacheField);
             body.addStatement(ifS(
                     equalsNullX(savedToString),
                     assignS(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, body))
@@ -168,7 +169,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             fList.addAll(getInstanceNonPropertyFields(cNode));
             for (FieldNode fNode : fList) {
                 if (shouldSkip(fNode.getName(), excludes, includes)) continue;
-                appendValue(body, result, first, new VariableExpression(fNode), fNode.getName(), includeNames, ignoreNulls);
+                appendValue(body, result, first, var(fNode), fNode.getName(), includeNames, ignoreNulls);
             }
         }
 
