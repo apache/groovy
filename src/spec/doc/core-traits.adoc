@@ -79,6 +79,29 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=private_
 WARNING: Traits only support `public` and `private` methods. Neither `protected` nor `package private` scopes are
 supported.
 
+== The meaning of this
+
+`this` represents the implementing instance. Think of a trait as a superclass. This means that when you write:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=meaningofthis_header,indent=0]
+----
+
+then calling:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=meaningofthis_snippet,indent=0]
+----
+
+will return the same instance:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=meaningofthis_assert,indent=0]
+----
+
 == Interfaces
 
 Traits may implement interfaces, in which case the interfaces are declared using the `implements` keyword:
@@ -437,7 +460,7 @@ interfaces, as well as the traits.
 == Differences with mixins
 
 There are several conceptual differences with mixins, as they are available in Groovy. Note that we are talking about
-runtime mixins, not the `@Mixin` annotation which is deprecated by traits.
+runtime mixins, not the @Mixin annotation which is deprecated in favour of traits.
 
 First of all, methods defined in a trait are visible in bytecode:
 
