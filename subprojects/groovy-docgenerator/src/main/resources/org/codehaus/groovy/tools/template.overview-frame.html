@@ -2,40 +2,29 @@
 
 <html>
 <head>
-<title>
-Overview (Groovy JDK)
-</title>
+    <title>
+        Overview (Groovy JDK)
+    </title>
 
-<link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
+    <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
 </head>
 
-<body class="center">
+<body class="left">
 
-<table border="0" width="100%">
-<tr>
-<th align="left" nowrap>Groovy JDK</th>
-</tr>
-</table>
+<div class="indexHeader">
+    <a href="allclasses-frame.html" target="packageFrame">All Classes</a>
+</div>
 
-<table border="0" width="100%">
-<tr>
-<td nowrap><span class="FrameItemFont"><a href="allclasses-frame.html" target="packageFrame">All Classes</a></span>
+<div class="indexContainer">
+    <h2 title="Packages">Packages</h2>
 
-<p>
-<span class="FrameHeadingFont">Packages</span><br>
+    <ul title="Packages">
+        <li><a href="primitive-types/package-frame.html" target="packageFrame">Primitive types</a></li>
+        <% packages.grep().each { %>
+        <li><a href="${it.replaceAll('\\.', '/')}/package-frame.html" target="packageFrame">${it}</a></li>
+        <% } %>
+    </ul>
+</div>
 
-<span class="FrameItemFont"><a href="primitive-types/package-frame.html" target="packageFrame">Primitive types</a></span>
-<% packages.each { %>
-<span class="FrameItemFont"><a href="${it.replaceAll('\\.', '/')}/package-frame.html" target="packageFrame">${it}</a></span>
-<br>
-<% } %>
-</p>
-</td>
-</tr>
-</table>
-
-<p>
-&nbsp;
-</p>
 </body>
 </html>

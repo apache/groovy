@@ -2,35 +2,26 @@
 <!--NewPage-->
 <html>
 <head>
-<title>
-All Classes (Groovy GDK)
-</title>
+    <title>
+        All Classes (Groovy GDK)
+    </title>
 
-
-<link rel ="stylesheet" type="text/css" href="stylesheet.css" title="Style">
-
-
+    <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
 </head>
 
-<body class="center">
-<span class="FrameHeadingFont">
-All Classes
-</span>
+<body class="left">
 
-<br>
+<div class="indexHeader">
+    <h2 title="All Classes">All Classes</h2>
+</div>
 
-<table border="0" width="100%" summary="">
-<tr>
-<td nowrap>
-
-<span class="FrameItemFont">
-<% classes.each { %>
-<a href="${it.replaceAll('\\.', '/')}.html" target="classFrame">${it.replaceAll('.*\\.', '')}</a>
-<br>
-<% } %>
-</span></td>
-</tr>
-</table>
+<div class="indexContainer">
+    <ul title="All Classes">
+        <% classes.each { %>
+        <li><a href="${it.replaceAll('\\.', '/')}.html" target="classFrame">${it.replaceAll('.*\\.', '')}</a></li>
+        <% } %>
+    </ul>
+</div>
 
 </body>
 </html>

@@ -2,40 +2,33 @@
 <!--NewPage-->
 <html>
 <head>
-<title>
-${packageName} (Java 2 Platform SE 5.0)
-</title>
+    <title>
+        ${packageName} (Java 2 Platform SE 5.0)
+    </title>
 
-<meta name="keywords" content="${packageName}">
 <%
-def path = '..'
-packageName.count('.').times {
-    path += ('/..')
-}
+    def path = '..'
+    packageName.count('.').times {
+        path += ('/..')
+    }
 %>
 
-<link rel ="stylesheet" type="text/css" href="${path}/stylesheet.css" title="Style">
-
-
+    <link rel="stylesheet" type="text/css" href="${path}/stylesheet.css" title="Style">
 </head>
 
-<body class="center">
-<span class="FrameTitleFont">${packageName}</span>
+<body class="left">
 
+<div class="indexHeader">
+    <h2 title="${packageName}">${packageName}</h2>
+</div>
 
-<table border="0" width="100%" summary="">
-<tr>
-<td nowrap>
-<span class="FrameHeadingFont">Classes</span>&nbsp;
-<span class="FrameItemFont">
-<% classes.each { %>
-<br>
-<a href="${it}.html" title="class in ${packageName}" target="classFrame">${it}</a>
-<% } %>
-</span></td>
-</tr>
-</table>
-
+<div class="indexContainer">
+    <ul title="Packages">
+        <% classes.grep().each { %>
+        <li><a href="${it}.html" title="class in ${packageName}" target="classFrame">${it}</a></li>
+        <% } %>
+    </ul>
+</div>
 
 </body>
 </html>
