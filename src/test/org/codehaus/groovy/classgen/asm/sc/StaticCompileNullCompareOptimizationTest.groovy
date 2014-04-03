@@ -128,6 +128,7 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
                 '',
                 '',
                 '',
+                '',
                 ']',
                 'IFEQ'
             ])
@@ -153,6 +154,7 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
             assert bytecode.hasStrictSequence([
                 'ALOAD 1',
                 'INVOKEDYNAMIC cast(Ljava/lang/Object;)Z',
+                '',
                 '',
                 '',
                 '',
@@ -219,6 +221,7 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
             assert bytecode.hasStrictSequence([
                 'ALOAD 1',
                 'INVOKEDYNAMIC cast(LA$B;)Z',
+                '',
                 '',
                 '',
                 '',

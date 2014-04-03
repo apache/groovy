@@ -114,7 +114,7 @@ public class BooleanExpressionTransformer {
                     // unbox
                     // GROOVY-6270
                     if (!os.getTopOperand().equals(type)) BytecodeHelper.doCast(mv, type);
-                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z");
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false);
                     mv.visitLabel(exit);
                     os.replace(ClassHelper.boolean_TYPE);
                     return;

@@ -121,7 +121,7 @@ public class ConstructorCallTransformer {
             String classInternalName = BytecodeHelper.getClassInternalName(declaringClass);
             mv.visitTypeInsn(NEW, classInternalName);
             mv.visitInsn(DUP);
-            mv.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", "()V");
+            mv.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", "()V", false);
             mv.visitVarInsn(ASTORE, tmpObj); // store it into tmp variable
 
             // load every field

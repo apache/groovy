@@ -186,10 +186,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
                             mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
                             mv.visitVarInsn(ALOAD, 1);
                             mv.visitVarInsn(ALOAD, 2);
-                            mv.visitMethodInsn(INVOKEVIRTUAL,
-                                    outerClassInternalName,
-                                    "this$dist$invoke$" + objectDistance,
-                                    "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
+                            mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$invoke$" + objectDistance, "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", false);
                             mv.visitInsn(ARETURN);
                         }
                     })
@@ -227,10 +224,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
                             mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
                             mv.visitVarInsn(ALOAD, 1);
                             mv.visitVarInsn(ALOAD, 2);
-                            mv.visitMethodInsn(INVOKEVIRTUAL,
-                                    outerClassInternalName,
-                                    "this$dist$set$" + objectDistance,
-                                    "(Ljava/lang/String;Ljava/lang/Object;)V");
+                            mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$set$" + objectDistance, "(Ljava/lang/String;Ljava/lang/Object;)V", false);
                             mv.visitInsn(RETURN);
                         }
                     })
@@ -266,10 +260,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
                             mv.visitVarInsn(ALOAD, 0);
                             mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
                             mv.visitVarInsn(ALOAD, 1);
-                            mv.visitMethodInsn(INVOKEVIRTUAL,
-                                    outerClassInternalName,
-                                    "this$dist$get$" + objectDistance,
-                                    "(Ljava/lang/String;)Ljava/lang/Object;");
+                            mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$get$" + objectDistance, "(Ljava/lang/String;)Ljava/lang/Object;", false);
                             mv.visitInsn(ARETURN);
                         }
                     })

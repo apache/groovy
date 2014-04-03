@@ -57,7 +57,7 @@ public class MethodCaller implements Opcodes {
     }
 
     public void call(MethodVisitor methodVisitor) {
-        methodVisitor.visitMethodInsn(opcode, internalName, name, getMethodDescriptor());
+        methodVisitor.visitMethodInsn(opcode, internalName, name, getMethodDescriptor(), opcode == Opcodes.INVOKEINTERFACE);
     }
 
     public String getMethodDescriptor() {

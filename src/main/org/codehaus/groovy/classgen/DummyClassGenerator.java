@@ -109,7 +109,7 @@ public class DummyClassGenerator extends ClassGenerator {
         mv.visitTypeInsn(NEW, "java/lang/RuntimeException");
         mv.visitInsn(DUP);
         mv.visitLdcInsn("not intended for execution");
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V", false);
         mv.visitInsn(ATHROW);
         mv.visitMaxs(0, 0);
     }
@@ -124,7 +124,7 @@ public class DummyClassGenerator extends ClassGenerator {
         mv.visitTypeInsn(NEW, "java/lang/RuntimeException");
         mv.visitInsn(DUP);
         mv.visitLdcInsn("not intended for execution");
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V", false);
         mv.visitInsn(ATHROW);
 
         mv.visitMaxs(0, 0);
