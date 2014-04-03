@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-
-
 package org.codehaus.groovy.transform
 
 import gls.CompilableTestSupport
@@ -116,5 +114,12 @@ class SortableTransformTest extends CompilableTestSupport {
             }
         '''
         assert message.contains("Error during @Sortable processing: property 'appearances' must be Comparable")
+    }
+
+    void testBadInterfaceUsage() {
+        def message = shouldFail '''
+            @groovy.transform.Sortable interface Foo { }
+        '''
+        assert message.contains("@Sortable cannot be applied to interface Foo")
     }
 }

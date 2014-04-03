@@ -485,4 +485,21 @@ assert o instanceof A                           // <6>
 assert !(o instanceof B)                        // <7>
 // end::diff_mixin[]'''
     }
+
+    void testMeaningOfThis() {
+        assertScript '''// tag::meaningofthis_header[]
+trait Introspector {
+    def whoAmI() { this }
+}
+class Foo implements Introspector {}
+def foo = new Foo()
+// end::meaningofthis_header[]
+// tag::meaningofthis_snippet[]
+foo.whoAmI()
+// end::meaningofthis_snippet[]
+// tag::meaningofthis_assert[]
+assert foo.whoAmI().is(foo)
+// end::meaningofthis_assert[]'''
+    }
+
 }
