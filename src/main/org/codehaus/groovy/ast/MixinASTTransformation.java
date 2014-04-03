@@ -32,6 +32,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 
+/**
+ * @deprecated static mixins have been deprecated in favour of traits (trait keyword).
+ */
+@Deprecated
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class MixinASTTransformation extends AbstractASTTransformation {
     private static final ClassNode MY_TYPE = make(Mixin.class);
