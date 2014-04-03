@@ -1403,6 +1403,16 @@ assert p.get(0) == 'bar\''''
         '''
     }
 
+    void testShouldCompileTraitMethodStatically() {
+        def message = shouldFail '''
+            @groovy.transform.CompileStatic
+            trait Foo {
+                int foo() { 1+'foo'}
+            }
+        '''
+        assert message.contains('[Static type checking] - Cannot return value of type java.lang.String on method returning type int')
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

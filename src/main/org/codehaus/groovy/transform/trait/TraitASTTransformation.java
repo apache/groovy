@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform.trait;
 
+import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -36,11 +37,14 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.ASTTransformation;
+import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
@@ -51,6 +55,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -61,9 +66,10 @@ import java.util.Set;
  * @author Cedric Champeau
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-public class TraitASTTransformation extends AbstractASTTransformation {
+public class TraitASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
     private SourceUnit unit;
+    private CompilationUnit compilationUnit;
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
@@ -186,24 +192,40 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         cNode.getProperties().clear();
 
         // copy annotations
-        List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
-        List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
-        copyAnnotatedNodeAnnotations(cNode, copied, notCopied);
-        if (!notCopied.isEmpty()) {
-            for (AnnotationNode node : notCopied) {
-                unit.addError(new SyntaxException("Annotation not supported onto traits", node.getLineNumber(), node.getColumnNumber()));
-            }
-        }
-        helper.addAnnotations(copied);
+        copyClassAnnotations(cNode, helper);
 
         fields = new ArrayList<FieldNode>(cNode.getFields()); // reuse the full list of fields
         for (FieldNode field : fields) {
             cNode.removeField(field.getName());
         }
 
+        // visit AST xforms
+        registerASTTranformations(helper);
+
         unit.getAST().addClass(helper);
         if (fieldHelper != null) {
             unit.getAST().addClass(fieldHelper);
+        }
+    }
+
+    private void registerASTTranformations(final ClassNode helper) {
+        ASTTransformationCollectorCodeVisitor collector = new ASTTransformationCollectorCodeVisitor(
+                unit, compilationUnit.getTransformLoader()
+        );
+        collector.visitClass(helper);
+    }
+
+    /**
+     * Copies annotation from the trait to the helper, excluding the trait annotation itself
+     * @param cNode the trait class node
+     * @param helper the helper class node
+     */
+    private void copyClassAnnotations(final ClassNode cNode, final ClassNode helper) {
+        List<AnnotationNode> annotations = cNode.getAnnotations();
+        for (AnnotationNode annotation : annotations) {
+            if (!annotation.getClassNode().equals(Traits.TRAIT_CLASSNODE)) {
+                helper.addAnnotation(annotation);
+            }
         }
     }
 
@@ -375,10 +397,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
                 processBody(new VariableExpression(newParams[0]), methodNode.getCode(), traitClass, fieldHelper, knownFields)
         );
         mNode.setSourcePosition(methodNode);
-        List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
-        List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
-        AbstractASTTransformation.copyAnnotatedNodeAnnotations(methodNode, copied, notCopied);
-        mNode.addAnnotations(copied);
+        mNode.addAnnotations(methodNode.getAnnotations());
         if (methodNode.isAbstract()) {
             mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         } else {
@@ -401,4 +420,7 @@ public class TraitASTTransformation extends AbstractASTTransformation {
         return code;
     }
 
+    public void setCompilationUnit(final CompilationUnit unit) {
+        this.compilationUnit = unit;
+    }
 }
