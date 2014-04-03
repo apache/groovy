@@ -31,6 +31,8 @@ import org.codehaus.groovy.syntax.SyntaxException;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.transform.AnnotationCollector;
+import org.codehaus.groovy.transform.trait.TraitASTTransformation;
+import org.codehaus.groovy.transform.trait.Traits;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -80,7 +82,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
      */
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
-        
+
         List<AnnotationNode> collected = new ArrayList<AnnotationNode>();
         for (Iterator<AnnotationNode> it = node.getAnnotations().iterator(); it.hasNext();) {
             AnnotationNode annotation = it.next();
@@ -204,7 +206,10 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
 
     @SuppressWarnings("unchecked")
     private void addTransform(AnnotationNode annotation, Class klass)  {
-        classNode.addTransform(klass, annotation);
+        boolean apply = !Traits.isTrait(classNode) || klass == TraitASTTransformation.class;
+        if (apply) {
+            classNode.addTransform(klass, annotation);
+        }
     }
 
     private static Annotation getTransformClassAnnotation(ClassNode annotatedType) {
