@@ -1,55 +1,55 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 
-<HTML>
-<HEAD>
-<TITLE>${className} (Groovy JDK)</TITLE>
+<html>
+<head>
+<title>${className} (Groovy JDK)</title>
 
 <%
 int dotCount = packageName.count('.')
 String pathPref = '../' * (dotCount+1)
 %>
-<LINK REL ="stylesheet" TYPE="text/css" HREF="${pathPref}stylesheet.css" TITLE="Style">
+<link rel ="stylesheet" type="text/css" href="${pathPref}stylesheet.css" title="Style">
 
-<SCRIPT type="text/javascript">
+<script type="text/javascript">
 function windowTitle()
 {
     parent.document.title = document.title;
 }
-</SCRIPT>
+</script>
 
-</HEAD>
+</head>
 
-<BODY BGCOLOR="white" onload="windowTitle();">
+<body bgcolor="white" onload="windowTitle();">
 
 <!-- ========== START OF NAVBAR ========== -->
-<A NAME="navbar_top"><!-- --></A>
-<TABLE BORDER="0" WIDTH="100%" CELLPADDING="1" CELLSPACING="0">
-    <TR>
-        <TD COLSPAN=3 BGCOLOR="#EEEEFF" CLASS="NavBarCell1">
-            <A NAME="navbar_top_firstrow"><!-- --></A>
-            <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="3">
-                <TR ALIGN="center" VALIGN="top">
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}overview-summary.html"><SPAN CLASS="NavBarFont1"><B>Overview</B></SPAN></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Package</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Class</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Tree</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Deprecated</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}index-all.html"><SPAN CLASS="NavBarFont1"><B>Index</B></SPAN></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Help</SPAN>&nbsp;</TD>
-                </TR>
-            </TABLE>
-        </TD>
-        <TD ALIGN="right" VALIGN="top" ROWSPAN=3><EM>
+<a name="navbar_top"><!-- --></a>
+<table border="0" width="100%" cellpadding="1" cellspacing="0">
+    <tr>
+        <td colspan="3" bgcolor="#EEEEFF" class="NavBarCell1">
+            <a name="navbar_top_firstrow"><!-- --></a>
+            <table border="0" cellpadding="0" cellspacing="3">
+                <tr align="center" valign="top">
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}overview-summary.html"><span class="NavBarFont1"><B>Overview</B></span></A>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <span class="NavBarFont1">Package</span>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <span class="NavBarFont1">Class</span>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <span class="NavBarFont1">Tree</span>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <span class="NavBarFont1">Deprecated</span>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}index-all.html"><span class="NavBarFont1"><B>Index</B></span></A>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <span class="NavBarFont1">Help</span>&nbsp;</td>
+                </tr>
+            </table>
+        </td>
+        <td ALIGN="right" VALIGN="top" ROWSPAN=3><EM>
             <b>${title}</b></EM>
-        </TD>
-    </TR>
-</TABLE>
+        </td>
+    </tr>
+</table>
 <!-- =========== END OF NAVBAR =========== -->
 
 <!-- ======== START OF CLASS DATA ======== -->
 <H2>
 <SPAN style="font-size:12px;">
-${packageName}</SPAN>
+${packageName}</span>
 <BR>
 Class ${className}</H2>
 
@@ -59,20 +59,20 @@ Class ${className}</H2>
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
 <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
 <TH ALIGN="left" COLSPAN="2"><SPAN style="font-size:24px;">
-<B>Method Summary</B></SPAN></TH>
+<B>Method Summary</B></span></TH>
 </TR>
 
 <% methods.each { method -> %>
 <TR BGCOLOR="white" CLASS="TableRowColor">
-<TD ALIGN="right" VALIGN="top" WIDTH="1%">
+<td ALIGN="right" VALIGN="top" WIDTH="1%">
 
 <SPAN>
-<CODE>${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl}</CODE></SPAN>
-</TD>
-<TD><CODE><B><A HREF="#${method.name}(${method.parametersSignature})">${method.name}</A></B>(${method.parametersDocUrl})</CODE>
+<CODE>${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl}</CODE></span>
+</td>
+<td><CODE><B><A HREF="#${method.name}(${method.parametersSignature})">${method.name}</A></B>(${method.parametersDocUrl})</CODE>
 <BR>
 ${method.shortComment}
-</TD>
+</td>
 </TR>
 <% } %>
 </TABLE>
@@ -85,7 +85,7 @@ ${method.shortComment}
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
 <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
 <TH ALIGN="left" COLSPAN="1"><SPAN style="font-size:24px;">
-<B>Method Detail</B></SPAN></TH>
+<B>Method Detail</B></span></TH>
 </TR>
 </TABLE>
 
@@ -134,28 +134,28 @@ ${method.shortComment}
 <A NAME="navbar_bottom"><!-- --></A>
 <A HREF="#skip-navbar_bottom" title="Skip navigation links"></A>
 
-<TABLE BORDER="0" WIDTH="100%" CELLPADDING="1" CELLSPACING="0">
-    <TR>
-        <TD COLSPAN=3 BGCOLOR="#EEEEFF" CLASS="NavBarCell1">
-            <A NAME="navbar_top_firstrow"><!-- --></A>
-            <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="3">
-                <TR ALIGN="center" VALIGN="top">
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}overview-summary.html"><SPAN CLASS="NavBarFont1"><B>Overview</B></SPAN></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Package</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Class</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Tree</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Deprecated</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}index-all.html"><SPAN CLASS="NavBarFont1"><B>Index</B></SPAN></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Help</SPAN>&nbsp;</TD>
-                </TR>
-            </TABLE>
-        </TD>
-        <TD ALIGN="right" VALIGN="top" ROWSPAN=3><EM>
-            <b>${title}</b></EM>
-        </TD>
-    </TR>
-</TABLE>
+<table border="0" width="100%" cellpadding="1" cellspacing="0">
+    <tr>
+        <td colspan=3 bgcolor="#EEEEFF" class="NavBarCell1">
+            <a name="navbar_top_firstrow"><!-- --></a>
+            <table border="0" cellpadding="0" cellspacing="3">
+                <tr align="center" valign="top">
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <a href="${pathPref}overview-summary.html"><span class="NavBarFont1"><B>Overview</B></span></a>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <span class="NavBarFont1">Package</span>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <span class="NavBarFont1">Class</span>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <span class="NavBarFont1">Tree</span>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <span class="NavBarFont1">Deprecated</span>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <a href="${pathPref}index-all.html"><span class="NavBarFont1"><B>Index</B></span></a>&nbsp;</td>
+                    <td bgcolor="#EEEEFF" CLASS="NavBarCell1">    <span class="NavBarFont1">Help</span>&nbsp;</td>
+                </tr>
+            </table>
+        </td>
+        <td align="right" valign="top" rowspan=3><em>
+            <b>${title}</b></em>
+        </td>
+    </tr>
+</table>
 <!-- =========== END OF NAVBAR =========== -->
 
-</BODY>
-</HTML>
+</body>
+</html>
