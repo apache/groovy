@@ -90,7 +90,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         // TODO use pList and fList
         if (cacheResult) {
             final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
-            final Expression hash = var(hashField);
+            final Expression hash = varX(hashField);
             body.addStatement(ifS(
                     isZeroX(hash),
                     calculateHashStatements(cNode, hash, includeFields, callSuper, excludes, includes)
@@ -117,26 +117,26 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         }
         final BlockStatement body = new BlockStatement();
         // def _result = HashCodeHelper.initHash()
-        final Expression result = var("_result");
+        final Expression result = varX("_result");
         body.addStatement(declS(result, callX(HASHUTIL_TYPE, "initHash")));
 
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             // _result = HashCodeHelper.updateHash(_result, getProperty()) // plus self-reference checking
-            Expression getter = callX(INVOKERHELPER_TYPE, "getProperty", args(var("this"), constX(pNode.getName())));
+            Expression getter = callX(INVOKERHELPER_TYPE, "getProperty", args(varX("this"), constX(pNode.getName())));
             final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, getter));
             body.addStatement(ifS(
-                    not(identicalX(getter, var("this"))),
+                    notX(sameX(getter, varX("this"))),
                     assignS(result, current)));
 
         }
         for (FieldNode fNode : fList) {
             if (shouldSkip(fNode.getName(), excludes, includes)) continue;
             // _result = HashCodeHelper.updateHash(_result, field) // plus self-reference checking
-            final Expression fieldExpr = var(fNode);
+            final Expression fieldExpr = varX(fNode);
             final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, fieldExpr));
             body.addStatement(ifS(
-                    not(identicalX(fieldExpr, var("this"))),
+                    notX(sameX(fieldExpr, varX("this"))),
                     assignS(result, current)));
         }
         if (callSuper) {
@@ -158,8 +158,8 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         if (hasExistingCanEqual && hasDeclaredMethod(cNode, "_canEqual", 1)) return;
 
         final BlockStatement body = new BlockStatement();
-        VariableExpression other = var("other");
-        body.addStatement(returnS(isInstanceOf(other, cNode)));
+        VariableExpression other = varX("other");
+        body.addStatement(returnS(isInstanceOfX(other, cNode)));
         cNode.addMethod(new MethodNode(
                 hasExistingCanEqual ? "_canEqual" : "canEqual",
                 hasExistingCanEqual ? ACC_PRIVATE : ACC_PUBLIC,
@@ -177,31 +177,31 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         if (hasExistingEquals && hasDeclaredMethod(cNode, "_equals", 1)) return;
 
         final BlockStatement body = new BlockStatement();
-        VariableExpression other = var("other");
+        VariableExpression other = varX("other");
 
         // some short circuit cases for efficiency
         body.addStatement(ifS(equalsNullX(other), returnS(constX(Boolean.FALSE))));
-        body.addStatement(ifS(identicalX(VariableExpression.THIS_EXPRESSION, other), returnS(constX(Boolean.TRUE))));
+        body.addStatement(ifS(sameX(varX("this"), other), returnS(constX(Boolean.TRUE))));
 
         if (useCanEqual) {
-            body.addStatement(ifS(not(isInstanceOf(other, cNode)), returnS(constX(Boolean.FALSE))));
-            body.addStatement(ifS(not(callX(other, "canEqual", var("this"))), returnS(constX(Boolean.FALSE))));
+            body.addStatement(ifS(notX(isInstanceOfX(other, cNode)), returnS(constX(Boolean.FALSE))));
+            body.addStatement(ifS(notX(callX(other, "canEqual", varX("this"))), returnS(constX(Boolean.FALSE))));
         } else {
-            body.addStatement(ifS(not(hasClassX(other, cNode)), returnS(constX(Boolean.FALSE))));
+            body.addStatement(ifS(notX(hasClassX(other, cNode)), returnS(constX(Boolean.FALSE))));
         }
 
-        VariableExpression otherTyped = var("otherTyped");
+        VariableExpression otherTyped = varX("otherTyped");
         body.addStatement(declS(otherTyped, new CastExpression(cNode, other)));
 
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             body.addStatement(
-                    ifS(differentPropertyX(pNode, otherTyped),
+                    ifS(notX(hasSamePropertyX(pNode, otherTyped)),
                             ifElseS(differentSelfRecursivePropertyX(pNode, otherTyped),
                                     returnS(constX(Boolean.FALSE)),
-                                    ifS(not(bothSelfRecursivePropertyX(pNode, otherTyped)),
-                                            ifS(nePropertyX(pNode, otherTyped), returnS(constX(Boolean.FALSE))))
+                                    ifS(notX(bothSelfRecursivePropertyX(pNode, otherTyped)),
+                                            ifS(notX(hasEqualPropertyX(pNode, otherTyped)), returnS(constX(Boolean.FALSE))))
                             )
                     )
             );
@@ -213,16 +213,16 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         for (FieldNode fNode : fList) {
             if (shouldSkip(fNode.getName(), excludes, includes)) continue;
             body.addStatement(
-                    ifS(differentFieldX(fNode, otherTyped),
+                    ifS(notX(hasSameFieldX(fNode, otherTyped)),
                             ifElseS(differentSelfRecursiveFieldX(fNode, otherTyped),
                                     returnS(constX(Boolean.FALSE)),
-                                    ifS(not(bothSelfRecursiveFieldX(fNode, otherTyped)),
-                                            ifS(neFieldX(otherTyped, fNode), returnS(constX(Boolean.FALSE)))))
+                                    ifS(notX(bothSelfRecursiveFieldX(fNode, otherTyped)),
+                                            ifS(notX(hasEqualFieldX(fNode, otherTyped)), returnS(constX(Boolean.FALSE)))))
                     ));
         }
         if (callSuper) {
             body.addStatement(ifS(
-                    not(isTrueX(callSuperX("equals", other))),
+                    notX(isTrueX(callSuperX("equals", other))),
                     returnS(constX(Boolean.FALSE))
             ));
         }
@@ -243,9 +243,9 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         String getterName = getGetterName(pNode);
         Expression selfGetter = callThisX(getterName);
         Expression otherGetter = callX(other, getterName);
-        return or(
-                and(identicalX(selfGetter, var("this")), differentX(otherGetter, other)),
-                and(differentX(selfGetter, var("this")), identicalX(otherGetter, other))
+        return orX(
+                andX(sameX(selfGetter, varX("this")), notX(sameX(otherGetter, other))),
+                andX(notX(sameX(selfGetter, varX("this"))), sameX(otherGetter, other))
         );
     }
 
@@ -253,27 +253,27 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         String getterName = getGetterName(pNode);
         Expression selfGetter = callThisX(getterName);
         Expression otherGetter = callX(other, getterName);
-        return and(
-                identicalX(selfGetter, var("this")),
-                identicalX(otherGetter, other)
+        return andX(
+                sameX(selfGetter, varX("this")),
+                sameX(otherGetter, other)
         );
     }
 
     private static BinaryExpression differentSelfRecursiveFieldX(FieldNode fNode, Expression other) {
-        final Expression fieldExpr = var(fNode);
-        final Expression otherExpr = prop(other, fNode.getName());
-        return or(
-                and(identicalX(fieldExpr, var("this")), differentX(otherExpr, other)),
-                and(differentX(fieldExpr, var("this")), identicalX(otherExpr, other))
+        final Expression fieldExpr = varX(fNode);
+        final Expression otherExpr = propX(other, fNode.getName());
+        return orX(
+                andX(sameX(fieldExpr, varX("this")), notX(sameX(otherExpr, other))),
+                andX(notX(sameX(fieldExpr, varX("this"))), sameX(otherExpr, other))
         );
     }
 
     private static BinaryExpression bothSelfRecursiveFieldX(FieldNode fNode, Expression other) {
-        final Expression fieldExpr = var(fNode);
-        final Expression otherExpr = prop(other, fNode.getName());
-        return and(
-                identicalX(fieldExpr, var("this")),
-                identicalX(otherExpr, other)
+        final Expression fieldExpr = varX(fNode);
+        final Expression otherExpr = propX(other, fNode.getName());
+        return andX(
+                sameX(fieldExpr, varX("this")),
+                sameX(otherExpr, other)
         );
     }
 }

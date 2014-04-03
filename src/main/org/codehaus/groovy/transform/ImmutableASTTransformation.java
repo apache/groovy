@@ -271,7 +271,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         for (PropertyNode pNode : list) {
             Parameter param = new Parameter(pNode.getField().getType(), pNode.getField().getName());
             orderedParams[index++] = param;
-            argMap.addMapEntryExpression(constX(pNode.getName()), var(pNode.getName()));
+            argMap.addMapEntryExpression(constX(pNode.getName()), varX(pNode.getName()));
         }
         final BlockStatement orderedBody = new BlockStatement();
         orderedBody.addStatement(stmt(
@@ -281,7 +281,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createGetterBodyDefault(FieldNode fNode) {
-        final Expression fieldExpr = var(fNode);
+        final Expression fieldExpr = varX(fNode);
         return stmt(fieldExpr);
     }
 
@@ -300,7 +300,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Expression createIfInstanceOfAsImmutableS(Expression expr, ClassNode type, Expression elseStatement) {
-        return ternaryX(isInstanceOf(expr, type), createAsImmutableX(expr, type), elseStatement);
+        return ternaryX(isInstanceOfX(expr, type), createAsImmutableX(expr, type), elseStatement);
     }
 
     private Expression createAsImmutableX(final Expression expr, final ClassNode type) {
@@ -332,8 +332,8 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             body.addStatement(createConstructorStatement(cNode, pNode, knownImmutableClasses, knownImmutables));
         }
         // check for missing properties
-        body.addStatement(stmt(callX(SELF_TYPE, "checkPropNames", vars("this", "args"))));
-        body.addStatement(ifS(equalsNullX(var("args")), assignS(var("args"), new MapExpression())));
+        body.addStatement(stmt(callX(SELF_TYPE, "checkPropNames", args("this", "args"))));
+        body.addStatement(ifS(equalsNullX(varX("args")), assignS(varX("args"), new MapExpression())));
         createConstructorMapCommon(cNode, body);
         if (list.size() > 0) {
             createNoArgConstructor(cNode);
@@ -363,22 +363,22 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         final String name = fNode.getName();
         Expression value = findArg(name);
         return ifS(
-                not(equalsNullX(value)),
+                notX(equalsNullX(value)),
                 new ThrowStatement(ctorX(READONLYEXCEPTION_TYPE,
                         args(constX(name), constX(cNode.getName()))
                 )));
     }
 
     private Statement createConstructorStatementMapSpecial(FieldNode fNode) {
-        final Expression fieldExpr = var(fNode);
+        final Expression fieldExpr = varX(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
         Expression namedArgs = findArg(fNode.getName());
-        Expression baseArgs = var("args");
+        Expression baseArgs = varX("args");
         return ifElseS(
                 equalsNullX(baseArgs),
                 ifS(
-                        not(equalsNullX(initExpr)),
+                        notX(equalsNullX(initExpr)),
                         assignS(fieldExpr, cloneCollectionExpr(initExpr))),
                 ifElseS(
                         equalsNullX(namedArgs),
@@ -442,14 +442,14 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createConstructorStatementGuarded(ClassNode cNode, FieldNode fNode) {
-        final Expression fieldExpr = var(fNode);
+        final Expression fieldExpr = varX(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
         Expression unknown = findArg(fNode.getName());
         return ifElseS(
                 equalsNullX(unknown),
                 ifS(
-                        not(equalsNullX(initExpr)),
+                        notX(equalsNullX(initExpr)),
                         assignS(fieldExpr, checkUnresolved(fNode, initExpr))),
                 assignS(fieldExpr, checkUnresolved(fNode, unknown))
         );
@@ -461,7 +461,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createConstructorStatementCollection(FieldNode fNode) {
-        final Expression fieldExpr = var(fNode);
+        final Expression fieldExpr = varX(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
         Expression collection = findArg(fNode.getName());
@@ -469,10 +469,10 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return ifElseS(
                 equalsNullX(collection),
                 ifS(
-                        not(equalsNullX(initExpr)),
+                        notX(equalsNullX(initExpr)),
                         assignS(fieldExpr, cloneCollectionExpr(initExpr))),
                 ifElseS(
-                        isInstanceOf(collection, CLONEABLE_TYPE),
+                        isInstanceOfX(collection, CLONEABLE_TYPE),
                         assignS(fieldExpr, cloneCollectionExpr(cloneArrayOrCloneableExpr(collection, fieldType))),
                         assignS(fieldExpr, cloneCollectionExpr(collection)))
         );
@@ -497,7 +497,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createConstructorStatementArrayOrCloneable(FieldNode fNode) {
-        final Expression fieldExpr = var(fNode);
+        final Expression fieldExpr = varX(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         ClassNode fieldType = fNode.getType();
         if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
@@ -513,7 +513,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createConstructorStatementDate(FieldNode fNode) {
-        final Expression fieldExpr = var(fNode);
+        final Expression fieldExpr = varX(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
         final Expression date = findArg(fNode.getName());
@@ -573,13 +573,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement createGetterBodyArrayOrCloneable(FieldNode fNode) {
-        final Expression fieldExpr = var(fNode);
+        final Expression fieldExpr = varX(fNode);
         final Expression expression = cloneArrayOrCloneableExpr(fieldExpr, fNode.getType());
         return safeExpression(fieldExpr, expression);
     }
 
     private Statement createGetterBodyDate(FieldNode fNode) {
-        final Expression fieldExpr = var(fNode);
+        final Expression fieldExpr = varX(fNode);
         final Expression expression = cloneDateExpr(fieldExpr);
         return safeExpression(fieldExpr, expression);
     }
@@ -589,52 +589,52 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 new VariableScope(),
                 ifElseS(
                         callX(
-                                var("map", HASHMAP_TYPE),
+                                varX("map", HASHMAP_TYPE),
                                 "containsKey",
                                 args(constX(pNode.getName()))
                         ),
                         block(
                                 new VariableScope(),
                                 declS(
-                                        var("newValue", ClassHelper.OBJECT_TYPE),
+                                        varX("newValue", ClassHelper.OBJECT_TYPE),
                                         callX(
-                                                var("map", HASHMAP_TYPE),
+                                                varX("map", HASHMAP_TYPE),
                                                 "get",
                                                 args(constX(pNode.getName()))
                                         )
                                 ),
                                 declS(
-                                        var("oldValue", ClassHelper.OBJECT_TYPE),
+                                        varX("oldValue", ClassHelper.OBJECT_TYPE),
                                         callThisX(getGetterName(pNode))
                                 ),
                                 ifS(
-                                        ne(
-                                                var("newValue", ClassHelper.OBJECT_TYPE),
-                                                var("oldValue", ClassHelper.OBJECT_TYPE)
+                                        neX(
+                                                varX("newValue", ClassHelper.OBJECT_TYPE),
+                                                varX("oldValue", ClassHelper.OBJECT_TYPE)
                                         ),
                                         block(
                                                 new VariableScope(),
                                                 assignS(
-                                                        var("oldValue", ClassHelper.OBJECT_TYPE),
-                                                        var("newValue", ClassHelper.OBJECT_TYPE)),
+                                                        varX("oldValue", ClassHelper.OBJECT_TYPE),
+                                                        varX("newValue", ClassHelper.OBJECT_TYPE)),
                                                 assignS(
-                                                        var("dirty", ClassHelper.boolean_TYPE),
+                                                        varX("dirty", ClassHelper.boolean_TYPE),
                                                         ConstantExpression.TRUE)
                                         )
                                 ),
                                 stmt(callX(
-                                        var("construct", HASHMAP_TYPE),
+                                        varX("construct", HASHMAP_TYPE),
                                         "put",
                                         args(
                                                 constX(pNode.getName()),
-                                                var("oldValue", ClassHelper.OBJECT_TYPE)
+                                                varX("oldValue", ClassHelper.OBJECT_TYPE)
                                         )
                                 ))
                         ),
                         block(
                                 new VariableScope(),
                                 stmt(callX(
-                                        var("construct", HASHMAP_TYPE),
+                                        varX("construct", HASHMAP_TYPE),
                                         "put",
                                         args(
                                                 constX(pNode.getName()),
@@ -649,14 +649,14 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private void createCopyWith(final ClassNode cNode, final List<PropertyNode> pList) {
         BlockStatement body = new BlockStatement();
         body.addStatement(ifS(
-                or(
-                        equalsNullX(var("map", ClassHelper.MAP_TYPE)),
-                        eq(callX(var("map", HASHMAP_TYPE), "size"), constX(0))
+                orX(
+                        equalsNullX(varX("map", ClassHelper.MAP_TYPE)),
+                        eqX(callX(varX("map", HASHMAP_TYPE), "size"), constX(0))
                 ),
-                returnS(var("this", cNode))
+                returnS(varX("this", cNode))
         ));
-        body.addStatement(declS(var("dirty", ClassHelper.boolean_TYPE), ConstantExpression.PRIM_FALSE));
-        body.addStatement(declS(var("construct", HASHMAP_TYPE), ctorX(HASHMAP_TYPE)));
+        body.addStatement(declS(varX("dirty", ClassHelper.boolean_TYPE), ConstantExpression.PRIM_FALSE));
+        body.addStatement(declS(varX("construct", HASHMAP_TYPE), ctorX(HASHMAP_TYPE)));
 
         // Check for each property
         for (final PropertyNode pNode : pList) {
@@ -664,9 +664,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
 
         body.addStatement(returnS(ternaryX(
-                isTrueX(var("dirty", ClassHelper.boolean_TYPE)),
-                ctorX(cNode, args(var("construct", HASHMAP_TYPE))),
-                var("this", cNode)
+                isTrueX(varX("dirty", ClassHelper.boolean_TYPE)),
+                ctorX(cNode, args(varX("construct", HASHMAP_TYPE))),
+                varX("this", cNode)
         )));
 
         final ClassNode clonedNode = cNode.getPlainNodeReference();

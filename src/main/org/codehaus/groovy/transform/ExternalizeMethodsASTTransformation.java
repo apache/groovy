@@ -42,7 +42,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyF
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the @ExternalizeMethods annotation.
@@ -81,11 +81,11 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
 
     private void createWriteExternal(ClassNode cNode, List<String> excludes, List<FieldNode> list) {
         final BlockStatement body = new BlockStatement();
-        VariableExpression out = var("out", OBJECTOUTPUT_TYPE);
+        VariableExpression out = varX("out", OBJECTOUTPUT_TYPE);
         for (FieldNode fNode : list) {
             if (excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
-            body.addStatement(stmt(callX(out, "write" + suffixForField(fNode), var(fNode))));
+            body.addStatement(stmt(callX(out, "write" + suffixForField(fNode), varX(fNode))));
         }
         ClassNode[] exceptions = {make(IOException.class)};
         cNode.addMethod("writeExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(new Parameter(OBJECTOUTPUT_TYPE, "out")), exceptions, body);
@@ -93,12 +93,12 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
 
     private void createReadExternal(ClassNode cNode, List<String> excludes, List<FieldNode> list) {
         final BlockStatement body = new BlockStatement();
-        final Expression oin = var("oin", OBJECTINPUT_TYPE);
+        final Expression oin = varX("oin", OBJECTINPUT_TYPE);
         for (FieldNode fNode : list) {
             if (excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
             Expression readObject = callX(oin, "read" + suffixForField(fNode));
-            body.addStatement(assignS(var(fNode), readObject));
+            body.addStatement(assignS(varX(fNode), readObject));
         }
         cNode.addMethod("readExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(new Parameter(OBJECTINPUT_TYPE, "oin")), ClassNode.EMPTY_ARRAY, body);
     }

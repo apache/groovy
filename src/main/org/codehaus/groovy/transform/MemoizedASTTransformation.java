@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,18 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.Memoized;
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
@@ -28,6 +35,18 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.cloneParams;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 
 /**
  * Handles generation of code for the {@link Memoized} annotation.
@@ -39,7 +58,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
 
     private static final String CLOSURE_CALL_METHOD_NAME = "call";
     private static final Class<Memoized> MY_CLASS = Memoized.class;
-    private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    private static final ClassNode MY_TYPE = make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final String PROTECTED_CACHE_SIZE_NAME = "protectedCacheSize";
     private static final String MAX_CACHE_SIZE_NAME = "maxCacheSize";
@@ -47,11 +66,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     private static final String METHOD_LABEL = "Priv";
 
     public void visit(ASTNode[] nodes, final SourceUnit source) {
-        if (nodes == null) {
-            return;
-        }
         init(nodes, source);
-
         AnnotationNode annotationNode = (AnnotationNode) nodes[0];
         AnnotatedNode annotatedNode = (AnnotatedNode) nodes[1];
         if (MY_TYPE.equals(annotationNode.getClassNode()) && annotatedNode instanceof MethodNode) {
@@ -74,36 +89,25 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
                 modifiers = modifiers | FieldNode.ACC_STATIC;
             }
 
-            int protectedCacheSize = getIntMemberValue(annotationNode, PROTECTED_CACHE_SIZE_NAME);
-            int maxCacheSize = getIntMemberValue(annotationNode, MAX_CACHE_SIZE_NAME);
+            int protectedCacheSize = getMemberIntValue(annotationNode, PROTECTED_CACHE_SIZE_NAME);
+            int maxCacheSize = getMemberIntValue(annotationNode, MAX_CACHE_SIZE_NAME);
             MethodCallExpression memoizeClosureCallExpression =
                     buildMemoizeClosureCallExpression(delegatingMethod, protectedCacheSize, maxCacheSize);
 
             String memoizedClosureFieldName = buildUniqueName(ownerClassNode, CLOSURE_LABEL, methodNode);
             FieldNode memoizedClosureField = new FieldNode(memoizedClosureFieldName, modifiers,
-                    ClassHelper.CLOSURE_TYPE.getPlainNodeReference(), null, memoizeClosureCallExpression);
+                    newClass(ClassHelper.CLOSURE_TYPE), null, memoizeClosureCallExpression);
             ownerClassNode.addField(memoizedClosureField);
 
             BlockStatement newCode = new BlockStatement();
-            ArgumentListExpression args = new ArgumentListExpression(methodNode.getParameters());
-            MethodCallExpression closureCallExpression = new MethodCallExpression(new FieldExpression(
-                    memoizedClosureField), CLOSURE_CALL_METHOD_NAME, args);
+            MethodCallExpression closureCallExpression = callX(
+                    fieldX(memoizedClosureField), CLOSURE_CALL_METHOD_NAME, args(methodNode.getParameters()));
             closureCallExpression.setImplicitThis(false);
-            newCode.addStatement(new ReturnStatement(closureCallExpression));
+            newCode.addStatement(returnS(closureCallExpression));
             methodNode.setCode(newCode);
             VariableScopeVisitor visitor = new VariableScopeVisitor(source);
             visitor.visitClass(ownerClassNode);
         }
-    }
-
-    private static Parameter[] cloneParams(Parameter[] source) {
-        Parameter[] result = new Parameter[source.length];
-        for (int i = 0; i < source.length; i++) {
-            Parameter srcParam = source[i];
-            Parameter dstParam = new Parameter(srcParam.getOriginType(), srcParam.getName());
-            result[i] = dstParam;
-        }
-        return result;
     }
 
     private MethodNode buildDelegatingMethod(final MethodNode annotatedMethod, final ClassNode ownerClassNode) {
@@ -125,15 +129,6 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         return method;
     }
 
-    private int getIntMemberValue(AnnotationNode node, String name) {
-        Object value = getMemberValue(node, name);
-        if (value != null && value instanceof Integer) {
-            return (Integer) value;
-        }
-
-        return 0;
-    }
-
     private static final String MEMOIZE_METHOD_NAME = "memoize";
     private static final String MEMOIZE_AT_MOST_METHOD_NAME = "memoizeAtMost";
     private static final String MEMOIZE_AT_LEAST_METHOD_NAME = "memoizeAtLeast";
@@ -145,40 +140,27 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         Parameter[] newParams = cloneParams(srcParams);
         List<Expression> argList = new ArrayList<Expression>(newParams.length);
         for (int i = 0; i < srcParams.length; i++) {
-            argList.add(new VariableExpression(newParams[i]));
+            argList.add(varX(newParams[i]));
         }
 
         ClosureExpression expression = new ClosureExpression(
                 newParams,
-                new ExpressionStatement(
-                        new MethodCallExpression(
-                                new VariableExpression("this"),
-                                privateMethod.getName(),
-                                new ArgumentListExpression(argList))
-                )
+                stmt(callThisX(privateMethod.getName(), args(argList)))
         );
         MethodCallExpression mce;
         if (protectedCacheSize == 0 && maxCacheSize == 0) {
-            mce = new MethodCallExpression(expression, MEMOIZE_METHOD_NAME, MethodCallExpression.NO_ARGUMENTS);
+            mce = callX(expression, MEMOIZE_METHOD_NAME);
         } else if (protectedCacheSize == 0) {
-            mce = new MethodCallExpression(expression, MEMOIZE_AT_MOST_METHOD_NAME, new ArgumentListExpression(
-                    new ConstantExpression(maxCacheSize)));
+            mce = callX(expression, MEMOIZE_AT_MOST_METHOD_NAME, args(constX(maxCacheSize)));
         } else if (maxCacheSize == 0) {
-            mce = new MethodCallExpression(expression, MEMOIZE_AT_LEAST_METHOD_NAME, new ArgumentListExpression(
-                    new ConstantExpression(protectedCacheSize)));
+            mce = callX(expression, MEMOIZE_AT_LEAST_METHOD_NAME, args(constX(protectedCacheSize)));
         } else {
-            ArgumentListExpression args = new ArgumentListExpression(new Expression[]{
-                    new ConstantExpression(protectedCacheSize), new ConstantExpression(maxCacheSize)});
-
-            mce = new MethodCallExpression(expression, MEMOIZE_BETWEEN_METHOD_NAME, args);
+            mce = callX(expression, MEMOIZE_BETWEEN_METHOD_NAME, args(constX(protectedCacheSize), constX(maxCacheSize)));
         }
         mce.setImplicitThis(false);
         return mce;
     }
 
-    /*
-     * Build unique name.
-     */
     private static String buildUniqueName(ClassNode owner, String ident, MethodNode methodNode) {
         StringBuilder nameBuilder = new StringBuilder("memoizedMethod" + ident + "$").append(methodNode.getName());
         if (methodNode.getParameters() != null) {

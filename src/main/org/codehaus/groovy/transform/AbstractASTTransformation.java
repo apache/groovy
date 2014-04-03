@@ -30,7 +30,6 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -53,8 +52,8 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     private SourceUnit sourceUnit;
 
     protected void init(ASTNode[] nodes, SourceUnit sourceUnit) {
-        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
+        if (nodes == null || nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
+            throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + (nodes == null ? null : Arrays.asList(nodes)));
         }
         this.sourceUnit = sourceUnit;
     }
@@ -81,6 +80,14 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
 
     protected String getMemberStringValue(AnnotationNode node, String name) {
         return getMemberStringValue(node, name, null);
+    }
+
+    protected int getMemberIntValue(AnnotationNode node, String name) {
+        Object value = getMemberValue(node, name);
+        if (value != null && value instanceof Integer) {
+            return (Integer) value;
+        }
+        return 0;
     }
 
     protected List<String> getMemberList(AnnotationNode anno, String name) {

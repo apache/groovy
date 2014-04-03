@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,20 @@
 package org.codehaus.groovy.transform.tailrec
 
 import groovy.transform.CompileStatic
-import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.expr.BinaryExpression
-import org.codehaus.groovy.ast.expr.ClassExpression
-import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.Expression
-import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.ContinueStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.ast.stmt.ThrowStatement
-import org.codehaus.groovy.syntax.Token
 
 import java.lang.reflect.Modifier
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 
 /**
  * Helping to create a few standard AST constructs
@@ -40,27 +38,19 @@ import java.lang.reflect.Modifier
  */
 @CompileStatic
 class AstHelper {
-
-	static final Token ASSIGN = Token.newSymbol("=", -1, -1)
-	static final Token PLUS = Token.newSymbol("+", -1, -1)
-
 	static ExpressionStatement createVariableDefinition(String variableName, ClassNode variableType, Expression value, boolean variableShouldBeFinal = false ) {
-        def newVariable = new VariableExpression(variableName, variableType)
+        def newVariable = varX(variableName, variableType)
         if (variableShouldBeFinal)
             newVariable.setModifiers(Modifier.FINAL)
-        new ExpressionStatement(new DeclarationExpression(newVariable, AstHelper.ASSIGN, value))
+        (ExpressionStatement) declS(newVariable, value)
 	}
 
 	static ExpressionStatement createVariableAlias(String aliasName, ClassNode variableType, String variableName ) {
-		createVariableDefinition(aliasName, variableType, new VariableExpression(variableName, variableType), true)
-	}
-
-	static ExpressionStatement createAssignment(String variableName, ClassNode variableType, Expression value ) {
-		new ExpressionStatement(new BinaryExpression(new VariableExpression(variableName, variableType), AstHelper.ASSIGN, value))
+		createVariableDefinition(aliasName, variableType, varX(variableName, variableType), true)
 	}
 
     static VariableExpression createVariableReference(Map variableSpec) {
-        new VariableExpression((String) variableSpec.name, (ClassNode) variableSpec.type)
+        varX((String) variableSpec.name, (ClassNode) variableSpec.type)
     }
 
     /**
@@ -78,6 +68,6 @@ class AstHelper {
      */
     static Statement recurByThrowStatement() {
         // throw InWhileLoopWrapper.LOOP_EXCEPTION
-        new ThrowStatement(new PropertyExpression(new ClassExpression(ClassHelper.make(InWhileLoopWrapper)), 'LOOP_EXCEPTION'))
+        new ThrowStatement(propX(classX(InWhileLoopWrapper), 'LOOP_EXCEPTION'))
     }
 }

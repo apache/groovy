@@ -34,7 +34,7 @@ import java.util.Arrays;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the {@code @Synchronized} annotation.
@@ -61,7 +61,7 @@ public class SynchronizedASTTransformation extends AbstractASTTransformation {
             ClassNode cNode = mNode.getDeclaringClass();
             String lockExpr = determineLock(value, cNode, mNode);
             Statement origCode = mNode.getCode();
-            Statement newCode = new SynchronizedStatement(var(lockExpr), origCode);
+            Statement newCode = new SynchronizedStatement(varX(lockExpr), origCode);
             mNode.setCode(newCode);
         }
     }

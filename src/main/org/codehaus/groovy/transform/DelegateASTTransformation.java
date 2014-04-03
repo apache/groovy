@@ -50,10 +50,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllMethods;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.prop;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
 /**
@@ -161,7 +161,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     ClassHelper.VOID_TYPE,
                     params(new Parameter(GenericsUtils.nonGeneric(prop.getType()), "value")),
                     null,
-                    assignS(prop(var(fieldNode), name), var("value"))
+                    assignS(propX(varX(fieldNode), name), varX("value"))
             );
         }
     }
@@ -174,7 +174,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     GenericsUtils.nonGeneric(prop.getType()),
                     Parameter.EMPTY_ARRAY,
                     null,
-                    returnS(prop(var(fieldNode), name)));
+                    returnS(propX(varX(fieldNode), name)));
         }
     }
 
@@ -232,11 +232,11 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 if (includeParameterAnnotations) newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i]));
 
                 newParams[i] = newParam;
-                args.addExpression(var(newParam));
+                args.addExpression(varX(newParam));
             }
             // addMethod will ignore attempts to override abstract or static methods with same signature on self
             MethodCallExpression mce = callX(
-                    var(fieldNode.getName(), correctToGenericsSpecRecurse(genericsSpec, fieldNode.getType())),
+                    varX(fieldNode.getName(), correctToGenericsSpecRecurse(genericsSpec, fieldNode.getType())),
                     candidate.getName(),
                     args);
             mce.setSourcePosition(fieldNode);

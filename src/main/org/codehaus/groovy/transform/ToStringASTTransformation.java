@@ -50,13 +50,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.identicalX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.sameX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the @ToString annotation.
@@ -125,7 +125,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         Expression tempToString;
         if (cache) {
             final FieldNode cacheField = cNode.addField("$to$string", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.STRING_TYPE, null);
-            final Expression savedToString = var(cacheField);
+            final Expression savedToString = varX(cacheField);
             body.addStatement(ifS(
                     equalsNullX(savedToString),
                     assignS(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, body))
@@ -142,11 +142,11 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
     private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, BlockStatement body) {
         // def _result = new StringBuilder()
-        final Expression result = var("_result");
+        final Expression result = varX("_result");
         body.addStatement(declS(result, ctorX(STRINGBUILDER_TYPE)));
 
         // def $toStringFirst = true
-        final VariableExpression first = var("$toStringFirst");
+        final VariableExpression first = varX("$toStringFirst");
         body.addStatement(declS(first, constX(Boolean.TRUE)));
 
         // <class_name>(
@@ -157,7 +157,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            Expression getter = callX(INVOKER_TYPE, "getProperty", args(var("this"), constX(pNode.getName())));
+            Expression getter = callX(INVOKER_TYPE, "getProperty", args(varX("this"), constX(pNode.getName())));
             appendValue(body, result, first, getter, pNode.getName(), includeNames, ignoreNulls);
         }
 
@@ -167,7 +167,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             fList.addAll(getInstanceNonPropertyFields(cNode));
             for (FieldNode fNode : fList) {
                 if (shouldSkip(fNode.getName(), excludes, includes)) continue;
-                appendValue(body, result, first, var(fNode), fNode.getName(), includeNames, ignoreNulls);
+                appendValue(body, result, first, varX(fNode), fNode.getName(), includeNames, ignoreNulls);
             }
         }
 
@@ -192,7 +192,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         appendCommaIfNotFirst(thenBlock, result, first);
         appendPrefix(thenBlock, result, name, includeNames);
         thenBlock.addStatement(ifElseS(
-                identicalX(value, VariableExpression.THIS_EXPRESSION),
+                sameX(value, VariableExpression.THIS_EXPRESSION),
                 appendS(result, constX("(this)")),
                 appendS(result, callX(INVOKER_TYPE, "toString", value))));
         body.addStatement(appendValue);

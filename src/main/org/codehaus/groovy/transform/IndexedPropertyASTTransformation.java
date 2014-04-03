@@ -36,7 +36,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the {@code @}IndexedProperty annotation.
@@ -100,7 +100,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         BlockStatement body = new BlockStatement();
         Parameter[] params = new Parameter[1];
         params[0] = new Parameter(ClassHelper.int_TYPE, "index");
-        body.addStatement(stmt(indexX(var(fNode.getName()), var(params[0]))));
+        body.addStatement(stmt(indexX(varX(fNode.getName()), varX(params[0]))));
         cNode.addMethod(makeName(fNode, "get"), getModifiers(fNode), componentType, params, null, body);
     }
 
@@ -110,7 +110,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         Parameter[] theParams = params(
                 new Parameter(ClassHelper.int_TYPE, "index"),
                 new Parameter(componentType, "value"));
-        body.addStatement(assignS(indexX(var(fNode.getName()), var(theParams[0])), var(theParams[1])));
+        body.addStatement(assignS(indexX(varX(fNode.getName()), varX(theParams[0])), varX(theParams[1])));
         cNode.addMethod(makeName(fNode, "set"), getModifiers(fNode), ClassHelper.VOID_TYPE, theParams, null, body);
     }
 

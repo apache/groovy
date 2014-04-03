@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -37,13 +36,14 @@ import java.util.List;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 
 /**
@@ -80,16 +80,16 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement nonLazyBody(FieldNode fieldNode) {
-        return returnS(var(fieldNode));
+        return returnS(varX(fieldNode));
     }
 
     private Statement lazyBody(ClassNode classNode, FieldNode fieldNode) {
-        final Expression instanceExpression = var(fieldNode);
+        final Expression instanceExpression = varX(fieldNode);
         return ifElseS(
                 notNullX(instanceExpression),
                 returnS(instanceExpression),
                 new SynchronizedStatement(
-                        new ClassExpression(classNode),
+                        classX(classNode),
                         ifElseS(
                                 notNullX(instanceExpression),
                                 returnS(instanceExpression),
@@ -123,7 +123,7 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
         if (foundNoArg == null) {
             final BlockStatement body = new BlockStatement();
             body.addStatement(ifS(
-                    notNullX(var(field)),
+                    notNullX(varX(field)),
                     new ThrowStatement(
                             ctorX(make(RuntimeException.class),
                                     args(constX("Can't instantiate singleton " + classNode.getName() + ". Use " + classNode.getName() + "." + propertyName))))

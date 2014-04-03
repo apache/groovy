@@ -104,17 +104,17 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         List<Statement> statements = new ArrayList<Statement>();
 
         // if(this.is(obj)) return 0;
-        statements.add(ifS(callThisX("is", vars(OBJ)), returnS(constX(0))));
+        statements.add(ifS(callThisX("is", args(OBJ)), returnS(constX(0))));
         // if(!(obj instanceof <type>)) return -1;
-        statements.add(ifS(not(isInstanceOf(var(OBJ), newClass(classNode))), returnS(constX(-1))));
+        statements.add(ifS(notX(isInstanceOfX(varX(OBJ), newClass(classNode))), returnS(constX(-1))));
         // int value = 0;
-        statements.add(declS(var(VALUE, ClassHelper.int_TYPE), constX(0)));
+        statements.add(declS(varX(VALUE, ClassHelper.int_TYPE), constX(0)));
         for (PropertyNode property : properties) {
             String name = property.getName();
             // value = this.prop <=> obj.prop;
-            statements.add(assignS(var(VALUE), cmp(prop(var("this"), name), prop(var(OBJ), name))));
+            statements.add(assignS(varX(VALUE), cmpX(propX(varX("this"), name), propX(varX(OBJ), name))));
             // if(value != 0) return value;
-            statements.add(ifS(ne(var(VALUE), constX(0)), returnS(var(VALUE))));
+            statements.add(ifS(neX(varX(VALUE), constX(0)), returnS(varX(VALUE))));
         }
 
         if (properties.isEmpty()) {
@@ -134,13 +134,13 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         String propertyName = property.getName();
         return block(
                 // if(arg0 == arg1) return 0;
-                ifS(eq(var(ARG0), var(ARG1)), returnS(constX(0))),
+                ifS(eqX(varX(ARG0), varX(ARG1)), returnS(constX(0))),
                 // if(arg0 != null && arg1 == null) return -1;
-                ifS(and(notNullX(var(ARG0)), equalsNullX(var(ARG1))), returnS(constX(-1))),
+                ifS(andX(notNullX(varX(ARG0)), equalsNullX(varX(ARG1))), returnS(constX(-1))),
                 // if(arg0 == null && arg1 != null) return 1;
-                ifS(and(equalsNullX(var(ARG0)), notNullX(var(ARG1))), returnS(constX(1))),
+                ifS(andX(equalsNullX(varX(ARG0)), notNullX(varX(ARG1))), returnS(constX(1))),
                 // return arg0.prop <=> arg1.prop;
-                returnS(cmp(prop(var(ARG0), propertyName), prop(var(ARG1), propertyName)))
+                returnS(cmpX(propX(varX(ARG0), propertyName), propX(varX(ARG1), propertyName)))
         );
     }
 
@@ -173,7 +173,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 COMPARATOR_TYPE,
                 Parameter.EMPTY_ARRAY,
                 ClassNode.EMPTY_ARRAY,
-                returnS(field(cmpField))
+                returnS(fieldX(cmpField))
         ));
     }
 

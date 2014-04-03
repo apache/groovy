@@ -34,7 +34,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the {@code @}InheritConstructors annotation.
@@ -89,7 +89,7 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
             params[i] = p.hasInitialExpression() ?
                     new Parameter(p.getType(), p.getName(), p.getInitialExpression()) :
                     new Parameter(p.getType(), p.getName());
-            theArgs.add(var(p.getName(), p.getType()));
+            theArgs.add(varX(p.getName(), p.getType()));
         }
         if (isExisting(classNode, params)) return;
         BlockStatement body = new BlockStatement();

@@ -23,6 +23,9 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
+
 /**
  * Translates all return statements into an invocation of the next iteration. This can be either
  * - "continue LOOP_LABEL": Outside closures
@@ -46,7 +49,6 @@ class ReturnStatementToIterationConverter {
         Expression recursiveCall = statement.expression
         if (!isAMethodCalls(recursiveCall))
             return statement
-
 
         Map<String, Map> tempMapping = [:]
         Map tempDeclarations = [:]
@@ -84,7 +86,7 @@ class ReturnStatementToIterationConverter {
     private ExpressionStatement createAssignmentToIterationVariable(Expression expression, int index, Map<Integer, Map> positionMapping) {
         String argName = positionMapping[index]['name']
         ClassNode argAndTempType = positionMapping[index]['type'] as ClassNode
-        ExpressionStatement argAssignment = AstHelper.createAssignment(argName, argAndTempType, expression)
+        ExpressionStatement argAssignment = (ExpressionStatement) assignS(varX(argName, argAndTempType), expression)
         argAssignment
     }
 

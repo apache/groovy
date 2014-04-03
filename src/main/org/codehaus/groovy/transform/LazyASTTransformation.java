@@ -43,16 +43,17 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.prop;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the @Lazy annotation
@@ -115,14 +116,14 @@ public class LazyASTTransformation extends AbstractASTTransformation {
         final InnerClassNode holderClass = new InnerClassNode(declaringClass, fullName, visibility, ClassHelper.OBJECT_TYPE);
         final String innerFieldName = "INSTANCE";
         holderClass.addField(innerFieldName, ACC_PRIVATE | ACC_STATIC | ACC_FINAL, fieldType, initExpr);
-        final Expression innerField = prop(new ClassExpression(holderClass), innerFieldName);
+        final Expression innerField = propX(classX(holderClass), innerFieldName);
         declaringClass.getModule().addClass(holderClass);
         body.addStatement(returnS(innerField));
     }
 
     private static void addDoubleCheckedLockingBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
-        final Expression fieldExpr = var(fieldNode);
-        final VariableExpression localVar = var(fieldNode.getName() + "_local");
+        final Expression fieldExpr = varX(fieldNode);
+        final VariableExpression localVar = varX(fieldNode.getName() + "_local");
         body.addStatement(declS(localVar, fieldExpr));
         body.addStatement(ifElseS(
                 notNullX(localVar),
@@ -139,7 +140,7 @@ public class LazyASTTransformation extends AbstractASTTransformation {
     }
 
     private static void addNonThreadSafeBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
-        final Expression fieldExpr = var(fieldNode);
+        final Expression fieldExpr = varX(fieldNode);
         body.addStatement(ifElseS(notNullX(fieldExpr), stmt(fieldExpr), assignS(fieldExpr, initExpr)));
     }
 
@@ -159,8 +160,8 @@ public class LazyASTTransformation extends AbstractASTTransformation {
 
     private static void createSoftGetter(FieldNode fieldNode, Expression initExpr, ClassNode type) {
         final BlockStatement body = new BlockStatement();
-        final Expression fieldExpr = var(fieldNode);
-        final Expression resExpr = var("res", type);
+        final Expression fieldExpr = varX(fieldNode);
+        final Expression resExpr = varX("res", type);
         final MethodCallExpression callExpression = callX(fieldExpr, "get");
         callExpression.setSafe(true);
         body.addStatement(declS(resExpr, callExpression));
@@ -187,10 +188,10 @@ public class LazyASTTransformation extends AbstractASTTransformation {
 
     private static void createSoftSetter(FieldNode fieldNode, ClassNode type) {
         final BlockStatement body = new BlockStatement();
-        final Expression fieldExpr = var(fieldNode);
+        final Expression fieldExpr = varX(fieldNode);
         final String name = "set" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
         final Parameter parameter = param(type, "value");
-        final Expression paramExpr = var(parameter);
+        final Expression paramExpr = varX(parameter);
         body.addStatement(ifElseS(
                 notNullX(paramExpr),
                 assignS(fieldExpr, ctorX(SOFT_REF, paramExpr)),
@@ -202,7 +203,7 @@ public class LazyASTTransformation extends AbstractASTTransformation {
     }
 
     private static Expression syncTarget(FieldNode fieldNode) {
-        return fieldNode.isStatic() ? new ClassExpression(fieldNode.getDeclaringClass()) : var("this");
+        return fieldNode.isStatic() ? classX(fieldNode.getDeclaringClass()) : varX("this");
     }
 
     private static Expression getInitExpr(FieldNode fieldNode) {

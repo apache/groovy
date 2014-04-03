@@ -56,9 +56,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.prop;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the @TupleConstructor annotation.
@@ -150,9 +150,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             if (shouldSkip(name, excludes, includes)) continue;
             params.add(createParam(fNode, name));
             if (callSuper) {
-                superParams.add(var(name));
+                superParams.add(varX(name));
             } else {
-                body.addStatement(assignS(prop(var("this"), name), var(name)));
+                body.addStatement(assignS(propX(varX("this"), name), varX(name)));
             }
         }
         if (callSuper) {
@@ -162,7 +162,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             String name = fNode.getName();
             if (shouldSkip(name, excludes, includes)) continue;
             params.add(createParam(fNode, name));
-            body.addStatement(assignS(prop(var("this"), name), var(name)));
+            body.addStatement(assignS(propX(varX("this"), name), varX(name)));
         }
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
         // add map constructor if needed, don't do it for LinkedHashMap for now (would lead to duplicate signature)
@@ -204,7 +204,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     public static void addMapConstructors(ClassNode cNode, boolean hasNoArg, String message) {
         Parameter[] parameters = params(new Parameter(LHMAP_TYPE, "__namedArgs"));
         BlockStatement code = new BlockStatement();
-        VariableExpression namedArgs = var("__namedArgs");
+        VariableExpression namedArgs = varX("__namedArgs");
         namedArgs.setAccessedVariable(parameters[0]);
         code.addStatement(ifElseS(equalsNullX(namedArgs),
                 illegalArgumentBlock(message),
@@ -233,10 +233,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             // if namedArgs.containsKey(propertyName) setProperty(propertyName, namedArgs.get(propertyName));
             Statement ifStatement = ifS(
                     callX(namedArgs, "containsKey", constX(pNode.getName())),
-                    assignS(var(pNode), prop(namedArgs, pNode.getName())));
+                    assignS(varX(pNode), propX(namedArgs, pNode.getName())));
             block.addStatement(ifStatement);
         }
-        block.addStatement(stmt(callX(CHECK_METHOD_TYPE, "checkPropNames", args(var("this"), namedArgs))));
+        block.addStatement(stmt(callX(CHECK_METHOD_TYPE, "checkPropNames", args(varX("this"), namedArgs))));
         return block;
     }
 }
