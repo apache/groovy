@@ -172,10 +172,10 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
             if (node instanceof MethodNode) {
                 MethodNode origMethod = (MethodNode) node;
                 ClassNode cNode = node.getDeclaringClass();
-                Map genericsSpec = createGenericsSpec(cNode, new HashMap());
                 ClassNode next = cNode;
                 outer:
                 while (next != null) {
+                    Map genericsSpec = createGenericsSpec(next, new HashMap());
                     MethodNode mn = correctToGenericsSpec(genericsSpec, origMethod);
                     if (next != cNode) {
                         ClassNode correctedNext = correctToGenericsSpecRecurse(genericsSpec, next);
@@ -195,7 +195,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
                             ifaces.addAll(Arrays.asList(iNode.getInterfaces()));
                         }
                     }
-                    next = next.getSuperClass();
+                    next = next.getUnresolvedSuperClass();
                 }
                 if (next == null) {
                     addError("Method '" + origMethod.getName() + "' from class '" + cNode.getName() + "' does not override " +

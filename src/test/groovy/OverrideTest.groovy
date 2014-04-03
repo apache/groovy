@@ -34,8 +34,7 @@ class OverrideTest extends GroovyTestCase {
 
             class OverrideAnnotationTest extends Parent<Integer> implements IntfString {
                 @Override method() {}
-                // TODO should complain about arg not being Integer
-                @Override void methodTakeT(arg) {}
+                @Override void methodTakeT(Integer arg) {}
                 @Override Integer methodMakeT() {}
                 @Override method4() {}
                 @Override void method5(String arg) {}
@@ -44,6 +43,51 @@ class OverrideTest extends GroovyTestCase {
 
             new OverrideAnnotationTest()
         """
+    }
+
+    void testUnhappyPath() {
+        def message = shouldFail """
+            abstract class Parent<T> {
+                abstract method()
+                void methodTakeT(T t) { }
+                T methodMakeT() { return null }
+            }
+
+            interface Intf<U> {
+                def method4()
+                void method5(U u)
+                U method6()
+            }
+
+            interface IntfString extends Intf<String> {}
+
+            class OverrideAnnotationTest extends Parent<Integer> implements IntfString {
+                @Override method() {}
+                @Override void methodTakeT(arg) {}
+                @Override Double methodMakeT() {}
+                @Override method4() {}
+                @Override void method5(String arg) {}
+                @Override String method6() {}
+            }
+
+            new OverrideAnnotationTest()
+        """
+        assert message.contains(/The return type of java.lang.Double methodMakeT() in OverrideAnnotationTest is incompatible with java.lang.Integer in Parent/)
+        assert message.contains(/Method 'methodTakeT' from class 'OverrideAnnotationTest' does not override method from its superclass or interfaces but is annotated with @Override./)
+    }
+
+    void testGroovy6654() {
+        assertScript '''
+class Base<T> {
+    void foo(T t) {}
+}
+
+class Derived extends Base<String> {
+    @Override
+    void foo(String s) {}
+}
+def d = new Derived()
+'''
     }
 
     void testSpuriousMethod() {
