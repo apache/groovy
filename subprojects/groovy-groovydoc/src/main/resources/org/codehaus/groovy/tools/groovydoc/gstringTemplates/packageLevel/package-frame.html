@@ -1,12 +1,10 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML>
-<HEAD>
-<TITLE>
-${packageDoc.nameWithDots()}
-</TITLE>
-<%
-// TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
-def classTypes = [
+<html>
+<head>
+    <title>${packageDoc.nameWithDots()}</title>
+    <%
+    // TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
+    def classTypes = [
     "Interface" : { it.isInterface() },
     "Class" : { it.isClass() && !it.parentClasses*.qualifiedTypeName().contains('java.lang.Throwable') },
     "Enum" : { it.isEnum() },
@@ -14,43 +12,44 @@ def classTypes = [
     "Error" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Error') },
     "Annotation Type" : { it.isAnnotationType() },
     "Script" : { it.isScript() }
-]
-def pluralize = { name -> name + (name.endsWith("s") ? "es" : "s") }
-%>
-<meta http-equiv="Content-Type" content="text/html; charset=${props.charset}">
-<META NAME="keywords" CONTENT="${packageDoc.name()} package">
+    ]
+    def pluralize = { name -> name + (name.endsWith("s") ? "es" : "s") }
+    %>
+    <meta http-equiv="Content-Type" content="text/html; charset=${props.charset}">
+    <meta name="keywords" CONTENT="${packageDoc.name()} package">
 
-<LINK REL ="stylesheet" TYPE="text/css" HREF="${packageDoc.getRelativeRootPath()}stylesheet.css" TITLE="Style">
+    <link href="groovy.ico" type="image/x-icon" rel="shortcut icon">
+    <link href="groovy.ico" type="image/x-icon" rel="icon">
+    <link rel="stylesheet" type="text/css" href="${packageDoc.relativeRootPath}stylesheet.css" title="Style">
+</head>
 
-</HEAD>
-
-<BODY BGCOLOR="white">
-<FONT size="+1" CLASS="FrameTitleFont">
-<A HREF="package-summary.html" target="classFrame">${packageDoc.nameWithDots()}</A></FONT>
+<body class="left">
+<div class="indexHeader">
+    <b><a href="package-summary.html" target="classFrame">${packageDoc.nameWithDots()}</a></b>
+</div>
 
 <%
 def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
-classTypes.each{ k, v ->
-    if (packageDoc.allClasses().any{ isVisible(it) && v(it) }) {
+classTypes.each { k, v ->
+if (packageDoc.allClasses().any{ isVisible(it) && v(it) }) {
 %>
 
-<TABLE BORDER="0" WIDTH="100%" SUMMARY="">
-<TR>
-<TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
-${pluralize(k)}</FONT>&nbsp;
-<FONT CLASS="FrameItemFont"><%
-    for (classDoc in packageDoc.allClasses().findAll{ isVisible(it) && v(it) }) {
-        %><BR><A HREF="${classDoc.name()}.html" title="${k.toLowerCase()} in ${packageDoc.nameWithDots()}" target="classFrame"><%
-        if (classDoc.isInterface()) { %><I><% }
-        %>${classDoc.name()}<%
-        if (classDoc.isInterface()) { %></I><% }
-        %></A><%
-    }
-%></FONT></TD>
-</TR>
-</TABLE>
+<div class="indexContainer">
+    <h2>${pluralize(k)}</h2>
+    <ul>
+        <%
+        for (classDoc in packageDoc.allClasses().findAll{ isVisible(it) && v(it) }) {
+        %><li><a href="${classDoc.name()}.html" title="${k.toLowerCase()} in ${packageDoc.nameWithDots()}" target="classFrame"><%
+        if (classDoc.isInterface()) { %><em><% }
+            %>${classDoc.name()}<%
+            if (classDoc.isInterface()) { %></em><% }
+        %></a></li><%
+        }
+        %>
+    </ul>
+</div>
 <% } %>
 <% } %>
 
-</BODY>
-</HTML>
+</body>
+</html>

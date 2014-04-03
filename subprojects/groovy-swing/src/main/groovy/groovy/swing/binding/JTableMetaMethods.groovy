@@ -21,14 +21,6 @@ import javax.swing.table.TableColumnModel
 import javax.swing.table.TableModel
 import org.codehaus.groovy.runtime.InvokerHelper
 
-
-/**
- * Created by IntelliJ IDEA.
- * User: Danno.Ferrin
- * Date: Jun 19, 2008
- * Time: 12:46:29 PM
- * To change this template use File | Settings | File Templates.
- */
 class JTableMetaMethods {
 
     public static void enhanceMetaClass(table) {
