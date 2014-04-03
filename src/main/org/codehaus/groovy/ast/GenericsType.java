@@ -365,7 +365,7 @@ public class GenericsType extends ASTNode {
                             match = false;
                             if (genericsType!=null) {
                                 if (genericsType.isPlaceholder()) {
-                                    match = genericsType.getName().equals(name);
+                                    match = true;
                                 } else if (genericsType.isWildcard()) {
                                     if (genericsType.getUpperBounds()!=null) {
                                         for (ClassNode up : genericsType.getUpperBounds()) {
@@ -434,7 +434,8 @@ public class GenericsType extends ASTNode {
                             match = redirectBoundType.isCompatibleWith(classNodeType.getType());
                         }
                     } else {
-                        match = classNodeType.isCompatibleWith(redirectBoundType.getType());
+                        // todo: the check for isWildcard should be replaced with a more complete check
+                        match = redirectBoundType.isWildcard() || classNodeType.isCompatibleWith(redirectBoundType.getType());
                     }
                 }
             }
