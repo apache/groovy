@@ -24,13 +24,5 @@ import groovy.transform.stc.DelegatesToSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class DelegatesToStaticCompileTest extends DelegatesToSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
-
+class DelegatesToStaticCompileTest extends DelegatesToSTCTest implements StaticCompilationTestSupport {
 }

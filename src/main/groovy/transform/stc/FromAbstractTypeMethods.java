@@ -16,12 +16,12 @@
 package groovy.transform.stc;
 
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.trait.Traits;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -54,6 +54,7 @@ public class FromAbstractTypeMethods extends ClosureSignatureHint {
     }
 
     private void extractParametersFromMethod(final List<ClassNode[]> signatures, final MethodNode method) {
+        if (Traits.hasDefaultImplementation(method)) return;
         Parameter[] parameters = method.getParameters();
         ClassNode[] typeParams = new ClassNode[parameters.length];
         for (int i = 0; i < parameters.length; i++) {

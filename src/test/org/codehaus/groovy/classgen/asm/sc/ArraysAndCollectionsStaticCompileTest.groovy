@@ -22,14 +22,7 @@ import groovy.transform.stc.ArraysAndCollectionsSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest implements StaticCompilationTestSupport {
 
     void testListStarWithMethodReturningVoid() {
         assertScript '''

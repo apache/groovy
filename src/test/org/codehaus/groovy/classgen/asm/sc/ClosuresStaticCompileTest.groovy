@@ -22,14 +22,7 @@ import groovy.transform.stc.ClosuresSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class ClosuresStaticCompileTest extends ClosuresSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-5584
     void testEachOnMapClosure() {

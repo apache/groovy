@@ -22,14 +22,7 @@ import groovy.transform.stc.STCnAryExpressionTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class NaryExpressionTestStaticCompileTest extends STCnAryExpressionTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class NaryExpressionTestStaticCompileTest extends STCnAryExpressionTest implements StaticCompilationTestSupport {
 
 }
 

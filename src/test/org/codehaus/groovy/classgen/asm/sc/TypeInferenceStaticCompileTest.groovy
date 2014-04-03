@@ -22,14 +22,7 @@ import groovy.transform.stc.TypeInferenceSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-5655
     void testByteArrayInference() {

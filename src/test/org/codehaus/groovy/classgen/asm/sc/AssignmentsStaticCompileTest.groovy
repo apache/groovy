@@ -22,14 +22,5 @@ import groovy.transform.stc.STCAssignmentTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class AssignmentsStaticCompileTest extends STCAssignmentTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
-
-}
+class AssignmentsStaticCompileTest extends STCAssignmentTest implements StaticCompilationTestSupport {}
 

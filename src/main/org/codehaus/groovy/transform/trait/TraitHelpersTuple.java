@@ -13,17 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.codehaus.groovy.transform.trait;
 
-package org.codehaus.groovy.classgen.asm.sc
-
-import groovy.transform.stc.SocketGMClosureParamTypeInferenceSTCTest
+import org.codehaus.groovy.ast.ClassNode;
 
 /**
- * Unit tests for static compilation: closure parameter type inference: {@link org.codehaus.groovy.runtime.SocketGroovyMethods}.
+ * A class meant to hold reference to the helper and field helper of a trait.
  *
- * @author Cedric Champeau
+ * @author Cédric Champeau
+ * @since 2.3.0
  */
-class SocketGMClosureParamTypeInferrenceStaticCompileTest extends SocketGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
+class TraitHelpersTuple {
+    private final ClassNode helper;
+    private final ClassNode fieldHelper;
 
+    public TraitHelpersTuple(final ClassNode helper, final ClassNode fieldHelper) {
+        this.helper = helper;
+        this.fieldHelper = fieldHelper;
+    }
+
+    public ClassNode getHelper() {
+        return helper;
+    }
+
+    public ClassNode getFieldHelper() {
+        return fieldHelper;
+    }
 }
-

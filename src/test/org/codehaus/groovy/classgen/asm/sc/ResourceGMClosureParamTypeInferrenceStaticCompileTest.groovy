@@ -23,14 +23,7 @@ import groovy.transform.stc.ResourceGMClosureParamTypeInferenceSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class ResourceGMClosureParamTypeInferrenceStaticCompileTest extends ResourceGMClosureParamTypeInferenceSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class ResourceGMClosureParamTypeInferrenceStaticCompileTest extends ResourceGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 
 }
 

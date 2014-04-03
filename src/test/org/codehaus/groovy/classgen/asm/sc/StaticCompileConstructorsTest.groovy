@@ -22,14 +22,7 @@ import groovy.transform.stc.ConstructorsSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class StaticCompileConstructorsTest extends ConstructorsSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class StaticCompileConstructorsTest extends ConstructorsSTCTest implements StaticCompilationTestSupport {
 
     void testMapConstructorError() {
         assertScript '''import groovy.transform.Canonical

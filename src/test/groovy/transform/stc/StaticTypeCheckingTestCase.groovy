@@ -46,7 +46,10 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
         config.addCompilationCustomizers(new ASTTransformationCustomizer(TypeChecked), imports)
         configure()
         shell = new GroovyShell(config)
+        extraSetup()
     }
+
+    protected void extraSetup() {}
 
     protected void configure() {}
 

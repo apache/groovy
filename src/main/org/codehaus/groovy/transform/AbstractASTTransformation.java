@@ -22,17 +22,24 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.annotation.Retention;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation {
+    public static final ClassNode RETENTION_CLASSNODE = ClassHelper.makeWithoutCaching(Retention.class);
+
     private SourceUnit sourceUnit;
 
     protected void init(ASTNode[] nodes, SourceUnit sourceUnit) {
@@ -204,4 +213,135 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return GenericsUtils.nonGeneric(type);
     }
 
+    public static ClassNode newClass(ClassNode type) {
+        return type.getPlainNodeReference();
+    }
+
+    public static ClassNode makeClassSafe0(ClassNode type, GenericsType... genericTypes) {
+        ClassNode plainNodeReference = newClass(type);
+        if (genericTypes != null && genericTypes.length > 0) plainNodeReference.setGenericsTypes(genericTypes);
+        return plainNodeReference;
+    }
+
+
+    public static ClassNode makeClassSafeWithGenerics(ClassNode type, GenericsType... genericTypes) {
+        if (type.isArray()) {
+            return makeClassSafeWithGenerics(type.getComponentType(), genericTypes).makeArray();
+        }
+        GenericsType[] gtypes = new GenericsType[0];
+        if (genericTypes != null) {
+            gtypes = new GenericsType[genericTypes.length];
+            System.arraycopy(genericTypes, 0, gtypes, 0, gtypes.length);
+        }
+        return makeClassSafe0(type, gtypes);
+    }
+
+    public static MethodNode correctToGenericsSpec(Map genericsSpec, MethodNode mn) {
+        ClassNode correctedType = correctToGenericsSpecRecurse(genericsSpec, mn.getReturnType());
+        Parameter[] origParameters = mn.getParameters();
+        Parameter[] newParameters = new Parameter[origParameters.length];
+        for (int i = 0; i < origParameters.length; i++) {
+            Parameter origParameter = origParameters[i];
+            newParameters[i] = new Parameter(correctToGenericsSpecRecurse(genericsSpec, origParameter.getType()), origParameter.getName(), origParameter.getInitialExpression());
+        }
+        return new MethodNode(mn.getName(), mn.getModifiers(), correctedType, newParameters, mn.getExceptions(), mn.getCode());
+    }
+
+    public static ClassNode correctToGenericsSpecRecurse(Map genericsSpec, ClassNode type) {
+        if (type.isGenericsPlaceHolder()) {
+            String name = type.getGenericsTypes()[0].getName();
+            type = (ClassNode) genericsSpec.get(name);
+        }
+        if (type == null) type = ClassHelper.OBJECT_TYPE;
+        GenericsType[] oldgTypes = type.getGenericsTypes();
+        GenericsType[] newgTypes = new GenericsType[0];
+        if (oldgTypes != null) {
+            newgTypes = new GenericsType[oldgTypes.length];
+            for (int i = 0; i < newgTypes.length; i++) {
+                GenericsType oldgType = oldgTypes[i];
+                if (oldgType.isPlaceholder() ) {
+                    if (genericsSpec.get(oldgType.getName())!=null) {
+                        newgTypes[i] = new GenericsType((ClassNode) genericsSpec.get(oldgType.getName()));
+                    } else {
+                        newgTypes[i] = new GenericsType(ClassHelper.OBJECT_TYPE);
+                    }
+                } else if (oldgType.isWildcard()) {
+                    ClassNode oldLower = oldgType.getLowerBound();
+                    ClassNode lower = oldLower!=null?correctToGenericsSpecRecurse(genericsSpec, oldLower):null;
+                    ClassNode[] oldUpper = oldgType.getUpperBounds();
+                    ClassNode[] upper = null;
+                    if (oldUpper!=null) {
+                        upper = new ClassNode[oldUpper.length];
+                        for (int j = 0; j < oldUpper.length; j++) {
+                            upper[j] = correctToGenericsSpecRecurse(genericsSpec,oldUpper[j]);
+                        }
+                    }
+                    GenericsType fixed = new GenericsType(oldgType.getType(), upper, lower);
+                    fixed.setWildcard(true);
+                    newgTypes[i] = fixed;
+                } else {
+                    newgTypes[i] = new GenericsType(GenericsUtils.correctToGenericsSpec(genericsSpec, oldgType));
+                }
+            }
+        }
+        return makeClassSafeWithGenerics(type, newgTypes);
+    }
+
+    /**
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
+     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * <p>
+     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported by now.
+     */
+    public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, List<AnnotationNode> notCopied) {
+        List<AnnotationNode> annotationList = annotatedNode.getAnnotations();
+        for (AnnotationNode annotation : annotationList)  {
+
+            List<AnnotationNode> annotations = annotation.getClassNode().getAnnotations(RETENTION_CLASSNODE);
+            if (annotations.isEmpty()) continue;
+
+            if (hasClosureMember(annotation)) {
+                notCopied.add(annotation);
+                continue;
+            }
+
+            AnnotationNode retentionPolicyAnnotation = annotations.get(0);
+            Expression valueExpression = retentionPolicyAnnotation.getMember("value");
+            if (!(valueExpression instanceof PropertyExpression)) continue;
+
+            PropertyExpression propertyExpression = (PropertyExpression) valueExpression;
+            boolean processAnnotation =
+                    propertyExpression.getProperty() instanceof ConstantExpression &&
+                            (
+                                    "RUNTIME".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue()) ||
+                                    "CLASS".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue())
+                            );
+
+            if (processAnnotation)  {
+                AnnotationNode newAnnotation = new AnnotationNode(annotation.getClassNode());
+                for (Map.Entry<String, Expression> member : annotation.getMembers().entrySet())  {
+                    newAnnotation.addMember(member.getKey(), member.getValue());
+                }
+                newAnnotation.setSourcePosition(annotatedNode);
+
+                copied.add(newAnnotation);
+            }
+        }
+    }
+
+    private static boolean hasClosureMember(AnnotationNode annotation) {
+
+        Map<String, Expression> members = annotation.getMembers();
+        for (Map.Entry<String, Expression> member : members.entrySet())  {
+            if (member.getValue() instanceof ClosureExpression) return true;
+
+            if (member.getValue() instanceof ClassExpression)  {
+                ClassExpression classExpression = (ClassExpression) member.getValue();
+                Class<?> typeClass = classExpression.getType().isResolved() ? classExpression.getType().redirect().getTypeClass() : null;
+                if (typeClass != null && GeneratedClosure.class.isAssignableFrom(typeClass)) return true;
+            }
+        }
+
+        return false;
+    }
 }

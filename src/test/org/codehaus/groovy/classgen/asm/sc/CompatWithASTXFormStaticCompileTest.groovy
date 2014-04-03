@@ -24,13 +24,7 @@ import groovy.transform.stc.StaticTypeCheckingTestCase
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class CompatWithASTXFormStaticCompileTest extends StaticTypeCheckingTestCase {
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class CompatWithASTXFormStaticCompileTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testShouldNotThrowArrayIndexOutOfBoundsError() {
         assertScript '''import groovy.transform.Immutable

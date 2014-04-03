@@ -209,7 +209,7 @@ options {
 
 tokens {
     BLOCK; MODIFIERS; OBJBLOCK; SLIST; METHOD_DEF; VARIABLE_DEF;
-    INSTANCE_INIT; STATIC_INIT; TYPE; CLASS_DEF; INTERFACE_DEF;
+    INSTANCE_INIT; STATIC_INIT; TYPE; CLASS_DEF; INTERFACE_DEF; TRAIT_DEF;
     PACKAGE_DEF; ARRAY_DECLARATOR; EXTENDS_CLAUSE; IMPLEMENTS_CLAUSE;
     PARAMETERS; PARAMETER_DEF; LABELED_STAT; TYPECAST; INDEX_OP;
     POST_INC; POST_DEC; METHOD_CALL; EXPR;
@@ -535,6 +535,8 @@ importStatement
 protected typeDefinitionInternal[AST mods]
     :   cd:classDefinition[#mods]       // inner class
         {#typeDefinitionInternal = #cd;}
+    |   td:traitDefinition[#mods]       // inner trait
+        {#typeDefinitionInternal = #td;}
     |   id:interfaceDefinition[#mods]   // inner interface
         {#typeDefinitionInternal = #id;}
     |   ed:enumDefinition[#mods]        // inner enum
@@ -678,7 +680,7 @@ constructorStart!
 just stop at '@', because variable and method declarations can also be
 annotated.
 > typeDeclarationStart!
->     :   (modifier!)* ("class" | "interface" | "enum" | AT )
+>     :   (modifier!)* ("class" | "interface" | "enum" | "trait" | AT )
 S.B. something like
 >     :   (modifier! | annotationTokens!)* ("class" | "interface" |
 > "enum" )
@@ -689,7 +691,7 @@ places: '@' ident '(' balancedTokens ')'.
 */
 
 typeDeclarationStart!
-    :   modifiersOpt! ("class" | "interface" | "enum" | AT "interface")
+    :   modifiersOpt! ("class" | "interface" | "enum" | "trait" | AT "interface")
     ;
 
 /** An IDENT token whose spelling is required to start with an uppercase letter.
@@ -1054,6 +1056,28 @@ if (modifiers != null) {
         // now parse the body of the class
         cb:classBlock
         {#classDefinition = #(create(CLASS_DEF,"CLASS_DEF",first,LT(1)),
+                                                            modifiers,IDENT,tp,sc,ic,cb);}
+        { currentClass = prevCurrentClass; }
+    ;
+
+// Definition of a Trait
+traitDefinition![AST modifiers]
+{Token first = cloneToken(LT(1));AST prevCurrentClass = currentClass;
+if (modifiers != null) {
+     first.setLine(modifiers.getLine());
+     first.setColumn(modifiers.getColumn());
+}}
+    :   "trait" IDENT nls!
+       { currentClass = #IDENT; }
+        // it _might_ have type parameters
+        (tp:typeParameters nls!)?
+        // it _might_ have a superclass...
+        sc:superClassClause
+        // it might implement some interfaces...
+        ic:implementsClause
+        // now parse the body of the class
+        cb:classBlock
+        {#traitDefinition = #(create(TRAIT_DEF, "TRAIT_DEF",first,LT(1)),
                                                             modifiers,IDENT,tp,sc,ic,cb);}
         { currentClass = prevCurrentClass; }
     ;
@@ -2562,6 +2586,7 @@ keywordPropertyNames
         | "this"
         | "throw"
         | "throws"
+        | "trait"
         | "true"
         | "try"
         | "while"
@@ -3497,6 +3522,7 @@ options {
         case LITERAL_super:
         case LITERAL_switch:
         case LITERAL_synchronized:
+        case LITERAL_trait:
         case LITERAL_this:
         case LITERAL_threadsafe:
         case LITERAL_throw:
@@ -4150,7 +4176,7 @@ options {
             int ttype = testLiteralsTable(IDENT);
             // Java doesn't have the keywords 'as', 'in' or 'def so we make some allowances
             // for them in package names for better integration with existing Java packages
-            if ((ttype == LITERAL_as || ttype == LITERAL_def || ttype == LITERAL_in) &&
+            if ((ttype == LITERAL_as || ttype == LITERAL_def || ttype == LITERAL_in || ttype == LITERAL_trait) &&
                 (LA(1) == '.' || lastSigTokenType == DOT || lastSigTokenType == LITERAL_package)) {
                 ttype = IDENT;
             }

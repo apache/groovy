@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package groovy.transform;
 
+import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
-package org.codehaus.groovy.classgen.asm.sc
-
-import groovy.transform.stc.StringGMClosureParamTypeInferenceSTCTest
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Unit tests for static compilation: closure parameter type inference: StringGroovyMethods.
+ * Used to mark a class as being a trait.
  *
- * @author Cedric Champeau
+ * @since 2.3.0
  */
-class StringGMClosureParamTypeInferrenceStaticCompileTest extends StringGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
-
+@java.lang.annotation.Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
+@GroovyASTTransformationClass("org.codehaus.groovy.transform.trait.TraitASTTransformation")
+public @interface Trait {
 }
-

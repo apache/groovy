@@ -33,6 +33,7 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
@@ -46,11 +47,13 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ArrayIterator;
 
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
@@ -8147,6 +8150,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static <T> T asType(Closure cl, Class<T> clazz) {
         if (clazz.isInterface() && !(clazz.isInstance(cl))) {
+            if (Traits.isTrait(clazz)) {
+                Method samMethod = CachedSAMClass.getSAMMethod(clazz);
+                if (samMethod!=null) {
+                    Map impl = Collections.singletonMap(samMethod.getName(),cl);
+                    return (T) ProxyGenerator.INSTANCE.instantiateAggregate(impl, Collections.<Class>singletonList(clazz));
+                }
+            }
             return (T) Proxy.newProxyInstance(
                     clazz.getClassLoader(),
                     new Class[]{clazz},
@@ -14885,4 +14895,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return ResourceGroovyMethods.readBytes(file);
     }
 
+    /**
+     * Dynamically wraps an instance into something which implements the
+     * supplied trait classes. It is guaranteed that the returned object
+     * will implement the trait interfaces, but the original type of the
+     * object is lost (replaced with a proxy).
+     * @param self object to be wrapped
+     * @param traits a list of trait classes
+     * @return a proxy implementing the trait interfaces
+     */
+    public static Object withTraits(Object self, Class<?>... traits) {
+        List<Class> interfaces = new ArrayList<Class>();
+        Collections.addAll(interfaces, traits);
+        return ProxyGenerator.INSTANCE.instantiateDelegate(interfaces, self);
+    }
 }

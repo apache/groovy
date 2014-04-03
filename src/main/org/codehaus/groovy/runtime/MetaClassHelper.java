@@ -1007,4 +1007,16 @@ public class MetaClassHelper {
             DefaultGroovyMethods.setMetaClass(self, mc);
         }
     }
+
+    /**
+     * Converts a String into a standard property name.
+     * @param prop
+     * @return
+     */
+    public static String convertPropertyName(String prop) {
+        if (Character.isDigit(prop.charAt(0))) {
+            return prop;
+        }
+        return java.beans.Introspector.decapitalize(prop);
+    }
 }

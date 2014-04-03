@@ -13,17 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package groovy.transform;
 
-package org.codehaus.groovy.classgen.asm.sc
-
-import groovy.transform.stc.SocketGMClosureParamTypeInferenceSTCTest
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Unit tests for static compilation: closure parameter type inference: {@link org.codehaus.groovy.runtime.SocketGroovyMethods}.
+ * This annotation can be used on trait methods to make sure that a class which
+ * explicitely implements a trait will get the trait method behavior if it defines
+ * or any superclass defines an equivalent method.
  *
- * @author Cedric Champeau
+ * @since 2.3.0
  */
-class SocketGMClosureParamTypeInferrenceStaticCompileTest extends SocketGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
-
-}
-
+@java.lang.annotation.Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.TYPE})
+public @interface ForceOverride {}

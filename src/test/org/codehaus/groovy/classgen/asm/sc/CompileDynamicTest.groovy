@@ -21,14 +21,7 @@ import groovy.transform.stc.StaticTypeCheckingTestCase
 /**
  * Test case for {@link groovy.transform.CompileDynamic}.
  */
-@Mixin(StaticCompilationTestSupport)
-
-class CompileDynamicTest extends StaticTypeCheckingTestCase {
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class CompileDynamicTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testCompileDynamic() {
         assertScript '''import groovy.transform.CompileDynamic

@@ -127,7 +127,9 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
             "\\bas\\b",
             "\\bin\\b",
             "\\bsynchronized\\b",
-            "\\bnull\\b"};
+            "\\bnull\\b",
+            "\\btrait\\b"
+    };
 
     /**
      * Creates a new instance of GroovyFilter

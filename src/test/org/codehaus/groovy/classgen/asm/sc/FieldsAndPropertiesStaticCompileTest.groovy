@@ -17,14 +17,8 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.FieldsAndPropertiesSTCTest
 
-@Mixin(StaticCompilationTestSupport)
-class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest {
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
-    
+class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest implements StaticCompilationTestSupport{
+
     void testMapGetAt() {
         assertScript '''
             Map map = [a: 1, b:2]

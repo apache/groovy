@@ -22,14 +22,7 @@ import groovy.transform.stc.DefaultGroovyMethodsSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class StaticCompileDGMTest extends DefaultGroovyMethodsSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class StaticCompileDGMTest extends DefaultGroovyMethodsSTCTest implements StaticCompilationTestSupport {
 
     void testThreadDotStart() {
         assertScript '''

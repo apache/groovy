@@ -22,14 +22,7 @@ import groovy.transform.stc.UnaryOperatorSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class UnaryOperatorStaticCompileTest extends UnaryOperatorSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class UnaryOperatorStaticCompileTest extends UnaryOperatorSTCTest implements StaticCompilationTestSupport {
 
 }
 

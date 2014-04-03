@@ -22,14 +22,7 @@ import groovy.transform.stc.RangesSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class RangesStaticCompileTest extends RangesSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+class RangesStaticCompileTest extends RangesSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-6482
     void testShouldReturnAnEmptyList() {

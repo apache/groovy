@@ -18,11 +18,5 @@ package org.codehaus.groovy.classgen.asm.sc.vm6
 import groovy.transform.stc.vm6.MethodCallsSTCTest
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-@Mixin(StaticCompilationTestSupport)
-public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
+public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest implements StaticCompilationTestSupport {
 }

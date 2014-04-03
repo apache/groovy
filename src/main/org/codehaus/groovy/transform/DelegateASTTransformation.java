@@ -27,19 +27,15 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 
-import java.lang.annotation.Retention;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,8 +54,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.prop;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
 /**
@@ -138,11 +132,16 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
             final Set<ClassNode> allInterfaces = getInterfacesAndSuperInterfaces(type);
             final Set<ClassNode> ownerIfaces = owner.getAllInterfaces();
+            Map genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap());
+            genericsSpec = createGenericsSpec(fieldNode.getType(), genericsSpec);
             for (ClassNode iface : allInterfaces) {
                 if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface)) {
                     final ClassNode[] ifaces = owner.getInterfaces();
                     final ClassNode[] newIfaces = new ClassNode[ifaces.length + 1];
-                    System.arraycopy(ifaces, 0, newIfaces, 0, ifaces.length);
+                    for (int i = 0; i < ifaces.length; i++) {
+                        final ClassNode classNode = ifaces[i];
+                        newIfaces[i] = GenericsUtils.correctToGenericsSpecRecurse(genericsSpec, classNode);
+                    }
                     newIfaces[ifaces.length] = iface;
                     owner.setInterfaces(newIfaces);
                 }
@@ -230,7 +229,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 Parameter newParam = new Parameter(correctToGenericsSpecRecurse(genericsSpec, params[i].getType()), getParamName(params, i, fieldNode.getName()));
                 newParam.setInitialExpression(params[i].getInitialExpression());
 
-                if (includeParameterAnnotations) newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i].getAnnotations(), newParam));
+                if (includeParameterAnnotations) newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i]));
 
                 newParams[i] = newParam;
                 args.addExpression(var(newParam));
@@ -251,7 +250,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             newMethod.setGenericsTypes(candidate.getGenericsTypes());
 
             if (hasBooleanValue(node.getMember(MEMBER_METHOD_ANNOTATIONS), true)) {
-                newMethod.addAnnotations(copyAnnotatedNodeAnnotations(candidate.getAnnotations(), newMethod));
+                newMethod.addAnnotations(copyAnnotatedNodeAnnotations(candidate));
             }
         }
     }
@@ -278,58 +277,14 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
      * <p>
      * Annotations with {@link GeneratedClosure} members are not supported by now.
      */
-    private List<AnnotationNode> copyAnnotatedNodeAnnotations(final List<AnnotationNode> candidateAnnotations, final AnnotatedNode annotatedNode) {
+    private List<AnnotationNode> copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode) {
         final ArrayList<AnnotationNode> delegateAnnotations = new ArrayList<AnnotationNode>();
-        final ClassNode retentionClassNode = ClassHelper.makeWithoutCaching(Retention.class);
-
-        for (AnnotationNode annotation : candidateAnnotations)  {
-
-            List<AnnotationNode> annotations = annotation.getClassNode().getAnnotations(retentionClassNode);
-            if (annotations.isEmpty()) continue;
-
-            if (hasClosureMember(annotation)) {
-                addError(MY_TYPE_NAME + " does not support keeping Closure annotation members.", annotation);
-                continue;
-            }
-
-            AnnotationNode retentionPolicyAnnotation = annotations.get(0);
-            Expression valueExpression = retentionPolicyAnnotation.getMember("value");
-            if (!(valueExpression instanceof PropertyExpression)) continue;
-
-            PropertyExpression propertyExpression = (PropertyExpression) valueExpression;
-            boolean processAnnotation =
-                    propertyExpression.getProperty() instanceof ConstantExpression &&
-                            (
-                                    "RUNTIME".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue()) ||
-                                            "CLASS".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue())
-                            );
-
-            if (processAnnotation)  {
-                AnnotationNode newAnnotation = new AnnotationNode(annotation.getClassNode());
-                for (Map.Entry<String, Expression> member : annotation.getMembers().entrySet())  {
-                    newAnnotation.addMember(member.getKey(), member.getValue());
-                }
-                newAnnotation.setSourcePosition(annotatedNode);
-
-                delegateAnnotations.add(newAnnotation);
-            }
+        final ArrayList<AnnotationNode> notCopied = new ArrayList<AnnotationNode>();
+        copyAnnotatedNodeAnnotations(annotatedNode, delegateAnnotations, notCopied);
+        for (AnnotationNode annotation : notCopied) {
+            addError(MY_TYPE_NAME + " does not support keeping Closure annotation members.", annotation);
         }
         return delegateAnnotations;
     }
 
-    private boolean hasClosureMember(AnnotationNode annotation) {
-
-        Map<String, Expression> members = annotation.getMembers();
-        for (Map.Entry<String, Expression> member : members.entrySet())  {
-            if (member.getValue() instanceof ClosureExpression) return true;
-
-            if (member.getValue() instanceof ClassExpression)  {
-                ClassExpression classExpression = (ClassExpression) member.getValue();
-                Class<?> typeClass = classExpression.getType().isResolved() ? classExpression.getType().redirect().getTypeClass() : null;
-                if (typeClass != null && GeneratedClosure.class.isAssignableFrom(typeClass)) return true;
-            }
-        }
-
-        return false;
-    }
 }

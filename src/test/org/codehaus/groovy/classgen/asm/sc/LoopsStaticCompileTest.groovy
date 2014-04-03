@@ -22,14 +22,6 @@ import groovy.transform.stc.LoopsSTCTest
  *
  * @author Cedric Champeau
  */
-@Mixin(StaticCompilationTestSupport)
-class LoopsStaticCompileTest extends LoopsSTCTest {
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
-
+class LoopsStaticCompileTest extends LoopsSTCTest implements StaticCompilationTestSupport {
 }
 

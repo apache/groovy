@@ -22,13 +22,7 @@ import groovy.transform.stc.WithSTCTest
  *
  * @author Andre Steingress
  */
-@Mixin(StaticCompilationTestSupport)
-class WithStaticCompileTest extends WithSTCTest {
+class WithStaticCompileTest extends WithSTCTest implements StaticCompilationTestSupport {
 
-    @Override
-    protected void setUp() {
-        super.setUp()
-        extraSetup()
-    }
 }
 

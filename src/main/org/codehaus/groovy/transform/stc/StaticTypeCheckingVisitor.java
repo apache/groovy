@@ -49,6 +49,7 @@ import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 import static org.codehaus.groovy.syntax.Types.*;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 
 /**
  * The main class code visitor responsible for static type checking. It will perform various inspections like checking
@@ -2510,6 +2511,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                         }
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, mn.get(0), call)) {
+                            returnType = adjustWithTraits(directMethodCallCandidate,chosenReceiver.getType(), args, returnType);
                             storeType(call, returnType);
                             storeTargetMethod(call, directMethodCallCandidate);
                             String data = chosenReceiver != null ? chosenReceiver.getData() : null;
@@ -2563,6 +2565,35 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             typeCheckingContext.popEnclosingMethodCall();
             extension.afterMethodCall(call);
         }
+    }
+
+    /**
+     * A special method handling the "withTrait" call for which the type checker knows more than
+     * what the type signature is able to tell. If "withTrait" is detected, then a new class node
+     * is created representing the list of trait interfaces.
+     *
+     * @param directMethodCallCandidate a method selected by the type checker
+     * @param receiver the receiver of the method call
+     *@param args the arguments of the method call
+     * @param returnType the original return type, as inferred by the type checker   @return fixed return type if the selected method is {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
+     */
+    private ClassNode adjustWithTraits(final MethodNode directMethodCallCandidate, final ClassNode receiver, final ClassNode[] args, final ClassNode returnType) {
+        if (directMethodCallCandidate instanceof ExtensionMethodNode) {
+            ExtensionMethodNode emn = (ExtensionMethodNode) directMethodCallCandidate;
+            if ("withTraits".equals(emn.getName()) && "DefaultGroovyMethods".equals(emn.getExtensionMethodNode().getDeclaringClass().getNameWithoutPackage())) {
+                List<ClassNode> nodes = new LinkedList<ClassNode>();
+                Collections.addAll(nodes, receiver.getInterfaces());
+                for (ClassNode arg : args) {
+                    if (isClassClassNodeWrappingConcreteType(arg)) {
+                        nodes.add(arg.getGenericsTypes()[0].getType());
+                    } else {
+                        nodes.add(arg);
+                    }
+                }
+                return new LowestUpperBoundClassNode(returnType.getName()+"Composed", OBJECT_TYPE, nodes.toArray(new ClassNode[nodes.size()]));
+            }
+        }
+        return returnType;
     }
 
     /**
