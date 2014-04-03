@@ -2,10 +2,10 @@
 
 <html>
 <head>
-<title>${classname} (Groovy JDK)</title>
+<title>${className} (Groovy JDK)</title>
 
 <%
-int dotCount = packagename.count('.')
+int dotCount = packageName.count('.')
 String pathPref = '../' * (dotCount+1)
 %>
 <link rel ="stylesheet" type="text/css" href="${pathPref}stylesheet.css" title="Style">
@@ -19,7 +19,7 @@ function windowTitle()
 
 </head>
 
-<body bgcolor="white" onload="windowTitle();">
+<body class="center" onload="windowTitle();">
 
 <!-- ========== START OF NAVBAR ========== -->
 <a name="navbar_top"><!-- --></a>
@@ -49,9 +49,9 @@ function windowTitle()
 <!-- ======== START OF class DATA ======== -->
 <h2>
 <span style="font-size:12px;">
-${packagename}</span>
+${packageName}</span>
 <br>
-class ${classname}</h2>
+class ${className}</h2>
 
 <!-- ========== METHOD SUMMARY =========== -->
 
@@ -82,25 +82,25 @@ ${method.shortComment}
 <!-- ============ METHOD DETAIL ========== -->
 
 <a name="method_detail"><!-- --></a>
-<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-<TR BGCOLOR="#CCCCFF" class="TableHeadingColor">
-<TH ALIGN="left" COLSPAN="1"><SPAN style="font-size:24px;">
-<b>Method Detail</b></span></TH>
-</TR>
-</TABLE>
+<table border="1" width="100%" cellpadding="3" cellspacing="0" summary="">
+<tr class="TableHeadingColor">
+<th align="left" colspan="1"><span style="font-size:24px;">
+<b>Method Detail</b></span></th>
+</tr>
+</table>
 
 <% methods.each { method -> %>
 
-<a name="${method.name}(${method.parametersSignature})"><!-- --></a><H3>${method.name}</H3>
-<PRE>public ${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl} <b>${method.name}</b>(${method.parametersDocUrl})</PRE>
-<DL>
+<a name="${method.name}(${method.parametersSignature})"><!-- --></a><h3>${method.name}</h3>
+<pre>public ${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl} <b>${method.name}</b>(${method.parametersDocUrl})</pre>
+<dl>
 <dt>&nbsp;</dt>
 <dd>${method.comment}</dd>
-</DL>
+</dl>
 <% if (method.parametersSignature) { %>
 <dl><dt><b>Parameters:</b></dt>
 	<% method.parameters.each { param -> %>
-		<dd><CODE>${param.name}</CODE> - ${param.comment}.</dd>
+		<dd><code>${param.name}</code> - ${param.comment}.</dd>
 <% } %>
     </dl>
     <%
@@ -132,11 +132,11 @@ ${method.shortComment}
 
  <!-- ======= START OF BOTTOM NAVBAR ====== -->
 <a name="navbar_bottom"><!-- --></a>
-<a hrEF="#skip-navbar_bottom" title="Skip navigation links"></a>
+<a href="#skip-navbar_bottom" title="Skip navigation links"></a>
 
 <table border="0" width="100%" cellpadding="1" cellspacing="0">
     <tr>
-        <td colspan=3 bgcolor="#EEEEFF" class="NavBarCell1">
+        <td colspan=3 class="NavBarCell1">
             <a name="navbar_top_firstrow"><!-- --></a>
             <table border="0" cellpadding="0" cellspacing="3">
                 <tr align="center" valign="top">
