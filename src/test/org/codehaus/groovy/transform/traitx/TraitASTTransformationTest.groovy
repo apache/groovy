@@ -1388,22 +1388,6 @@ p.foo()
 assert p.get(0) == 'bar\''''
     }
 
-    void testMeaningOfThis() {
-        assertScript '''// tag::meaningofthis_header[]
-trait Introspector {
-    def whoAmI() { this }
-}
-class Foo implements Introspector {}
-def foo = new Foo()
-// end::meaningofthis_header[]
-// tag::meaningofthis_snippet[]
-foo.whoAmI()
-// end::meaningofthis_snippet[]
-// tag::meaningofthis_assert[]
-assert foo.whoAmI().is(foo)
-// end::meaningofthis_assert[]'''
-    }
-
     static trait TestTrait {
         int a() { 123 }
     }
