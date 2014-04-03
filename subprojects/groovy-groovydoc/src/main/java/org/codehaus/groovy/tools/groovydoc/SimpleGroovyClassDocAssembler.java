@@ -130,25 +130,12 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             current.setFullPathName(packagePath + FS + current.name());
             current.setTokenType(t.getType());
             processAnnotations(t, current);
-            updateDeprecatedFlagWithAnnotations(current);
             processModifiers(t, current);
             classDocs.put(current.getFullPathName(), current);
             foundClasses.put(shortName, current);
             if (parent != null) {
                 parent.addNested(current);
                 current.setOuter(parent);
-            }
-        }
-    }
-
-    private static void updateDeprecatedFlagWithAnnotations(SimpleGroovyProgramElementDoc elem) {
-        GroovyAnnotationRef[] annotations = elem.annotations();
-        if (annotations!=null) {
-            for (GroovyAnnotationRef annotation : annotations) {
-                if ("Deprecated".equals(annotation.name()) || "java.lang.Deprecated".equals(annotation.name())) {
-                    elem.setDeprecated(true);
-                    break;
-                }
             }
         }
     }
@@ -236,7 +223,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             processModifiers(t, currentConstructorDoc);
             addParametersTo(t, currentConstructorDoc);
             processAnnotations(t, currentConstructorDoc);
-            updateDeprecatedFlagWithAnnotations(currentConstructorDoc);
             currentClassDoc.add(currentConstructorDoc);
         }
     }
@@ -279,7 +265,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         currentMethodDoc.setReturnType(new SimpleGroovyType(getTypeOrDefault(t)));
         addParametersTo(t, currentMethodDoc);
         processAnnotations(t, currentMethodDoc);
-        updateDeprecatedFlagWithAnnotations(currentMethodDoc);
         return currentMethodDoc;
     }
 
@@ -334,8 +319,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             SimpleGroovyFieldDoc currentEnumConstantDoc = new SimpleGroovyFieldDoc(enumConstantName, currentClassDoc);
             currentEnumConstantDoc.setRawCommentText(getJavaDocCommentsBeforeNode(t));
             processModifiers(t, currentEnumConstantDoc);
-            processAnnotations(t, currentEnumConstantDoc);
-            updateDeprecatedFlagWithAnnotations(currentEnumConstantDoc);
             String typeName = getTypeNodeAsText(t.childOfType(TYPE), currentClassDoc.getTypeDescription());
             currentEnumConstantDoc.setType(new SimpleGroovyType(typeName));
             currentClassDoc.addEnumConstant(currentEnumConstantDoc);
@@ -355,7 +338,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 boolean isProp = processModifiers(t, currentFieldDoc);
                 currentFieldDoc.setType(new SimpleGroovyType(getTypeOrDefault(t)));
                 processAnnotations(t, currentFieldDoc);
-                updateDeprecatedFlagWithAnnotations(currentFieldDoc);
                 if (isProp) {
                     currentClassDoc.addProperty(currentFieldDoc);
                 } else {
@@ -601,9 +583,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private String getJavaDocCommentsBeforeNode(GroovySourceAST t) {
         String result = "";
         LineColumn thisLineCol = new LineColumn(t.getLine(), t.getColumn());
-        if (t.getType()==VARIABLE_DEF) {
-            thisLineCol = new LineColumn(t.getLineLast(), t.getColumnLast());
-        }
         String text = sourceBuffer.getSnippet(lastLineCol, thisLineCol);
         if (text != null) {
             Matcher m = PREV_JAVADOC_COMMENT_PATTERN.matcher(text);

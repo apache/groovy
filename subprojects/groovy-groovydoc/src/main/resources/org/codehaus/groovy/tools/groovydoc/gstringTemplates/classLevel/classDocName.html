@@ -225,15 +225,15 @@ if (classDoc.isInterface()) {
 %>extends ${linkable(classDoc.superclass())}
 <% } %>
 </pre>
+<% } %>
+<% } %>
 <% if (classDoc.commentText()) { %>
-<p>${classDoc.commentText()}</p>
-            <%
-    }
-}
-%>        </li>
+    <p>${classDoc.commentText()}</p>
+<% } %>
+          </li>
     </ul>
 </div>
-<% } %>
+
 <div class="summary">
     <ul class="blockList">
         <li class="blockList">
