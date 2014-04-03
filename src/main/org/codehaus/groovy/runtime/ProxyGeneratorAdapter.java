@@ -23,6 +23,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.transform.Trait;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -201,11 +202,19 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             String name = superClass.getName() + "$TraitAdapter";
             ClassNode cn = new ClassNode(name, ACC_PUBLIC | ACC_ABSTRACT, ClassHelper.OBJECT_TYPE, traits.toArray(new ClassNode[traits.size()]), null);
             CompilationUnit cu = new CompilationUnit(loader);
-            cu.addClassNode(cn);
+            CompilerConfiguration config = new CompilerConfiguration();
+            SourceUnit su = new SourceUnit(name+"wrapper", "", config, loader, new ErrorCollector(config));
+            cu.addSource(su);
+            cu.compile(Phases.CONVERSION);
+            su.getAST().addClass(cn);
             cu.compile(Phases.CLASS_GENERATION);
             @SuppressWarnings("unchecked")
             List<GroovyClass> classes = (List<GroovyClass>) cu.getClasses();
-            result = loader.defineClass(name,classes.get(0).getBytes());
+            for (GroovyClass groovyClass : classes) {
+                if (groovyClass.getName().equals(name)) {
+                    return loader.defineClass(name,groovyClass.getBytes());
+                }
+            }
         }
         return result;
     }

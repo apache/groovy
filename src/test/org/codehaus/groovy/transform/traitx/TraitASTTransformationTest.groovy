@@ -1388,6 +1388,21 @@ p.foo()
 assert p.get(0) == 'bar\''''
     }
 
+    void testAnnotationShouldBeCarriedOver() {
+        assertScript '''import groovy.transform.ASTTest
+
+            trait Foo {
+                @Deprecated void foo() { 'ok' }
+            }
+            @ASTTest(phase=CANONICALIZATION,value={
+                assert node.getDeclaredMethod('foo').annotations.any { it.classNode.nameWithoutPackage == 'Deprecated'}
+            })
+            class Bar implements Foo {}
+            def b = new Bar()
+            b.foo()
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

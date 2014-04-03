@@ -204,6 +204,12 @@ public abstract class TraitComposer {
                         exceptionNodes,
                         new ExpressionStatement(forwardExpression)
                 );
+                List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
+                List<AnnotationNode> notCopied = Collections.emptyList(); // at this point, should *always* stay empty
+                AbstractASTTransformation.copyAnnotatedNodeAnnotations(methodNode, copied, notCopied);
+                if (!copied.isEmpty()) {
+                    forwarder.addAnnotations(copied);
+                }
                 cNode.addMethod(forwarder);
             }
         }
