@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,48 +16,41 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.EqualsAndHashCode;
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.IfStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.util.HashCodeHelper;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
+import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe;
 
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = EqualsAndHashCode.class;
-    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode HASHUTIL_TYPE = ClassHelper.make(HashCodeHelper.class);
-    private static final ClassNode INVOKERHELPER_TYPE = ClassHelper.make(InvokerHelper.class);
-    private static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
-    private static final Token LOGICAL_OR = Token.newSymbol(Types.LOGICAL_OR, -1, -1);
-    private static final Token LOGICAL_AND = Token.newSymbol(Types.LOGICAL_AND, -1, -1);
-    private static final ClassNode OBJECT_TYPE = ClassHelper.make(Object.class);
+    private static final ClassNode HASHUTIL_TYPE = make(HashCodeHelper.class);
+    private static final ClassNode INVOKERHELPER_TYPE = make(InvokerHelper.class);
+    private static final ClassNode OBJECT_TYPE = makeClassSafe(Object.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -82,9 +75,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
                 if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
-            if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
-                addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
-            }
+            checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
             createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes);
             createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes);
         }
@@ -99,19 +90,23 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         // TODO use pList and fList
         if (cacheResult) {
             final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
-            final Expression hash = new VariableExpression(hashField);
-            body.addStatement(new IfStatement(
-                    isZeroExpr(hash),
-                    calculateHashStatements(cNode, hash, includeFields, callSuper, excludes, includes),
-                    EmptyStatement.INSTANCE
+            final Expression hash = var(hashField);
+            body.addStatement(ifS(
+                    isZeroX(hash),
+                    calculateHashStatements(cNode, hash, includeFields, callSuper, excludes, includes)
             ));
-            body.addStatement(new ReturnStatement(hash));
+            body.addStatement(returnS(hash));
         } else {
             body.addStatement(calculateHashStatements(cNode, null, includeFields, callSuper, excludes, includes));
         }
 
-        cNode.addMethod(new MethodNode(hasExistingHashCode ? "_hashCode" : "hashCode", hasExistingHashCode ? ACC_PRIVATE : ACC_PUBLIC,
-                ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+        cNode.addMethod(new MethodNode(
+                hasExistingHashCode ? "_hashCode" : "hashCode",
+                hasExistingHashCode ? ACC_PRIVATE : ACC_PUBLIC,
+                ClassHelper.int_TYPE,
+                Parameter.EMPTY_ARRAY,
+                ClassNode.EMPTY_ARRAY,
+                body));
     }
 
     private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes) {
@@ -122,43 +117,38 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         }
         final BlockStatement body = new BlockStatement();
         // def _result = HashCodeHelper.initHash()
-        final Expression result = new VariableExpression("_result");
-        final Expression init = new StaticMethodCallExpression(HASHUTIL_TYPE, "initHash", MethodCallExpression.NO_ARGUMENTS);
-        body.addStatement(new ExpressionStatement(new DeclarationExpression(result, ASSIGN, init)));
+        final Expression result = var("_result");
+        body.addStatement(declS(result, callX(HASHUTIL_TYPE, "initHash")));
 
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             // _result = HashCodeHelper.updateHash(_result, getProperty()) // plus self-reference checking
-            Expression getter = new StaticMethodCallExpression(INVOKERHELPER_TYPE, "getProperty",
-                    new TupleExpression(new VariableExpression("this"), new ConstantExpression(pNode.getName())));
-            final Expression args = new TupleExpression(result, getter);
-            final Expression current = new StaticMethodCallExpression(HASHUTIL_TYPE, "updateHash", args);
-            body.addStatement(new IfStatement(identicalExpr(getter, new VariableExpression("this")),
-                    EmptyStatement.INSTANCE,
-                    assignStatement(result, current)));
+            Expression getter = callX(INVOKERHELPER_TYPE, "getProperty", args(var("this"), constX(pNode.getName())));
+            final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, getter));
+            body.addStatement(ifS(
+                    not(identicalX(getter, var("this"))),
+                    assignS(result, current)));
 
         }
         for (FieldNode fNode : fList) {
             if (shouldSkip(fNode.getName(), excludes, includes)) continue;
             // _result = HashCodeHelper.updateHash(_result, field) // plus self-reference checking
-            final Expression fieldExpr = new VariableExpression(fNode);
-            final Expression args = new TupleExpression(result, fieldExpr);
-            final Expression current = new StaticMethodCallExpression(HASHUTIL_TYPE, "updateHash", args);
-            body.addStatement(new IfStatement(identicalExpr(fieldExpr, new VariableExpression("this")),
-                    EmptyStatement.INSTANCE,
-                    assignStatement(result, current)));
+            final Expression fieldExpr = var(fNode);
+            final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, fieldExpr));
+            body.addStatement(ifS(
+                    not(identicalX(fieldExpr, var("this"))),
+                    assignS(result, current)));
         }
         if (callSuper) {
             // _result = HashCodeHelper.updateHash(_result, super.hashCode())
-            final Expression args = new TupleExpression(result, new MethodCallExpression(VariableExpression.SUPER_EXPRESSION, "hashCode", MethodCallExpression.NO_ARGUMENTS));
-            final Expression current = new StaticMethodCallExpression(HASHUTIL_TYPE, "updateHash", args);
-            body.addStatement(assignStatement(result, current));
+            final Expression current = callX(HASHUTIL_TYPE, "updateHash", args(result, callSuperX("hashCode")));
+            body.addStatement(assignS(result, current));
         }
         // $hash$code = _result
         if (hash != null) {
-            body.addStatement(assignStatement(hash, result));
+            body.addStatement(assignS(hash, result));
         } else {
-            body.addStatement(new ReturnStatement(result));
+            body.addStatement(returnS(result));
         }
         return body;
     }
@@ -168,11 +158,15 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         if (hasExistingCanEqual && hasDeclaredMethod(cNode, "_canEqual", 1)) return;
 
         final BlockStatement body = new BlockStatement();
-        VariableExpression other = new VariableExpression("other");
-        body.addStatement(new ReturnStatement(isInstanceof(cNode, other)));
-        Parameter[] params = {new Parameter(OBJECT_TYPE, other.getName())};
-        cNode.addMethod(new MethodNode(hasExistingCanEqual ? "_canEqual" : "canEqual", hasExistingCanEqual ? ACC_PRIVATE : ACC_PUBLIC,
-                ClassHelper.boolean_TYPE, params, ClassNode.EMPTY_ARRAY, body));
+        VariableExpression other = var("other");
+        body.addStatement(returnS(isInstanceOf(other, cNode)));
+        cNode.addMethod(new MethodNode(
+                hasExistingCanEqual ? "_canEqual" : "canEqual",
+                hasExistingCanEqual ? ACC_PRIVATE : ACC_PUBLIC,
+                ClassHelper.boolean_TYPE,
+                params(param(OBJECT_TYPE, other.getName())),
+                ClassNode.EMPTY_ARRAY,
+                body));
 
     }
 
@@ -183,37 +177,34 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         if (hasExistingEquals && hasDeclaredMethod(cNode, "_equals", 1)) return;
 
         final BlockStatement body = new BlockStatement();
-        VariableExpression other = new VariableExpression("other");
+        VariableExpression other = var("other");
 
         // some short circuit cases for efficiency
-        body.addStatement(returnFalseIfNull(other));
-        body.addStatement(returnTrueIfIdentical(VariableExpression.THIS_EXPRESSION, other));
+        body.addStatement(ifS(equalsNullX(other), returnS(constX(Boolean.FALSE))));
+        body.addStatement(ifS(identicalX(VariableExpression.THIS_EXPRESSION, other), returnS(constX(Boolean.TRUE))));
 
         if (useCanEqual) {
-            body.addStatement(returnFalseIfNotInstanceof(cNode, other));
-            body.addStatement(new IfStatement(
-                    new BooleanExpression(new MethodCallExpression(other, "canEqual", VariableExpression.THIS_EXPRESSION)),
-                    EmptyStatement.INSTANCE,
-                    new ReturnStatement(ConstantExpression.FALSE)
-            ));
+            body.addStatement(ifS(not(isInstanceOf(other, cNode)), returnS(constX(Boolean.FALSE))));
+            body.addStatement(ifS(not(callX(other, "canEqual", var("this"))), returnS(constX(Boolean.FALSE))));
         } else {
-            body.addStatement(returnFalseIfWrongType(cNode, other));
+            body.addStatement(ifS(not(hasClassX(other, cNode)), returnS(constX(Boolean.FALSE))));
         }
 
-        VariableExpression otherTyped = new VariableExpression("otherTyped");
-        body.addStatement(new ExpressionStatement(new DeclarationExpression(otherTyped, ASSIGN, new CastExpression(cNode, other))));
+        VariableExpression otherTyped = var("otherTyped");
+        body.addStatement(declS(otherTyped, new CastExpression(cNode, other)));
 
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             body.addStatement(
-                    new IfStatement(differentPropertyExpr(pNode, otherTyped),
-                            new IfStatement(differentSelfRecursivePropertyExpr(pNode, otherTyped),
-                                    new ReturnStatement(ConstantExpression.FALSE),
-                                    new IfStatement(bothSelfRecursivePropertyExpr(pNode, otherTyped),
-                                            EmptyStatement.INSTANCE,
-                                            returnFalseIfPropertyNotEqual(pNode, otherTyped))),
-                            EmptyStatement.INSTANCE));
+                    ifS(differentPropertyX(pNode, otherTyped),
+                            ifElseS(differentSelfRecursivePropertyX(pNode, otherTyped),
+                                    returnS(constX(Boolean.FALSE)),
+                                    ifS(not(bothSelfRecursivePropertyX(pNode, otherTyped)),
+                                            ifS(nePropertyX(pNode, otherTyped), returnS(constX(Boolean.FALSE))))
+                            )
+                    )
+            );
         }
         List<FieldNode> fList = new ArrayList<FieldNode>();
         if (includeFields) {
@@ -222,59 +213,67 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         for (FieldNode fNode : fList) {
             if (shouldSkip(fNode.getName(), excludes, includes)) continue;
             body.addStatement(
-                    new IfStatement(differentFieldExpr(fNode, otherTyped),
-                            new IfStatement(differentSelfRecursiveFieldExpr(fNode, otherTyped),
-                                    new ReturnStatement(ConstantExpression.FALSE),
-                                    new IfStatement(bothSelfRecursiveFieldExpr(fNode, otherTyped),
-                                            EmptyStatement.INSTANCE,
-                                            returnFalseIfFieldNotEqual(fNode, otherTyped))),
-                            EmptyStatement.INSTANCE));
+                    ifS(differentFieldX(fNode, otherTyped),
+                            ifElseS(differentSelfRecursiveFieldX(fNode, otherTyped),
+                                    returnS(constX(Boolean.FALSE)),
+                                    ifS(not(bothSelfRecursiveFieldX(fNode, otherTyped)),
+                                            ifS(neFieldX(otherTyped, fNode), returnS(constX(Boolean.FALSE)))))
+                    ));
         }
         if (callSuper) {
-            body.addStatement(new IfStatement(
-                    isTrueExpr(new MethodCallExpression(VariableExpression.SUPER_EXPRESSION, "equals", other)),
-                    EmptyStatement.INSTANCE,
-                    new ReturnStatement(ConstantExpression.FALSE)
+            body.addStatement(ifS(
+                    not(isTrueX(callSuperX("equals", other))),
+                    returnS(constX(Boolean.FALSE))
             ));
         }
 
         // default
-        body.addStatement(new ReturnStatement(ConstantExpression.TRUE));
+        body.addStatement(returnS(constX(Boolean.TRUE)));
 
-        Parameter[] params = {new Parameter(OBJECT_TYPE, other.getName())};
-        cNode.addMethod(new MethodNode(hasExistingEquals ? "_equals" : "equals", hasExistingEquals ? ACC_PRIVATE : ACC_PUBLIC,
-                ClassHelper.boolean_TYPE, params, ClassNode.EMPTY_ARRAY, body));
+        cNode.addMethod(new MethodNode(
+                hasExistingEquals ? "_equals" : "equals",
+                hasExistingEquals ? ACC_PRIVATE : ACC_PUBLIC,
+                ClassHelper.boolean_TYPE,
+                params(param(OBJECT_TYPE, other.getName())),
+                ClassNode.EMPTY_ARRAY,
+                body));
     }
 
-    private static BooleanExpression differentSelfRecursivePropertyExpr(PropertyNode pNode, Expression other) {
-        String getterName = "get" + Verifier.capitalize(pNode.getName());
-        Expression selfGetter = new MethodCallExpression(new VariableExpression("this"), getterName, MethodCallExpression.NO_ARGUMENTS);
-        Expression otherGetter = new MethodCallExpression(other, getterName, MethodCallExpression.NO_ARGUMENTS);
-        return new BooleanExpression(new BinaryExpression(new BinaryExpression(
-                identicalExpr(selfGetter, new VariableExpression("this")), LOGICAL_AND, differentExpr(otherGetter, other)), LOGICAL_OR, new BinaryExpression(
-                differentExpr(selfGetter, new VariableExpression("this")), LOGICAL_AND, identicalExpr(otherGetter, other))));
+    private static BinaryExpression differentSelfRecursivePropertyX(PropertyNode pNode, Expression other) {
+        String getterName = getGetterName(pNode);
+        Expression selfGetter = callThisX(getterName);
+        Expression otherGetter = callX(other, getterName);
+        return or(
+                and(identicalX(selfGetter, var("this")), differentX(otherGetter, other)),
+                and(differentX(selfGetter, var("this")), identicalX(otherGetter, other))
+        );
     }
 
-    private static BooleanExpression bothSelfRecursivePropertyExpr(PropertyNode pNode, Expression other) {
-        String getterName = "get" + Verifier.capitalize(pNode.getName());
-        Expression selfGetter = new MethodCallExpression(new VariableExpression("this"), getterName, MethodCallExpression.NO_ARGUMENTS);
-        Expression otherGetter = new MethodCallExpression(other, getterName, MethodCallExpression.NO_ARGUMENTS);
-        return new BooleanExpression(new BinaryExpression(
-                identicalExpr(selfGetter, new VariableExpression("this")), LOGICAL_AND, identicalExpr(otherGetter, other)));
+    private static BinaryExpression bothSelfRecursivePropertyX(PropertyNode pNode, Expression other) {
+        String getterName = getGetterName(pNode);
+        Expression selfGetter = callThisX(getterName);
+        Expression otherGetter = callX(other, getterName);
+        return and(
+                identicalX(selfGetter, var("this")),
+                identicalX(otherGetter, other)
+        );
     }
 
-    private static BooleanExpression differentSelfRecursiveFieldExpr(FieldNode fNode, Expression other) {
-        final Expression fieldExpr = new VariableExpression(fNode);
-        final Expression otherExpr = new PropertyExpression(other, fNode.getName());
-        return new BooleanExpression(new BinaryExpression(new BinaryExpression(
-                identicalExpr(fieldExpr, new VariableExpression("this")), LOGICAL_AND, differentExpr(otherExpr, other)), LOGICAL_OR, new BinaryExpression(
-                differentExpr(fieldExpr, new VariableExpression("this")), LOGICAL_AND, identicalExpr(otherExpr, other))));
+    private static BinaryExpression differentSelfRecursiveFieldX(FieldNode fNode, Expression other) {
+        final Expression fieldExpr = var(fNode);
+        final Expression otherExpr = prop(other, fNode.getName());
+        return or(
+                and(identicalX(fieldExpr, var("this")), differentX(otherExpr, other)),
+                and(differentX(fieldExpr, var("this")), identicalX(otherExpr, other))
+        );
     }
 
-    private static BooleanExpression bothSelfRecursiveFieldExpr(FieldNode fNode, Expression other) {
-        final Expression fieldExpr = new VariableExpression(fNode);
-        final Expression otherExpr = new PropertyExpression(other, fNode.getName());
-        return new BooleanExpression(new BinaryExpression(
-                identicalExpr(fieldExpr, new VariableExpression("this")), LOGICAL_AND, identicalExpr(otherExpr, other)));
+    private static BinaryExpression bothSelfRecursiveFieldX(FieldNode fNode, Expression other) {
+        final Expression fieldExpr = var(fNode);
+        final Expression otherExpr = prop(other, fNode.getName());
+        return and(
+                identicalX(fieldExpr, var("this")),
+                identicalX(otherExpr, other)
+        );
     }
 }

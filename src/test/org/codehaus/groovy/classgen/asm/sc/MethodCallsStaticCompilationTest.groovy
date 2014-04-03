@@ -164,4 +164,17 @@ import groovy.transform.TypeCheckingMode//import org.codehaus.groovy.classgen.as
         }
     }
 
+    // GROOVY-6647
+    void testInaccessibleConstructor() {
+        shouldFailWithMessages '''
+            class Foo {
+                private Foo(){}
+            }
+
+            class Bar {
+                def foo() {new Foo()}
+            }
+        ''', 'Cannot call private constructor'
+    }
+
 }

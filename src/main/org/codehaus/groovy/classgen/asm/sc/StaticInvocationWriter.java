@@ -103,6 +103,14 @@ public class StaticInvocationWriter extends InvocationWriter {
             cn = new ConstructorNode(mn.getModifiers(), mn.getParameters(), mn.getExceptions(), mn.getCode());
             cn.setDeclaringClass(mn.getDeclaringClass());
         }
+        if (cn.isPrivate()) {
+            ClassNode classNode = controller.getClassNode();
+            ClassNode declaringClass = cn.getDeclaringClass();
+            if (declaringClass != classNode) {
+                controller.getSourceUnit().addError(new SyntaxException("Cannot call private constructor for " + declaringClass.toString(false) +
+                            " from class " + classNode.toString(false), call.getLineNumber(), call.getColumnNumber(), mn.getLastLineNumber(), call.getLastColumnNumber()));
+            }
+        }
 
         String ownerDescriptor = prepareConstructorCall(cn);
         TupleExpression args = makeArgumentList(call.getArguments());
@@ -178,7 +186,7 @@ public class StaticInvocationWriter extends InvocationWriter {
 
             String owner = BytecodeHelper.getClassInternalName(node.getDeclaringClass());
             String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), parameters);
-            mv.visitMethodInsn(INVOKESTATIC, owner, methodName, desc);
+            mv.visitMethodInsn(INVOKESTATIC, owner, methodName, desc, false);
             ClassNode ret = target.getReturnType().redirect();
             if (ret == ClassHelper.VOID_TYPE) {
                 ret = ClassHelper.OBJECT_TYPE;

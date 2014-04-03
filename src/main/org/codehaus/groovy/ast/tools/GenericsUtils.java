@@ -250,6 +250,10 @@ public class GenericsUtils {
         return type.getPlainNodeReference();
     }
 
+    public static ClassNode makeClassSafe(Class klass) {
+        return makeClassSafeWithGenerics(ClassHelper.make(klass));
+    }
+
     public static ClassNode makeClassSafe0(ClassNode type, GenericsType... genericTypes) {
         ClassNode plainNodeReference = newClass(type);
         if (genericTypes != null && genericTypes.length > 0) plainNodeReference.setGenericsTypes(genericTypes);

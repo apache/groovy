@@ -225,7 +225,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
 
         mv.visitLdcInsn(methodName); // load property name
-        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;", true);
         if (safe) {
             mv.visitLabel(exit);
         }
@@ -264,24 +264,24 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         mv.visitTypeInsn(NEW, "java/util/ArrayList");
         mv.visitInsn(DUP);
         receiver.visit(controller.getAcg());
-        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "size", "()I");
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "size", "()I", true);
         controller.getOperandStack().remove(1);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "(I)V");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "(I)V", false);
         mv.visitVarInsn(ASTORE, var);
         Label l1 = new Label();
         mv.visitLabel(l1);
         receiver.visit(controller.getAcg());
-        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "iterator", "()Ljava/util/Iterator;");
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "iterator", "()Ljava/util/Iterator;", true);
         controller.getOperandStack().remove(1);
         mv.visitVarInsn(ASTORE, it);
         Label l2 = new Label();
         mv.visitLabel(l2);
         mv.visitVarInsn(ALOAD, it);
-        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "hasNext", "()Z");
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "hasNext", "()Z", true);
         Label l3 = new Label();
         mv.visitJumpInsn(IFEQ, l3);
         mv.visitVarInsn(ALOAD, it);
-        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "next", "()Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "next", "()Ljava/lang/Object;", true);
         mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(componentType));
         mv.visitVarInsn(ASTORE, next);
         Label l4 = new Label();
@@ -302,7 +302,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         pexp.visit(controller.getAcg());
         controller.getOperandStack().box();
         controller.getOperandStack().remove(1);
-        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z");
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z", true);
         mv.visitInsn(POP);
         Label l5 = new Label();
         mv.visitLabel(l5);
@@ -635,10 +635,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         visitBoxedArgument(arguments);
         controller.getOperandStack().doGroovyCast(Number_TYPE);
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitMethodInsn(INVOKESTATIC,
-                "org/codehaus/groovy/runtime/typehandling/NumberMath",
-                "mod",
-                "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/typehandling/NumberMath", "mod", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
         controller.getOperandStack().replace(Number_TYPE, 2);
     }
     
@@ -651,30 +648,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         int m2 = operandStack.getStackLength();
         MethodVisitor mv = controller.getMethodVisitor();
         if (BigDecimal_TYPE.equals(rType) && Integer_TYPE.equals(getWrapper(aType))) {
-            mv.visitMethodInsn(INVOKESTATIC,
-                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
-                    "power",
-                    "(Ljava/math/BigDecimal;Ljava/lang/Integer;)Ljava/lang/Number;");
+            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "power", "(Ljava/math/BigDecimal;Ljava/lang/Integer;)Ljava/lang/Number;", false);
         } else if (BigInteger_TYPE.equals(rType) && Integer_TYPE.equals(getWrapper(aType))) {
-            mv.visitMethodInsn(INVOKESTATIC,
-                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
-                    "power",
-                    "(Ljava/math/BigInteger;Ljava/lang/Integer;)Ljava/lang/Number;");
+            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "power", "(Ljava/math/BigInteger;Ljava/lang/Integer;)Ljava/lang/Number;", false);
         } else if (Long_TYPE.equals(getWrapper(rType)) && Integer_TYPE.equals(getWrapper(aType))) {
-            mv.visitMethodInsn(INVOKESTATIC,
-                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
-                    "power",
-                    "(Ljava/lang/Long;Ljava/lang/Integer;)Ljava/lang/Number;");
+            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "power", "(Ljava/lang/Long;Ljava/lang/Integer;)Ljava/lang/Number;", false);
         } else if (Integer_TYPE.equals(getWrapper(rType)) && Integer_TYPE.equals(getWrapper(aType))) {
-            mv.visitMethodInsn(INVOKESTATIC,
-                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
-                    "power",
-                    "(Ljava/lang/Integer;Ljava/lang/Integer;)Ljava/lang/Number;");
+            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "power", "(Ljava/lang/Integer;Ljava/lang/Integer;)Ljava/lang/Number;", false);
         } else {
-            mv.visitMethodInsn(INVOKESTATIC,
-                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
-                    "power",
-                    "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
+            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "power", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
         }
         controller.getOperandStack().replace(Number_TYPE, m2 - m1);
     }
@@ -688,10 +670,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         visitBoxedArgument(arguments);
         int m2 = operandStack.getStackLength();
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitMethodInsn(INVOKESTATIC,
-                "org/codehaus/groovy/runtime/DefaultGroovyMethods",
-                "plus",
-                "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;");
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "plus", "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;", false);
         controller.getOperandStack().replace(STRING_TYPE, m2-m1);
     }
 
@@ -705,10 +684,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         controller.getOperandStack().doGroovyCast(Number_TYPE);
         int m2 = operandStack.getStackLength();
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitMethodInsn(INVOKESTATIC,
-                "org/codehaus/groovy/runtime/dgmimpl/NumberNumber" + MetaClassHelper.capitalize(message),
-                message,
-                "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/dgmimpl/NumberNumber" + MetaClassHelper.capitalize(message), message, "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
         controller.getOperandStack().replace(Number_TYPE, m2 - m1);
     }
 

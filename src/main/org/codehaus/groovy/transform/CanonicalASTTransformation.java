@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,16 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.Canonical;
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.List;
 
+import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createEquals;
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createHashCode;
 import static org.codehaus.groovy.transform.ToStringASTTransformation.createToString;
@@ -37,7 +41,7 @@ import static org.codehaus.groovy.transform.TupleConstructorASTTransformation.cr
 public class CanonicalASTTransformation extends AbstractASTTransformation {
 
     static final Class MY_CLASS = Canonical.class;
-    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -55,9 +59,7 @@ public class CanonicalASTTransformation extends AbstractASTTransformation {
             checkNotInterface(cNode, MY_TYPE_NAME);
             List<String> excludes = getMemberList(anno, "excludes");
             List<String> includes = getMemberList(anno, "includes");
-            if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
-                addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
-            }
+            checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
             if (!hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
                 createConstructor(cNode, false, true, false, false, false, false, excludes, includes);
             }

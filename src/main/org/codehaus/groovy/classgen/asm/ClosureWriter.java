@@ -107,11 +107,7 @@ public class ClosureWriter {
 
         // we may need to pass in some other constructors
         //cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
-        mv.visitMethodInsn(
-                INVOKESPECIAL,
-                closureClassinternalName,
-                "<init>",
-                BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, localVariableParams));
+        mv.visitMethodInsn(INVOKESPECIAL, closureClassinternalName, "<init>", BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, localVariableParams), false);
         controller.getOperandStack().replace(ClassHelper.CLOSURE_TYPE, localVariableParams.length);
     }
     
@@ -342,7 +338,7 @@ public class ClosureWriter {
         //TODO: replace with normal String, p not needed
         Parameter p = new Parameter(ClassHelper.OBJECT_TYPE,"_p");
         String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, new Parameter[]{p,p});
-        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor);
+        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor, false);
         operandStack.remove(2);
         return true;
     }
@@ -366,12 +362,7 @@ public class ClosureWriter {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ALOAD, 0);
         if (controller.isInClosure()) {
-            mv.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    "groovy/lang/Closure",
-                    "getThisObject",
-                    "()Ljava/lang/Object;"
-            );
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
             controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
         } else {
             controller.getOperandStack().push(controller.getClassNode());

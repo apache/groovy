@@ -76,7 +76,10 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     }
 
     public ExpandoMetaClass getModifiedExpando() {
-        return strongMetaClass == null ? null : strongMetaClass instanceof ExpandoMetaClass ? (ExpandoMetaClass)strongMetaClass : null;
+        // safe value here to avoid multiple reads with possibly
+        // differing values due to concurrency
+        MetaClass strongRef = strongMetaClass;
+        return strongRef == null ? null : strongRef instanceof ExpandoMetaClass ? (ExpandoMetaClass)strongRef : null;
     }
 
     public static void clearModifiedExpandos() {
@@ -96,21 +99,31 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     }
 
     public static ClassInfo getClassInfo (Class cls) {
-        ThreadLocalMapHandler handler = localMapRef.get();
-        SoftReference<LocalMap> ref=null;
-        if (handler!=null) ref = handler.get();
-        LocalMap map=null;
-        if (ref!=null) map = ref.get();
+        LocalMap map = getLocalClassInfoMap();
         if (map!=null) return map.get(cls);
         return (ClassInfo) globalClassSet.getOrPut(cls,null);
     }
 
-    public static Collection<ClassInfo> getAllClassInfo () {
+    private static LocalMap getLocalClassInfoMap() {
         ThreadLocalMapHandler handler = localMapRef.get();
         SoftReference<LocalMap> ref=null;
         if (handler!=null) ref = handler.get();
         LocalMap map=null;
         if (ref!=null) map = ref.get();
+        return map;
+    }
+
+    public static Collection<ClassInfo> getAllClassInfo () {
+        Collection<ClassInfo> localClassInfos = getAllLocalClassInfo();
+        return localClassInfos != null ? localClassInfos : getAllGlobalClassInfo();
+    }
+
+    private static Collection getAllGlobalClassInfo() {
+        return globalClassSet.values();
+    }
+
+    private static Collection<ClassInfo> getAllLocalClassInfo() {
+        LocalMap map = getLocalClassInfoMap();
         if (map!=null) return map.values();
         return globalClassSet.values();
     }
@@ -122,38 +135,63 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     public void setStrongMetaClass(MetaClass answer) {
         version++;
 
-        if (strongMetaClass instanceof ExpandoMetaClass) {
-          ((ExpandoMetaClass)strongMetaClass).inRegistry = false;
+        // safe value here to avoid multiple reads with possibly
+        // differing values due to concurrency
+        MetaClass strongRef = strongMetaClass;
+        
+        if (strongRef instanceof ExpandoMetaClass) {
+          ((ExpandoMetaClass)strongRef).inRegistry = false;
           modifiedExpandos.remove(this);
         }
 
         strongMetaClass = answer;
 
-        if (strongMetaClass instanceof ExpandoMetaClass) {
-          ((ExpandoMetaClass)strongMetaClass).inRegistry = true;
+        if (answer instanceof ExpandoMetaClass) {
+          ((ExpandoMetaClass)answer).inRegistry = true;
           modifiedExpandos.add(this);
         }
 
-        weakMetaClass = null;
+        replaceWeakMetaClassRef(null);
     }
 
     public MetaClass getWeakMetaClass() {
-        return weakMetaClass == null ? null : weakMetaClass.get();
+        // safe value here to avoid multiple reads with possibly
+        // differing values due to concurrency
+        ManagedReference<MetaClass> weakRef = weakMetaClass;
+        return weakRef == null ? null : weakRef.get();
     }
 
     public void setWeakMetaClass(MetaClass answer) {
         version++;
 
         strongMetaClass = null;
-        if (answer == null) {
-           weakMetaClass = null;
-        } else {
-           weakMetaClass = new ManagedReference<MetaClass> (softBundle,answer);
+        ManagedReference<MetaClass> newRef = null;
+        if (answer != null) {
+            newRef = new ManagedReference<MetaClass> (softBundle,answer);
         }
+        replaceWeakMetaClassRef(newRef);
+    }
+
+    private void replaceWeakMetaClassRef(ManagedReference<MetaClass> newRef) {
+        // safe value here to avoid multiple reads with possibly
+        // differing values due to concurrency
+        ManagedReference<MetaClass> weakRef = weakMetaClass;
+        if (weakRef != null) {
+            weakRef.clear();
+        }
+        weakMetaClass = newRef;
     }
 
     public MetaClass getMetaClassForClass() {
-        return strongMetaClass != null ? strongMetaClass : weakMetaClass == null ? null : weakMetaClass.get();
+        // safe value here to avoid multiple reads with possibly
+        // differing values due to concurrency
+        MetaClass strongMc = strongMetaClass;
+        if (strongMc!=null) return strongMc;
+        MetaClass weakMc = getWeakMetaClass();
+        if (isValidWeakMetaClass(weakMc)) {
+            return weakMc;
+        }
+        return null;
     }
 
     private MetaClass getMetaClassUnderLock() {
@@ -164,14 +202,8 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         MetaClassRegistry.MetaClassCreationHandle mccHandle = metaClassRegistry.getMetaClassCreationHandler();
         
-        if (answer != null) {
-            boolean enableGloballyOn = (mccHandle instanceof ExpandoMetaClassCreationHandle);
-            boolean cachedAnswerIsEMC = (answer instanceof ExpandoMetaClass);
-            // if EMC.enableGlobally() is OFF, return whatever the cached answer is.
-            // but if EMC.enableGlobally() is ON and the cached answer is not an EMC, come up with a fresh answer
-            if(!enableGloballyOn || cachedAnswerIsEMC) {
-                return answer;
-            }
+        if (isValidWeakMetaClass(answer, mccHandle)) {
+            return answer;
         }
 
         answer = mccHandle.create(get(), metaClassRegistry);
@@ -183,6 +215,21 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
             setWeakMetaClass(answer);
         }
         return answer;
+    }
+    
+    private boolean isValidWeakMetaClass(MetaClass metaClass) {
+        return isValidWeakMetaClass(metaClass, GroovySystem.getMetaClassRegistry().getMetaClassCreationHandler());
+    }
+
+    /**
+     * if EMC.enableGlobally() is OFF, return whatever the cached answer is.
+     * but if EMC.enableGlobally() is ON and the cached answer is not an EMC, come up with a fresh answer
+     */
+    private boolean isValidWeakMetaClass(MetaClass metaClass, MetaClassRegistry.MetaClassCreationHandle mccHandle) {
+        if(metaClass==null) return false;
+        boolean enableGloballyOn = (mccHandle instanceof ExpandoMetaClassCreationHandle);
+        boolean cachedAnswerIsEMC = (metaClass instanceof ExpandoMetaClass);
+        return (!enableGloballyOn || cachedAnswerIsEMC);
     }
 
     public final MetaClass getMetaClass() {
@@ -201,13 +248,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         final MetaClass instanceMetaClass = getPerInstanceMetaClass(obj);
         if (instanceMetaClass != null)
             return instanceMetaClass;
-
-        lock();
-        try {
-            return getMetaClassUnderLock();
-        } finally {
-            unlock();
-        }
+        return getMetaClass();
     }
 
     public static int size () {

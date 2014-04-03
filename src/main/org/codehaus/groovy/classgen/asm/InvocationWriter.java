@@ -154,7 +154,7 @@ public class InvocationWriter {
 
         String owner = BytecodeHelper.getClassInternalName(target.getDeclaringClass());
         String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
-        mv.visitMethodInsn(opcode, owner, methodName, desc);
+        mv.visitMethodInsn(opcode, owner, methodName, desc, opcode == INVOKEINTERFACE);
         ClassNode ret = target.getReturnType().redirect();
         if (ret==ClassHelper.VOID_TYPE) {
             ret = ClassHelper.OBJECT_TYPE;
@@ -505,7 +505,7 @@ public class InvocationWriter {
     protected void finnishConstructorCall(ConstructorNode cn, String ownerDescriptor, int argsToRemove) {
         String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitMethodInsn(INVOKESPECIAL, ownerDescriptor, "<init>", desc);
+        mv.visitMethodInsn(INVOKESPECIAL, ownerDescriptor, "<init>", desc, false);
         
         controller.getOperandStack().remove(argsToRemove);
         controller.getOperandStack().push(cn.getDeclaringClass());
@@ -634,7 +634,7 @@ public class InvocationWriter {
             operandStack.remove(1);
         }
         String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
-        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor);
+        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor, false);
 
         return true;
     }
@@ -731,7 +731,7 @@ public class InvocationWriter {
             // at the end we remove the Object[]
             mv.visitInsn(POP);
             // make the constructor call
-            mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor);
+            mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor, false);
             mv.visitJumpInsn(GOTO, afterSwitch);
         }
         mv.visitLabel(defaultLabel);
@@ -739,7 +739,7 @@ public class InvocationWriter {
         mv.visitTypeInsn(NEW, "java/lang/IllegalArgumentException");
         mv.visitInsn(DUP);
         mv.visitLdcInsn("This class has been compiled with a super class which is binary incompatible with the current super class found on classpath. You should recompile this class with the new version.");
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "(Ljava/lang/String;)V");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "(Ljava/lang/String;)V", false);
         mv.visitInsn(ATHROW);
         mv.visitLabel(afterSwitch);
 

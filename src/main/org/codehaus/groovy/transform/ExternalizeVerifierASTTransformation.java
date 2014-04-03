@@ -20,7 +20,6 @@ import groovy.transform.ExternalizeVerifier;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -32,16 +31,17 @@ import java.io.Serializable;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.getInstanceNonPropertyFields;
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.getInstancePropertyFields;
+import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 
 @GroovyASTTransformation(phase = CompilePhase.CLASS_GENERATION)
 public class ExternalizeVerifierASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = ExternalizeVerifier.class;
-    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode EXTERNALIZABLE_TYPE = ClassHelper.make(Externalizable.class);
-    private static final ClassNode SERIALIZABLE_TYPE = ClassHelper.make(Serializable.class);
+    private static final ClassNode EXTERNALIZABLE_TYPE = make(Externalizable.class);
+    private static final ClassNode SERIALIZABLE_TYPE = make(Serializable.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);

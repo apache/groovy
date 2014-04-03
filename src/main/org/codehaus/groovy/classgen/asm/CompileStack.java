@@ -585,7 +585,7 @@ public class CompileStack implements Opcodes {
         mv.visitTypeInsn(NEW, "groovy/lang/Reference");
         mv.visitInsn(DUP_X1);
         mv.visitInsn(SWAP);
-        mv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "(Ljava/lang/Object;)V");
+        mv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "(Ljava/lang/Object;)V", false);
         mv.visitVarInsn(ASTORE, reference.getIndex());
     }
 

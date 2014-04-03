@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,12 @@
  */
 package groovy.json
 
-
-import groovy.util.GroovyTestCase
 import static groovy.json.JsonOutput.toJson
 import groovy.transform.Canonical
 
 /**
- * 
  * @author Guillaume Laforge
+ * @author Andrey Bloschetsov
  */
 class JsonOutputTest extends GroovyTestCase {
     
@@ -41,6 +39,19 @@ class JsonOutputTest extends GroovyTestCase {
 
     void testNullValue() {
         assert toJson(null) == "null"
+        // test every overloaded version
+        assert toJson((Object) null) == "null"
+        assert toJson((Boolean) null) == 'null'
+        assert toJson((Number) null) == 'null'
+        assert toJson((Character) null) == 'null'
+        assert toJson((String) null) == 'null'
+        assert toJson((Date) null) == 'null'
+        assert toJson((Calendar) null) == 'null'
+        assert toJson((UUID) null) == 'null'
+        assert toJson((URL) null) == 'null'
+        assert toJson((Closure) null) == 'null'
+        assert toJson((Expando) null) == 'null'
+        assert toJson((Map) null) == 'null'
     }
 
     void testNumbers() {
@@ -140,6 +151,15 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson("\u0019") == '"\\u0019"'
     }
 
+    void testGString() {
+        assert toJson("1 + 2 = ${1 + 2}") == '"1 + 2 = 3"'
+    }
+
+    void testStringBuilderBuffer() {
+        assert toJson(new StringBuilder().append(14).append(' March ').append(2014)) == '"14 March 2014"'
+        assert toJson(new StringBuffer().append(14).append(' March ').append(2014)) == '"14 March 2014"'
+    }
+
     void testCharArray() {
         char[] charArray = ['a', 'b', 'c']
 
@@ -154,7 +174,7 @@ class JsonOutputTest extends GroovyTestCase {
 
     void testURL() {
         assert toJson(new URL("http://glaforge.appspot.com")) == '"http://glaforge.appspot.com"'
-        assert JsonOutput.toJson(new URL('file', '', 'C:\\this\\is\\windows\\path')) == '"file:C:\\\\this\\\\is\\\\windows\\\\path"' // GROOVY-6560
+        assert toJson(new URL('file', '', 'C:\\this\\is\\windows\\path')) == '"file:C:\\\\this\\\\is\\\\windows\\\\path"' // GROOVY-6560
     }
 
     void testCalendar() {

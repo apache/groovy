@@ -76,12 +76,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
             iterator.visit(controller.getAcg());
         } else {
             collectionExpression.visit(controller.getAcg());
-            mv.visitMethodInsn(
-                    INVOKESTATIC,
-                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
-                    "iterator",
-                    "(Ljava/lang/Object;)Ljava/util/Iterator;"
-            );
+            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "iterator", "(Ljava/lang/Object;)Ljava/util/Iterator;", false);
             operandStack.replace(ClassHelper.Iterator_TYPE);
         }
 

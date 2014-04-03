@@ -16,7 +16,6 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.IndexedProperty;
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -24,21 +23,20 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.MetaClassHelper;
-import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.syntax.Token;
-import org.objectweb.asm.Opcodes;
 
-import java.util.Arrays;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
 
 /**
  * Handles generation of code for the {@code @}IndexedProperty annotation.
@@ -46,20 +44,15 @@ import java.util.List;
  * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-public class IndexedPropertyASTTransformation implements ASTTransformation, Opcodes {
+public class IndexedPropertyASTTransformation extends AbstractASTTransformation {
 
     private static final Class MY_CLASS = IndexedProperty.class;
-    private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    private static final ClassNode MY_TYPE = make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode LIST_TYPE = ClassHelper.makeWithoutCaching(List.class, false);
-    private static final Token ASSIGN = Token.newSymbol("=", -1, -1);
-    private static final Token INDEX = Token.newSymbol("[", -1, -1);
+    private static final ClassNode LIST_TYPE = makeWithoutCaching(List.class, false);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
-        }
-
+        init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(node.getClassNode())) return;
@@ -69,7 +62,7 @@ public class IndexedPropertyASTTransformation implements ASTTransformation, Opco
             ClassNode cNode = fNode.getDeclaringClass();
             if (cNode.getProperty(fNode.getName()) == null) {
                 addError("Error during " + MY_TYPE_NAME + " processing. Field '" + fNode.getName() +
-                        "' doesn't appear to be a property; incorrect visibility?", fNode, source);
+                        "' doesn't appear to be a property; incorrect visibility?", fNode);
                 return;
             }
             ClassNode fType = fNode.getType();
@@ -81,7 +74,7 @@ public class IndexedPropertyASTTransformation implements ASTTransformation, Opco
                 addListGetter(fNode);
             } else {
                 addError("Error during " + MY_TYPE_NAME + " processing. Non-Indexable property '" + fNode.getName() +
-                        "' found. Type must be array or list but found " + fType.getName(), fNode, source);
+                        "' found. Type must be array or list but found " + fType.getName(), fNode);
             }
         }
     }
@@ -107,31 +100,18 @@ public class IndexedPropertyASTTransformation implements ASTTransformation, Opco
         BlockStatement body = new BlockStatement();
         Parameter[] params = new Parameter[1];
         params[0] = new Parameter(ClassHelper.int_TYPE, "index");
-        body.addStatement(new ExpressionStatement(
-                new BinaryExpression(
-                        new VariableExpression(fNode.getName()),
-                        INDEX,
-                        new VariableExpression(params[0]))
-        ));
+        body.addStatement(stmt(indexX(var(fNode.getName()), var(params[0]))));
         cNode.addMethod(makeName(fNode, "get"), getModifiers(fNode), componentType, params, null, body);
     }
 
     private void addSetter(FieldNode fNode, ClassNode componentType) {
         ClassNode cNode = fNode.getDeclaringClass();
         BlockStatement body = new BlockStatement();
-        Parameter[] params = new Parameter[2];
-        params[0] = new Parameter(ClassHelper.int_TYPE, "index");
-        params[1] = new Parameter(componentType, "value");
-        body.addStatement(new ExpressionStatement(
-                new BinaryExpression(
-                        new BinaryExpression(
-                                new VariableExpression(fNode.getName()),
-                                INDEX,
-                                new VariableExpression(params[0])),
-                        ASSIGN,
-                        new VariableExpression(params[1])
-                )));
-        cNode.addMethod(makeName(fNode, "set"), getModifiers(fNode), ClassHelper.VOID_TYPE, params, null, body);
+        Parameter[] theParams = params(
+                new Parameter(ClassHelper.int_TYPE, "index"),
+                new Parameter(componentType, "value"));
+        body.addStatement(assignS(indexX(var(fNode.getName()), var(theParams[0])), var(theParams[1])));
+        cNode.addMethod(makeName(fNode, "set"), getModifiers(fNode), ClassHelper.VOID_TYPE, theParams, null, body);
     }
 
     private ClassNode getComponentTypeForList(ClassNode fType) {
@@ -151,12 +131,4 @@ public class IndexedPropertyASTTransformation implements ASTTransformation, Opco
     private String makeName(FieldNode fNode, String prefix) {
         return prefix + MetaClassHelper.capitalize(fNode.getName());
     }
-
-    private void addError(String msg, ASTNode expr, SourceUnit source) {
-        source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
-                        expr.getLastLineNumber(), expr.getLastColumnNumber()), source)
-        );
-    }
-
 }

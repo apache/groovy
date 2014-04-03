@@ -94,7 +94,7 @@ public class CallSiteWriter {
     
     public void makeSiteEntry() {
         if (controller.isNotClinit()) {
-            controller.getMethodVisitor().visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), GET_CALLSITE_METHOD, GET_CALLSITE_DESC);
+            controller.getMethodVisitor().visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), GET_CALLSITE_METHOD, GET_CALLSITE_DESC, false);
             controller.getOperandStack().push(CALLSITE_ARRAY_NODE);
             callSiteArrayVarIndex = controller.getCompileStack().defineTemporaryVariable("$local$callSiteArray", CALLSITE_ARRAY_NODE, true);
         }
@@ -117,19 +117,19 @@ public class CallSiteWriter {
         Label l0 = new Label();
         mv.visitJumpInsn(IFNULL, l0);
         mv.visitFieldInsn(GETSTATIC, controller.getInternalClassName(), "$callSiteArray", "Ljava/lang/ref/SoftReference;");
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ref/SoftReference", "get", "()Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ref/SoftReference", "get", "()Ljava/lang/Object;", false);
         mv.visitTypeInsn(CHECKCAST, "org/codehaus/groovy/runtime/callsite/CallSiteArray");
         mv.visitInsn(DUP);
         mv.visitVarInsn(ASTORE, 0);
         Label l1 = new Label();
         mv.visitJumpInsn(IFNONNULL, l1);
         mv.visitLabel(l0);
-        mv.visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), "$createCallSiteArray", "()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
+        mv.visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), "$createCallSiteArray", "()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;", false);
         mv.visitVarInsn(ASTORE, 0);
         mv.visitTypeInsn(NEW, "java/lang/ref/SoftReference");
         mv.visitInsn(DUP);
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ref/SoftReference", "<init>", "(Ljava/lang/Object;)V");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ref/SoftReference", "<init>", "(Ljava/lang/Object;)V", false);
         mv.visitFieldInsn(PUTSTATIC, controller.getInternalClassName(), "$callSiteArray", "Ljava/lang/ref/SoftReference;");
         mv.visitLabel(l1);
         mv.visitVarInsn(ALOAD, 0);
@@ -176,17 +176,17 @@ public class CallSiteWriter {
         mv.visitTypeInsn(ANEWARRAY, "java/lang/String"); 
         mv.visitVarInsn(ASTORE, 0); 
         for (String methodName : callSiteInitMethods) { 
-            mv.visitVarInsn(ALOAD, 0); 
-            mv.visitMethodInsn(INVOKESTATIC,controller.getInternalClassName(),methodName,"([Ljava/lang/String;)V"); 
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), methodName, "([Ljava/lang/String;)V", false);
         } 
 
         mv.visitTypeInsn(NEW, CALLSITE_ARRAY_CLASS); 
         mv.visitInsn(DUP); 
         controller.getAcg().visitClassExpression(new ClassExpression(controller.getClassNode())); 
 
-        mv.visitVarInsn(ALOAD, 0); 
+        mv.visitVarInsn(ALOAD, 0);
 
-        mv.visitMethodInsn(INVOKESPECIAL, CALLSITE_ARRAY_CLASS, "<init>", "(Ljava/lang/Class;[Ljava/lang/String;)V");
+        mv.visitMethodInsn(INVOKESPECIAL, CALLSITE_ARRAY_CLASS, "<init>", "(Ljava/lang/Class;[Ljava/lang/String;)V", false);
         mv.visitInsn(ARETURN); 
         mv.visitMaxs(0,0); 
         mv.visitEnd(); 
@@ -200,8 +200,7 @@ public class CallSiteWriter {
     private void invokeSafe(boolean safe, String unsafeMethod, String safeMethod) {
         String method = unsafeMethod;
         if (safe) method = safeMethod;
-        controller.getMethodVisitor().
-            visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, method, METHOD_OO_DESC);
+        controller.getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, method, METHOD_OO_DESC, true);
         controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
     }
 
@@ -210,7 +209,7 @@ public class CallSiteWriter {
         if (controller.isNotClinit()) {
             mv.visitVarInsn(ALOAD, callSiteArrayVarIndex);
         } else {
-            mv.visitMethodInsn(INVOKESTATIC, controller.getClassName(), GET_CALLSITE_METHOD, GET_CALLSITE_DESC);
+            mv.visitMethodInsn(INVOKESTATIC, controller.getClassName(), GET_CALLSITE_METHOD, GET_CALLSITE_DESC, false);
         }
         final int index = allocateIndex(message);
         mv.visitLdcInsn(index);
@@ -251,8 +250,7 @@ public class CallSiteWriter {
         prepareSiteAndReceiver(receiver, message, false, controller.getCompileStack().isLHS());
         visitBoxedArgument(arguments);
         int m2 = operandStack.getStackLength();
-        controller.getMethodVisitor().
-            visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+        controller.getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
         operandStack.replace(ClassHelper.OBJECT_TYPE, m2-m1);
     }
     
@@ -313,7 +311,7 @@ public class CallSiteWriter {
         
         if (numberOfArguments > 4) {
             final String createArraySignature = getCreateArraySignature(numberOfArguments);
-            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", createArraySignature);
+            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", createArraySignature, false);
             //TODO: use pre-generated Object[]
             operandStack.replace(ClassHelper.OBJECT_TYPE.makeArray(),numberOfArguments);
             operandsToReplace = operandsToReplace-numberOfArguments+1;
@@ -321,15 +319,15 @@ public class CallSiteWriter {
 
         final String desc = getDescForParamNum(numberOfArguments);
         if (callStatic) {
-            mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "callStatic", "(Ljava/lang/Class;" + desc);
+            mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "callStatic", "(Ljava/lang/Class;" + desc, true);
         } else if (constructor) {
-            mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "callConstructor", "(Ljava/lang/Object;" + desc);
+            mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "callConstructor", "(Ljava/lang/Object;" + desc, true);
         } else if (callCurrent) {
-            mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "callCurrent", "(Lgroovy/lang/GroovyObject;" + desc);
+            mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "callCurrent", "(Lgroovy/lang/GroovyObject;" + desc, true);
         } else if (safe) {
-            mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "callSafe", "(Ljava/lang/Object;" + desc);
+            mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "callSafe", "(Ljava/lang/Object;" + desc, true);
         } else {
-            mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "call", "(Ljava/lang/Object;" + desc);
+            mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "call", "(Ljava/lang/Object;" + desc, true);
         }
         operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToReplace);
     }

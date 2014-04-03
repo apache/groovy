@@ -400,8 +400,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             mv.visitLabel(l2);
             mv.visitVarInsn(ALOAD, 0);
             mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "getMetaClass", "(Ljava/lang/Class;)Lgroovy/lang/MetaClass;");
+            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "getMetaClass", "(Ljava/lang/Class;)Lgroovy/lang/MetaClass;", false);
             mv.visitFieldInsn(PUTFIELD, proxyName, "metaClass", "Lgroovy/lang/MetaClass;");
             mv.visitLabel(l1);
             mv.visitVarInsn(ALOAD, 0);
@@ -416,10 +416,10 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             mv = super.visitMethod(ACC_PUBLIC, "getProperty", "(Ljava/lang/String;)Ljava/lang/Object;", null, null);
             mv.visitCode();
             mv.visitIntInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/GroovyObject", "getMetaClass", "()Lgroovy/lang/MetaClass;");
+            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/GroovyObject", "getMetaClass", "()Lgroovy/lang/MetaClass;", true);
             mv.visitIntInsn(ALOAD, 0);
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "getProperty", "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;");
+            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "getProperty", "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;", true);
             mv.visitInsn(ARETURN);
             mv.visitMaxs(3, 2);
             mv.visitEnd();
@@ -432,11 +432,11 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             Label l0 = new Label();
             mv.visitLabel(l0);
             mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKEVIRTUAL, proxyName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
+            mv.visitMethodInsn(INVOKEVIRTUAL, proxyName, "getMetaClass", "()Lgroovy/lang/MetaClass;", false);
             mv.visitVarInsn(ALOAD, 0);
             mv.visitVarInsn(ALOAD, 1);
             mv.visitVarInsn(ALOAD, 2);
-            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "setProperty", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V");
+            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "setProperty", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V", true);
             Label l1 = new Label();
             mv.visitLabel(l1);
             mv.visitInsn(RETURN);
@@ -452,11 +452,11 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             Label l0 = new Label();
             mv.visitLabel(l0);
             mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKEVIRTUAL, proxyName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
+            mv.visitMethodInsn(INVOKEVIRTUAL, proxyName, "getMetaClass", "()Lgroovy/lang/MetaClass;", false);
             mv.visitVarInsn(ALOAD, 0);
             mv.visitVarInsn(ALOAD, 1);
             mv.visitVarInsn(ALOAD, 2);
-            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
+            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", true);
             mv.visitInsn(ARETURN);
             Label l1 = new Label();
             mv.visitLabel(l1);
@@ -579,7 +579,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                 // instead of an AbtractMethodException
                 mv.visitTypeInsn(NEW, "java/lang/UnsupportedOperationException");
                 mv.visitInsn(DUP);
-                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "()V");
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "()V", false);
                 mv.visitInsn(ATHROW);
                 mv.visitMaxs(2, registerLen(args)+1);
             }
@@ -627,7 +627,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             }
             idx += registerLen(arg);
         }
-        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", desc);
+        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", desc, false);
         mv.visitInsn(RETURN);
         int max = idx + 1 + (generateDelegateField?1:0);
         mv.visitMaxs(max, max);
@@ -681,10 +681,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             if (isPrimitive(arg)) {
                 mv.visitIntInsn(getLoadInsn(arg), idx);
                 String wrappedType = getWrappedClassDescriptor(arg);
-                mv.visitMethodInsn(INVOKESTATIC,
-                        wrappedType,
-                        "valueOf",
-                        "(" + arg.getDescriptor() + ")L" + wrappedType + ";");
+                mv.visitMethodInsn(INVOKESTATIC, wrappedType, "valueOf", "(" + arg.getDescriptor() + ")L" + wrappedType + ";", false);
             } else {
                 mv.visitVarInsn(ALOAD, idx); // load argument i
             }
@@ -692,7 +689,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             idx += registerLen(arg);
             mv.visitInsn(AASTORE); // store value into array
         }
-        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", false);
         unwrapResult(mv, desc);
         mv.visitMaxs(size, registerLen(args) + 1);
 
@@ -722,10 +719,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             if (isPrimitive(arg)) {
                 mv.visitIntInsn(getLoadInsn(arg), idx);
                 String wrappedType = getWrappedClassDescriptor(arg);
-                mv.visitMethodInsn(INVOKESTATIC,
-                        wrappedType,
-                        "valueOf",
-                        "(" + arg.getDescriptor() + ")L" + wrappedType + ";");
+                mv.visitMethodInsn(INVOKESTATIC, wrappedType, "valueOf", "(" + arg.getDescriptor() + ")L" + wrappedType + ";", false);
             } else {
                 mv.visitVarInsn(ALOAD, idx); // load argument i
             }
@@ -738,7 +732,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         mv.visitVarInsn(ALOAD, 0); // load this
         mv.visitFieldInsn(GETFIELD, proxyName, CLOSURES_MAP_FIELD, "Ljava/util/Map;"); // load closure map
         mv.visitLdcInsn(name); // load method name
-        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;", true);
         arrayStore++;
         mv.visitVarInsn(ASTORE, arrayStore);
         // if null, test if wildcard exists
@@ -748,14 +742,14 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         mv.visitVarInsn(ALOAD, 0); // load this
         mv.visitFieldInsn(GETFIELD, proxyName, CLOSURES_MAP_FIELD, "Ljava/util/Map;"); // load closure map
         mv.visitLdcInsn("*"); // load wildcard
-        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;", true);
         mv.visitVarInsn(ASTORE, arrayStore);
         mv.visitLabel(notNull);
         mv.visitVarInsn(ALOAD, arrayStore);
-        mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(this.getClass()), "ensureClosure", "(Ljava/lang/Object;)Lgroovy/lang/Closure;");
+        mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(this.getClass()), "ensureClosure", "(Ljava/lang/Object;)Lgroovy/lang/Closure;", false);
         mv.visitVarInsn(ALOAD, arrayIndex); // load argument array
         stackSize++;
-        mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "call", "([Ljava/lang/Object;)Ljava/lang/Object;"); // call closure
+        mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "call", "([Ljava/lang/Object;)Ljava/lang/Object;", false); // call closure
         unwrapResult(mv, desc);
         mv.visitMaxs(stackSize, arrayStore+1);
         mv.visitEnd();

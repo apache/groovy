@@ -486,13 +486,13 @@ public class OperandStack {
             mv.visitTypeInsn(NEW, className);
             mv.visitInsn(DUP);
             mv.visitLdcInsn(value.toString());
-            mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", "(Ljava/lang/String;)V");
+            mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", "(Ljava/lang/String;)V", false);
         } else if (value instanceof BigInteger) {
             String className = BytecodeHelper.getClassInternalName(value.getClass().getName());
             mv.visitTypeInsn(NEW, className);
             mv.visitInsn(DUP);
             mv.visitLdcInsn(value.toString());
-            mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", "(Ljava/lang/String;)V");
+            mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", "(Ljava/lang/String;)V", false);
         } else if (value instanceof String) {
             mv.visitLdcInsn(value);
         } else {
@@ -601,7 +601,7 @@ public class OperandStack {
             if (variable.isHolder()) {
                 mv.visitVarInsn(ALOAD, idx);
                 if (!useReferenceDirectly) {
-                    mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;", false);
                     BytecodeHelper.doCast(mv, type);
                     push(type);
                 } else {
@@ -624,7 +624,7 @@ public class OperandStack {
             mv.visitVarInsn(ALOAD, idx);
             mv.visitTypeInsn(CHECKCAST, "groovy/lang/Reference");
             mv.visitInsn(SWAP);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V");
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V", false);
         } else {
             doGroovyCast(type);
             if (type == ClassHelper.double_TYPE) {

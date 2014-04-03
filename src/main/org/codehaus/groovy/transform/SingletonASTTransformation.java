@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,31 +19,32 @@ package org.codehaus.groovy.transform;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
-import org.codehaus.groovy.ast.stmt.IfStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.syntax.Token;
 
 import java.util.List;
+
+import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 
 /**
  * Handles generation of code for the @Singleton annotation
@@ -70,29 +71,29 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
 
     private void createField(ClassNode classNode, String propertyName, boolean isLazy, boolean isStrict) {
         int modifiers = isLazy ? ACC_PRIVATE | ACC_STATIC | ACC_VOLATILE : ACC_PUBLIC | ACC_FINAL | ACC_STATIC;
-        Expression initialValue = isLazy ? null : new ConstructorCallExpression(classNode, new ArgumentListExpression());
-        final FieldNode fieldNode = classNode.addField(propertyName, modifiers, classNode.getPlainNodeReference(), initialValue);
+        Expression initialValue = isLazy ? null : ctorX(classNode);
+        final FieldNode fieldNode = classNode.addField(propertyName, modifiers, newClass(classNode), initialValue);
         createConstructor(classNode, fieldNode, propertyName, isStrict);
         final BlockStatement body = new BlockStatement();
         body.addStatement(isLazy ? lazyBody(classNode, fieldNode) : nonLazyBody(fieldNode));
-        classNode.addMethod(getGetterName(propertyName), ACC_STATIC | ACC_PUBLIC, classNode.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        classNode.addMethod(getGetterName(propertyName), ACC_STATIC | ACC_PUBLIC, newClass(classNode), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private Statement nonLazyBody(FieldNode fieldNode) {
-        return new ReturnStatement(new VariableExpression(fieldNode));
+        return returnS(var(fieldNode));
     }
 
     private Statement lazyBody(ClassNode classNode, FieldNode fieldNode) {
-        final Expression instanceExpression = new VariableExpression(fieldNode);
-        return new IfStatement(
-                new BooleanExpression(new BinaryExpression(instanceExpression, Token.newSymbol("!=", -1, -1), ConstantExpression.NULL)),
-                new ReturnStatement(instanceExpression),
+        final Expression instanceExpression = var(fieldNode);
+        return ifElseS(
+                notNullX(instanceExpression),
+                returnS(instanceExpression),
                 new SynchronizedStatement(
                         new ClassExpression(classNode),
-                        new IfStatement(
-                                new BooleanExpression(new BinaryExpression(instanceExpression, Token.newSymbol("!=", -1, -1), ConstantExpression.NULL)),
-                                new ReturnStatement(instanceExpression),
-                                new ReturnStatement(new BinaryExpression(instanceExpression, Token.newSymbol("=", -1, -1), new ConstructorCallExpression(classNode, new ArgumentListExpression())))
+                        ifElseS(
+                                notNullX(instanceExpression),
+                                returnS(instanceExpression),
+                                returnS(assignX(instanceExpression, ctorX(classNode)))
                         )
                 )
         );
@@ -121,13 +122,12 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
 
         if (foundNoArg == null) {
             final BlockStatement body = new BlockStatement();
-            body.addStatement(new IfStatement(
-                    new BooleanExpression(new BinaryExpression(new VariableExpression(field), Token.newSymbol("!=", -1, -1), ConstantExpression.NULL)),
+            body.addStatement(ifS(
+                    notNullX(var(field)),
                     new ThrowStatement(
-                            new ConstructorCallExpression(ClassHelper.make(RuntimeException.class),
-                                    new ArgumentListExpression(
-                                            new ConstantExpression("Can't instantiate singleton " + classNode.getName() + ". Use " + classNode.getName() + "." + propertyName)))),
-                    EmptyStatement.INSTANCE));
+                            ctorX(make(RuntimeException.class),
+                                    args(constX("Can't instantiate singleton " + classNode.getName() + ". Use " + classNode.getName() + "." + propertyName))))
+            ));
             classNode.addConstructor(new ConstructorNode(ACC_PRIVATE, body));
         }
     }
