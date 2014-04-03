@@ -365,7 +365,7 @@ public class GenericsType extends ASTNode {
                             match = false;
                             if (genericsType!=null) {
                                 if (genericsType.isPlaceholder()) {
-                                    match = genericsType.getName().equals(name);
+                                    match = true;
                                 } else if (genericsType.isWildcard()) {
                                     if (genericsType.getUpperBounds()!=null) {
                                         for (ClassNode up : genericsType.getUpperBounds()) {
