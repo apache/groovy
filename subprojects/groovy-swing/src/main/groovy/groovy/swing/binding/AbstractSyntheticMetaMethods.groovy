@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 package groovy.swing.binding
-/**
- * Created by IntelliJ IDEA.
- * User: Danno.Ferrin
- * Date: Jun 19, 2008
- * Time: 12:52:31 PM
- * To change this template use File | Settings | File Templates.
- */
+
 class AbstractSyntheticMetaMethods {
 
     static void enhance(Object o, Map enhancedMethods) {
@@ -42,7 +36,5 @@ class AbstractSyntheticMetaMethods {
             mc.initialize()
             mcr.setMetaClass(klass, mc)
         }
-
     }
-
 }

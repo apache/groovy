@@ -1,10 +1,4 @@
 package org.codehaus.groovy.control;
-/**
- * Created by IntelliJ IDEA.
- * User: cedric
- * Date: 06/10/11
- * Time: 15:13
- */
 
 import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -13,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
-* Stores state information about global AST transformations applied to a compilation unit.
+ * Stores state information about global AST transformations applied to a compilation unit.
  *
  * @author Cedric Champeau
 */

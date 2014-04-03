@@ -1,10 +1,4 @@
 package groovy.transform;
-/**
- * Created by IntelliJ IDEA.
- * User: cedric
- * Date: 06/10/11
- * Time: 15:02
- */
 
 import org.codehaus.groovy.control.CompilationUnit;
 

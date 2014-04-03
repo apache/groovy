@@ -20,12 +20,6 @@ import org.codehaus.groovy.binding.PropertyBinding;
 import org.codehaus.groovy.binding.SourceBinding;
 import org.codehaus.groovy.binding.TargetBinding;
 
-/**
- * Created by IntelliJ IDEA.
- * User: Danno.Ferrin
- * Date: Jun 18, 2008
- * Time: 1:41:14 PM
- */
 public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
     boolean bound;
     String propertyName;
