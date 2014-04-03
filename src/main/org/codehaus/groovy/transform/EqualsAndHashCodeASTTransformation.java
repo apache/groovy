@@ -75,9 +75,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
                 if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
-            if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
-                addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
-            }
+            checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
             createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes);
             createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes);
         }

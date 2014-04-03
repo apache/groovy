@@ -136,9 +136,9 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 // if(arg0 == arg1) return 0;
                 ifS(eq(var(ARG0), var(ARG1)), returnS(constX(0))),
                 // if(arg0 != null && arg1 == null) return -1;
-                ifS(and(notNullExpr(var(ARG0)), equalsNullX(var(ARG1))), returnS(constX(-1))),
+                ifS(and(notNullX(var(ARG0)), equalsNullX(var(ARG1))), returnS(constX(-1))),
                 // if(arg0 == null && arg1 != null) return 1;
-                ifS(and(equalsNullX(var(ARG0)), notNullExpr(var(ARG1))), returnS(constX(1))),
+                ifS(and(equalsNullX(var(ARG0)), notNullX(var(ARG1))), returnS(constX(1))),
                 // return arg0.prop <=> arg1.prop;
                 returnS(cmp(prop(var(ARG0), propertyName), prop(var(ARG1), propertyName)))
         );
@@ -207,7 +207,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         if (pNode.getType().implementsInterface(COMPARABLE_TYPE)) {
             return;
         }
-        if (pNode.getType().getAnnotations(MY_TYPE).size() > 0) {
+        if (hasAnnotation(pNode.getType(), MY_TYPE)) {
             return;
         }
         addError("Error during " + MY_TYPE_NAME + " processing: property '" +

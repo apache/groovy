@@ -35,6 +35,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
@@ -51,11 +52,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ExternalizeMethodsASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = ExternalizeMethods.class;
-    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode EXTERNALIZABLE_TYPE = ClassHelper.make(Externalizable.class);
-    private static final ClassNode OBJECTOUTPUT_TYPE = ClassHelper.make(ObjectOutput.class);
-    private static final ClassNode OBJECTINPUT_TYPE = ClassHelper.make(ObjectInput.class);
+    private static final ClassNode EXTERNALIZABLE_TYPE = make(Externalizable.class);
+    private static final ClassNode OBJECTOUTPUT_TYPE = make(ObjectOutput.class);
+    private static final ClassNode OBJECTINPUT_TYPE = make(ObjectInput.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -84,9 +85,9 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
         for (FieldNode fNode : list) {
             if (excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
-            body.addStatement(stmt(callX(out, "write" + suffixForField(fNode), new VariableExpression(fNode))));
+            body.addStatement(stmt(callX(out, "write" + suffixForField(fNode), var(fNode))));
         }
-        ClassNode[] exceptions = {ClassHelper.make(IOException.class)};
+        ClassNode[] exceptions = {make(IOException.class)};
         cNode.addMethod("writeExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(new Parameter(OBJECTOUTPUT_TYPE, "out")), exceptions, body);
     }
 
@@ -97,7 +98,7 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
             if (excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
             Expression readObject = callX(oin, "read" + suffixForField(fNode));
-            body.addStatement(assignS(new VariableExpression(fNode), readObject));
+            body.addStatement(assignS(var(fNode), readObject));
         }
         cNode.addMethod("readExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(new Parameter(OBJECTINPUT_TYPE, "oin")), ClassNode.EMPTY_ARRAY, body);
     }

@@ -140,7 +140,7 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
 
     @Deprecated
     public static BooleanExpression notNullExpr(Expression argExpr) {
-        return GeneralUtils.notNullExpr(argExpr);
+        return GeneralUtils.notNullX(argExpr);
     }
 
     @Deprecated

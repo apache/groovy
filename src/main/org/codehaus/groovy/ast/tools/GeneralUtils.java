@@ -64,8 +64,6 @@ import java.util.Set;
  * @author Graeme Rocher
  */
 public class GeneralUtils {
-    public static final Expression THIS = VariableExpression.THIS_EXPRESSION;
-    public static final Expression SUPER = VariableExpression.SUPER_EXPRESSION;
     public static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
     public static final Token EQ = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
     public static final Token NE = Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1);
@@ -73,6 +71,7 @@ public class GeneralUtils {
     public static final Token OR = Token.newSymbol(Types.LOGICAL_OR, -1, -1);
     public static final Token CMP = Token.newSymbol(Types.COMPARE_TO, -1, -1);
     private static final Token INSTANCEOF = Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1);
+    private static final Token INDEX = Token.newSymbol("[", -1, -1);
 
     public static BinaryExpression and(Expression lhv, Expression rhv) {
         return new BinaryExpression(lhv, AND, rhv);
@@ -94,6 +93,10 @@ public class GeneralUtils {
 
     public static Expression assignX(Expression target, Expression value) {
         return new BinaryExpression(target, ASSIGN, value);
+    }
+
+    public static Expression indexX(Expression target, Expression value) {
+        return new BinaryExpression(target, INDEX, value);
     }
 
     public static BlockStatement block(VariableScope varScope, Statement... stmts) {
@@ -386,7 +389,7 @@ public class GeneralUtils {
         return new NotExpression(expr instanceof BooleanExpression ? expr : new BooleanExpression(expr));
     }
 
-    public static BooleanExpression notNullExpr(Expression argExpr) {
+    public static BooleanExpression notNullX(Expression argExpr) {
         return new BooleanExpression(new BinaryExpression(argExpr, NE, new ConstantExpression(null)));
     }
 

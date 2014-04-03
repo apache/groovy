@@ -30,7 +30,6 @@ import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -42,6 +41,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -56,6 +56,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOf;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.prop;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
@@ -68,11 +69,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class AutoCloneASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = AutoClone.class;
-    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode CLONEABLE_TYPE = ClassHelper.make(Cloneable.class);
-    private static final ClassNode BAOS_TYPE = ClassHelper.make(ByteArrayOutputStream.class);
-    private static final ClassNode BAIS_TYPE = ClassHelper.make(ByteArrayInputStream.class);
+    private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
+    private static final ClassNode BAOS_TYPE = make(ByteArrayOutputStream.class);
+    private static final ClassNode BAIS_TYPE = make(ByteArrayInputStream.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -118,7 +119,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         // baos.withObjectOutputStream{ it.writeObject(this) }
         final Expression it = var("it");
         ClosureExpression writeClosure = new ClosureExpression(Parameter.EMPTY_ARRAY, block(
-                stmt(callX(it, "writeObject", VariableExpression.THIS_EXPRESSION))));
+                stmt(callX(it, "writeObject", var("this")))));
         writeClosure.setVariableScope(new VariableScope());
         body.addStatement(stmt(callX(baos, "withObjectOutputStream", args(writeClosure))));
 
@@ -136,7 +137,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         Expression result = callX(bais, "withObjectInputStream", args(classLoader, readClosure));
         body.addStatement(returnS(result));
 
-        ClassNode[] exceptions = {ClassHelper.make(CloneNotSupportedException.class)};
+        ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
         cNode.addMethod("clone", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, exceptions, body);
     }
 
@@ -149,7 +150,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             initBody = new BlockStatement();
         }
         Parameter initParam = new Parameter(GenericsUtils.nonGeneric(cNode), "other");
-        final Expression other = new VariableExpression(initParam);
+        final Expression other = var(initParam);
         boolean hasParent = cNode.getSuperClass() != ClassHelper.OBJECT_TYPE;
         if (hasParent) {
             initBody.addStatement(stmt(ctorX(ClassNode.SUPER, other)));
@@ -157,17 +158,17 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         for (FieldNode fieldNode : list) {
             String name = fieldNode.getName();
             if (excludes.contains(name)) continue;
-            PropertyExpression direct = new PropertyExpression(other, name);
+            Expression direct = prop(other, name);
             Expression cloned = callX(direct, "clone");
-            Expression to = new PropertyExpression(VariableExpression.THIS_EXPRESSION, name);
+            Expression to = prop(var("this"), name);
             Statement assignCloned = assignS(to, cloned);
             Statement assignDirect = assignS(to, direct);
             initBody.addStatement(ifElseS(isInstanceOf(direct, CLONEABLE_TYPE), assignCloned, assignDirect));
         }
-        ClassNode[] exceptions = {ClassHelper.make(CloneNotSupportedException.class)};
+        ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
         cNode.addConstructor(ACC_PROTECTED, params(initParam), ClassNode.EMPTY_ARRAY, initBody);
         cNode.addMethod("clone", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, exceptions, block(
-                stmt(ctorX(cNode, args(VariableExpression.THIS_EXPRESSION)))));
+                stmt(ctorX(cNode, args(var("this"))))));
     }
 
     private void createSimpleClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
@@ -182,13 +183,13 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         addSimpleCloneHelperMethod(cNode, fieldNodes, excludes);
         cloneBody.addStatement(stmt(callThisX("cloneOrCopyMembers", args(result))));
         cloneBody.addStatement(returnS(result));
-        ClassNode[] exceptions = {ClassHelper.make(CloneNotSupportedException.class)};
+        ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
         cNode.addMethod("clone", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, exceptions, cloneBody);
     }
 
     private void addSimpleCloneHelperMethod(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
         Parameter methodParam = new Parameter(GenericsUtils.nonGeneric(cNode), "other");
-        final Expression other = new VariableExpression(methodParam);
+        final Expression other = var(methodParam);
         boolean hasParent = cNode.getSuperClass() != ClassHelper.OBJECT_TYPE;
         BlockStatement methodBody = new BlockStatement();
         if (hasParent) {
@@ -197,14 +198,14 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         for (FieldNode fieldNode : fieldNodes) {
             String name = fieldNode.getName();
             if (excludes.contains(name)) continue;
-            PropertyExpression direct = new PropertyExpression(VariableExpression.THIS_EXPRESSION, name);
+            Expression direct = prop(var("this"), name);
             Expression cloned = callX(direct, "clone");
-            Expression to = new PropertyExpression(other, name);
+            Expression to = prop(other, name);
             Statement assignCloned = assignS(to, cloned);
             Statement assignDirect = assignS(to, direct);
             methodBody.addStatement(ifElseS(isInstanceOf(direct, CLONEABLE_TYPE), assignCloned, assignDirect));
         }
-        ClassNode[] exceptions = {ClassHelper.make(CloneNotSupportedException.class)};
+        ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
         cNode.addMethod("cloneOrCopyMembers", ACC_PROTECTED, ClassHelper.VOID_TYPE, params(methodParam), exceptions, methodBody);
     }
 
@@ -214,14 +215,14 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         body.addStatement(declS(result, callSuperX("clone")));
         for (FieldNode fieldNode : fieldNodes) {
             if (excludes.contains(fieldNode.getName())) continue;
-            Expression fieldExpr = new VariableExpression(fieldNode);
+            Expression fieldExpr = var(fieldNode);
             Expression from = callX(fieldExpr, "clone");
-            Expression to = new PropertyExpression(result, fieldNode.getName());
+            Expression to = prop(result, fieldNode.getName());
             Statement doClone = assignS(to, from);
             body.addStatement(ifS(isInstanceOf(fieldExpr, CLONEABLE_TYPE), doClone));
         }
         body.addStatement(returnS(result));
-        ClassNode[] exceptions = {ClassHelper.make(CloneNotSupportedException.class)};
+        ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
         cNode.addMethod("clone", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, exceptions, body);
     }
 

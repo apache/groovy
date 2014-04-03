@@ -112,9 +112,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
                 if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
-            if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
-                addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
-            }
+            checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
             createConstructor(cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes);
         }
     }

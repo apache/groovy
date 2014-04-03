@@ -53,7 +53,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.identicalX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullExpr;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.var;
@@ -99,9 +99,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
                 if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
                 if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
-            if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
-                addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
-            }
+            checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
             createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString);
         }
     }
@@ -149,7 +147,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
         // def $toStringFirst = true
         final VariableExpression first = var("$toStringFirst");
-        body.addStatement(declS(first, ConstantExpression.TRUE));
+        body.addStatement(declS(first, constX(Boolean.TRUE)));
 
         // <class_name>(
         String className = (includePackage) ? cNode.getName() : cNode.getNameWithoutPackage();
@@ -182,7 +180,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         }
 
         // wrap up
-        body.addStatement(appendS(result, new ConstantExpression(")")));
+        body.addStatement(appendS(result, constX(")")));
         MethodCallExpression toString = callX(result, "toString");
         toString.setImplicitThis(false);
         return toString;
@@ -190,7 +188,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
     private static void appendValue(BlockStatement body, Expression result, VariableExpression first, Expression value, String name, boolean includeNames, boolean ignoreNulls) {
         final BlockStatement thenBlock = new BlockStatement();
-        final Statement appendValue = ignoreNulls ? ifS(notNullExpr(value), thenBlock) : thenBlock;
+        final Statement appendValue = ignoreNulls ? ifS(notNullX(value), thenBlock) : thenBlock;
         appendCommaIfNotFirst(thenBlock, result, first);
         appendPrefix(thenBlock, result, name, includeNames);
         thenBlock.addStatement(ifElseS(
