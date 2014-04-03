@@ -34,92 +34,124 @@
     <!-- =========== END OF NAVBAR =========== -->
 
     <!-- ======== START OF class DATA ======== -->
-    <h2>
-    <span style="font-size:12px;">
-    ${packageName}</span>
-        <br>
-        class ${className}</h2>
+
+    <div class="header">
+        <div class="subTitle">Package: <strong>${packageName}</strong></div>
+        <h2>Class ${className}</h2>
+    </div>
+
+    <div class="contentContainer">
 
     <!-- ========== METHOD SUMMARY =========== -->
 
-    <a name="method_summary"><!-- --></a>
-    <table border="1" width="100%" cellpadding="3" cellspacing="0" summary="">
-        <tr bgcolor="#CCCCFF" class="TableHeadingColor">
-            <th align="left" colspan="2"><span style="font-size:24px;">
-    <b>Method Summary</b></span></th>
-        </tr>
+        <a name="method_summary"><!-- --></a>
 
-        <% methods.each { method -> %>
-        <tr class="TableRowColor">
-            <td align="right" valign="top" width="1%">
+        <div class="summary">
+            <ul class="blockList">
+                <li class="blockList">
+                    <ul class="blockList">
+                        <li class="blockList">
+                            <h3>Methods Summary</h3>
+                                <ul class="blockList">
 
-    <span>
-    <code>${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl}</code></span>
-            </td>
-            <td><code><b><a href="#${method.name}(${method.parametersSignature})">${method.name}</a></b>(${method.parametersDocUrl})</code>
-                <br>
-                ${method.shortComment}
-            </td>
-        </tr>
-        <% } %>
-    </table>
-    &nbsp;
+                                    <table border="0" cellpadding="3" cellspacing="0" class="overviewSummary">
+                                        <caption><span>Methods</span><span class="tabEnd">&nbsp;</span></caption>
 
+                                        <tr>
+                                            <th>Return type</th>
+                                            <th>Name and parameters</th>
+                                        </tr>
+                                        <tbody>
+                                            <% methods.eachWithIndex { method, i -> %>
+                                            <tr class="${i % 2 == 0 ? 'altColor' : 'rawColor'}">
+                                                <td align="right" valign="top" width="1%">
+                                                    <span> <code>${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl}</code></span>
+                                                </td>
+                                                <td>
+                                                    <code><strong><a href="#${method.name}(${method.parametersSignature})">${method.name}</a></strong>(${method.parametersDocUrl})</code>
+                                                    <br>
+                                                    ${method.shortComment}
+                                                </td>
+                                            </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
 
     <!-- ============ METHOD DETAIL ========== -->
 
     <a name="method_detail"><!-- --></a>
-    <table border="1" width="100%" cellpadding="3" cellspacing="0" summary="">
-        <tr class="TableHeadingColor">
-            <th align="left" colspan="1"><span style="font-size:24px;">
-    <b>Method Detail</b></span></th>
-        </tr>
-    </table>
 
-    <% methods.each { method -> %>
 
-    <a name="${method.name}(${method.parametersSignature})"><!-- --></a>
+        <div class="details">
+            <ul class="blockList">
+                <li class="blockList">
+                    <ul class="blockList">
+                        <li class="blockList">
+                            <h3>Methods Detail</h3>
 
-    <h3>${method.name}</h3>
-    <pre>public ${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl} <b>${method.name}</b>(${method.parametersDocUrl})</pre>
-    <dl>
-        <dt>&nbsp;</dt>
-        <dd>${method.comment}</dd>
-    </dl>
-    <% if (method.parametersSignature) { %>
-    <dl>
-        <dt><b>Parameters:</b></dt>
-        <% method.parameters.each { param -> %>
-        <dd><code>${param.name}</code> - ${param.comment}.</dd>
-        <% } %>
-    </dl>
-    <%
-    } %>
+                            <% methods.eachWithIndex { method, i -> %>
+                            <a name="${method.name}(${method.parametersSignature})"><!-- --></a>
 
-    <% if (method.returnComment) { %>
-    <dl>
-        <dt><b>Returns:</b></dt>
-        <dd>${method.returnComment}</dd>
-    </dl>
-    <% } %>
+                            <ul class="blockListLast">
+                                <li class="blockList">
 
-    <%if (method.since) { %>
-    <dl>
-        <dt><b>Since:</b></dt>
-        <dd>${method.since}</dd>
-    </dl>
-    <%}%>
+                                    <h4>public ${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl} <b>${method.name}</b>(${method.parametersDocUrl})</h4>
 
-    <% if (method.seeComments) { %>
-    <dl>
-        <dt><b>See:</b></dt>
-        <% method.seeComments.each { param -> %>
-        <dd>${param.target}.</dd>
-        <% }%>
-    </dl>
-    <% } %>
+                                    <p>${method.comment}</p>
+                                    
+                                    <% if (method.parametersSignature) { %>
+                                    <dl>
+                                        <dt><b>Parameters:</b></dt>
+                                        <% method.parameters.each { param -> %>
+                                        <dd><code>${param.name}</code> - ${param.comment}.</dd>
+                                        <% } %>
+                                    </dl>
+                                    <%
+                                    } %>
 
-    <% } %>
+                                    <% if (method.returnComment) { %>
+                                    <dl>
+                                        <dt><b>Returns:</b></dt>
+                                        <dd>${method.returnComment}</dd>
+                                    </dl>
+                                    <% } %>
+
+                                    <%if (method.since) { %>
+                                    <dl>
+                                        <dt><b>Since:</b></dt>
+                                        <dd>${method.since}</dd>
+                                    </dl>
+                                    <%}%>
+
+                                    <% if (method.seeComments) { %>
+                                    <dl>
+                                        <dt><b>See:</b></dt>
+                                        <% method.seeComments.each { param -> %>
+                                        <dd>${param.target}.</dd>
+                                        <% }%>
+                                    </dl>
+                                    <% } %>
+
+                                </li>
+                            </ul>
+
+                            <% } %>
+
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
     <!-- ========= END OF class DATA ========= -->
 
     <!-- ======= START OF BOTTOM NAVBAR ====== -->
