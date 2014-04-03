@@ -2,150 +2,138 @@
 
 <html>
 <head>
-<title>${className} (Groovy JDK)</title>
+    <title>${className} (Groovy JDK)</title>
 
-<%
-int dotCount = packageName.count('.')
-String pathPref = '../' * (dotCount+1)
-%>
-<link rel ="stylesheet" type="text/css" href="${pathPref}stylesheet.css" title="Style">
+    <%
+    int dotCount = packageName.count('.')
+    String pathPref = '../' * (dotCount+1)
+    %>
+    <link rel="stylesheet" type="text/css" href="${pathPref}stylesheet.css" title="Style">
 
-<script type="text/javascript">
-function windowTitle()
-{
-    parent.document.title = document.title;
-}
-</script>
+    <script type="text/javascript">
+        function windowTitle() {
+            parent.document.title = document.title;
+        }
+    </script>
 
 </head>
 
 <body class="center" onload="windowTitle();">
 
-<!-- ========== START OF NAVBAR ========== -->
-<a name="navbar_top"><!-- --></a>
-<table border="0" width="100%" cellpadding="1" cellspacing="0">
-    <tr>
-        <td colspan="3" bgcolor="#EEEEFF" class="NavBarCell1">
-            <a name="navbar_top_firstrow"><!-- --></a>
-            <table border="0" cellpadding="0" cellspacing="3">
-                <tr align="center" valign="top">
-                    <td bgcolor="#EEEEFF" class="NavBarCell1">    <a hrEF="${pathPref}overview-summary.html"><span class="NavBarFont1"><b>Overview</b></span></a>&nbsp;</td>
-                    <td bgcolor="#EEEEFF" class="NavBarCell1">    <a hrEF="${pathPref}index-all.html"><span class="NavBarFont1"><b>Index</b></span></a>&nbsp;</td>
-                </tr>
-            </table>
-        </td>
-        <td ALIGN="right" VALIGN="top" ROWSPAN=3><EM>
-            <b>${title}</b></EM>
-        </td>
-    </tr>
-</table>
-<!-- =========== END OF NAVBAR =========== -->
+    <!-- ========== START OF NAVBAR ========== -->
+    <a name="navbar_top"><!-- --></a>
 
-<!-- ======== START OF class DATA ======== -->
-<h2>
-<span style="font-size:12px;">
-${packageName}</span>
-<br>
-class ${className}</h2>
+    <div class="topNav">
+        <ul class="navList" title="Navigation">
+            <li><a href="${pathPref}overview-summary.html">Overview</a></li>
+            <li class="navBarCell1Rev">Class</li>
+            <li><a href="${pathPref}index-all.html">Index</a></li>
+        </ul>
+    </div>
 
-<!-- ========== METHOD SUMMARY =========== -->
+    <!-- =========== END OF NAVBAR =========== -->
 
-<a name="method_summary"><!-- --></a>
-<table border="1" width="100%" cellpadding="3" cellspacing="0" summary="">
-<tr bgcolor="#CCCCFF" class="TableHeadingColor">
-<th align="left" colspan="2"><span style="font-size:24px;">
-<b>Method Summary</b></span></th>
-</tr>
+    <!-- ======== START OF class DATA ======== -->
+    <h2>
+    <span style="font-size:12px;">
+    ${packageName}</span>
+        <br>
+        class ${className}</h2>
 
-<% methods.each { method -> %>
-<tr class="TableRowColor">
-<td align="right" valign="top" width="1%">
+    <!-- ========== METHOD SUMMARY =========== -->
 
-<span>
-<code>${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl}</code></span>
-</td>
-<td><code><b><a href="#${method.name}(${method.parametersSignature})">${method.name}</a></b>(${method.parametersDocUrl})</code>
-<br>
-${method.shortComment}
-</td>
-</tr>
-<% } %>
-</table>
-&nbsp;
+    <a name="method_summary"><!-- --></a>
+    <table border="1" width="100%" cellpadding="3" cellspacing="0" summary="">
+        <tr bgcolor="#CCCCFF" class="TableHeadingColor">
+            <th align="left" colspan="2"><span style="font-size:24px;">
+    <b>Method Summary</b></span></th>
+        </tr>
+
+        <% methods.each { method -> %>
+        <tr class="TableRowColor">
+            <td align="right" valign="top" width="1%">
+
+    <span>
+    <code>${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl}</code></span>
+            </td>
+            <td><code><b><a href="#${method.name}(${method.parametersSignature})">${method.name}</a></b>(${method.parametersDocUrl})</code>
+                <br>
+                ${method.shortComment}
+            </td>
+        </tr>
+        <% } %>
+    </table>
+    &nbsp;
 
 
-<!-- ============ METHOD DETAIL ========== -->
+    <!-- ============ METHOD DETAIL ========== -->
 
-<a name="method_detail"><!-- --></a>
-<table border="1" width="100%" cellpadding="3" cellspacing="0" summary="">
-<tr class="TableHeadingColor">
-<th align="left" colspan="1"><span style="font-size:24px;">
-<b>Method Detail</b></span></th>
-</tr>
-</table>
+    <a name="method_detail"><!-- --></a>
+    <table border="1" width="100%" cellpadding="3" cellspacing="0" summary="">
+        <tr class="TableHeadingColor">
+            <th align="left" colspan="1"><span style="font-size:24px;">
+    <b>Method Detail</b></span></th>
+        </tr>
+    </table>
 
-<% methods.each { method -> %>
+    <% methods.each { method -> %>
 
-<a name="${method.name}(${method.parametersSignature})"><!-- --></a><h3>${method.name}</h3>
-<pre>public ${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl} <b>${method.name}</b>(${method.parametersDocUrl})</pre>
-<dl>
-<dt>&nbsp;</dt>
-<dd>${method.comment}</dd>
-</dl>
-<% if (method.parametersSignature) { %>
-<dl><dt><b>Parameters:</b></dt>
-	<% method.parameters.each { param -> %>
-		<dd><code>${param.name}</code> - ${param.comment}.</dd>
-<% } %>
+    <a name="${method.name}(${method.parametersSignature})"><!-- --></a>
+
+    <h3>${method.name}</h3>
+    <pre>public ${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl} <b>${method.name}</b>(${method.parametersDocUrl})</pre>
+    <dl>
+        <dt>&nbsp;</dt>
+        <dd>${method.comment}</dd>
+    </dl>
+    <% if (method.parametersSignature) { %>
+    <dl>
+        <dt><b>Parameters:</b></dt>
+        <% method.parameters.each { param -> %>
+        <dd><code>${param.name}</code> - ${param.comment}.</dd>
+        <% } %>
     </dl>
     <%
     } %>
 
-<% if (method.returnComment) { %>
-<dl><dt><b>Returns:</b></dt><dd>${method.returnComment}</dd></dl>
-<% } %>
+    <% if (method.returnComment) { %>
+    <dl>
+        <dt><b>Returns:</b></dt>
+        <dd>${method.returnComment}</dd>
+    </dl>
+    <% } %>
 
-<%if (method.since) { %>
-<dl>
-<dt><b>Since:</b></dt>
-<dd>${method.since}</dd>
-</dl>
-<%}%>
+    <%if (method.since) { %>
+    <dl>
+        <dt><b>Since:</b></dt>
+        <dd>${method.since}</dd>
+    </dl>
+    <%}%>
 
-<% if (method.seeComments) { %>
-<dl>
-<dt><b>See:</b></dt>
-<% method.seeComments.each { param -> %>
-    <dd>${param.target}.</dd>
-<% }%>
-</dl>
-<%    } %>
+    <% if (method.seeComments) { %>
+    <dl>
+        <dt><b>See:</b></dt>
+        <% method.seeComments.each { param -> %>
+        <dd>${param.target}.</dd>
+        <% }%>
+    </dl>
+    <% } %>
 
-<hr>
-<% } %>
-<!-- ========= END OF class DATA ========= -->
+    <% } %>
+    <!-- ========= END OF class DATA ========= -->
 
- <!-- ======= START OF BOTTOM NAVBAR ====== -->
-<a name="navbar_bottom"><!-- --></a>
-<a href="#skip-navbar_bottom" title="Skip navigation links"></a>
+    <!-- ======= START OF BOTTOM NAVBAR ====== -->
+    <a name="navbar_bottom"><!-- --></a>
+    <a href="#skip-navbar_bottom" title="Skip navigation links"></a>
 
-<table border="0" width="100%" cellpadding="1" cellspacing="0">
-    <tr>
-        <td colspan=3 class="NavBarCell1">
-            <a name="navbar_top_firstrow"><!-- --></a>
-            <table border="0" cellpadding="0" cellspacing="3">
-                <tr align="center" valign="top">
-                    <td bgcolor="#EEEEFF" class="NavBarCell1">    <a href="${pathPref}overview-summary.html"><span class="NavBarFont1"><b>Overview</b></span></a>&nbsp;</td>
-                    <td bgcolor="#EEEEFF" class="NavBarCell1">    <a href="${pathPref}index-all.html"><span class="NavBarFont1"><b>Index</b></span></a>&nbsp;</td>
-                </tr>
-            </table>
-        </td>
-        <td align="right" valign="top" rowspan=3><em>
-            <b>${title}</b></em>
-        </td>
-    </tr>
-</table>
-<!-- =========== END OF NAVBAR =========== -->
+    <div class="topNav">
+        <ul class="navList" title="Navigation">
+            <li><a href="${pathPref}overview-summary.html">Overview</a></li>
+            <li class="navBarCell1Rev">Class</li>
+            <li><a href="${pathPref}index-all.html">Index</a></li>
+        </ul>
+    </div>
+    <!-- =========== END OF NAVBAR =========== -->
 
 </body>
 </html>
