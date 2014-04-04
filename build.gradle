@@ -183,7 +183,7 @@ configurations {
 }
 
 ext {
-    antVersion = '1.9.2'
+    antVersion = '1.9.3'
     asmVersion = '5.0.1'
     antlrVersion = '2.7.7'
     bndVersion = '0.0.401'
