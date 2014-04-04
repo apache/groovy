@@ -206,8 +206,8 @@ ext {
     qdoxVersion = '1.12.1'
     simianVersion = '2.2.4'
     slf4jVersion = '1.7.5'
-    xmlunitVersion = '1.3'
-    xstreamVersion = '1.4.4'
+    xmlunitVersion = '1.5'
+    xstreamVersion = '1.4.7'
 }
 
 dependencies {
