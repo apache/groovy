@@ -32,7 +32,9 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -150,6 +152,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a {@code Path} object
      * @return an object input stream
      * @throws java.io.IOException if an IOException occurs.
+     * @since 2.3.0
      */
     public static ObjectInputStream newObjectInputStream(Path self) throws IOException {
         return new ObjectInputStream( Files.newInputStream(self) );
@@ -449,9 +452,9 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void write(Path self, String text) throws IOException {
-        BufferedWriter writer = null;
+        Writer writer = null;
         try {
-            writer = newWriter(self);
+            writer = new OutputStreamWriter(Files.newOutputStream(self, CREATE, APPEND), Charset.defaultCharset());
             writer.write(text);
             writer.flush();
 
@@ -550,9 +553,9 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void write(Path self, String text, String charset) throws IOException {
-        BufferedWriter writer = null;
+        Writer writer = null;
         try {
-            writer = newWriter(self, charset);
+            writer = new OutputStreamWriter(Files.newOutputStream(self, CREATE, APPEND), Charset.forName(charset));
             writer.write(text);
             writer.flush();
 
@@ -573,9 +576,48 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void append(Path self, Object text) throws IOException {
+        Writer writer = null;
+        try {
+            writer = new OutputStreamWriter(Files.newOutputStream(self, CREATE, APPEND), Charset.defaultCharset());
+            InvokerHelper.write(writer, text);
+            writer.flush();
+
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        } finally {
+            closeWithWarning(writer);
+        }
+    }
+
+    /**
+     * Append the text supplied by the Writer at the end of the File.
+     *
+     * @param file a Path
+     * @param reader the Reader supplying the text to append at the end of the File
+     * @throws IOException if an IOException occurs.
+     * @since 2.3.0
+     */
+    public static void append(Path file, Reader reader) throws IOException {
+        appendBuffered(file, reader);
+    }
+
+    /**
+     * Append the text supplied by the Writer at the end of the File.
+     *
+     * @param file a File
+     * @param writer the Writer supplying the text to append at the end of the File
+     * @throws IOException if an IOException occurs.
+     * @since 2.3.0
+     */
+    public static void append(Path file, Writer writer) throws IOException {
+        appendBuffered(file, writer);
+    }
+
+    private static void appendBuffered(Path file, Object text) throws IOException {
         BufferedWriter writer = null;
         try {
-            writer = newWriter(self, true);
+            writer = newWriter(file, true);
             InvokerHelper.write(writer, text);
             writer.flush();
 
@@ -596,9 +638,9 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void append(Path self, byte[] bytes) throws IOException {
-        BufferedOutputStream stream = null;
+        OutputStream stream = null;
         try {
-            stream = new BufferedOutputStream( Files.newOutputStream(self, CREATE, APPEND) );
+            stream = Files.newOutputStream(self, CREATE, APPEND);
             stream.write(bytes, 0, bytes.length);
             stream.flush();
 
@@ -638,9 +680,51 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static void append(Path self, Object text, String charset) throws IOException {
+        Writer writer = null;
+        try {
+            OutputStream out = Files.newOutputStream(self, CREATE, APPEND);
+            writer = new OutputStreamWriter(out, Charset.forName(charset));
+            InvokerHelper.write(writer, text);
+            writer.flush();
+
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        } finally {
+            closeWithWarning(writer);
+        }
+    }
+
+    /**
+     * Append the text supplied by the Writer at the end of the File, using a specified encoding.
+     *
+     * @param file a File
+     * @param writer the Writer supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @throws IOException if an IOException occurs.
+     * @since 2.3.0
+     */
+    public static void append(Path file, Writer writer, String charset) throws IOException {
+        appendBuffered(file, writer, charset);
+    }
+
+    /**
+     * Append the text supplied by the Reader at the end of the File, using a specified encoding.
+     *
+     * @param file a File
+     * @param reader the Reader supplying the text to append at the end of the File
+     * @param charset the charset used
+     * @throws IOException if an IOException occurs.
+     * @since 2.3.0
+     */
+    public static void append(Path file, Reader reader, String charset) throws IOException {
+        appendBuffered(file, reader, charset);
+    }
+
+    private static void appendBuffered(Path file, Object text, String charset) throws IOException {
         BufferedWriter writer = null;
         try {
-            writer = newWriter(self, charset, true);
+            writer = newWriter(file, charset, true);
             InvokerHelper.write(writer, text);
             writer.flush();
 
@@ -1140,7 +1224,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Renames the file.
+     * Renames a file.
      *
      * @param self        a Path
      * @param newPathName The new pathname for the named file
@@ -1158,10 +1242,10 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Renames the file.
+     * Renames a file.
      *
      * @param self        a Path
-     * @param newPathName The new URI for the named file
+     * @param newPathName The new target path specified as a URI object
      * @return <code>true</code> if and only if the renaming succeeded;
      *         <code>false</code> otherwise
      * @since 2.3.0
@@ -1222,6 +1306,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Path
      * @return a BufferedReader
      * @throws java.io.IOException if an IOException occurs.
+     * @since 2.3.0
      */
     public static BufferedReader newReader(Path self) throws IOException {
         return Files.newBufferedReader(self, Charset.defaultCharset());
@@ -1236,6 +1321,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a BufferedReader
      * @throws java.io.FileNotFoundException        if the Path was not found
      * @throws java.io.UnsupportedEncodingException if the encoding specified is not supported
+     * @since 2.3.0
      */
     public static BufferedReader newReader(Path self, String charset) throws IOException {
         return Files.newBufferedReader(self, Charset.forName(charset));

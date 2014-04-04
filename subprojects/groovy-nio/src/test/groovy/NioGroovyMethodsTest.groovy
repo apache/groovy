@@ -3,6 +3,7 @@
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
 package org.codehaus.groovy.runtime
+
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -326,5 +327,56 @@ class NioGroovyMethodsTest extends Specification {
 
         cleanup:
         folder?.deleteDir()
+    }
+
+
+    def testAppendUTF16LE() {
+
+        setup:
+        final temp = Files.createTempDirectory('utf-test')
+        final path = temp.resolve('path_UTF-16LE.txt')
+        final file = new File( temp.toFile(), 'file_UTF-LE.txt')
+        final HELLO = 'Hello world!'
+
+        // save using a File, thus uses ResourcesGroovyMethods
+        when:
+        file.append( HELLO, 'UTF-16LE' )
+        then:
+        file.getText('UTF-16LE') == HELLO
+
+        // now test append method using the Path
+        when:
+        path.append('Hello ', 'UTF-16LE')
+        path.append('world!', 'UTF-16LE')
+        then:
+        path.getText('UTF-16LE') == HELLO
+        file.toPath().getText('UTF-16LE') == HELLO
+
+        // append the content of a reader, thus using the 'appendBuffered' version
+        when:
+        path.append( new StringReader(' - Hola Mundo!'), 'UTF-16LE' )
+        then:
+        path.getText('UTF-16LE') == 'Hello world! - Hola Mundo!'
+
+        cleanup:
+        temp.toFile().deleteDir()
+
+    }
+
+    def testWriteUTF16BE() {
+
+        setup:
+        final temp = Files.createTempDirectory('utf-test')
+        final path = temp.resolve('path_UTF-16BE.txt')
+        final HELLO = 'Hello world!'
+
+        when:
+        path.write(HELLO, 'UTF-16BE')
+        then:
+        path.getText('UTF-16BE') == HELLO
+
+        cleanup:
+        temp.toFile().deleteDir()
+
     }
 }
