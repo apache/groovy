@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2597,11 +2597,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * add various getAt and setAt methods for primtive arrays
+     * add various getAt and setAt methods for primitive arrays
      * @param receiver the receiver class
      * @param name  the name of the method
      * @param args the argument classes
-     * @return a list containing the single match or null
      */
     private void addArrayMethods(List<MethodNode> methods, ClassNode receiver, String name, ClassNode[] args) {
         if (args.length!=1) return;
@@ -2742,7 +2741,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // pop if-then-else temporary type info
             typeCheckingContext.popTemporaryTypeInfo();
 
-            // GROOVY-6099: restore assignement info as before the if branch
+            // GROOVY-6099: restore assignment info as before the if branch
             restoreTypeBeforeConditional();
 
             Statement elseBlock = ifElse.getElseBlock();

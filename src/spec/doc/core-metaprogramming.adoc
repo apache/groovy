@@ -586,8 +586,10 @@ available for you to use in your code here:
 
 ==== Code generation transformations
 
-This category of transformation includes AST transformations which helps removing boilerplate code. This is typically
-code that you have to write but that does not carry any useful information.
+This category of transformation includes AST transformations which help removing boilerplate code. This is typically
+code that you have to write but that does not carry any useful information. By autogenerating this boilerplate code,
+the code you have to write is left clean and concise and the chance of introducing an error by getting such
+boilerplate code incorrect is reduced.
 
 [[xform-ToString]]
 ===== @groovy.transform.ToString
@@ -860,7 +862,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 
 The default value which is used to initialize the field is the default constructor of the declaration type. It is possible
-to define a default value by using a closure on the right hand side of the property assignement, as in the following
+to define a default value by using a closure on the right hand side of the property assignment, as in the following
 example:
 
 ----
@@ -896,6 +898,56 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=newify_ruby,indent=0]
 ----
 The `Ruby` version can be disabled by setting the `auto` flag to `false`.
+
+[[xform-Sortable]]
+===== @groovy.lang.Sortable
+
+The `@Sortable` AST transformation is used to help write classes that are `Comparable` and easily sorted by
+numerous properties. For example, annotating the `Person` class like below will:
+* automatically implement the `Comparable` interface
+* automatically generate a `compareTo` method with an implementation based on the natural ordering of the classes `first`, `last` and `born` properties
+* automatically generate three comparator methods `comparatorByFirst`, `comparatorByLast` and `comparatorByBorn`.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_simple,indent=0]
+----
+
+The generated `compareTo` method will look like this:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_simple_generated_compareTo,indent=0]
+----
+As an example of a comparator method, the generated `comparatorByFirst` method will look like this:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_simple_generated_comparatorByFirst,indent=0]
+----
+The `Person` class can be used wherever a `Comparable` is expected and the generated comparators
+wherever a `Comparator` is expected as shown by these examples:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_simple_usage,indent=0]
+----
+
+Normally, all properties are used in the generated `compareTo` method in the priority order in which they are defined.
+You can include or exclude certain properties from the generated `compareTo` method by giving a list of property names
+in the `includes` or `excludes` annotation attributes. If using `includes`, the order of the property names given will
+determine the priority of properties when comparing. To illustrate, consider the following `Person` class definition:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_custom,indent=0]
+----
+It will have a generated `compareTo` method like this:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_custom_generated_compareTo,indent=0]
+----
+and can be used as follows:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_custom_usage,indent=0]
+----
 
 ==== Class design annotations
 
@@ -964,6 +1016,17 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=del
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_includes_header,indent=0]
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_includes_footer,indent=0]
+----
+|excludeTypes|Empty array|A list of interfaces containing method signatures to be excluded from delegation|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_excludeTypes,indent=0]
+----
+|includeTypes|Empty array|A list of interfaces containing method signatures to be included in delegation|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_includeTypes_header,indent=0]
+include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_includeTypes_footer,indent=0]
 ----
 |=======================================================================
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,8 +120,13 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         if (ret==null) return 0;
         return ret;
     }
-    
+
+    @Deprecated
     protected boolean doPrimtiveCompare(ClassNode leftType, ClassNode rightType, BinaryExpression binExp) {
+        return doPrimitiveCompare(leftType, rightType, binExp);
+    }
+
+    protected boolean doPrimitiveCompare(ClassNode leftType, ClassNode rightType, BinaryExpression binExp) {
         Expression leftExp = binExp.getLeftExpression();
         Expression rightExp = binExp.getRightExpression();
         int operation = binExp.getOperation().getType();
@@ -153,7 +158,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         Expression rightExp = binExp.getRightExpression();
         ClassNode rightType = typeChooser.resolveType(rightExp, current);
         
-        if (!doPrimtiveCompare(leftType, rightType, binExp)) {
+        if (!doPrimitiveCompare(leftType, rightType, binExp)) {
             super.evaluateCompareExpression(compareMethod, binExp);
         }
     }

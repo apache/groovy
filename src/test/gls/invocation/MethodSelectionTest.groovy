@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,7 +208,7 @@ public class MethodSelectionTest extends CompilableTestSupport {
     """
   }
   
-  void testNullUsageForPrimtivesWithExplcitNull() {
+  void testNullUsageForPrimitivesWithExplicitNull() {
     [byte,int,short,float,double,boolean,char].each { type ->
       assertScript """
          def foo($type x) {}
@@ -226,7 +226,7 @@ public class MethodSelectionTest extends CompilableTestSupport {
     }
   }
   
-  void testNullUsageForPrimtivesWithImplcitNull() {
+  void testNullUsageForPrimitivesWithImplicitNull() {
     [byte,int,short,float,double,boolean,char].each { type ->
       assertScript """
          def foo($type x) {}

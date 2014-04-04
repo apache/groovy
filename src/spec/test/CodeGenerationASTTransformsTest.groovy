@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -700,4 +700,112 @@ use (TripleCategory) {
 '''
     }
 
+    void testSortable() {
+        assertScript '''
+// tag::sortable_simple[]
+import groovy.transform.Sortable
+
+@Sortable class Person {
+    String first
+    String last
+    Integer born
+}
+// end::sortable_simple[]
+
+// tag::sortable_simple_usage[]
+def people = [
+    new Person(first: 'Johnny', last: 'Depp', born: 1963),
+    new Person(first: 'Keira', last: 'Knightley', born: 1985),
+    new Person(first: 'Geoffrey', last: 'Rush', born: 1951),
+    new Person(first: 'Orlando', last: 'Bloom', born: 1977)
+]
+
+assert people[0] > people[2]
+assert people.sort()*.last == ['Rush', 'Depp', 'Knightley', 'Bloom']
+assert people.sort(false, Person.comparatorByFirst())*.first == ['Geoffrey', 'Johnny', 'Keira', 'Orlando']
+assert people.sort(false, Person.comparatorByLast())*.last == ['Bloom', 'Depp', 'Knightley', 'Rush']
+assert people.sort(false, Person.comparatorByBorn())*.last == ['Rush', 'Depp', 'Bloom', 'Knightley']
+// end::sortable_simple_usage[]
+/* generates the following:
+// tag::sortable_simple_generated_compareTo[]
+public int compareTo(java.lang.Object obj) {
+    if (this.is(obj)) {
+        return 0
+    }
+    if (!(obj instanceof Person)) {
+        return -1
+    }
+    java.lang.Integer value = this.first <=> obj.first
+    if (value != 0) {
+        return value
+    }
+    value = this.last <=> obj.last
+    if (value != 0) {
+        return value
+    }
+    value = this.born <=> obj.born
+    if (value != 0) {
+        return value
+    }
+    return 0
+}
+// end::sortable_simple_generated_compareTo[]
+// tag::sortable_simple_generated_comparatorByFirst[]
+public int compare(java.lang.Object arg0, java.lang.Object arg1) {
+    if (arg0 == arg1) {
+        return 0
+    }
+    if (arg0 != null && arg1 == null) {
+        return -1
+    }
+    if (arg0 == null && arg1 != null) {
+        return 1
+    }
+    return arg0.first <=> arg1.first
+}
+// end::sortable_simple_generated_comparatorByFirst[]
+*/
+        '''
+        assertScript '''
+import groovy.transform.Sortable
+
+// tag::sortable_custom[]
+@Sortable(includes='first,born') class Person {
+    String last
+    Integer born
+    String first
+}
+// end::sortable_custom[]
+
+// tag::sortable_custom_usage[]
+def people = [
+    new Person(first: 'Ben', last: 'Affleck', born: 1972),
+    new Person(first: 'Ben', last: 'Stiller', born: 1965)
+]
+
+assert people.sort()*.last == ['Stiller', 'Affleck']
+// end::sortable_custom_usage[]
+/* generates the following:
+// tag::sortable_custom_generated_compareTo[]
+public int compareTo(java.lang.Object obj) {
+    if (this.is(obj)) {
+        return 0
+    }
+    if (!(obj instanceof Person)) {
+        return -1
+    }
+    java.lang.Integer value = this.first <=> obj.first
+    if (value != 0) {
+        return value
+    }
+    value = this.born <=> obj.born
+    if (value != 0) {
+        return value
+    }
+    return 0
+}
+// end::sortable_custom_generated_compareTo[]
+*/
+        '''
+    }
 }

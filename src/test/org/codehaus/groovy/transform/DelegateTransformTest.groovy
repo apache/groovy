@@ -52,7 +52,7 @@ class DelegateTransformTest extends CompilableTestSupport {
         """
     }
 
-    /** test for GROOVY-GROOVY-5974 */
+    /** test for GROOVY-5974 */
     void testDelegateExcludes() {
         assertScript """
           class MapSet {

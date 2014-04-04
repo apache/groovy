@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -428,7 +428,7 @@ public class BinaryExpressionHelper {
                 ClassHelper.isPrimitiveType(rightType)) 
         {
             BinaryExpressionMultiTypeDispatcher helper = new BinaryExpressionMultiTypeDispatcher(getController());
-            done = helper.doPrimtiveCompare(leftType, rightType, expression);
+            done = helper.doPrimitiveCompare(leftType, rightType, expression);
         }
         
         if (!done) {

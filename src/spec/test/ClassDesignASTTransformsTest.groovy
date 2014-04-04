@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 
 class ClassDesignASTTransformsTest extends GroovyTestCase {
 
@@ -149,11 +147,11 @@ class Delegating {
 def d = new Delegating()
 d.task1() // passes
 // end::delegate_example_excludes_header[]
-try {
+groovy.test.GroovyAssert.shouldFail {
 // tag::delegate_example_excludes_footer[]
-d.bar() // fails because method is excluded
+d.task2() // fails because method is excluded
 // end::delegate_example_excludes_footer[]
-} catch (e ) {}
+}
 
 '''
 
@@ -169,12 +167,64 @@ class Delegating {
 def d = new Delegating()
 d.task1() // passes
 // end::delegate_example_includes_header[]
-try {
+groovy.test.GroovyAssert.shouldFail {
 // tag::delegate_example_includes_footer[]
-d.bar() // fails because method is not included
+d.task2() // fails because method is not included
 // end::delegate_example_includes_footer[]
-} catch (e ) {}
+}
 
+'''
+        assertScript '''
+// tag::delegate_example_includeTypes_header[]
+interface AppendBooleanSelector {
+    StringBuilder append(boolean b)
+}
+interface AppendFloatSelector {
+    StringBuilder append(float b)
+}
+class NumberBooleanBuilder {
+    @Delegate(includeTypes=AppendBooleanSelector, interfaces=false)
+    StringBuilder nums = new StringBuilder()
+    @Delegate(includeTypes=[AppendFloatSelector], interfaces=false)
+    StringBuilder bools = new StringBuilder()
+    String result() { "${nums.toString()} | ${bools.toString()}" }
+}
+def b = new NumberBooleanBuilder()
+b.append(true)
+b.append(3.14f)
+b.append(false)
+b.append(0.0f)
+assert b.result() == "truefalse | 3.140.0"
+// end::delegate_example_includeTypes_header[]
+groovy.test.GroovyAssert.shouldFail {
+// tag::delegate_example_includeTypes_footer[]
+b.append(3.5d) // would fail because we didn't include append(double)
+// end::delegate_example_includeTypes_footer[]
+}
+'''
+        assertScript '''
+// tag::delegate_example_excludeTypes[]
+interface AppendStringSelector1 {
+    StringBuilder append(String str)
+}
+interface AppendStringSelector2 {
+    AbstractStringBuilder append(String str)
+}
+class UpperStringBuilder {
+    @Delegate(excludeTypes=[AppendStringSelector1,AppendStringSelector2])
+    StringBuilder sb1 = new StringBuilder()
+
+    @Delegate(includeTypes=AppendStringSelector1)
+    StringBuilder sb2 = new StringBuilder()
+
+    String toString() { sb1.toString() + sb2.toString().toUpperCase() }
+}
+def usb = new UpperStringBuilder()
+usb.append(3.5d)
+usb.append('hello')
+usb.append(true)
+assert usb.toString() == '3.5trueHELLO'
+// end::delegate_example_excludeTypes[]
 '''
     }
 
