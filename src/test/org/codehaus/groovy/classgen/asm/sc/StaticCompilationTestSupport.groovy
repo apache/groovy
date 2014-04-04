@@ -36,7 +36,7 @@ import org.codehaus.groovy.tools.GroovyClass
  * static compilation test case.
  *
  * On the beginning of a test method, it initializes a property which is available
- * to the developper for additional tests:
+ * to the developer for additional tests:
  * <ul>
  *     <li>astTrees: a map which has for key the names of classes generated in assertScript and an array of length 2
  *     as a value, for which the first element is the generated AST tree of the class, and the second element is

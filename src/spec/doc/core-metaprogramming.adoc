@@ -564,7 +564,7 @@ do the same using compile-time metaprogramming, the method would be visible from
 would likely be better with compile-time metaprogramming (because no initialization phase is required).
 
 In this section, we will start with explaining the various compile-time transformations that are bundled with the Groovy
-distribution. In a second time, we will describe how you can <<developing-ast-xforms,implement your own AST transformations>>
+distribution. In a subsequent section, we will describe how you can <<developing-ast-xforms,implement your own AST transformations>>
 and what are the disadvantages of this technique.
 
 === Available AST transformations
@@ -572,7 +572,7 @@ and what are the disadvantages of this technique.
 Groovy comes with various AST transformations covering different needs: reducing boilerplate (code generation), implementing
 design patterns (delegation, ...), logging, declarative concurrency, cloning, safer scripting, tweaking the compilation,
 implementing Swing patterns, testing and eventually managing dependencies. If none of those AST transformations cover
-your needs, you can still implement your own, as show in section <<developing-ast-xforms,Developping your own AST
+your needs, you can still implement your own, as show in section <<developing-ast-xforms,Developing your own AST
 transformations>>.
 
 AST transformations can be separated into two categories:
@@ -903,28 +903,35 @@ The `Ruby` version can be disabled by setting the `auto` flag to `false`.
 ===== @groovy.lang.Sortable
 
 The `@Sortable` AST transformation is used to help write classes that are `Comparable` and easily sorted by
-numerous properties. For example, annotating the `Person` class like below will:
-* automatically implement the `Comparable` interface
-* automatically generate a `compareTo` method with an implementation based on the natural ordering of the classes `first`, `last` and `born` properties
-* automatically generate three comparator methods `comparatorByFirst`, `comparatorByLast` and `comparatorByBorn`.
+numerous properties. It is easy to use as shown in the following example where we annotate the `Person` class:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_simple,indent=0]
 ----
 
+The generated class has the following properties:
+
+* it implements the `Comparable` interface
+* it contains a `compareTo` method with an implementation based on the natural ordering of the `first`, `last` and `born` properties
+* it has three methods returning comparators: `comparatorByFirst`, `comparatorByLast` and `comparatorByBorn`.
+
 The generated `compareTo` method will look like this:
+
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_simple_generated_compareTo,indent=0]
 ----
-As an example of a comparator method, the generated `comparatorByFirst` method will look like this:
+As an example of the generated comparators, the `comparatorByFirst` comparator will have a `compare` method that looks like this:
+
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_simple_generated_comparatorByFirst,indent=0]
 ----
+
 The `Person` class can be used wherever a `Comparable` is expected and the generated comparators
 wherever a `Comparator` is expected as shown by these examples:
+
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_simple_usage,indent=0]
@@ -934,16 +941,21 @@ Normally, all properties are used in the generated `compareTo` method in the pri
 You can include or exclude certain properties from the generated `compareTo` method by giving a list of property names
 in the `includes` or `excludes` annotation attributes. If using `includes`, the order of the property names given will
 determine the priority of properties when comparing. To illustrate, consider the following `Person` class definition:
+
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_custom,indent=0]
 ----
-It will have a generated `compareTo` method like this:
+
+It will have two comparator methods `comparatorByFirst` and `comparatorByBorn` and the generated `compareTo` method will look like this:
+
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_custom_generated_compareTo,indent=0]
 ----
-and can be used as follows:
+
+This `Person` class can be used as follows:
+
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_custom_usage,indent=0]
@@ -1005,13 +1017,13 @@ include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=del
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_parameter_annotations,indent=0]
 ----
-|excludes|Empty array|A list of methods to be excluded from delegation|
+|excludes|Empty array|A list of methods to be excluded from delegation. For more fine-grained control, see also `excludeTypes`.|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_excludes_header,indent=0]
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_excludes_footer,indent=0]
 ----
-|includes|Empty array|A list of methods to be included in delegation|
+|includes|Empty array|A list of methods to be included in delegation. For more fine-grained control, see also `includeTypes`.|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=delegate_example_includes_header,indent=0]

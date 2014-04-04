@@ -151,7 +151,7 @@ is from the method documentation. There are two issues with this: first
 of all, documentation is not always written, and if it is, it’s not
 always available (javadoc not downloaded, for example). Second, it
 doesn’t help IDEs. What would be really interesting, here, is for IDEs
-to help the developper by suggesting, once they are in the closure body,
+to help the developer by suggesting, once they are in the closure body,
 methods that exist on the `email` class.
 
 Moreover, if the user calls a method in the closure which is not defined
