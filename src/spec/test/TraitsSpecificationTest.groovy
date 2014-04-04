@@ -502,4 +502,32 @@ assert foo.whoAmI().is(foo)
 // end::meaningofthis_assert[]'''
     }
 
+    void testPublicStaticFieldInTrait() {
+        assertScript '''// tag::staticfield_header[]
+trait TestHelper {
+    public static boolean CALLED = false        // <1>
+    static void init() {                        // <2>
+        CALLED = true                           // <3>
+    }
+}
+class Foo implements TestHelper {}
+Foo.init()                                      // <4>
+assert Foo.TestHelper__CALLED                   // <5>
+// tag::staticfield_header[]
+
+try {
+// tag::staticfield_notontrait[]
+    Foo.CALLED = true
+// end::staticfield_notontrait[]
+} catch (Exception e){}
+
+// tag::staticfield_distinct[]
+class Bar implements TestHelper {}              // <1>
+class Baz implements TestHelper {}              // <2>
+Bar.init()                                      // <3>
+assert Bar.TestHelper__CALLED                   // <4>
+assert !Baz.TestHelper__CALLED                   // <5>
+// end::staticfield_distinct[]
+'''
+    }
 }

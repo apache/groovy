@@ -493,3 +493,46 @@ CAUTION: Traits are not officially compatible with AST transformations. Some of 
 on the trait itself (not on implementing classes), while others will apply on both the implementing class and the trait.
 There is absolutely no guarantee that an AST transformation will run on a trait as it does on a regular class, so use it
 at your own risk!
+
+== Static methods, properties and fields
+
+WARNING: The following instructions are subject to caution. Static member support is work in progress and still experimental. The
+information below is valid for {groovyVersion} only.
+
+It is possible to define static methods in a trait, but it comes with numerous limitations:
+
+* traits with static methods cannot be compiled statically or type checked. All static methods/properties/field are accessed dynamically (it's a limitation from the JVM).
+* the trait is interpreted as a _template_ for the implementing class, which means that each implementing class will get its own static methods/properties/methods. So a
+static member declared on a trait doesn't belong to the `Trait`, but to it's implementing class.
+
+Let's start with a simple example:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfield_header,indent=0]
+-----
+<1> the static field is declared in the trait
+<2> a static method is also declared in the trait
+<3> the static field is updated _within_ the trait
+<4> a static method _init_ is made available to the implementing class
+<5> the static field is _remapped_ to avoid the diamond issue
+
+As usual, it is not recommanded to use public fields. Anyway, should you want this, you must understand that the following code would fail:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfield_notontrait,indent=0]
+-----
+
+because there is _no_ static field _CALLED_ defined on the trait itself. Likewise, if you have to distinct implementing classes, each ones gets a distinct static field:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfield_distinct,indent=0]
+----
+<1> class `Bar` implements the trait
+<2> class `Baz` also implements the trait
+<3> `init` is only called on `Bar`
+<4> the static field `CALLED` on `Bar` is updated
+<5> but the static field `CALLED` on `Baz` is not, because it is *distinct*
+

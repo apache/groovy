@@ -51,19 +51,22 @@ public abstract class Traits {
     static final String FIELD_HELPER = "$Trait$FieldHelper";
     static final String DIRECT_SETTER_SUFFIX = "$set";
     static final String DIRECT_GETTER_SUFFIX = "$get";
-    static final String STATIC_INIT_METHOD = "$init$";
+    static final String INIT_METHOD = "$init$";
+    static final String STATIC_INIT_METHOD = "$static$init$";
     static final String THIS_OBJECT = "$self";
+    static final String STATIC_THIS_OBJECT = "$static$self";
+    static final String STATIC_FIELD_PREFIX = "$static";
 
     static String fieldHelperClassName(final ClassNode traitNode) {
         return traitNode.getName() + FIELD_HELPER;
     }
 
     static String helperGetterName(final FieldNode field) {
-        return remappedFieldName(field.getOwner(), field.getName()) + DIRECT_GETTER_SUFFIX;
+        return remappedFieldName(unwrapOwner(field.getOwner()), field.getName()) + DIRECT_GETTER_SUFFIX;
     }
 
     static String helperSetterName(final FieldNode field) {
-        return remappedFieldName(field.getOwner(), field.getName()) + DIRECT_SETTER_SUFFIX;
+        return remappedFieldName(unwrapOwner(field.getOwner()), field.getName()) + DIRECT_SETTER_SUFFIX;
     }
 
     static String helperClassName(final ClassNode traitNode) {
@@ -72,6 +75,13 @@ public abstract class Traits {
 
     static String remappedFieldName(final ClassNode traitNode, final String name) {
         return traitNode.getName().replace('.','_')+"__"+name;
+    }
+
+    private static ClassNode unwrapOwner(ClassNode owner) {
+        if (ClassHelper.CLASS_Type.equals(owner) && owner.getGenericsTypes()!=null && owner.getGenericsTypes().length==1) {
+            return owner.getGenericsTypes()[0].getType();
+        }
+        return owner;
     }
 
     static TraitHelpersTuple findHelpers(final ClassNode trait) {

@@ -1413,6 +1413,60 @@ assert p.get(0) == 'bar\''''
         assert message.contains('[Static type checking] - Cannot return value of type java.lang.String on method returning type int')
     }
 
+    void testStaticMethodInTrait() {
+        assertScript '''
+            trait StaticProvider {
+                static String foo() { 'static method' }
+            }
+            class Foo implements StaticProvider {}
+            assert Foo.foo() == 'static method'
+        '''
+        assertScript '''
+            trait StaticProvider {
+                static String foo() { bar() }
+                static String bar() { 'static method' }
+            }
+            class Foo implements StaticProvider {}
+            assert Foo.foo() == 'static method'
+        '''
+    }
+
+    void testStaticFieldInTrait() {
+        assertScript '''
+trait StaticFieldProvider {
+    public static int VAL = 123
+}
+class Foo implements StaticFieldProvider {}
+assert Foo.StaticFieldProvider__VAL == 123
+'''
+    }
+
+    void testStaticFieldModifiedInTrait() {
+        assertScript '''
+trait StaticFieldProvider {
+    public static int VAL = 123
+    public static void update(int x) { VAL = x }
+}
+class Foo implements StaticFieldProvider {}
+assert Foo.StaticFieldProvider__VAL == 123
+Foo.update(456)
+assert Foo.StaticFieldProvider__VAL == 456
+'''
+    }
+
+    void testStaticPropertyModifiedInTrait() {
+        assertScript '''
+trait StaticFieldProvider {
+    static int VAL = 123
+    public static void update(int x) { VAL = x }
+}
+class Foo implements StaticFieldProvider {}
+assert Foo.VAL == 123
+Foo.update(456)
+assert Foo.VAL == 456
+'''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.transform.trait;
 
-import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -36,8 +35,6 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -56,7 +53,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class contains a static utility method {@link #doExtendTraits(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.control.SourceUnit)}
+ * This class contains a static utility method {@link #doExtendTraits(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.control.CompilationUnit)}
  * aimed at generating code for a classnode implementing a trait.
  *
  * @author Cédric Champeau
@@ -196,9 +193,14 @@ public abstract class TraitComposer {
                 mce.setImplicitThis(false);
                 ClassNode fixedReturnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, returnType);
                 Expression forwardExpression = genericsSpec.isEmpty()?mce:new CastExpression(fixedReturnType,mce);
+                if (!argumentTypes[0].getOriginType().equals(ClassHelper.CLASS_Type)) {
+                    // we could rely on the first parameter name ($static$self) but that information is not
+                    // guaranteed to be always present
+                    access = access ^ Opcodes.ACC_STATIC;
+                }
                 MethodNode forwarder = new MethodNode(
                         name,
-                        access ^ Opcodes.ACC_STATIC,
+                        access,
                         fixedReturnType,
                         params,
                         exceptionNodes,
@@ -216,9 +218,15 @@ public abstract class TraitComposer {
         cNode.addObjectInitializerStatements(new ExpressionStatement(
                 new MethodCallExpression(
                         new ClassExpression(helperClassNode),
-                        Traits.STATIC_INIT_METHOD,
+                        Traits.INIT_METHOD,
                         new ArgumentListExpression(new VariableExpression("this")))
         ));
+        cNode.addStaticInitializerStatements(Collections.<Statement>singletonList(new ExpressionStatement(
+                new MethodCallExpression(
+                        new ClassExpression(helperClassNode),
+                        Traits.STATIC_INIT_METHOD,
+                        new ArgumentListExpression(new VariableExpression("this")))
+        )), false);
         if (fieldHelperClassNode != null) {
             // we should implement the field helper interface too
             cNode.addInterface(fieldHelperClassNode);
@@ -233,14 +241,20 @@ public abstract class TraitComposer {
                     String operation = methodNode.getName().substring(suffixIdx + 1);
                     boolean getter = "get".equals(operation);
                     ClassNode returnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, methodNode.getReturnType());
+                    int isStatic = 0;
+                    FieldNode helperField = fieldHelperClassNode.getField(fieldName);
+                    if (helperField==null) {
+                        // try to find a static one
+                        helperField = fieldHelperClassNode.getField(Traits.STATIC_FIELD_PREFIX+fieldName);
+                        isStatic = Opcodes.ACC_STATIC;
+                    }
                     if (getter) {
                         // add field
-                        FieldNode fieldNode = cNode.addField(fieldName, Opcodes.ACC_PRIVATE, returnType, null);
-                        FieldNode helperField = fieldHelperClassNode.getField(fieldName);
                         if (helperField!=null) {
                             List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
                             List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
                             AbstractASTTransformation.copyAnnotatedNodeAnnotations(helperField, copied, notCopied);
+                            FieldNode fieldNode = cNode.addField(fieldName, Opcodes.ACC_PRIVATE | isStatic, returnType, null);
                             fieldNode.addAnnotations(copied);
                         }
                     }
@@ -265,7 +279,7 @@ public abstract class TraitComposer {
                                     );
                     MethodNode impl = new MethodNode(
                             methodNode.getName(),
-                            Opcodes.ACC_PUBLIC,
+                            Opcodes.ACC_PUBLIC | isStatic,
                             returnType,
                             newParams,
                             ClassNode.EMPTY_ARRAY,
