@@ -47,7 +47,7 @@ public class IndyGuardsFiltersAndSignatures {
 
     private static final MethodType
         ZERO_GUARD          = MethodType.methodType(boolean.class),
-        OBJECT0_GUARD       = MethodType.methodType(boolean.class, Object.class),
+        OBJECT_GUARD        = MethodType.methodType(boolean.class, Object.class),
         CLASS1_GUARD        = MethodType.methodType(boolean.class, Class.class, Object.class),
         METACLASS1_GUARD    = MethodType.methodType(boolean.class, MetaClass.class, Object.class),
         
@@ -73,6 +73,8 @@ public class IndyGuardsFiltersAndSignatures {
         MOP_GET, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
         INTERCEPTABLE_INVOKER,
         CLASS_FOR_NAME
+
+        EQUALS
         ;
 
     static {
@@ -80,7 +82,7 @@ public class IndyGuardsFiltersAndSignatures {
             SAME_CLASS = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "sameClass", CLASS1_GUARD);
             UNWRAP_METHOD = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "unwrap", OBJECT_FILTER);
             SAME_MC = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isSameMetaClass", METACLASS1_GUARD);
-            IS_NULL = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isNull", OBJECT0_GUARD);
+            IS_NULL = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isNull", OBJECT_GUARD);
             UNWRAP_EXCEPTION = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "unwrap", GRE_GUARD);
             GROOVY_OBJECT_INVOKER = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "invokeGroovyObjectInvoker", INVOKER.insertParameterTypes(0, MissingMethodException.class));
 
@@ -98,6 +100,8 @@ public class IndyGuardsFiltersAndSignatures {
             INTERCEPTABLE_INVOKER = LOOKUP.findVirtual(GroovyObject.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
 
             CLASS_FOR_NAME = LOOKUP.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));
+
+            EQUALS = LOOKUP.findVirtual(Object.class, "equals", OBJECT_GUARD);
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }

@@ -705,6 +705,11 @@ public abstract class Selector {
                 test = test.asType(MethodType.methodType(boolean.class,targetType.parameterType(0)));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
                 if (LOG_ENABLED) LOG.info("added meta class equality check");
+            } else if (receiver instanceof Class) {
+                MethodHandle test = EQUALS.bindTo(receiver);
+                test = test.asType(MethodType.methodType(boolean.class,targetType.parameterType(0)));
+                handle = MethodHandles.guardWithTest(test, handle, fallback);
+                if (LOG_ENABLED) LOG.info("added class equality check");
             }
 
             if (!useMetaClass && isCategoryMethod) {
