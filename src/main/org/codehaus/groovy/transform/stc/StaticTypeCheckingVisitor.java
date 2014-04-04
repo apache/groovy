@@ -3899,6 +3899,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (current.equals(declaringClass)) break;
 
             current = getNextSuperClass(current, declaringClass);
+            if (current==null && CLASS_Type.equals(declaringClass)) {
+                // this can happen if the receiver is Class<Foo>, then
+                // the actual receiver is Foo and declaringClass is Class
+                current = declaringClass;
+            }
             if (current==null) {
                 String descriptor = "<>";
                 if (method!=null) descriptor = method.getTypeDescriptor();
