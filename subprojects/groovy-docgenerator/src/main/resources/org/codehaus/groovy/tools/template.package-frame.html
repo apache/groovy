@@ -1,41 +1,34 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <!--NewPage-->
-<HTML>
-<HEAD>
-<TITLE>
-${packageName} (Java 2 Platform SE 5.0)
-</TITLE>
+<html>
+<head>
+    <title>
+        ${packageName} (Java 2 Platform SE 5.0)
+    </title>
 
-<META NAME="keywords" CONTENT="${packageName}">
 <%
-def path = '..'
-packageName.count('.').times {
-    path += ('/..')
-}
+    def path = '..'
+    packageName.count('.').times {
+        path += ('/..')
+    }
 %>
 
-<LINK REL ="stylesheet" TYPE="text/css" HREF="${path}/stylesheet.css" TITLE="Style">
+    <link rel="stylesheet" type="text/css" href="${path}/stylesheet.css" title="Style">
+</head>
 
+<body class="left">
 
-</HEAD>
+<div class="indexHeader">
+    <h2 title="${packageName}">${packageName}</h2>
+</div>
 
-<BODY BGCOLOR="white">
-<SPAN CLASS="FrameTitleFont">${packageName}</SPAN>
+<div class="indexContainer">
+    <ul title="Packages">
+        <% classes.grep().each { %>
+        <li><a href="${it}.html" title="class in ${packageName}" target="classFrame">${it}</a></li>
+        <% } %>
+    </ul>
+</div>
 
-
-<TABLE BORDER="0" WIDTH="100%" SUMMARY="">
-<TR>
-<TD NOWRAP>
-<SPAN CLASS="FrameHeadingFont">Classes</SPAN>&nbsp;
-<SPAN CLASS="FrameItemFont">
-<% classes.each { %>
-<BR>
-<A href="${it}.html" title="class in ${packageName}" target="classFrame">${it}</A>
-<% } %>
-</SPAN></TD>
-</TR>
-</TABLE>
-
-
-</BODY>
-</HTML>
+</body>
+</html>

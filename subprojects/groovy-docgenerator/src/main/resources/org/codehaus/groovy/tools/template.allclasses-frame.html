@@ -1,36 +1,27 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <!--NewPage-->
-<HTML>
-<HEAD>
-<TITLE>
-All Classes (Groovy GDK)
-</TITLE>
+<html>
+<head>
+    <title>
+        All Classes (Groovy GDK)
+    </title>
 
+    <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
+</head>
 
-<LINK REL ="stylesheet" TYPE="text/css" HREF="stylesheet.css" TITLE="Style">
+<body class="left">
 
+<div class="indexHeader">
+    <h2 title="All Classes">All Classes</h2>
+</div>
 
-</HEAD>
+<div class="indexContainer">
+    <ul title="All Classes">
+        <% classes.each { %>
+        <li><a href="${it.replaceAll('\\.', '/')}.html" target="classFrame">${it.replaceAll('.*\\.', '')}</a></li>
+        <% } %>
+    </ul>
+</div>
 
-<BODY BGCOLOR="white">
-<SPAN CLASS="FrameHeadingFont">
-All Classes
-</SPAN>
-
-<BR>
-
-<TABLE BORDER="0" WIDTH="100%" SUMMARY="">
-<TR>
-<TD NOWRAP>
-
-<SPAN CLASS="FrameItemFont">
-<% classes.each { %>
-<A HREF="${it.replaceAll('\\.', '/')}.html" target="classFrame">${it.replaceAll('.*\\.', '')}</A>
-<BR>
-<% } %>
-</SPAN></TD>
-</TR>
-</TABLE>
-
-</BODY>
-</HTML>
+</body>
+</html>

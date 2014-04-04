@@ -1,161 +1,171 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 
-<HTML>
-<HEAD>
-<TITLE>${className} (Groovy JDK)</TITLE>
+<html>
+<head>
+    <title>${className} (Groovy JDK)</title>
 
-<%
-int dotCount = packageName.count('.')
-String pathPref = '../' * (dotCount+1)
-%>
-<LINK REL ="stylesheet" TYPE="text/css" HREF="${pathPref}stylesheet.css" TITLE="Style">
-
-<SCRIPT type="text/javascript">
-function windowTitle()
-{
-    parent.document.title = document.title;
-}
-</SCRIPT>
-
-</HEAD>
-
-<BODY BGCOLOR="white" onload="windowTitle();">
-
-<!-- ========== START OF NAVBAR ========== -->
-<A NAME="navbar_top"><!-- --></A>
-<TABLE BORDER="0" WIDTH="100%" CELLPADDING="1" CELLSPACING="0">
-    <TR>
-        <TD COLSPAN=3 BGCOLOR="#EEEEFF" CLASS="NavBarCell1">
-            <A NAME="navbar_top_firstrow"><!-- --></A>
-            <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="3">
-                <TR ALIGN="center" VALIGN="top">
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}overview-summary.html"><SPAN CLASS="NavBarFont1"><B>Overview</B></SPAN></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Package</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Class</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Tree</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Deprecated</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}index-all.html"><SPAN CLASS="NavBarFont1"><B>Index</B></SPAN></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Help</SPAN>&nbsp;</TD>
-                </TR>
-            </TABLE>
-        </TD>
-        <TD ALIGN="right" VALIGN="top" ROWSPAN=3><EM>
-            <b>${title}</b></EM>
-        </TD>
-    </TR>
-</TABLE>
-<!-- =========== END OF NAVBAR =========== -->
-
-<!-- ======== START OF CLASS DATA ======== -->
-<H2>
-<SPAN style="font-size:12px;">
-${packageName}</SPAN>
-<BR>
-Class ${className}</H2>
-
-<!-- ========== METHOD SUMMARY =========== -->
-
-<A NAME="method_summary"><!-- --></A>
-<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-<TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
-<TH ALIGN="left" COLSPAN="2"><SPAN style="font-size:24px;">
-<B>Method Summary</B></SPAN></TH>
-</TR>
-
-<% methods.each { method -> %>
-<TR BGCOLOR="white" CLASS="TableRowColor">
-<TD ALIGN="right" VALIGN="top" WIDTH="1%">
-
-<SPAN>
-<CODE>${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl}</CODE></SPAN>
-</TD>
-<TD><CODE><B><A HREF="#${method.name}(${method.parametersSignature})">${method.name}</A></B>(${method.parametersDocUrl})</CODE>
-<BR>
-${method.shortComment}
-</TD>
-</TR>
-<% } %>
-</TABLE>
-&nbsp;
-
-
-<!-- ============ METHOD DETAIL ========== -->
-
-<A NAME="method_detail"><!-- --></A>
-<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-<TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
-<TH ALIGN="left" COLSPAN="1"><SPAN style="font-size:24px;">
-<B>Method Detail</B></SPAN></TH>
-</TR>
-</TABLE>
-
-<% methods.each { method -> %>
-
-<A name="${method.name}(${method.parametersSignature})"><!-- --></A><H3>${method.name}</H3>
-<PRE>public ${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl} <B>${method.name}</B>(${method.parametersDocUrl})</PRE>
-<DL>
-<dt>&nbsp;</dt>
-<DD>${method.comment}</DD>
-</DL>
-<% if (method.parametersSignature) { %>
-<dl><DT><B>Parameters:</B></DT>
-	<% method.parameters.each { param -> %>
-		<DD><CODE>${param.name}</CODE> - ${param.comment}.</DD>
-<% } %>
-    </dl>
     <%
-    } %>
+    int dotCount = packageName.count('.')
+    String pathPref = '../' * (dotCount+1)
+    %>
+    <link rel="stylesheet" type="text/css" href="${pathPref}stylesheet.css" title="Style">
 
-<% if (method.returnComment) { %>
-<dl><DT><B>Returns:</B></DT><DD>${method.returnComment}</DD></dl>
-<% } %>
+    <script type="text/javascript">
+        function windowTitle() {
+            parent.document.title = document.title;
+        }
+    </script>
 
-<%if (method.since) { %>
-<dl>
-<DT><B>Since:</B></DT>
-<DD>${method.since}</DD>
-</dl>
-<%}%>
+</head>
 
-<% if (method.seeComments) { %>
-<dl>
-<DT><B>See:</B></DT>
-<% method.seeComments.each { param -> %>
-    <DD>${param.target}.</DD>
-<% }%>
-</dl>
-<%    } %>
+<body class="center" onload="windowTitle();">
 
-<HR>
-<% } %>
-<!-- ========= END OF CLASS DATA ========= -->
+    <!-- ========== START OF NAVBAR ========== -->
+    <a name="navbar_top"><!-- --></a>
 
- <!-- ======= START OF BOTTOM NAVBAR ====== -->
-<A NAME="navbar_bottom"><!-- --></A>
-<A HREF="#skip-navbar_bottom" title="Skip navigation links"></A>
+    <div class="topNav">
+        <ul class="navList" title="Navigation">
+            <li><a href="${pathPref}overview-summary.html">Overview</a></li>
+            <li class="navBarCell1Rev">Class</li>
+            <li><a href="${pathPref}index-all.html">Index</a></li>
+        </ul>
+    </div>
 
-<TABLE BORDER="0" WIDTH="100%" CELLPADDING="1" CELLSPACING="0">
-    <TR>
-        <TD COLSPAN=3 BGCOLOR="#EEEEFF" CLASS="NavBarCell1">
-            <A NAME="navbar_top_firstrow"><!-- --></A>
-            <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="3">
-                <TR ALIGN="center" VALIGN="top">
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}overview-summary.html"><SPAN CLASS="NavBarFont1"><B>Overview</B></SPAN></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Package</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Class</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Tree</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Deprecated</SPAN>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}index-all.html"><SPAN CLASS="NavBarFont1"><B>Index</B></SPAN></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Help</SPAN>&nbsp;</TD>
-                </TR>
-            </TABLE>
-        </TD>
-        <TD ALIGN="right" VALIGN="top" ROWSPAN=3><EM>
-            <b>${title}</b></EM>
-        </TD>
-    </TR>
-</TABLE>
-<!-- =========== END OF NAVBAR =========== -->
+    <!-- =========== END OF NAVBAR =========== -->
 
-</BODY>
-</HTML>
+    <!-- ======== START OF class DATA ======== -->
+
+    <div class="header">
+        <div class="subTitle">Package: <strong>${packageName}</strong></div>
+        <h2>Class ${className}</h2>
+    </div>
+
+    <div class="contentContainer">
+
+    <!-- ========== METHOD SUMMARY =========== -->
+
+        <a name="method_summary"><!-- --></a>
+
+        <div class="summary">
+            <ul class="blockList">
+                <li class="blockList">
+                    <ul class="blockList">
+                        <li class="blockList">
+                            <h3>Methods Summary</h3>
+                                <ul class="blockList">
+
+                                    <table border="0" cellpadding="3" cellspacing="0" class="overviewSummary">
+                                        <caption><span>Methods</span><span class="tabEnd">&nbsp;</span></caption>
+
+                                        <tr>
+                                            <th>Return type</th>
+                                            <th>Name and parameters</th>
+                                        </tr>
+                                        <tbody>
+                                            <% methods.eachWithIndex { method, i -> %>
+                                            <tr class="${i % 2 == 0 ? 'altColor' : 'rawColor'}">
+                                                <td align="right" valign="top" width="1%">
+                                                    <span> <code>${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl}</code></span>
+                                                </td>
+                                                <td>
+                                                    <code><strong><a href="#${method.name}(${method.parametersSignature})">${method.name}</a></strong>(${method.parametersDocUrl})</code>
+                                                    <br>
+                                                    ${method.shortComment}
+                                                </td>
+                                            </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+    <!-- ============ METHOD DETAIL ========== -->
+
+    <a name="method_detail"><!-- --></a>
+
+
+        <div class="details">
+            <ul class="blockList">
+                <li class="blockList">
+                    <ul class="blockList">
+                        <li class="blockList">
+                            <h3>Methods Detail</h3>
+
+                            <% methods.eachWithIndex { method, i -> %>
+                            <a name="${method.name}(${method.parametersSignature})"><!-- --></a>
+
+                            <ul class="blockListLast">
+                                <li class="blockList">
+
+                                    <h4>public ${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl} <b>${method.name}</b>(${method.parametersDocUrl})</h4>
+
+                                    <p>${method.comment}</p>
+                                    
+                                    <% if (method.parametersSignature) { %>
+                                    <dl>
+                                        <dt><b>Parameters:</b></dt>
+                                        <% method.parameters.each { param -> %>
+                                        <dd><code>${param.name}</code> - ${param.comment}.</dd>
+                                        <% } %>
+                                    </dl>
+                                    <%
+                                    } %>
+
+                                    <% if (method.returnComment) { %>
+                                    <dl>
+                                        <dt><b>Returns:</b></dt>
+                                        <dd>${method.returnComment}</dd>
+                                    </dl>
+                                    <% } %>
+
+                                    <%if (method.since) { %>
+                                    <dl>
+                                        <dt><b>Since:</b></dt>
+                                        <dd>${method.since}</dd>
+                                    </dl>
+                                    <%}%>
+
+                                    <% if (method.seeComments) { %>
+                                    <dl>
+                                        <dt><b>See:</b></dt>
+                                        <% method.seeComments.each { param -> %>
+                                        <dd>${param.target}.</dd>
+                                        <% }%>
+                                    </dl>
+                                    <% } %>
+
+                                </li>
+                            </ul>
+
+                            <% } %>
+
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- ========= END OF class DATA ========= -->
+
+    <!-- ======= START OF BOTTOM NAVBAR ====== -->
+    <a name="navbar_bottom"><!-- --></a>
+    <a href="#skip-navbar_bottom" title="Skip navigation links"></a>
+
+    <div class="topNav">
+        <ul class="navList" title="Navigation">
+            <li><a href="${pathPref}overview-summary.html">Overview</a></li>
+            <li class="navBarCell1Rev">Class</li>
+            <li><a href="${pathPref}index-all.html">Index</a></li>
+        </ul>
+    </div>
+    <!-- =========== END OF NAVBAR =========== -->
+
+</body>
+</html>

@@ -163,6 +163,15 @@ class DocGenerator {
         out.withWriter {
             it << templateIndexAll.make(binding)
         }
+
+        // copy resources
+        ['groovy.ico', 'stylesheet.css'].each { String resource ->
+            new File(outputFolder, resource).withOutputStream { outs ->
+                getClass().getResource(resource).withInputStream { ins ->
+                    outs << ins
+                }
+            }
+        }
     }
 
     /**
