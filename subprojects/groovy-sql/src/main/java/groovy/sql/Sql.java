@@ -1180,7 +1180,7 @@ public class Sql {
 
             GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
             int i = 0;
-            while (groovyRS.next() && (maxRows <= 0 || i++ < maxRows)) {
+            while ((maxRows <= 0 || i++ < maxRows) && groovyRS.next()) {
                 rowClosure.call(groovyRS);
             }
         } catch (SQLException e) {
@@ -1244,7 +1244,7 @@ public class Sql {
 
             GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
             int i = 0;
-            while (groovyRS.next() && (maxRows <= 0 || i++ < maxRows)) {
+            while ((maxRows <= 0 || i++ < maxRows) && groovyRS.next()) {
                 rowClosure.call(groovyRS);
             }
         } catch (SQLException e) {
@@ -3555,7 +3555,7 @@ public class Sql {
             if (!cursorAtRow) return null;
 
             int i = 0;
-            while (rs.next() && (maxRows <= 0 || i++ < maxRows)) {
+            while ((maxRows <= 0 || i++ < maxRows) && rs.next()) {
                 results.add(SqlGroovyMethods.toRowResult(rs));
             }
             return (results);
