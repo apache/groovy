@@ -1,10 +1,12 @@
 package com.xseagullx.groovy.gsoc
 import com.sun.istack.internal.NotNull
-import groovy.transform.Memoized
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import org.codehaus.groovy.ast.ASTNode
+import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.control.SourceUnit
@@ -30,28 +32,33 @@ class ASTBuilder extends GroovyBaseListener {
         new ParseTreeWalker().walk(this, tree);
     }
 
-    @Memoized classNode(Class c) {
-        def classNode = new ClassNode(c)
-        classNode.module = moduleNode
-        classNode
-    }
-
-    @Memoized classNode(String c) {
-        new ClassNode(classLoader.loadClass(c))
-    }
-
     @Override void exitImportStatement(@NotNull GroovyParser.ImportStatementContext ctx) {
         def clazz = classLoader.loadClass(ctx.IDENTIFIER().join('.'))
-        moduleNode.addImport(clazz.simpleName, classNode(clazz))
+        moduleNode.addImport(clazz.simpleName, ClassHelper.make(clazz))
+        setupNodeLocation(moduleNode.imports.last(), ctx)
+        setupNodeLocation(moduleNode.imports.last().type, ctx)
     }
 
     @Override void enterPackageDefinition(@NotNull GroovyParser.PackageDefinitionContext ctx) {
         moduleNode.packageName = ctx.IDENTIFIER().join('.') + '.'
+        setupNodeLocation(moduleNode.package, ctx)
     }
 
     @Override void exitClassDeclaration(@NotNull GroovyParser.ClassDeclarationContext ctx) {
-        def classNode = new ClassNode("$moduleNode.packageName${ctx.IDENTIFIER()}", Modifier.PUBLIC, classNode("java.lang.Object"))
-        classNode.module = moduleNode
-        moduleNode.classes.add(classNode)
+        def classNode = new ClassNode("$moduleNode.packageName${ctx.IDENTIFIER()}", Modifier.PUBLIC, ClassHelper.make("java.lang.Object"))
+        classNode.syntheticPublic = true
+        setupNodeLocation(classNode, ctx)
+        moduleNode.addClass(classNode)
+    }
+
+    static void setupNodeLocation(ASTNode astNode, ParserRuleContext ctx) {
+        astNode.lineNumber = ctx.start.line
+        astNode.columnNumber = ctx.start.charPositionInLine + 1
+        astNode.lastLineNumber = ctx.stop.line
+        astNode.lastColumnNumber = ctx.stop.charPositionInLine + 1 + ctx.stop.text.length()
+    }
+
+    @Override void exitCompilationUnit(@org.antlr.v4.runtime.misc.NotNull GroovyParser.CompilationUnitContext ctx) {
+        moduleNode.mainClassName = moduleNode.classes[0].name
     }
 }
