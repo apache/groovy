@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,15 @@ package org.codehaus.groovy.transform;
 
 import groovy.transform.PackageScope;
 import groovy.transform.PackageScopeTarget;
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -26,7 +34,6 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.objectweb.asm.Opcodes;
 
 import java.util.Arrays;
 import java.util.List;
@@ -41,7 +48,7 @@ import java.util.ArrayList;
  * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-public class PackageScopeASTTransformation implements ASTTransformation, Opcodes {
+public class PackageScopeASTTransformation extends AbstractASTTransformation {
 
     private static final Class MY_CLASS = PackageScope.class;
     private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
@@ -51,10 +58,7 @@ public class PackageScopeASTTransformation implements ASTTransformation, Opcodes
     private static final String TARGET_CLASS_NAME = ClassHelper.make(TARGET_CLASS).getNameWithoutPackage();
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new RuntimeException("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
-        }
-
+        init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
         boolean legacyMode = LEGACY_TYPE_NAME.equals(node.getClassNode().getName());
@@ -68,9 +72,11 @@ public class PackageScopeASTTransformation implements ASTTransformation, Opcodes
             visitClassNode((ClassNode) parent, targets);
             parent.getAnnotations();
         } else {
-            if (value != null)
-                throw new RuntimeException("Error during " + MY_TYPE_NAME
-                            + " processing: " + TARGET_CLASS_NAME + " only allowed at class level.");
+            if (value != null) {
+                addError("Error during " + MY_TYPE_NAME
+                        + " processing: " + TARGET_CLASS_NAME + " only allowed at class level.", parent);
+                return;
+            }
             if (parent instanceof MethodNode) {
                 visitMethodNode((MethodNode) parent);
             } else if (parent instanceof FieldNode) {
@@ -81,17 +87,17 @@ public class PackageScopeASTTransformation implements ASTTransformation, Opcodes
 
     private void visitMethodNode(MethodNode methodNode) {
         if (methodNode.isSyntheticPublic()) revertVisibility(methodNode);
-        else throw new RuntimeException("Can't use " + MY_TYPE_NAME + " for method '" + methodNode.getName() + "' which has explicit visibility.");
+        else addError("Can't use " + MY_TYPE_NAME + " for method '" + methodNode.getName() + "' which has explicit visibility.", methodNode);
     }
 
     private void visitClassNode(ClassNode cNode, List<PackageScopeTarget> value) {
         String cName = cNode.getName();
         if (cNode.isInterface() && value.size() != 1 && value.get(0) != PackageScopeTarget.CLASS) {
-            throw new RuntimeException("Error processing interface '" + cName + "'. " + MY_TYPE_NAME + " not allowed for interfaces except when targeting Class level.");
+            addError("Error processing interface '" + cName + "'. " + MY_TYPE_NAME + " not allowed for interfaces except when targeting Class level.", cNode);
         }
         if (value.contains(groovy.transform.PackageScopeTarget.CLASS)) {
             if (cNode.isSyntheticPublic()) revertVisibility(cNode);
-            else throw new RuntimeException("Can't use " + MY_TYPE_NAME + " for class '" + cNode.getName() + "' which has explicit visibility.");
+            else addError("Can't use " + MY_TYPE_NAME + " for class '" + cNode.getName() + "' which has explicit visibility.", cNode);
         }
         if (value.contains(groovy.transform.PackageScopeTarget.METHODS)) {
             final List<MethodNode> mList = cNode.getMethods();
@@ -179,7 +185,7 @@ public class PackageScopeASTTransformation implements ASTTransformation, Opcodes
                 }
             }
         }
-        throw new RuntimeException("Internal error during " + MY_TYPE_NAME
+        throw new GroovyBugError("Internal error during " + MY_TYPE_NAME
                 + " processing. Annotation parameters must be of type: " + TARGET_CLASS_NAME + ".");
     }
 

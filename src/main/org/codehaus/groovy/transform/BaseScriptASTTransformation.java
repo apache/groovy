@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,6 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.BaseScript;
-
-import java.util.Arrays;
-import java.util.List;
-
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -38,9 +33,8 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.control.messages.WarningMessage;
-import org.codehaus.groovy.syntax.SyntaxException;
+
+import java.util.List;
 
 /**
  * Handles transformation for the @BaseScript annotation.
@@ -56,20 +50,15 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
     private static final Class<BaseScript> MY_CLASS = BaseScript.class;
     public static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private SourceUnit sourceUnit;
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        sourceUnit = source;
-        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
-        }
-
+        init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(node.getClassNode())) return;
 
         if (parent instanceof DeclarationExpression) {
-            changeBaseScriptTypeFromDeclaration((DeclarationExpression)parent, node);
+            changeBaseScriptTypeFromDeclaration((DeclarationExpression) parent, node);
         } else if (parent instanceof ImportNode || parent instanceof PackageNode) {
             changeBaseScriptTypeFromPackageOrImport(source, parent, node);
         } else if (parent instanceof ClassNode) {
@@ -111,7 +100,7 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
             return;
         }
         Expression value = node.getMember("value");
-        if (value!=null) {
+        if (value != null) {
             addError("Annotation " + MY_TYPE_NAME + " cannot have member 'value' if used on a declaration.", value);
             return;
         }
@@ -129,7 +118,7 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
             return;
         }
 
-        if(!baseScriptType.isScript()){
+        if (!baseScriptType.isScript()) {
             addError("Declared type " + baseScriptType + " does not extend groovy.lang.Script class!", parent);
             return;
         }
@@ -144,8 +133,8 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
             MethodNode defaultMethod = cNode.getDeclaredMethod("run", Parameter.EMPTY_ARRAY);
             cNode.removeMethod(defaultMethod);
             MethodNode methodNode = new MethodNode(runScriptMethod.getName(), runScriptMethod.getModifiers() & ~ACC_ABSTRACT
-                , runScriptMethod.getReturnType(), runScriptMethod.getParameters(), runScriptMethod.getExceptions()
-                , defaultMethod.getCode());
+                    , runScriptMethod.getReturnType(), runScriptMethod.getParameters(), runScriptMethod.getExceptions()
+                    , defaultMethod.getCode());
             // The AST node metadata has the flag that indicates that this method is a script body.
             // It may also be carrying data for other AST transforms.
             methodNode.copyNodeMetaData(defaultMethod);
@@ -158,18 +147,5 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
                 && !(node.getDeclaringClass().equals(ClassHelper.SCRIPT_TYPE)
                 && "run".equals(node.getName())
                 && node.getParameters().length == 0);
-    }
-
-    public SourceUnit getSourceUnit() {
-        return sourceUnit;
-    }
-    
-    protected void addError(String msg, ASTNode expr) {
-        // for some reason the source unit is null sometimes, e.g. in testNotAllowedInScriptInnerClassMethods
-        sourceUnit.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
-                new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
-                        expr.getLastLineNumber(), expr.getLastColumnNumber()),
-                sourceUnit)
-        );
     }
 }
