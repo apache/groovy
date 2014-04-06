@@ -49,7 +49,7 @@ import java.util.Map;
 public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation {
     public static final ClassNode RETENTION_CLASSNODE = ClassHelper.makeWithoutCaching(Retention.class);
 
-    private SourceUnit sourceUnit;
+    protected SourceUnit sourceUnit;
 
     protected void init(ASTNode[] nodes, SourceUnit sourceUnit) {
         if (nodes == null || nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,24 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.SourceURI;
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.io.File;
 import java.net.URI;
-import java.util.Arrays;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 
 /**
  * Handles transformation for the @ScriptURI annotation.
@@ -55,14 +52,8 @@ public class SourceURIASTTransformation extends AbstractASTTransformation {
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode URI_TYPE = ClassHelper.make(java.net.URI.class);
 
-    private SourceUnit sourceUnit;
-
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        sourceUnit = source;
-        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
-        }
-
+        init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(node.getClassNode())) return;
@@ -115,9 +106,8 @@ public class SourceURIASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private StaticMethodCallExpression getExpression(URI uri) {
-        return new StaticMethodCallExpression(URI_TYPE, "create"
-                , new ArgumentListExpression(new ConstantExpression(uri.toString())));
+    private Expression getExpression(URI uri) {
+        return callX(URI_TYPE, "create", args(constX(uri.toString())));
     }
 
     protected URI getSourceURI(AnnotationNode node) {
@@ -136,23 +126,5 @@ public class SourceURIASTTransformation extends AbstractASTTransformation {
         }
 
         return uri;
-    }
-
-    public SourceUnit getSourceUnit() {
-        return sourceUnit;
-    }
-
-    protected boolean memberHasValue(AnnotationNode node, String name, Object value) {
-        final Expression member = node.getMember(name);
-        return member != null && member instanceof ConstantExpression && ((ConstantExpression) member).getValue().equals(value);
-    }
-
-    protected void addError(String msg, ASTNode expr) {
-        // for some reason the source unit is null sometimes, e.g. in testNotAllowedInScriptInnerClassMethods
-        sourceUnit.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
-                new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
-                        expr.getLastLineNumber(), expr.getLastColumnNumber()),
-                sourceUnit)
-        );
     }
 }
