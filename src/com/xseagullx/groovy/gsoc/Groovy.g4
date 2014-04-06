@@ -20,11 +20,11 @@ IDENTIFIER: [A-Za-z][A-Za-z0-9_]*;
 
 // PARSER
 
-compilationUnit: (NL*) packageDefinition? (importStatement | NL)* (classDeclaration | NL)* EOF;
+compilationUnit: (NL*) packageDefinition? (NL | ';')* (importStatement | NL)* (NL | ';')* (classDeclaration | NL)* EOF;
 
 packageDefinition:
-    KW_PACKAGE (IDENTIFIER ('.' IDENTIFIER)*) (NL | ';');
+    KW_PACKAGE (IDENTIFIER ('.' IDENTIFIER)*);
 importStatement:
-    KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)*) (NL | ';');
+    KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)*);
 classDeclaration:
     KW_CLASS IDENTIFIER (NL)* '{' NL* /* MEMBERS */ '}';

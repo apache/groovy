@@ -7,6 +7,10 @@ import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.syntax.Token
 
 class ASTComparatorCategory {
+
+    static objects = [] as Set
+    static String lastName
+
     /**
      * Main method that makes the magic. Compares all properties for object a and object b.
      * There is a lot of problems in this code, like omitted class checking and so on. Just belive, it will be used properly.
@@ -15,6 +19,11 @@ class ASTComparatorCategory {
      * @return
      */
     static reflexiveEquals(a, b, ignore = []) {
+        if (a in objects)
+            println('=' * 100 + "\nHehe. Recursion detected!\n" + '=' * 100)
+
+        objects << a
+        println("Equals was called for ${ a.getClass() } ${ a.hashCode() }, $lastName")
         if (a.is(b))
             return true
         def difference = a.metaClass.properties.find { MetaBeanProperty p ->
@@ -22,11 +31,14 @@ class ASTComparatorCategory {
                 return false
 
             def name = p.name
+            lastName = "$name :::: ${ a.getClass() } ${ a.hashCode() }"
             !(name in ignore) && a."$name" != b."$name"
         }
 
         if (difference)
-            println("Difference was found! ${ a."$difference.name" } != ${ b."$difference.name" }")
+            println("Difference was found! $difference.name:: ${ a."$difference.name" } != ${ b."$difference.name" }")
+        else
+            println(" ==== Exit ${ a.getClass() } ${ a.hashCode() } ====== ")
         difference == null
     }
 
@@ -35,7 +47,7 @@ class ASTComparatorCategory {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     static equals(ClassNode a, ClassNode b) {
-        reflexiveEquals(a, b, ['module', "declaredMethodsMap", "plainNodeReference", "typeClass"])
+        reflexiveEquals(a, b, ['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode"])
     }
 
     static equals(ConstructorNode a, ConstructorNode b) {
@@ -79,7 +91,7 @@ class ASTComparatorCategory {
     }
 
     static equals(ModuleNode a, ModuleNode b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["context"])
     }
 
     static equals(PackageNode a, PackageNode b) {

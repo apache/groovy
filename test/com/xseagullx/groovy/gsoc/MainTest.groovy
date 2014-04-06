@@ -1,5 +1,6 @@
 package com.xseagullx.groovy.gsoc
 
+import com.xseagullx.groovy.gsoc.util.ASTComparatorCategory
 import spock.lang.Specification
 
 class MainTest extends Specification {
@@ -9,21 +10,24 @@ class MainTest extends Specification {
     }
 
     def "test process method"() {
-        expect:
+        setup:
         def sourceFile = new File("test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy")
 
-        def moduleNodeOld = new Main(Configuration.OLD).process(sourceFile)
         def moduleNodeNew = new Main(Configuration.NEW).process(sourceFile)
-        assert moduleNodeOld && moduleNodeNew
-        assert moduleNodeOld.packageName == moduleNodeNew.packageName
-        assert moduleNodeOld.imports.collect { [it.alias, it.className] } == moduleNodeNew.imports.collect { [it.alias, it.className] }
-        assert moduleNodeOld.classes.collect { [it.name, it.modifiers, it.superClass.name] } == moduleNodeNew.classes.collect { [it.name, it.modifiers, it.superClass.name] }
+        def moduleNodeOld = new Main(Configuration.OLD).process(sourceFile)
+        def moduleNodeOld2 = new Main(Configuration.OLD).process(sourceFile)
+
+        expect:
+        use(ASTComparatorCategory) {
+            assert moduleNodeOld == moduleNodeOld2;
+            assert moduleNodeNew == moduleNodeOld
+            true
+        }
     }
 
     def "test class file creation"() {
         expect:
         def sourceFile = new File("test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy")
-
 
         def main = new Main(Configuration.NEW)
         main.compile(sourceFile)
