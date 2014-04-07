@@ -13,6 +13,23 @@ KW_CLASS: 'class' ;
 KW_PACKAGE: 'package' ;
 KW_IMPORT: 'import' ;
 
+// Modifiers
+VISIBILITY_MODIFIER: (KW_PUBLIC | KW_PROTECTED | KW_PRIVATE) ;
+fragment KW_PUBLIC: 'public' ;
+fragment KW_PROTECTED: 'protected' ;
+fragment KW_PRIVATE: 'private' ;
+
+KW_ABSTRACT: 'abstract' ;
+KW_STATIC: 'static' ;
+KW_FINAL: 'final' ; // Class
+KW_TRANSIENT: 'transient' ; // methods and fields
+KW_NATIVE: 'native' ; // Methods and fields, as fields are accesors in Groovy.
+KW_VOLATILE: 'volatile' ; // Fields only
+KW_SYNCHRONIZED: 'synchronized' ; // Methods and fields.
+KW_THREADSAFE: 'threadsafe' ;
+KW_STRICTFP: 'strictfp';
+
+
 // Match both UNIX and Windows newlines
 NL: '\r'? '\n';
 
@@ -27,4 +44,7 @@ packageDefinition:
 importStatement:
     KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)*);
 classDeclaration:
-    KW_CLASS IDENTIFIER (NL)* '{' NL* /* MEMBERS */ '}';
+    classModifiers KW_CLASS IDENTIFIER (NL)* '{' NL* /* MEMBERS */ '}';
+
+classModifiers: //JSL7 8.1 FIXME Now gramar allows modifier duplication. It's possible to make it more strict listing all 24 permutations.
+(VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_STRICTFP)* ;

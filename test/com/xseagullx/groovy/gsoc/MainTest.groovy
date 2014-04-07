@@ -25,6 +25,22 @@ class MainTest extends Specification {
         }
     }
 
+    def "test class modifiers"() {
+        setup:
+        def sourceFile = new File("test_res/com/xseagullx/groovy/gsoc/ClassModifiers_Issue_2.groovy")
+
+        def moduleNodeNew = new Main(Configuration.NEW).process(sourceFile)
+        def moduleNodeOld = new Main(Configuration.OLD).process(sourceFile)
+        def moduleNodeOld2 = new Main(Configuration.OLD).process(sourceFile)
+
+        expect:
+        use(ASTComparatorCategory) {
+            assert moduleNodeOld == moduleNodeOld2;
+            assert moduleNodeNew == moduleNodeOld
+            true
+        }
+    }
+
     def "test class file creation"() {
         expect:
         def sourceFile = new File("test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy")
