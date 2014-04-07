@@ -2498,7 +2498,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
 
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
-                            visitMethodCallArguments(receiver, argumentList, true, directMethodCallCandidate);
+                            visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, directMethodCallCandidate);
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments);
                             returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
                             callArgsVisited = true;
