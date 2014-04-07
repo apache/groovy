@@ -544,7 +544,7 @@ if (classDoc.isInterface()) {
                         <ul class="blockListLast">
                             <li class="blockList">
                                 <h4>${modifiers(ec) + '<a href="' + classDoc.relativeRootPath + classDoc.fullPathName + '.html">' + classDoc.name() + '</a>'} <strong>${ec.name()}</strong></h4>
-                                <pre>${ec.commentText()}</pre>
+                                <p>${ec.commentText()}</p>
                             </li>
                         </ul>
                     <% } %>
@@ -564,7 +564,7 @@ if (classDoc.isInterface()) {
                         <ul class="blockListLast">
                             <li class="blockList">
                                 <h4>${annotations(field, '\n') + modifiersWithIgnore(field, false) + linkable(field.type())} <strong>${field.name()}</strong></h4>
-                                <pre>${field.commentText()}</pre>
+                                <p>${field.commentText()}</p>
                             </li>
                         </ul>
                     <% } %>
@@ -584,7 +584,7 @@ if (classDoc.isInterface()) {
                         <ul class="blockListLast">
                             <li class="blockList">
                                 <h4>${annotations(prop, '\n') + modifiers(prop) + linkable(prop.type())} <strong>${prop.name()}</strong></h4>
-                                <pre>${prop.commentText()}</pre>
+                                <p>${prop.commentText()}</p>
                             </li>
                         </ul>
                     <% } %>
@@ -604,7 +604,7 @@ if (classDoc.isInterface()) {
                         <ul class="blockListLast">
                             <li class="blockList">
                                 <h4>${modifiers(element) + linkable(element.type())} <strong>${element.name()}</strong></h4>
-                                <pre>${element.commentText()}</pre>
+                                <p>${element.commentText()}</p>
                             </li>
                         </ul>
                     <% } %>
@@ -624,7 +624,7 @@ if (classDoc.isInterface()) {
                         <ul class="blockListLast">
                             <li class="blockList">
                                 <h4>${annotations(constructor, '\n') + modifiers(constructor)}<strong>${constructor.name()}</strong>(${paramsOf(constructor, false)})</h4>
-                                <pre>${constructor.commentText()}</pre>
+                                <p>${constructor.commentText()}</p>
                             </li>
                         </ul>
                     <% } %>
@@ -645,7 +645,7 @@ if (classDoc.isInterface()) {
                         <ul class="blockListLast">
                             <li class="blockList">
                                 <h4>${annotations(method, '\n') + modifiers(method)}${linkable(method.returnType())} <strong>${method.name()}</strong>(${paramsOf(method, false)})</h4>
-                                <pre>${method.commentText()}</pre>
+                                <p>${method.commentText()}</p>
                             </li>
                         </ul>
                     <% } %>
