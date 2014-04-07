@@ -128,12 +128,11 @@ public abstract class ClosureSignatureHint {
         if (className.endsWith("[]")) {
             return findClassNode(sourceUnit, compilationUnit, className.substring(0, className.length() - 2)).makeArray();
         }
-        ClassNode cn;
-        try {
-            cn = ClassHelper.make(Class.forName(className, false, sourceUnit.getClassLoader()));
-        } catch (ClassNotFoundException e) {
-            cn = compilationUnit.getClassNode(className);
-            if (cn==null) {
+        ClassNode cn = compilationUnit.getClassNode(className);
+        if (cn == null) {
+            try {
+                cn = ClassHelper.make(Class.forName(className, false, sourceUnit.getClassLoader()));
+            } catch (ClassNotFoundException e) {
                 cn = ClassHelper.make(className);
             }
         }
