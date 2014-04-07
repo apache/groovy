@@ -11,7 +11,9 @@ import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.control.messages.Message
 import org.codehaus.groovy.syntax.SyntaxException
 
 import java.lang.reflect.Modifier
@@ -32,7 +34,12 @@ class ASTBuilder extends GroovyBaseListener {
         def parser = new GroovyParser(tokens)
         ParseTree tree = parser.compilationUnit()
 
-        new ParseTreeWalker().walk(this, tree);
+        try {
+            new ParseTreeWalker().walk(this, tree);
+        }
+        catch (CompilationFailedException ignored) {
+            // Compilation failed.
+        }
     }
 
     @Override void exitImportStatement(@NotNull GroovyParser.ImportStatementContext ctx) {
@@ -74,7 +81,11 @@ class ASTBuilder extends GroovyBaseListener {
         checkModifierIsSingle(ctx.KW_STRICTFP())
         if (ctx.VISIBILITY_MODIFIER().size() > 1) {
             def modifier = ctx.VISIBILITY_MODIFIER(1).symbol
-            sourceUnit.addError(new SyntaxException("Cannot specify modifier: ${ modifier.text } when access scope has already been defined", modifier.line, modifier.charPositionInLine))
+
+            def line = modifier.line
+            def col = modifier.charPositionInLine + 1
+
+            sourceUnit.errorCollector.addFatalError(Message.create(new SyntaxException("Cannot specify modifier: ${modifier.text} when access scope has already been defined at line: $line column: $col. File: $sourceUnit.name", line, col), sourceUnit))
         }
 
         int modifier = 0;
@@ -99,7 +110,10 @@ class ASTBuilder extends GroovyBaseListener {
     void checkModifierIsSingle(Collection<TerminalNode> nodes) {
         if (nodes.size() > 1) {
             def modifier = nodes[1].symbol
-            sourceUnit.addError(new SyntaxException("Could not repeat modifier: $modifier.text", modifier.line, modifier.charPositionInLine))
+
+            def line = modifier.line
+            def col = modifier.charPositionInLine + 1
+            sourceUnit.addError(new SyntaxException("Cannot repeat modifier: $modifier.text at line: $line column: $col. File: $sourceUnit.name", line, col))
         }
     }
 }
