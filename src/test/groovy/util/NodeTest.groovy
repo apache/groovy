@@ -71,7 +71,7 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("name", "foo", attribute.name());
         assertEquals("attributes", 1, attribute.attributes().size());
         assertEquals("value", 3, attribute.children().size());
-        assertEquals("text", "someText", attribute.text());
+        assertEquals("text", "JamesBobsomeText", attribute.text());
 
         dump(attribute);
     }
@@ -93,7 +93,7 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("name", "foo", attribute.name());
         assertEquals("attributes", 1, attribute.attributes().size());
         assertEquals("value", 5, attribute.children().size());
-        assertEquals("text", "someTextmoreTextmoreText", attribute.text());
+        assertEquals("text", "someTextJamesmoreTextBobmoreText", attribute.text());
 
         // let's test get
         List list = (List) attribute.get("person");
