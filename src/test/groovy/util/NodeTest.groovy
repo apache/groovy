@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,36 +26,36 @@ import groovy.xml.QName
 public class NodeTest extends GroovyTestCase {
 
     void testSimpleAttribute() {
-        Node attribute = new Node(null, "transactional");
-        assertEquals("name", "transactional", attribute.name());
-        assertEquals("attributes", 0, attribute.attributes().size());
-        assertEquals("value", 0, attribute.children().size());
-        assertEquals("text", "", attribute.text());
+        Node node = new Node(null, "transactional");
+        assertEquals("name", "transactional", node.name());
+        assertEquals("attributes", 0, node.attributes().size());
+        assertEquals("value", 0, node.children().size());
+        assertEquals("text", "", node.text());
 
-        dump(attribute);
+        dump(node);
     }
 
     void testAttributeWithAttributes() {
         Map attributes = new HashMap();
         attributes.put("a", "xyz");
 
-        Node attribute = new Node(null, "foo", attributes);
-        assertEquals("name", "foo", attribute.name());
-        assertEquals("attributes", 1, attribute.attributes().size());
-        assertEquals("value", 0, attribute.children().size());
-        assertEquals("text", "", attribute.text());
+        Node node = new Node(null, "foo", attributes);
+        assertEquals("name", "foo", node.name());
+        assertEquals("attributes", 1, node.attributes().size());
+        assertEquals("value", 0, node.children().size());
+        assertEquals("text", "", node.text());
 
-        dump(attribute);
+        dump(node);
     }
 
     void testAttributeWithText() {
-        Node attribute = new Node(null, "foo", "the text");
-        assertEquals("name", "foo", attribute.name());
-        assertEquals("attributes", 0, attribute.attributes().size());
-        assertEquals("value", 1, attribute.children().size());
-        assertEquals("text", "the text", attribute.text());
+        Node node = new Node(null, "foo", "the text");
+        assertEquals("name", "foo", node.name());
+        assertEquals("attributes", 0, node.attributes().size());
+        assertEquals("value", 1, node.children().size());
+        assertEquals("text", "the text", node.text());
 
-        dump(attribute);
+        dump(node);
     }
 
     void testAttributeWithAttributesAndChildren() {
@@ -67,13 +67,13 @@ public class NodeTest extends GroovyTestCase {
         children.add(new Node(null, "person", "Bob"));
         children.add("someText");
 
-        Node attribute = new Node(null, "foo", attributes, children);
-        assertEquals("name", "foo", attribute.name());
-        assertEquals("attributes", 1, attribute.attributes().size());
-        assertEquals("value", 3, attribute.children().size());
-        assertEquals("text", "JamesBobsomeText", attribute.text());
+        Node node = new Node(null, "foo", attributes, children);
+        assertEquals("name", "foo", node.name());
+        assertEquals("attributes", 1, node.attributes().size());
+        assertEquals("value", 3, node.children().size());
+        assertEquals("text", "JamesBobsomeText", node.text());
 
-        dump(attribute);
+        dump(node);
     }
 
     void testAttributeWithAttributesAndChildrenWithMixedText() {
@@ -89,20 +89,20 @@ public class NodeTest extends GroovyTestCase {
         children.add(node2);
         children.add("moreText");
 
-        Node attribute = new Node(null, "foo", attributes, children);
-        assertEquals("name", "foo", attribute.name());
-        assertEquals("attributes", 1, attribute.attributes().size());
-        assertEquals("value", 5, attribute.children().size());
-        assertEquals("text", "someTextJamesmoreTextBobmoreText", attribute.text());
+        Node node = new Node(null, "foo", attributes, children);
+        assertEquals("name", "foo", node.name());
+        assertEquals("attributes", 1, node.attributes().size());
+        assertEquals("value", 5, node.children().size());
+        assertEquals("text", "someTextJamesmoreTextBobmoreText", node.text());
 
         // let's test get
-        List list = (List) attribute.get("person");
+        List list = (List) node.get("person");
         assertEquals("Expected list size: " + list, 2, list.size());
 
         assertEquals("Node1", node1, list.get(0));
         assertEquals("Node2", node2, list.get(1));
 
-        dump(attribute);
+        dump(node);
     }
 
     void testNavigationUsingQNames() {
@@ -138,14 +138,11 @@ public class NodeTest extends GroovyTestCase {
     }
 
     void testRemove() {
-        def xml = '''
-        <foo>
-            <bar id="1" />
-            <bar id="2" />
-            <bar id="3" />
-            <bar id="4" />
-        </foo>'''
-        Node foo = new XmlParser().parseText(xml)
+        Node foo = new Node(null, 'foo')
+        new Node(foo, 'bar', [id:'1'])
+        new Node(foo, 'bar', [id:'2'])
+        new Node(foo, 'bar', [id:'3'])
+        new Node(foo, 'bar', [id:'4'])
 
         assert foo.bar.size() == 4
         assert foo.children().size() == 4
@@ -169,13 +166,10 @@ public class NodeTest extends GroovyTestCase {
     }
 
     void testMove() {
-        def xml = '''
-        <foo>
-            <bar id="1" />
-            <bar id="2" />
-            <baz/>
-        </foo>'''
-        Node foo = new XmlParser().parseText(xml)
+        Node foo = new Node(null, 'foo')
+        new Node(foo, 'bar', [id:'1'])
+        new Node(foo, 'bar', [id:'2'])
+        new Node(foo, 'baz')
 
         assert foo.bar.size() == 2
         assert foo.children().size() == 3
