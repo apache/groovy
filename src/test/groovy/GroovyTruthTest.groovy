@@ -90,5 +90,14 @@ class GroovyTruthTest extends GroovyTestCase {
     protected testFalse(someObj) {
         assertFalse someObj ? true : false
     }
+    
+    void testLogicORandAND() {
+        def x = null
+        assert ((false || x) == false)
+        assert ((x || false) == false)
+        
+        assert ((x && true) == false)
+        assert ((true && x) == false)
+    }
 
 }

@@ -345,7 +345,7 @@ public class OperandStack {
         }
 
         MethodVisitor mv = controller.getMethodVisitor();
-        if (primTarget && !primTop && ClassHelper.getWrapper(targetType).equals(top)) {
+        if (primTarget && !ClassHelper.boolean_TYPE.equals(targetType) && !primTop && ClassHelper.getWrapper(targetType).equals(top)) {
             BytecodeHelper.doCastToPrimitive(mv, top, targetType);
         } else {
             top = stack.get(size-1);
