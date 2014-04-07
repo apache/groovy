@@ -93,6 +93,7 @@ class XmlSlurperTest extends GroovyTestCase {
 
     void testMixedMarkup() {
         MixedMarkupTestSupport.checkMixedMarkup(getRoot)
+        MixedMarkupTestSupport.checkMixedMarkupText(getRoot)
     }
 
     void testReplace() {

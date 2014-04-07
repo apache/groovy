@@ -239,6 +239,7 @@ p() {
 
     void testMixedMarkup() {
         MixedMarkupTestSupport.checkMixedMarkup(getRoot)
+        MixedMarkupTestSupport.checkMixedMarkupText(getRoot)
     }
 
     void testWhitespaceTrimming() {

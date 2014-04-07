@@ -23,6 +23,19 @@ class MixedMarkupTestSupport {
         }
     }
 
+    static void checkMixedMarkupText(Closure getRoot) {
+        def root = getRoot("<foo a='xyz'><person>James</person><person>Bob</person>someText</foo>")
+        assert root != null
+        assert root.text() == 'JamesBobsomeText'
+        if (isSlurper(root)) {
+            assert root[0].children()[-1] == 'someText'
+        } else if (isParser(root)) {
+            assert root.children()[-1] == 'someText'
+        } else {
+            assert root.children()[-1].nodeValue == 'someText'
+        }
+    }
+
     private static boolean isSlurper(node) {
         return node.getClass().name.contains('slurper')
     }

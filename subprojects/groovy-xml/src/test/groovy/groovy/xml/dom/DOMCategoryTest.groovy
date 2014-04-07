@@ -42,6 +42,7 @@ class DOMCategoryTest extends GroovyTestCase {
     void testMixedMarkup() {
         use(DOMCategory) {
             MixedMarkupTestSupport.checkMixedMarkup(getRoot)
+            MixedMarkupTestSupport.checkMixedMarkupText(getRoot)
         }
     }
 
