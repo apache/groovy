@@ -1467,6 +1467,15 @@ assert Foo.VAL == 456
 '''
     }
 
+    void testTraitShouldNotBeAllowedToExtendInterface() {
+        // GROOVY-6672
+        def message = shouldFail '''
+            trait Foo extends Serializable {}
+            Foo x = null
+        '''
+        assert message.contains('Trait cannot extend an interface.')
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

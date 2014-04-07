@@ -80,8 +80,16 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             ClassNode cNode = (ClassNode) parent;
             checkNotInterface(cNode, Traits.TRAIT_TYPE_NAME);
             checkNoConstructor(cNode);
+            checkExtendsClause(cNode);
             replaceExtendsByImplements(cNode);
             createHelperClass(cNode);
+        }
+    }
+
+    private void checkExtendsClause(final ClassNode cNode) {
+        ClassNode superClass = cNode.getSuperClass();
+        if (superClass.isInterface() && !Traits.isTrait(superClass)) {
+            addError("Trait cannot extend an interface. Use 'implements' instead", cNode);
         }
     }
 
