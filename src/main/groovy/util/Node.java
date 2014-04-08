@@ -602,8 +602,8 @@ public class Node implements Serializable, Cloneable {
         List<String> answer = new ArrayList<String>();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
-            if (child instanceof String) {
-                answer.add((String) child);
+            if (!(child instanceof Node)) {
+                answer.add((String) child.toString());
             }
         }
         return answer;
