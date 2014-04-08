@@ -603,7 +603,7 @@ public class Node implements Serializable, Cloneable {
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (!(child instanceof Node)) {
-                answer.add((String) child.toString());
+                answer.add(child.toString());
             }
         }
         return answer;
