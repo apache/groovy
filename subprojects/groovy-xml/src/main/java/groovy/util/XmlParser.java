@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,28 @@ package groovy.util;
 
 import groovy.xml.FactorySupport;
 import groovy.xml.QName;
-import org.xml.sax.*;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.DTDHandler;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.XMLReader;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,13 +68,15 @@ import java.util.Map;
  */
 public class XmlParser implements ContentHandler {
 
-    private StringBuffer bodyText = new StringBuffer();
+    private StringBuilder bodyText = new StringBuilder();
     private List<Node> stack = new ArrayList<Node>();
     private Locator locator;
     private XMLReader reader;
     private Node parent;
 
+    // TODO GROOVY-5360 set default to false - safer now that we can leave ignorable whitespace unaltered
     private boolean trimWhitespace = true;
+    private boolean trimIgnorableWhitespace = true;
     private boolean namespaceAware;
 
     /**
@@ -138,6 +155,24 @@ public class XmlParser implements ContentHandler {
      */
     public void setTrimWhitespace(boolean trimWhitespace) {
         this.trimWhitespace = trimWhitespace;
+    }
+
+    /**
+     * Returns the current trim ignorable whitespace setting.
+     *
+     * @return true if whitespace will be trimmed
+     */
+    public boolean isTrimIgnorableWhitespace() {
+        return trimIgnorableWhitespace;
+    }
+
+    /**
+     * Sets the trim whitespace setting value.
+     *
+     * @param trimIgnorableWhitespace the desired setting value
+     */
+    public void setTrimIgnorableWhitespace(boolean trimIgnorableWhitespace) {
+        this.trimIgnorableWhitespace = trimIgnorableWhitespace;
     }
 
     /**
@@ -388,8 +423,7 @@ public class XmlParser implements ContentHandler {
     }
 
     public void ignorableWhitespace(char buffer[], int start, int len) throws SAXException {
-// TODO GROOVY-5360: do we want to capture all whitespace when trim is off? or do we need additional flags?
-//        if (!trimWhitespace) characters(buffer, start, len);
+        if (!trimIgnorableWhitespace) characters(buffer, start, len);
     }
 
     public void processingInstruction(String target, String data) throws SAXException {
@@ -414,16 +448,19 @@ public class XmlParser implements ContentHandler {
     }
 
     protected void addTextToNode() {
+        if (parent == null) {
+            // TODO store this on root node? reset bodyText?
+            return;
+        }
         String text = bodyText.toString();
-//        if (!trimWhitespace || text.trim().length() > 0) {
-// TODO GROOVY-5360: replace next 4 lines with above commented out line (trimming more similar to XmlSlurper)
-        if (trimWhitespace) {
-            text = text.trim();
-        }
-        if (text.length() > 0) {
+        if (!trimWhitespace && !trimIgnorableWhitespace) {
             parent.children().add(text);
+        } else if (!trimWhitespace && text.trim().length() > 0) {
+            parent.children().add(text);
+        } else if (text.trim().length() > 0) {
+            parent.children().add(text.trim());
         }
-        bodyText = new StringBuffer();
+        bodyText = new StringBuilder();
     }
 
     /**
