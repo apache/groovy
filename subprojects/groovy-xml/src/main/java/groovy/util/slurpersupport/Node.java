@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import groovy.lang.Writable;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -155,6 +156,18 @@ public class Node implements Writable {
             }
         }
         return sb.toString();
+    }
+
+    // TODO make this an iterator?
+    public List<String> localText() {
+        final List<String> result = new ArrayList<String>();
+        for (Object child : this.children) {
+            if (child instanceof String) {
+                // must be a String
+                result.add((String) child);
+            }
+        }
+        return result;
     }
 
     /**

@@ -12,21 +12,27 @@ class MixedMarkupTestSupport {
         if (isSlurper(root)) {
             assert children.size() == 1
             assert children[0].name() == 'a'
+            assert children[0].localText() == ['Home']
+            assert root.text() == 'Please read the Home page'
         } else {
             assert children.size() == 3
             assert children[1].name() == 'a'
+            assert children[1].localText() == ['Home']
+            assert root.text() == 'Please read theHomepage'
             if (isParser(root)) {
                 assert children[2] == 'page'
             } else {
                 assert children[2].text() == 'page'
             }
         }
+        assert root.localText()*.trim() == ['Please read the', 'page']
     }
 
     static void checkMixedMarkupText(Closure getRoot) {
         def root = getRoot("<foo a='xyz'><person>James</person><person>Bob</person>someText</foo>")
         assert root != null
         assert root.text() == 'JamesBobsomeText'
+        assert root.localText() == ['someText']
         if (isSlurper(root)) {
             assert root[0].children()[-1] == 'someText'
         } else if (isParser(root)) {

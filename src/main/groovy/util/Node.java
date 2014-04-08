@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,12 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents an arbitrary tree node which can be used for structured metadata or any arbitrary XML-like tree.
@@ -582,6 +587,17 @@ public class Node implements Serializable, Cloneable {
                     List children = childNode.getDirectChildren();
                     if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) nextLevelChildren.addAll(children);
                 }
+            }
+        }
+        return answer;
+    }
+
+    public List<String> localText() {
+        List<String> answer = new ArrayList<String>();
+        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
+            Object child = iter.next();
+            if (child instanceof String) {
+                answer.add((String) child);
             }
         }
         return answer;

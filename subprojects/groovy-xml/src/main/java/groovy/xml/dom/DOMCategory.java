@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -346,6 +346,22 @@ public class DOMCategory {
         while (iter.hasNext()) {
             parent.insertBefore(iter.next(), beforeNode);
         }
+    }
+
+    public static List<String> localText(Element self) {
+        List<String> result = new ArrayList<String>();
+        if (self.getNodeType() == Node.TEXT_NODE || self.getNodeType() == Node.CDATA_SECTION_NODE) {
+            result.add(self.getNodeValue());
+        } else if (self.hasChildNodes()) {
+            NodeList nodeList = self.getChildNodes();
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node item = nodeList.item(i);
+                if (item.getNodeType() == Node.TEXT_NODE || item.getNodeType() == Node.CDATA_SECTION_NODE) {
+                    result.add(item.getNodeValue());
+                }
+            }
+        }
+        return result;
     }
 
     public static void plus(NodeList self, Closure c) {
