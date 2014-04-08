@@ -179,12 +179,22 @@ public abstract class Traits {
     }
 
     /**
-     * Reflection API to indicate whether some method is the default implementation
+     * Reflection API to indicate whether some method is a bridge method to the default implementation
      * of a trait.
      * @param someMethod a method node
      * @return null if it is not a method implemented in a trait. If it is, returns the method from the trait class.
      */
-    public static Method getDefaultImplementation(Method someMethod) {
+    public static boolean isBridgeMethod(Method someMethod) {
+        TraitBridge annotation = someMethod.getAnnotation(TraitBridge.class);
+        return annotation!=null;
+    }
+
+    /**
+     * Reflection API to find the method corresponding to the default implementation of a trait, given a bridge method.
+     * @param someMethod a method node
+     * @return null if it is not a method implemented in a trait. If it is, returns the method from the trait class.
+     */
+    public static Method getBridgeMethodTarget(Method someMethod) {
         TraitBridge annotation = someMethod.getAnnotation(TraitBridge.class);
         if (annotation==null) {
             return null;

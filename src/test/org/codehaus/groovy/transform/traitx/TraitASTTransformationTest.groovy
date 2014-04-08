@@ -1478,7 +1478,8 @@ class Bar implements Foo {}
 
 def method = Bar.getDeclaredMethod('foo')
 assert method.declaringClass == Bar
-def traitMethod = Traits.getDefaultImplementation(method)
+assert Traits.isBridgeMethod(method)
+def traitMethod = Traits.getBridgeMethodTarget(method)
 assert traitMethod != null
 assert traitMethod.declaringClass == Foo
 assert traitMethod.name == 'foo'
@@ -1498,7 +1499,8 @@ class Bar implements Foo {
 
 def method = Bar.getDeclaredMethod('foo')
 assert method.declaringClass == Bar
-def traitMethod = Traits.getDefaultImplementation(method)
+assert !Traits.isBridgeMethod(method)
+def traitMethod = Traits.getBridgeMethodTarget(method)
 assert traitMethod == null
 '''
     }
@@ -1514,7 +1516,8 @@ class Bar implements Foo<String,Integer> {}
 
 def method = Bar.getDeclaredMethod('foo', String)
 assert method.declaringClass == Bar
-def traitMethod = Traits.getDefaultImplementation(method)
+assert Traits.isBridgeMethod(method)
+def traitMethod = Traits.getBridgeMethodTarget(method)
 assert traitMethod != null
 assert traitMethod.declaringClass == Foo
 assert traitMethod.name == 'foo'
