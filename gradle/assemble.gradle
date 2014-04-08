@@ -132,7 +132,51 @@ jar {
     manifest groovyOsgiManifest
 
     exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
+
 }
+
+allprojects {
+    task jarjar(dependsOn: jar) {
+        inputs.file jar.archivePath
+        outputs.file jar.archivePath
+        doLast {
+            boolean isRoot = project == rootProject
+            ant {
+                def target = new File("${jar.archivePath}.jarjar")
+                taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: rootProject.configurations.tools.asPath
+                jarjar(jarfile: target) {
+                    zipfileset(
+                            src: jar.archivePath,
+                            excludes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class')
+
+                    // only groovy core will include the dependencies repackaged
+                    if (isRoot) {
+                        configurations.runtime.files.findAll { file ->
+                            ['antlr', 'asm', 'commons-cli'].any {
+                                file.name.startsWith(it)
+                            } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
+                        }.each { jarjarFile ->
+                            zipfileset(src: jarjarFile)
+                        }
+
+                        zipfileset(src: configurations.runtime.files.find { file -> file.name.startsWith('asm-util') },
+                                includes: 'org/objectweb/asm/util/AbstractVisitor.class,org/objectweb/asm/util/Trace*')
+                    }
+                    rule pattern: 'antlr.**', result: 'groovyjarjarantlr.@1'
+                    rule pattern: 'org.objectweb.**', result: 'groovyjarjarasm.@1'
+                    rule pattern: 'org.apache.commons.cli.**', result: 'groovyjarjarcommonscli.@1'
+                }
+                jar(destfile: target, update: true) {
+                    zipfileset(
+                            src: jar.archivePath,
+                            includes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class')
+                }
+                ant.move(file: target, tofile: jar.archivePath)
+            }
+        }
+    }
+}
+
 
 subprojects {
     jar {
@@ -182,7 +226,7 @@ def mergeModuleDescriptors() {
     descriptor
 }
 
-task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
+task jarAll(type: Jar, dependsOn: { allprojects.jarjar }) {
     ext.metaInfDir = "$buildDir/tmp/groovy-all-metainf"
     appendix = 'all'
     includeEmptyDirs = false
@@ -201,29 +245,15 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
             with licenseSpec
         }
         logger.info 'Packaging with jarjar'
-        project.ant {
+
+        ant {
             taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: configurations.tools.asPath
             jarjar(jarfile: archivePath, manifest: "$owner.ext.metaInfDir/MANIFEST.MF") {
                 zipfileset(dir: "$owner.ext.metaInfDir", prefix: 'META-INF', excludes: 'META-INF')
-                zipfileset(
-                        src: jar.archivePath,
-                        excludes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class')
+                zipfileset(src: jar.archivePath)
                 moduleJars().each {
-                    // HelpFormatter only found in groovy-groovysh but no harm for other modules
-                    zipfileset(
-                        src: it,
-                        excludes: '**/org.codehaus.groovy.runtime.ExtensionModule,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
+                    zipfileset(src: it)
                 }
-                configurations.runtime.files.findAll { file ->
-                    ['antlr', 'asm', 'commons-cli'].any { file.name.startsWith(it) } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
-                }.each { jarjarFile ->
-                    zipfileset(src: jarjarFile)
-                }
-                zipfileset(src: configurations.runtime.files.find { file -> file.name.startsWith('asm-util') },
-                    includes: 'org/objectweb/asm/util/AbstractVisitor.class,org/objectweb/asm/util/Trace*')
-                rule pattern: 'antlr.**', result: 'groovyjarjarantlr.@1'
-                rule pattern: 'org.objectweb.**', result: 'groovyjarjarasm.@1'
-                rule pattern: 'org.apache.commons.cli.**', result: 'groovyjarjarcommonscli.@1'
             }
         }
 
@@ -237,15 +267,9 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
         manifestPath = "${temporaryDir}/META-INF/MANIFEST.MF"
         manifest.writeTo(manifestPath)
 
-        project.ant {
+        ant {
             jar(destfile: archivePath, update:true, manifest: manifestPath) {
-                zipfileset(
-                        src: jar.archivePath,
-                        includes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class')
-                moduleJars().each {
-                    // HelpFormatter only found in groovy-groovysh but have left all modules here to allow future expansion
-                    zipfileset(src: it, includes: 'org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
-                }
+                zipfileset(src: jar.archivePath)
             }
         }
     }
