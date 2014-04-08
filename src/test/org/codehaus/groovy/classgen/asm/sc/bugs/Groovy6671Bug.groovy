@@ -16,7 +16,6 @@
 
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
-import groovy.transform.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
@@ -60,7 +59,6 @@ def h2 = h1.convert {
 '''
     }
 
-    @NotYetImplemented
     void testGenericsInferenceWithPlaceholderNameClash() {
         assertScript '''
 interface Converter<F, T> {

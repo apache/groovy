@@ -563,7 +563,7 @@ class FooWorker {
     }
 }
 
-new FooWorker().doSomething()''', 'Incompatible generic argument types. Cannot assign java.util.ArrayList <Integer> to: java.util.List <java.lang.String>'
+new FooWorker().doSomething()''', 'Incompatible generic argument types. Cannot assign java.util.ArrayList <Integer> to: java.util.List <String>'
     }
 
     public static interface InterfaceWithField {

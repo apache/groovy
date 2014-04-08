@@ -637,11 +637,6 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
 
-        //SAM check
-        if (rightRedirect.isDerivedFrom(CLOSURE_TYPE) && isSAMType(leftRedirect)) {
-            return true;
-        }
-
         return false;
     }
 
@@ -1242,7 +1237,8 @@ public abstract class StaticTypeCheckingSupport {
         if (parameterType.isUsingGenerics() && argumentType.isUsingGenerics()) {
             GenericsType gt = GenericsUtils.buildWildcardType(parameterType);
             if (!gt.isCompatibleWith(argumentType)) {
-                return false;
+                boolean samCoercion = isSAMType(parameterType) && argumentType.equals(CLOSURE_TYPE);
+                if (!samCoercion) return false;
             }
         } else if (parameterType.isArray() && argumentType.isArray()) {
             // verify component type
@@ -1402,86 +1398,208 @@ public abstract class StaticTypeCheckingSupport {
         }
         return !failure;
     }
-
-    public static ClassNode resolveClassNodeGenerics(final Map<String, GenericsType> resolvedPlaceholders, final Map<String, GenericsType> placeholdersFromContext, ClassNode currentType) {
+    
+    public static ClassNode resolveClassNodeGenerics(Map<String, GenericsType> resolvedPlaceholders, final Map<String, GenericsType> placeholdersFromContext, ClassNode currentType) {
+        ClassNode target = currentType.redirect();
+        resolvedPlaceholders = new HashMap<String, GenericsType>(resolvedPlaceholders);
         applyContextGenerics(resolvedPlaceholders,placeholdersFromContext);
-        currentType = applyGenerics(currentType, resolvedPlaceholders);
 
-        // GROOVY-5748
-        if (currentType.isGenericsPlaceHolder()) {
-            GenericsType resolved = resolvedPlaceholders.get(currentType.getUnresolvedName());
-            if (resolved!=null && !resolved.isPlaceholder() && !resolved.isWildcard()) {
-                return resolved.getType();
+        Map<String, GenericsType> connections  = new HashMap<String, GenericsType>();
+        extractGenericsConnections(connections, currentType,target);
+        applyGenericsConnections(connections, resolvedPlaceholders);
+        currentType = applyGenericsContext(resolvedPlaceholders, currentType);
+        return currentType;
+    }
+
+    static void applyGenericsConnections(
+            Map<String, GenericsType> connections,
+            Map<String, GenericsType> resolvedPlaceholders
+    ) {
+        if (connections==null) return;
+        int count = 0;
+        while (count<10000) {
+            count++;
+            boolean checkForMorePlaceHolders=false;
+            for (Map.Entry<String, GenericsType> entry: resolvedPlaceholders.entrySet()){
+                String name = entry.getKey();
+                GenericsType replacement = connections.get(name);
+                if (replacement==null) {
+                    GenericsType value = entry.getValue();
+                    GenericsType newValue = applyGenericsContext(connections, value);
+                    entry.setValue(newValue);
+                    checkForMorePlaceHolders = checkForMorePlaceHolders || !equalIncludingGenerics(value,newValue);
+                    continue;
+                }
+                GenericsType original = entry.getValue(); 
+                if (!original.isWildcard() && !original.isPlaceholder()) {
+                    continue;
+                } else if (!replacement.isPlaceholder()) {
+                    entry.setValue(replacement);
+                    continue;
+                }
+                GenericsType connectedType = resolvedPlaceholders.get(replacement.getName());
+                if (replacement==connectedType) continue;
+                //TODO: connectedType==null should not happen
+                if (connectedType==null) {
+                    continue;
+                } else {
+                    entry.setValue(replacement);
+                    checkForMorePlaceHolders = checkForMorePlaceHolders || !equalIncludingGenerics(original,replacement);
+                }
+            }
+            if (!checkForMorePlaceHolders) break;
+        }
+        if  (count>=10000) throw new GroovyBugError("unable to handle generics in "+resolvedPlaceholders+" with connections "+connections);
+    }
+
+    private static boolean equalIncludingGenerics(GenericsType orig, GenericsType copy) {
+        if (orig==copy) return true;
+        if (orig.isPlaceholder()!=copy.isPlaceholder()) return false;
+        if (orig.isWildcard()!=copy.isWildcard()) return false;
+        if (!equalIncludingGenerics(orig.getType(), copy.getType())) return false;
+        ClassNode lower1 = orig.getLowerBound();
+        ClassNode lower2 = copy.getLowerBound();
+        if ((lower1==null || lower2 ==null) && lower1!=lower2) return false;
+        if (lower1==lower2) return true;
+        if (!equalIncludingGenerics(lower1,lower2)) return false;
+        ClassNode[] upper1 = orig.getUpperBounds();
+        ClassNode[] upper2 = copy.getUpperBounds();
+        if ((upper1==null || upper2==null) && upper1!=upper2) return false;
+        if (upper1==upper2) return true;
+        if (upper1.length!=upper2.length) return false;
+        for (int i=0; i<upper1.length; i++) {
+            if (!equalIncludingGenerics(upper1[i],upper2[i])) return false;
+        }
+        return true;
+    }
+
+    private static boolean equalIncludingGenerics(ClassNode orig, ClassNode copy) {
+        if (orig==copy) return true;
+        if (orig.isGenericsPlaceHolder()!=copy.isGenericsPlaceHolder()) return false;
+        if (!orig.equals(copy)) return false;
+        GenericsType[] gt1 = orig.getGenericsTypes();
+        GenericsType[] gt2 = orig.getGenericsTypes();
+        if ((gt1==null || gt2==null) && gt1!=gt2) return false;
+        if (gt1==gt2) return true;
+        if (gt1.length!=gt2.length) return false;
+        for (int i=0; i<gt1.length; i++) {
+            if (!equalIncludingGenerics(gt1[i],gt2[i])) return false;
+        }
+        return true;
+    }
+
+    /**
+     * use supplied type to make a connection from usage to declaration
+     * The method operates in two modes. 
+     * * For type !instanceof target a structural compare will be done 
+     *   (for example Dummy<T> and List<R> to get T=R) 
+     * * If type equals target, a structural match is done as well 
+     *   (for example Colection<U> and Collection<E> to get U=E)
+     * * otherwise we climb the hierarchy to find a case of type equals target
+     *   to then execute the structural match, while applying possibly existing
+     *   generics contexts on the way (for example for IntRange and Collection<E>
+     *   to get E=Integer, since IntRange is an AbstractList<Integer>)
+     * Should the target not have any generics this method does nothing.
+     */
+    static void extractGenericsConnections(Map<String, GenericsType> connections, ClassNode type, ClassNode target) {
+        if (target==null || type==target || !isUsingGenericsOrIsArrayUsingGenerics(target)) return;
+        if (type.isArray() && target.isArray()) {
+            extractGenericsConnections(connections, type.getComponentType(), target.getComponentType());
+        } else if (target.isGenericsPlaceHolder() || type.equals(target) || !implementsInterfaceOrIsSubclassOf(type, target)) {
+            // structural match route
+            if (target.isGenericsPlaceHolder()) {
+                connections.put(target.getGenericsTypes()[0].getName(),new GenericsType(type));
+            } else {
+                extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
+            }
+        } else {
+            // have first to find matching super class or interface
+            Map <String,ClassNode> genSpec = GenericsUtils.createGenericsSpec(type,Collections.EMPTY_MAP);
+            ClassNode superClass = getNextSuperClass(type,target);
+            if (superClass!=null){
+                ClassNode corrected;
+                if (missesGenericsTypes(type)) {
+                    corrected = superClass.getPlainNodeReference();
+                } else {
+                    corrected = GenericsUtils.correctToGenericsSpecRecurse(genSpec, superClass);
+                }
+                extractGenericsConnections(connections, corrected, target);
+            } else {
+                // if we reach here, we have an unhandled case 
+                throw new GroovyBugError("The type "+type+" seems not to normally extend "+target+". Sorry, I cannot handle this.");
+            }
+        }
+    }
+
+    static ClassNode getNextSuperClass(ClassNode clazz, ClassNode goalClazz) {
+        if (clazz.isArray()) {
+            ClassNode cn = getNextSuperClass(clazz.getComponentType(),goalClazz.getComponentType());
+            if (cn!=null) cn = cn.makeArray();
+            return cn;
+        }
+
+        if (!goalClazz.isInterface()) {
+            if (clazz.isInterface()) {
+                if (OBJECT_TYPE.equals(clazz)) return null;
+                return OBJECT_TYPE;
+            } else {
+                return clazz.getUnresolvedSuperClass();
             }
         }
 
-        GenericsType[] returnTypeGenerics = getGenericsWithoutArray(currentType);
-        if (returnTypeGenerics==null || returnTypeGenerics.length==0) return currentType;
-        GenericsType[] copy = new GenericsType[returnTypeGenerics.length];
-        for (int i = 0; i < copy.length; i++) {
-            GenericsType returnTypeGeneric = returnTypeGenerics[i];
-            if (returnTypeGeneric.isPlaceholder() || returnTypeGeneric.isWildcard()) {
-                String name = returnTypeGeneric.getName();
-                /*if (returnTypeGeneric.isWildcard()) {
-                    ClassNode lowerBound = returnTypeGeneric.getLowerBound();
-                    if (lowerBound !=null && lowerBound.isGenericsPlaceHolder()) {
-                        name = lowerBound.getUnresolvedName();
-                    } else {
-                        ClassNode[] upperBounds = returnTypeGeneric.getUpperBounds();
-                        if (upperBounds!=null) {
-                            for (ClassNode upperBound : upperBounds) {
-                                if (upperBound.isGenericsPlaceHolder()) {
-                                    name = upperBound.getUnresolvedName();
-                                    break; // todo: what if more than one match?
-                                }
-                            }
+        ClassNode[] interfaces = clazz.getUnresolvedInterfaces();
+        for (int i=0; i<interfaces.length; i++) {
+            if (implementsInterfaceOrIsSubclassOf(interfaces[i],goalClazz)) {
+                return interfaces[i];
+            }
+        }
+        //none of the interfaces here match, so continue with super class
+        return clazz.getUnresolvedSuperClass();
+    }
+
+    private static void extractGenericsConnections(Map<String, GenericsType> connections, GenericsType[] usage, GenericsType[] declaration) {
+        // if declaration does not provide generics, there is no connection to make 
+        if (usage==null || declaration==null || declaration.length==0) return;
+        if (usage.length!=declaration.length) return;
+
+        // both have generics
+        for (int i=0; i<usage.length; i++) {
+            GenericsType ui = usage[i];
+            GenericsType di = declaration[i];
+            if (di.isPlaceholder()) {
+                connections.put(di.getName(), ui);
+            } else if (di.isWildcard()){
+                if (ui.isWildcard()) {
+                    extractGenericsConnections(connections, ui.getLowerBound(), di.getLowerBound());
+                    extractGenericsConnections(connections, ui.getUpperBounds(), di.getUpperBounds());
+                } else {
+                    ClassNode cu = ui.getType();
+                    extractGenericsConnections(connections, cu, di.getLowerBound());
+                    ClassNode[] upperBounds = di.getUpperBounds();
+                    if (upperBounds!=null) {
+                        for (ClassNode cn : upperBounds) {
+                            extractGenericsConnections(connections, cu, cn);
                         }
                     }
-                }*/
-                GenericsType resolved = resolvedPlaceholders.get(name);
-                /*if (resolved == null && placeholdersFromContext!=null) {
-                    resolved = placeholdersFromContext.get(name);
-                }*/
-                if (resolved == null) resolved = returnTypeGeneric;
-                copy[i] = fullyResolve(resolved, resolvedPlaceholders);
-            } else {
-                copy[i] = fullyResolve(returnTypeGeneric, resolvedPlaceholders);
-            }
-        }
-        GenericsType firstGenericsType = copy[0];
-        if (currentType.equals(OBJECT_TYPE)) {
-            if (firstGenericsType.getType().isGenericsPlaceHolder()) return OBJECT_TYPE;
-
-            if (firstGenericsType.isWildcard()) {
-                // ? extends Foo
-                // ? super Foo
-                // ?
-                if (firstGenericsType.getLowerBound() != null) return firstGenericsType.getLowerBound();
-                ClassNode[] upperBounds = firstGenericsType.getUpperBounds();
-                if (upperBounds==null) { // case "?"
-                    return OBJECT_TYPE;
                 }
-                if (upperBounds.length == 1) return upperBounds[0];
-                return new UnionTypeClassNode(upperBounds);
             }
-            return firstGenericsType.getType();
         }
-        if (currentType.isArray()) {
-            currentType = currentType.getComponentType().getPlainNodeReference();
-            currentType.setGenericsTypes(copy);
-            if (OBJECT_TYPE.equals(currentType)) {
-                // replace Object<Component> with Component
-                currentType = firstGenericsType.getType();
+    }
+
+    private static void extractGenericsConnections(Map<String, GenericsType> connections, ClassNode[] usage, ClassNode[] declaration) {
+        if (usage==null || declaration==null || declaration.length==0) return;
+        // both have generics
+        for (int i=0; i<usage.length; i++) {
+            ClassNode ui = usage[i];
+            ClassNode di = declaration[i];
+            if (di.isGenericsPlaceHolder()) {
+                GenericsType gt = new GenericsType(di);
+                gt.setPlaceholder(di.isGenericsPlaceHolder());
+                connections.put(ui.getGenericsTypes()[0].getName(), gt);
+            } else if (di.isUsingGenerics()){
+                extractGenericsConnections(connections, ui.getGenericsTypes(), di.getGenericsTypes());
             }
-            currentType = currentType.makeArray();
-        } else {
-            currentType = currentType.getPlainNodeReference();
-            currentType.setGenericsTypes(copy);
         }
-        if (currentType.equals(Annotation_TYPE) && currentType.getGenericsTypes() != null && !currentType.getGenericsTypes()[0].isPlaceholder()) {
-            return currentType.getGenericsTypes()[0].getType();
-        }
-        return currentType;
     }
 
     static GenericsType[] getGenericsWithoutArray(ClassNode type) {
@@ -1489,17 +1607,95 @@ public abstract class StaticTypeCheckingSupport {
         return type.getGenericsTypes();
     }
 
-    private static ClassNode applyGenerics(ClassNode type, Map<String, GenericsType> resolvedPlaceholders) {
-        if (type.isGenericsPlaceHolder()) {
-            String name = type.getUnresolvedName();
-            GenericsType gt = resolvedPlaceholders.get(name);
-            if (gt!=null && gt.isPlaceholder()) {
-                //TODO: have to handle more cases here
-                if (gt.getUpperBounds()!=null) return gt.getUpperBounds()[0];
-                return type;
-            }
+    static Map<String, GenericsType> applyGenericsContextToParameterClass(
+            Map<String, GenericsType> spec, ClassNode parameterUsage
+    ) {
+        GenericsType[] gts = parameterUsage.getGenericsTypes();
+        if (gts==null) return Collections.EMPTY_MAP;
+
+        GenericsType[] newGTs = applyGenericsContext(spec, gts);
+        ClassNode newTarget = parameterUsage.redirect().getPlainNodeReference();
+        newTarget.setGenericsTypes(newGTs);
+        return GenericsUtils.extractPlaceholders(newTarget);
+    }
+    
+    private static GenericsType[] applyGenericsContext(
+            Map<String, GenericsType> spec, GenericsType[] gts
+    ) {
+        if (gts==null) return null;
+        GenericsType[] newGTs = new GenericsType[gts.length];
+        for (int i=0; i<gts.length; i++) {
+            GenericsType gt = gts[i];
+            newGTs[i] = applyGenericsContext(spec, gt);
         }
-        return type;
+        return newGTs;
+    }
+
+    private static GenericsType applyGenericsContext(
+            Map<String, GenericsType> spec, GenericsType gt
+    ) {
+        if (gt.isPlaceholder()) {
+            String name = gt.getName();
+            GenericsType specType = spec.get(name);
+            if (specType!=null) return specType;
+            if (gt.getLowerBound()!=null || gt.getUpperBounds()!=null) {
+                GenericsType newType = new GenericsType(gt.getType(), applyGenericsContext(spec, gt.getUpperBounds()), applyGenericsContext(spec, gt.getLowerBound()));
+                newType.setPlaceholder(true);
+                return newType;
+            } else {
+                return gt;
+            }
+        } else if (gt.isWildcard()) {
+            GenericsType newGT = new GenericsType(gt.getType(), applyGenericsContext(spec, gt.getUpperBounds()), applyGenericsContext(spec, gt.getLowerBound()));
+            newGT.setWildcard(true);
+            return newGT;
+        }
+        ClassNode type = gt.getType();
+        if (type.getGenericsTypes()==null) return gt;
+        ClassNode newType = type.getPlainNodeReference();
+        newType.setGenericsPlaceHolder(type.isGenericsPlaceHolder());
+        newType.setGenericsTypes(applyGenericsContext(spec, type.getGenericsTypes()));
+        GenericsType newGT = new GenericsType(newType);
+        return newGT;
+    }
+
+    private static ClassNode[] applyGenericsContext(
+            Map<String, GenericsType> spec, ClassNode[] bounds
+    ) {
+        if (bounds==null) return null;
+        ClassNode[] newBounds = new ClassNode[bounds.length];
+        for(int i=0; i<bounds.length; i++) {
+            newBounds[i] = applyGenericsContext(spec,bounds[i]);
+        }
+        return newBounds;
+    }
+
+    static ClassNode applyGenericsContext(
+            Map<String, GenericsType> spec, ClassNode bound
+    ) {
+        if (bound==null) return null;
+        if (bound.isArray()) {
+            return applyGenericsContext(spec,bound.getComponentType()).makeArray();
+        }
+        if (!bound.isUsingGenerics()) return bound;
+        ClassNode newBound = bound.getPlainNodeReference();
+        newBound.setGenericsTypes(applyGenericsContext(spec, bound.getGenericsTypes()));
+        if (bound.isGenericsPlaceHolder()) {
+            GenericsType[] gt= newBound.getGenericsTypes();
+            boolean hasBounds = gt[0].getLowerBound()!=null || gt[0].getUpperBounds()!=null;
+            if (hasBounds || !gt[0].isPlaceholder()) return getCombinedBoundType(gt[0]);
+            newBound.setGenericsPlaceHolder(true);
+        }
+        return newBound;
+    }
+
+    private static ClassNode getCombinedBoundType(GenericsType genericsType) {
+        //TODO: this method should really return some kind of meta ClassNode
+        // representing the combination of all bounds. The code here, just picks
+        // something out to be able to proceed and is not actually correct
+        if (genericsType.getLowerBound()!=null) return genericsType.getLowerBound();
+        if (genericsType.getUpperBounds()!=null) return genericsType.getUpperBounds()[0];
+        return genericsType.getType();
     }
 
     private static void applyContextGenerics(Map<String, GenericsType> resolvedPlaceholders, Map<String, GenericsType> placeholdersFromContext) {

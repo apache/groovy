@@ -272,7 +272,7 @@ public class GenericsUtils {
         return makeClassSafe0(type, gtypes);
     }
 
-    public static MethodNode correctToGenericsSpec(Map genericsSpec, MethodNode mn) {
+    public static MethodNode correctToGenericsSpec(Map<String,ClassNode> genericsSpec, MethodNode mn) {
         ClassNode correctedType = correctToGenericsSpecRecurse(genericsSpec, mn.getReturnType());
         Parameter[] origParameters = mn.getParameters();
         Parameter[] newParameters = new Parameter[origParameters.length];
@@ -283,10 +283,10 @@ public class GenericsUtils {
         return new MethodNode(mn.getName(), mn.getModifiers(), correctedType, newParameters, mn.getExceptions(), mn.getCode());
     }
 
-    public static ClassNode correctToGenericsSpecRecurse(Map genericsSpec, ClassNode type) {
+    public static ClassNode correctToGenericsSpecRecurse(Map<String,ClassNode> genericsSpec, ClassNode type) {
         if (type.isGenericsPlaceHolder()) {
-            String name = type.getUnresolvedName();
-            type = (ClassNode) genericsSpec.get(name);
+            String name = type.getGenericsTypes()[0].getName();
+            type = genericsSpec.get(name);
         }
         if (type == null) type = ClassHelper.OBJECT_TYPE;
         GenericsType[] oldgTypes = type.getGenericsTypes();
@@ -297,7 +297,7 @@ public class GenericsUtils {
                 GenericsType oldgType = oldgTypes[i];
                 if (oldgType.isPlaceholder() ) {
                     if (genericsSpec.get(oldgType.getName())!=null) {
-                        newgTypes[i] = new GenericsType((ClassNode) genericsSpec.get(oldgType.getName()));
+                        newgTypes[i] = new GenericsType(genericsSpec.get(oldgType.getName()));
                     } else {
                         newgTypes[i] = new GenericsType(ClassHelper.OBJECT_TYPE);
                     }
@@ -323,27 +323,27 @@ public class GenericsUtils {
         return makeClassSafeWithGenerics(type, newgTypes);
     }
 
-    public static ClassNode correctToGenericsSpec(Map genericsSpec, GenericsType type) {
+    public static ClassNode correctToGenericsSpec(Map<String, ClassNode> genericsSpec, GenericsType type) {
         ClassNode ret = null;
         if (type.isPlaceholder()) {
             String name = type.getName();
-            ret = (ClassNode) genericsSpec.get(name);
+            ret = genericsSpec.get(name);
         }
         if (ret == null) ret = type.getType();
         return ret;
     }
 
-    public static ClassNode correctToGenericsSpec(Map genericsSpec, ClassNode type) {
+    public static ClassNode correctToGenericsSpec(Map<String,ClassNode> genericsSpec, ClassNode type) {
         if (type.isGenericsPlaceHolder()) {
             String name = type.getGenericsTypes()[0].getName();
-            type = (ClassNode) genericsSpec.get(name);
+            type = genericsSpec.get(name);
         }
         if (type == null) type = ClassHelper.OBJECT_TYPE;
         return type;
     }
 
-    public static Map createGenericsSpec(ClassNode current, Map oldSpec) {
-        Map ret = new HashMap(oldSpec);
+    public static Map<String,ClassNode> createGenericsSpec(ClassNode current, Map<String,ClassNode> oldSpec) {
+        Map<String,ClassNode> ret = new HashMap<String,ClassNode>(oldSpec);
         // ret contains the type specs, what we now need is the type spec for the
         // current class. To get that we first apply the type parameters to the
         // current class and then use the type names of the current class to reset
