@@ -94,13 +94,17 @@ public class CachedSAMClass extends CachedClass {
     }
 
     private static Method[] getDeclaredMethods(final Class c) {
-        Method[] methods = AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
-            public Method[] run() {
-                return c.getDeclaredMethods();
-            }
-        });
-        if (methods==null) return new Method[0];
-        return methods;
+        try {
+            Method[] methods = AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+                public Method[] run() {
+                    return c.getDeclaredMethods();
+                }
+            });
+            if (methods!=null) return methods;
+        } catch (java.security.AccessControlException ace) {
+            // swallow and do as if no method is available
+        }
+        return new Method[0];
     }
 
     private static void getAbstractMethods(Class c, List<Method> current) {
