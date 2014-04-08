@@ -3691,9 +3691,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 String key = typeEntry.getKey();
                                 GenericsType value = typeEntry.getValue();
                                 GenericsType alias = typePlaceholders.get(key);
-                                if (alias != null && alias.isPlaceholder()) {
-                                    if (!resolvedPlaceholders.containsKey(alias.getName()) || resolvedPlaceholders.get(alias.getName()).isPlaceholder()) {
-                                        resolvedPlaceholders.put(alias.getName(), value);
+                                if (alias != null) {
+                                    if (alias.isPlaceholder()) {
+                                        if (!resolvedPlaceholders.containsKey(alias.getName()) || resolvedPlaceholders.get(alias.getName()).isPlaceholder()) {
+                                            resolvedPlaceholders.put(alias.getName(), value);
+                                        }
+                                    } else if (alias.isWildcard()) {
+                                        ClassNode[] upperBounds = alias.getUpperBounds();
+                                        if (upperBounds!=null) {
+                                            for (ClassNode upperBound : upperBounds) {
+                                                if (upperBound.isGenericsPlaceHolder()) {
+                                                    resolvedPlaceholders.put(upperBound.getUnresolvedName(), value);
+                                                }
+                                            }
+                                        }
+                                        ClassNode lowerBound = alias.getLowerBound();
+                                        if (lowerBound!=null && lowerBound.isGenericsPlaceHolder()) {
+                                            String placeholderName = lowerBound.getUnresolvedName();
+                                            GenericsType genericsType = resolvedPlaceholders.get(placeholderName);
+                                            if (genericsType!=null) {
+                                                resolvedPlaceholders.put(key, genericsType);
+                                            }
+                                        }
                                     }
                                 }
                             }

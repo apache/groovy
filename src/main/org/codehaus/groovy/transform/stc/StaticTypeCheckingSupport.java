@@ -1417,7 +1417,27 @@ public abstract class StaticTypeCheckingSupport {
         for (int i = 0; i < copy.length; i++) {
             GenericsType returnTypeGeneric = returnTypeGenerics[i];
             if (returnTypeGeneric.isPlaceholder() || returnTypeGeneric.isWildcard()) {
-                GenericsType resolved = resolvedPlaceholders.get(returnTypeGeneric.getName());
+                String name = returnTypeGeneric.getName();
+                /*if (returnTypeGeneric.isWildcard()) {
+                    ClassNode lowerBound = returnTypeGeneric.getLowerBound();
+                    if (lowerBound !=null && lowerBound.isGenericsPlaceHolder()) {
+                        name = lowerBound.getUnresolvedName();
+                    } else {
+                        ClassNode[] upperBounds = returnTypeGeneric.getUpperBounds();
+                        if (upperBounds!=null) {
+                            for (ClassNode upperBound : upperBounds) {
+                                if (upperBound.isGenericsPlaceHolder()) {
+                                    name = upperBound.getUnresolvedName();
+                                    break; // todo: what if more than one match?
+                                }
+                            }
+                        }
+                    }
+                }*/
+                GenericsType resolved = resolvedPlaceholders.get(name);
+                /*if (resolved == null && placeholdersFromContext!=null) {
+                    resolved = placeholdersFromContext.get(name);
+                }*/
                 if (resolved == null) resolved = returnTypeGeneric;
                 copy[i] = fullyResolve(resolved, resolvedPlaceholders);
             } else {
