@@ -158,13 +158,17 @@ public class Node implements Writable {
         return sb.toString();
     }
 
-    // TODO make this an iterator?
+    /**
+     * Returns the list of any direct String nodes of this node.
+     *
+     * @return the list of String values from this node
+     * @since 2.3.0
+     */
     public List<String> localText() {
         final List<String> result = new ArrayList<String>();
         for (Object child : this.children) {
-            if (child instanceof String) {
-                // must be a String
-                result.add((String) child);
+            if (!(child instanceof Node)) {
+                result.add(child.toString());
             }
         }
         return result;

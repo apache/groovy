@@ -592,6 +592,12 @@ public class Node implements Serializable, Cloneable {
         return answer;
     }
 
+    /**
+     * Returns the list of any direct String nodes of this node.
+     *
+     * @return the list of String values from this node
+     * @since 2.3.0
+     */
     public List<String> localText() {
         List<String> answer = new ArrayList<String>();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {

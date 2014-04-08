@@ -348,6 +348,12 @@ public class DOMCategory {
         }
     }
 
+    /**
+     * Returns the list of any direct String nodes of this node.
+     *
+     * @return the list of String values from this node
+     * @since 2.3.0
+     */
     public static List<String> localText(Element self) {
         List<String> result = new ArrayList<String>();
         if (self.getNodeType() == Node.TEXT_NODE || self.getNodeType() == Node.CDATA_SECTION_NODE) {

@@ -71,6 +71,12 @@ public class NodeChild extends GPathResult {
         return this.node.text();
     }
 
+    /**
+     * Returns the list of any direct String nodes of this NodeChild.
+     *
+     * @return the list of String values from this node
+     * @since 2.3.0
+     */
     public List<String> localText() {
         return this.node.localText();
     }
