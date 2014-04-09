@@ -57,7 +57,7 @@ class XmlParserTest extends GroovyTestCase {
         def text = """
 <p>Please read the <a href="index.html">Home</a> page</p>
 """
-        def node = new XmlParser().parseText(text)
+        def node = new XmlParser(trimWhitespace: true).parseText(text)
         StringWriter sw = new StringWriter()
         new NodePrinter(new PrintWriter(sw)).print(node)
         def result = fixEOLs(sw.toString())
@@ -77,7 +77,7 @@ p() {
         def text = """
 <p>Please read the <a href="index.html">Home</a> page</p>
 """
-        def node = new XmlParser().parseText(text)
+        def node = new XmlParser(trimWhitespace: true).parseText(text)
         StringWriter sw = new StringWriter()
         new XmlNodePrinter(new PrintWriter(sw)).print(node)
         def result = fixEOLs(sw.toString())
@@ -94,7 +94,7 @@ p() {
     }
 
     void testXmlNodePrinterNamespaces() {
-        def html = new XmlParser().parseText(bookXml)
+        def html = new XmlParser(trimWhitespace: true).parseText(bookXml)
         StringWriter sw = new StringWriter()
         new XmlNodePrinter(new PrintWriter(sw)).print(html)
         def result = fixEOLs(sw.toString())
@@ -244,7 +244,7 @@ p() {
 
     void testWhitespaceTrimming() {
         def text = '<outer><inner>   Here is some text    </inner></outer>'
-        def parser = new XmlParser()
+        def parser = new XmlParser(trimWhitespace: true)
         def outer = parser.parseText(text)
         assert outer.inner.text() == 'Here is some text'
         parser.setTrimWhitespace false
