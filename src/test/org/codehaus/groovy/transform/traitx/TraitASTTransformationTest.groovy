@@ -1254,7 +1254,7 @@ assert greeter.greet() == 'Hello Alice'
         assertScript '''
             trait DoingSecretThings {
                 private int x = 0
-                private int secret() { ++x }
+                private int secret() { x+=1; x }
                 int foo() { secret() }
             }
             class Foo implements DoingSecretThings {}
@@ -1281,12 +1281,13 @@ assert greeter.greet() == 'Hello Alice'
             @groovy.transform.CompileStatic
             trait DoingSecretThings {
                 private int x = 0
-                private int secret() { ++x }
+                private int secret() { x+=1; x }
                 int foo() { secret() }
             }
             class Foo implements DoingSecretThings {}
             def foo = new Foo()
             assert foo.foo() == 1
+            assert foo.foo() == 2
         '''
     }
 
@@ -1295,7 +1296,7 @@ assert greeter.greet() == 'Hello Alice'
             @groovy.transform.CompileStatic
             trait DoingSecretThings {
                 private int x = 0
-                private int secret() { ++x }
+                private int secret() { x+=1; x }
                 int foo() { secret() }
             }
             class Foo implements DoingSecretThings {
@@ -1303,6 +1304,7 @@ assert greeter.greet() == 'Hello Alice'
             }
             def foo = new Foo()
             assert foo.foo() == 1
+            assert foo.foo() == 2
         '''
     }
 
@@ -1310,7 +1312,7 @@ assert greeter.greet() == 'Hello Alice'
         assertScript '''
             trait DoingSecretThings {
                 private int x = 0
-                private int secret() { ++x }
+                private int secret() { x+=1; x }
                 int foo() { secret() }
             }
             class Foo implements DoingSecretThings {
@@ -1318,6 +1320,7 @@ assert greeter.greet() == 'Hello Alice'
             }
             def foo = new Foo()
             assert foo.foo() == 1
+            assert foo.foo() == 2
         '''
     }
 
@@ -1326,7 +1329,7 @@ assert greeter.greet() == 'Hello Alice'
             trait DoingSecretThings {
                 private int x = 0
                 @ForceOverride // make sure this has no effect
-                private int secret() { ++x }
+                private int secret() { x+=1; x }
                 int foo() { secret() }
             }
             class Foo implements DoingSecretThings {
@@ -1334,6 +1337,7 @@ assert greeter.greet() == 'Hello Alice'
             }
             def foo = new Foo()
             assert foo.foo() == 1
+            assert foo.foo() == 2
         '''
     }
 
@@ -1619,6 +1623,89 @@ class BottomSomething extends Something implements SomethingDoing {
 assert new BottomSomething().foo() == 'implemented'
 
 '''
+    }
+
+    void testIncrementPropertyOfTrait() {
+        assertScript '''trait Level {
+    int maxLevel
+    int currentLevel = 0
+
+    void foo() {
+        if( currentLevel < maxLevel ) {
+            currentLevel += 1
+        }
+    }
+}
+
+class Leveller implements Level {
+    Leveller() {
+        maxLevel = 3
+    }
+}
+
+def v = new Leveller()
+v.foo()
+v.foo()
+v.foo()
+v.foo()
+assert v.currentLevel == 3
+'''
+    }
+
+    void testIncrementPropertyOfTraitUsingPlusPlus() {
+        def message = shouldFail '''trait Level {
+    int maxLevel
+    int currentLevel = 0
+
+    void foo() {
+        if( currentLevel < maxLevel ) {
+            currentLevel++
+        }
+    }
+}
+
+class Leveller implements Level {
+    Leveller() {
+        maxLevel = 3
+    }
+}
+
+def v = new Leveller()
+v.foo()
+v.foo()
+v.foo()
+v.foo()
+assert v.currentLevel == 3
+'''
+        assert message.contains('Postfix expressions on trait fields/properties  are not supported in traits')
+    }
+
+    void testIncrementPropertyOfTraitUsingPrefixPlusPlus() {
+        def message = shouldFail '''trait Level {
+    int maxLevel
+    int currentLevel = 0
+
+    void foo() {
+        if( currentLevel < maxLevel ) {
+            ++currentLevel
+        }
+    }
+}
+
+class Leveller implements Level {
+    Leveller() {
+        maxLevel = 3
+    }
+}
+
+def v = new Leveller()
+v.foo()
+v.foo()
+v.foo()
+v.foo()
+assert v.currentLevel == 3
+'''
+        assert message.contains('Prefix expressions on trait fields/properties are not supported in traits')
     }
 
     static trait TestTrait {
