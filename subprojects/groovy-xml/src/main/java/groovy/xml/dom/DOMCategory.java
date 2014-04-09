@@ -47,8 +47,44 @@ import java.util.Map;
  * @author paulk
  */
 public class DOMCategory {
+    private static boolean trimIgnorableWhitespace = true;
+    private static boolean trimWhitespace = false;
 
-    private static boolean trimWhitespace = true;
+    /**
+     * @return true if text elements are trimmed before returning; default false
+     */
+    public static synchronized boolean isGlobalTrimWhitespace() {
+        return trimWhitespace;
+    }
+
+    /**
+     * Whether text content is trimmed (removing leading and trailing whitespace); default false.
+     * WARNING: this is a global setting. Altering it will affect all DOMCategory usage within the current Java process.
+     * It is not recommended that this is altered; instead call the trim() method on the returned text, but the
+     * flag is available to support legacy Groovy behavior.
+     *
+     * @param trimWhitespace the new value
+     */
+    public static synchronized void setGlobalTrimWhitespace(boolean trimWhitespace) {
+        DOMCategory.trimWhitespace = trimWhitespace;
+    }
+
+    /**
+     * @return true if ignorable whitespace (e.g. whitespace between elements) is trimmed/ignored; default true
+     */
+    public static synchronized boolean isGlobalTrimIgnorableWhitespace() {
+        return trimIgnorableWhitespace;
+    }
+
+    /**
+     * Whether ignorable whitespace (e.g. whitespace between elements) is trimmed/ignored (default true).
+     * WARNING: this is a global setting. Altering it will affect all DOMCategory usage within the current Java process.
+     *
+     * @param trimIgnorableWhitespace the new value
+     */
+    public static synchronized void setGlobalTrimIgnorableWhitespace(boolean trimIgnorableWhitespace) {
+        DOMCategory.trimIgnorableWhitespace = trimIgnorableWhitespace;
+    }
 
     public static Object get(Element element, String elementName) {
         return xgetAt(element, elementName);
@@ -423,7 +459,7 @@ public class DOMCategory {
                 }
             } else if (node.getNodeType() == Node.TEXT_NODE) {
                 String value = node.getNodeValue();
-                if (trimWhitespace) {
+                if ((isGlobalTrimIgnorableWhitespace() && value.trim().length() == 0) || isGlobalTrimWhitespace()) {
                     value = value.trim();
                 }
                 if ("*".equals(elementName) && value.length() > 0) {
