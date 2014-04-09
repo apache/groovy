@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -34,6 +35,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
@@ -157,6 +159,7 @@ public abstract class TraitComposer {
             if (!isAbstract && argumentTypes.length > 0 && ((access & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC) && !name.contains("$")) {
                 ArgumentListExpression argList = new ArgumentListExpression();
                 argList.addExpression(new VariableExpression("this"));
+                Parameter[] origParams = new Parameter[argumentTypes.length - 1];
                 Parameter[] params = new Parameter[argumentTypes.length - 1];
                 for (int i = 1; i < argumentTypes.length; i++) {
                     Parameter parameter = argumentTypes[i];
@@ -168,6 +171,7 @@ public abstract class TraitComposer {
                     AbstractASTTransformation.copyAnnotatedNodeAnnotations(parameter, copied, notCopied);
                     newParam.addAnnotations(copied);
                     params[i - 1] = newParam;
+                    origParams[i-1] = parameter;
                     argList.addExpression(new VariableExpression(params[i - 1]));
                 }
                 MethodNode existingMethod = cNode.getMethod(name, params);
@@ -212,6 +216,15 @@ public abstract class TraitComposer {
                 if (!copied.isEmpty()) {
                     forwarder.addAnnotations(copied);
                 }
+
+                // add a helper annotation indicating that it is a bridge method
+                AnnotationNode bridgeAnnotation = new AnnotationNode(Traits.TRAITBRIDGE_CLASSNODE);
+                bridgeAnnotation.addMember("traitClass", new ClassExpression(trait));
+                bridgeAnnotation.addMember("desc", new ConstantExpression(BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(), origParams)));
+                forwarder.addAnnotation(
+                        bridgeAnnotation
+                );
+
                 cNode.addMethod(forwarder);
             }
         }

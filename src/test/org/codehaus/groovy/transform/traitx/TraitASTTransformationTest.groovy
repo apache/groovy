@@ -1467,6 +1467,65 @@ assert Foo.VAL == 456
 '''
     }
 
+    void testTraitMethodShouldBeDefaultImplementationUsingReflection() {
+        assertScript '''import org.codehaus.groovy.transform.trait.Traits
+
+trait Foo {
+    void foo() {}
+}
+
+class Bar implements Foo {}
+
+def method = Bar.getDeclaredMethod('foo')
+assert method.declaringClass == Bar
+assert Traits.isBridgeMethod(method)
+def traitMethod = Traits.getBridgeMethodTarget(method)
+assert traitMethod != null
+assert traitMethod.declaringClass == Foo
+assert traitMethod.name == 'foo'
+'''
+    }
+
+    void testTraitMethodShouldNotBeDefaultImplementationUsingReflection() {
+        assertScript '''import org.codehaus.groovy.transform.trait.Traits
+
+trait Foo {
+    void foo() {}
+}
+
+class Bar implements Foo {
+    void foo() { }
+}
+
+def method = Bar.getDeclaredMethod('foo')
+assert method.declaringClass == Bar
+assert !Traits.isBridgeMethod(method)
+def traitMethod = Traits.getBridgeMethodTarget(method)
+assert traitMethod == null
+'''
+    }
+
+    void testTraitMethodShouldBeDefaultImplementationUsingReflectionAndGenericTypes() {
+        assertScript '''import org.codehaus.groovy.transform.trait.Traits
+
+trait Foo<F,T> {
+    T foo(F from) {}
+}
+
+class Bar implements Foo<String,Integer> {}
+
+def method = Bar.getDeclaredMethod('foo', String)
+assert method.declaringClass == Bar
+assert Traits.isBridgeMethod(method)
+def traitMethod = Traits.getBridgeMethodTarget(method)
+assert traitMethod != null
+assert traitMethod.declaringClass == Foo
+assert traitMethod.name == 'foo'
+assert traitMethod.parameterTypes.length==1
+assert traitMethod.parameterTypes[0] == Object
+'''
+    }
+
     void testTraitShouldNotBeAllowedToExtendInterface() {
         // GROOVY-6672
         def message = shouldFail '''

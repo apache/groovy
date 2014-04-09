@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -43,6 +44,7 @@ import java.util.List;
 public abstract class Traits {
     public static final ClassNode FORCEOVERRIDE_CLASSNODE = ClassHelper.make(ForceOverride.class);
     public static final ClassNode IMPLEMENTED_CLASSNODE = ClassHelper.make(Implemented.class);
+    public static final ClassNode TRAITBRIDGE_CLASSNODE = ClassHelper.make(TraitBridge.class);
     public static final Class TRAIT_CLASS = Trait.class;
     public static final ClassNode TRAIT_CLASSNODE = ClassHelper.make(TRAIT_CLASS);
 
@@ -177,10 +179,62 @@ public abstract class Traits {
     }
 
     /**
+     * Reflection API to indicate whether some method is a bridge method to the default implementation
+     * of a trait.
+     * @param someMethod a method node
+     * @return null if it is not a method implemented in a trait. If it is, returns the method from the trait class.
+     */
+    public static boolean isBridgeMethod(Method someMethod) {
+        TraitBridge annotation = someMethod.getAnnotation(TraitBridge.class);
+        return annotation!=null;
+    }
+
+    /**
+     * Reflection API to find the method corresponding to the default implementation of a trait, given a bridge method.
+     * @param someMethod a method node
+     * @return null if it is not a method implemented in a trait. If it is, returns the method from the trait class.
+     */
+    public static Method getBridgeMethodTarget(Method someMethod) {
+        TraitBridge annotation = someMethod.getAnnotation(TraitBridge.class);
+        if (annotation==null) {
+            return null;
+        }
+        Class aClass = annotation.traitClass();
+        String desc = annotation.desc();
+        for (Method method : aClass.getDeclaredMethods()) {
+            String methodDescriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
+            if (desc.equals(methodDescriptor)) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+
+    /**
      * Internal annotation used to indicate which methods in a trait interface have a
      * default implementation.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public static @interface Implemented {}
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+
+    /**
+     * Internal annotation used to indicate that a method is a bridge method to a trait
+     * default implementation.
+     */
+     public static @interface TraitBridge {
+        /**
+         * @return the trait class
+         */
+        Class traitClass();
+
+        /**
+         * @return The method descriptor of the method from the trait
+         */
+        String desc();
+    }
 }
