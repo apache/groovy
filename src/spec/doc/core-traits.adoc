@@ -487,13 +487,6 @@ The last point is actually a very important and illustrates a place where mixins
 are *not* modified, so if you mixin some class into another, there isn't a third class generated, and methods which respond to
 A will continue responding to A even if mixed in.
 
-=== Compatibility with AST transformations
-
-CAUTION: Traits are not officially compatible with AST transformations. Some of them, like `@CompileStatic` will be applied
-on the trait itself (not on implementing classes), while others will apply on both the implementing class and the trait.
-There is absolutely no guarantee that an AST transformation will run on a trait as it does on a regular class, so use it
-at your own risk!
-
 == Static methods, properties and fields
 
 WARNING: The following instructions are subject to caution. Static member support is work in progress and still experimental. The
@@ -536,3 +529,23 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfi
 <4> the static field `CALLED` on `Bar` is updated
 <5> but the static field `CALLED` on `Baz` is not, because it is *distinct*
 
+== Limitations
+=== Compatibility with AST transformations
+
+CAUTION: Traits are not officially compatible with AST transformations. Some of them, like `@CompileStatic` will be applied
+on the trait itself (not on implementing classes), while others will apply on both the implementing class and the trait.
+There is absolutely no guarantee that an AST transformation will run on a trait as it does on a regular class, so use it
+at your own risk!
+
+=== Prefix and postfix operations
+
+Within traits, prefix and postfix operations are not allowed if they update a field of the trait:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=prefix_postfix,indent=0]
+----
+<1> `x` is defined within the trait, postfix increment is not allowed
+<2> `x` is defined within the trait, prefix decrement is not allowed
+
+A workaround is to use the `=+` operator instead.

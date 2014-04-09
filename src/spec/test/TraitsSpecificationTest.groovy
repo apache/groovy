@@ -158,7 +158,7 @@ try {
         assertScript '''// tag::trait_with_private_field[]
 trait Counter {
     private int count = 0                   // <1>
-    int count() { ++count }                 // <2>
+    int count() { count += 1; count }       // <2>
 }
 class Foo implements Counter {}             // <3>
 def f = new Foo()
@@ -526,8 +526,29 @@ class Bar implements TestHelper {}              // <1>
 class Baz implements TestHelper {}              // <2>
 Bar.init()                                      // <3>
 assert Bar.TestHelper__CALLED                   // <4>
-assert !Baz.TestHelper__CALLED                   // <5>
+assert !Baz.TestHelper__CALLED                  // <5>
 // end::staticfield_distinct[]
 '''
+    }
+
+    void testPrePostfixIsDisallowed() {
+        def message = shouldFail '''
+// tag::prefix_postfix[]
+trait Counting {
+    int x
+    void inc() {
+        x++                             // <1>
+    }
+    void dec() {
+        --x                             // <2>
+    }
+}
+class Counter implements Counting {}
+def c = new Counter()
+c.inc()
+// end::prefix_postfix[]
+        '''
+        assert message.contains('Postfix expressions on trait fields/properties  are not supported')
+        assert message.contains('Prefix expressions on trait fields/properties are not supported')
     }
 }
