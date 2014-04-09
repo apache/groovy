@@ -140,6 +140,12 @@ allprojects {
         inputs.file jar.archivePath
         outputs.file jar.archivePath
         doLast {
+            def keepUntouched = [
+                    'org/codehaus/groovy/cli/GroovyPosixParser*.class',
+                    'groovy/util/CliBuilder*.class',
+                    'groovy/util/OptionAccessor*.class',
+                    'org/codehaus/groovy/tools/shell/util/HelpFormatter*.class'
+            ].join(',')
             boolean isRoot = project == rootProject
             ant {
                 def target = new File("${jar.archivePath}.jarjar")
@@ -147,7 +153,7 @@ allprojects {
                 jarjar(jarfile: target) {
                     zipfileset(
                             src: jar.archivePath,
-                            excludes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class')
+                            excludes: keepUntouched)
 
                     // only groovy core will include the dependencies repackaged
                     if (isRoot) {
@@ -169,7 +175,7 @@ allprojects {
                 jar(destfile: target, update: true) {
                     zipfileset(
                             src: jar.archivePath,
-                            includes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class')
+                            includes: keepUntouched)
                 }
                 ant.move(file: target, tofile: jar.archivePath)
             }
