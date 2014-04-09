@@ -5,6 +5,14 @@ if (isUsingBintray) {
     logger.lifecycle 'Deployment environment set to Bintray'
 }
 
+def removeJarjaredDependencies = { p ->
+    p.dependencies.removeAll(p.dependencies.findAll {
+        it.groupId == 'org.codehaus.groovy' ||
+                (['asm', 'asm-util', 'asm-analysis', 'asm-tree', 'asm-commons', 'antlr', 'commons-cli'].contains(it.artifactId))
+    })
+}
+
+
 allprojects {
     apply plugin: 'maven'
     apply from: "${rootProject.projectDir}/gradle/pomconfigurer.gradle"
@@ -121,12 +129,9 @@ ext.pomAll = {
         }
     }
 
-    allpom.whenConfigured { p ->
-        p.dependencies.removeAll(p.dependencies.findAll {
-            it.groupId == 'org.codehaus.groovy' ||
-                    (['asm', 'asm-util', 'asm-analysis', 'asm-tree', 'asm-commons', 'antlr', 'commons-cli'].contains(it.artifactId))
-        })
-    }
+
+    groovypom.whenConfigured(removeJarjaredDependencies)
+    allpom.whenConfigured(removeJarjaredDependencies)
 
     binarypom.whenConfigured { p ->
         p.dependencies.clear()
