@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.makeDescriptorWithoutReturnType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
@@ -197,16 +198,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         checkForDuplicateMethods(node);
         addCovariantMethods(node);
     }
-    
-    private String makeDescriptorWithoutReturnType(MethodNode mn) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(mn.getName()).append(':');
-        for (Parameter p : mn.getParameters()) {
-            sb.append(p.getType()).append(',');
-        }
-        return sb.toString();
-    }
-    
+
     private void checkForDuplicateMethods(ClassNode cn) {
         HashSet<String> descriptors = new HashSet<String>();
         for (MethodNode mn : cn.getMethods()) {

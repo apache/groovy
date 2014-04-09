@@ -191,8 +191,9 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         genericsSpec = createGenericsSpec(fieldNode.getType(), genericsSpec);
 
         if (!excludeTypes.isEmpty() || !includeTypes.isEmpty()) {
-            String correctedTypeDescriptor = correctToGenericsSpec(genericsSpec, candidate).getTypeDescriptor();
-            if (shouldSkipOnDescriptor(genericsSpec, correctedTypeDescriptor, excludeTypes, includeTypes)) return;
+            MethodNode correctedMethodNode = correctToGenericsSpec(genericsSpec, candidate);
+            boolean checkReturn = fieldNode.getType().getMethods().contains(candidate);
+            if (shouldSkipOnDescriptor(checkReturn, genericsSpec, correctedMethodNode, excludeTypes, includeTypes)) return;
         }
 
         // ignore methods from GroovyObject

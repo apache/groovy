@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -158,7 +159,9 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return (excludes != null && excludes.contains(name)) || deemedInternalName(name) || (includes != null && !includes.isEmpty() && !includes.contains(name));
     }
 
-    public static boolean shouldSkipOnDescriptor(Map genericsSpec, String descriptor, List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
+    public static boolean shouldSkipOnDescriptor(boolean checkReturn, Map genericsSpec, MethodNode mNode, List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
+        String descriptor = mNode.getTypeDescriptor();
+        String descriptorNoReturn = GeneralUtils.makeDescriptorWithoutReturnType(mNode);
             for (ClassNode cn : excludeTypes) {
                 List<ClassNode> remaining = new LinkedList<ClassNode>();
                 remaining.add(cn);
@@ -168,8 +171,14 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
                     if (!next.equals(ClassHelper.OBJECT_TYPE)) {
                         updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
                         for (MethodNode mn : next.getMethods()) {
-                            String md = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn).getTypeDescriptor();
-                            if (md.equals(descriptor)) return true;
+                            MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
+                            if (checkReturn) {
+                                String md = correctedMethodNode.getTypeDescriptor();
+                                if (md.equals(descriptor)) return true;
+                            } else {
+                                String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                                if (md.equals(descriptorNoReturn)) return true;
+                            }
                         }
                         remaining.addAll(Arrays.asList(next.getInterfaces()));
                     }
@@ -185,8 +194,14 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
                     if (!next.equals(ClassHelper.OBJECT_TYPE)) {
                         updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
                         for (MethodNode mn : next.getMethods()) {
-                            String md = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn).getTypeDescriptor();
-                            if (md.equals(descriptor)) return false;
+                            MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
+                            if (checkReturn) {
+                                String md = correctedMethodNode.getTypeDescriptor();
+                                if (md.equals(descriptor)) return false;
+                            } else {
+                                String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                                if (md.equals(descriptorNoReturn)) return false;
+                            }
                         }
                         remaining.addAll(Arrays.asList(next.getInterfaces()));
                     }

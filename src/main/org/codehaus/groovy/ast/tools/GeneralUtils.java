@@ -412,6 +412,15 @@ public class GeneralUtils {
         return new BinaryExpression(lhv, LT, rhv);
     }
 
+    public static String makeDescriptorWithoutReturnType(MethodNode mn) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(mn.getName()).append(':');
+        for (Parameter p : mn.getParameters()) {
+            sb.append(p.getType()).append(',');
+        }
+        return sb.toString();
+    }
+
     public static BinaryExpression neX(Expression lhv, Expression rhv) {
         return new BinaryExpression(lhv, NE, rhv);
     }

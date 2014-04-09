@@ -204,17 +204,14 @@ b.append(3.5d) // would fail because we didn't include append(double)
 '''
         assertScript '''
 // tag::delegate_example_excludeTypes[]
-interface AppendStringSelector1 {
+interface AppendStringSelector {
     StringBuilder append(String str)
 }
-interface AppendStringSelector2 {
-    AbstractStringBuilder append(String str)
-}
 class UpperStringBuilder {
-    @Delegate(excludeTypes=[AppendStringSelector1,AppendStringSelector2])
+    @Delegate(excludeTypes=AppendStringSelector)
     StringBuilder sb1 = new StringBuilder()
 
-    @Delegate(includeTypes=AppendStringSelector1)
+    @Delegate(includeTypes=AppendStringSelector)
     StringBuilder sb2 = new StringBuilder()
 
     String toString() { sb1.toString() + sb2.toString().toUpperCase() }
