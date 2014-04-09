@@ -1,5 +1,6 @@
 import groovy.transform.ConditionalInterrupt
 import groovy.util.logging.Log
+import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.expr.AttributeExpression
 import org.codehaus.groovy.control.CompilePhase
@@ -207,7 +208,7 @@ a.@val // <1>
         // end::source_cz[]
 
         // tag::source_cz_predicates[]
-        // the customizer will only be applied to classes ending with 'Bean'
+        // the customizer will only be applied to classes contained in a file name ending with 'Bean'
         sac.baseNameValidator = { baseName ->
             baseName.endsWith 'Bean'
         }
@@ -218,6 +219,10 @@ a.@val // <1>
         // source unit validation
         // allow compilation only if the file contains at most 1 class
         sac.sourceUnitValidator = { SourceUnit sourceUnit -> sourceUnit.AST.classes.size() == 1 }
+
+        // class validation
+        // the customizer will only be applied to classes ending with 'Bean'
+        sac.classValidator = { ClassNode cn -> cn.endsWith('Bean') }
 
         // end::source_cz_predicates[]
 

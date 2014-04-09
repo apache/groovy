@@ -63,6 +63,11 @@ import java.util.Map;
  *     builder.source(unitValidator: { unit -> !unit.AST.classes.any { it.name == 'Baz' } }) {
  *         ast(CompileStatic)
  *     }
+ *
+ *     // apply CompileStatic AST annotation on class nodes that end with 'CS'
+ *     builder.source(classValidator: { cn -> cn.name.endsWith('CS') }) {
+ *         ast(CompileStatic)
+ *     }
  * </code></pre>
  *
  * @author Cedric Champeau
@@ -97,6 +102,7 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
         addExtensionValidator(sourceAwareCustomizer, data);
         addBasenameValidator(sourceAwareCustomizer, data);
         if (data.unitValidator!=null) sourceAwareCustomizer.setSourceUnitValidator(data.unitValidator);
+        if (data.classValidator!=null) sourceAwareCustomizer.setClassValidator(data.classValidator);
         return sourceAwareCustomizer;
     }
 
@@ -138,6 +144,7 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
         public Closure<Boolean> extensionValidator;
         public Closure<Boolean> unitValidator;
         public Closure<Boolean> basenameValidator;
+        public Closure<Boolean> classValidator;
 
         // validate with one string
         public String extension;

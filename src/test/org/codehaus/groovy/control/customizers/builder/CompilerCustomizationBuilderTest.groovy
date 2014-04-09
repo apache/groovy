@@ -16,7 +16,9 @@
 
 package org.codehaus.groovy.control.customizers.builder
 
+import groovy.mock.interceptor.StubFor
 import groovy.transform.ToString
+import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.transform.ToStringASTTransformation
 import org.codehaus.groovy.control.customizers.SecureASTCustomizer
@@ -181,6 +183,7 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         assert cz.baseNameValidator == null
         assert cz.extensionValidator == null
         assert cz.sourceUnitValidator == null
+        assert cz.classValidator == null
 
         cz = builder.source(extension: 'gx') {
             ast(ToString)
@@ -191,6 +194,7 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         assert cz.baseNameValidator == null
         assert cz.sourceUnitValidator == null
         assert cz.extensionValidator != null
+        assert cz.classValidator == null
         assert cz.extensionValidator.call('gx') == true
         assert cz.extensionValidator.call('foo') == false
 
@@ -203,6 +207,7 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         assert cz.baseNameValidator == null
         assert cz.sourceUnitValidator == null
         assert cz.extensionValidator != null
+        assert cz.classValidator == null
         assert cz.extensionValidator.call('gx') == true
         assert cz.extensionValidator.call('foo') == true
 
@@ -215,6 +220,7 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         assert cz.baseNameValidator == null
         assert cz.sourceUnitValidator == null
         assert cz.extensionValidator != null
+        assert cz.classValidator == null
         assert cz.extensionValidator.call('gx') == true
         assert cz.extensionValidator.call('foo') == true
 
@@ -227,6 +233,7 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         assert cz.extensionValidator == null
         assert cz.sourceUnitValidator == null
         assert cz.baseNameValidator != null
+        assert cz.classValidator == null
         assert cz.baseNameValidator.call('gx') == true
         assert cz.baseNameValidator.call('foo') == false
 
@@ -238,6 +245,7 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         assert cz.phase == cz.delegate.phase
         assert cz.extensionValidator == null
         assert cz.sourceUnitValidator == null
+        assert cz.classValidator == null
         assert cz.baseNameValidator != null
         assert cz.baseNameValidator.call('gx') == true
         assert cz.baseNameValidator.call('foo') == true
@@ -262,9 +270,32 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         assert cz.phase == cz.delegate.phase
         assert cz.extensionValidator == null
         assert cz.baseNameValidator == null
+        assert cz.classValidator == null
         assert cz.sourceUnitValidator != null
         assert cz.sourceUnitValidator.call(new SourceUnit(name:'gx')) == false
         assert cz.sourceUnitValidator.call(new SourceUnit(name:'barfoo')) == true
+
+        cz = builder.source(classValidator: { ClassNode cn -> cn.getName().contains 'Foo' }) {
+            ast(ToString)
+        }
+        def valid = new StubFor(ClassNode)
+        def invalid = new StubFor(ClassNode)
+        valid.demand.getName { 'ClassWithFooInName' }
+        invalid.demand.getName { 'ClassWithBarInName' }
+
+        assert cz instanceof SourceAwareCustomizer
+        assert cz.delegate instanceof ASTTransformationCustomizer
+        assert cz.phase == cz.delegate.phase
+        assert cz.extensionValidator == null
+        assert cz.baseNameValidator == null
+        assert cz.sourceUnitValidator == null
+        assert cz.classValidator != null
+        valid.use {
+            assert cz.classValidator.call(new ClassNode(String)) == true
+        }
+        invalid.use {
+            assert cz.classValidator.call(new ClassNode(String)) == false
+        }
 
     }
 

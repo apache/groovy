@@ -42,6 +42,7 @@ public class SourceAwareCustomizer extends DelegatingCustomizer {
     private Closure<Boolean> extensionValidator;
     private Closure<Boolean> baseNameValidator;
     private Closure<Boolean> sourceUnitValidator;
+    private Closure<Boolean> classValidator;
 
     public SourceAwareCustomizer(CompilationCustomizer delegate) {
         super(delegate);
@@ -55,7 +56,7 @@ public class SourceAwareCustomizer extends DelegatingCustomizer {
             FileReaderSource file = (FileReaderSource) reader;
             fileName = file.getFile().getName();
         }
-        if (acceptSource(source) && accept(fileName)) {
+        if (acceptSource(source) && acceptClass(classNode) && accept(fileName)) {
             delegate.call(source, context, classNode);
         }
     }
@@ -72,11 +73,19 @@ public class SourceAwareCustomizer extends DelegatingCustomizer {
         this.sourceUnitValidator = sourceUnitValidator;
     }
 
+    public void setClassValidator(final Closure<Boolean> classValidator) {
+        this.classValidator = classValidator;
+    }
+
     public boolean accept(String fileName) {
         int ext = fileName.lastIndexOf(".");
         String baseName = ext<0?fileName:fileName.substring(0, ext);
         String extension = ext<0?"":fileName.substring(ext+1);
         return acceptExtension(extension) && acceptBaseName(baseName);
+    }
+
+    public boolean acceptClass(ClassNode cnode) {
+        return classValidator == null || classValidator.call(cnode);
     }
 
     public boolean acceptSource(SourceUnit unit) {
