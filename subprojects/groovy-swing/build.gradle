@@ -1,7 +1,7 @@
 dependencies {
-    compile project(':')
-    groovy project(':')
-    testCompile project(':').sourceSets.test.runtimeClasspath
+    compile rootProject
+    groovy rootProject
+    testCompile rootProject.sourceSets.test.runtimeClasspath
     testCompile project(':groovy-test')
 }
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {

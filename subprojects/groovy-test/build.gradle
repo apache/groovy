@@ -1,5 +1,5 @@
 dependencies {
-    groovy project(':')
+    groovy rootProject
     compile 'junit:junit:4.11'
     testRuntime project(':groovy-ant')
 }

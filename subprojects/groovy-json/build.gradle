@@ -1,5 +1,5 @@
 dependencies {
-    compile project(':')
-    groovy project(':')
+    compile rootProject
+    groovy rootProject
     testCompile project(':groovy-test')
 }

@@ -1,7 +1,7 @@
 dependencies {
-    compile project(':')
+    compile rootProject
     compile project(':groovy-xml')
-    groovy project(':')
+    groovy rootProject
     testCompile project(':groovy-test')
 }
 

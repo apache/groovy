@@ -5,8 +5,8 @@ dependencies {
     compile('javax.servlet:jsp-api:2.0') { dep ->
         provided dep
     }
-    compile project(':')
-    groovy project(':')
+    compile rootProject
+    groovy rootProject
     testCompile "jmock:jmock:$jmockVersion"
     // needed for MarkupBuilder
     compile project(':groovy-xml')

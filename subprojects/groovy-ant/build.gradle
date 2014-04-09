@@ -1,6 +1,6 @@
 dependencies {
-    compile project(':')
-    groovy project(':')
+    compile rootProject
+    groovy rootProject
     compile "org.apache.ant:ant:$antVersion"
     runtime("org.apache.ant:ant-junit:$antVersion") {
         exclude(group: 'junit', module: 'junit')
