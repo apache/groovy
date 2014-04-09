@@ -1,5 +1,5 @@
 task doc(dependsOn: ['asciidocAll', 'assembleAsciidoc', 'javadocAll', 'groovydocAll', 'docGDK']) {
-    ext.footer = 'Copyright &amp;copy; 2003-2013 The Codehaus. All rights reserved.'
+    ext.footer = 'Copyright &amp;copy; 2003-2014 The Codehaus. All rights reserved.'
     ext.title = "Groovy ${groovyVersion}"
 }
 
@@ -134,6 +134,7 @@ task docGDK {
                     arg(value: 'subprojects/groovy-sql/src/main/java/org/codehaus/groovy/runtime/SqlGroovyMethods.java')
                     arg(value: 'subprojects/groovy-swing/src/main/java/org/codehaus/groovy/runtime/SwingGroovyMethods.java')
                     arg(value: 'subprojects/groovy-xml/src/main/java/org/codehaus/groovy/runtime/XmlGroovyMethods.java')
+                    arg(value: 'subprojects/groovy-nio/src/main/java/org/codehaus/groovy/runtime/NioGroovyMethods.java')
                 }
             }
         } finally {

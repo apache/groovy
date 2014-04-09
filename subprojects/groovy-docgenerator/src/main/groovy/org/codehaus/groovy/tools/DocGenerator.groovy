@@ -318,10 +318,10 @@ class DocGenerator {
             curPackage.split('\\.').size().times { apiBaseUrl += '../'}
             title = "GDK enhancement for ${target[0]}"
         } else if (type.startsWith("groovy") || type.startsWith("org.codehaus.groovy")) {
-            apiBaseUrl = "http://groovy.codehaus.org/api/"
+            apiBaseUrl = "http://groovy.codehaus.org/gapi/"
             title = "Groovy class in $packageName"
         } else {
-            apiBaseUrl = "http://java.sun.com/j2se/1.5.0/docs/api/"
+            apiBaseUrl = "http://docs.oracle.com/javase/7/docs/api/"
             title = "JDK class in $packageName"
         }
 
