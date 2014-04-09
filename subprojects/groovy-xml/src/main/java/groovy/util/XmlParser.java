@@ -74,8 +74,7 @@ public class XmlParser implements ContentHandler {
     private XMLReader reader;
     private Node parent;
 
-    // TODO GROOVY-5360 set default to false - safer now that we can leave ignorable whitespace unaltered
-    private boolean trimWhitespace = true;
+    private boolean trimWhitespace = false;
     private boolean trimIgnorableWhitespace = true;
     private boolean namespaceAware;
 
