@@ -72,8 +72,7 @@ public class IndyGuardsFiltersAndSignatures {
         SLOW_META_CLASS_FIND, META_CLASS_INVOKE_STATIC_METHOD,
         MOP_GET, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
         INTERCEPTABLE_INVOKER,
-        CLASS_FOR_NAME
-
+        CLASS_FOR_NAME,
         EQUALS
         ;
 
