@@ -175,7 +175,7 @@ public abstract class TraitComposer {
                     argList.addExpression(new VariableExpression(params[i - 1]));
                 }
                 MethodNode existingMethod = cNode.getMethod(name, params);
-                if (existingMethod==null) {
+                if (existingMethod==null || existingMethod.isAbstract()) {
                     // for Java 8, make sure that if a subinterface defines a default method, it is used
                     existingMethod = findDefaultMethodFromInterface(cNode, name, params);
                 }

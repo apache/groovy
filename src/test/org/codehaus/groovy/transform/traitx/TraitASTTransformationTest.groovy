@@ -1571,6 +1571,56 @@ util.info()'''
         assert message.contains('Trait cannot extend an interface.')
     }
 
+    void testImplementingingAbstractClass() {
+        assertScript '''
+abstract class AbstractSomething {
+    abstract String something()
+}
+
+trait SomethingDoing {
+    String something() {
+        "Doing something"
+    }
+}
+
+class Something extends AbstractSomething implements SomethingDoing {
+    String foo() {
+        something()
+    }
+}
+
+assert new Something().foo() == 'Doing something'
+
+'''
+    }
+
+    void testShouldNotOverrideMethodImplementedFromAbstractClass() {
+        assertScript '''
+abstract class AbstractSomething {
+    abstract String something()
+}
+
+trait SomethingDoing {
+    String something() {
+        "Doing something"
+    }
+}
+
+class Something extends AbstractSomething  {
+    String something() { 'implemented' }
+}
+
+class BottomSomething extends Something implements SomethingDoing {
+    String foo() {
+        something()
+    }
+}
+
+assert new BottomSomething().foo() == 'implemented'
+
+'''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }
