@@ -1,9 +1,10 @@
 package com.xseagullx.groovy.gsoc
-import com.sun.istack.internal.NotNull
+
 import groovyjarjarasm.asm.Opcodes
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
+import org.antlr.v4.runtime.misc.NotNull
 import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
@@ -70,11 +71,7 @@ class ASTBuilder extends GroovyBaseListener {
         astNode.lastColumnNumber = ctx.stop.charPositionInLine + 1 + ctx.stop.text.length()
     }
 
-    @Override void exitCompilationUnit(@org.antlr.v4.runtime.misc.NotNull GroovyParser.CompilationUnitContext ctx) {
-        moduleNode.mainClassName = moduleNode.classes[0].name
-    }
-
-    int parseClassModifiers(@org.antlr.v4.runtime.misc.NotNull GroovyParser.ClassModifiersContext ctx) {
+    int parseClassModifiers(@NotNull GroovyParser.ClassModifiersContext ctx) {
         checkModifierIsSingle(ctx.KW_ABSTRACT())
         checkModifierIsSingle(ctx.KW_FINAL())
         checkModifierIsSingle(ctx.KW_STATIC())

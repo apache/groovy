@@ -6,6 +6,7 @@ import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.syntax.Token
 
+@SuppressWarnings("GroovyUnusedDeclaration")
 class ASTComparatorCategory {
 
     static objects = [] as Set
