@@ -177,7 +177,9 @@ allprojects {
                             src: jar.archivePath,
                             includes: keepUntouched)
                 }
-                ant.move(file: target, tofile: jar.archivePath)
+                // ant.move seems broken on windows if there is an existing file even with overwrite & force so we copy + delete
+                ant.copy(file: target, tofile: jar.archivePath)
+                ant.delete(file: target)
             }
         }
     }
