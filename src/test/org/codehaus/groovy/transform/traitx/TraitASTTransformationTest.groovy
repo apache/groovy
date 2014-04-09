@@ -1526,6 +1526,42 @@ assert traitMethod.parameterTypes[0] == Object
 '''
     }
 
+    void testUseOfThisInInitializer() {
+        assertScript '''
+trait Dummyable  {
+    String x = this.class.name
+
+    void info() {
+        assert x == this.class.name
+    }
+}
+
+
+class Util implements Dummyable {}
+
+def util = new Util()
+util.info()'''
+    }
+
+    void testUseOfMethodInInitializer() {
+        assertScript '''
+trait Dummyable  {
+    String x = whoAmI()
+
+    String whoAmI() { this.class.name }
+
+    void info() {
+        assert x == this.class.name
+    }
+}
+
+
+class Util implements Dummyable {}
+
+def util = new Util()
+util.info()'''
+    }
+
     void testTraitShouldNotBeAllowedToExtendInterface() {
         // GROOVY-6672
         def message = shouldFail '''

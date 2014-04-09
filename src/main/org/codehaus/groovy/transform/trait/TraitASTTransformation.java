@@ -184,7 +184,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
         // add fields
         for (FieldNode field : fields) {
-            processField(field, initializer, staticInitializer, fieldHelper);
+            processField(field, initializer, staticInitializer, fieldHelper, cNode, fieldNames);
         }
 
         // clear properties to avoid generation of methods
@@ -347,16 +347,18 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
 
-    private void processField(final FieldNode field, final MethodNode initializer, final MethodNode staticInitializer, final ClassNode fieldHelper) {
+    private void processField(final FieldNode field, final MethodNode initializer, final MethodNode staticInitializer, final ClassNode fieldHelper, final ClassNode trait, final Set<String> knownFields) {
         Expression initialExpression = field.getInitialExpression();
         MethodNode selectedMethod = field.isStatic()?staticInitializer:initializer;
         if (initialExpression != null) {
             VariableExpression thisObject = new VariableExpression(selectedMethod.getParameters()[0]);
+            ExpressionStatement initCode = new ExpressionStatement(initialExpression);
+            processBody(thisObject, initCode, trait, fieldHelper, knownFields);
             BlockStatement code = (BlockStatement) selectedMethod.getCode();
             MethodCallExpression mce = new MethodCallExpression(
                     new CastExpression(createReceiverType(field.isStatic(), fieldHelper), thisObject),
                     Traits.helperSetterName(field),
-                    initialExpression
+                    initCode.getExpression()
             );
             mce.setImplicitThis(false);
             mce.setSourcePosition(initialExpression);
