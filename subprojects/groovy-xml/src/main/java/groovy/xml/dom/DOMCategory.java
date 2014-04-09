@@ -47,8 +47,8 @@ import java.util.Map;
  * @author paulk
  */
 public class DOMCategory {
-    private static boolean trimIgnorableWhitespace = true;
     private static boolean trimWhitespace = false;
+    private static boolean keepIgnorableWhitespace = false;
 
     /**
      * @return true if text elements are trimmed before returning; default false
@@ -70,20 +70,20 @@ public class DOMCategory {
     }
 
     /**
-     * @return true if ignorable whitespace (e.g. whitespace between elements) is trimmed/ignored; default true
+     * @return true if ignorable whitespace (e.g. whitespace between elements) is kept; default false
      */
-    public static synchronized boolean isGlobalTrimIgnorableWhitespace() {
-        return trimIgnorableWhitespace;
+    public static synchronized boolean isGlobalKeepIgnorableWhitespace() {
+        return keepIgnorableWhitespace;
     }
 
     /**
-     * Whether ignorable whitespace (e.g. whitespace between elements) is trimmed/ignored (default true).
+     * Whether ignorable whitespace (e.g. whitespace between elements) is kept (default false).
      * WARNING: this is a global setting. Altering it will affect all DOMCategory usage within the current Java process.
      *
-     * @param trimIgnorableWhitespace the new value
+     * @param keepIgnorableWhitespace the new value
      */
-    public static synchronized void setGlobalTrimIgnorableWhitespace(boolean trimIgnorableWhitespace) {
-        DOMCategory.trimIgnorableWhitespace = trimIgnorableWhitespace;
+    public static synchronized void setGlobalKeepIgnorableWhitespace(boolean keepIgnorableWhitespace) {
+        DOMCategory.keepIgnorableWhitespace = keepIgnorableWhitespace;
     }
 
     public static Object get(Element element, String elementName) {
@@ -459,7 +459,7 @@ public class DOMCategory {
                 }
             } else if (node.getNodeType() == Node.TEXT_NODE) {
                 String value = node.getNodeValue();
-                if ((isGlobalTrimIgnorableWhitespace() && value.trim().length() == 0) || isGlobalTrimWhitespace()) {
+                if ((!isGlobalKeepIgnorableWhitespace() && value.trim().length() == 0) || isGlobalTrimWhitespace()) {
                     value = value.trim();
                 }
                 if ("*".equals(elementName) && value.length() > 0) {

@@ -84,7 +84,7 @@ class XmlNodePrinterTest extends GroovyTestCase {
 
     void testNamespacesPreserving() {
         parser.trimWhitespace = false
-        parser.trimIgnorableWhitespace = false
+        parser.keepIgnorableWhitespace = true
         setUpNoindentingPrinter()
         checkRoundtrip namespaceInput, namespaceInput.trim()
     }
@@ -106,7 +106,7 @@ class XmlNodePrinterTest extends GroovyTestCase {
 
     void testWithoutNamespacesVerbosePreserving() {
         parser.trimWhitespace = false
-        parser.trimIgnorableWhitespace = false
+        parser.keepIgnorableWhitespace = true
         setUpNoindentingPrinter()
         checkRoundtrip noNamespaceInputVerbose, noNamespaceInputVerbose.trim()
     }

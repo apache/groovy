@@ -75,7 +75,7 @@ public class XmlParser implements ContentHandler {
     private Node parent;
 
     private boolean trimWhitespace = false;
-    private boolean trimIgnorableWhitespace = true;
+    private boolean keepIgnorableWhitespace = false;
     private boolean namespaceAware;
 
     /**
@@ -90,10 +90,9 @@ public class XmlParser implements ContentHandler {
 
     /**
      * Creates a <code>XmlParser</code> which does not allow DOCTYPE declarations in documents.
-     * 
+     *
      * @param validating <code>true</code> if the parser should validate documents as they are parsed; false otherwise.
      * @param namespaceAware <code>true</code> if the parser should provide support for XML namespaces; <code>false</code> otherwise.
-     *
      * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
      * @throws SAXException for SAX errors.
      */
@@ -103,11 +102,10 @@ public class XmlParser implements ContentHandler {
 
     /**
      * Creates a <code>XmlParser</code>.
-     * 
+     *
      * @param validating <code>true</code> if the parser should validate documents as they are parsed; false otherwise.
      * @param namespaceAware <code>true</code> if the parser should provide support for XML namespaces; <code>false</code> otherwise.
      * @param allowDocTypeDeclaration <code>true</code> if the parser should provide support for DOCTYPE declarations; <code>false</code> otherwise.
-     *
      * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
      * @throws SAXException for SAX errors.
      */
@@ -128,7 +126,7 @@ public class XmlParser implements ContentHandler {
     public XmlParser(SAXParser parser) throws SAXException {
         reader = parser.getXMLReader();
     }
-    
+
     private void setQuietly(SAXParserFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);
@@ -157,21 +155,21 @@ public class XmlParser implements ContentHandler {
     }
 
     /**
-     * Returns the current trim ignorable whitespace setting.
+     * Returns the current keep ignorable whitespace setting.
      *
-     * @return true if whitespace will be trimmed
+     * @return true if ignorable whitespace will be kept (default false)
      */
-    public boolean isTrimIgnorableWhitespace() {
-        return trimIgnorableWhitespace;
+    public boolean isKeepIgnorableWhitespace() {
+        return keepIgnorableWhitespace;
     }
 
     /**
-     * Sets the trim whitespace setting value.
+     * Sets the keep ignorable whitespace setting value.
      *
-     * @param trimIgnorableWhitespace the desired setting value
+     * @param keepIgnorableWhitespace the desired new value
      */
-    public void setTrimIgnorableWhitespace(boolean trimIgnorableWhitespace) {
-        this.trimIgnorableWhitespace = trimIgnorableWhitespace;
+    public void setKeepIgnorableWhitespace(boolean keepIgnorableWhitespace) {
+        this.keepIgnorableWhitespace = keepIgnorableWhitespace;
     }
 
     /**
@@ -422,7 +420,7 @@ public class XmlParser implements ContentHandler {
     }
 
     public void ignorableWhitespace(char buffer[], int start, int len) throws SAXException {
-        if (!trimIgnorableWhitespace) characters(buffer, start, len);
+        if (keepIgnorableWhitespace) characters(buffer, start, len);
     }
 
     public void processingInstruction(String target, String data) throws SAXException {
@@ -452,7 +450,7 @@ public class XmlParser implements ContentHandler {
             return;
         }
         String text = bodyText.toString();
-        if (!trimWhitespace && !trimIgnorableWhitespace) {
+        if (!trimWhitespace && keepIgnorableWhitespace) {
             parent.children().add(text);
         } else if (!trimWhitespace && text.trim().length() > 0) {
             parent.children().add(text);
