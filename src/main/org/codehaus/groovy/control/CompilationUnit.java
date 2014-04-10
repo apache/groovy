@@ -1055,25 +1055,34 @@ public class CompilationUnit extends ProcessingUnit {
             } catch (GroovyBugError e) {
                 changeBugText(e, context);
                 throw e;
+            } catch (NoClassDefFoundError e) {
+                // effort to get more logging in case a dependency of a class is loaded
+                // although it shouldn't have
+                convertUncaughtExceptionToCompilationError(e);
             } catch (Exception e) {
-                // check the exception for a nested compilation exception
-                ErrorCollector nestedCollector = null;
-                for (Throwable next = e.getCause(); next != e && next != null; next = next.getCause()) {
-                    if (!(next instanceof MultipleCompilationErrorsException)) continue;
-                    MultipleCompilationErrorsException mcee = (MultipleCompilationErrorsException) next;
-                    nestedCollector = mcee.collector;
-                    break;
-                }
-
-                if (nestedCollector != null) {
-                    getErrorCollector().addCollectorContents(nestedCollector);
-                } else {
-                    getErrorCollector().addError(new ExceptionMessage(e, configuration.getDebug(), this));
-                }
+                convertUncaughtExceptionToCompilationError(e);
             }
         }
 
         getErrorCollector().failIfErrors();
+    }
+
+    private void convertUncaughtExceptionToCompilationError(final Throwable e) {
+        // check the exception for a nested compilation exception
+        ErrorCollector nestedCollector = null;
+        for (Throwable next = e.getCause(); next != e && next != null; next = next.getCause()) {
+            if (!(next instanceof MultipleCompilationErrorsException)) continue;
+            MultipleCompilationErrorsException mcee = (MultipleCompilationErrorsException) next;
+            nestedCollector = mcee.collector;
+            break;
+        }
+
+        if (nestedCollector != null) {
+            getErrorCollector().addCollectorContents(nestedCollector);
+        } else {
+            Exception err = e instanceof Exception?((Exception)e):new RuntimeException(e);
+            getErrorCollector().addError(new ExceptionMessage(err, configuration.getDebug(), this));
+        }
     }
 
     public void applyToGeneratedGroovyClasses(GroovyClassOperation body) throws CompilationFailedException {
