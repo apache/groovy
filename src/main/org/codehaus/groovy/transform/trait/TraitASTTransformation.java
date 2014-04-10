@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -98,7 +99,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         if (Traits.isTrait(superClass)) {
             // move from super class to interface;
             cNode.setSuperClass(ClassHelper.OBJECT_TYPE);
-            cNode.addInterface(superClass);
+            // TODO GROOVY-6691 - check this is the best approach
+            cNode.addInterface(GenericsUtils.nonGeneric(superClass));
             resolveScope(cNode);
         }
     }
