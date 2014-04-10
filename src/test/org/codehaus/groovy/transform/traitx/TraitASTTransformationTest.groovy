@@ -1708,6 +1708,43 @@ assert v.currentLevel == 3
         assert message.contains('Prefix expressions on trait fields/properties are not supported in traits')
     }
 
+    // GROOVY-6691
+    void testTraitImplementingGenericSuperTrait() {
+        assertScript '''
+            class App {}
+            trait Base<T> {
+                T value
+                void set(T v) { value = v}
+                T get() { v }
+            }
+            trait Applicative extends Base<App> { }
+            class Dummy implements Applicative {}
+            @groovy.transform.TypeChecked
+            void test() {
+                def d = new Dummy()
+                d.set(new App())
+            }
+            test()
+        '''
+        def message = shouldFail '''
+            class App {}
+            trait Base<T> {
+                T value
+                void set(T v) { value = v}
+                T get() { v }
+            }
+            trait Applicative extends Base<App> { }
+            class Dummy implements Applicative {}
+            @groovy.transform.TypeChecked
+            void test() {
+                def d = new Dummy()
+                d.set('oh noes!')
+            }
+            test()
+        '''
+        assert message.contains('Cannot find matching method Dummy#set(java.lang.String)')
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

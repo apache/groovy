@@ -95,12 +95,12 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     private void replaceExtendsByImplements(final ClassNode cNode) {
-        ClassNode superClass = cNode.getSuperClass();
+        ClassNode superClass = cNode.getUnresolvedSuperClass();
         if (Traits.isTrait(superClass)) {
             // move from super class to interface;
             cNode.setSuperClass(ClassHelper.OBJECT_TYPE);
-            // TODO GROOVY-6691 - check this is the best approach
-            cNode.addInterface(GenericsUtils.nonGeneric(superClass));
+            cNode.setUnresolvedSuperClass(ClassHelper.OBJECT_TYPE);
+            cNode.addInterface(superClass);
             resolveScope(cNode);
         }
     }
