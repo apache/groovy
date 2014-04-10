@@ -5,27 +5,6 @@ apply plugin: 'osgi'
 group = 'org.codehaus.groovy'
 archivesBaseName = 'groovy'
 
-ext.allManifest = manifest {
-    attributes('Built-By': System.properties['user.name'],
-               'Extension-Name': 'groovy',
-               'Specification-Title': 'Groovy: a powerful, dynamic language for the JVM',
-               'Specification-Version': project.version,
-               'Specification-Vendor': 'The Codehaus',
-               'Implementation-Title': 'Groovy: a powerful, dynamic language for the JVM',
-               'Implementation-Version': project.version,
-               'Implementation-Vendor': 'The Codehaus',
-               'Bundle-ManifestVersion': '2',
-               'Bundle-Name': 'Groovy Runtime',
-               'Bundle-Description': 'Groovy Runtime',
-               'Bundle-Version': groovyBundleVersion,
-               'Bundle-Vendor': 'The Codehaus',
-               'Bundle-ClassPath': '.',
-               'Bundle-RequiredExecutionEnvironment': 'J2SE-1.5',
-               'Eclipse-BuddyPolicy': 'dependent',
-               'DynamicImport-Package': '*',
-               'Main-class': 'groovy.ui.GroovyMain')
-}
-
 ext.licenseSpec = copySpec {
     from 'config/build'
     from(zipTree(configurations.compile.fileCollection { it.name.startsWith 'commons-cli' }.singleFile).matching {
@@ -83,9 +62,28 @@ task copy(type: Copy) {
     with licenseSpec
 }
 
-def groovyOsgiManifest, subprojectOsgiManifest
+ext.allManifest = manifest {
+    attributes('Built-By': System.properties['user.name'],
+            'Extension-Name': 'groovy',
+            'Specification-Title': 'Groovy: a powerful, dynamic language for the JVM',
+            'Specification-Version': groovyBundleVersion,
+            'Specification-Vendor': 'The Codehaus',
+            'Implementation-Title': 'Groovy: a powerful, dynamic language for the JVM',
+            'Implementation-Version': groovyBundleVersion,
+            'Implementation-Vendor': 'The Codehaus',
+            'Bundle-ManifestVersion': '2',
+            'Bundle-Name': 'Groovy Runtime',
+            'Bundle-Description': 'Groovy Runtime',
+            'Bundle-Version': groovyBundleVersion,
+            'Bundle-Vendor': 'The Codehaus',
+            'Bundle-ClassPath': '.',
+            'Bundle-RequiredExecutionEnvironment': 'J2SE-1.6',
+            'Eclipse-BuddyPolicy': 'dependent',
+            'DynamicImport-Package': '*',
+            'Main-class': 'groovy.ui.GroovyMain')
+}
 
-groovyOsgiManifest = {
+ext.groovyOsgiManifest = {
     // Exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
     from(allManifest) {
         eachEntry { details ->
@@ -96,11 +94,11 @@ groovyOsgiManifest = {
     }
     version = groovyBundleVersion
     instruction '-nouses', 'true'
-    instruction 'Export-Package', "*;version=${version}"
+    instruction 'Export-Package', "*;version=${groovyBundleVersion}"
     classpath = sourceSets.main.runtimeClasspath
 }
 
-subprojectOsgiManifest = {
+ext.subprojectOsgiManifest = {
     // Exclude attributes not needed for subprojects.
     from(allManifest) {
         eachEntry { details ->
@@ -111,7 +109,7 @@ subprojectOsgiManifest = {
     }
     version = groovyBundleVersion
     instruction '-nouses', 'true'
-    instruction 'Export-Package', "*;version=${version}"
+    instruction 'Export-Package', "*;version=${groovyBundleVersion}"
     classpath = sourceSets.main.runtimeClasspath
 }
 
@@ -124,22 +122,21 @@ jar {
         }
     }
 
-    manifest = osgiManifest {
-        symbolicName = 'groovy'
-        instruction 'Import-Package', 'antlr', 'org.objectweb.asm', '*;resolution:=optional'
-        classesDir = sourceSets.main.output.classesDir
-    }
-    manifest groovyOsgiManifest
-
     exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
 
 }
 
 allprojects {
-    task jarjar(dependsOn: jar) {
-        inputs.file jar.archivePath
-        outputs.file jar.archivePath
-        doLast {
+    task jarjar(type:Jar, dependsOn: jar) {
+        destinationDir = jar.destinationDir
+        baseName = jar.baseName
+        appendix = jar.appendix
+        classifier = jar.classifier
+        includeEmptyDirs = false
+        def target = new File("${archivePath}.tmp")
+        from zipTree(target)
+
+        doFirst {
             def keepUntouched = [
                     'org/codehaus/groovy/cli/GroovyPosixParser*.class',
                     'groovy/util/CliBuilder*.class',
@@ -147,8 +144,8 @@ allprojects {
                     'org/codehaus/groovy/tools/shell/util/HelpFormatter*.class'
             ].join(',')
             boolean isRoot = project == rootProject
+            def gradleProject = project
             ant {
-                def target = new File("${jar.archivePath}.jarjar")
                 taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: rootProject.configurations.tools.asPath
                 jarjar(jarfile: target) {
                     zipfileset(
@@ -172,15 +169,29 @@ allprojects {
                     rule pattern: 'org.objectweb.**', result: 'groovyjarjarasm.@1'
                     rule pattern: 'org.apache.commons.cli.**', result: 'groovyjarjarcommonscli.@1'
                 }
-                jar(destfile: target, update: true) {
-                    zipfileset(
-                            src: jar.archivePath,
-                            includes: keepUntouched)
-                }
-                // ant.move seems broken on windows if there is an existing file even with overwrite & force so we copy + delete
-                ant.copy(file: target, tofile: jar.archivePath)
-                ant.delete(file: target)
             }
+
+            def manifestSpec = isRoot ? groovyOsgiManifest : subprojectOsgiManifest
+            manifest = osgiManifest {
+                symbolicName = gradleProject.name
+                instruction 'Import-Package', '*;resolution:=optional'
+                classesDir = target
+            }
+            manifest(manifestSpec)
+
+            def manifestPath = "${temporaryDir}/META-INF/MANIFEST.MF"
+            manifest.writeTo(manifestPath)
+
+            ant.jar(destfile: target, update: true, manifest: manifestPath) {
+                zipfileset(
+                        src: jar.archivePath,
+                        includes: keepUntouched)
+            }
+
+        }
+        doLast {
+            // for some obscure reason, this produces a Gradle warning
+            target.delete()
         }
     }
 }
@@ -194,11 +205,6 @@ subprojects {
                 filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
             }
         }
-        manifest = osgiManifest {
-            symbolicName = project.name
-            classesDir = sourceSets.main.output.classesDir
-        }
-        manifest subprojectOsgiManifest
         exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
     }
 }
@@ -265,7 +271,6 @@ task jarAll(type: Jar, dependsOn: { allprojects.jarjar }) {
             }
         }
 
-        // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
         manifest = osgiManifest {
             symbolicName = 'groovy-all'
             instruction 'Import-Package', '*;resolution:=optional'
