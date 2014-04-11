@@ -39,4 +39,14 @@ String[] result = x + y
 assert result as List == ['a', 'b', 'c', 'd', 'e', 'f']
 '''
     }
+
+    void testShouldNotThrowAmbiguousSelectionError() {
+        assertScript '''import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.MethodNode
+
+MethodNode methodNode = null
+ClassNode annotation = null
+List annots = methodNode?.getAnnotations(annotation)
+return (annots != null && annots.size() > 0);'''
+    }
 }
