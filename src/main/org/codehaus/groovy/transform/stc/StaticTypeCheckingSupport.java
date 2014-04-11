@@ -295,10 +295,11 @@ public abstract class StaticTypeCheckingSupport {
         // the argument is wrapped in the vargs array or
         // the argument is an array that can be used for the vargs part directly
         // we test only the wrapping part, since the non wrapping is done already
-        ClassNode ptype = params[params.length - 1].getType().getComponentType();
+        ClassNode lastParamType = params[params.length - 1].getType();
+        ClassNode ptype = lastParamType.getComponentType();
         ClassNode arg = args[args.length - 1];
         if (isNumberType(ptype) && isNumberType(arg) && !ptype.equals(arg)) return -1;
-        return isAssignableTo(arg, ptype)?getDistance(arg,ptype):-1;
+        return isAssignableTo(arg, ptype)?Math.min(getDistance(arg, lastParamType), getDistance(arg, ptype)):-1;
     }
 
     /**
@@ -967,7 +968,7 @@ public abstract class StaticTypeCheckingSupport {
                     System.arraycopy(params, 0, firstParams, 0, firstParams.length);
                     firstParamMatches = allParametersAndArgumentsMatch(firstParams, safeArgs) >= 0;
                 }
-                int lastArgMatch = allPMatch<0 && isVargs(params) && firstParamMatches?lastArgMatchesVarg(params, safeArgs):-1;
+                int lastArgMatch = isVargs(params) && firstParamMatches?lastArgMatchesVarg(params, safeArgs):-1;
                 if (lastArgMatch>=0) {
                     lastArgMatch += 256-params.length; // ensure exact matches are preferred over vargs
                 }
