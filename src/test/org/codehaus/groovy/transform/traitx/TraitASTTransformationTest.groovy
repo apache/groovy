@@ -1745,6 +1745,65 @@ assert v.currentLevel == 3
         assert message.contains('Cannot find matching method Dummy#set(java.lang.String)')
     }
 
+    void testUpdateFieldFromOtherReceiver() {
+        assertScript '''
+            class Person {
+                String name
+            }
+            trait PersonUpdater {
+                void update(Person p) {
+                    p.name = 'Test'
+                }
+            }
+            class Updater implements PersonUpdater{}
+            def p = new Person()
+            def u = new Updater()
+            u.update(p)
+            assert p.name == 'Test'
+        '''
+    }
+
+    void testUseStaticFieldInTraitBody() {
+        assertScript '''
+            import java.util.logging.Logger
+
+            trait Loggable {
+
+                static def LOGGER = Logger.getLogger(this.class.name)
+
+                void info(String msg) {
+                    LOGGER.info(msg)
+                }
+            }
+
+            class Test implements Loggable {}
+
+            def t = new Test()
+            t.info('foo')
+        '''
+    }
+
+    void testUpdateStaticFieldInTraitBody() {
+        assertScript '''
+            trait Loggable {
+
+                static int CALLS = 0
+
+                int call() {
+                    CALLS += 1
+                    CALLS
+                }
+            }
+
+            class Test implements Loggable {}
+
+            def t = new Test()
+            assert t.call() == 1
+            assert t.call() == 2
+            assert Test.CALLS == 2
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

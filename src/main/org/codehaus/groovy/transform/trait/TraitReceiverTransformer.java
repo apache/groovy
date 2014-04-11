@@ -78,6 +78,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
     @Override
     public Expression transform(final Expression exp) {
+        ClassNode weavedType = weaved.getOriginType();
         if (exp instanceof BinaryExpression) {
             Expression leftExpression = ((BinaryExpression) exp).getLeftExpression();
             Expression rightExpression = ((BinaryExpression) exp).getRightExpression();
@@ -94,9 +95,17 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     leftFieldName = ((PropertyExpression) leftExpression).getPropertyAsString();
                 }
                 if (leftFieldName!=null) {
-                    String method = Traits.helperSetterName(new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weaved.getOriginType(), null));
+                    FieldNode fn = weavedType.getDeclaredField(leftFieldName);
+                    if (fn==null) {
+                        fn = new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null);
+                    }
+                    Expression receiver = createFieldHelperReceiver();
+                    if (fn.isStatic()) {
+                        receiver = new PropertyExpression(receiver, "class");
+                    }
+                    String method = Traits.helperSetterName(fn);
                     MethodCallExpression mce = new MethodCallExpression(
-                            createFieldHelperReceiver(),
+                            receiver,
                             method,
                             new ArgumentListExpression(super.transform(rightExpression))
                     );
@@ -181,8 +190,13 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             VariableExpression vexp = (VariableExpression) exp;
             Variable accessedVariable = vexp.getAccessedVariable();
             if (accessedVariable instanceof FieldNode) {
+                FieldNode fn = (FieldNode) accessedVariable;
+                Expression receiver = createFieldHelperReceiver();
+                if (fn.isStatic()) {
+                    receiver = new PropertyExpression(createFieldHelperReceiver(), "class");
+                }
                 MethodCallExpression mce = new MethodCallExpression(
-                        createFieldHelperReceiver(),
+                        receiver,
                         Traits.helperGetterName((FieldNode) accessedVariable),
                         ArgumentListExpression.EMPTY_ARGUMENTS
                 );
@@ -192,7 +206,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             } else if (accessedVariable instanceof PropertyNode) {
                 String propName = accessedVariable.getName();
                 if (knownFields.contains(propName)) {
-                    String method = Traits.helperGetterName(new FieldNode(propName, 0, ClassHelper.OBJECT_TYPE, weaved.getOriginType(), null));
+                    String method = Traits.helperGetterName(new FieldNode(propName, 0, ClassHelper.OBJECT_TYPE, weavedType, null));
                     MethodCallExpression mce = new MethodCallExpression(
                             createFieldHelperReceiver(),
                             method,
@@ -228,7 +242,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             if (pexp.isImplicitThis() || "this".equals(object.getText())) {
                 String propName = pexp.getPropertyAsString();
                 if (knownFields.contains(propName)) {
-                    String method = Traits.helperGetterName(new FieldNode(propName, 0, ClassHelper.OBJECT_TYPE, weaved.getOriginType(), null));
+                    String method = Traits.helperGetterName(new FieldNode(propName, 0, ClassHelper.OBJECT_TYPE, weavedType, null));
                     MethodCallExpression mce = new MethodCallExpression(
                             createFieldHelperReceiver(),
                             method,
