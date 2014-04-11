@@ -792,6 +792,9 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static int getDistance(final ClassNode receiver, final ClassNode compare) {
+        if (receiver.isArray() && compare.isArray()) {
+            return getDistance(receiver.getComponentType(), compare.getComponentType());
+        }
         int dist = 0;
         ClassNode unwrapReceiver = ClassHelper.getUnwrapper(receiver);
         ClassNode unwrapCompare = ClassHelper.getUnwrapper(compare);
@@ -965,7 +968,7 @@ public abstract class StaticTypeCheckingSupport {
                     System.arraycopy(params, 0, firstParams, 0, firstParams.length);
                     firstParamMatches = allParametersAndArgumentsMatch(firstParams, safeArgs) >= 0;
                 }
-                int lastArgMatch = isVargs(params) && firstParamMatches?lastArgMatchesVarg(params, safeArgs):-1;
+                int lastArgMatch = allPMatch<0 && isVargs(params) && firstParamMatches?lastArgMatchesVarg(params, safeArgs):-1;
                 if (lastArgMatch>=0) {
                     lastArgMatch += 256-params.length; // ensure exact matches are preferred over vargs
                 }
