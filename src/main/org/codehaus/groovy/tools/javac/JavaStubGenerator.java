@@ -68,7 +68,7 @@ public class JavaStubGenerator {
     }
 
     public JavaStubGenerator(final File outputPath) {
-        this(outputPath, false, false, "utf-8");
+        this(outputPath, false, false, Charset.defaultCharset().name());
     }
 
     private void mkdirs(File parent, String relativeFile) {
