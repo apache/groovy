@@ -365,11 +365,14 @@ compileJava {
     options.fork(memoryMaximumSize: javacMain_mx)
 }
 
+    // Gradle classloading magic with Groovy will only work if it finds a *jar*
+    // on classpath. This "bootstrap jar" contains the minimal compiler, without .groovy compiled files
+
 task bootstrapJar {
-    dependsOn compileJava,dgmConverter
+    dependsOn compileJava, dgmConverter
 
     def destinationDir = file("$buildDir/bootstrap")
-    def archiveName = "groovy-${version}.jar"
+    def archiveName = "groovy-${version}-bootstrap.jar"
     ext.archivePath = file("$destinationDir/$archiveName")
 
     doLast {
@@ -395,14 +398,10 @@ allprojects {
         groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
         groovyClasspath = files(
                 rootProject.compileJava.classpath,
-                rootProject.bootstrapJar.archivePath/*,
-                { project(':groovy-docgenerator').compileJava.destinationDir },
-                { project(':groovy-groovydoc').compileJava.destinationDir },
-                { project(':groovy-ant').compileJava.destinationDir },
-                { project(':groovy-templates').compileJava.destinationDir },*/
-
+                rootProject.bootstrapJar.archivePath
         )
-        classpath = files(rootProject.compileJava.classpath, compileJava.classpath)
+
+        classpath = classpath + groovyClasspath
 
         doFirst {
             if (useIndy()) {
