@@ -384,7 +384,7 @@ task bootstrapJar {
                 basedir: file(sourceSets.main.output.classesDir)
         )
     }
-
+    inputs.property('indy', useIndy())
     inputs.files fileTree('src')
     outputs.file archivePath
 }
