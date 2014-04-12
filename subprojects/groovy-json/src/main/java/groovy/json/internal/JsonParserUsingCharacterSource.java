@@ -173,12 +173,11 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
     }
 
     private final Object decodeNumber(boolean negative) {
-
         char[] chars = characterSource.readNumber();
         Object value = null;
 
         if (CharScanner.hasDecimalChar(chars, negative)) {
-            value = CharScanner.parseDouble(chars);
+            value = CharScanner.parseBigDecimal(chars);
         } else if (CharScanner.isInteger(chars)) {
             value = CharScanner.parseInt(chars);
         } else if (CharScanner.isLong(chars)) {

@@ -15,6 +15,8 @@
  */
 package groovy.json
 
+import groovy.json.internal.Value
+
 /**
  * @author Guillaume Laforge
  */
@@ -69,16 +71,12 @@ class JsonSlurperTest extends GroovyTestCase {
 
     }
 
-
-
     void testLargeNegNumWithSpace() {
         int i = parser.parseText('   -1234567891')
         int i2 = -1234567891
         assert i == i2
 
     }
-
-
 
     void testWithSpaces() {
         int num = ((Number)parser.parseText( "           123")).intValue()
@@ -87,15 +85,12 @@ class JsonSlurperTest extends GroovyTestCase {
 
     }
 
-
-
     void testParseLargeNum() {
         long num = parser.parseText(""+Long.MAX_VALUE)
         long num2 = Long.MAX_VALUE
         assert num == num2
 
     }
-
 
     void testParseSmallNum() {
         long num = parser.parseText(""+Long.MIN_VALUE)
@@ -104,14 +99,12 @@ class JsonSlurperTest extends GroovyTestCase {
 
     }
 
-
     void testParseLargeDecimal() {
         double num  = parser.parseText(""+Double.MAX_VALUE)
         double num2 = Double.MAX_VALUE
         assert num == num2
 
     }
-
 
     void testParseSmallDecimal() {
         double num  = parser.parseText(""+Double.MIN_VALUE)
@@ -120,13 +113,69 @@ class JsonSlurperTest extends GroovyTestCase {
 
     }
 
+    void testOutputTypes() {
+        if (parser.type in [JsonParserType.CHAR_BUFFER, JsonParserType.CHARACTER_SOURCE]) {
+            assert parser.parseText('"hello"').class == String
+        } else {
+            assert parser.parseText('"hello"') instanceof CharSequence
+        }
+
+        if (parser.type in [JsonParserType.CHAR_BUFFER, JsonParserType.CHARACTER_SOURCE]) {
+            assert parser.parseText('123.45').class == BigDecimal
+        } else {
+            assert parser.parseText('123.45') instanceof Number
+        }
+
+        if (parser.type in [JsonParserType.CHAR_BUFFER, JsonParserType.CHARACTER_SOURCE]) {
+            assert parser.parseText('123').class == Integer
+        } else {
+            assert parser.parseText('123') instanceof Number
+        }
+
+        if (parser.type in [JsonParserType.CHAR_BUFFER, JsonParserType.CHARACTER_SOURCE]) {
+            assert parser.parseText('12345678912345').class == Long
+        } else {
+            assert parser.parseText('12345678912345') instanceof Number
+        }
+
+        if (parser.type in [JsonParserType.CHAR_BUFFER, JsonParserType.CHARACTER_SOURCE]) {
+            assert parser.parseText('true').class == Boolean
+        } else {
+            assert parser.parseText('true') instanceof Value
+        }
+
+        assert parser.parseText('[1,2,3,4]') instanceof List
+
+        assert parser.parseText('{"message":"Hello"}') instanceof Map
+
+        if (parser.type in [JsonParserType.INDEX_OVERLAY, JsonParserType.LAX]) {
+            assert parser.parseText('null') instanceof Value
+        }
+    }
+
+    void testNull() {
+        if (parser.type in [JsonParserType.CHAR_BUFFER, JsonParserType.CHARACTER_SOURCE]) {
+            assert parser.parseText("null") == null
+        } else {
+            assert parser.parseText("null").toValue() == null
+        }
+    }
+
+    void testBoolean() {
+        if (parser.type in [JsonParserType.CHAR_BUFFER, JsonParserType.CHARACTER_SOURCE]) {
+            assert parser.parseText("true") == true
+            assert parser.parseText("false") == false
+        } else {
+            assert parser.parseText("true").toValue() == true
+            assert parser.parseText("false").toValue() == false
+        }
+    }
+
     void exactly312Test() {
         assert parser.parseText('22') == 22
         assert parser.parseText('-22') == -22
         assert parser.parseText('-22.0065') == -22.0065
     }
-
-
 
     void testArrayOfArrayWithSimpleValues() {
         assert parser.parseText('[1, 2, 3, ["a", "b", "c", [true, false], "d"], 4]') ==

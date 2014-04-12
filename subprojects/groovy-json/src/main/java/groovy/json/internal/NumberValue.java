@@ -105,7 +105,7 @@ public class NumberValue extends java.lang.Number implements Value {
 
         switch (type) {
             case DOUBLE:
-                return doubleValue();
+                return bigDecimalValue();
             case INTEGER:
 
                 int sign = 1;
@@ -213,7 +213,6 @@ public class NumberValue extends java.lang.Number implements Value {
 
     public double doubleValue() {
         return CharScanner.parseDouble(this.buffer, startIndex, endIndex);
-
     }
 
     public boolean booleanValue() {

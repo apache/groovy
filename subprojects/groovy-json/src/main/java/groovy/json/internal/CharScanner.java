@@ -17,6 +17,8 @@
  */
 package groovy.json.internal;
 
+import java.math.BigDecimal;
+
 import static groovy.json.internal.Exceptions.die;
 import static groovy.json.internal.Exceptions.handle;
 
@@ -676,26 +678,26 @@ public class CharScanner {
                 value = parseLongFromTo(buffer, from, index);
             }
         } else if (foundDot && simple) {
-            long lvalue;
+            BigDecimal lvalue;
 
             if (length < powersOf10.length) {
 
                 if (isInteger(buffer, from, length)) {
-                    lvalue = parseIntFromToIgnoreDot(buffer, from, index);
+                    lvalue = new BigDecimal(parseIntFromToIgnoreDot(buffer, from, index));
                 } else {
-                    lvalue = parseLongFromToIgnoreDot(buffer, from, index);
+                    lvalue = new BigDecimal(parseLongFromToIgnoreDot(buffer, from, index));
                 }
 
-                double power = powersOf10[digitsPastPoint];
-                value = lvalue / power;
+                BigDecimal power = new BigDecimal(powersOf10[digitsPastPoint]);
+                value = lvalue.divide(power);
 
             } else {
-                value = Double.parseDouble(new String(buffer, from, length));
+                value = new BigDecimal(new String(buffer, from, length));
 
             }
 
         } else {
-            value = Double.parseDouble(new String(buffer, from, index - from));
+            value = new BigDecimal(new String(buffer, from, index - from));
         }
 
         if (size != null) {
@@ -703,6 +705,14 @@ public class CharScanner {
         }
 
         return value;
+    }
+
+    public static BigDecimal parseBigDecimal(char[] buffer) {
+        return parseBigDecimal(buffer, 0, buffer.length);
+    }
+
+    public static BigDecimal parseBigDecimal(char[] buffer, int from, int to) {
+        return new BigDecimal(parseDouble(buffer, from, to));
     }
 
     public static float parseFloat(char[] buffer, int from, int to) {
