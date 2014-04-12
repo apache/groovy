@@ -203,7 +203,6 @@ dependencies {
 //    antlr "antlr:antlr:$antlrVersion"
     antlr "org.apache.ant:ant-antlr:$antVersion"
 
-    // TODO remove once M12N refactoring finished
     testCompile project(':groovy-ant')
     testCompile project(':groovy-test')
 }
@@ -401,21 +400,19 @@ allprojects {
         )
 
         classpath = classpath + groovyClasspath
-
-        doFirst {
-            if (useIndy()) {
-                logger.info('Building ${project.name} with InvokeDynamic support activated')
-            }
-        }
     }
 
     if (useIndy()) {
         tasks.withType(GroovyCompile) {
+            logger.info("Building ${project.name}:${name} with InvokeDynamic support activated")
             groovyOptions.optimizationOptions.indy = true
+            sourceCompatibility = 1.7
+            targetCompatibility = 1.7
         }
-
-        compileJava.sourceCompatibility = 1.7
-        compileJava.targetCompatibility = 1.7
+        tasks.withType(Compile) {
+            sourceCompatibility = 1.7
+            targetCompatibility = 1.7
+        }
         jar {
             classifier = 'indy'
         }
@@ -438,12 +435,6 @@ if (!JavaVersion.current().java6Compatible) {
     logger.warn 'You must run on JDK 6+ to be able to deploy to codehaus.'
 } else {
     apply from: 'gradle/codehaus.gradle'
-}
-
-classes {
-    doFirst {
-        logger.lifecycle "InvokeDynamic support ${useIndy() ? 'on' : 'off'}"
-    }
 }
 
 // If a local configuration file for tweaking the build is present, apply it
