@@ -451,10 +451,6 @@ if (file('user.gradle').exists()) {
     apply from: 'user.gradle'
 }
 
-wrapper {
-    gradleVersion = '1.10'
-}
-
 // produce warning if running on 1.5 or 1.6
 if (!JavaVersion.current().java6Compatible) {
     logger.lifecycle '''
