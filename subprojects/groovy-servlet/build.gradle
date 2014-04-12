@@ -6,7 +6,6 @@ dependencies {
         provided dep
     }
     compile rootProject
-    groovy rootProject
     testCompile "jmock:jmock:$jmockVersion"
     // needed for MarkupBuilder
     compile project(':groovy-xml')

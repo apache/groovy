@@ -1,6 +1,5 @@
 dependencies {
     compile rootProject
-    groovy rootProject
     testCompile rootProject.sourceSets.test.runtimeClasspath
     testCompile project(':groovy-test')
 }

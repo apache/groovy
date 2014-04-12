@@ -4,6 +4,5 @@ dependencies {
     }
     compile 'commons-logging:commons-logging:1.1.1'
     compile rootProject
-    groovy rootProject
     testCompile project(':groovy-test')
 }

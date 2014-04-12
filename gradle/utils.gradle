@@ -36,7 +36,7 @@ buildscript {
  */
 task exceptionUtils {
     ext.classFiles = [
-            "${compileCompilerJava.destinationDir}/org/codehaus/groovy/runtime/ExceptionUtils.class",
+            "${buildDir}/generated-classes/org/codehaus/groovy/runtime/ExceptionUtils.class",
             "${compileJava.destinationDir}/org/codehaus/groovy/runtime/ExceptionUtils.class"]
     outputs.files classFiles
 

@@ -1,5 +1,6 @@
 apply from: 'gradle/filter.gradle'
 apply from: 'gradle/indy.gradle'
+
 if (JavaVersion.current().java6Compatible) {
     apply from: 'gradle/bintray.gradle'
 }
@@ -30,8 +31,8 @@ allprojects {
     apply plugin: 'java'
 
     buildDir = 'target'
-    sourceCompatibility = 1.5
-    targetCompatibility = 1.5
+    sourceCompatibility = 1.6
+    targetCompatibility = 1.6
 
     group = 'org.codehaus.groovy'
     version = groovyVersion
@@ -39,96 +40,10 @@ allprojects {
         jcenter()
     }
 
-    apply plugin: 'checkstyle'
     apply plugin: 'groovy'
-    apply plugin: 'codenarc'
     apply from: "${rootProject.projectDir}/gradle/groovydoc.gradle"
     apply from: "${rootProject.projectDir}/gradle/indy.gradle"
-
-    if (isJava15()) {
-        // do nothing on JDK 5 as gradle fails to create a proxy for the AsciidoctorTask
-        logger.warn 'You must run on JDK 6+ to be able to generate the Asciidoc documentation.'
-    } else {
-        apply plugin: 'asciidoctor'
-
-        asciidoctor {
-            def (full, major, minor, patch, flavor) = (groovyVersion =~ /(\d+)\.(\d++)\.(\d+)-?(.+)/)[0]
-            logDocuments = true
-            sourceDir = project.file('src/spec/doc')
-            options = [
-                    attributes: [
-                            'source-highlighter': 'prettify',
-                            groovyversion: groovyVersion,
-                            'groovy-major-version': major,
-                            'groovy-minor-version': minor,
-                            'groovy-patch-version': patch,
-                            'groovy-full-version': groovyVersion,
-                            'groovy-short-version': "${major}.${minor}",
-                            doctype: 'book',
-                            revnumber : groovyVersion,
-                            icons : 'font',
-                            toc2: '',
-                            subprojroot: 'subprojects/groovy-',
-                            specfolder: 'src/spec/doc',
-                            'linkcss!': '',
-                            encoding: 'utf-8'
-                    ]
-            ]
-        }
-
-        // skip the asciidoctor task if there's no directory with asciidoc files
-        asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
-
-        asciidoctor.doLast {
-            outputDir.eachFileMatch(~'.*html') { File file ->
-                def text = file.getText('UTF-8')
-                text = text.replaceAll(/gapi::([a-zA-Z0-9$.#]+)/) { m->
-                    def cName = m[1]
-                    def cPath = m[1].replace('.','/')
-                    def anchor = ''
-                    int anchorIdx = cPath.indexOf('#')
-                    if (anchorIdx>0) {
-                        anchor = cPath.substring(anchorIdx)
-                        cPath = cPath.substring(0, anchorIdx)
-                    }
-
-                    "<a href='http://groovy.codehaus.org/gapi/index.html?${cPath}.html${anchor}' target='_blank'><code>$cName</code></a>"
-                }
-                file.write(text,'UTF-8')
-            }
-        }
-    }
-
-    // don't fail build on CodeNarc tasks
-    tasks.withType(CodeNarc) {
-        ignoreFailures = true
-        configFile = file("$rootProject.projectDir/config/codenarc/codenarc.groovy")
-    }
-    tasks.withType(Checkstyle) {
-        ignoreFailures = true
-        configFile = file("$rootProject.projectDir/config/checkstyle/checkstyle.xml")
-        configProperties = ['rootProject.projectDir': rootProject.projectDir]
-    }
-
-    if (useIndy()) {
-        tasks.withType(GroovyCompile) {
-            groovyOptions.optimizationOptions.indy = true
-            groovyClasspath = files(
-                    rootProject.compileJava.destinationDir,
-                    rootProject.compileJava.classpath,
-                    { project(':groovy-docgenerator').compileJava.destinationDir },
-                    { project(':groovy-groovydoc').compileJava.destinationDir },
-                    { project(':groovy-ant').compileJava.destinationDir },
-                    { project(':groovy-templates').compileJava.destinationDir },
-            )
-        }
-
-        compileJava.sourceCompatibility = 1.7
-        compileJava.targetCompatibility = 1.7
-        jar {
-            classifier = 'indy'
-        }
-    }
+    apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
 }
 
 // todo: use the conventional "resources" directory for classpath resources
@@ -211,33 +126,25 @@ ext {
 }
 
 dependencies {
-    compilerCompile "antlr:antlr:$antlrVersion"
-    compilerCompile "org.ow2.asm:asm:$asmVersion"
-    compilerCompile "org.ow2.asm:asm-analysis:$asmVersion"
-    compilerCompile "org.ow2.asm:asm-commons:$asmVersion"
-    compilerCompile "org.ow2.asm:asm-tree:$asmVersion"
-    compilerCompile "org.ow2.asm:asm-util:$asmVersion"
+    compile "antlr:antlr:$antlrVersion"
+    compile "org.ow2.asm:asm:$asmVersion"
+    compile "org.ow2.asm:asm-analysis:$asmVersion"
+    compile "org.ow2.asm:asm-commons:$asmVersion"
+    compile "org.ow2.asm:asm-tree:$asmVersion"
+    compile "org.ow2.asm:asm-util:$asmVersion"
 
-    compilerCompile "commons-cli:commons-cli:$commonsCliVersion"
-    compilerCompile "org.apache.ant:ant:$antVersion"
-    compilerCompile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
+    compile "commons-cli:commons-cli:$commonsCliVersion"
+    compile "org.apache.ant:ant:$antVersion"
+    compile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compilerCompile "org.fusesource.jansi:jansi:$jansiVersion"
-    compilerCompile("org.apache.ivy:ivy:$ivyVersion") {
+    compile "org.fusesource.jansi:jansi:$jansiVersion"
+    compile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
     }
-    compilerCompile files("$buildDir/classes/compiler")
-
-    groovy files("$buildDir/classes/compiler")
-    groovy "antlr:antlr:$antlrVersion"
-    groovy "org.ow2.asm:asm:$asmVersion"
-    groovy "org.ow2.asm:asm-analysis:$asmVersion"
-    groovy "org.ow2.asm:asm-commons:$asmVersion"
-    groovy "org.ow2.asm:asm-tree:$asmVersion"
-    groovy "org.ow2.asm:asm-util:$asmVersion"
+    compile files("${buildDir}/generated-classes")
 
     compile "commons-cli:commons-cli:$commonsCliVersion"
     compile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
@@ -305,21 +212,6 @@ dependencies {
 ext.generatedDirectory = "${buildDir}/generated-sources"
 
 sourceSets {
-    compiler {
-        // This sourceSet corresponds to the minimal "bootstrap" Groovy compiler
-        // which will be used by the build itself to compile the groovy files
-        java {
-            srcDirs = [
-                    'src/main',
-                    "$generatedDirectory/src/main"
-            ]
-            if (!useIndy()) {
-                exclude '**/indy/*'
-                exclude '**/v7/*'
-                exclude '**/vm7/*'
-            }
-        }
-    }
     main {
         java {
             srcDirs = [
@@ -443,82 +335,98 @@ task ensureGrammars {
 
 apply from: 'gradle/utils.gradle'
 
-def isJava16() {
-    System.properties['java.version'].contains('1.6')
-}
-
-def isJava15() {
-    System.properties['java.version'].contains('1.5')
-}
-
-def modules() {
+ext.modules = {
     subprojects
 }
 
-// provide to other build scripts
-ext.isJava6 = this.&isJava16()
-ext.isJava5 = this.&isJava15()
-ext.modules = this.&modules()
-
-task dgmConverter(type: JavaExec, dependsOn: 'classes') {
+task dgmConverter(dependsOn:compileJava) {
     description = 'Generates DGM info file required for faster startup.'
-    ext.classesDir = sourceSets.main.output.classesDir
-    classpath = files(classesDir) + configurations.compile
-    main = 'org.codehaus.groovy.tools.DgmConverter'
-    args = ['--info', classesDir.absolutePath]
+    def classesDir = sourceSets.main.output.classesDir
+    def classpath = files(classesDir, configurations.compile).asPath
+
+    //main = 'org.codehaus.groovy.tools.DgmConverter'
+    //args = ['--info', classesDir.absolutePath]
     doFirst {
         file("$classesDir/META-INF").mkdirs()
+        // we use ant.java because Gradle is a bit "too smart" with JavaExec
+        // as it will invalidate the task if classpath changes, which will
+        // happen once Groovy files are compiled
+        ant.java(classname:'org.codehaus.groovy.tools.DgmConverter', classpath: classpath) {
+            arg(value: '--info')
+            arg(value: classesDir.absolutePath)
+        }
     }
-    inputs.files fileTree(dir: projectDir, includes: ['src/**/*GroovyMethods.java'])
-    outputs.file file("$classesDir/META-INF/dgminfo")
+    inputs.files fileTree('src').include('**/*GroovyMethods.java')
+    outputs.file file("${classesDir}/META-INF/dgminfo")
 }
 
-task compilerDgmConverter(type: JavaExec) {
-    description = 'Generates DGM info file for the bootstrap compiler'
-    ext.compilerClassesDir = sourceSets.compiler.output.classesDir
-    classpath = files(compilerClassesDir) + configurations.compilerCompile
-    main = 'org.codehaus.groovy.tools.DgmConverter'
-    args = ['--info', compilerClassesDir.absolutePath]
-    doFirst {
-        file("$compilerClassesDir/META-INF").mkdirs()
-    }
-    inputs.files fileTree(dir: projectDir, includes: ['src/**/*GroovyMethods.java'])
-    outputs.file file("$compilerClassesDir/META-INF/dgminfo")
-}
-
-compileCompilerJava {
+compileJava {
     dependsOn ensureGrammars, exceptionUtils
     options.fork(memoryMaximumSize: javacMain_mx)
 }
 
-compileJava {
-    dependsOn compilerClasses, compilerDgmConverter, ensureGrammars
-    options.fork(memoryMaximumSize: javacMain_mx)
+task bootstrapJar {
+    dependsOn compileJava,dgmConverter
+
+    def destinationDir = file("$buildDir/bootstrap")
+    def archiveName = "groovy-${version}.jar"
+    ext.archivePath = file("$destinationDir/$archiveName")
+
+    doLast {
+        // we use ant.jar because Gradle is a bit "too smart" with JavaExec
+        // as it will invalidate the task if classpath changes, which will
+        // happen once Groovy files are compiled
+        destinationDir.mkdirs()
+        ant.jar(
+                destfile: archivePath,
+                basedir: file(sourceSets.main.output.classesDir)
+        )
+    }
+
+    inputs.files fileTree('src')
+    outputs.file archivePath
 }
 
-compileGroovy {
-    doFirst {
-        if (useIndy()) {
-            logger.info('Building with InvokeDynamic support activated')
+compileGroovy.dependsOn bootstrapJar
+
+allprojects {
+
+    tasks.withType(GroovyCompile) {
+        groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
+        groovyClasspath = files(
+                rootProject.compileJava.classpath,
+                rootProject.bootstrapJar.archivePath/*,
+                { project(':groovy-docgenerator').compileJava.destinationDir },
+                { project(':groovy-groovydoc').compileJava.destinationDir },
+                { project(':groovy-ant').compileJava.destinationDir },
+                { project(':groovy-templates').compileJava.destinationDir },*/
+
+        )
+        classpath = files(rootProject.compileJava.classpath, compileJava.classpath)
+
+        doFirst {
+            if (useIndy()) {
+                logger.info('Building ${project.name} with InvokeDynamic support activated')
+            }
         }
     }
-    groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
+
+    if (useIndy()) {
+        tasks.withType(GroovyCompile) {
+            groovyOptions.optimizationOptions.indy = true
+        }
+
+        compileJava.sourceCompatibility = 1.7
+        compileJava.targetCompatibility = 1.7
+        jar {
+            classifier = 'indy'
+        }
+    }
 }
 
 compileTestGroovy {
     groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
 }
-
-compileExamplesGroovy {
-    groovyOptions.fork(memoryMaximumSize: groovycExamples_mx)
-}
-
-// suppress CheckStyle/CodeNarc
-task checkstyleExamples(overwrite: true) << {}
-task checkstyleMain(overwrite: true) << {}
-task checkstyleTest(overwrite: true) << {}
-task checkstyleTools(overwrite: true) << {}
-task codenarcExamples(overwrite: true) << {}
 
 apply from: 'gradle/test.gradle'
 apply from: 'gradle/docs.gradle'
@@ -528,7 +436,7 @@ apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 // Define a GroovyDoc task which depends on the generated groovydoc tool
 apply from: 'gradle/groovydoc.gradle'
-if (isJava15()) {
+if (!JavaVersion.current().java6Compatible) {
     // do nothing on JDK 5 as sardine is built for Java 6
     logger.warn 'You must run on JDK 6+ to be able to deploy to codehaus.'
 } else {
@@ -546,20 +454,12 @@ if (file('user.gradle').exists()) {
     apply from: 'user.gradle'
 }
 
-allprojects {
-    apply plugin: 'cobertura'
-    cobertura {
-        coverageFormats = ['xml', 'html']
-        coverageReportDir = file("$buildDir/reports/cobertura")
-    }
-}
-
 wrapper {
     gradleVersion = '1.10'
 }
 
 // produce warning if running on 1.5 or 1.6
-if (isJava15() || isJava16()) {
+if (!JavaVersion.current().java6Compatible) {
     logger.lifecycle '''
     **************************************** WARNING **********************************************
     ****** You are running the build with an older JDK. NEVER try to release with 1.5 or 1.6 ******

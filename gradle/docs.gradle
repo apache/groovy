@@ -4,12 +4,10 @@ task doc(dependsOn: ['asciidocAll', 'assembleAsciidoc', 'javadocAll', 'groovydoc
 }
 
 task assembleAsciidoc(type: Copy, dependsOn: 'asciidocAll') {
-    if (!isJava15()) {
-        subprojects {
-            from project.asciidoctor
-        }
-        into "$buildDir/asciidoc"
+    subprojects {
+        from project.asciidoctor
     }
+    into "$buildDir/asciidoc"
 }
 
 def javadocSpec = {
@@ -22,7 +20,7 @@ def javadocSpec = {
         version = true
         overview = rootProject.file('src/main/overviewj.html')
         footer = doc.footer
-        source = rootProject.useIndy()?'1.7':'1.5'
+        source = rootProject.useIndy()?'1.7':'1.6'
         links('http://docs.oracle.com/javase/7/docs/api/', 'http://evgeny-goldin.org/javadoc/ant/api/',
                 'http://commons.apache.org/proper/commons-cli/javadocs/api-release', 'http://junit.org/javadoc/latest/',
                 'http://docs.oracle.com/javaee/6/api/', 'http://www.antlr2.org/javadoc')
@@ -51,9 +49,7 @@ allprojects {
     javadoc javadocSpec
     groovydoc groovydocSpec
 
-    if (!isJava15()) {
-        task asciidocAll(dependsOn: 'asciidoctor')
-    }
+    task asciidocAll(dependsOn: 'asciidoctor')
 }
 
 // Root project has an extra 'all' javadoc task
