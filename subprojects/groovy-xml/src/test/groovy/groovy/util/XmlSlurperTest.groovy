@@ -141,6 +141,19 @@ class XmlSlurperTest extends GroovyTestCase {
         assert root.ChildElement.@'two:ItemId'[0].namespaceURI() == 'http://www.ivan.com/ns2'
     }
 
+    // GROOVY-6255
+    void testXmlNamespacedAttributes() {
+        def xml = '''
+        <appendix version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+            <section xml:id="a"/>
+        </appendix>
+        '''
+
+        def root = new XmlSlurper().parseText(xml).declareNamespace(docbook: 'http://docbook.org/ns/docbook')
+
+        assert root.section[0].@'xml:id' == 'a'
+    }
+
     // GROOVY-5931
     void testIterableGPathResult() {
         def xml = """

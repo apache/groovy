@@ -178,6 +178,8 @@ public class XmlSlurper extends DefaultHandler {
      */
     public GPathResult getDocument() {
         try {
+            // xml namespace is always defined
+            namespaceTagHints.put("xml", "http://www.w3.org/XML/1998/namespace");
             return new NodeChild(currentNode, null, namespaceTagHints);
         } finally {
             currentNode = null;
