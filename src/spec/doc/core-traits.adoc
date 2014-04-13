@@ -548,4 +548,4 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=prefix_p
 <1> `x` is defined within the trait, postfix increment is not allowed
 <2> `x` is defined within the trait, prefix decrement is not allowed
 
-A workaround is to use the `=+` operator instead.
+A workaround is to use the `+=` operator instead.
