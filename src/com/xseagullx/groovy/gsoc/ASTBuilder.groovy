@@ -9,7 +9,11 @@ import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.codehaus.groovy.ast.*
+import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.SyntaxException
@@ -79,9 +83,33 @@ class ASTBuilder extends GroovyBaseListener {
     static def parseMember(ClassNode classNode, GroovyParser.ConstructorDeclarationContext ctx) {
         int modifiers = ctx.VISIBILITY_MODIFIER() ? parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER()) : Opcodes.ACC_PUBLIC
 
-        def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), [] as ClassNode[], new BlockStatement())
+        def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), [] as ClassNode[], parseBlockStatement(ctx.blockStatement()))
         setupNodeLocation(constructorNode, ctx)
         constructorNode.syntheticPublic = ctx.VISIBILITY_MODIFIER() == null
+    }
+
+    static Statement parseBlockStatement(GroovyParser.BlockStatementContext ctx) {
+        def statement = new BlockStatement()
+        if (!ctx)
+            return statement
+
+        ctx.statement().each {
+            statement.addStatement(parseStatement(it))
+        }
+        statement
+    }
+
+    static Statement parseStatement(GroovyParser.StatementContext ctx) {
+        setupNodeLocation(new ExpressionStatement(parseExpression(ctx.expressionStatement().expression())), ctx)
+    }
+
+    static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
+        def val = ctx.NUMBER() ? Integer.parseInt(ctx.NUMBER().text) : ctx.text[1..-2]
+        setupNodeLocation(new ConstantExpression(val, true), ctx)
+    }
+
+    static Expression parseExpression(GroovyParser.NullExpressionContext ctx) {
+        setupNodeLocation(new ConstantExpression(null), ctx)
     }
 
     def parseMember(ClassNode classNode, GroovyParser.MethodDeclarationContext ctx) {
@@ -94,7 +122,7 @@ class ASTBuilder extends GroovyBaseListener {
         modifiers |= parseModifier(ctx.KW_TRANSIENT(), Opcodes.ACC_TRANSIENT)
         modifiers |= parseModifier(ctx.KW_VOLATILE(), Opcodes.ACC_VOLATILE)
 
-        def statement = new BlockStatement()
+        def statement = parseBlockStatement(ctx.blockStatement())
 
         def params = parseParameters(ctx.argumentDeclarationList())
         def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, parseTypeDeclaration(ctx.typeDeclaration()), params, [] as ClassNode[], statement)
