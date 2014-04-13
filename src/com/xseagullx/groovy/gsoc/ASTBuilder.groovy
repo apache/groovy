@@ -65,14 +65,21 @@ class ASTBuilder extends GroovyBaseListener {
 
     def parseMembers(ClassNode classNode, List<GroovyParser.ClassMemberContext> ctx) {
         for (member in ctx) {
-            parseMember(classNode, member.children[0])
+            def memberContext = member.children[0]
+            assert memberContext instanceof GroovyParser.ConstructorDeclarationContext ||
+                    memberContext instanceof GroovyParser.MethodDeclarationContext ||
+                    memberContext instanceof GroovyParser.FieldDeclarationContext
+
+            // This inspection is suppressed cause I use Runtime multimethods dispatching mechanics of Groovy.
+            //noinspection GroovyAssignabilityCheck
+            parseMember(classNode, memberContext)
         }
     }
 
-    def parseMember(ClassNode classNode, GroovyParser.ConstructorDeclarationContext ctx) {
+    static def parseMember(ClassNode classNode, GroovyParser.ConstructorDeclarationContext ctx) {
         int modifiers = ctx.VISIBILITY_MODIFIER() ? parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER()) : Opcodes.ACC_PUBLIC
 
-        def constructorNode = classNode.addConstructor(modifiers, [] as Parameter[], [] as ClassNode[], new BlockStatement())
+        def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), [] as ClassNode[], new BlockStatement())
         setupNodeLocation(constructorNode, ctx)
         constructorNode.syntheticPublic = ctx.VISIBILITY_MODIFIER() == null
     }
@@ -89,7 +96,8 @@ class ASTBuilder extends GroovyBaseListener {
 
         def statement = new BlockStatement()
 
-        def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, ClassHelper.make(ClassHelper.OBJECT), [] as Parameter[], [] as ClassNode[], statement)
+        def params = parseParameters(ctx.argumentDeclarationList())
+        def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, parseTypeDeclaration(ctx.typeDeclaration()), params, [] as ClassNode[], statement)
         setupNodeLocation(methodNode, ctx)
         methodNode.syntheticPublic = (methodNode.modifiers & Opcodes.ACC_SYNTHETIC) != 0
         methodNode.modifiers &= ~Opcodes.ACC_SYNTHETIC // FIXME Magic with syntetic modifier.
@@ -105,16 +113,39 @@ class ASTBuilder extends GroovyBaseListener {
         modifiers |= parseModifier(ctx.KW_TRANSIENT(), Opcodes.ACC_TRANSIENT)
         modifiers |= parseModifier(ctx.KW_VOLATILE(), Opcodes.ACC_VOLATILE)
 
-        def fieldNode = classNode.addField(ctx.IDENTIFIER().text, modifiers, ClassHelper.make(ClassHelper.OBJECT), null)
+        def fieldNode = classNode.addField(ctx.IDENTIFIER().text, modifiers, parseTypeDeclaration(ctx.typeDeclaration()), null)
         setupNodeLocation(fieldNode, ctx)
-        fieldNode.synthetic = ctx.KW_DEF() // TODO what it means?
+        fieldNode.synthetic = modifiers & Opcodes.ACC_PUBLIC //modifiers (ctx?.typeDeclaration()?.KW_DEF() as boolean) // TODO what it means?
     }
 
-    static void setupNodeLocation(ASTNode astNode, ParserRuleContext ctx) {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Utility methods.
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    static ClassNode parseTypeDeclaration(GroovyParser.TypeDeclarationContext ctx) {
+        !ctx || ctx.KW_DEF() ? ClassHelper.OBJECT_TYPE : setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().text), ctx)
+    }
+
+    static Parameter[] parseParameters(GroovyParser.ArgumentDeclarationListContext ctx) {
+        ctx.argumentDeclaration().collect {
+            setupNodeLocation(new Parameter(parseTypeDeclaration(it.typeDeclaration()), it.IDENTIFIER().text), it)
+        }
+    }
+
+
+    /**
+     * Sets location(lineNumber, colNumber, lastLineNumber, lastColumnNumber) for node using standard context information.
+     * Note: this method is implemented to be closed over ASTNode. It returns same node as it received in arguments.
+     * @param astNode Node to be modified.
+     * @param ctx Context from which information is obtained.
+     * @return Modified astNode.
+     */
+    static <T extends ASTNode> T setupNodeLocation(T astNode, ParserRuleContext ctx) {
         astNode.lineNumber = ctx.start.line
         astNode.columnNumber = ctx.start.charPositionInLine + 1
         astNode.lastLineNumber = ctx.stop.line
         astNode.lastColumnNumber = ctx.stop.charPositionInLine + 1 + ctx.stop.text.length()
+        astNode
     }
 
     int parseClassModifiers(@NotNull GroovyParser.ClassModifiersContext ctx) {

@@ -48,14 +48,25 @@ classDeclaration:
     classModifiers KW_CLASS IDENTIFIER (NL)* '{' (classMember | NL | ';')* '}';
 classMember:
     constructorDeclaration | methodDeclaration | fieldDeclaration;
+
+// Members // FIXME Make more strict check for def keyword. There should be no way to ommit everything but IDENTIFIER.
 methodDeclaration:
-    (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE | KW_DEF) +
-    IDENTIFIER '(' /* Arglist */')' '{' /* Body */ '}'; // Inner NL 's handling.
+    (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE) +
+    typeDeclaration? IDENTIFIER '(' argumentDeclarationList ')' '{' /* Body */ '}'; // Inner NL 's handling.
 fieldDeclaration:
-    (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE | KW_DEF) +
-    IDENTIFIER ;
+    (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE) +
+    typeDeclaration? IDENTIFIER ;
 constructorDeclaration:
-    VISIBILITY_MODIFIER? IDENTIFIER '(' /* Arglist */')' '{' /* Body */ '}'; // Inner NL 's handling.
+    VISIBILITY_MODIFIER? IDENTIFIER '(' argumentDeclarationList ')' '{' /* Body */ '}'; // Inner NL 's handling.
+
+typeDeclaration:
+    (IDENTIFIER | KW_DEF)
+;
+
+argumentDeclarationList:
+    argumentDeclaration (',' argumentDeclaration)* | /* EMPTY ARGUMENT LIST */ ;
+argumentDeclaration:
+    typeDeclaration? IDENTIFIER ;
 
 classModifiers: //JSL7 8.1 FIXME Now gramar allows modifier duplication. It's possible to make it more strict listing all 24 permutations.
 (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_STRICTFP)* ;
