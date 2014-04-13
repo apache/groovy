@@ -235,7 +235,7 @@ public class MarkupBuilder extends BuilderSupport {
      *
      * @return this MarkupBuilder
      */
-    public Object getMkp() {
+    public MarkupBuilderHelper getMkp() {
         return new MarkupBuilderHelper(this);
     }
 
