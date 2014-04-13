@@ -52,7 +52,7 @@ class ASTComparatorCategory {
     }
 
     static equals(ConstructorNode a, ConstructorNode b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["declaringClass"])
     }
 
     static equals(DynamicVariable a, DynamicVariable b) {
@@ -133,7 +133,7 @@ class ASTComparatorCategory {
     }
     
     static equals(BlockStatement a, BlockStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(BreakStatement a, BreakStatement b) {

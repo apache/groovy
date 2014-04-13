@@ -43,11 +43,11 @@ class MainTest extends Specification {
 
     def "test invalid class modifiers"() {
         expect:
-        def sourceFile = new File(file)
+        def file = new File(path)
 
-        def errorCollectorNew = new Main(Configuration.NEW).process(sourceFile).context.errorCollector
-        def errorCollectorOld = new Main(Configuration.OLD).process(sourceFile).context.errorCollector
-        def errorCollectorOld2 = new Main(Configuration.OLD).process(sourceFile).context.errorCollector
+        def errorCollectorNew = new Main(Configuration.NEW).process(file).context.errorCollector
+        def errorCollectorOld = new Main(Configuration.OLD).process(file).context.errorCollector
+        def errorCollectorOld2 = new Main(Configuration.OLD).process(file).context.errorCollector
 
 
         def cl = { ErrorCollector errorCollector, int it -> def s = new StringWriter(); errorCollector.getError(it).write(new PrintWriter(s)); s.toString() }
@@ -59,9 +59,28 @@ class MainTest extends Specification {
         assert errOld1 == errNew
 
         where:
-        file | output
+        path | output
         "test_res/com/xseagullx/groovy/gsoc/ClassModifiersInvalid_Issue1_2.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ClassModifiersInvalid_Issue2_2.groovy" | _
+    }
+
+    def "test class members"() {
+        expect:
+        def file = new File(path)
+        def moduleNodeNew = new Main(Configuration.NEW).process(file)
+        def moduleNodeOld = new Main(Configuration.OLD).process(file)
+        def moduleNodeOld2 = new Main(Configuration.OLD).process(file)
+
+        use(ASTComparatorCategory) {
+            assert moduleNodeOld == moduleNodeOld2;
+            assert moduleNodeNew == moduleNodeOld
+            true
+        }
+
+        where:
+        path | output
+        "test_res/com/xseagullx/groovy/gsoc/class/members/ClassMembers_Issue3_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/class/members/ClassMembers_Issue3_2.groovy" | _
     }
 
     def "test class file creation"() {
