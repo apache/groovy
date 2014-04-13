@@ -19,6 +19,7 @@ import groovy.xml.TraversalTestSupport
 import groovy.xml.GpathSyntaxTestSupport
 import groovy.xml.MixedMarkupTestSupport
 import groovy.xml.StreamingMarkupBuilder
+import static groovy.xml.XmlUtil.serialize
 
 class XmlSlurperTest extends GroovyTestCase {
 
@@ -152,6 +153,28 @@ class XmlSlurperTest extends GroovyTestCase {
         def root = new XmlSlurper().parseText(xml).declareNamespace(docbook: 'http://docbook.org/ns/docbook')
 
         assert root.section[0].@'xml:id' == 'a'
+    }
+
+    // GROOVY-6356
+    void testSetAndRemoveAttributesWithNamespace() {
+        def xmlSource = '''<bob:root
+                xmlns:bob="stuff"
+                xmlns:gmi="http://www.isotc211.org/2005/gmi"
+                xmlns:xlink="http://www.w3.org/1999/xlink">
+            <gmi:instrument xlink:title="$INSTRUMENT"/>
+        </bob:root>'''
+
+        def bobRoot = new XmlSlurper(false, true).parseText(xmlSource).declareNamespace(bob: 'stuff',
+                ns2: 'http://www.example.org/NS2', gmi: "http://www.isotc211.org/2005/gmi")
+
+        def instrument = bobRoot.'gmi:instrument'
+
+        assert serialize(instrument).contains('xlink:title="$INSTRUMENT"')
+        instrument[0].'@xlink:title' = 'XXX'
+        assert !serialize(instrument).contains('xlink:title="$INSTRUMENT"')
+        assert serialize(instrument).contains('xlink:title="XXX"')
+        instrument[0].attributes().remove('xlink:title')
+        assert !serialize(instrument).contains('xlink:title="XXX"')
     }
 
     // GROOVY-5931

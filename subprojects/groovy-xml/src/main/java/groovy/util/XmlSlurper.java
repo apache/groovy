@@ -19,6 +19,7 @@ package groovy.util;
 import groovy.util.slurpersupport.GPathResult;
 import groovy.util.slurpersupport.Node;
 import groovy.util.slurpersupport.NodeChild;
+import groovy.util.slurpersupport.NamespaceAwareHashMap;
 import groovy.xml.FactorySupport;
 
 import java.io.File;
@@ -389,7 +390,7 @@ public class XmlSlurper extends DefaultHandler {
     public void startElement(final String namespaceURI, final String localName, final String qName, final Attributes atts) throws SAXException {
         addCdata();
 
-        final Map<String, String> attributes = new HashMap<String, String>();
+        final Map<String, String> attributes = new NamespaceAwareHashMap();
         final Map<String, String> attributeNamespaces = new HashMap<String, String>();
 
         for (int i = atts.getLength() - 1; i != -1; i--) {

@@ -45,6 +45,7 @@ public class NodeChild extends GPathResult {
     public NodeChild(final Node node, final GPathResult parent, final String namespacePrefix, final Map<String, String> namespaceTagHints) {
         super(parent, node.name(), namespacePrefix, namespaceTagHints);
         this.node = node;
+        ((NamespaceAwareHashMap)this.node.attributes()).setNamespaceTagHints(namespaceTagHints);
     }
 
     /**
