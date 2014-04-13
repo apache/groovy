@@ -22,6 +22,10 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+/**
+ * @deprecated Use the {@link groovy.test.GroovyAssert} class instead
+ */
+@Deprecated
 public class GroovyAssert {
     private static final int MAX_NESTED_EXCEPTIONS = 10;
 
