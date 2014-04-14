@@ -99,6 +99,7 @@ class MainTest extends Specification {
         where:
         path | output
         "test_res/com/xseagullx/groovy/gsoc/class/statements/MethodBody_Issue7_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/class/statements/Operators_Issue9_1.groovy" | _
     }
 
     def "test class file creation"() {

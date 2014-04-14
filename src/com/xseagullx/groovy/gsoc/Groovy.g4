@@ -19,8 +19,7 @@ KW_NULL: 'null' ;
 STRING: QUOTE STRING_BODY QUOTE ;
 fragment STRING_BODY: (~'\'')* ;
 fragment QUOTE: '\'';
-NUMBER: [0-9]+ ;
-
+NUMBER: '-'?[0-9]+ ;
 
 // Modifiers
 VISIBILITY_MODIFIER: (KW_PUBLIC | KW_PROTECTED | KW_PRIVATE) ;
@@ -81,7 +80,13 @@ statement: expressionStatement ;
 expressionStatement: expression ;
 
 expression:
-    STRING #constantExpression
+    ('+' | '-') expression #unaryExpression
+    | '!'expression #unaryExpression
+    | expression ('*' | '/') expression #binaryExpression
+    | expression ('+' | '-') expression #binaryExpression
+    | expression ('&&') expression #binaryExpression
+    | expression ('||') expression #binaryExpression
+    | STRING #constantExpression
     | NUMBER #constantExpression
     | KW_NULL #nullExpression;
 

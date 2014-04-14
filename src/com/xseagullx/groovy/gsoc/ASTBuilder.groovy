@@ -1,5 +1,4 @@
 package com.xseagullx.groovy.gsoc
-
 import groovyjarjarasm.asm.Opcodes
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
@@ -9,14 +8,20 @@ import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.codehaus.groovy.ast.*
+import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.ast.expr.NotExpression
+import org.codehaus.groovy.ast.expr.UnaryMinusExpression
+import org.codehaus.groovy.ast.expr.UnaryPlusExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.SyntaxException
+import org.codehaus.groovy.syntax.Token
+import org.codehaus.groovy.syntax.Types
 
 import java.lang.reflect.Modifier
 
@@ -103,6 +108,37 @@ class ASTBuilder extends GroovyBaseListener {
         setupNodeLocation(new ExpressionStatement(parseExpression(ctx.expressionStatement().expression())), ctx)
     }
 
+    static Expression parseExpression(GroovyParser.ExpressionContext ctx) {
+        throw new RuntimeException("Unsupported expression type! $ctx")
+    }
+
+    static Expression parseExpression(GroovyParser.BinaryExpressionContext ctx) {
+        def op = createToken(ctx.getChild(1) as TerminalNode)
+        def expression = new BinaryExpression(parseExpression(ctx.expression(0)), op, parseExpression(ctx.expression(1)))
+        expression.columnNumber = op.startColumn
+        expression.lastColumnNumber = op.startColumn + op.text.length()
+        expression.lineNumber = op.startLine
+        expression.lastLineNumber = op.startLine
+        expression
+    }
+
+    static Expression parseExpression(GroovyParser.UnaryExpressionContext ctx) {
+        def node = null
+        def op = ctx.getChild(0) as TerminalNode
+        switch (op.text) {
+            case '-' : node = new UnaryMinusExpression(parseExpression(ctx.expression())); break
+            case '+' : node = new UnaryPlusExpression(parseExpression(ctx.expression())); break
+            case '!' : node = new NotExpression(parseExpression(ctx.expression())); break
+            default: assert false; break
+        }
+
+        node.columnNumber = op.symbol.charPositionInLine + 1
+        node.lineNumber = op.symbol.line
+        node.lastLineNumber = op.symbol.line
+        node.lastColumnNumber = op.symbol.charPositionInLine + 1 + op.text.length()
+        node
+    }
+
     static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
         def val = ctx.NUMBER() ? Integer.parseInt(ctx.NUMBER().text) : ctx.text[1..-2]
         setupNodeLocation(new ConstantExpression(val, true), ctx)
@@ -149,6 +185,10 @@ class ASTBuilder extends GroovyBaseListener {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Utility methods.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    static createToken(TerminalNode node) {
+        new Token(Types.lookupSymbol(node.text), node.text, node.symbol.line, node.symbol.charPositionInLine + 1)
+    }
 
     static ClassNode parseTypeDeclaration(GroovyParser.TypeDeclarationContext ctx) {
         !ctx || ctx.KW_DEF() ? ClassHelper.OBJECT_TYPE : setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().text), ctx)

@@ -220,7 +220,7 @@ class ASTComparatorCategory {
     }
 
     static equals(BinaryExpression a, BinaryExpression b) {
-        reflexiveEquals(a, b, ["text"])
+        reflexiveEquals(a, b, ["text", "columnNumber", "lastColumnNumber"])
     }
 
     static equals(BitwiseNegationExpression a, BitwiseNegationExpression b) {
