@@ -288,7 +288,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if(classToCheck == null || hierClasses.containsKey(classToCheck.getName())) break;
             hierClasses.put(classToCheck.getName(), classToCheck);
         }
-        
+
         for (ClassNode classToCheck : hierClasses.values()) {
             name = classToCheck.getName()+"$"+type.getName();
             val = ClassHelper.make(name);
@@ -296,8 +296,18 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 type.setRedirect(val);
                 return true;
             }
+            // also check interfaces in case we have interfaces with nested classes
+            for (ClassNode next : classToCheck.getAllInterfaces()) {
+                if (type.getName().contains(next.getName())) continue;
+                name = next.getName()+"$"+type.getName();
+                val = ClassHelper.make(name);
+                if (resolve(val, false, false, false)) {
+                    type.setRedirect(val);
+                    return true;
+                }
+            }
         }
-        
+
         // another case we want to check here is if we are in a
         // nested class A$B$C and want to access B without
         // qualifying it by A.B. A alone will work, since that
@@ -329,9 +339,19 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 type.setRedirect(val);
                 return true;
             }
-        }        
-        
-        return false;   
+            // also check interfaces in case we have interfaces with nested classes
+            for (ClassNode next : testNode.getAllInterfaces()) {
+                if (type.getName().contains(next.getName())) continue;
+                name = next.getName()+"$"+type.getName();
+                val = ClassHelper.make(name);
+                if (resolve(val, false, false, false)) {
+                    type.setRedirect(val);
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private String replaceLastPoint(String name) {

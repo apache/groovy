@@ -73,7 +73,7 @@ class InnerClassTest extends CompilableTestSupport {
         """
     }
 
-    void testUsageOfInitializerBlockWithinAnAIC () {
+    void testUsageOfInitializerBlockWithinAnAIC() {
         assertScript """
             Object makeObj2(String name) {
                  new Object() {
@@ -106,7 +106,7 @@ class InnerClassTest extends CompilableTestSupport {
             def mods = A.B.modifiers
             assert Modifier.isPublic(mods)
         """
-        
+
         assertScript """
             class A {
                 static class B{}
@@ -281,7 +281,7 @@ class InnerClassTest extends CompilableTestSupport {
             assert bar.foo() == 2
         """
 
-    //TODO: static part
+        //TODO: static part
 
     }
 
@@ -364,7 +364,7 @@ class InnerClassTest extends CompilableTestSupport {
             assert bar.foo() == 1
         """
     }
-    
+
     void testClassOutputOrdering() {
         // this does actually not do much, but before this
         // change the inner class was tried to be executed
@@ -380,7 +380,7 @@ class InnerClassTest extends CompilableTestSupport {
             }
         """
     }
-    
+
     void testInnerClassDotThisUsage() {
         assertScript """
             class A{
@@ -423,13 +423,13 @@ class InnerClassTest extends CompilableTestSupport {
             assert b.foo() instanceof B
         """
     }
-    
+
     void testImplicitThisPassingWithNamedArguments() {
         def oc = new MyOuterClass4028()
         assert oc.foo().propMap.size() == 2
     }
 
-    void testThis0 () {
+    void testThis0() {
         assertScript """
 class A {
    static def field = 10
@@ -451,7 +451,7 @@ class A {
      def u (i) { println i + s + field }
    }}"""
     }
-    
+
     void testReferencedVariableInAIC() {
         assertScript """
             interface X{}
@@ -478,6 +478,19 @@ class A {
                 }
             }
         """
+    }
+
+    // GROOVY-5989
+    void testReferenceToOuterClassNestedInterface() {
+        assertScript '''
+            interface Koo { class Inner { } }
+
+            class Usage implements Koo {
+                static class MyInner extends Inner { }
+            }
+
+            assert new Usage() != null
+        '''
     }
 
     // GROOVY-5679
