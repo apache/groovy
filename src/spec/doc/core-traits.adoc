@@ -517,7 +517,7 @@ As usual, it is not recommanded to use public fields. Anyway, should you want th
 include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfield_notontrait,indent=0]
 -----
 
-because there is _no_ static field _CALLED_ defined on the trait itself. Likewise, if you have to distinct implementing classes, each ones gets a distinct static field:
+because there is _no_ static field _CALLED_ defined on the trait itself. Likewise, if you have two distinct implementing classes, each one gets a distinct static field:
 
 [source,groovy]
 ----

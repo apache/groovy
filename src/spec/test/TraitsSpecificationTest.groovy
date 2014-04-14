@@ -513,7 +513,7 @@ trait TestHelper {
 class Foo implements TestHelper {}
 Foo.init()                                      // <4>
 assert Foo.TestHelper__CALLED                   // <5>
-// tag::staticfield_header[]
+// end::staticfield_header[]
 
 try {
 // tag::staticfield_notontrait[]
