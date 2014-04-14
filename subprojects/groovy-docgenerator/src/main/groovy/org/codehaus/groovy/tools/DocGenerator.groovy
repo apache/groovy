@@ -209,8 +209,8 @@ class DocGenerator {
         }
         def indexMap = new TreeMap()
         def methodNameComparator = [compare: {a, b ->
-            final String aMethodAndSignature = a.method.name + ' ' + getParametersDecl(a.method)
-            final String bMethodAndSignature = b.method.name + ' ' + getParametersDecl(b.method)
+            final String aMethodAndSignature = a.method.name + ' ' + getParametersDecl(a.method) + ' ' + a.class
+            final String bMethodAndSignature = b.method.name + ' ' + getParametersDecl(b.method) + ' ' + b.class
 
             return aMethodAndSignature.compareTo(bMethodAndSignature)
         }] as Comparator
