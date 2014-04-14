@@ -772,7 +772,7 @@ import groovy.transform.Sortable
 // tag::sortable_custom[]
 @Sortable(includes='first,born') class Person {
     String last
-    Integer born
+    int born
     String first
 }
 // end::sortable_custom[]

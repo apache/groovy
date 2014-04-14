@@ -39,10 +39,10 @@ import java.util.Comparator;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 
 /**
  * Injects a set of Comparators and sort methods.
@@ -207,10 +207,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
     }
 
     private void checkComparable(PropertyNode pNode) {
-        if (pNode.getType().implementsInterface(COMPARABLE_TYPE)) {
-            return;
-        }
-        if (hasAnnotation(pNode.getType(), MY_TYPE)) {
+        if (pNode.getType().implementsInterface(COMPARABLE_TYPE) || isPrimitiveType(pNode.getType()) || hasAnnotation(pNode.getType(), MY_TYPE)) {
             return;
         }
         addError("Error during " + MY_TYPE_NAME + " processing: property '" +
