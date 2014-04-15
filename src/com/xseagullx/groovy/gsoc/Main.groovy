@@ -15,6 +15,7 @@ enum Configuration {
 class Main {
 
     private CompilerConfiguration configuration
+    static boolean dumpAstInXml = false
 
     Main(Configuration configuration) {
         assert configuration
@@ -60,7 +61,8 @@ class Main {
             def errorCollector = new ErrorCollector(configuration)
             def su = new SourceUnit(file, configuration, classLoader, errorCollector)
 
-            System.setProperty('groovy.ast', 'xml')
+            if (dumpAstInXml)
+                System.setProperty('groovy.ast', 'xml')
             su.parse()
             su.completePhase()
             su.nextPhase()
