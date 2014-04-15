@@ -20,22 +20,7 @@ import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.get;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
@@ -1756,4 +1741,24 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         return Files.readAllBytes(self);
     }
 
+    /**
+     *
+     *
+     * @param self the Closeable
+     * @param action the closure taking the Closeable as parameter
+     * @since 2.3.0
+     */
+    public static <T> T withCloseable(Closeable self, @ClosureParams(value=SimpleType.class, options="java.io.Closeable") Closure<T> action) throws IOException {
+        try {
+            T result = action.call(self);
+
+            Closeable temp = self;
+            self = null;
+            temp.close();
+
+            return result;
+        } finally {
+            DefaultGroovyMethodsSupport.closeWithWarning(self);
+        }
+    }
 }
