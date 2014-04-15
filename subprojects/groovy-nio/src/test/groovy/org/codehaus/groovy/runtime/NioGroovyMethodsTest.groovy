@@ -379,4 +379,50 @@ class NioGroovyMethodsTest extends Specification {
         temp.toFile().deleteDir()
 
     }
+
+    def testWithCloseable() {
+
+        setup:
+        final closeable = new DummyCloseable()
+
+        when:
+        def closeableParam = null
+        def result = closeable.withCloseable {
+            closeableParam = it
+            return 123
+        }
+
+        then:
+        closeableParam == closeable
+        result == 123
+        closeable.closed
+    }
+
+    def testWithCloseableAndException() {
+
+        setup:
+        final closeable = new ExceptionDummyCloseable()
+
+        when:
+        closeable.close()
+
+        then:
+        thrown IOException
+    }
+}
+
+class DummyCloseable implements Closeable {
+    boolean closed = false;
+
+    @Override
+    void close() throws IOException {
+        closed = true;
+    }
+}
+
+class ExceptionDummyCloseable implements Closeable {
+    @Override
+    void close() throws IOException {
+        throw new IOException("boom badaboom")
+    }
 }

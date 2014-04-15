@@ -36,6 +36,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.io.Closeable;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
@@ -1756,4 +1757,27 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         return Files.readAllBytes(self);
     }
 
+    /**
+     * Allows this closeable to be used within the closure, ensuring that it
+     * is closed once the closure has been executed and before this method returns.
+     *
+     * @param self the Closeable
+     * @param action the closure taking the Closeable as parameter
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @since 2.3.0
+     */
+    public static <T> T withCloseable(Closeable self, @ClosureParams(value=SimpleType.class, options="java.io.Closeable") Closure<T> action) throws IOException {
+        try {
+            T result = action.call(self);
+
+            Closeable temp = self;
+            self = null;
+            temp.close();
+
+            return result;
+        } finally {
+            DefaultGroovyMethodsSupport.closeWithWarning(self);
+        }
+    }
 }
