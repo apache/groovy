@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform.trait;
 
+import groovy.lang.GeneratedGroovyProxy;
 import groovy.transform.ForceOverride;
 import groovy.transform.Trait;
 import org.codehaus.groovy.GroovyBugError;
@@ -26,6 +27,7 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -210,6 +212,25 @@ public abstract class Traits {
         return null;
     }
 
+
+    /**
+     * Converts a class implementing some trait into a target class. If the trait is a dynamic proxy and
+     * that the target class is assignable to the target object of the proxy, then the target object is
+     * returned. Otherwise, falls back to {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#asType(java.lang.Object, Class)}
+     * @param self an object to be coerced to some class
+     * @param clazz the class to be coerced to
+     * @return the object coerced to the target class, or the proxy instance if it is compatible with the target class.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getAsType(Object self, Class<T> clazz) {
+        if (self instanceof GeneratedGroovyProxy) {
+            Object proxyTarget = ((GeneratedGroovyProxy)self).getProxyTarget();
+            if (clazz.isAssignableFrom(proxyTarget.getClass())) {
+                return (T) proxyTarget;
+            }
+        }
+        return DefaultGroovyMethods.asType(self, clazz);
+    }
 
     /**
      * Internal annotation used to indicate which methods in a trait interface have a

@@ -1804,6 +1804,44 @@ assert v.currentLevel == 3
         '''
     }
 
+    void testProxyTarget() {
+        assertScript '''
+trait Helloable implements CharSequence {
+    void hello() { println "hello" }
+}
+
+def x = new String("hello") as Helloable
+x.hello()
+assert !(x instanceof String)
+assert x instanceof Helloable
+assert x instanceof GeneratedGroovyProxy
+assert x.toUpperCase() == "HELLO" // expected
+assert x.proxyTarget.tr('h','*') == "*ello"
+'''
+
+    }
+
+    void testTraitsGetAsType() {
+        assertScript '''import org.codehaus.groovy.transform.trait.Traits
+trait Helloable implements CharSequence {
+    void hello() { println "hello" }
+}
+def str = "hello"
+def x = str as Helloable
+x.hello()
+assert !(x instanceof String)
+assert x instanceof Helloable
+assert x instanceof GeneratedGroovyProxy
+assert x.toUpperCase() == "HELLO" // expected
+assert x.proxyTarget.tr('h','*') == "*ello"
+def proxyTarget = x.proxyTarget
+assert proxyTarget.is(str)
+def converted = Traits.getAsType(x,String)
+assert converted.is(str)
+'''
+
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

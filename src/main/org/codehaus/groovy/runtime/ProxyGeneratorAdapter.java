@@ -16,6 +16,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import groovy.lang.GeneratedGroovyProxy;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
@@ -321,6 +322,10 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         final boolean addGroovyObjectSupport = !GroovyObject.class.isAssignableFrom(superClass);
         if (addGroovyObjectSupport) interfacesSet.add("groovy/lang/GroovyObject");
+        if (generateDelegateField) {
+            classList.add(GeneratedGroovyProxy.class);
+            interfacesSet.add("groovy/lang/GeneratedGroovyProxy");
+        }
         super.visit(V1_5, ACC_PUBLIC, proxyName, signature, BytecodeHelper.getClassInternalName(superClass), interfacesSet.toArray(new String[interfacesSet.size()]));
         visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         addDelegateFields();
@@ -552,6 +557,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                 delegatedClosures.put(name, Boolean.TRUE);
                 return makeDelegateToClosureCall(name, desc, signature, exceptions, accessFlags);
             }
+        } else if ("getProxyTarget".equals(name) && "()Ljava/lang/Object;".equals(desc)) {
+            return createGetProxyTargetMethod(access, name, desc, signature, exceptions);
         } else if ("<init>".equals(name) && (Modifier.isPublic(access) || Modifier.isProtected(access))) {
             return createConstructor(access, name, desc, signature, exceptions);
         } else if (Modifier.isAbstract(access) && !GROOVYOBJECT_METHOD_NAMESS.contains(name)) {
@@ -594,6 +601,17 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             }
             mv.visitEnd();
         }
+        return null;
+    }
+
+    private MethodVisitor createGetProxyTargetMethod(final int access, final String name, final String desc, final String signature, final String[] exceptions) {
+        MethodVisitor mv = super.visitMethod(ACC_PUBLIC | ACC_FINAL, name, desc, signature, exceptions);
+        mv.visitCode();
+        mv.visitIntInsn(ALOAD,0);
+        mv.visitFieldInsn(GETFIELD, proxyName, DELEGATE_OBJECT_FIELD, BytecodeHelper.getTypeDescription(delegateClass));
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(1,1);
+        mv.visitEnd();
         return null;
     }
 
