@@ -80,15 +80,26 @@ statement: expressionStatement ;
 expressionStatement: expression ;
 
 expression:
-    ('+' | '-') expression #unaryExpression
-    | '!'expression #unaryExpression
-    | expression ('*' | '/') expression #binaryExpression
+    expression ('.' | '?.' | '*.' | '.@') IDENTIFIER #fieldAccessExpression
+    | expression ('--' | '++') #postfixExpression
+    | ('!' | '~') expression #unaryExpression
+    | ('+' | '-') expression #unaryExpression
+    | ('--' | '++') expression #prefixExpression
+    | expression ('**') expression #binaryExpression
+    | expression ('*' | '/' | '%') expression #binaryExpression
     | expression ('+' | '-') expression #binaryExpression
+    | expression ('<<' | '>>' | '>>>' | '..' | '..<') expression #binaryExpression
+    | expression ((('<' | '<=' | '>' | '>=' | 'in') expression) | (('as' | 'instanceof') IDENTIFIER)) #binaryExpression
+    | expression ('==' | '!=' | '<=>') expression #binaryExpression
+    | expression ('=~' | '==~') expression #binaryExpression
+    | expression ('&') expression #binaryExpression
+    | expression ('^') expression #binaryExpression
+    | expression ('|') expression #binaryExpression
     | expression ('&&') expression #binaryExpression
     | expression ('||') expression #binaryExpression
     | STRING #constantExpression
     | NUMBER #constantExpression
-    | KW_NULL #nullExpression;
+    | KW_NULL #nullExpression ;
 
 classModifiers: //JSL7 8.1 FIXME Now gramar allows modifier duplication. It's possible to make it more strict listing all 24 permutations.
 (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_STRICTFP)* ;
