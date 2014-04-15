@@ -9,10 +9,15 @@ import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.codehaus.groovy.ast.*
+import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.SyntaxException
+import org.codehaus.groovy.syntax.Token
+import org.codehaus.groovy.syntax.Types
 
 import java.lang.reflect.Modifier
 
@@ -76,14 +81,126 @@ class ASTBuilder extends GroovyBaseListener {
         }
     }
 
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static def parseMember(ClassNode classNode, GroovyParser.ConstructorDeclarationContext ctx) {
         int modifiers = ctx.VISIBILITY_MODIFIER() ? parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER()) : Opcodes.ACC_PUBLIC
 
-        def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), [] as ClassNode[], new BlockStatement())
+        def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), [] as ClassNode[], parseBlockStatement(ctx.blockStatement()))
         setupNodeLocation(constructorNode, ctx)
         constructorNode.syntheticPublic = ctx.VISIBILITY_MODIFIER() == null
     }
 
+    static Statement parseBlockStatement(GroovyParser.BlockStatementContext ctx) {
+        def statement = new BlockStatement()
+        if (!ctx)
+            return statement
+
+        ctx.statement().each {
+            statement.addStatement(parseStatement(it))
+        }
+        statement
+    }
+
+    static Statement parseStatement(GroovyParser.StatementContext ctx) {
+        setupNodeLocation(new ExpressionStatement(parseExpression(ctx.expressionStatement().expression())), ctx)
+    }
+
+    static Expression parseExpression(GroovyParser.ExpressionContext ctx) {
+        throw new RuntimeException("Unsupported expression type! $ctx")
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.BinaryExpressionContext ctx) {
+        def op = createToken(ctx.getChild(1) as TerminalNode)
+        def expression
+        def left = parseExpression(ctx.expression(0))
+        def right = null // Will be initialized later, in switch. We should handle as and instanceof creating
+        // ClassExpression for given IDENTIFIERS. So, switch should fall through.
+        //noinspection GroovyFallthrough
+        switch (op.type) {
+            case Types.RANGE_OPERATOR:
+                right = parseExpression(ctx.expression(1))
+                expression = new RangeExpression(left, right, !op.text.endsWith('<'))
+                break;
+            case Types.KEYWORD_AS:
+                def classNode = setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().text), ctx.IDENTIFIER().symbol)
+                expression = CastExpression.asExpression(classNode, left)
+                break;
+            case Types.KEYWORD_INSTANCEOF:
+                def classNode = setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().text), ctx.IDENTIFIER().symbol)
+                right = new ClassExpression(classNode)
+            default:
+                if (!right)
+                    right = parseExpression(ctx.expression(1))
+                expression = new BinaryExpression(left, op, right)
+                break
+        }
+
+        expression.columnNumber = op.startColumn
+        expression.lastColumnNumber = op.startColumn + op.text.length()
+        expression.lineNumber = op.startLine
+        expression.lastLineNumber = op.startLine
+        expression
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.UnaryExpressionContext ctx) {
+        def node = null
+        def op = ctx.getChild(0) as TerminalNode
+        switch (op.text) {
+            case '-' : node = new UnaryMinusExpression(parseExpression(ctx.expression())); break
+            case '+' : node = new UnaryPlusExpression(parseExpression(ctx.expression())); break
+            case '!' : node = new NotExpression(parseExpression(ctx.expression())); break
+            case '~' : node = new BitwiseNegationExpression(parseExpression(ctx.expression())); break
+            default: assert false, "There is no $op.text handler."; break
+        }
+
+        node.columnNumber = op.symbol.charPositionInLine + 1
+        node.lineNumber = op.symbol.line
+        node.lastLineNumber = op.symbol.line
+        node.lastColumnNumber = op.symbol.charPositionInLine + 1 + op.text.length()
+        node
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.FieldAccessExpressionContext ctx) {
+        def op = ctx.getChild(1) as TerminalNode
+        def text = ctx.IDENTIFIER().text
+        def left = parseExpression(ctx.expression())
+        def right = new ConstantExpression(text)
+        def node
+        if (op.text == '.@')
+            node = new AttributeExpression(left, right)
+        else {
+            node = new PropertyExpression(left, right, ctx.getChild(1).text in ['?.', '*.'])
+        }
+        setupNodeLocation(node, ctx)
+        node.spreadSafe = ctx.getChild(1).text == '*.'
+        node
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static PrefixExpression parseExpression(GroovyParser.PrefixExpressionContext ctx) {
+        setupNodeLocation(new PrefixExpression(createToken(ctx.getChild(0) as TerminalNode), parseExpression(ctx.expression())), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static PostfixExpression parseExpression(GroovyParser.PostfixExpressionContext ctx) {
+        setupNodeLocation(new PostfixExpression(parseExpression(ctx.expression()), createToken(ctx.getChild(1) as TerminalNode)), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
+        def val = ctx.NUMBER() ? Integer.parseInt(ctx.NUMBER().text) : ctx.text[1..-2]
+        setupNodeLocation(new ConstantExpression(val, true), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.NullExpressionContext ctx) {
+        setupNodeLocation(new ConstantExpression(null), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     def parseMember(ClassNode classNode, GroovyParser.MethodDeclarationContext ctx) {
         int modifiers = parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER(), Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC)
         modifiers |= parseModifier(ctx.KW_STATIC(), Opcodes.ACC_STATIC)
@@ -94,7 +211,7 @@ class ASTBuilder extends GroovyBaseListener {
         modifiers |= parseModifier(ctx.KW_TRANSIENT(), Opcodes.ACC_TRANSIENT)
         modifiers |= parseModifier(ctx.KW_VOLATILE(), Opcodes.ACC_VOLATILE)
 
-        def statement = new BlockStatement()
+        def statement = parseBlockStatement(ctx.blockStatement())
 
         def params = parseParameters(ctx.argumentDeclarationList())
         def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, parseTypeDeclaration(ctx.typeDeclaration()), params, [] as ClassNode[], statement)
@@ -103,6 +220,7 @@ class ASTBuilder extends GroovyBaseListener {
         methodNode.modifiers &= ~Opcodes.ACC_SYNTHETIC // FIXME Magic with syntetic modifier.
     }
 
+    @SuppressWarnings("GroovyUnusedDeclaration")
     def parseMember(ClassNode classNode, GroovyParser.FieldDeclarationContext ctx) {
         int modifiers = parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER(), Opcodes.ACC_PRIVATE) // FIXME Why?
         modifiers |= parseModifier(ctx.KW_STATIC(), Opcodes.ACC_STATIC)
@@ -121,6 +239,12 @@ class ASTBuilder extends GroovyBaseListener {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Utility methods.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    static createToken(TerminalNode node) {
+        def text = node.text
+        new Token(node.text == '..<' || node.text == '..' ? Types.RANGE_OPERATOR : Types.lookup(text, Types.ANY),
+            text, node.symbol.line, node.symbol.charPositionInLine + 1)
+    }
 
     static ClassNode parseTypeDeclaration(GroovyParser.TypeDeclarationContext ctx) {
         !ctx || ctx.KW_DEF() ? ClassHelper.OBJECT_TYPE : setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().text), ctx)
@@ -145,6 +269,14 @@ class ASTBuilder extends GroovyBaseListener {
         astNode.columnNumber = ctx.start.charPositionInLine + 1
         astNode.lastLineNumber = ctx.stop.line
         astNode.lastColumnNumber = ctx.stop.charPositionInLine + 1 + ctx.stop.text.length()
+        astNode
+    }
+
+    static <T extends ASTNode> T setupNodeLocation(T astNode, org.antlr.v4.runtime.Token token) {
+        astNode.lineNumber = token.line
+        astNode.columnNumber = token.charPositionInLine + 1
+        astNode.lastLineNumber = token.line
+        astNode.lastColumnNumber = token.charPositionInLine + 1 + token.text.length()
         astNode
     }
 

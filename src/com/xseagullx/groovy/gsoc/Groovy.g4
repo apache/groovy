@@ -14,6 +14,12 @@ KW_PACKAGE: 'package' ;
 KW_IMPORT: 'import' ;
 
 KW_DEF: 'def' ;
+KW_NULL: 'null' ;
+
+STRING: QUOTE STRING_BODY QUOTE ;
+fragment STRING_BODY: (~'\'')* ;
+fragment QUOTE: '\'';
+NUMBER: '-'?[0-9]+ ;
 
 // Modifiers
 VISIBILITY_MODIFIER: (KW_PUBLIC | KW_PROTECTED | KW_PRIVATE) ;
@@ -52,12 +58,12 @@ classMember:
 // Members // FIXME Make more strict check for def keyword. There should be no way to ommit everything but IDENTIFIER.
 methodDeclaration:
     (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE) +
-    typeDeclaration? IDENTIFIER '(' argumentDeclarationList ')' '{' /* Body */ '}'; // Inner NL 's handling.
+    typeDeclaration? IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}'; // Inner NL 's handling.
 fieldDeclaration:
     (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE) +
     typeDeclaration? IDENTIFIER ;
 constructorDeclaration:
-    VISIBILITY_MODIFIER? IDENTIFIER '(' argumentDeclarationList ')' '{' /* Body */ '}'; // Inner NL 's handling.
+    VISIBILITY_MODIFIER? IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}'; // Inner NL 's handling.
 
 typeDeclaration:
     (IDENTIFIER | KW_DEF)
@@ -67,6 +73,33 @@ argumentDeclarationList:
     argumentDeclaration (',' argumentDeclaration)* | /* EMPTY ARGUMENT LIST */ ;
 argumentDeclaration:
     typeDeclaration? IDENTIFIER ;
+
+blockStatement: (statement | NL)+ ;
+statement: expressionStatement ;
+
+expressionStatement: expression ;
+
+expression:
+    expression ('.' | '?.' | '*.' | '.@') IDENTIFIER #fieldAccessExpression
+    | expression ('--' | '++') #postfixExpression
+    | ('!' | '~') expression #unaryExpression
+    | ('+' | '-') expression #unaryExpression
+    | ('--' | '++') expression #prefixExpression
+    | expression ('**') expression #binaryExpression
+    | expression ('*' | '/' | '%') expression #binaryExpression
+    | expression ('+' | '-') expression #binaryExpression
+    | expression ('<<' | '>>' | '>>>' | '..' | '..<') expression #binaryExpression
+    | expression ((('<' | '<=' | '>' | '>=' | 'in') expression) | (('as' | 'instanceof') IDENTIFIER)) #binaryExpression
+    | expression ('==' | '!=' | '<=>') expression #binaryExpression
+    | expression ('=~' | '==~') expression #binaryExpression
+    | expression ('&') expression #binaryExpression
+    | expression ('^') expression #binaryExpression
+    | expression ('|') expression #binaryExpression
+    | expression ('&&') expression #binaryExpression
+    | expression ('||') expression #binaryExpression
+    | STRING #constantExpression
+    | NUMBER #constantExpression
+    | KW_NULL #nullExpression ;
 
 classModifiers: //JSL7 8.1 FIXME Now gramar allows modifier duplication. It's possible to make it more strict listing all 24 permutations.
 (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_STRICTFP)* ;

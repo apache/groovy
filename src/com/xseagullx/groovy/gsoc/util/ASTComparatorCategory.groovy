@@ -1,14 +1,18 @@
 
 package com.xseagullx.groovy.gsoc.util
 
+import groovy.util.logging.Log
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.syntax.Token
 
-@SuppressWarnings("GroovyUnusedDeclaration")
+import java.util.logging.Level
+
+@Log @SuppressWarnings("GroovyUnusedDeclaration")
 class ASTComparatorCategory {
 
+    static { log.level = Level.WARNING }
     static objects = [] as Set
     static String lastName
 
@@ -21,10 +25,10 @@ class ASTComparatorCategory {
      */
     static reflexiveEquals(a, b, ignore = []) {
         if (a in objects)
-            println('=' * 100 + "\nHehe. Recursion detected!\n" + '=' * 100)
+            log.info('=' * 100 + "\nHehe. Recursion detected!\n" + '=' * 100)
 
         objects << a
-        println("Equals was called for ${ a.getClass() } ${ a.hashCode() }, $lastName")
+        log.info("Equals was called for ${ a.getClass() } ${ a.hashCode() }, $lastName")
         if (a.is(b))
             return true
         def difference = a.metaClass.properties.find { MetaBeanProperty p ->
@@ -37,9 +41,9 @@ class ASTComparatorCategory {
         }
 
         if (difference)
-            println("Difference was found! $difference.name:: ${ a."$difference.name" } != ${ b."$difference.name" }")
+            log.warning("Difference was found! $difference.name:: ${ a."$difference.name" } != ${ b."$difference.name" }")
         else
-            println(" ==== Exit ${ a.getClass() } ${ a.hashCode() } ====== ")
+            log.info(" ==== Exit ${ a.getClass() } ${ a.hashCode() } ====== ")
         difference == null
     }
 
@@ -127,77 +131,76 @@ class ASTComparatorCategory {
     // Statements 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
     static equals(AssertStatement a, AssertStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
     
     static equals(BlockStatement a, BlockStatement b) {
-        reflexiveEquals(a, b, ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
+        reflexiveEquals(a, b, ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber", "text"])
     }
 
     static equals(BreakStatement a, BreakStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
     
     static equals(CaseStatement a, CaseStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
     
     static equals(CatchStatement a, CatchStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(ContinueStatement a, ContinueStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(DoWhileStatement a, DoWhileStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(EmptyStatement a, EmptyStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(ExpressionStatement a, ExpressionStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(ForStatement a, ForStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(IfStatement a, IfStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(LoopingStatement a, LoopingStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(ReturnStatement a, ReturnStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(SwitchStatement a, SwitchStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(SynchronizedStatement a, SynchronizedStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(ThrowStatement a, ThrowStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(TryCatchStatement a, TryCatchStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
 
     static equals(WhileStatement a, WhileStatement b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text"])
     }
     
     /////////////////////////////////////////////////////////////////////////////////////////////
@@ -205,158 +208,158 @@ class ASTComparatorCategory {
     /////////////////////////////////////////////////////////////////////////////////////////////
 
     static equals(AnnotationConstantExpression a, AnnotationConstantExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(ArgumentListExpression a, ArgumentListExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(ArrayExpression a, ArrayExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(AttributeExpression a, AttributeExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(BinaryExpression a, BinaryExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lastColumnNumber"])
     }
 
     static equals(BitwiseNegationExpression a, BitwiseNegationExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(BooleanExpression a, BooleanExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(CastExpression a, CastExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(ClassExpression a, ClassExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(ClosureExpression a, ClosureExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(ClosureListExpression a, ClosureListExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(ConstantExpression a, ConstantExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(ConstructorCallExpression a, ConstructorCallExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(DeclarationExpression a, DeclarationExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(ElvisOperatorExpression a, ElvisOperatorExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(EmptyExpression a, EmptyExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(ExpressionTransformer a, ExpressionTransformer b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(FieldExpression a, FieldExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(GStringExpression a, GStringExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(ListExpression a, ListExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(MapEntryExpression a, MapEntryExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(MapExpression a, MapExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(MethodCall a, MethodCall b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(MethodCallExpression a, MethodCallExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(MethodPointerExpression a, MethodPointerExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(NamedArgumentListExpression a, NamedArgumentListExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(NotExpression a, NotExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(PostfixExpression a, PostfixExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(PrefixExpression a, PrefixExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(PropertyExpression a, PropertyExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(RangeExpression a, RangeExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(SpreadExpression a, SpreadExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(SpreadMapExpression a, SpreadMapExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(StaticMethodCallExpression a, StaticMethodCallExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(TernaryExpression a, TernaryExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(TupleExpression a, TupleExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(UnaryMinusExpression a, UnaryMinusExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(UnaryPlusExpression a, UnaryPlusExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 
     static equals(VariableExpression a, VariableExpression b) {
-        reflexiveEquals(a, b)
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
     }
 }
