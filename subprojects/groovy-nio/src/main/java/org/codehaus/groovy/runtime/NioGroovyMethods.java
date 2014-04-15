@@ -1758,10 +1758,13 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     *
+     * Allows this closeable to be used within the closure, ensuring that it
+     * is closed once the closure has been executed and before this method returns.
      *
      * @param self the Closeable
      * @param action the closure taking the Closeable as parameter
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
      * @since 2.3.0
      */
     public static <T> T withCloseable(Closeable self, @ClosureParams(value=SimpleType.class, options="java.io.Closeable") Closure<T> action) throws IOException {
