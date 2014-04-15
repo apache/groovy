@@ -177,6 +177,25 @@ class XmlSlurperTest extends GroovyTestCase {
         assert !serialize(instrument).contains('xlink:title="XXX"')
     }
 
+    // GROOVY-6356
+    void testSetAndRemoveAttributesNamespaceUnaware() {
+        def xmlSource = '''<bob:root
+                xmlns:bob="stuff"
+                xmlns:gmi="http://www.isotc211.org/2005/gmi"
+                xmlns:xlink="http://www.w3.org/1999/xlink">
+            <gmi:instrument xlink:title="$INSTRUMENT"/>
+        </bob:root>'''
+
+        def bobRoot = new XmlSlurper(false, false, true).parseText(xmlSource)
+
+        def instrument = bobRoot.children()[0]
+        assert instrument.'@xlink:title' == '$INSTRUMENT'
+        instrument.'@xlink:title' = 'XXX'
+        assert instrument.'@xlink:title' == 'XXX'
+        instrument.attributes().remove('xlink:title')
+        assert instrument.'@xlink:title' == ''
+    }
+
     // GROOVY-5931
     void testIterableGPathResult() {
         def xml = """

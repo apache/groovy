@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,14 +122,14 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         } else if ("**".equals(property)) {
             return depthFirst();
         } else if (property.startsWith("@")) {
-            if (property.indexOf(":") != -1) {
+            if (property.contains(":") && !this.namespaceTagHints.isEmpty()) {
                 final int i = property.indexOf(":");
                 return new Attributes(this, "@" + property.substring(i + 1), property.substring(1, i), this.namespaceTagHints);
             } else {
                 return new Attributes(this, property, this.namespaceTagHints);
             }
         } else {
-            if (property.indexOf(":") != -1) {
+            if (property.contains(":") && !this.namespaceTagHints.isEmpty()) {
                 final int i = property.indexOf(":");
                 return new NodeChildren(this, property.substring(i + 1), property.substring(0, i), this.namespaceTagHints);
             } else {
@@ -258,7 +258,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      * @return the namespace of the prefix
      */
     public String lookupNamespace(final String prefix) {
-        return this.namespaceTagHints.get(prefix);
+        return this.namespaceTagHints.isEmpty() ? prefix : this.namespaceTagHints.get(prefix);
     }
 
     /**

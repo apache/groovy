@@ -67,13 +67,10 @@ public class NamespaceAwareHashMap extends HashMap<String, String> {
 
     private Object adjustForNamespaceIfNeeded(Object key) {
         String keyString = key.toString();
-        if (keyString.contains("{")) {
+        if (keyString.contains("{") || namespaceTagHints == null || namespaceTagHints.isEmpty() || keyString.contains("{") || !keyString.contains(":")) {
             return key;
         }
-        if (keyString.contains(":")) {
-            final int i = keyString.indexOf(":");
-            key = new QName(namespaceTagHints.get(keyString.substring(0, i)).toString(), keyString.substring(i + 1)).toString();
-        }
-        return key;
+        final int i = keyString.indexOf(":");
+        return new QName(namespaceTagHints.get(keyString.substring(0, i)).toString(), keyString.substring(i + 1)).toString();
     }
 }

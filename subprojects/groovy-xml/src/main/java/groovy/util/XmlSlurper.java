@@ -87,6 +87,7 @@ public class XmlSlurper extends DefaultHandler {
     private final StringBuffer charBuffer = new StringBuffer();
     private final Map<String, String> namespaceTagHints = new Hashtable<String, String>();
     private boolean keepIgnorableWhitespace = false;
+    private boolean namespaceAware = false;
 
     /**
      * Creates a non-validating and non-namespace-aware <code>XmlSlurper</code> which does not allow DOCTYPE declarations in documents.
@@ -124,6 +125,7 @@ public class XmlSlurper extends DefaultHandler {
     public XmlSlurper(final boolean validating, final boolean namespaceAware, boolean allowDocTypeDeclaration) throws ParserConfigurationException, SAXException {
         SAXParserFactory factory = FactorySupport.createSaxParserFactory();
         factory.setNamespaceAware(namespaceAware);
+        this.namespaceAware = namespaceAware;
         factory.setValidating(validating);
         setQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
         setQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
@@ -180,7 +182,9 @@ public class XmlSlurper extends DefaultHandler {
     public GPathResult getDocument() {
         try {
             // xml namespace is always defined
-            namespaceTagHints.put("xml", "http://www.w3.org/XML/1998/namespace");
+            if (namespaceAware) {
+                namespaceTagHints.put("xml", "http://www.w3.org/XML/1998/namespace");
+            }
             return new NodeChild(currentNode, null, namespaceTagHints);
         } finally {
             currentNode = null;
@@ -381,7 +385,7 @@ public class XmlSlurper extends DefaultHandler {
     * @see org.xml.sax.helpers.DefaultHandler#startPrefixMapping(java.lang.String, java.lang.String)
     */
     public void startPrefixMapping(final String tag, final String uri) throws SAXException {
-        namespaceTagHints.put(tag, uri);
+        if (namespaceAware) namespaceTagHints.put(tag, uri);
     }
 
     /* (non-Javadoc)
