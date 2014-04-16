@@ -2032,6 +2032,24 @@ def b = new B()
 '''
     }
 
+    void testDecorateFinalClassWithTrait() {
+        assertScript '''
+trait Filtering {
+    @groovy.transform.ForceOverride
+    StringBuilder append(String str) {
+        def subst = str.replace('o','')
+        super.append(subst)
+    }
+    @groovy.transform.ForceOverride
+    String toString() { super.toString() }
+}
+def sb = new StringBuilder().withTraits Filtering
+sb.append('Groovy')
+assert sb.toString() == 'Grvy'
+
+'''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

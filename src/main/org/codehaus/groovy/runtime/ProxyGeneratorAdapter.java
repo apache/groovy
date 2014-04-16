@@ -255,7 +255,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                         !containsEquivalentMethod(GROOVYOBJECT_METHODS, method) &&
                         !(containsEquivalentMethod(superClassMethods, method) &&
                                 shouldOverrideMethod(delegateClass, method))) {
-                    selectedMethods.add(method.getName());
+                    selectedMethods.add(method.getName()+Type.getMethodDescriptor(method));
                 }
             }
         }
@@ -266,7 +266,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             if (!containsEquivalentMethod(interfaceMethods, method) &&
                     !containsEquivalentMethod(OBJECT_METHODS, method) &&
                     !containsEquivalentMethod(GROOVYOBJECT_METHODS, method)) {
-                selectedMethods.add(method.getName());
+                selectedMethods.add(method.getName()+Type.getMethodDescriptor(method));
             }
         }
         return selectedMethods;
@@ -541,7 +541,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         int accessFlags = access;
         visitedMethods.add(key);
-        if ((objectDelegateMethods.contains(name) || delegatedClosures.containsKey(name) || (!"<init>".equals(name) && hasWildcard)) && !Modifier.isStatic(access) && !Modifier.isFinal(access)) {
+        if ((objectDelegateMethods.contains(name+desc) || delegatedClosures.containsKey(name) || (!"<init>".equals(name) && hasWildcard)) && !Modifier.isStatic(access) && !Modifier.isFinal(access)) {
             if (!GROOVYOBJECT_METHOD_NAMESS.contains(name)) {
                 if (Modifier.isAbstract(access)) {
                     // prevents the proxy from being abstract
@@ -551,7 +551,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                     delegatedClosures.put(name, Boolean.TRUE);
                     return makeDelegateToClosureCall(name, desc, signature, exceptions, accessFlags);
                 }
-                if (generateDelegateField && objectDelegateMethods.contains(name)) {
+                if (generateDelegateField && objectDelegateMethods.contains(name+desc)) {
                     return makeDelegateCall(name, desc,  signature, exceptions, accessFlags);
                 }
                 delegatedClosures.put(name, Boolean.TRUE);
