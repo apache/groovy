@@ -61,6 +61,11 @@ public abstract class Traits {
     static final String THIS_OBJECT = "$self";
     static final String STATIC_THIS_OBJECT = "$static$self";
     static final String STATIC_FIELD_PREFIX = "$static";
+    static final String FIELD_PREFIX = "$ins";
+    static final String PUBLIC_FIELD_PREFIX = "$0";
+    static final String PRIVATE_FIELD_PREFIX = "$1";
+
+
 
     static final String SUPER_TRAIT_METHOD_PREFIX = "trait$super$";
 
@@ -276,13 +281,12 @@ public abstract class Traits {
     @Target(ElementType.METHOD)
     public static @interface Implemented {}
 
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.METHOD)
-
     /**
      * Internal annotation used to indicate that a method is a bridge method to a trait
      * default implementation.
      */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
      public static @interface TraitBridge {
         /**
          * @return the trait class
@@ -294,4 +298,5 @@ public abstract class Traits {
          */
         String desc();
     }
+
 }

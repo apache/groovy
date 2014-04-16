@@ -1991,6 +1991,47 @@ assert c.foo(2) == 6
 '''
     }
 
+    void testFieldInTraitAndDynamicProxy() {
+        assertScript '''
+trait WithName {
+    public String name
+}
+WithName p = new Object() as WithName
+p.WithName__name = 'foo'
+assert p.WithName__name == 'foo'
+'''
+    }
+
+    void testFieldInTraitModifiers() {
+        assertScript '''import groovy.transform.ASTTest
+import static org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION
+trait A {
+    public int foo
+}
+@ASTTest(phase=INSTRUCTION_SELECTION,value={
+    def field = node.getField('A__foo')
+    assert field.isPublic()
+})
+class B implements A {}
+def b = new B()
+'''
+        assertScript '''import groovy.transform.ASTTest
+
+import java.lang.reflect.Modifier
+
+import static org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION
+trait A {
+    private int foo
+}
+@ASTTest(phase=INSTRUCTION_SELECTION,value={
+    def field = node.getField('A__foo')
+    assert Modifier.isPrivate(field.modifiers)
+})
+class B implements A {}
+def b = new B()
+'''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

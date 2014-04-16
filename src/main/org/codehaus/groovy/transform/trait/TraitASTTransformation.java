@@ -385,9 +385,12 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
         // dummy fields are only used to carry annotations if instance field
         // and to differentiate from static fields otherwise
+        String dummyFieldName = (field.isStatic() ? Traits.STATIC_FIELD_PREFIX : Traits.FIELD_PREFIX) +
+                (field.isPublic()? Traits.PUBLIC_FIELD_PREFIX : Traits.PRIVATE_FIELD_PREFIX)+
+                Traits.remappedFieldName(field.getOwner(), field.getName());
         FieldNode dummyField = new FieldNode(
-                (field.isStatic()?Traits.STATIC_FIELD_PREFIX:"")+Traits.remappedFieldName(field.getOwner(),field.getName()),
-                ACC_STATIC|ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC,
+                dummyFieldName,
+                ACC_STATIC | ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC,
                 field.getOriginType(),
                 fieldHelper,
                 null

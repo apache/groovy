@@ -194,10 +194,20 @@ public abstract class TraitComposer {
                     boolean getter = "get".equals(operation);
                     ClassNode returnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, methodNode.getReturnType());
                     int isStatic = 0;
-                    FieldNode helperField = fieldHelperClassNode.getField(fieldName);
+                    boolean publicField = true;
+                    FieldNode helperField = fieldHelperClassNode.getField(Traits.FIELD_PREFIX + Traits.PUBLIC_FIELD_PREFIX + fieldName);
                     if (helperField==null) {
+                        publicField = false;
+                        helperField = fieldHelperClassNode.getField(Traits.FIELD_PREFIX + Traits.PRIVATE_FIELD_PREFIX + fieldName);
+                    }
+                    if (helperField==null) {
+                        publicField = true;
                         // try to find a static one
-                        helperField = fieldHelperClassNode.getField(Traits.STATIC_FIELD_PREFIX+fieldName);
+                        helperField = fieldHelperClassNode.getField(Traits.STATIC_FIELD_PREFIX+Traits.PUBLIC_FIELD_PREFIX+fieldName);
+                        if (helperField==null) {
+                            publicField = false;
+                            helperField = fieldHelperClassNode.getField(Traits.STATIC_FIELD_PREFIX+Traits.PRIVATE_FIELD_PREFIX +fieldName);
+                        }
                         isStatic = Opcodes.ACC_STATIC;
                     }
                     if (getter) {
@@ -206,7 +216,7 @@ public abstract class TraitComposer {
                             List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
                             List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
                             AbstractASTTransformation.copyAnnotatedNodeAnnotations(helperField, copied, notCopied);
-                            FieldNode fieldNode = cNode.addField(fieldName, Opcodes.ACC_PRIVATE | isStatic, returnType, null);
+                            FieldNode fieldNode = cNode.addField(fieldName, (publicField?Opcodes.ACC_PUBLIC:Opcodes.ACC_PRIVATE) | isStatic, returnType, null);
                             fieldNode.addAnnotations(copied);
                         }
                     }
