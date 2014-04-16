@@ -129,22 +129,26 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
         MethodNode runScriptMethod = ClassHelper.findSAM(baseScriptType);
 
         // If they want to use a name other than than "run", then make the change.
-        if (isSuitableAbstractMethod(runScriptMethod)) {
+        if (isCustomScriptBodyMethod(runScriptMethod)) {
             MethodNode defaultMethod = cNode.getDeclaredMethod("run", Parameter.EMPTY_ARRAY);
-            cNode.removeMethod(defaultMethod);
-            MethodNode methodNode = new MethodNode(runScriptMethod.getName(), runScriptMethod.getModifiers() & ~ACC_ABSTRACT
-                    , runScriptMethod.getReturnType(), runScriptMethod.getParameters(), runScriptMethod.getExceptions()
-                    , defaultMethod.getCode());
-            // The AST node metadata has the flag that indicates that this method is a script body.
-            // It may also be carrying data for other AST transforms.
-            methodNode.copyNodeMetaData(defaultMethod);
-            cNode.addMethod(methodNode);
+            // GROOVY-6706: Sometimes an NPE is thrown here.
+            // The reason is that our transform is getting called more than once sometimes.  
+            if (defaultMethod != null) {
+                cNode.removeMethod(defaultMethod);
+                MethodNode methodNode = new MethodNode(runScriptMethod.getName(), runScriptMethod.getModifiers() & ~ACC_ABSTRACT
+                        , runScriptMethod.getReturnType(), runScriptMethod.getParameters(), runScriptMethod.getExceptions()
+                        , defaultMethod.getCode());
+                // The AST node metadata has the flag that indicates that this method is a script body.
+                // It may also be carrying data for other AST transforms.
+                methodNode.copyNodeMetaData(defaultMethod);
+                cNode.addMethod(methodNode);
+            }
         }
     }
 
-    private boolean isSuitableAbstractMethod(MethodNode node) {
+    private boolean isCustomScriptBodyMethod(MethodNode node) {
         return node != null
-                && !(node.getDeclaringClass().equals(ClassHelper.SCRIPT_TYPE)
+            && !(node.getDeclaringClass().equals(ClassHelper.SCRIPT_TYPE)
                 && "run".equals(node.getName())
                 && node.getParameters().length == 0);
     }

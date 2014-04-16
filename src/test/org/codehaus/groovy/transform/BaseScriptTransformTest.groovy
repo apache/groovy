@@ -106,6 +106,8 @@ class BaseScriptTransformTest extends CompilableTestSupport {
         """
     }
 
+    abstract class MyCustomScript extends Script {}
+
     void testBaseScriptFromCompiler(){
         CompilerConfiguration config = new CompilerConfiguration()
         config.scriptBaseClass = MyCustomScript.name
@@ -259,6 +261,37 @@ class BaseScriptTransformTest extends CompilableTestSupport {
         assert result
     }
 
+    /**
+     * Test GROOVY-6706.  Base script in import (or package) with a SAM.
+     */
+    void testGROOVY_6706() {
+        assertScript '''
+@BaseScript(CustomBase)
+import groovy.transform.BaseScript
+
+assert did_before
+assert !did_after
+
+42
+
+abstract class CustomBase extends Script {
+    boolean did_before = false
+    boolean did_after = false
+
+    def run() {
+        before()
+        def r = internalRun()
+        after()
+        assert r == 42
+    }
+
+    abstract internalRun()
+
+    def before() { did_before = true }
+    def after()  { did_after = true  }
+}'''
+    }
+
     void testBaseScriptOnPackage() {
         def result = new GroovyShell().evaluate('''
             @BaseScript(DeclaredBaseScript)
@@ -315,7 +348,4 @@ class BaseScriptTransformTest extends CompilableTestSupport {
             println 'ok'
         '''
     }
-
 }
-
-abstract class MyCustomScript extends Script {}
