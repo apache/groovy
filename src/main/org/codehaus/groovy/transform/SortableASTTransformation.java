@@ -43,6 +43,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 
 /**
  * Injects a set of Comparators and sort methods.

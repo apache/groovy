@@ -22,9 +22,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -237,80 +235,6 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     @Deprecated
     public static ClassNode nonGeneric(ClassNode type) {
         return GenericsUtils.nonGeneric(type);
-    }
-
-    public static ClassNode newClass(ClassNode type) {
-        return type.getPlainNodeReference();
-    }
-
-    public static ClassNode makeClassSafe0(ClassNode type, GenericsType... genericTypes) {
-        ClassNode plainNodeReference = newClass(type);
-        if (genericTypes != null && genericTypes.length > 0) plainNodeReference.setGenericsTypes(genericTypes);
-        return plainNodeReference;
-    }
-
-
-    public static ClassNode makeClassSafeWithGenerics(ClassNode type, GenericsType... genericTypes) {
-        if (type.isArray()) {
-            return makeClassSafeWithGenerics(type.getComponentType(), genericTypes).makeArray();
-        }
-        GenericsType[] gtypes = new GenericsType[0];
-        if (genericTypes != null) {
-            gtypes = new GenericsType[genericTypes.length];
-            System.arraycopy(genericTypes, 0, gtypes, 0, gtypes.length);
-        }
-        return makeClassSafe0(type, gtypes);
-    }
-
-    public static MethodNode correctToGenericsSpec(Map genericsSpec, MethodNode mn) {
-        ClassNode correctedType = correctToGenericsSpecRecurse(genericsSpec, mn.getReturnType());
-        Parameter[] origParameters = mn.getParameters();
-        Parameter[] newParameters = new Parameter[origParameters.length];
-        for (int i = 0; i < origParameters.length; i++) {
-            Parameter origParameter = origParameters[i];
-            newParameters[i] = new Parameter(correctToGenericsSpecRecurse(genericsSpec, origParameter.getType()), origParameter.getName(), origParameter.getInitialExpression());
-        }
-        return new MethodNode(mn.getName(), mn.getModifiers(), correctedType, newParameters, mn.getExceptions(), mn.getCode());
-    }
-
-    public static ClassNode correctToGenericsSpecRecurse(Map genericsSpec, ClassNode type) {
-        if (type.isGenericsPlaceHolder()) {
-            String name = type.getGenericsTypes()[0].getName();
-            type = (ClassNode) genericsSpec.get(name);
-        }
-        if (type == null) type = ClassHelper.OBJECT_TYPE;
-        GenericsType[] oldgTypes = type.getGenericsTypes();
-        GenericsType[] newgTypes = new GenericsType[0];
-        if (oldgTypes != null) {
-            newgTypes = new GenericsType[oldgTypes.length];
-            for (int i = 0; i < newgTypes.length; i++) {
-                GenericsType oldgType = oldgTypes[i];
-                if (oldgType.isPlaceholder() ) {
-                    if (genericsSpec.get(oldgType.getName())!=null) {
-                        newgTypes[i] = new GenericsType((ClassNode) genericsSpec.get(oldgType.getName()));
-                    } else {
-                        newgTypes[i] = new GenericsType(ClassHelper.OBJECT_TYPE);
-                    }
-                } else if (oldgType.isWildcard()) {
-                    ClassNode oldLower = oldgType.getLowerBound();
-                    ClassNode lower = oldLower!=null?correctToGenericsSpecRecurse(genericsSpec, oldLower):null;
-                    ClassNode[] oldUpper = oldgType.getUpperBounds();
-                    ClassNode[] upper = null;
-                    if (oldUpper!=null) {
-                        upper = new ClassNode[oldUpper.length];
-                        for (int j = 0; j < oldUpper.length; j++) {
-                            upper[j] = correctToGenericsSpecRecurse(genericsSpec,oldUpper[j]);
-                        }
-                    }
-                    GenericsType fixed = new GenericsType(oldgType.getType(), upper, lower);
-                    fixed.setWildcard(true);
-                    newgTypes[i] = fixed;
-                } else {
-                    newgTypes[i] = new GenericsType(GenericsUtils.correctToGenericsSpec(genericsSpec, oldgType));
-                }
-            }
-        }
-        return makeClassSafeWithGenerics(type, newgTypes);
     }
 
     /**

@@ -54,6 +54,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
 /**
@@ -140,7 +142,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     final ClassNode[] newIfaces = new ClassNode[ifaces.length + 1];
                     for (int i = 0; i < ifaces.length; i++) {
                         final ClassNode classNode = ifaces[i];
-                        newIfaces[i] = GenericsUtils.correctToGenericsSpecRecurse(genericsSpec, classNode);
+                        newIfaces[i] = correctToGenericsSpecRecurse(genericsSpec, classNode);
                     }
                     newIfaces[ifaces.length] = iface;
                     owner.setInterfaces(newIfaces);

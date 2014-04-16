@@ -62,6 +62,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
+
 /**
  * This class contains a static utility method {@link #doExtendTraits(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.control.CompilationUnit)}
  * aimed at generating code for a classnode implementing a trait.
@@ -151,7 +153,7 @@ public abstract class TraitComposer {
                 for (int i = 1; i < helperMethodParams.length; i++) {
                     Parameter parameter = helperMethodParams[i];
                     ClassNode originType = parameter.getOriginType();
-                    ClassNode fixedType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, originType);
+                    ClassNode fixedType = correctToGenericsSpecRecurse(genericsSpec, originType);
                     Parameter newParam = new Parameter(fixedType, "arg" + i);
                     List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
                     List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
@@ -192,7 +194,7 @@ public abstract class TraitComposer {
                     fieldName = fieldName.substring(0, suffixIdx);
                     String operation = methodNode.getName().substring(suffixIdx + 1);
                     boolean getter = "get".equals(operation);
-                    ClassNode returnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, methodNode.getReturnType());
+                    ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, methodNode.getReturnType());
                     int isStatic = 0;
                     boolean publicField = true;
                     FieldNode helperField = fieldHelperClassNode.getField(Traits.FIELD_PREFIX + Traits.PUBLIC_FIELD_PREFIX + fieldName);
@@ -225,7 +227,7 @@ public abstract class TraitComposer {
                         newParams = Parameter.EMPTY_ARRAY;
                     } else {
                         ClassNode originType = methodNode.getParameters()[0].getOriginType();
-                        ClassNode fixedType = originType.isGenericsPlaceHolder()?ClassHelper.OBJECT_TYPE:AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, originType);
+                        ClassNode fixedType = originType.isGenericsPlaceHolder()?ClassHelper.OBJECT_TYPE:correctToGenericsSpecRecurse(genericsSpec, originType);
                         newParams = new Parameter[]{new Parameter(fixedType, "val")};
                     }
 
@@ -271,7 +273,7 @@ public abstract class TraitComposer {
                 helperMethodArgList
         );
         mce.setImplicitThis(false);
-        ClassNode fixedReturnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
+        ClassNode fixedReturnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
         Expression forwardExpression = genericsSpec.isEmpty()?mce:new CastExpression(fixedReturnType,mce);
         int access = helperMethod.getModifiers();
         if (!helperMethodParams[0].getOriginType().equals(ClassHelper.CLASS_Type)) {
@@ -360,7 +362,7 @@ public abstract class TraitComposer {
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
             ClassNode originType = parameter.getOriginType();
-            superForwarderParams[i+1] = new Parameter(GenericsUtils.correctToGenericsSpecRecurse(genericsSpec,originType), parameter.getName());
+            superForwarderParams[i+1] = new Parameter(correctToGenericsSpecRecurse(genericsSpec, originType), parameter.getName());
         }
         BlockStatement body = new BlockStatement();
         VariableExpression clazz = new VariableExpression(superForwarderParams[0]);
@@ -369,8 +371,8 @@ public abstract class TraitComposer {
             final ClassNode next = interfacesToGenerateForwarderFor[i+1];
             body.addStatement(createDelegatingForwarder(forwarderMethod, current, next, clazz));
         }
-        // last fallback is calling the method on the object iself
-        ClassNode returnType = GenericsUtils.correctToGenericsSpecRecurse(genericsSpec, forwarderMethod.getReturnType());
+        // last fallback is calling the method on the object itself
+        ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, forwarderMethod.getReturnType());
         body.addStatement(createSuperFallback(forwarderMethod, returnType));
         MethodNode methodNode = targetNode.addMethod(superForwarderName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, returnType, superForwarderParams, ClassNode.EMPTY_ARRAY, body);
     }
