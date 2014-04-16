@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.transform.traitx
 
+import groovy.transform.NotYetImplemented
+
 class TraitASTTransformationTest extends GroovyTestCase {
     void testTraitWithNoMethod() {
         assertScript '''
@@ -1839,7 +1841,139 @@ assert proxyTarget.is(str)
 def converted = Traits.getAsType(x,String)
 assert converted.is(str)
 '''
+    }
 
+    void testStackableTraits() {
+        assertScript '''import org.codehaus.groovy.transform.trait.Traits
+
+trait A {
+    int foo(int x) { x }
+}
+trait B {
+    int foo(int x) { x<10?2*super.foo(x):x }
+}
+class C implements A,B {}
+def c = new C()
+(0..9).each {
+    assert c.foo(it) == 2*it
+}
+(10..20).each {
+    assert c.foo(it) == it
+}'''
+    }
+
+    void testStackableTraitsWithForceOverride() {
+        assertScript '''
+import groovy.transform.ForceOverride
+
+interface IntQueue {
+    Integer get()
+    void put(Integer x)
+}
+trait Incrementing {
+    @ForceOverride
+    void put(Integer x) { println 'Incrementing';super.put(x+1) }
+}
+trait Filtering {
+    @ForceOverride
+    void put(Integer x) { println 'Filtering'; if(x >=0) super.put(x) }
+}
+
+class BasicIntQueue implements IntQueue{
+    private buf = new ArrayList<Integer>()
+    Integer get() { buf.remove(0) }
+    void put(Integer x) { buf << x}
+    String toString() { buf.toString() }
+}
+class Sub extends BasicIntQueue implements Incrementing, Filtering {}
+
+def queue = new Sub()
+queue.put(-1)
+queue.put(0)
+queue.put(1)
+assert queue.get() == 1
+'''
+    }
+
+    void testStackableTraitsWithForceOverrideAndDynamicTraits() {
+        assertScript '''
+import groovy.transform.ForceOverride
+
+interface IntQueue {
+    Integer get()
+    void put(Integer x)
+}
+trait Incrementing {
+    @ForceOverride
+    void put(Integer x) { println 'Incrementing';super.put(x+1) }
+}
+trait Filtering {
+    @ForceOverride
+    void put(Integer x) { println 'Filtering'; if(x >=0) super.put(x) }
+}
+
+class BasicIntQueue implements IntQueue{
+    private buf = new ArrayList<Integer>()
+    Integer get() { buf.remove(0) }
+    void put(Integer x) { buf << x}
+    String toString() { buf.toString() }
+}
+
+def queue = new BasicIntQueue().withTraits Incrementing, Filtering
+queue.put(-1)
+queue.put(0)
+queue.put(1)
+assert queue.get() == 1
+'''
+
+    }
+
+    void testSuperKeywordInRegularTraitInheritance() {
+        assertScript '''
+trait A {
+    int foo(x) { 1+x }
+}
+trait B extends A {
+    int foo(x) { 2*super.foo(x)}
+}
+class C implements B {}
+def c = new C()
+assert c.foo(2) == 6
+'''
+    }
+
+    void testSuperKeywordInRegularTraitMultipleInheritance() {
+        assertScript '''
+trait A {
+    int foo(x) { 1+x }
+}
+trait A2 {
+    int foo(x) { 1+super.foo(x) }
+}
+trait B implements A,A2 {
+    int foo(x) { 2*super.foo(x)}
+}
+class C implements B {}
+def c = new C()
+assert c.foo(2) == 8
+'''
+    }
+
+    @NotYetImplemented
+    void testStaticallyCompiledTraitWithCallToSuper() {
+        assertScript '''
+@groovy.transform.CompileStatic
+trait A {
+    int foo(int x) { 1+x }
+}
+@groovy.transform.CompileStatic
+trait B extends A {
+    int foo(int x) { 2*super.foo(x)}
+}
+class C implements B {}
+def c = new C()
+assert c.foo(2) == 6
+'''
     }
 
     static trait TestTrait {

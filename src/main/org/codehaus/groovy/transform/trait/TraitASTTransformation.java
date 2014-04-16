@@ -36,7 +36,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -162,7 +161,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
 
         // add methods
-        List<MethodNode> methods = cNode.getMethods();
+        List<MethodNode> methods = new ArrayList<MethodNode>(cNode.getMethods());
         List<MethodNode> nonPublicAPIMethods = new LinkedList<MethodNode>();
         for (final MethodNode methodNode : methods) {
             boolean declared = methodNode.getDeclaringClass() == cNode;
@@ -355,7 +354,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         if (initialExpression != null) {
             VariableExpression thisObject = new VariableExpression(selectedMethod.getParameters()[0]);
             ExpressionStatement initCode = new ExpressionStatement(initialExpression);
-            processBody(thisObject, initCode, trait, fieldHelper, knownFields);
+            processBody(thisObject, selectedMethod, initCode, trait, fieldHelper, knownFields);
             BlockStatement code = (BlockStatement) selectedMethod.getCode();
             MethodCallExpression mce = new MethodCallExpression(
                     new CastExpression(createReceiverType(field.isStatic(), fieldHelper), thisObject),
@@ -413,7 +412,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 methodNode.getReturnType(),
                 newParams,
                 methodNode.getExceptions(),
-                processBody(new VariableExpression(newParams[0]), methodNode.getCode(), traitClass, fieldHelper, knownFields)
+                processBody(new VariableExpression(newParams[0]), methodNode, methodNode.getCode(), traitClass, fieldHelper, knownFields)
         );
         mNode.setSourcePosition(methodNode);
         mNode.addAnnotations(methodNode.getAnnotations());
@@ -451,7 +450,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return type;
     }
 
-    private Statement processBody(VariableExpression thisObject, Statement code, ClassNode trait, ClassNode fieldHelper, Collection<String> knownFields) {
+    private Statement processBody(VariableExpression thisObject, MethodNode methodNode, Statement code, ClassNode trait, ClassNode fieldHelper, Collection<String> knownFields) {
         if (code == null) return null;
         NAryOperationRewriter operationRewriter = new NAryOperationRewriter(unit, knownFields);
         code.visit(operationRewriter);

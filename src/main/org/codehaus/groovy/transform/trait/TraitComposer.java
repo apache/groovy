@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform.trait;
 
+import groovy.transform.CompileDynamic;
 import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -24,20 +25,27 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
@@ -46,6 +54,7 @@ import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.objectweb.asm.Opcodes;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -72,6 +81,8 @@ public abstract class TraitComposer {
             return 1;
         }
     };
+    public static final ClassNode COMPILESTATIC_CLASSNODE = ClassHelper.make(CompileStatic.class);
+    public static final ClassNode COMPILEDYNAMIC_CLASSNODE = ClassHelper.make(CompileDynamic.class);
 
     /**
      * Given a class node, if this class node implements a trait, then generate all the appropriate
@@ -109,7 +120,7 @@ public abstract class TraitComposer {
      * @param cNode a class node
      * @param interfaces ordered set of interfaces
      */
-    private static void collectAllInterfacesReverseOrder(ClassNode cNode, LinkedHashSet<ClassNode> interfaces) {
+    private static LinkedHashSet<ClassNode> collectAllInterfacesReverseOrder(ClassNode cNode, LinkedHashSet<ClassNode> interfaces) {
         if (cNode.isInterface())
             interfaces.add(cNode);
 
@@ -119,6 +130,7 @@ public abstract class TraitComposer {
             interfaces.add(anInterface);
             collectAllInterfacesReverseOrder(anInterface, interfaces);
         }
+        return interfaces;
     }
 
     private static List<ClassNode> findTraits(ClassNode cNode) {
@@ -151,18 +163,15 @@ public abstract class TraitComposer {
         for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
             boolean isForceOverride = isTraitForceOverride || Traits.isForceOverride(methodNode);
             String name = methodNode.getName();
-            int access = methodNode.getModifiers();
-            Parameter[] argumentTypes = methodNode.getParameters();
-            ClassNode[] exceptions = methodNode.getExceptions();
-            ClassNode returnType = methodNode.getReturnType();
+            Parameter[] helperMethodParams = methodNode.getParameters();
             boolean isAbstract = methodNode.isAbstract();
-            if (!isAbstract && argumentTypes.length > 0 && ((access & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC) && !name.contains("$")) {
+            if (!isAbstract && helperMethodParams.length > 0 && ((methodNode.getModifiers() & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC) && !name.contains("$")) {
                 ArgumentListExpression argList = new ArgumentListExpression();
                 argList.addExpression(new VariableExpression("this"));
-                Parameter[] origParams = new Parameter[argumentTypes.length - 1];
-                Parameter[] params = new Parameter[argumentTypes.length - 1];
-                for (int i = 1; i < argumentTypes.length; i++) {
-                    Parameter parameter = argumentTypes[i];
+                Parameter[] origParams = new Parameter[helperMethodParams.length - 1];
+                Parameter[] params = new Parameter[helperMethodParams.length - 1];
+                for (int i = 1; i < helperMethodParams.length; i++) {
+                    Parameter parameter = helperMethodParams[i];
                     ClassNode originType = parameter.getOriginType();
                     ClassNode fixedType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, originType);
                     Parameter newParam = new Parameter(fixedType, "arg" + i);
@@ -174,58 +183,10 @@ public abstract class TraitComposer {
                     origParams[i-1] = parameter;
                     argList.addExpression(new VariableExpression(params[i - 1]));
                 }
-                MethodNode existingMethod = cNode.getMethod(name, params);
-                if (existingMethod==null || existingMethod.isAbstract()) {
-                    // for Java 8, make sure that if a subinterface defines a default method, it is used
-                    existingMethod = findDefaultMethodFromInterface(cNode, name, params);
-                }
-                if (!isForceOverride && (existingMethod != null || isExistingProperty(name, cNode, params))) {
-                    // override exists in the weaved class or any parent
+                if (shouldSkipMethod(cNode, name, params, isForceOverride)) {
                     continue;
                 }
-                if (isForceOverride && cNode.getDeclaredMethod(name, params)!=null) {
-                    // override exists in the weaved class itself
-                    continue;
-                }
-                ClassNode[] exceptionNodes = new ClassNode[exceptions == null ? 0 : exceptions.length];
-                System.arraycopy(exceptions, 0, exceptionNodes, 0, exceptionNodes.length);
-                MethodCallExpression mce = new MethodCallExpression(
-                        new ClassExpression(helperClassNode),
-                        name,
-                        argList
-                );
-                mce.setImplicitThis(false);
-                ClassNode fixedReturnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, returnType);
-                Expression forwardExpression = genericsSpec.isEmpty()?mce:new CastExpression(fixedReturnType,mce);
-                if (!argumentTypes[0].getOriginType().equals(ClassHelper.CLASS_Type)) {
-                    // we could rely on the first parameter name ($static$self) but that information is not
-                    // guaranteed to be always present
-                    access = access ^ Opcodes.ACC_STATIC;
-                }
-                MethodNode forwarder = new MethodNode(
-                        name,
-                        access,
-                        fixedReturnType,
-                        params,
-                        exceptionNodes,
-                        new ExpressionStatement(forwardExpression)
-                );
-                List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
-                List<AnnotationNode> notCopied = Collections.emptyList(); // at this point, should *always* stay empty
-                AbstractASTTransformation.copyAnnotatedNodeAnnotations(methodNode, copied, notCopied);
-                if (!copied.isEmpty()) {
-                    forwarder.addAnnotations(copied);
-                }
-
-                // add a helper annotation indicating that it is a bridge method
-                AnnotationNode bridgeAnnotation = new AnnotationNode(Traits.TRAITBRIDGE_CLASSNODE);
-                bridgeAnnotation.addMember("traitClass", new ClassExpression(trait));
-                bridgeAnnotation.addMember("desc", new ConstantExpression(BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(), origParams)));
-                forwarder.addAnnotation(
-                        bridgeAnnotation
-                );
-
-                cNode.addMethod(forwarder);
+                createForwarderMethod(trait, cNode, methodNode, helperClassNode, genericsSpec, helperMethodParams, origParams, params, argList);
             }
         }
         cNode.addObjectInitializerStatements(new ExpressionStatement(
@@ -298,11 +259,216 @@ public abstract class TraitComposer {
                             ClassNode.EMPTY_ARRAY,
                             body
                     );
-                    impl.addAnnotation(new AnnotationNode(ClassHelper.make(CompileStatic.class)));
+                    impl.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
                     cNode.addMethod(impl);
                 }
             }
         }
+    }
+
+    private static void createForwarderMethod(
+            ClassNode trait,
+            ClassNode targetNode,
+            MethodNode helperMethod,
+            ClassNode helperClassNode,
+            Map genericsSpec,
+            Parameter[] helperMethodParams,
+            Parameter[] traitMethodParams,
+            Parameter[] forwarderParams,
+            ArgumentListExpression helperMethodArgList) {
+        ClassNode[] exceptionNodes = copyExceptions(helperMethod.getExceptions());
+        MethodCallExpression mce = new MethodCallExpression(
+                new ClassExpression(helperClassNode),
+                helperMethod.getName(),
+                helperMethodArgList
+        );
+        mce.setImplicitThis(false);
+        ClassNode fixedReturnType = AbstractASTTransformation.correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
+        Expression forwardExpression = genericsSpec.isEmpty()?mce:new CastExpression(fixedReturnType,mce);
+        int access = helperMethod.getModifiers();
+        if (!helperMethodParams[0].getOriginType().equals(ClassHelper.CLASS_Type)) {
+            // we could rely on the first parameter name ($static$self) but that information is not
+            // guaranteed to be always present
+            access = access ^ Opcodes.ACC_STATIC;
+        }
+        MethodNode forwarder = new MethodNode(
+                helperMethod.getName(),
+                access,
+                fixedReturnType,
+                forwarderParams,
+                exceptionNodes,
+                new ExpressionStatement(forwardExpression)
+        );
+        List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
+        List<AnnotationNode> notCopied = Collections.emptyList(); // at this point, should *always* stay empty
+        AbstractASTTransformation.copyAnnotatedNodeAnnotations(helperMethod, copied, notCopied);
+        if (!copied.isEmpty()) {
+            forwarder.addAnnotations(copied);
+        }
+
+        // add a helper annotation indicating that it is a bridge method
+        AnnotationNode bridgeAnnotation = new AnnotationNode(Traits.TRAITBRIDGE_CLASSNODE);
+        bridgeAnnotation.addMember("traitClass", new ClassExpression(trait));
+        bridgeAnnotation.addMember("desc", new ConstantExpression(BytecodeHelper.getMethodDescriptor(helperMethod.getReturnType(), traitMethodParams)));
+        forwarder.addAnnotation(
+                bridgeAnnotation
+        );
+
+        targetNode.addMethod(forwarder);
+
+        createSuperForwarder(targetNode, forwarder, genericsSpec);
+    }
+
+    /**
+     * Creates, if necessary, a super forwarder method, for stackable traits.
+     * @param forwarder a forwarder method
+     * @param genericsSpec
+     */
+    private static void createSuperForwarder(ClassNode targetNode, MethodNode forwarder, final Map genericsSpec) {
+        List<ClassNode> interfaces = new ArrayList<ClassNode>(collectAllInterfacesReverseOrder(targetNode, new LinkedHashSet<ClassNode>()));
+        String name = forwarder.getName();
+        Parameter[] forwarderParameters = forwarder.getParameters();
+        LinkedHashSet<ClassNode> traits = new LinkedHashSet<ClassNode>();
+        List<MethodNode> superForwarders = new LinkedList<MethodNode>();
+        for (ClassNode node : interfaces) {
+            if (Traits.isTrait(node)) {
+                MethodNode method = node.getDeclaredMethod(name, forwarderParameters);
+                if (method!=null) {
+                    // a similar method exists, we need a super bridge
+                    // trait$super$foo(Class currentTrait, ...)
+                    traits.add(node);
+                    superForwarders.add(method);
+                }
+            }
+        }
+        for (MethodNode superForwarder : superForwarders) {
+            doCreateSuperForwarder(targetNode, superForwarder, traits.toArray(new ClassNode[traits.size()]), genericsSpec);
+        }
+    }
+
+    /**
+     * Creates a method to dispatch to "super traits" in a "stackable" fashion. The generated method looks like this:
+     * <p>
+     * <code>ReturnType trait$super$method(Class clazz, Arg1 arg1, Arg2 arg2, ...) {
+     *     if (SomeTrait.is(A) { return SomeOtherTrait$Trait$Helper.method(this, arg1, arg2) }
+     *     super.method(arg1,arg2)
+     * }</code>
+     * </p>
+     * @param targetNode
+     * @param forwarderMethod
+     * @param interfacesToGenerateForwarderFor
+     * @param genericsSpec
+     */
+    private static void doCreateSuperForwarder(ClassNode targetNode, MethodNode forwarderMethod, ClassNode[] interfacesToGenerateForwarderFor, Map genericsSpec) {
+        Parameter[] parameters = forwarderMethod.getParameters();
+        String name = forwarderMethod.getName();
+        String superForwarderName = Traits.SUPER_TRAIT_METHOD_PREFIX+ name;
+        if (targetNode.getDeclaredMethod(superForwarderName, parameters)!=null) {
+            // a forwarder already exists
+            return;
+        }
+        Parameter[] superForwarderParams = new Parameter[parameters.length+1];
+        superForwarderParams[0] = new Parameter(ClassHelper.CLASS_Type.getPlainNodeReference(), "clazz");
+        for (int i = 0; i < parameters.length; i++) {
+            Parameter parameter = parameters[i];
+            ClassNode originType = parameter.getOriginType();
+            superForwarderParams[i+1] = new Parameter(GenericsUtils.correctToGenericsSpecRecurse(genericsSpec,originType), parameter.getName());
+        }
+        BlockStatement body = new BlockStatement();
+        VariableExpression clazz = new VariableExpression(superForwarderParams[0]);
+        for (int i = 0; i < interfacesToGenerateForwarderFor.length-1; i++) {
+            final ClassNode current = interfacesToGenerateForwarderFor[i];
+            final ClassNode next = interfacesToGenerateForwarderFor[i+1];
+            body.addStatement(createDelegatingForwarder(forwarderMethod, current, next, clazz));
+        }
+        // last fallback is calling the method on the object iself
+        ClassNode returnType = GenericsUtils.correctToGenericsSpecRecurse(genericsSpec, forwarderMethod.getReturnType());
+        body.addStatement(createSuperFallback(forwarderMethod, returnType));
+        MethodNode methodNode = targetNode.addMethod(superForwarderName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, returnType, superForwarderParams, ClassNode.EMPTY_ARRAY, body);
+    }
+
+    private static Statement createSuperFallback(MethodNode forwarderMethod, ClassNode returnType) {
+        ArgumentListExpression args = new ArgumentListExpression();
+        Parameter[] forwarderMethodParameters = forwarderMethod.getParameters();
+        for (final Parameter forwarderMethodParameter : forwarderMethodParameters) {
+            args.addExpression(new VariableExpression(forwarderMethodParameter));
+        }
+        BinaryExpression instanceOfExpr = new BinaryExpression(new VariableExpression("this"), Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1), new ClassExpression(Traits.GENERATED_PROXY_CLASSNODE));
+        MethodCallExpression superCall = new MethodCallExpression(
+                new VariableExpression("super"),
+                forwarderMethod.getName(),
+                args
+        );
+        superCall.setImplicitThis(false);
+        CastExpression proxyReceiver = new CastExpression(Traits.GENERATED_PROXY_CLASSNODE, new VariableExpression("this"));
+        MethodCallExpression getProxy = new MethodCallExpression(proxyReceiver, "getProxyTarget", ArgumentListExpression.EMPTY_ARGUMENTS);
+        getProxy.setImplicitThis(true);
+        StaticMethodCallExpression proxyCall = new StaticMethodCallExpression(
+                ClassHelper.make(InvokerHelper.class),
+                "invokeMethod",
+                new ArgumentListExpression(getProxy, new ConstantExpression(forwarderMethod.getName()), new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions()))
+        );
+        IfStatement stmt = new IfStatement(
+                new BooleanExpression(instanceOfExpr),
+                new ExpressionStatement(new CastExpression(returnType,proxyCall)),
+                new ExpressionStatement(superCall)
+        );
+        return stmt;
+    }
+
+    private static Statement createDelegatingForwarder(final MethodNode forwarderMethod, final ClassNode current, final ClassNode next, final VariableExpression clazz) {
+        // if (clazz.is(current)) { next$Trait$Helper.method(this, arg1, arg2) }
+        MethodCallExpression isExpression = new MethodCallExpression(
+                clazz,
+                "is",
+                new ClassExpression(current)
+        );
+        isExpression.setImplicitThis(false);
+        TraitHelpersTuple helpers = Traits.findHelpers(next);
+        ArgumentListExpression args = new ArgumentListExpression();
+        args.addExpression(new VariableExpression("this"));
+        Parameter[] forwarderMethodParameters = forwarderMethod.getParameters();
+        for (final Parameter forwarderMethodParameter : forwarderMethodParameters) {
+            args.addExpression(new VariableExpression(forwarderMethodParameter));
+        }
+        StaticMethodCallExpression delegateCall = new StaticMethodCallExpression(
+                helpers.getHelper(),
+                forwarderMethod.getName(),
+                args
+        );
+        IfStatement result;
+        if (ClassHelper.VOID_TYPE.equals(forwarderMethod.getReturnType())) {
+            BlockStatement stmt = new BlockStatement();
+            stmt.addStatement(new ExpressionStatement(delegateCall));
+            stmt.addStatement(new ReturnStatement(new ConstantExpression(null)));
+            result = new IfStatement(new BooleanExpression(isExpression), stmt, new EmptyStatement());
+        } else {
+            result = new IfStatement(new BooleanExpression(isExpression), new ReturnStatement(delegateCall), new EmptyStatement());
+        }
+        return result;
+    }
+
+    private static ClassNode[] copyExceptions(final ClassNode[] sourceExceptions) {
+        ClassNode[] exceptionNodes = new ClassNode[sourceExceptions == null ? 0 : sourceExceptions.length];
+        System.arraycopy(sourceExceptions, 0, exceptionNodes, 0, exceptionNodes.length);
+        return exceptionNodes;
+    }
+
+    private static boolean shouldSkipMethod(final ClassNode cNode, final String name, final Parameter[] params, final boolean isForceOverride) {
+        MethodNode existingMethod = cNode.getMethod(name, params);
+        if (existingMethod==null || existingMethod.isAbstract()) {
+            // for Java 8, make sure that if a subinterface defines a default method, it is used
+            existingMethod = findDefaultMethodFromInterface(cNode, name, params);
+        }
+        if (!isForceOverride && (existingMethod != null || isExistingProperty(name, cNode, params))) {
+            // override exists in the weaved class or any parent
+            return true;
+        }
+        if (isForceOverride && cNode.getDeclaredMethod(name, params)!=null) {
+            // override exists in the weaved class itself
+            return true;
+        }
+        return false;
     }
 
     /**

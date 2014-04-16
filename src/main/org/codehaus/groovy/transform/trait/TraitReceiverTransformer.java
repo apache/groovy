@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform.trait;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -26,6 +27,7 @@ import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -37,6 +39,7 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ExceptionUtils;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 
@@ -142,39 +145,10 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         } else if (exp instanceof MethodCallExpression) {
             MethodCallExpression call = (MethodCallExpression) exp;
             Expression obj = call.getObjectExpression();
-            if (call.isImplicitThis() || obj.getText().equals("this")) {
-                Expression method = call.getMethod();
-                Expression arguments = call.getArguments();
-                if (method instanceof ConstantExpression) {
-                    String methodName = method.getText();
-                    List<MethodNode> methods = traitClass.getMethods(methodName);
-                    for (MethodNode methodNode : methods) {
-                        if (methodName.equals(methodNode.getName()) && methodNode.isPrivate()) {
-                            ArgumentListExpression newArgs = createArgumentList(arguments);
-                            MethodCallExpression transformed = new MethodCallExpression(
-                                    new VariableExpression("this"),
-                                    methodName,
-                                    newArgs
-                            );
-                            transformed.setSourcePosition(call);
-                            transformed.setSafe(call.isSafe());
-                            transformed.setSpreadSafe(call.isSpreadSafe());
-                            transformed.setImplicitThis(true);
-                            return transformed;
-                        }
-                    }
-                }
-
-                MethodCallExpression transformed = new MethodCallExpression(
-                        weaved,
-                        method,
-                        transform(arguments)
-                );
-                transformed.setSourcePosition(call);
-                transformed.setSafe(call.isSafe());
-                transformed.setSpreadSafe(call.isSpreadSafe());
-                transformed.setImplicitThis(false);
-                return transformed;
+            if (call.isImplicitThis() || "this".equals(obj.getText())) {
+                return transformMethodCallOnThis(call);
+            } else if ("super".equals(obj.getText())) {
+                return transformSuperMethodCall(call);
             }
         } else if (exp instanceof FieldExpression) {
             FieldNode field = ((FieldExpression) exp).getField();
@@ -233,8 +207,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 return res;
             }
             if (vexp.isSuperExpression()) {
-                ExceptionUtils.sneakyThrow(
-                        new SyntaxException("Call to super is not allowed in a trait", vexp.getLineNumber(), vexp.getColumnNumber()));
+                throwSuperError(vexp);
             }
         } else if (exp instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) exp;
@@ -270,6 +243,80 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
         // todo: unary expressions (field++, field+=, ...)
         return super.transform(exp);
+    }
+
+    private void throwSuperError(final ASTNode node) {
+        unit.addError(new SyntaxException("Call to super is not allowed in a trait", node.getLineNumber(), node.getColumnNumber()));
+    }
+
+    private Expression transformSuperMethodCall(final MethodCallExpression call) {
+        String method = call.getMethodAsString();
+        if (method==null) {
+            throwSuperError(call);
+        }
+
+        Expression arguments = transform(call.getArguments());
+        ArgumentListExpression superCallArgs = new ArgumentListExpression();
+        superCallArgs.addExpression(new ClassExpression(traitClass));
+        if (arguments instanceof ArgumentListExpression) {
+            ArgumentListExpression list = (ArgumentListExpression) arguments;
+            for (Expression expression : list) {
+                superCallArgs.addExpression(expression);
+            }
+        } else {
+            superCallArgs.addExpression(arguments);
+        }
+        MethodCallExpression transformed = new MethodCallExpression(
+                weaved,
+                Traits.SUPER_TRAIT_METHOD_PREFIX+method,
+                superCallArgs
+        );
+        transformed.setSourcePosition(call);
+        transformed.setSafe(call.isSafe());
+        transformed.setSpreadSafe(call.isSpreadSafe());
+        transformed.setImplicitThis(false);
+        return transformed;
+    }
+
+
+
+    private Expression transformMethodCallOnThis(final MethodCallExpression call) {
+        Expression method = call.getMethod();
+        Expression arguments = call.getArguments();
+        if (method instanceof ConstantExpression) {
+            String methodName = method.getText();
+            List<MethodNode> methods = traitClass.getMethods(methodName);
+            for (MethodNode methodNode : methods) {
+                if (methodName.equals(methodNode.getName()) && methodNode.isPrivate()) {
+                    return transformPrivateMethodCall(call, arguments, methodName);
+                }
+            }
+        }
+
+        MethodCallExpression transformed = new MethodCallExpression(
+                weaved,
+                method,
+                transform(arguments)
+        );
+        transformed.setSourcePosition(call);
+        transformed.setSafe(call.isSafe());
+        transformed.setSpreadSafe(call.isSpreadSafe());
+        transformed.setImplicitThis(false);
+        return transformed;
+    }
+
+    private Expression transformPrivateMethodCall(final MethodCallExpression call, final Expression arguments, final String methodName) {
+        ArgumentListExpression newArgs = createArgumentList(arguments);
+        MethodCallExpression transformed = new MethodCallExpression(
+                new VariableExpression("this"),
+                methodName,
+                newArgs
+        );
+        transformed.setSourcePosition(call);
+        transformed.setSafe(call.isSafe());
+        transformed.setSpreadSafe(call.isSpreadSafe());
+        transformed.setImplicitThis(true);
+        return transformed;
     }
 
     private Expression createFieldHelperReceiver() {

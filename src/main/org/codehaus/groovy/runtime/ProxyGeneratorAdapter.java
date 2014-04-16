@@ -245,7 +245,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         Set<String> selectedMethods = new HashSet<String>();
         List<Method> interfaceMethods = new ArrayList<Method>();
         List<Method> superClassMethods = new ArrayList<Method>();
-        getInheritedMethods(superClass, superClassMethods);
+        Collections.addAll(superClassMethods, superClass.getDeclaredMethods());
         if (interfaces!=null) {
             for (Class thisInterface : interfaces) {
                 getInheritedMethods(thisInterface, interfaceMethods);

@@ -28,12 +28,15 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.objectweb.asm.Type;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -49,6 +52,7 @@ public abstract class Traits {
     public static final ClassNode TRAITBRIDGE_CLASSNODE = ClassHelper.make(TraitBridge.class);
     public static final Class TRAIT_CLASS = Trait.class;
     public static final ClassNode TRAIT_CLASSNODE = ClassHelper.make(TRAIT_CLASS);
+    public static final ClassNode GENERATED_PROXY_CLASSNODE = ClassHelper.make(GeneratedGroovyProxy.class);
 
     static final String TRAIT_TYPE_NAME = "@" + TRAIT_CLASSNODE.getNameWithoutPackage();
     static final String TRAIT_HELPER = "$Trait$Helper";
@@ -60,6 +64,7 @@ public abstract class Traits {
     static final String THIS_OBJECT = "$self";
     static final String STATIC_THIS_OBJECT = "$static$self";
     static final String STATIC_FIELD_PREFIX = "$static";
+    static final String SUPER_TRAIT_METHOD_PREFIX = "trait$super$";
 
     static String fieldHelperClassName(final ClassNode traitNode) {
         return traitNode.getName() + FIELD_HELPER;
