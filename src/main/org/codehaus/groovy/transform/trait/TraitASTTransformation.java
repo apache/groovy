@@ -79,7 +79,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         init(nodes, source);
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
-            checkNotInterface(cNode, Traits.TRAIT_TYPE_NAME);
+            if (!checkNotInterface(cNode, Traits.TRAIT_TYPE_NAME)) return;
             checkNoConstructor(cNode);
             checkExtendsClause(cNode);
             replaceExtendsByImplements(cNode);

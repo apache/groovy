@@ -98,7 +98,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
-            checkNotInterface(cNode, MY_TYPE_NAME);
+            if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             boolean includeProperties = !memberHasValue(anno, "includeProperties", false);
             boolean includeSuperFields = memberHasValue(anno, "includeSuperFields", true);
@@ -112,7 +112,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
                 if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
-            checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
+            if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
             createConstructor(cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes);
         }
     }

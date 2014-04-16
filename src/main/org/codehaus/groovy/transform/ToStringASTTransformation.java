@@ -81,7 +81,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
-            checkNotInterface(cNode, MY_TYPE_NAME);
+            if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             boolean includeSuper = memberHasValue(anno, "includeSuper", true);
             boolean cacheToString = memberHasValue(anno, "cache", true);
             if (includeSuper && cNode.getSuperClass().getName().equals("java.lang.Object")) {
@@ -99,7 +99,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
                 if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
                 if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
-            checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
+            if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
             createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString);
         }
     }

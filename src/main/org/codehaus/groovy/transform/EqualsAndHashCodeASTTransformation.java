@@ -60,7 +60,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
-            checkNotInterface(cNode, MY_TYPE_NAME);
+            if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             boolean callSuper = memberHasValue(anno, "callSuper", true);
             boolean cacheHashCode = memberHasValue(anno, "cache", true);
             boolean useCanEqual = !memberHasValue(anno, "useCanEqual", false);
@@ -75,7 +75,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
                 if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
-            checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
+            if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
             createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes);
             createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes);
         }

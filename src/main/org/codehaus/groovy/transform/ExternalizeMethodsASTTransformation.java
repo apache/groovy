@@ -66,7 +66,7 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
 
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
-            checkNotInterface(cNode, MY_TYPE_NAME);
+            if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             cNode.addInterface(EXTERNALIZABLE_TYPE);
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             List<String> excludes = getMemberList(anno, "excludes");

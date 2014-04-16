@@ -56,10 +56,10 @@ public class CanonicalASTTransformation extends AbstractASTTransformation {
             if (hasAnnotation(cNode, ImmutableASTTransformation.MY_TYPE)) {
                 addError(MY_TYPE_NAME + " class '" + cNode.getName() + "' can't also be " + ImmutableASTTransformation.MY_TYPE_NAME, parent);
             }
-            checkNotInterface(cNode, MY_TYPE_NAME);
+            if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             List<String> excludes = getMemberList(anno, "excludes");
             List<String> includes = getMemberList(anno, "includes");
-            checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
+            if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
                 createConstructor(cNode, false, true, false, false, false, false, excludes, includes);
             }

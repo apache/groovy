@@ -135,11 +135,13 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         );
     }
 
-    protected void checkNotInterface(ClassNode cNode, String annotationName) {
+    protected boolean checkNotInterface(ClassNode cNode, String annotationName) {
         if (cNode.isInterface()) {
             addError("Error processing interface '" + cNode.getName() + "'. " +
                     annotationName + " not allowed for interfaces.", cNode);
+            return false;
         }
+        return true;
     }
 
     protected boolean hasAnnotation(ClassNode cNode, ClassNode annotation) {
@@ -210,10 +212,12 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
             return true;
     }
 
-    protected void checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
+    protected boolean checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
         if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
             addError("Error during " + typeName + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", node);
+            return false;
         }
+        return true;
     }
 
     protected void checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, List<ClassNode> excludeTypes, List<ClassNode> includeTypes, String typeName) {

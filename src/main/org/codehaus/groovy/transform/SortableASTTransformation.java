@@ -76,7 +76,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
     private void createSortable(AnnotationNode annotation, ClassNode classNode) {
         List<String> includes = getMemberList(annotation, "includes");
         List<String> excludes = getMemberList(annotation, "excludes");
-        checkIncludeExclude(annotation, excludes, includes, MY_TYPE_NAME);
+        if (!checkIncludeExclude(annotation, excludes, includes, MY_TYPE_NAME)) return;
         if (classNode.isInterface()) {
             addError(MY_TYPE_NAME + " cannot be applied to interface " + classNode.getName(), annotation);
         }

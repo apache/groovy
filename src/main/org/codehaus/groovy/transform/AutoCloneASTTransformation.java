@@ -83,7 +83,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
 
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
-            checkNotInterface(cNode, MY_TYPE_NAME);
+            if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             cNode.addInterface(CLONEABLE_TYPE);
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             AutoCloneStyle style = getStyle(anno, "style");
