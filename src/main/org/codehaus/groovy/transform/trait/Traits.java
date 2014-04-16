@@ -25,19 +25,16 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.objectweb.asm.Type;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -64,6 +61,7 @@ public abstract class Traits {
     static final String THIS_OBJECT = "$self";
     static final String STATIC_THIS_OBJECT = "$static$self";
     static final String STATIC_FIELD_PREFIX = "$static";
+
     static final String SUPER_TRAIT_METHOD_PREFIX = "trait$super$";
 
     static String fieldHelperClassName(final ClassNode traitNode) {
@@ -235,6 +233,39 @@ public abstract class Traits {
             }
         }
         return DefaultGroovyMethods.asType(self, clazz);
+    }
+
+    /**
+     * Returns the name of a method without the super trait specific prefix. If the method name
+     * doesn't correspond to a super trait method call, the result will be null.
+     * @param origName the name of a method
+     * @return null if the name doesn't start with the super trait prefix, otherwise the name without the prefix
+     */
+    public static String getNameWithoutSuperTrait(String origName) {
+        if (origName.startsWith(SUPER_TRAIT_METHOD_PREFIX)) {
+            return origName.substring(SUPER_TRAIT_METHOD_PREFIX.length());
+        }
+        return null;
+    }
+
+    /**
+     * Collects all interfaces of a class node, but reverses the order of the declaration of direct interfaces
+     * of this class node. This is used to make sure a trait implementing A,B where both A and B have the same
+     * method will take the method from B (latest), aligning the behavior with categories.
+     * @param cNode a class node
+     * @param interfaces ordered set of interfaces
+     */
+    public static LinkedHashSet<ClassNode> collectAllInterfacesReverseOrder(ClassNode cNode, LinkedHashSet<ClassNode> interfaces) {
+        if (cNode.isInterface())
+            interfaces.add(cNode);
+
+        ClassNode[] directInterfaces = cNode.getInterfaces();
+        for (int i = directInterfaces.length-1; i >=0 ; i--) {
+            final ClassNode anInterface = directInterfaces[i];
+            interfaces.add(anInterface);
+            collectAllInterfacesReverseOrder(anInterface, interfaces);
+        }
+        return interfaces;
     }
 
     /**

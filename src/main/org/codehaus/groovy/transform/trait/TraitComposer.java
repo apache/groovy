@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.transform.trait;
 
-import groovy.transform.CompileDynamic;
 import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -82,7 +81,6 @@ public abstract class TraitComposer {
         }
     };
     public static final ClassNode COMPILESTATIC_CLASSNODE = ClassHelper.make(CompileStatic.class);
-    public static final ClassNode COMPILEDYNAMIC_CLASSNODE = ClassHelper.make(CompileDynamic.class);
 
     /**
      * Given a class node, if this class node implements a trait, then generate all the appropriate
@@ -113,29 +111,9 @@ public abstract class TraitComposer {
         }
     }
 
-    /**
-     * Collects all interfaces of a class node, but reverses the order of the declaration of direct interfaces
-     * of this class node. This is used to make sure a trait implementing A,B where both A and B have the same
-     * method will take the method from B (latest), aligning the behavior with categories.
-     * @param cNode a class node
-     * @param interfaces ordered set of interfaces
-     */
-    private static LinkedHashSet<ClassNode> collectAllInterfacesReverseOrder(ClassNode cNode, LinkedHashSet<ClassNode> interfaces) {
-        if (cNode.isInterface())
-            interfaces.add(cNode);
-
-        ClassNode[] directInterfaces = cNode.getInterfaces();
-        for (int i = directInterfaces.length-1; i >=0 ; i--) {
-            final ClassNode anInterface = directInterfaces[i];
-            interfaces.add(anInterface);
-            collectAllInterfacesReverseOrder(anInterface, interfaces);
-        }
-        return interfaces;
-    }
-
     private static List<ClassNode> findTraits(ClassNode cNode) {
         LinkedHashSet<ClassNode> interfaces = new LinkedHashSet<ClassNode>();
-        collectAllInterfacesReverseOrder(cNode, interfaces);
+        Traits.collectAllInterfacesReverseOrder(cNode, interfaces);
         List<ClassNode> traits = new LinkedList<ClassNode>();
         for (ClassNode candidate : interfaces) {
             if (Traits.isAnnotatedWithTrait(candidate)) {
@@ -325,7 +303,7 @@ public abstract class TraitComposer {
      * @param genericsSpec
      */
     private static void createSuperForwarder(ClassNode targetNode, MethodNode forwarder, final Map genericsSpec) {
-        List<ClassNode> interfaces = new ArrayList<ClassNode>(collectAllInterfacesReverseOrder(targetNode, new LinkedHashSet<ClassNode>()));
+        List<ClassNode> interfaces = new ArrayList<ClassNode>(Traits.collectAllInterfacesReverseOrder(targetNode, new LinkedHashSet<ClassNode>()));
         String name = forwarder.getName();
         Parameter[] forwarderParameters = forwarder.getParameters();
         LinkedHashSet<ClassNode> traits = new LinkedHashSet<ClassNode>();

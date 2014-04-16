@@ -1959,7 +1959,6 @@ assert c.foo(2) == 8
 '''
     }
 
-    @NotYetImplemented
     void testStaticallyCompiledTraitWithCallToSuper() {
         assertScript '''
 @groovy.transform.CompileStatic
@@ -1971,6 +1970,22 @@ trait B extends A {
     int foo(int x) { 2*super.foo(x)}
 }
 class C implements B {}
+def c = new C()
+assert c.foo(2) == 6
+'''
+    }
+
+    void testStaticallyCompiledTraitWithCallToSuperAndNoExplicitSuperTrait() {
+        assertScript '''
+@groovy.transform.CompileStatic
+trait A {
+    int foo(int x) { 1+x }
+}
+@groovy.transform.CompileStatic
+trait B {
+    int foo(int x) { 2*(int)super.foo(x)}
+}
+class C implements A,B {}
 def c = new C()
 assert c.foo(2) == 6
 '''
