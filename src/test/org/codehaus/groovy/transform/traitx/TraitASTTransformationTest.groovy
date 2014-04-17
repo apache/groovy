@@ -1892,6 +1892,8 @@ queue.put(-1)
 queue.put(0)
 queue.put(1)
 assert queue.get() == 1
+assert queue.get() == 2
+assert queue.toString() == "[]"
 '''
     }
 
@@ -1924,6 +1926,8 @@ queue.put(-1)
 queue.put(0)
 queue.put(1)
 assert queue.get() == 1
+assert queue.get() == 2
+assert queue.proxyTarget.toString() == "[]"
 '''
 
     }
