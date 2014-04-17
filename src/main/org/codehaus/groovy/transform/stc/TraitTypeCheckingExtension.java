@@ -88,7 +88,6 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
                 result = candidates.get(0).getReturnType();
             }
         }
-        System.out.println("result = " + result.toString(false));
         return result;
     }
 
