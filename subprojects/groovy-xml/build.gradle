@@ -1,19 +1,8 @@
 dependencies {
     compile rootProject
-    groovy rootProject
     testCompile rootProject.sourceSets.test.runtimeClasspath
     testCompile "xmlunit:xmlunit:$xmlunitVersion"
     testCompile project(':groovy-test')
-}
-
-sourceSets {
-    test {
-        groovy {
-            if (isJava15()) {
-                exclude '**/vm6/*Test.groovy'
-            }
-        }
-    }
 }
 
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {

@@ -15,16 +15,18 @@
  */
 
 // Define a GroovyDoc task which depends on the generated groovydoc tool
-groovydoc {
-    dependsOn( { project(':groovy-groovydoc').classes })
-    dependsOn( { project(':groovy-docgenerator').classes })
-    groovyClasspath = files(
-            rootProject.compileJava.destinationDir,
-            rootProject.compileJava.classpath,
-            { project(':groovy-docgenerator').compileJava.destinationDir },
-            { project(':groovy-groovydoc').compileJava.destinationDir },
-            { project(':groovy-groovydoc').sourceSets.main.runtimeClasspath },
-            { project(':groovy-ant').compileJava.destinationDir },
-            { project(':groovy-templates').compileJava.destinationDir },
-    )
+allprojects {
+    groovydoc {
+        dependsOn( { project(':groovy-groovydoc').classes })
+        dependsOn( { project(':groovy-docgenerator').classes })
+        groovyClasspath = files(
+                rootProject.compileJava.classpath,
+                rootProject.bootstrapJar.archivePath,
+                { project(':groovy-docgenerator').compileJava.destinationDir },
+                { project(':groovy-groovydoc').compileJava.destinationDir },
+                { project(':groovy-groovydoc').sourceSets.main.runtimeClasspath },
+                { project(':groovy-ant').sourceSets.main.runtimeClasspath },
+                { project(':groovy-templates').sourceSets.main.runtimeClasspath },
+        )
+    }
 }

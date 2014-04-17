@@ -130,7 +130,7 @@ allprojects {
     task jarjar(type:Jar, dependsOn: jar) {
         destinationDir = jar.destinationDir
         baseName = jar.baseName
-        appendix = jar.appendix
+        appendix = jar.appendix?"${jar.appendix}-jarjar":"jarjar"
         classifier = jar.classifier
         includeEmptyDirs = false
         def target = new File("${archivePath}.tmp")
@@ -192,6 +192,7 @@ allprojects {
         doLast {
             // for some obscure reason, this produces a Gradle warning
             target.delete()
+            rootProject.isJarJar = false
         }
     }
 }
@@ -240,7 +241,22 @@ def mergeModuleDescriptors() {
     descriptor
 }
 
-task jarAll(type: Jar, dependsOn: { allprojects.jarjar }) {
+task replaceJarWithJarJar(dependsOn:{ allprojects.jarjar }) {
+    description = "Overwrites normal JAR files with their JARJAR version"
+    doLast {
+        allprojects {
+            def jarjarFile = tasks.jarjar.archivePath
+            if (jarjarFile) {
+                ant.copy(file: jarjarFile, tofile: jar.archivePath)
+                jarjarFile.delete()
+            }
+        }
+    }
+    inputs.files(allprojects.jarjar.archivePath)
+    outputs.files(allprojects.jar.archivePath)
+}
+
+task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
     ext.metaInfDir = "$buildDir/tmp/groovy-all-metainf"
     appendix = 'all'
     includeEmptyDirs = false
@@ -388,7 +404,7 @@ ext.distSpec = copySpec {
     }
 }
 
-task distBin(type: Zip, dependsOn: [jar, jarAllAll]) {
+task distBin(type: Zip, dependsOn: [jar, jarAllAll, replaceJarWithJarJar]) {
     appendix = 'binary'
     into("groovy-$version") {
         with distSpec

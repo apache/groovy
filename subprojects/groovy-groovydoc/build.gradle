@@ -1,7 +1,6 @@
 dependencies {
     compile rootProject
     testCompile rootProject.sourceSets.test.runtimeClasspath
-    groovy rootProject
     compile project(':groovy-templates')
     testCompile project(':groovy-test')
     testCompile project(':groovy-ant')
