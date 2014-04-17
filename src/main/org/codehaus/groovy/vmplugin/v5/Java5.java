@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 
@@ -349,41 +350,45 @@ public class Java5 implements VMPlugin {
     }
 
     public void configureClassNode(CompileUnit compileUnit, ClassNode classNode) {
-        Class clazz = classNode.getTypeClass();
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field f : fields) {
-            ClassNode ret = makeClassNode(compileUnit, f.getGenericType(), f.getType());
-            FieldNode fn = new FieldNode(f.getName(), f.getModifiers(), ret, classNode, null);
-            setAnnotationMetaData(f.getAnnotations(), fn);
-            classNode.addField(fn);
-        }
-        Method[] methods = clazz.getDeclaredMethods();
-        for (Method m : methods) {
-            ClassNode ret = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
-            Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations());
-            ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
-            MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
-            mn.setSynthetic(m.isSynthetic());
-            setMethodDefaultValue(mn, m);
-            setAnnotationMetaData(m.getAnnotations(), mn);
-            mn.setGenericsTypes(configureTypeVariable(m.getTypeParameters()));
-            classNode.addMethod(mn);
-        }
-        Constructor[] constructors = clazz.getDeclaredConstructors();
-        for (Constructor ctor : constructors) {
-            Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes(), ctor.getParameterAnnotations());
-            ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
-            classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
-        }
+        try {
+            Class clazz = classNode.getTypeClass();
+            Field[] fields = clazz.getDeclaredFields();
+            for (Field f : fields) {
+                ClassNode ret = makeClassNode(compileUnit, f.getGenericType(), f.getType());
+                FieldNode fn = new FieldNode(f.getName(), f.getModifiers(), ret, classNode, null);
+                setAnnotationMetaData(f.getAnnotations(), fn);
+                classNode.addField(fn);
+            }
+            Method[] methods = clazz.getDeclaredMethods();
+            for (Method m : methods) {
+                ClassNode ret = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
+                Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations());
+                ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
+                MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
+                mn.setSynthetic(m.isSynthetic());
+                setMethodDefaultValue(mn, m);
+                setAnnotationMetaData(m.getAnnotations(), mn);
+                mn.setGenericsTypes(configureTypeVariable(m.getTypeParameters()));
+                classNode.addMethod(mn);
+            }
+            Constructor[] constructors = clazz.getDeclaredConstructors();
+            for (Constructor ctor : constructors) {
+                Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes(), ctor.getParameterAnnotations());
+                ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
+                classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
+            }
 
-        Class sc = clazz.getSuperclass();
-        if (sc != null) classNode.setUnresolvedSuperClass(makeClassNode(compileUnit, clazz.getGenericSuperclass(), sc));
-        makeInterfaceTypes(compileUnit, classNode, clazz);
-        setAnnotationMetaData(classNode.getTypeClass().getAnnotations(), classNode);
+            Class sc = clazz.getSuperclass();
+            if (sc != null) classNode.setUnresolvedSuperClass(makeClassNode(compileUnit, clazz.getGenericSuperclass(), sc));
+            makeInterfaceTypes(compileUnit, classNode, clazz);
+            setAnnotationMetaData(classNode.getTypeClass().getAnnotations(), classNode);
 
-        PackageNode packageNode = classNode.getPackage();
-        if (packageNode != null) {
-            setAnnotationMetaData(classNode.getTypeClass().getPackage().getAnnotations(), packageNode);
+            PackageNode packageNode = classNode.getPackage();
+            if (packageNode != null) {
+                setAnnotationMetaData(classNode.getTypeClass().getPackage().getAnnotations(), packageNode);
+            }
+        } catch (NoClassDefFoundError e) {
+            throw new NoClassDefFoundError("Unable to load class "+classNode.toString(false)+" due to missing dependency "+e.getMessage());
         }
     }
 

@@ -241,12 +241,13 @@ def mergeModuleDescriptors() {
     descriptor
 }
 
-task replaceJarWithJarJar(dependsOn:{ allprojects.jarjar }) {
+task replaceJarWithJarJar(dependsOn: allprojects.jarjar ) {
     description = "Overwrites normal JAR files with their JARJAR version"
     doLast {
         allprojects {
             def jarjarFile = tasks.jarjar.archivePath
             if (jarjarFile) {
+                file(jar.archivePath).delete()
                 ant.copy(file: jarjarFile, tofile: jar.archivePath)
                 jarjarFile.delete()
             }
