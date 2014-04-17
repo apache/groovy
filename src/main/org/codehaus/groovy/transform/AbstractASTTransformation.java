@@ -23,16 +23,13 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
@@ -57,18 +54,18 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         this.sourceUnit = sourceUnit;
     }
 
-    protected boolean memberHasValue(AnnotationNode node, String name, Object value) {
+    public boolean memberHasValue(AnnotationNode node, String name, Object value) {
         final Expression member = node.getMember(name);
         return member != null && member instanceof ConstantExpression && ((ConstantExpression) member).getValue().equals(value);
     }
 
-    protected Object getMemberValue(AnnotationNode node, String name) {
+    public Object getMemberValue(AnnotationNode node, String name) {
         final Expression member = node.getMember(name);
         if (member != null && member instanceof ConstantExpression) return ((ConstantExpression) member).getValue();
         return null;
     }
 
-    protected String getMemberStringValue(AnnotationNode node, String name, String defaultValue) {
+    public String getMemberStringValue(AnnotationNode node, String name, String defaultValue) {
         final Expression member = node.getMember(name);
         if (member != null && member instanceof ConstantExpression) {
             Object result = ((ConstantExpression) member).getValue();
@@ -77,11 +74,11 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return defaultValue;
     }
 
-    protected String getMemberStringValue(AnnotationNode node, String name) {
+    public String getMemberStringValue(AnnotationNode node, String name) {
         return getMemberStringValue(node, name, null);
     }
 
-    protected int getMemberIntValue(AnnotationNode node, String name) {
+    public int getMemberIntValue(AnnotationNode node, String name) {
         Object value = getMemberValue(node, name);
         if (value != null && value instanceof Integer) {
             return (Integer) value;
@@ -89,7 +86,17 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return 0;
     }
 
-    protected List<String> getMemberList(AnnotationNode anno, String name) {
+    public static ClassNode getMemberClassValue(AnnotationNode node, String name) {
+        return getMemberClassValue(node, name, null);
+    }
+
+    public static ClassNode getMemberClassValue(AnnotationNode node, String name, ClassNode defaultValue) {
+        final Expression member = node.getMember(name);
+        if (member != null && member instanceof ClassExpression) return member.getType();
+        return defaultValue;
+    }
+
+    public List<String> getMemberList(AnnotationNode anno, String name) {
         List<String> list;
         Expression expr = anno.getMember(name);
         if (expr != null && expr instanceof ListExpression) {
@@ -107,7 +114,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return list;
     }
 
-    protected List<ClassNode> getClassList(AnnotationNode anno, String name) {
+    public List<ClassNode> getClassList(AnnotationNode anno, String name) {
         List<ClassNode> list = new ArrayList<ClassNode>();
         Expression expr = anno.getMember(name);
         if (expr != null && expr instanceof ListExpression) {
@@ -125,11 +132,11 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return list;
     }
 
-    protected void addError(String msg, ASTNode expr) {
+    public void addError(String msg, ASTNode expr) {
         sourceUnit.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
-                new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
-                        expr.getLastLineNumber(), expr.getLastColumnNumber()),
-                sourceUnit)
+                        new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
+                                expr.getLastLineNumber(), expr.getLastColumnNumber()),
+                        sourceUnit)
         );
     }
 
@@ -142,7 +149,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return true;
     }
 
-    protected boolean hasAnnotation(ClassNode cNode, ClassNode annotation) {
+    public boolean hasAnnotation(ClassNode cNode, ClassNode annotation) {
         List annots = cNode.getAnnotations(annotation);
         return (annots != null && annots.size() > 0);
     }
@@ -162,52 +169,52 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     public static boolean shouldSkipOnDescriptor(boolean checkReturn, Map genericsSpec, MethodNode mNode, List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
         String descriptor = mNode.getTypeDescriptor();
         String descriptorNoReturn = GeneralUtils.makeDescriptorWithoutReturnType(mNode);
-            for (ClassNode cn : excludeTypes) {
-                List<ClassNode> remaining = new LinkedList<ClassNode>();
-                remaining.add(cn);
-                Map updatedGenericsSpec = new HashMap(genericsSpec);
-                while (!remaining.isEmpty()) {
-                    ClassNode next = remaining.remove(0);
-                    if (!next.equals(ClassHelper.OBJECT_TYPE)) {
-                        updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
-                        for (MethodNode mn : next.getMethods()) {
-                            MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
-                            if (checkReturn) {
-                                String md = correctedMethodNode.getTypeDescriptor();
-                                if (md.equals(descriptor)) return true;
-                            } else {
-                                String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
-                                if (md.equals(descriptorNoReturn)) return true;
-                            }
+        for (ClassNode cn : excludeTypes) {
+            List<ClassNode> remaining = new LinkedList<ClassNode>();
+            remaining.add(cn);
+            Map updatedGenericsSpec = new HashMap(genericsSpec);
+            while (!remaining.isEmpty()) {
+                ClassNode next = remaining.remove(0);
+                if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                    updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
+                    for (MethodNode mn : next.getMethods()) {
+                        MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
+                        if (checkReturn) {
+                            String md = correctedMethodNode.getTypeDescriptor();
+                            if (md.equals(descriptor)) return true;
+                        } else {
+                            String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                            if (md.equals(descriptorNoReturn)) return true;
                         }
-                        remaining.addAll(Arrays.asList(next.getInterfaces()));
                     }
+                    remaining.addAll(Arrays.asList(next.getInterfaces()));
                 }
             }
-            if (includeTypes.isEmpty()) return false;
-            for (ClassNode cn : includeTypes) {
-                List<ClassNode> remaining = new LinkedList<ClassNode>();
-                remaining.add(cn);
-                Map updatedGenericsSpec = new HashMap(genericsSpec);
-                while (!remaining.isEmpty()) {
-                    ClassNode next = remaining.remove(0);
-                    if (!next.equals(ClassHelper.OBJECT_TYPE)) {
-                        updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
-                        for (MethodNode mn : next.getMethods()) {
-                            MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
-                            if (checkReturn) {
-                                String md = correctedMethodNode.getTypeDescriptor();
-                                if (md.equals(descriptor)) return false;
-                            } else {
-                                String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
-                                if (md.equals(descriptorNoReturn)) return false;
-                            }
+        }
+        if (includeTypes.isEmpty()) return false;
+        for (ClassNode cn : includeTypes) {
+            List<ClassNode> remaining = new LinkedList<ClassNode>();
+            remaining.add(cn);
+            Map updatedGenericsSpec = new HashMap(genericsSpec);
+            while (!remaining.isEmpty()) {
+                ClassNode next = remaining.remove(0);
+                if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                    updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
+                    for (MethodNode mn : next.getMethods()) {
+                        MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
+                        if (checkReturn) {
+                            String md = correctedMethodNode.getTypeDescriptor();
+                            if (md.equals(descriptor)) return false;
+                        } else {
+                            String md = GeneralUtils.makeDescriptorWithoutReturnType(correctedMethodNode);
+                            if (md.equals(descriptorNoReturn)) return false;
                         }
-                        remaining.addAll(Arrays.asList(next.getInterfaces()));
                     }
+                    remaining.addAll(Arrays.asList(next.getInterfaces()));
                 }
             }
-            return true;
+        }
+        return true;
     }
 
     protected boolean checkIncludeExclude(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
@@ -237,61 +244,4 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return GenericsUtils.nonGeneric(type);
     }
 
-    /**
-     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
-     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
-     * <p>
-     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported by now.
-     */
-    public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, List<AnnotationNode> notCopied) {
-        List<AnnotationNode> annotationList = annotatedNode.getAnnotations();
-        for (AnnotationNode annotation : annotationList)  {
-
-            List<AnnotationNode> annotations = annotation.getClassNode().getAnnotations(RETENTION_CLASSNODE);
-            if (annotations.isEmpty()) continue;
-
-            if (hasClosureMember(annotation)) {
-                notCopied.add(annotation);
-                continue;
-            }
-
-            AnnotationNode retentionPolicyAnnotation = annotations.get(0);
-            Expression valueExpression = retentionPolicyAnnotation.getMember("value");
-            if (!(valueExpression instanceof PropertyExpression)) continue;
-
-            PropertyExpression propertyExpression = (PropertyExpression) valueExpression;
-            boolean processAnnotation =
-                    propertyExpression.getProperty() instanceof ConstantExpression &&
-                            (
-                                    "RUNTIME".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue()) ||
-                                    "CLASS".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue())
-                            );
-
-            if (processAnnotation)  {
-                AnnotationNode newAnnotation = new AnnotationNode(annotation.getClassNode());
-                for (Map.Entry<String, Expression> member : annotation.getMembers().entrySet())  {
-                    newAnnotation.addMember(member.getKey(), member.getValue());
-                }
-                newAnnotation.setSourcePosition(annotatedNode);
-
-                copied.add(newAnnotation);
-            }
-        }
-    }
-
-    private static boolean hasClosureMember(AnnotationNode annotation) {
-
-        Map<String, Expression> members = annotation.getMembers();
-        for (Map.Entry<String, Expression> member : members.entrySet())  {
-            if (member.getValue() instanceof ClosureExpression) return true;
-
-            if (member.getValue() instanceof ClassExpression)  {
-                ClassExpression classExpression = (ClassExpression) member.getValue();
-                Class<?> typeClass = classExpression.getType().isResolved() ? classExpression.getType().redirect().getTypeClass() : null;
-                if (typeClass != null && GeneratedClosure.class.isAssignableFrom(typeClass)) return true;
-            }
-        }
-
-        return false;
-    }
 }

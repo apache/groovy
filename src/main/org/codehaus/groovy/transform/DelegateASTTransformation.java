@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
@@ -283,7 +284,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     private List<AnnotationNode> copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode) {
         final ArrayList<AnnotationNode> delegateAnnotations = new ArrayList<AnnotationNode>();
         final ArrayList<AnnotationNode> notCopied = new ArrayList<AnnotationNode>();
-        copyAnnotatedNodeAnnotations(annotatedNode, delegateAnnotations, notCopied);
+        GeneralUtils.copyAnnotatedNodeAnnotations(annotatedNode, delegateAnnotations, notCopied);
         for (AnnotationNode annotation : notCopied) {
             addError(MY_TYPE_NAME + " does not support keeping Closure annotation members.", annotation);
         }

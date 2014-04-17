@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -398,7 +399,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         // copy annotations from field to dummy field
         List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
         List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
-        copyAnnotatedNodeAnnotations(field, copied, notCopied);
+        GeneralUtils.copyAnnotatedNodeAnnotations(field, copied, notCopied);
         dummyField.addAnnotations(copied);
         fieldHelper.addField(dummyField);
     }

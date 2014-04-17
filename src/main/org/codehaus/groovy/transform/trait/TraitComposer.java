@@ -40,6 +40,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -50,7 +51,6 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
-import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
@@ -157,7 +157,7 @@ public abstract class TraitComposer {
                     Parameter newParam = new Parameter(fixedType, "arg" + i);
                     List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
                     List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
-                    AbstractASTTransformation.copyAnnotatedNodeAnnotations(parameter, copied, notCopied);
+                    GeneralUtils.copyAnnotatedNodeAnnotations(parameter, copied, notCopied);
                     newParam.addAnnotations(copied);
                     params[i - 1] = newParam;
                     origParams[i-1] = parameter;
@@ -217,7 +217,7 @@ public abstract class TraitComposer {
                         if (helperField!=null) {
                             List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
                             List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
-                            AbstractASTTransformation.copyAnnotatedNodeAnnotations(helperField, copied, notCopied);
+                            GeneralUtils.copyAnnotatedNodeAnnotations(helperField, copied, notCopied);
                             FieldNode fieldNode = cNode.addField(fieldName, (publicField?Opcodes.ACC_PUBLIC:Opcodes.ACC_PRIVATE) | isStatic, returnType, null);
                             fieldNode.addAnnotations(copied);
                         }
@@ -291,7 +291,7 @@ public abstract class TraitComposer {
         );
         List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
         List<AnnotationNode> notCopied = Collections.emptyList(); // at this point, should *always* stay empty
-        AbstractASTTransformation.copyAnnotatedNodeAnnotations(helperMethod, copied, notCopied);
+        GeneralUtils.copyAnnotatedNodeAnnotations(helperMethod, copied, notCopied);
         if (!copied.isEmpty()) {
             forwarder.addAnnotations(copied);
         }

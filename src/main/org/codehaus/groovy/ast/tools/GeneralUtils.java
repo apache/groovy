@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.ast.tools;
 
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -28,6 +30,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -46,13 +49,16 @@ import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.AbstractASTTransformation;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -186,6 +192,48 @@ public class GeneralUtils {
 
     public static ConstantExpression constX(Object val, boolean keepPrimitive) {
         return new ConstantExpression(val, keepPrimitive);
+    }
+
+    /**
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
+     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * <p>
+     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported at present.
+     */
+    public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, List<AnnotationNode> notCopied) {
+        List<AnnotationNode> annotationList = annotatedNode.getAnnotations();
+        for (AnnotationNode annotation : annotationList)  {
+
+            List<AnnotationNode> annotations = annotation.getClassNode().getAnnotations(AbstractASTTransformation.RETENTION_CLASSNODE);
+            if (annotations.isEmpty()) continue;
+
+            if (hasClosureMember(annotation)) {
+                notCopied.add(annotation);
+                continue;
+            }
+
+            AnnotationNode retentionPolicyAnnotation = annotations.get(0);
+            Expression valueExpression = retentionPolicyAnnotation.getMember("value");
+            if (!(valueExpression instanceof PropertyExpression)) continue;
+
+            PropertyExpression propertyExpression = (PropertyExpression) valueExpression;
+            boolean processAnnotation =
+                    propertyExpression.getProperty() instanceof ConstantExpression &&
+                            (
+                                    "RUNTIME".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue()) ||
+                                            "CLASS".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue())
+                            );
+
+            if (processAnnotation)  {
+                AnnotationNode newAnnotation = new AnnotationNode(annotation.getClassNode());
+                for (Map.Entry<String, Expression> member : annotation.getMembers().entrySet())  {
+                    newAnnotation.addMember(member.getKey(), member.getValue());
+                }
+                newAnnotation.setSourcePosition(annotatedNode);
+
+                copied.add(newAnnotation);
+            }
+        }
     }
 
     public static Statement createConstructorStatementDefault(FieldNode fNode) {
@@ -333,6 +381,22 @@ public class GeneralUtils {
 
     public static BinaryExpression hasClassX(Expression instance, ClassNode cNode) {
         return eqX(classX(cNode), callX(instance, "getClass"));
+    }
+
+    private static boolean hasClosureMember(AnnotationNode annotation) {
+
+        Map<String, Expression> members = annotation.getMembers();
+        for (Map.Entry<String, Expression> member : members.entrySet())  {
+            if (member.getValue() instanceof ClosureExpression) return true;
+
+            if (member.getValue() instanceof ClassExpression)  {
+                ClassExpression classExpression = (ClassExpression) member.getValue();
+                Class<?> typeClass = classExpression.getType().isResolved() ? classExpression.getType().redirect().getTypeClass() : null;
+                if (typeClass != null && GeneratedClosure.class.isAssignableFrom(typeClass)) return true;
+            }
+        }
+
+        return false;
     }
 
     public static boolean hasDeclaredMethod(ClassNode cNode, String name, int argsCount) {
