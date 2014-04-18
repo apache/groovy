@@ -1894,6 +1894,18 @@ queue.put(1)
 assert queue.get() == 1
 assert queue.get() == 2
 assert queue.toString() == "[]"
+
+class Sub2 extends BasicIntQueue implements Filtering, Incrementing {}
+
+def queue2 = new Sub2()
+queue2.put(-1)
+queue2.put(0)
+queue2.put(1)
+assert queue2.get() == 0
+assert queue2.get() == 1
+assert queue2.get() == 2
+assert queue2.toString() == "[]"
+
 '''
     }
 
@@ -1928,8 +1940,16 @@ queue.put(1)
 assert queue.get() == 1
 assert queue.get() == 2
 assert queue.proxyTarget.toString() == "[]"
-'''
 
+def queue2 = new BasicIntQueue().withTraits Filtering, Incrementing
+queue2.put(-1)
+queue2.put(0)
+queue2.put(1)
+assert queue2.get() == 0
+assert queue2.get() == 1
+assert queue2.get() == 2
+assert queue.proxyTarget.toString() == "[]"
+'''
     }
 
     void testSuperKeywordInRegularTraitInheritance() {
