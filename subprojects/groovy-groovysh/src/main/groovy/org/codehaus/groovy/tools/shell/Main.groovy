@@ -175,7 +175,7 @@ class Main
         }
     }
 
-    static void setColor(Boolean value) {
+    static void setColor(String value) {
         if (value == null) {
             value = true // --color is the same as --color=true
         }
