@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -113,6 +114,10 @@ public class GeneralUtils {
 
     public static Expression assignX(Expression target, Expression value) {
         return new BinaryExpression(target, ASSIGN, value);
+    }
+
+    public static Expression attrX(Expression oe, Expression prop) {
+        return new AttributeExpression(oe, prop);
     }
 
     public static BlockStatement block(VariableScope varScope, Statement... stmts) {
