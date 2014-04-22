@@ -551,4 +551,157 @@ c.inc()
         assert message.contains('Postfix expressions on trait fields/properties  are not supported')
         assert message.contains('Prefix expressions on trait fields/properties are not supported')
     }
+
+    void testStackableTraits() {
+        assertScript '''import TraitsSpecificationTest.PrintCategory as PC
+import groovy.transform.ForceOverride
+
+String filterTags(String src) {
+    StringBuilder out = new StringBuilder()
+    src.eachLine {
+
+        if (!it.startsWith('//')) {
+            if (out) { out.append('\\n')}
+            out.append(it)
+        }
+    }
+    out
+}
+
+// tag::messagehandler[]
+interface MessageHandler {
+    void on(String message, Map payload)
+}
+// end::messagehandler[]
+
+// tag::defaulthandler[]
+@ForceOverride
+trait DefaultHandler implements MessageHandler {
+    void on(String message, Map payload) {
+        println "Received $message with payload $payload"
+    }
+}
+// end::defaulthandler[]
+
+// tag::logginghandler[]
+@ForceOverride
+trait LoggingHandler implements MessageHandler {                            // <1>
+    void on(String message, Map payload) {
+        println "Seeing $message with payload $payload"                     // <2>
+        super.on(message, payload)                                          // <3>
+    }
+}
+// end::logginghandler[]
+
+// tag::handlerwithlogger[]
+class HandlerWithLogger implements DefaultHandler, LoggingHandler {}
+// end::handlerwithlogger[]
+use(PC) {
+    // tag::handlerwithlogger_assert[]
+    def loggingHandler = new HandlerWithLogger()
+    loggingHandler.on('test logging', [:])
+    // end::handlerwithlogger_assert[]
+    def expect = """// tag::handlerwithlogger_assert_output[]
+Seeing test logging with payload [:]
+Received test logging with payload [:]
+// end::handlerwithlogger_assert_output[]"""
+    assert PC.BUFFER.toString() == filterTags(expect)
+    PC.reset()
+}
+// tag::sayhandler[]
+@ForceOverride
+trait SayHandler implements MessageHandler {
+    void on(String message, Map payload) {
+        if (message.startsWith("say")) {                                    // <1>
+            println "I say ${message - 'say'}!"
+        } else {
+            super.on(message, payload)                                      // <2>
+        }
+    }
+}
+// end::sayhandler[]
+
+// tag::simplehandler[]
+class SimpleHandler implements DefaultHandler {}
+// end::simplehandler[]
+
+// tag::simplehandlerwithlogging[]
+class SimpleHandlerWithLogging implements DefaultHandler {
+    void on(String message, Map payload) {                                  // <1>
+        println "Seeing $message with payload $payload"                     // <2>
+        DefaultHandler.super.on(message, payload)                           // <3>
+    }
+}
+// end::simplehandlerwithlogging[]
+
+// tag::implementinghandler[]
+class Handler implements DefaultHandler, SayHandler, LoggingHandler {}
+// end::implementinghandler[]
+use (PC) {
+    // tag::implementinghandler_assert[]
+    def h = new Handler()
+    h.on('foo', [:])
+    h.on('sayHello', [:])
+    // end::implementinghandler_assert[]
+    def expect = """// tag::implementinghandler_output[]
+Seeing foo with payload [:]
+Received foo with payload [:]
+Seeing sayHello with payload [:]
+I say Hello!
+// end::implementinghandler_output[]"""
+    assert PC.BUFFER.toString() == filterTags(expect)
+    PC.reset()
+}
+
+// tag::alternatehandler[]
+class AlternateHandler implements DefaultHandler, LoggingHandler, SayHandler {}
+// end::alternatehandler[]
+use (PC) {
+// tag::alternatehandler_assert[]
+h = new AlternateHandler()
+h.on('foo', [:])
+h.on('sayHello', [:])
+// end::alternatehandler_assert[]
+def expect = """// tag::alternatehandler_output[]
+Seeing foo with payload [:]
+Received foo with payload [:]
+I say Hello!
+// end::alternatehandler_output[]"""
+    assert PC.BUFFER.toString() == filterTags(expect)
+    PC.reset()
+PC.reset()
+}
+
+
+
+'''
+    }
+
+    void testDecorateFinalClass() {
+        assertScript '''
+// tag::decoratefinalclass[]
+trait Filtering {                                       // <1>
+    @groovy.transform.ForceOverride
+    StringBuilder append(String str) {                  // <2>
+        def subst = str.replace('o','')                 // <3>
+        super.append(subst)                             // <4>
+    }
+    @groovy.transform.ForceOverride
+    String toString() { super.toString() }              // <5>
+}
+def sb = new StringBuilder().withTraits Filtering       // <6>
+sb.append('Groovy')
+assert sb.toString() == 'Grvy'                          // <7>
+// end::decoratefinalclass[]
+'''
+    }
+
+    static class PrintCategory {
+        static StringBuilder BUFFER = new StringBuilder()
+        static void println(Object self, String message) {
+            if (BUFFER.length()>0) BUFFER.append('\n')
+            BUFFER.append(message)
+        }
+        static void reset() { BUFFER.setLength(0) }
+    }
 }

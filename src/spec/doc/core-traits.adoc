@@ -347,6 +347,148 @@ IMPORTANT: When coercing an object to multiple traits, the result of the operati
 that the coerced object will implement both the traits *and* the interfaces that the original object implements, but
 the result will *not* be an instance of the original class.
 
+== Chaining behavior
+
+Groovy supports the concept of _stackable traits_. The idea is to delegate from one trait to the other if the current trait
+is not capable of handling a message. To illustrate this, let's imagine a message handler interface like this:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=messagehandler,indent=0]
+-----
+
+Then you can compose a message handler by applying small behaviors. For example, let's define a default handler in the
+form of a trait:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=defaulthandler,indent=0]
+-----
+
+Then any class can inherit the behavior of the default handler by implementing the trait:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=simplehandler,indent=0]
+-----
+
+Now what if you want to log all messages, in addition to the default handler? One option is to write this:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=simplehandlerwithlogging,indent=0]
+-----
+<1> explicitly implement the `on` method
+<2> perform logging
+<3> continue by delegating to the `DefaultHandler` trait
+
+This works but this approach has drawbacks:
+
+. the logging logic is bound to a "concrete" handler
+. we have an explicit reference to `DefaultHandler` in the `on` method, meaning that if we happen to change the trait that our class implements, code will be broken
+
+As an alternative, we can write another trait which responsability is limited to logging:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=logginghandler,indent=0]
+-----
+<1> the logging handler is itself a handler
+<2> prints the message it receives
+<3> then `super` makes it delegate the call to the next trait in the chain
+
+Then our class can be rewritten as this:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=handlerwithlogger,indent=0]
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=handlerwithlogger_assert,indent=0]
+-----
+
+which will print:
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=handlerwithlogger_assert_output,indent=0]
+----
+
+As the priority rules imply that `LoggerHandler` wins because it is declared last, then a call to `on` will use
+the implementation from `LoggingHandler`. But the latter has a call to `super`, which means the next trait in the
+chain. Here, the next trait is `DefaultHandler` so *both* will be called:
+
+The interest of this approach becomes more evident if we add a third handler, which is responsible for handling messages
+that start with `say`:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=sayhandler,indent=0]
+-----
+<1> a handler specific precondition
+<2> if the precondition is not meant, pass the message to the next handler in the chain
+
+Then our final handler looks like this:
+
+[source,groovy]
+-----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=implementinghandler,indent=0]
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=implementinghandler_assert,indent=0]
+-----
+
+Which means:
+
+* messages will first go through the logging handler
+* the logging handler calls `super` which will delegate to the next handler, which is the `SayHandler`
+* if the message starts with `say`, then the hanlder consumes the message
+* if not, the `say` handler delegates to the next handler in the chain
+
+This approach is very powerful because it allows you to write handlers that do not know each other and yet let you
+combine them in the order you want. For example, if we execute the code, it will print:
+
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=implementinghandler_output,indent=0]
+----
+
+but if we move the logging handler to be the second one in the chain, the output is different:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=alternatehandler,indent=0]
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=alternatehandler_assert,indent=0]
+----
+
+prints:
+
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=alternatehandler_output,indent=0]
+----
+
+The reason is that now, since the `SayHandler` consumes the message without calling `super`, the logging handler is
+not called anymore.
+
+=== Semantics of super inside a trait
+
+If a class implements multiple traits and that a call to an unqualified `super` is found, then:
+
+. if the class implements another trait, the call delegates to the next trait in the chain
+. if there isn't any trait left in the chain, `super` refers to the implementing class (_this_)
+
+For example, it is possible to decorate final classes thanks to this behavior:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=decoratefinalclass,indent=0]
+----
+<1> define a trait named `Filtering`, supposed to be applied on a `StringBuilder` at runtime
+<2> redefine the `append` method
+<3> remove all 'o's from the string
+<4> then delegate to `super`
+<5> in case `toString` is called, delegate to `super.toString`
+<6> runtime implementation of the `Filtering` trait on a `StringBuilder` instance
+<7> the string which has been appended no longer contains the letter `o`
+
+In this example, when `super.append` is encountered, there is no other trait implemented by the target object, so the
+method which is called is the original `append` method, that is to say the one from `StringBuilder`. The same trick
+is used for `toString`, so that the string representation of the proxy object which is generated delegates to the
+`toString` of the `StringBuilder` instance.
+
 == Advanced features
 === SAM type coercion
 
