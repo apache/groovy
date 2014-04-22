@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
@@ -92,7 +93,17 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
 
     public ClassNode getMemberClassValue(AnnotationNode node, String name, ClassNode defaultValue) {
         final Expression member = node.getMember(name);
-        if (member != null && member instanceof ClassExpression) return member.getType();
+        if (member != null) {
+            if (member instanceof ClassExpression)
+                return member.getType();
+            if (member instanceof VariableExpression) {
+                addError("Error expecting to find class value for '" + name + "' but found variable: " + member.getText() + ". Missing import?", node);
+                return null;
+            } else if (member instanceof ConstantExpression) {
+                addError("Error expecting to find class value for '" + name + "' but found constant: " + member.getText() + "!", node);
+                return null;
+            }
+        }
         return defaultValue;
     }
 
