@@ -2074,6 +2074,19 @@ assert sb.toString() == 'Grvy'
 '''
     }
 
+    // GROOVY-6708
+    void testCovariantReturnTypeWithGenericsInheritance() {
+        assertScript '''
+trait Top<X> {
+    X self(X x) {x}
+}
+trait Bottom<X> extends Top<X> {}
+class A implements Bottom<Integer> {}
+def a = new A()
+assert a.self(15) == 15
+'''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
@@ -267,7 +268,7 @@ public abstract class Traits {
         ClassNode[] directInterfaces = cNode.getInterfaces();
         for (int i = directInterfaces.length-1; i >=0 ; i--) {
             final ClassNode anInterface = directInterfaces[i];
-            interfaces.add(anInterface);
+            interfaces.add(GenericsUtils.parameterizeType(cNode,anInterface));
             collectAllInterfacesReverseOrder(anInterface, interfaces);
         }
         return interfaces;

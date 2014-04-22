@@ -285,7 +285,7 @@ public class GenericsUtils {
 
     public static ClassNode correctToGenericsSpecRecurse(Map genericsSpec, ClassNode type) {
         if (type.isGenericsPlaceHolder()) {
-            String name = type.getGenericsTypes()[0].getName();
+            String name = type.getUnresolvedName();
             type = (ClassNode) genericsSpec.get(name);
         }
         if (type == null) type = ClassHelper.OBJECT_TYPE;
