@@ -258,6 +258,9 @@ task replaceJarWithJarJar(dependsOn: allprojects.jarjar ) {
 }
 
 task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
+
+    inputs.files(allprojects.jar.archivePath)
+
     ext.metaInfDir = "$buildDir/tmp/groovy-all-metainf"
     appendix = 'all'
     includeEmptyDirs = false
