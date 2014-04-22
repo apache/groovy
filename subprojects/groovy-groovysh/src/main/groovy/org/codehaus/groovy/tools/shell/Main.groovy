@@ -175,15 +175,17 @@ class Main
         }
     }
 
-    static void setColor(Boolean value) {
+    static void setColor(String value) {
+        boolean ansiEnabled
+
         if (value == null) {
-            value = true // --color is the same as --color=true
+            ansiEnabled = true // --color is the same as --color=true
         }
         else {
-            value = Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
+            ansiEnabled = Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
         }
 
-        Ansi.enabled = value
+        Ansi.enabled = ansiEnabled
     }
 
     static void setSystemProperty(final String nameValue) {
