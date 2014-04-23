@@ -961,6 +961,58 @@ This `Person` class can be used as follows:
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_custom_usage,indent=0]
 ----
 
+[[xform-Builder]]
+===== @groovy.lang.Sortable
+
+The `@Builder` AST transformation is used to help write classes that can be created using _fluent_ api calls.
+The transform supports multiple building strategies to cover a range of cases and there are a number
+of configuration options to customize the building process. If you're an AST hacker, you can also define your own
+strategy class. The following table lists the available strategies that are bundled with Groovy and the
+configuration options each strategy supports.
+
+|================================
+| Strategy | Description | builderClassName | builderMethodName |buildMethodName | prefix | includes/excludes
+| SimpleStrategy | chained setters | n/a | n/a | n/a | yes, default "set" | yes
+| ExternalStrategy | explicit builder class, class being built untouched | n/a | n/a | yes, default "build" | yes, default "" | yes
+| DefaultStrategy | creates a nested helper class | yes, default _<TypeName>_Builder | yes, default "builder" | yes, default "build" | yes, default "" | yes
+| InitializerStrategy | creates a nested helper class providing type-safe fluent creation | yes, default _<TypeName>_Initializer | yes, default "createInitializer" | yes | yes, default "" | yes
+|================================
+
+To use the `SimpleStrategy`, annotate your Groovy class using the `@Builder` annotation, and specify the strategy as shown in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple,indent=0]
+----
+
+Then, just call the setters in a chained fashion as shown here:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_usage,indent=0]
+----
+
+For each property, a generated setter will be created which looks like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_generated_setter,indent=0]
+----
+
+You can specify a prefix as shown in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_preix,indent=0]
+----
+
+And calling the chained setters would look like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_prefix_usage,indent=0]
+----
+
 ==== Class design annotations
 
 This category of annotations are aimed at simplifying the implementation of well-known design patterns (delegation,

@@ -808,4 +808,57 @@ public int compareTo(java.lang.Object obj) {
 */
         '''
     }
+
+    void testBuilderSimple() {
+        assertScript '''
+// tag::builder_simple[]
+import groovy.transform.builder.*
+
+@Builder(builderStrategy=SimpleStrategy)
+class Person {
+    String first
+    String last
+    Integer born
+}
+// end::builder_simple[]
+
+// tag::builder_simple_usage[]
+def p1 = new Person().setFirst('Johnny').setLast('Depp').setBorn(1963)
+assert "$p1.first $p1.last" == 'Johnny Depp'
+// end::builder_simple_usage[]
+// tag::builder_simple_alternatives[]
+def p2 = new Person(first: 'Keira', last: 'Knightley', born: 1985)
+def p3 = new Person().with {
+    first = 'Geoffrey'
+    last = 'Rush'
+    born = 1951
+}
+// end::builder_simple_alternatives[]
+/* generates the following:
+// tag::builder_simple_generated_setter[]
+public Person setFirst(java.lang.String first) {
+    this.first = first
+    return this
+}
+// end::builder_simple_generated_setter[]
+*/
+        '''
+        assertScript '''
+// tag::builder_simple_prefix[]
+import groovy.transform.builder.*
+
+@Builder(builderStrategy=SimpleStrategy, prefix="")
+class Person {
+    String first
+    String last
+    Integer born
+}
+// end::builder_simple_prefix[]
+
+// tag::builder_simple_prefix_usage[]
+def p1 = new Person().first('Johnny').last('Depp').born(1963)
+assert "$p1.first $p1.last" == 'Johnny Depp'
+// end::builder_simple_prefix_usage[]
+        '''
+    }
 }
