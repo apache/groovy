@@ -222,7 +222,7 @@ class ASTBuilder extends GroovyBaseListener {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     def parseMember(ClassNode classNode, GroovyParser.FieldDeclarationContext ctx) {
-        int modifiers = parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER(), Opcodes.ACC_PRIVATE) // FIXME Why?
+        int modifiers = parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER(), Opcodes.ACC_PRIVATE)
         modifiers |= parseModifier(ctx.KW_STATIC(), Opcodes.ACC_STATIC)
         modifiers |= parseModifier(ctx.KW_ABSTRACT(), Opcodes.ACC_ABSTRACT)
         modifiers |= parseModifier(ctx.KW_FINAL(), Opcodes.ACC_FINAL)
@@ -231,9 +231,20 @@ class ASTBuilder extends GroovyBaseListener {
         modifiers |= parseModifier(ctx.KW_TRANSIENT(), Opcodes.ACC_TRANSIENT)
         modifiers |= parseModifier(ctx.KW_VOLATILE(), Opcodes.ACC_VOLATILE)
 
-        def fieldNode = classNode.addField(ctx.IDENTIFIER().text, modifiers, parseTypeDeclaration(ctx.typeDeclaration()), null)
-        setupNodeLocation(fieldNode, ctx)
-        fieldNode.synthetic = modifiers & Opcodes.ACC_PUBLIC //modifiers (ctx?.typeDeclaration()?.KW_DEF() as boolean) // TODO what it means?
+
+        def typeDeclaration = parseTypeDeclaration(ctx.typeDeclaration())
+        if (!ctx.VISIBILITY_MODIFIER()) { // no visibility specified. Generate property node.
+            def prpertyModifier = modifiers & ~Opcodes.ACC_PRIVATE | Opcodes.ACC_PUBLIC
+            def propertyNode = classNode.addProperty(ctx.IDENTIFIER().text, prpertyModifier, typeDeclaration, null, null, null)
+            propertyNode.field.modifiers = modifiers
+            propertyNode.field.synthetic = true
+            setupNodeLocation(propertyNode.field, ctx)
+            setupNodeLocation(propertyNode, ctx)
+        }
+        else {
+            def fieldNode = classNode.addField(ctx.IDENTIFIER().text, modifiers, typeDeclaration, null)
+            setupNodeLocation(fieldNode, ctx)
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
