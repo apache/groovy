@@ -666,6 +666,50 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfi
 <4> the static field `CALLED` on `Bar` is updated
 <5> but the static field `CALLED` on `Baz` is not, because it is *distinct*
 
+== Inheritance of state gotchas
+
+We have seen that traits are stateful. It is possible for a trait to define fields or properties, but when a class implements a trait, it gets those fields/properties on
+a per-trait basis. So consider the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple,indent=0]
+----
+
+
+The trait defines two properties, `x` and `y`, as well as a `sum` method. Now let's create a class which implements the trait:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple_impl,indent=0]
+----
+
+The result of calling `f` is `3`, because `f` delegates to `sum` in the trait, which has state. But what if we write this instead?
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override,indent=0]
+----
+<1> Override property `x`
+<2> Override property `y`
+<3> Call `sum` from trait
+
+If you call `elem.f()`, what is the expected output? Actually it is:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override_assert,indent=0]
+----
+
+The reason is that the `sum` method accesses the _fields_ of the trait. So it is using the `x` and `y` values defined
+in the trait. If you want to use the values from the implementing class, then you need to derefencence fields by using
+getters and setters, like in this last example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override_directgetter,indent=0]
+----
+
 == Limitations
 === Compatibility with AST transformations
 

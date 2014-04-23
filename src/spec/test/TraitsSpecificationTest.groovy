@@ -643,6 +643,57 @@ assert sb.toString() == 'Grvy'                          // <7>
 '''
     }
 
+    void testInheritanceOfState() {
+        assertScript '''// tag::intcouple[]
+trait IntCouple {
+    int x = 1
+    int y = 2
+    int sum() { x+y }
+}
+// end::intcouple[]
+
+// tag::intcouple_impl[]
+class BaseElem implements IntCouple {
+    int f() { sum() }
+}
+def base = new BaseElem()
+assert base.f() == 3
+// end::intcouple_impl[]
+
+
+
+// tag::intcouple_impl_override[]
+class Elem implements IntCouple {
+    int x = 3                                       // <1>
+    int y = 4                                       // <2>
+    int f() { sum() }                               // <3>
+}
+def elem = new Elem()
+// end::intcouple_impl_override[]
+// tag::intcouple_impl_override_assert[]
+assert elem.f() == 3
+// end::intcouple_impl_override_assert[]
+
+'''
+        assertScript '''
+// tag::intcouple_impl_override_directgetter[]
+trait IntCouple {
+    int x = 1
+    int y = 2
+    int sum() { getX()+getY() }
+}
+
+class Elem implements IntCouple {
+    int x = 3
+    int y = 4
+    int f() { sum() }
+}
+def elem = new Elem()
+assert elem.f() == 7
+// end::intcouple_impl_override_directgetter[]
+'''
+    }
+
     static class PrintCategory {
         static StringBuilder BUFFER = new StringBuilder()
         static void println(Object self, String message) {
