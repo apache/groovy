@@ -134,14 +134,12 @@ public abstract class TraitComposer {
     }
 
     private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers) {
-        boolean isTraitForceOverride = !trait.getAnnotations(Traits.FORCEOVERRIDE_CLASSNODE).isEmpty();
         ClassNode helperClassNode = helpers.getHelper();
         ClassNode fieldHelperClassNode = helpers.getFieldHelper();
         Map genericsSpec = GenericsUtils.createGenericsSpec(cNode, new HashMap());
         genericsSpec = GenericsUtils.createGenericsSpec(trait, genericsSpec);
 
         for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
-            boolean isForceOverride = isTraitForceOverride || Traits.isForceOverride(methodNode);
             String name = methodNode.getName();
             Parameter[] helperMethodParams = methodNode.getParameters();
             boolean isAbstract = methodNode.isAbstract();
@@ -163,7 +161,7 @@ public abstract class TraitComposer {
                     origParams[i-1] = parameter;
                     argList.addExpression(new VariableExpression(params[i - 1]));
                 }
-                if (shouldSkipMethod(cNode, name, params, isForceOverride)) {
+                if (shouldSkipMethod(cNode, name, params)) {
                     continue;
                 }
                 createForwarderMethod(trait, cNode, methodNode, helperClassNode, genericsSpec, helperMethodParams, origParams, params, argList);
@@ -444,17 +442,8 @@ public abstract class TraitComposer {
         return exceptionNodes;
     }
 
-    private static boolean shouldSkipMethod(final ClassNode cNode, final String name, final Parameter[] params, final boolean isForceOverride) {
-        MethodNode existingMethod = cNode.getMethod(name, params);
-        if (existingMethod==null || existingMethod.isAbstract()) {
-            // for Java 8, make sure that if a subinterface defines a default method, it is used
-            existingMethod = findDefaultMethodFromInterface(cNode, name, params);
-        }
-        if (!isForceOverride && (existingMethod != null || isExistingProperty(name, cNode, params))) {
-            // override exists in the weaved class or any parent
-            return true;
-        }
-        if (isForceOverride && cNode.getDeclaredMethod(name, params)!=null) {
+    private static boolean shouldSkipMethod(final ClassNode cNode, final String name, final Parameter[] params) {
+        if (isExistingProperty(name, cNode, params) || cNode.getDeclaredMethod(name, params)!=null) {
             // override exists in the weaved class itself
             return true;
         }

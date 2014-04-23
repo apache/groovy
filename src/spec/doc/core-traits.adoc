@@ -519,10 +519,15 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=sam_trai
 <1> the greet method accepts the SAM type Greeter as parameter
 <2> we can call it directly with a closure
 
-=== @ForceOverride annotation
+=== Differences with Java 8 default methods
 
-The `@ForceOverride` annotation can be used to compose behaviors in an even more precise way, in case you want to
-override the behavior of an already implemented method.
+In Java 8, interfaces can have default implementations of methods. If a class implements an interface and does not provide
+an implementation for a default method, then the implementation from the interface is chosen. Traits behave the same but
+with a major difference: the implementation from the trait is *always* if the class declares the trait in its interface
+list *and* that it doesn't provide an implementation.
+
+This feature can be used to compose behaviors in an very precise way, in case you want to override the behavior of an
+already implemented method.
 
 To illustrate the concept, let's start with this simple example:
 
@@ -564,37 +569,27 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=forceove
 ----
 
 It would allow us to dramatically reduce the boilerplate code, and reduces the risk of forgetting to change the setup
-code in case we decide to change it. The problem is that `setup` is already implemented. Traits will only provide
-*default* implementations. Since the `setup` method is implemented in the super class, then even if we mark the class
-as implementing the trait, the default method is *not* used.
+code in case we decide to change it. Even if `setup` is already implemented in the super class, since the test class declares
+the trait in its interface list, the behavior will be borrowed from the trait implementation!
 
-That's where `@ForceOverride` comes in action. By annotating a trait method with `@ForceOverride`, you are asking the
-compiler to use the implementation from the trait *even if the method is already implemented*:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=forceoverride_trait_fixed,indent=0]
-----
-
-`@ForceOverride` is in particular useful when you don't have access to the super class source code. It can be used to
+This feature is in particular useful when you don't have access to the super class source code. It can be used to
 mock methods or force a particular implementation of a method in a subclass. It lets you refactor your code to keep
 the overriden logic in a single trait and inherit a new behavior just by implementing it. The alternative, of course,
 is to override the method in *every* place you would have used the new code.
 
-It's worth noting that `@ForceOverride` can also be used on runtime traits:
+
+IMPORTANT: It's worth noting that if you use runtime traits, the methods from the trait are *always* preferred to those of the proxied
+object:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=runtime_forceoverride,indent=0]
 ----
 <1> the `Person` class defines a `name` property which results in a `getName` method
-<2> `BobNoOverride` is a trait which defines `getName` without `@ForceOverride`
-<3> `BobForceOverride` is a trait which defines `getName` *with* `@ForceOverride`
-<4> the default object will return _Alice_
-<5> `p1` coerces into `BobNoOverride`
-<6> `getName` still returns _Alice_ because `getName` is already implemented in `Person`
-<7> `p2` coerces into `BobForceOverride`
-<8> `getName` still returns _Bob_ because `getName` is annotated with `@ForceOverride`
+<2> `Bob` is a trait which defines `getName` as returning `Bob`
+<3> the default object will return _Alice_
+<4> `p2` coerces `p` into `Bob` at runtime
+<5> `getName` returns _Bob_ because `getName` is taken from the *trait*
 
 IMPORTANT: Again, don't forget that dynamic trait coercion returns a distinct object which only implements the original
 interfaces, as well as the traits.

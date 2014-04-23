@@ -251,10 +251,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                 getInheritedMethods(thisInterface, interfaceMethods);
             }
             for (Method method : interfaceMethods) {
-                if (!containsEquivalentMethod(OBJECT_METHODS, method) &&
-                        !containsEquivalentMethod(GROOVYOBJECT_METHODS, method) &&
-                        !(containsEquivalentMethod(superClassMethods, method) &&
-                                shouldOverrideMethod(delegateClass, method))) {
+                if (!(containsEquivalentMethod(superClassMethods, method))) {
                     selectedMethods.add(method.getName()+Type.getMethodDescriptor(method));
                 }
             }
@@ -270,10 +267,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             }
         }
         return selectedMethods;
-    }
-
-    private static boolean shouldOverrideMethod(final Class delegateClass, final Method method) {
-        return (Traits.isForceOverride(method) || !isImplemented(delegateClass, method.getName(), Type.getMethodDescriptor(method)));
     }
 
     private static List<Method> getInheritedMethods(Class baseClass, List<Method> methods) {

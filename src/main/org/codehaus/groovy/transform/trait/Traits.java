@@ -16,7 +16,6 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.lang.GeneratedGroovyProxy;
-import groovy.transform.ForceOverride;
 import groovy.transform.Trait;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -45,7 +44,6 @@ import java.util.List;
  * @since 2.3.0
  */
 public abstract class Traits {
-    public static final ClassNode FORCEOVERRIDE_CLASSNODE = ClassHelper.make(ForceOverride.class);
     public static final ClassNode IMPLEMENTED_CLASSNODE = ClassHelper.make(Implemented.class);
     public static final ClassNode TRAITBRIDGE_CLASSNODE = ClassHelper.make(TraitBridge.class);
     public static final Class TRAIT_CLASS = Trait.class;
@@ -161,23 +159,12 @@ public abstract class Traits {
     }
 
     /**
-     * Returns true if the specified method node is annotated with {@link ForceOverride}
-     * @param methodNode a method node
-     * @return  true if the specified method node is annotated with {@link ForceOverride}
+     * Indicates whether a method in a trait interface has a default implementation.
+     * @param method a method node
+     * @return true if the method has a default implementation in the trait
      */
-    public static boolean isForceOverride(final MethodNode methodNode) {
-        return !methodNode.getAnnotations(FORCEOVERRIDE_CLASSNODE).isEmpty()
-                || !methodNode.getDeclaringClass().getAnnotations(FORCEOVERRIDE_CLASSNODE).isEmpty();
-    }
-
-    /**
-     * Returns true if the specified method is annotated with {@link ForceOverride}
-     * @param methodNode a method
-     * @return  true if the specified method is annotated with {@link ForceOverride}
-     */
-    public static boolean isForceOverride(final Method methodNode) {
-        return methodNode.getAnnotation(ForceOverride.class)!=null ||
-                methodNode.getDeclaringClass().getAnnotation(ForceOverride.class)!=null ;
+    public static boolean hasDefaultImplementation(final MethodNode method) {
+        return !method.getAnnotations(IMPLEMENTED_CLASSNODE).isEmpty();
     }
 
     /**
@@ -185,8 +172,8 @@ public abstract class Traits {
      * @param method a method node
      * @return true if the method has a default implementation in the trait
      */
-    public static boolean hasDefaultImplementation(final MethodNode method) {
-        return !method.getAnnotations(IMPLEMENTED_CLASSNODE).isEmpty();
+    public static boolean hasDefaultImplementation(final Method method) {
+        return method.getAnnotation(Implemented.class)!=null;
     }
 
     /**

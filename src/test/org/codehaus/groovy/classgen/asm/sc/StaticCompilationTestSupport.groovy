@@ -15,8 +15,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.ForceOverride
-import groovy.transform.InheritConstructors
 import groovy.transform.Trait
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
@@ -50,7 +48,6 @@ class StaticCompilationTestSupport {
     Map<String, Object[]> astTrees
     CustomCompilationUnit compilationUnit
 
-    @ForceOverride
     void extraSetup() {
         astTrees = [:]
         config = new CompilerConfiguration()

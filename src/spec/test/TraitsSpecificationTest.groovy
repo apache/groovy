@@ -343,7 +343,7 @@ greet { 'Alice' }                           // <2>
 // end::sam_trait_method[]'''
     }
 
-    void testForceOverride() {
+    void testTraitOverrideBehavior() {
         assertScript '''
 // tag::forceoverride_header[]
 import groovy.transform.CompileStatic
@@ -407,69 +407,24 @@ class YetAnotherTest extends SomeTest2 implements MyTestSupport {}
 
 def t = new AnotherTest()
 t.setup()
-assert t.config.compilationCustomizers.empty
-'''
-    }
-
-    void testForceOverrideFixed() {
-        assertScript '''
-import groovy.transform.CompileStatic
-import groovy.transform.ForceOverride
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import org.codehaus.groovy.control.customizers.ImportCustomizer
-
-class SomeTest extends GroovyTestCase {
-    def config
-    def shell
-
-    void setup() {
-        config = new CompilerConfiguration()
-        shell = new GroovyShell(config)
-    }
-    void testSomething() {
-        assert shell.evaluate('1+1') == 2
-    }
-    void otherTest() { /* ... */ }
-}
-// tag::forceoverride_trait_fixed[]
-trait MyTestSupport {
-    @ForceOverride
-    void setup() {
-        config = new CompilerConfiguration()
-        config.addCompilationCustomizers( new ASTTransformationCustomizer(CompileStatic) )
-        shell = new GroovyShell(config)
-    }
-}
-// end::forceoverride_trait_fixed[]
-
-class AnotherTest extends SomeTest implements MyTestSupport {}
-
-def t = new AnotherTest()
-t.setup()
 assert !t.config.compilationCustomizers.empty
 '''
     }
 
-    void testRuntimeForceOverride() {
-        assertScript '''import groovy.transform.ForceOverride
-// tag::runtime_forceoverride[]
+
+    void testRuntimeOverride() {
+        assertScript '''// tag::runtime_forceoverride[]
 class Person {
     String name                                         // <1>
 }
-trait BobNoOverride {
+trait Bob {
     String getName() { 'Bob' }                          // <2>
-}
-trait BobForceOverride {
-    @ForceOverride String getName() { 'Bob' }           // <3>
 }
 
 def p = new Person(name: 'Alice')
-assert p.name == 'Alice'                                // <4>
-def p1 = p as BobNoOverride                             // <5>
-assert p1.name == 'Alice'                               // <6>
-def p2 = p as BobForceOverride                          // <7>
-assert p2.name == 'Bob'                                 // <8>
+assert p.name == 'Alice'                                // <3>
+def p2 = p as Bob                                       // <4>
+assert p2.name == 'Bob'                                 // <5>
 // end::runtime_forceoverride[]'''
     }
 
@@ -554,7 +509,6 @@ c.inc()
 
     void testStackableTraits() {
         assertScript '''import TraitsSpecificationTest.PrintCategory as PC
-import groovy.transform.ForceOverride
 
 String filterTags(String src) {
     StringBuilder out = new StringBuilder()
@@ -575,7 +529,6 @@ interface MessageHandler {
 // end::messagehandler[]
 
 // tag::defaulthandler[]
-@ForceOverride
 trait DefaultHandler implements MessageHandler {
     void on(String message, Map payload) {
         println "Received $message with payload $payload"
@@ -584,7 +537,6 @@ trait DefaultHandler implements MessageHandler {
 // end::defaulthandler[]
 
 // tag::logginghandler[]
-@ForceOverride
 trait LoggingHandler implements MessageHandler {                            // <1>
     void on(String message, Map payload) {
         println "Seeing $message with payload $payload"                     // <2>
@@ -609,7 +561,6 @@ Received test logging with payload [:]
     PC.reset()
 }
 // tag::sayhandler[]
-@ForceOverride
 trait SayHandler implements MessageHandler {
     void on(String message, Map payload) {
         if (message.startsWith("say")) {                                    // <1>
@@ -672,8 +623,6 @@ I say Hello!
 PC.reset()
 }
 
-
-
 '''
     }
 
@@ -681,12 +630,10 @@ PC.reset()
         assertScript '''
 // tag::decoratefinalclass[]
 trait Filtering {                                       // <1>
-    @groovy.transform.ForceOverride
     StringBuilder append(String str) {                  // <2>
         def subst = str.replace('o','')                 // <3>
         super.append(subst)                             // <4>
     }
-    @groovy.transform.ForceOverride
     String toString() { super.toString() }              // <5>
 }
 def sb = new StringBuilder().withTraits Filtering       // <6>

@@ -696,15 +696,16 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
             } catch (MissingMethodException e) {
                 // doesn't implement Flying
             }
+            // when using runtime traits, inherits methods from trait!
             d = d.withTraits(Flying, Speaking)
             assert d instanceof Flying
             assert d.fly() == "I'm flying!"
             assert d instanceof Speaking
-            assert d.speak() == "I'm a special duck!"
+            assert d.speak() == "I'm speaking!"
         '''
     }
 
-   void testRuntimeWithTraitsDGMAndExplicitOverrideAndCompileStatic() {
+   void testRuntimeTraitUnderCompileStaticShouldUseMethodFromTrait() {
         assertScript '''
             trait Flying {
                 String fly() {
@@ -725,7 +726,8 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
                 def d = new Duck()
                 d = d.withTraits(Flying, Speaking)
                 assert d.fly() == "I'm flying!"
-                assert d.speak() == "I'm a special duck!"
+                // when using runtime traits, inherits methods from trait!
+                assert d.speak() == "I'm speaking!"
             }
             test()
         '''
@@ -754,7 +756,8 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
                 def d = new Duck()
                 d = d.withTraits(Flying, Speaking)
                 assert d.fly() == "I'm flying!"
-                assert d.speak() == "I'm a special duck!"
+                // when using runtime traits, inherits methods from trait!
+                assert d.speak() == "I'm speaking!"
                 assert d.quack() == "Quack!"
             }
             test()
@@ -775,7 +778,8 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
                 }
             }
             def d = new Duck() as Flying
-            assert d.fly() == 'Duck flying!'
+            // when using runtime traits, inherits methods from trait!
+            assert d.fly() == "I'm flying!"
             assert d.ability() == 'fly'
 
         '''
@@ -981,17 +985,20 @@ assert phone.speak() == 'My name is Galaxy S3\''''
             class Bar {
                 String foo() { 'from Bar' }
             }
-            class Baz extends Bar implements TestTrait {}
+            class Baz extends Bar implements TestTrait {
+                String foo() {
+                    // force use of Bar#foo
+                    super.foo()
+                }
+            }
             def b = new Baz()
             assert b.foo() == 'from Bar'
         '''
     }
 
-    void testTraitShouldTakeOverSuperClassMethodBecauseOfForceOverride() {
-        assertScript '''import groovy.transform.ForceOverride
-
+    void testTraitShouldTakeOverSuperClassMethod() {
+        assertScript '''
             trait TestTrait {
-                @ForceOverride
                 String foo() { 'from Trait' }
             }
             class Bar {
@@ -1012,7 +1019,8 @@ assert phone.speak() == 'My name is Galaxy S3\''''
                 String foo() { 'from Bar' }
             }
             def b = new Bar() as TestTrait
-            assert b.foo() == 'from Bar' // method shouldn't be overriden because not @ForceOverride
+            // when using runtime traits, inherits methods from trait!
+            assert b.foo() == 'from Trait'
         '''
 
         assertScript '''
@@ -1024,73 +1032,13 @@ assert phone.speak() == 'My name is Galaxy S3\''''
             }
             class Baz extends Bar {}
             def b = new Baz() as TestTrait
-            assert b.foo() == 'from Bar' // method shouldn't be overriden because not @ForceOverride
-        '''
-    }
-
-    void testForceOverrideUsingRuntimeTrait() {
-        assertScript '''import groovy.transform.ForceOverride
-
-            trait TestTrait {
-                @ForceOverride
-                String foo() { 'from Trait' }
-            }
-            class Bar {
-                String foo() { 'from Bar' }
-            }
-            def b = new Bar() as TestTrait
-            assert b.foo() == 'from Trait'
-        '''
-
-        assertScript '''import groovy.transform.ForceOverride
-
-            trait TestTrait {
-                @ForceOverride
-                String foo() { 'from Trait' }
-            }
-            class Bar {
-                String foo() { 'from Bar' }
-            }
-            class Baz extends Bar {}
-            def b = new Baz() as TestTrait
+            // when using runtime traits, inherits methods from trait!
             assert b.foo() == 'from Trait'
         '''
     }
 
-    void testForceOverrideExtended() {
-        assertScript '''import groovy.transform.ForceOverride
-
-            trait TestTrait {
-                String foo() { 'from Trait' } // no force override!
-
-                @ForceOverride
-                String bar() { 'from Trait' }
-            }
-            class Top implements TestTrait {} // top has default implementation
-            class Middle extends Top {
-                String foo() { 'from Middle' } // middle overrides default implementation
-                String bar() { 'from Middle' } // middle overrides default implementation
-            }
-            class Bottom extends Middle implements TestTrait {} // bottom restores default implementation only for "bar"
-            def top = new Top()
-            def middle = new Middle()
-            def bottom = new Bottom()
-
-            assert top.foo() == 'from Trait'
-            assert top.bar() == 'from Trait'
-
-            assert middle.foo() == 'from Middle'
-            assert middle.bar() == 'from Middle'
-
-            assert bottom.foo() == 'from Middle'
-            assert bottom.bar() == 'from Trait'
-        '''
-    }
-
-    void testForceOverrideOnFullTrait() {
-        assertScript '''import groovy.transform.ForceOverride
-
-            @ForceOverride // force all
+    void testTraitOverrideHierarchy() {
+        assertScript '''
             trait TestTrait {
                 String foo() { 'from Trait' }
                 String bar() { 'from Trait' }
@@ -1214,11 +1162,9 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
-    void testForceOverrideShouldNotBeAppliedIfMethodDefinedInClass() {
-        assertScript '''import groovy.transform.ForceOverride
-
+    void testShouldUseDefinitionFromClassInsteadOfTrait() {
+        assertScript '''
             trait TestTrait {
-                @ForceOverride
                 String foo() { 'from Trait' }
             }
             class Bar implements TestTrait {
@@ -1325,24 +1271,6 @@ assert greeter.greet() == 'Hello Alice'
             assert foo.foo() == 2
         '''
     }
-
-    void testNoShadowingPrivateMethodInTraitAccessingPrivateFieldForceOverride() {
-        assertScript '''import groovy.transform.ForceOverride
-            trait DoingSecretThings {
-                private int x = 0
-                @ForceOverride // make sure this has no effect
-                private int secret() { x+=1; x }
-                int foo() { secret() }
-            }
-            class Foo implements DoingSecretThings {
-                int secret() { 666 }
-            }
-            def foo = new Foo()
-            assert foo.foo() == 1
-            assert foo.foo() == 2
-        '''
-    }
-
 
     void testMixPrivatePublicMethodsOfSameName() {
         shouldFail {
@@ -1617,6 +1545,10 @@ class Something extends AbstractSomething  {
 }
 
 class BottomSomething extends Something implements SomethingDoing {
+    String something() {
+        // in order to avoid getting the default impl from the trait, need to call super
+        super.something()
+    }
     String foo() {
         something()
     }
@@ -1862,20 +1794,17 @@ def c = new C()
 }'''
     }
 
-    void testStackableTraitsWithForceOverride() {
+    void testStackableTraitsWithExplicitClasses() {
         assertScript '''
-import groovy.transform.ForceOverride
 
 interface IntQueue {
     Integer get()
     void put(Integer x)
 }
 trait Incrementing {
-    @ForceOverride
     void put(Integer x) { println 'Incrementing';super.put(x+1) }
 }
 trait Filtering {
-    @ForceOverride
     void put(Integer x) { println 'Filtering'; if(x >=0) super.put(x) }
 }
 
@@ -1909,20 +1838,17 @@ assert queue2.toString() == "[]"
 '''
     }
 
-    void testStackableTraitsWithForceOverrideAndDynamicTraits() {
+    void testStackableTraitsWithDynamicTraits() {
         assertScript '''
-import groovy.transform.ForceOverride
 
 interface IntQueue {
     Integer get()
     void put(Integer x)
 }
 trait Incrementing {
-    @ForceOverride
     void put(Integer x) { println 'Incrementing';super.put(x+1) }
 }
 trait Filtering {
-    @ForceOverride
     void put(Integer x) { println 'Filtering'; if(x >=0) super.put(x) }
 }
 
@@ -2059,12 +1985,10 @@ def b = new B()
     void testDecorateFinalClassWithTrait() {
         assertScript '''
 trait Filtering {
-    @groovy.transform.ForceOverride
     StringBuilder append(String str) {
         def subst = str.replace('o','')
         super.append(subst)
     }
-    @groovy.transform.ForceOverride
     String toString() { super.toString() }
 }
 def sb = new StringBuilder().withTraits Filtering
