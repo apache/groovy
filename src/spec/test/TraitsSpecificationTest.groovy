@@ -213,6 +213,21 @@ assert p.introduce() == 'Hello, I am Alice'         // <5>
 '''
     }
 
+    void testMultipleTraitInheritance() {
+        assertScript '''// tag::trait_multiple_inherit[]
+trait WithId {                                      // <1>
+    Long id
+}
+trait WithName {                                    // <2>
+    String name
+}
+trait Identified implements WithId, WithName {}     // <3>
+// end::trait_multiple_inherit[]
+class Bean implements Identified {}
+def b = new Bean(id: 123, name: 'Foo')
+'''
+    }
+
     void testMethodMissingInTrait() {
         assertScript '''// tag::dynamicobject[]
 trait DynamicObject {                               // <1>
