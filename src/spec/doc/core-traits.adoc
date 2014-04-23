@@ -212,7 +212,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=quacking
 <5> `speak` no longer uses the default implementation from `SpeakingAbility`
 
 == Extending traits
-
+=== Simple inheritance
 Traits may extend another trait, in which case you must use the `extends` keyword:
 
 [source,groovy]
@@ -224,6 +224,19 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_in
 <3> `Polite` adds a new method which has access to the `name` property of the super-trait
 <4> the `name` property is visible from the `Person` class implementing `Polite`
 <5> as is the `introduce` method
+
+=== Multiple inheritance
+
+Alternatively, a trait may extend multiple traits. In that case, all super traits must be declared in the `implements`
+clause:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_multiple_inherit,indent=0]
+----
+<1> `WithId` trait defines the `id` property
+<2> `WithName` trait defines the `name` property
+<3> `Identified` is a trait which inherits both `WithId` and `WithName`
 
 == Duck typing and traits
 === Dynamic code
