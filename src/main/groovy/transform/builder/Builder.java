@@ -34,6 +34,7 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.BuilderStra
  *     <li><b>SimpleStrategy</b> for creating chained setters</li>
  *     <li><b>ExternalStrategy</b> where you annotate an explicit builder class while leaving some buildee class being built untouched</li>
  *     <li><b>DefaultStrategy</b> which creates a nested helper class for instance creation</li>
+ *     <li><b>InitializerStrategy</b> which creates a nested helper class for instance creation which when used with {@code @CompileStatic} allows type-safe object creation</li>
  * </ul>
  *
  * Note that Groovy provides other built-in mechanisms for easy creation of objects, e.g. the named-args constructor:
@@ -55,6 +56,7 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.BuilderStra
  * @see groovy.transform.builder.SimpleStrategy
  * @see groovy.transform.builder.ExternalStrategy
  * @see groovy.transform.builder.DefaultStrategy
+ * @see groovy.transform.builder.InitializerStrategy
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

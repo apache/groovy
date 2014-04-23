@@ -174,23 +174,6 @@ class BuilderTransformTest extends CompilableTestSupport {
         """
     }
 
-    void testExternalBuilderJavaClass() {
-        assertScript """
-            import groovy.transform.builder.*
-            import groovy.transform.*
-
-            @Builder(builderStrategy=ExternalStrategy, forClass=javax.swing.DefaultButtonModel)
-            class ButtonModelBuilder {}
-
-            def model = new ButtonModelBuilder().enabled(true).pressed(true).armed(true).rollover(true).selected(true).build()
-            assert model.isArmed()
-            assert model.isPressed()
-            assert model.isEnabled()
-            assert model.isSelected()
-            assert model.isRollover()
-        """
-    }
-
     void testExternalBuilderInvalidUseOfBuilderClassName() {
         def message = shouldNotCompile """
             import groovy.transform.builder.*
@@ -233,7 +216,9 @@ class BuilderTransformTest extends CompilableTestSupport {
     void testExternalBuilderWithIncludeAndCustomMethodName() {
         assertScript """
             import groovy.transform.builder.*
+            import groovy.transform.Canonical
 
+            @Canonical
             class Person {
                 String firstName
                 String lastName
