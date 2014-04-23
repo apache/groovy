@@ -262,6 +262,22 @@ public class GeneralUtils {
         return new ConstructorCallExpression(type, ArgumentListExpression.EMPTY_ARGUMENTS);
     }
 
+    public static Statement ctorSuperS(Expression args) {
+        return stmt(ctorX(ClassNode.SUPER, args));
+    }
+
+    public static Statement ctorThisS(Expression args) {
+        return stmt(ctorX(ClassNode.THIS, args));
+    }
+
+    public static Statement ctorSuperS() {
+        return stmt(ctorX(ClassNode.SUPER));
+    }
+
+    public static Statement ctorThisS() {
+        return stmt(ctorX(ClassNode.THIS));
+    }
+
     public static Statement declS(Expression target, Expression init) {
         return new ExpressionStatement(new DeclarationExpression(target, ASSIGN, init));
     }
