@@ -136,6 +136,7 @@ class MainTest extends Specification {
         where:
         path | output
         "test_res/com/xseagullx/groovy/gsoc/class/memberAccess/MemberAccess_Issue14_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/class/methodCall/MethodCall_Issue15_1.groovy" | _
     }
 
     def "test class file creation"() {

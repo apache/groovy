@@ -227,6 +227,16 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.MethodCallExpressionContext ctx) {
+        def expression = new ConstantExpression(ctx.expression().text)
+        def argumentListExpression = new ArgumentListExpression()
+        ctx.argumentList()?.expression()?.each {
+            argumentListExpression.addExpression(parseExpression(it))
+        }
+        new MethodCallExpression(new VariableExpression("this"), expression, argumentListExpression)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     def parseMember(ClassNode classNode, GroovyParser.MethodDeclarationContext ctx) {
         //noinspection GroovyAssignabilityCheck
         def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier(), Opcodes.ACC_PUBLIC)
