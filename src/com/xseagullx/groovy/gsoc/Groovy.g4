@@ -77,12 +77,14 @@ argumentDeclaration:
     typeDeclaration? IDENTIFIER ;
 
 blockStatement: (statement | NL)+ ;
-statement: expressionStatement ;
 
-expressionStatement: expression ;
+statement:
+    expression #expressionStatement
+;
 
 expression:
     expression ('.' | '?.' | '*.' | '.@') IDENTIFIER #fieldAccessExpression
+    | expression '(' argumentList? ')' #methodCallExpression
     | expression ('--' | '++') #postfixExpression
     | ('!' | '~') expression #unaryExpression
     | ('+' | '-') expression #unaryExpression
@@ -99,9 +101,14 @@ expression:
     | expression ('|') expression #binaryExpression
     | expression ('&&') expression #binaryExpression
     | expression ('||') expression #binaryExpression
+    | expression ('=') expression #assignmentExpression
+    | typeDeclaration IDENTIFIER ('=' expression)? #declarationExpression
     | STRING #constantExpression
     | NUMBER #constantExpression
-    | KW_NULL #nullExpression ;
+    | KW_NULL #nullExpression
+    | IDENTIFIER #variableExpression ;
 
 classModifiers: //JSL7 8.1 FIXME Now gramar allows modifier duplication. It's possible to make it more strict listing all 24 permutations.
 (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_STRICTFP)* ;
+
+argumentList: expression (',' expression)* ;
