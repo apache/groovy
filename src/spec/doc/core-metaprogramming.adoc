@@ -1065,6 +1065,20 @@ You can use the `ExternalStrategy` in conjunction with `@Canonical`. If your `@B
 explicit `includes` or `excludes` annotation attributes but the `@Canonical` annotation of the class you are creating
 the builder for does, the ones from `@Canonical` will be re-used for `@Builder`.
 
+To use the `DefaultStrategy`, annotate your Groovy class using the `@Builder` annotation as shown in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_default,indent=0]
+----
+
+If you want, you can customize various aspects of the building process as shown here:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_default_custom,indent=0]
+----
+
 To use the `InitializerStrategy`, annotate your Groovy class using the `@Builder` annotation, and specify the strategy as shown in this example:
 
 [source,groovy]
@@ -1285,6 +1299,8 @@ In this example, we also set the `strict` parameter to false, which allows us to
 
 [[xform-Mixin]]
 ===== @groovy.transform.Mixin
+
+Deprecated. Consider using traits instead.
 
 ==== Logging improvements
 

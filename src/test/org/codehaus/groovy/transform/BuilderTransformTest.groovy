@@ -178,6 +178,25 @@ class BuilderTransformTest extends CompilableTestSupport {
         """
     }
 
+    void testDefaultBuilderUsingCanonical() {
+        assertScript '''
+            import groovy.transform.builder.Builder
+            import groovy.transform.Canonical
+
+            // explicit excludes overrides excludes from @Canonical
+            @Builder(buildMethodName='make', builderMethodName='maker', prefix='with', excludes='age')
+            @Canonical(includes='firstName,age')
+            class Person {
+                String firstName
+                String lastName
+                int age
+            }
+
+            def p = Person.maker().withFirstName("Robert").withLastName("Lewandowski").make()
+            assert "$p.firstName $p.lastName" == "Robert Lewandowski"
+        '''
+    }
+
     void testExternalBuilder() {
         assertScript """
             import groovy.transform.builder.*
