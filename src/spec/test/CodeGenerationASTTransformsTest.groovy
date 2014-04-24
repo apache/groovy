@@ -808,4 +808,206 @@ public int compareTo(java.lang.Object obj) {
 */
         '''
     }
+
+    void testBuilderSimple() {
+        assertScript '''
+// tag::builder_simple[]
+import groovy.transform.builder.*
+
+@Builder(builderStrategy=SimpleStrategy)
+class Person {
+    String first
+    String last
+    Integer born
+}
+// end::builder_simple[]
+
+// tag::builder_simple_usage[]
+def p1 = new Person().setFirst('Johnny').setLast('Depp').setBorn(1963)
+assert "$p1.first $p1.last" == 'Johnny Depp'
+// end::builder_simple_usage[]
+// tag::builder_simple_alternatives[]
+def p2 = new Person(first: 'Keira', last: 'Knightley', born: 1985)
+def p3 = new Person().with {
+    first = 'Geoffrey'
+    last = 'Rush'
+    born = 1951
+}
+// end::builder_simple_alternatives[]
+/* generates the following:
+// tag::builder_simple_generated_setter[]
+public Person setFirst(java.lang.String first) {
+    this.first = first
+    return this
+}
+// end::builder_simple_generated_setter[]
+*/
+        '''
+        assertScript '''
+// tag::builder_simple_prefix[]
+import groovy.transform.builder.*
+
+@Builder(builderStrategy=SimpleStrategy, prefix="")
+class Person {
+    String first
+    String last
+    Integer born
+}
+// end::builder_simple_prefix[]
+
+// tag::builder_simple_prefix_usage[]
+def p = new Person().first('Johnny').last('Depp').born(1963)
+assert "$p.first $p.last" == 'Johnny Depp'
+// end::builder_simple_prefix_usage[]
+        '''
+    }
+
+    void testBuilderExternal() {
+        assertScript '''
+// tag::builder_external_buildee[]
+class Person {
+    String first
+    String last
+    int born
+}
+// end::builder_external_buildee[]
+
+// tag::builder_external[]
+import groovy.transform.builder.*
+
+@Builder(builderStrategy=ExternalStrategy, forClass=Person)
+class PersonBuilder { }
+
+def p = new PersonBuilder().first('Johnny').last('Depp').born(1963).build()
+assert "$p.first $p.last" == 'Johnny Depp'
+// end::builder_external[]
+
+/* generates the following build method:
+// tag::builder_external_generated_build[]
+public Person build() {
+    Person _thePerson = new Person()
+    _thePerson.first = first
+    _thePerson.last = last
+    _thePerson.born = born
+    return _thePerson
+}
+// end::builder_external_generated_build[]
+*/
+        '''
+        assertScript '''
+// tag::builder_external_java[]
+import groovy.transform.builder.*
+
+@Builder(builderStrategy=ExternalStrategy, forClass=javax.swing.DefaultButtonModel)
+class ButtonModelBuilder {}
+
+def model = new ButtonModelBuilder().enabled(true).pressed(true).armed(true).rollover(true).selected(true).build()
+assert model.isArmed()
+assert model.isPressed()
+assert model.isEnabled()
+assert model.isSelected()
+assert model.isRollover()
+// end::builder_external_java[]
+        '''
+        assertScript '''
+// tag::builder_external_custom[]
+import groovy.transform.builder.*
+import groovy.transform.Canonical
+
+@Canonical
+class Person {
+    String first
+    String last
+    int born
+}
+
+@Builder(builderStrategy=ExternalStrategy, forClass=Person, includes=['first', 'last'], buildMethodName='create', prefix='with')
+class PersonBuilder { }
+
+def p = new PersonBuilder().withFirst('Johnny').withLast('Depp').create()
+assert "$p.first $p.last" == 'Johnny Depp'
+// end::builder_external_custom[]
+        '''
+    }
+
+    void testBuilderDefault() {
+        assertScript '''
+// tag::builder_default[]
+import groovy.transform.builder.Builder
+
+@Builder
+class Person {
+    String firstName
+    String lastName
+    int age
+}
+
+def person = Person.builder().firstName("Robert").lastName("Lewandowski").age(21).build()
+assert person.firstName == "Robert"
+assert person.lastName == "Lewandowski"
+assert person.age == 21
+// end::builder_default[]
+        '''
+        assertScript '''
+// tag::builder_default_custom[]
+import groovy.transform.builder.Builder
+
+@Builder(buildMethodName='make', builderMethodName='maker', prefix='with', excludes='age')
+class Person {
+    String firstName
+    String lastName
+    int age
+}
+
+def p = Person.maker().withFirstName("Robert").withLastName("Lewandowski").make()
+assert "$p.firstName $p.lastName" == "Robert Lewandowski"
+// end::builder_default_custom[]
+        '''
+    }
+
+    void testBuilderInitializer() {
+        assertScript '''
+// tag::builder_initializer[]
+import groovy.transform.builder.*
+import groovy.transform.*
+
+@ToString
+@Builder(builderStrategy=InitializerStrategy)
+class Person {
+    String firstName
+    String lastName
+    int age
+}
+// end::builder_initializer[]
+// tag::builder_initializer_usage[]
+@CompileStatic
+def firstLastAge() {
+    assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)\'
+}
+firstLastAge()
+// end::builder_initializer_usage[]
+        '''
+        assertScript '''
+// tag::builder_initializer_immutable[]
+import groovy.transform.builder.*
+import groovy.transform.*
+
+@Builder(builderStrategy=InitializerStrategy)
+@Immutable
+class Person {
+    String first
+    String last
+    int born
+}
+
+@CompileStatic
+def createFirstLastBorn() {
+  def p = new Person(Person.createInitializer().first('Johnny').last('Depp').born(1963))
+  assert "$p.first $p.last $p.born" == 'Johnny Depp 1963'
+}
+
+createFirstLastBorn()
+// end::builder_initializer_immutable[]
+        '''
+    }
 }

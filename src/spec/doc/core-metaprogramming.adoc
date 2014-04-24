@@ -961,6 +961,153 @@ This `Person` class can be used as follows:
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_custom_usage,indent=0]
 ----
 
+[[xform-Builder]]
+===== @groovy.transform.builder.Builder
+
+The `@Builder` AST transformation is used to help write classes that can be created using _fluent_ api calls.
+The transform supports multiple building strategies to cover a range of cases and there are a number
+of configuration options to customize the building process. If you're an AST hacker, you can also define your own
+strategy class. The following table lists the available strategies that are bundled with Groovy and the
+configuration options each strategy supports.
+
+|================================
+| Strategy | Description | builderClassName | builderMethodName |buildMethodName | prefix | includes/excludes
+| SimpleStrategy | chained setters | n/a | n/a | n/a | yes, default "set" | yes
+| ExternalStrategy | explicit builder class, class being built untouched | n/a | n/a | yes, default "build" | yes, default "" | yes
+| DefaultStrategy | creates a nested helper class | yes, default _<TypeName>_Builder | yes, default "builder" | yes, default "build" | yes, default "" | yes
+| InitializerStrategy | creates a nested helper class providing type-safe fluent creation | yes, default _<TypeName>_Initializer | yes, default "createInitializer" | yes | yes, default "" | yes
+|================================
+
+To use the `SimpleStrategy`, annotate your Groovy class using the `@Builder` annotation, and specify the strategy as shown in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple,indent=0]
+----
+
+Then, just call the setters in a chained fashion as shown here:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_usage,indent=0]
+----
+
+For each property, a generated setter will be created which looks like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_generated_setter,indent=0]
+----
+
+You can specify a prefix as shown in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_preix,indent=0]
+----
+
+And calling the chained setters would look like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_prefix_usage,indent=0]
+----
+
+You can use the `SimpleStrategy` in conjunction with `@Canonical`. If your `@Builder` annotation doesn't have
+explicit `includes` or `excludes` annotation attributes but your `@Canonical` annotation does, the ones
+from `@Canonical` will be re-used for `@Builder`.
+
+The annotation attributes `builderClassName`, `buildMethodName`, `builderMethodName` and `forClass` are not supported for this strategy.
+
+To use the `ExternalStrategy`, create and annotate a Groovy builder class using the `@Builder` annotation, specify the
+class the builder is for using `forClass` and indicate use of the `ExternalStrategy`.
+Suppose you have the following class you would like a builder for:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_external_buildee,indent=0]
+----
+
+you explicitly create and use your builder class as follows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_external,indent=0]
+----
+
+Note that the (normally empty) builder class you provide will be filled in with appropriate setters and a build method.
+The generated build method will look something like:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_external_generated,indent=0]
+----
+
+The class you are creating the builder for can be any Java or Groovy class following the normal JavaBean conventions,
+e.g. a no-arg constructor and setters for the properties. Here is an example using a Java class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_external_java,indent=0]
+----
+
+The generated builder can be customised using the `prefix`, `includes`, `excludes` and 'buildMethodName' annotation attributes.
+Here is an example illustrating various customisations:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_external_custom,indent=0]
+----
+
+The `@Builder` 'builderMethodName' and 'builderClassName' annotation attributes aren't applicable for this strategy.
+
+You can use the `ExternalStrategy` in conjunction with `@Canonical`. If your `@Builder` annotation doesn't have
+explicit `includes` or `excludes` annotation attributes but the `@Canonical` annotation of the class you are creating
+the builder for does, the ones from `@Canonical` will be re-used for `@Builder`.
+
+To use the `DefaultStrategy`, annotate your Groovy class using the `@Builder` annotation as shown in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_default,indent=0]
+----
+
+If you want, you can customize various aspects of the building process as shown here:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_default_custom,indent=0]
+----
+
+To use the `InitializerStrategy`, annotate your Groovy class using the `@Builder` annotation, and specify the strategy as shown in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_initializer,indent=0]
+----
+
+Your class will be locked down to have a single public constructor taking a "fully set" initializer.
+It will also have a factory method to create the initializer. These are used as follows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_initializer_usage,indent=0]
+----
+
+Any attempt to use the initializer which doesn't involve setting all the properties (though order is not important) will result in
+a compilation error. If you don't need this level of strictness, you don't need to use `@CompileStatic`.
+
+You can use the `InitializerStrategy` in conjunction with `@Canonical` and `@Immutable`. If your `@Builder` annotation
+doesn't have explicit `includes` or `excludes` annotation attributes but your `@Canonical` annotation does, the ones
+from `@Canonical` will be re-used for `@Builder`. Here is an example using `@Builder` with `@Immutable`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_initializer_immutable,indent=0]
+----
+
+The annotation attribute `forClass` is not supported for this strategy.
+
 ==== Class design annotations
 
 This category of annotations are aimed at simplifying the implementation of well-known design patterns (delegation,
@@ -1152,6 +1299,8 @@ In this example, we also set the `strict` parameter to false, which allows us to
 
 [[xform-Mixin]]
 ===== @groovy.transform.Mixin
+
+Deprecated. Consider using traits instead.
 
 ==== Logging improvements
 
