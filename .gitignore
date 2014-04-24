@@ -51,6 +51,10 @@ user.gradle
 /subprojects/groovy-jsr223/.project
 /subprojects/groovy-jsr223/.settings
 /subprojects/groovy-jsr223/.classpath
+/subprojects/groovy-nio/bin
+/subprojects/groovy-nio/.project
+/subprojects/groovy-nio/.settings
+/subprojects/groovy-nio/.classpath
 /subprojects/groovy-servlet/bin
 /subprojects/groovy-servlet/.project
 /subprojects/groovy-servlet/.settings
