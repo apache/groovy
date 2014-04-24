@@ -1,9 +1,9 @@
 
 class A {
     public publicProperty
-    final String stringProperty
+    String stringProperty
 
-    final value
-    final int getValue() {}
-    final void setValue(int value) {}
+    int value
+    def getValue() {}
+    private void setValue(int value) {}
 }

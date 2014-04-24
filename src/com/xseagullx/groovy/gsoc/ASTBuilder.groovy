@@ -202,41 +202,26 @@ class ASTBuilder extends GroovyBaseListener {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     def parseMember(ClassNode classNode, GroovyParser.MethodDeclarationContext ctx) {
-        int modifiers = parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER(), Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC)
-        modifiers |= parseModifier(ctx.KW_STATIC(), Opcodes.ACC_STATIC)
-        modifiers |= parseModifier(ctx.KW_ABSTRACT(), Opcodes.ACC_ABSTRACT)
-        modifiers |= parseModifier(ctx.KW_FINAL(), Opcodes.ACC_FINAL)
-        modifiers |= parseModifier(ctx.KW_NATIVE(), Opcodes.ACC_NATIVE)
-        modifiers |= parseModifier(ctx.KW_SYNCHRONIZED(), Opcodes.ACC_SYNCHRONIZED)
-        modifiers |= parseModifier(ctx.KW_TRANSIENT(), Opcodes.ACC_TRANSIENT)
-        modifiers |= parseModifier(ctx.KW_VOLATILE(), Opcodes.ACC_VOLATILE)
-
+        //noinspection GroovyAssignabilityCheck
+        def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier(), Opcodes.ACC_PUBLIC)
         def statement = parseBlockStatement(ctx.blockStatement())
 
         def params = parseParameters(ctx.argumentDeclarationList())
         def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, parseTypeDeclaration(ctx.typeDeclaration()), params, [] as ClassNode[], statement)
         setupNodeLocation(methodNode, ctx)
-        methodNode.syntheticPublic = (methodNode.modifiers & Opcodes.ACC_SYNTHETIC) != 0
-        methodNode.modifiers &= ~Opcodes.ACC_SYNTHETIC // FIXME Magic with syntetic modifier.
+        methodNode.syntheticPublic = !hasVisibilityModifier
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     def parseMember(ClassNode classNode, GroovyParser.FieldDeclarationContext ctx) {
-        int modifiers = parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER(), Opcodes.ACC_PRIVATE)
-        modifiers |= parseModifier(ctx.KW_STATIC(), Opcodes.ACC_STATIC)
-        modifiers |= parseModifier(ctx.KW_ABSTRACT(), Opcodes.ACC_ABSTRACT)
-        modifiers |= parseModifier(ctx.KW_FINAL(), Opcodes.ACC_FINAL)
-        modifiers |= parseModifier(ctx.KW_NATIVE(), Opcodes.ACC_NATIVE)
-        modifiers |= parseModifier(ctx.KW_SYNCHRONIZED(), Opcodes.ACC_SYNCHRONIZED)
-        modifiers |= parseModifier(ctx.KW_TRANSIENT(), Opcodes.ACC_TRANSIENT)
-        modifiers |= parseModifier(ctx.KW_VOLATILE(), Opcodes.ACC_VOLATILE)
-
+        //noinspection GroovyAssignabilityCheck
+        def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier())
 
         def typeDeclaration = parseTypeDeclaration(ctx.typeDeclaration())
-        if (!ctx.VISIBILITY_MODIFIER()) { // no visibility specified. Generate property node.
-            def prpertyModifier = modifiers & ~Opcodes.ACC_PRIVATE | Opcodes.ACC_PUBLIC
+        if (!hasVisibilityModifier) { // no visibility specified. Generate property node.
+            def prpertyModifier = modifiers | Opcodes.ACC_PUBLIC
             def propertyNode = classNode.addProperty(ctx.IDENTIFIER().text, prpertyModifier, typeDeclaration, null, null, null)
-            propertyNode.field.modifiers = modifiers
+            propertyNode.field.modifiers = modifiers | Opcodes.ACC_PRIVATE
             propertyNode.field.synthetic = true
             setupNodeLocation(propertyNode.field, ctx)
             setupNodeLocation(propertyNode, ctx)
@@ -266,7 +251,6 @@ class ASTBuilder extends GroovyBaseListener {
             setupNodeLocation(new Parameter(parseTypeDeclaration(it.typeDeclaration()), it.IDENTIFIER().text), it)
         }
     }
-
 
     /**
      * Sets location(lineNumber, colNumber, lastLineNumber, lastColumnNumber) for node using standard context information.
@@ -300,6 +284,19 @@ class ASTBuilder extends GroovyBaseListener {
         modifier
     }
 
+    int checkModifierDuplication(int modifier, int opcode, TerminalNode node) {
+        if (!(modifier & opcode))
+            modifier | opcode
+        else {
+            def symbol = node.symbol
+
+            def line = symbol.line
+            def col = symbol.charPositionInLine + 1
+            sourceUnit.addError(new SyntaxException("Cannot repeat modifier: $symbol.text at line: $line column: $col. File: $sourceUnit.name", line, col))
+            modifier
+        }
+    }
+
     int parseModifier(Collection<TerminalNode> nodes, int opcode) {
         if (!nodes)
             return 0
@@ -312,6 +309,31 @@ class ASTBuilder extends GroovyBaseListener {
             sourceUnit.addError(new SyntaxException("Cannot repeat modifier: $modifier.text at line: $line column: $col. File: $sourceUnit.name", line, col))
         }
         opcode
+    }
+
+    def parseModifiers(List<GroovyParser.MemberModifierContext> ctxList, Integer defaultVisibilityModifier = null) {
+        int modifiers = 0;
+        boolean hasVisibilityModifier = false;
+        ctxList.each {
+            def child = (it.getChild(0) as TerminalNode)
+            switch (child.symbol.type) {
+                case GroovyLexer.KW_STATIC: modifiers |= checkModifierDuplication(modifiers, Opcodes.ACC_STATIC, child); break
+                case GroovyLexer.KW_ABSTRACT: modifiers |= checkModifierDuplication(modifiers, Opcodes.ACC_ABSTRACT, child); break
+                case GroovyLexer.KW_FINAL: modifiers |= checkModifierDuplication(modifiers, Opcodes.ACC_FINAL, child); break
+                case GroovyLexer.KW_NATIVE: modifiers |= checkModifierDuplication(modifiers, Opcodes.ACC_NATIVE, child); break
+                case GroovyLexer.KW_SYNCHRONIZED: modifiers |= checkModifierDuplication(modifiers, Opcodes.ACC_SYNCHRONIZED, child); break
+                case GroovyLexer.KW_TRANSIENT: modifiers |= checkModifierDuplication(modifiers, Opcodes.ACC_TRANSIENT, child); break
+                case GroovyLexer.KW_VOLATILE: modifiers |= checkModifierDuplication(modifiers, Opcodes.ACC_VOLATILE, child); break
+                case GroovyLexer.VISIBILITY_MODIFIER:
+                    modifiers |= parseVisibilityModifiers(child)
+                    hasVisibilityModifier = true
+                    break
+            }
+        }
+        if (!hasVisibilityModifier && defaultVisibilityModifier != null)
+            modifiers |= defaultVisibilityModifier
+
+        [modifiers, hasVisibilityModifier]
     }
 
     void reportError(String text, int line, int col) {
@@ -343,5 +365,7 @@ class ASTBuilder extends GroovyBaseListener {
 
         parseVisibilityModifiers(modifiers[0])
     }
+
+
 
 }
