@@ -972,12 +972,13 @@ configuration options each strategy supports.
 
 |================================
 | Strategy | Description | builderClassName | builderMethodName |buildMethodName | prefix | includes/excludes
-| SimpleStrategy | chained setters | n/a | n/a | n/a | yes, default "set" | yes
-| ExternalStrategy | explicit builder class, class being built untouched | n/a | n/a | yes, default "build" | yes, default "" | yes
-| DefaultStrategy | creates a nested helper class | yes, default _<TypeName>_Builder | yes, default "builder" | yes, default "build" | yes, default "" | yes
-| InitializerStrategy | creates a nested helper class providing type-safe fluent creation | yes, default _<TypeName>_Initializer | yes, default "createInitializer" | yes | yes, default "" | yes
+| `SimpleStrategy` | chained setters | n/a | n/a | n/a | yes, default "set" | yes
+| `ExternalStrategy` | explicit builder class, class being built untouched | n/a | n/a | yes, default "build" | yes, default "" | yes
+| `DefaultStrategy` | creates a nested helper class | yes, default __<TypeName>__Builder | yes, default "builder" | yes, default "build" | yes, default "" | yes
+| `InitializerStrategy` | creates a nested helper class providing type-safe fluent creation | yes, default __<TypeName>__Initializer | yes, default "createInitializer" | yes, default "create" but usually only used internally | yes, default "" | yes
 |================================
 
+.SimpleStrategy
 To use the `SimpleStrategy`, annotate your Groovy class using the `@Builder` annotation, and specify the strategy as shown in this example:
 
 [source,groovy]
@@ -1003,7 +1004,7 @@ You can specify a prefix as shown in this example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_preix,indent=0]
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_prefix,indent=0]
 ----
 
 And calling the chained setters would look like this:
@@ -1019,6 +1020,13 @@ from `@Canonical` will be re-used for `@Builder`.
 
 The annotation attributes `builderClassName`, `buildMethodName`, `builderMethodName` and `forClass` are not supported for this strategy.
 
+NOTE: Groovy already has built-in building mechanisms. Don't rush to using `@Builder` if the built-in mechanisms meet your needs. Some examples:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_alternatives,indent=0]
+----
+
+.ExternalStrategy
 To use the `ExternalStrategy`, create and annotate a Groovy builder class using the `@Builder` annotation, specify the
 class the builder is for using `forClass` and indicate use of the `ExternalStrategy`.
 Suppose you have the following class you would like a builder for:
@@ -1040,7 +1048,7 @@ The generated build method will look something like:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_external_generated,indent=0]
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_external_generated_build,indent=0]
 ----
 
 The class you are creating the builder for can be any Java or Groovy class following the normal JavaBean conventions,
@@ -1051,7 +1059,7 @@ e.g. a no-arg constructor and setters for the properties. Here is an example usi
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_external_java,indent=0]
 ----
 
-The generated builder can be customised using the `prefix`, `includes`, `excludes` and 'buildMethodName' annotation attributes.
+The generated builder can be customised using the `prefix`, `includes`, `excludes` and `buildMethodName` annotation attributes.
 Here is an example illustrating various customisations:
 
 [source,groovy]
@@ -1059,12 +1067,13 @@ Here is an example illustrating various customisations:
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_external_custom,indent=0]
 ----
 
-The `@Builder` 'builderMethodName' and 'builderClassName' annotation attributes aren't applicable for this strategy.
+The `builderMethodName` and `builderClassName` annotation attributes for `@Builder` aren't applicable for this strategy.
 
 You can use the `ExternalStrategy` in conjunction with `@Canonical`. If your `@Builder` annotation doesn't have
 explicit `includes` or `excludes` annotation attributes but the `@Canonical` annotation of the class you are creating
 the builder for does, the ones from `@Canonical` will be re-used for `@Builder`.
 
+.DefaultStrategy
 To use the `DefaultStrategy`, annotate your Groovy class using the `@Builder` annotation as shown in this example:
 
 [source,groovy]
@@ -1072,13 +1081,18 @@ To use the `DefaultStrategy`, annotate your Groovy class using the `@Builder` an
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_default,indent=0]
 ----
 
-If you want, you can customize various aspects of the building process as shown here:
+If you want, you can customize various aspects of the building process
+using the `builderClassName`, `buildMethodName`, `builderMethodName`, `prefix`, `includes` and `excludes` annotation attributes,
+some of which are used in the example here:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_default_custom,indent=0]
 ----
 
+The `forClass` annotation attribute is not supported for this strategy.
+
+.InitializerStrategy
 To use the `InitializerStrategy`, annotate your Groovy class using the `@Builder` annotation, and specify the strategy as shown in this example:
 
 [source,groovy]
