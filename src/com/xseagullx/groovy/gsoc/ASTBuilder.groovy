@@ -184,7 +184,7 @@ class ASTBuilder extends GroovyBaseListener {
             node = new PropertyExpression(left, right, ctx.getChild(1).text in ['?.', '*.'])
         }
         setupNodeLocation(node, ctx)
-        node.spreadSafe = ctx.getChild(1).text == '*.'
+        node.spreadSafe = op.text == '*.'
         node
     }
 
@@ -227,13 +227,33 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.CallExpressionContext ctx) {
+        def argumentListExpression = createArgumentList(ctx.argumentList())
+
+        if (ctx.expression() instanceof GroovyParser.VariableExpressionContext)
+            new MethodCallExpression(new VariableExpression("this"), new ConstantExpression(ctx.expression().text), argumentListExpression)
+        else
+            new MethodCallExpression(parseExpression(ctx.expression()), new ConstantExpression("call"), argumentListExpression)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GroovyParser.MethodCallExpressionContext ctx) {
-        def expression = new ConstantExpression(ctx.expression().text)
+        def method = new ConstantExpression(ctx.IDENTIFIER().text)
+        ArgumentListExpression argumentListExpression = createArgumentList(ctx.argumentList())
+        def expression = new MethodCallExpression(parseExpression(ctx.expression()), method, argumentListExpression)
+        expression.implicitThis = false
+        def op = ctx.getChild(1) as TerminalNode
+        expression.spreadSafe = op.text == '*.'
+        expression.safe = op.text == '?.'
+        expression
+    }
+
+    private static ArgumentListExpression createArgumentList(GroovyParser.ArgumentListContext ctx) {
         def argumentListExpression = new ArgumentListExpression()
-        ctx.argumentList()?.expression()?.each {
+        ctx?.expression()?.each {
             argumentListExpression.addExpression(parseExpression(it))
         }
-        new MethodCallExpression(new VariableExpression("this"), expression, argumentListExpression)
+        argumentListExpression
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")

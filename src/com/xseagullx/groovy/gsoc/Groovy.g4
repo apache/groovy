@@ -83,8 +83,9 @@ statement:
 ;
 
 expression:
-    expression ('.' | '?.' | '*.' | '.@') IDENTIFIER #fieldAccessExpression
-    | expression '(' argumentList? ')' #methodCallExpression
+    expression ('.' | '?.' | '*.') IDENTIFIER '(' argumentList ')' #methodCallExpression
+    | expression ('.' | '?.' | '*.' | '.@') IDENTIFIER #fieldAccessExpression
+    | expression '(' argumentList? ')' #callExpression
     | expression ('--' | '++') #postfixExpression
     | ('!' | '~') expression #unaryExpression
     | ('+' | '-') expression #unaryExpression
