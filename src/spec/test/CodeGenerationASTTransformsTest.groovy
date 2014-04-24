@@ -947,6 +947,8 @@ assert person.firstName == "Robert"
 assert person.lastName == "Lewandowski"
 assert person.age == 21
 // end::builder_default[]
+        '''
+        assertScript '''
 // tag::builder_default_custom[]
 import groovy.transform.builder.Builder
 
