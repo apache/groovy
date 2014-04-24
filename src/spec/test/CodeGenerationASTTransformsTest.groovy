@@ -929,4 +929,50 @@ assert "$p.first $p.last" == 'Johnny Depp'
 // end::builder_external_custom[]
         '''
     }
+
+    void testBuilderInitializer() {
+        assertScript '''
+// tag::builder_initializer[]
+            import groovy.transform.builder.*
+            import groovy.transform.*
+
+            @ToString
+            @Builder(builderStrategy=InitializerStrategy)
+            class Person {
+                String firstName
+                String lastName
+                int age
+            }
+// end::builder_initializer[]
+// tag::builder_initializer_usage[]
+            @CompileStatic
+            def firstLastAge() {
+                assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)\'
+            }
+            firstLastAge()
+// end::builder_initializer_usage[]
+        '''
+        assertScript '''
+// tag::builder_initializer_immutable[]
+import groovy.transform.builder.*
+import groovy.transform.*
+
+@Builder(builderStrategy=InitializerStrategy)
+@Immutable
+class Person {
+    String first
+    String last
+    int born
+}
+
+@CompileStatic
+def createFirstLastBorn() {
+  def p = new Person(Person.createInitializer().first('Johnny').last('Depp').born(1963))
+  assert "$p.first $p.last $p.born" == 'Johnny Depp 1963'
+}
+
+createFirstLastBorn()
+// end::builder_initializer_immutable[]
+        '''
+    }
 }

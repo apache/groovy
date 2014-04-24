@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.BuilderASTTransformation;
+import org.codehaus.groovy.transform.ImmutableASTTransformation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -117,8 +118,8 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         List<FieldNode> filteredFields = selectFieldsFromExistingClass(fields, includes, excludes);
         int numFields = filteredFields.size();
         ClassNode builder = createInnerHelperClass(buildee, builderClassName, filteredFields);
-        createBuilderConstructors(builder, fields);
-        createBuildeeConstructors(buildee, builder, fields);
+        createBuilderConstructors(builder, filteredFields);
+        createBuildeeConstructors(transform, buildee, builder, filteredFields);
         buildee.getModule().addClass(builder);
         buildee.addMethod(createBuilderMethod(transform, anno, buildMethodName, builder, numFields));
         for (int i = 0; i < numFields; i++) {
@@ -173,18 +174,20 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         builder.addConstructor(ACC_PRIVATE, getParams(fields), NO_EXCEPTIONS, body);
     }
 
-    private static void createBuildeeConstructors(ClassNode buildee, ClassNode builder, List<FieldNode> fields) {
+    private static void createBuildeeConstructors(BuilderASTTransformation transform, ClassNode buildee, ClassNode builder, List<FieldNode> fields) {
         ClassNode paramType = makeClassSafeWithGenerics(builder, setGenTypes(fields.size()));
         List<Expression> argsList = new ArrayList<Expression>();
         for (FieldNode fieldNode : fields) {
             argsList.add(propX(varX("initializer"), fieldNode.getName()));
         }
         Expression args = new ArgumentListExpression(argsList);
-        buildee.addConstructor(ACC_PUBLIC, params(param(paramType, "initializer")), NO_EXCEPTIONS, block(ctorThisS(args)));
-        final BlockStatement body = new BlockStatement();
-        body.addStatement(ctorSuperS());
-        initializeFields(fields, body);
-        buildee.addConstructor(ACC_PRIVATE | ACC_SYNTHETIC, getParams(fields), NO_EXCEPTIONS, body);
+        buildee.addConstructor(ACC_PUBLIC | ACC_SYNTHETIC, params(param(paramType, "initializer")), NO_EXCEPTIONS, block(ctorThisS(args)));
+        if (!transform.hasAnnotation(buildee, ImmutableASTTransformation.MY_TYPE)) {
+            final BlockStatement body = new BlockStatement();
+            body.addStatement(ctorSuperS());
+            initializeFields(fields, body);
+            buildee.addConstructor(ACC_PRIVATE | ACC_SYNTHETIC, getParams(fields), NO_EXCEPTIONS, body);
+        }
     }
 
     private static Parameter[] getParams(List<FieldNode> fields) {

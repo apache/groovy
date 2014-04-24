@@ -106,7 +106,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             "java.util.UUID"
     );
     private static final Class MY_CLASS = groovy.transform.Immutable.class;
-    static final ClassNode MY_TYPE = make(MY_CLASS);
+    public static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
@@ -413,9 +413,15 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private boolean validateConstructors(ClassNode cNode) {
-        if (cNode.getDeclaredConstructors().size() != 0) {
+        List<ConstructorNode> declaredConstructors = cNode.getDeclaredConstructors();
+        for (ConstructorNode constructorNode : declaredConstructors) {
+            // allow Synthetic constructors added by other transforms
+            if ((constructorNode.getModifiers() & ACC_SYNTHETIC) != 0) {
+                continue;
+            }
             // TODO: allow constructors which only call provided constructor?
-            addError("Explicit constructors not allowed for " + MY_TYPE_NAME + " class: " + cNode.getNameWithoutPackage(), cNode.getDeclaredConstructors().get(0));
+            addError("Explicit constructors not allowed for " + MY_TYPE_NAME + " class: " + cNode.getNameWithoutPackage(), constructorNode);
+            return false;
         }
         return true;
     }

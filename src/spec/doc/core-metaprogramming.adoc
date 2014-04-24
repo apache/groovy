@@ -1017,6 +1017,8 @@ You can use the `SimpleStrategy` in conjunction with `@Canonical`. If your `@Bui
 explicit `includes` or `excludes` annotation attributes but your `@Canonical` annotation does, the ones
 from `@Canonical` will be re-used for `@Builder`.
 
+The annotation attributes `builderClassName`, `buildMethodName`, `builderMethodName` and `forClass` are not supported for this strategy.
+
 To use the `ExternalStrategy`, create and annotate a Groovy builder class using the `@Builder` annotation, specify the
 class the builder is for using `forClass` and indicate use of the `ExternalStrategy`.
 Suppose you have the following class you would like a builder for:
@@ -1062,6 +1064,35 @@ The `@Builder` 'builderMethodName' and 'builderClassName' annotation attributes 
 You can use the `ExternalStrategy` in conjunction with `@Canonical`. If your `@Builder` annotation doesn't have
 explicit `includes` or `excludes` annotation attributes but the `@Canonical` annotation of the class you are creating
 the builder for does, the ones from `@Canonical` will be re-used for `@Builder`.
+
+To use the `InitializerStrategy`, annotate your Groovy class using the `@Builder` annotation, and specify the strategy as shown in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_initializer,indent=0]
+----
+
+Your class will be locked down to have a single public constructor taking a "fully set" initializer.
+It will also have a factory method to create the initializer. These are used as follows:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_initializer_usage,indent=0]
+----
+
+Any attempt to use the initializer which doesn't involve setting all the properties (though order is not important) will result in
+a compilation error. If you don't need this level of strictness, you don't need to use `@CompileStatic`.
+
+You can use the `InitializerStrategy` in conjunction with `@Canonical` and `@Immutable`. If your `@Builder` annotation
+doesn't have explicit `includes` or `excludes` annotation attributes but your `@Canonical` annotation does, the ones
+from `@Canonical` will be re-used for `@Builder`. Here is an example using `@Builder` with `@Immutable`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_initializer_immutable,indent=0]
+----
+
+The annotation attribute `forClass` is not supported for this strategy.
 
 ==== Class design annotations
 

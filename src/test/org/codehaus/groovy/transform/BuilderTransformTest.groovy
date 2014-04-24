@@ -316,11 +316,11 @@ class BuilderTransformTest extends CompilableTestSupport {
             }
 
             @CompileStatic
-            def method() {
+            def firstLastAge() {
                 assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)'
             }
             // static case
-            method()
+            firstLastAge()
             // dynamic case
             assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)'
         '''
@@ -336,12 +336,33 @@ class BuilderTransformTest extends CompilableTestSupport {
             }
 
             @CompileStatic
-            def method() {
+            def firstLastButNoAge() {
                 new Person(Person.createInitializer().firstName("John").lastName("Smith"))
             }
         '''
         assert message.contains('[Static type checking] - Cannot find matching method Person#<init>')
         assert message =~ /.*SET.*SET.*UNSET.*/
+    }
+
+    void testInitializerStrategyCanonical() {
+        assertScript '''
+            import groovy.transform.builder.*
+            import groovy.transform.*
+
+            @Canonical
+            @Builder(builderStrategy=InitializerStrategy)
+            class Person {
+                String firstName
+                String lastName
+                int age
+            }
+
+            @CompileStatic
+            def firstLastAge() {
+                assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)\'
+            }
+            firstLastAge()
+        '''
     }
 
 }
