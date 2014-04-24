@@ -2,114 +2,93 @@ package groovy.util.logging
 
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
-import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
+
+import org.apache.log4j.spi.Filter
+import org.apache.log4j.spi.LoggingEvent
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.core.Layout
+import org.apache.logging.log4j.core.LogEvent
+import org.apache.logging.log4j.core.appender.AbstractAppender
+import org.apache.logging.log4j.core.layout.PatternLayout
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.Logger
 
 class Log4j2Test extends GroovyTestCase {
 
-    // Log4j2 requires at least Java 1.6
-    static final boolean testEnabled = true
-    static {
-        if (System.getProperty("java.version").startsWith("1.5.")) {
-            testEnabled = false
+    class Log4j2InterceptingAppender extends AbstractAppender {
+        List<LoggingEvent> events
+        boolean isLogGuarded = true
+
+        Log4j2InterceptingAppender(String name, Filter filter, Layout<String> layout){
+            super(name, filter, layout)
+            this.events = new ArrayList<LoggingEvent>()
         }
-        if (System.getProperty('groovy.target.indy') && System.getProperty("java.version").startsWith("1.7.")) {
-            // temporarily disable tests for indy if running on JDK 7 because of a bug in Log4j2
-            // todo: re-enable when Log4J2 beta10 is out
-            testEnabled = false
+
+        @Override
+        void append(LogEvent event) {
+            events.add(event)
         }
     }
 
-    Class appenderClazz
-    def appender
+    Log4j2InterceptingAppender appender
     def logger
 
     protected void setUp() {
         super.setUp()
-        if(testEnabled) {
-            appenderClazz = new GroovyClassLoader().parseClass('''
-                class Log4j2InterceptingAppender extends org.apache.logging.log4j.core.appender.AbstractAppender {
-                    List<org.apache.log4j.spi.LoggingEvent> events
-                    boolean isLogGuarded = true
-                
-                    Log4j2InterceptingAppender(String name, org.apache.log4j.spi.Filter filter, org.apache.logging.log4j.core.Layout<String> layout){
-                        super(name, filter, layout)
-                        this.events = new ArrayList<org.apache.log4j.spi.LoggingEvent>()
-                    }
-                
-                    @Override
-                    public void append(org.apache.logging.log4j.core.LogEvent event) {
-                        events.add(event)
-                    }
-                }''')
-            
-            def layoutClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.core.layout.PatternLayout')
-            def layout = layoutClazz.metaClass.invokeStaticMethod(layoutClazz, 'createLayout', ["%m", null, null, "UTF-8", "false"] as Object[])
-     
-            appender = appenderClazz.newInstance(['MyAppender', null, layout] as Object[])
-            def logManagerClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.LogManager')
-            logger = logManagerClazz.metaClass.invokeStaticMethod(logManagerClazz, 'getLogger', 'MyClass')
-            logger.addAppender(appender)
-            def levelClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.Level')
-            def allLevel = levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'ALL')
-            logger.setLevel(allLevel)
-        }
+
+        PatternLayout layout = PatternLayout.createLayout("%m", null, null, "UTF-8", "true", "false")
+        appender = new Log4j2InterceptingAppender('MyAppender', null, layout)
+        logger = LogManager.getLogger('MyClass')
+        logger.addAppender(appender)
+        logger.setLevel(Level.ALL)
     }
 
     protected void tearDown() {
         super.tearDown()
-        if(testEnabled) {
-            logger.removeAppender(appender)
-        }
+        logger.removeAppender(appender)
     }
 
     void testPrivateFinalStaticLogFieldAppears() {
-        if(testEnabled && !config.optimizationOptions.indy) {
-            Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass('''
               @groovy.util.logging.Log4j2
               class MyClass {
               } ''')
 
-            assert clazz.declaredFields.find { Field field ->
-                field.name == "log" &&
-                        Modifier.isPrivate(field.getModifiers()) &&
-                        Modifier.isStatic(field.getModifiers()) &&
-                        Modifier.isTransient(field.getModifiers()) &&
-                        Modifier.isFinal(field.getModifiers())
-            }
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    Modifier.isPrivate(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
         }
     }
 
     void testClassAlreadyHasLogField() {
-        if(testEnabled && !config.optimizationOptions.indy) {
-            shouldFail(RuntimeException) {
-                Class clazz = new GroovyClassLoader().parseClass('''
+        shouldFail(RuntimeException) {
+            Class clazz = new GroovyClassLoader().parseClass('''
                 @groovy.util.logging.Log4j2()
                 class MyClass {
                     String log
                 } ''')
 
-                assert clazz.newInstance()
-            }
+            assert clazz.newInstance()
         }
     }
 
     void testClassAlreadyHasNamedLogField() {
-        if(testEnabled && !config.optimizationOptions.indy) {
-            shouldFail(RuntimeException) {
-                Class clazz = new GroovyClassLoader().parseClass('''
+        shouldFail(RuntimeException) {
+            Class clazz = new GroovyClassLoader().parseClass('''
                 @groovy.util.logging.Log4j2('logger')
                 class MyClass {
                     String logger
                 } ''')
 
-                assert clazz.newInstance()
-            }
+            assert clazz.newInstance()
         }
     }
 
     void testLogInfo() {
-        if(testEnabled && !config.optimizationOptions.indy) {
-            Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Log4j2
             class MyClass {
 
@@ -124,30 +103,27 @@ class Log4j2Test extends GroovyTestCase {
             }
             new MyClass().loggingMethod() ''')
 
-            clazz.newInstance().run()
+        clazz.newInstance().run()
 
-            int ind = 0
-            def events = appender.getEvents()
-            assert events.size() == 6
-            def levelClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.Level')
-            assert events[ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'FATAL')
-            assert events[ind].message.message == "fatal called"
-            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'ERROR')
-            assert events[ind].message.message == "error called"
-            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'WARN')
-            assert events[ind].message.message == "warn called"
-            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'INFO')
-            assert events[ind].message.message == "info called"
-            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'DEBUG')
-            assert events[ind].message.message == "debug called"
-            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'TRACE')
-            assert events[ind].message.message == "trace called"
-        }
+        int ind = 0
+        def events = appender.getEvents()
+        assert events.size() == 6
+        assert events[ind].level == Level.FATAL
+        assert events[ind].message.message == "fatal called"
+        assert events[++ind].level == Level.ERROR
+        assert events[ind].message.message == "error called"
+        assert events[++ind].level == Level.WARN
+        assert events[ind].message.message == "warn called"
+        assert events[++ind].level == Level.INFO
+        assert events[ind].message.message == "info called"
+        assert events[++ind].level == Level.DEBUG
+        assert events[ind].message.message == "debug called"
+        assert events[++ind].level == Level.TRACE
+        assert events[ind].message.message == "trace called"
     }
 
     void testLogFromStaticMethods() {
-        if(testEnabled && !config.optimizationOptions.indy) {
-            Class clazz = new GroovyClassLoader().parseClass("""
+        Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Log4j2
             class MyClass {
                 static loggingMethod() {
@@ -156,19 +132,16 @@ class Log4j2Test extends GroovyTestCase {
             }
             MyClass.loggingMethod()""")
 
-            clazz.newInstance().run()
+        clazz.newInstance().run()
 
-            def events = appender.getEvents()
-            assert events.size() == 1
-            def levelClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.Level')
-            assert events[0].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'INFO')
-            assert events[0].message.message == "(static) info called"
-        }
+        def events = appender.getEvents()
+        assert events.size() == 1
+        assert events[0].level == Level.INFO
+        assert events[0].message.message == "(static) info called"
     }
 
     void testLogInfoForNamedLogger() {
-        if(testEnabled && !config.optimizationOptions.indy) {
-            Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Log4j2('logger')
             class MyClass {
 
@@ -183,30 +156,27 @@ class Log4j2Test extends GroovyTestCase {
             }
             new MyClass().loggingMethod() ''')
 
-            clazz.newInstance().run()
+        clazz.newInstance().run()
 
-            int ind = 0
-            def events = appender.getEvents()
-            assert events.size() == 6
-            def levelClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.Level')
-            assert events[ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'FATAL')
-            assert events[ind].message.message == "fatal called"
-            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'ERROR')
-            assert events[ind].message.message == "error called"
-            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'WARN')
-            assert events[ind].message.message == "warn called"
-            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'INFO')
-            assert events[ind].message.message == "info called"
-            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'DEBUG')
-            assert events[ind].message.message == "debug called"
-            assert events[++ind].level == levelClazz.metaClass.invokeStaticMethod(levelClazz, 'toLevel', 'TRACE')
-            assert events[ind].message.message == "trace called"
-        }
+        int ind = 0
+        def events = appender.getEvents()
+        assert events.size() == 6
+        assert events[ind].level == Level.FATAL
+        assert events[ind].message.message == "fatal called"
+        assert events[++ind].level == Level.ERROR
+        assert events[ind].message.message == "error called"
+        assert events[++ind].level == Level.WARN
+        assert events[ind].message.message == "warn called"
+        assert events[++ind].level == Level.INFO
+        assert events[ind].message.message == "info called"
+        assert events[++ind].level == Level.DEBUG
+        assert events[ind].message.message == "debug called"
+        assert events[++ind].level == Level.TRACE
+        assert events[ind].message.message == "trace called"
     }
 
     void testLogGuard() {
-        if(testEnabled && !config.optimizationOptions.indy) {
-            Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Log4j2
             class MyClass {
                 def loggingMethod() {
@@ -226,15 +196,13 @@ class Log4j2Test extends GroovyTestCase {
             }
             new MyClass().loggingMethod() ''')
 
-            clazz.newInstance().run()
+        clazz.newInstance().run()
 
-            assert appender.isLogGuarded == true
-        }
+        assert appender.isLogGuarded == true
     }
-    
+
     void testDefaultCategory() {
-        if(testEnabled && !config.optimizationOptions.indy) {
-            Class clazz = new GroovyClassLoader().parseClass("""
+        Class clazz = new GroovyClassLoader().parseClass("""
                 @groovy.util.logging.Log4j2
                 class MyClass {
                     static loggingMethod() {
@@ -242,36 +210,28 @@ class Log4j2Test extends GroovyTestCase {
                     }
                 }""")
 
-            def s = clazz.newInstance()
-            s.loggingMethod()
+        clazz.newInstance().loggingMethod()
 
-            assert appender.getEvents().size() == 1
-        }
+        assert appender.getEvents().size() == 1
     }
 
-    public void testCustomCategory() {
-        if(testEnabled && !config.optimizationOptions.indy) {
-            def layoutClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.core.layout.PatternLayout')
-            def layout = layoutClazz.metaClass.invokeStaticMethod(layoutClazz, 'createLayout', ["%m", null, null, "UTF-8", "false"] as Object[])
-            def appenderForCustomCategory = appenderClazz.newInstance(['Appender4CustomCategory', null, layout] as Object[])
+    void testCustomCategory() {
+        PatternLayout layout = PatternLayout.createLayout("%m", null, null, "UTF-8", "true", "false")
+        Log4j2InterceptingAppender appenderForCustomCategory = new Log4j2InterceptingAppender('Appender4CustomCategory', null, layout)
+        def loggerForCustomCategory = LogManager.getLogger('customCategory')
+        loggerForCustomCategory.addAppender(appenderForCustomCategory)
 
-            def logManagerClazz = new GroovyClassLoader().loadClass('org.apache.logging.log4j.LogManager')
-            def loggerForCustomCategory = logManagerClazz.metaClass.invokeStaticMethod(logManagerClazz, 'getLogger', 'customCategory')
-            loggerForCustomCategory.addAppender(appenderForCustomCategory)
-
-            Class clazz = new GroovyClassLoader().parseClass("""
+        Class clazz = new GroovyClassLoader().parseClass("""
                 @groovy.util.logging.Log4j2(category='customCategory')
                 class MyClass {
                     static loggingMethod() {
                       log.error("error called")
                     }
                 }""")
-            def s = clazz.newInstance()
+        
+        clazz.newInstance().loggingMethod()
 
-            s.loggingMethod()
-
-            assert appenderForCustomCategory.getEvents().size() == 1
-            assert appender.getEvents().size() == 0
-        }
+        assert appenderForCustomCategory.getEvents().size() == 1
+        assert appender.getEvents().size() == 0
     }
 }
