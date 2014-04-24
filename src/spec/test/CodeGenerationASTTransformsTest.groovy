@@ -982,7 +982,7 @@ class Person {
 // tag::builder_initializer_usage[]
 @CompileStatic
 def firstLastAge() {
-    assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)\'
+    assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)'
 }
 firstLastAge()
 // end::builder_initializer_usage[]
