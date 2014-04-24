@@ -105,7 +105,10 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private static final Expression DEFAULT_INITIAL_VALUE = null;
 
-    public void build(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno, List<String> excludes, List<String> includes) {
+    public void build(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
+        List<String> excludes = new ArrayList<String>();
+        List<String> includes = new ArrayList<String>();
+        if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         String prefix = transform.getMemberStringValue(anno, "prefix", "");
         if (unsupportedAttribute(transform, anno, "forClass")) return;
         String builderClassName = transform.getMemberStringValue(anno, "builderClassName", buildee.getName() + "Initializer");

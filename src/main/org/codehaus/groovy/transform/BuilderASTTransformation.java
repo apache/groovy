@@ -57,23 +57,15 @@ public class BuilderASTTransformation extends AbstractASTTransformation {
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
-            List<String> excludes = getMemberList(anno, "excludes");
-            List<String> includes = getMemberList(anno, "includes");
-            if (hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
-                AnnotationNode canonical = cNode.getAnnotations(CanonicalASTTransformation.MY_TYPE).get(0);
-                if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
-                if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
-            }
-            if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
 
             final BuilderStrategy strategy = createBuilderStrategy(anno, source.getClassLoader());
             if (strategy == null) return;
-            strategy.build(this, cNode, anno, excludes, includes);
+            strategy.build(this, cNode, anno);
         }
     }
 
     public interface BuilderStrategy {
-        void build(BuilderASTTransformation transform, ClassNode cNode, AnnotationNode anno, List<String> excludes, List<String> includes);
+        void build(BuilderASTTransformation transform, ClassNode cNode, AnnotationNode anno);
     }
 
     public abstract static class AbstractBuilderStrategy implements BuilderStrategy {
@@ -123,6 +115,27 @@ public class BuilderASTTransformation extends AbstractASTTransformation {
                 }
             }
             transform.addError("Error during " + MY_TYPE_NAME + " processing: tried to include unknown property '" + name + "'", anno);
+        }
+
+        protected boolean getIncludeExclude(BuilderASTTransformation transform, AnnotationNode anno, ClassNode cNode, List<String> excludes, List<String> includes) {
+            List<String> directExcludes = transform.getMemberList(anno, "excludes");
+            if (directExcludes != null) excludes.addAll(directExcludes);
+            List<String> directIncludes = transform.getMemberList(anno, "includes");
+            if (directIncludes != null) includes.addAll(directIncludes);
+            if (includes.isEmpty() && excludes.isEmpty()) {
+                if (transform.hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
+                    AnnotationNode canonical = cNode.getAnnotations(CanonicalASTTransformation.MY_TYPE).get(0);
+                    if (excludes.isEmpty()) {
+                        List<String>  canonicalExcludes = transform.getMemberList(canonical, "excludes");
+                        if (canonicalExcludes != null) excludes.addAll(canonicalExcludes);
+                    }
+                    if (includes.isEmpty()) {
+                        List<String>  canonicalIncludes = transform.getMemberList(canonical, "includes");
+                        if (canonicalIncludes != null) includes.addAll(canonicalIncludes);
+                    }
+                }
+            }
+            return transform.checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
         }
 
         protected static class PropertyInfo {

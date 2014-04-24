@@ -93,29 +93,32 @@ import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
     private static final Expression DEFAULT_INITIAL_VALUE = null;
 
-    public void build(BuilderASTTransformation transform, ClassNode builderClass, AnnotationNode anno, List<String> excludes, List<String> includes) {
+    public void build(BuilderASTTransformation transform, ClassNode builder, AnnotationNode anno) {
         String prefix = transform.getMemberStringValue(anno, "prefix", "");
-        ClassNode buildeeClass = transform.getMemberClassValue(anno, "forClass");
-        if (buildeeClass == null) {
+        ClassNode buildee = transform.getMemberClassValue(anno, "forClass");
+        if (buildee == null) {
             transform.addError("Error during " + MY_TYPE_NAME + " processing: 'forClass' must be specified for " + getClass().getName(), anno);
             return;
         }
+        List<String> excludes = new ArrayList<String>();
+        List<String> includes = new ArrayList<String>();
+        if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         if (unsupportedAttribute(transform, anno, "builderClassName")) return;
         if (unsupportedAttribute(transform, anno, "builderMethodName")) return;
         List<PropertyInfo> props;
-        if (buildeeClass.getModule() == null) {
-            props = getPropertyInfoFromBeanInfo(buildeeClass, includes, excludes);
+        if (buildee.getModule() == null) {
+            props = getPropertyInfoFromBeanInfo(buildee, includes, excludes);
         } else {
-            props = getPropertyInfoFromClassNode(buildeeClass, includes, excludes);
+            props = getPropertyInfoFromClassNode(buildee, includes, excludes);
         }
         for (String name : includes) {
             checkKnownProperty(transform, anno, name, props);
         }
         for (PropertyInfo prop : props) {
-            builderClass.addField(createFieldCopy(builderClass, prop));
-            builderClass.addMethod(createBuilderMethodForField(builderClass, prop, prefix));
+            builder.addField(createFieldCopy(builder, prop));
+            builder.addMethod(createBuilderMethodForField(builder, prop, prefix));
         }
-        builderClass.addMethod(createBuildMethod(transform, anno, buildeeClass, props));
+        builder.addMethod(createBuildMethod(transform, anno, buildee, props));
     }
 
     private static MethodNode createBuildMethod(BuilderASTTransformation transform, AnnotationNode anno, ClassNode sourceClass, List<PropertyInfo> fields) {

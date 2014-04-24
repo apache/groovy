@@ -1013,6 +1013,10 @@ And calling the chained setters would look like this:
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_simple_prefix_usage,indent=0]
 ----
 
+You can use the `SimpleStrategy` in conjunction with `@Canonical`. If your `@Builder` annotation doesn't have
+explicit `includes` or `excludes` annotation attributes but your `@Canonical` annotation does, the ones
+from `@Canonical` will be re-used for `@Builder`.
+
 To use the `ExternalStrategy`, create and annotate a Groovy builder class using the `@Builder` annotation, specify the
 class the builder is for using `forClass` and indicate use of the `ExternalStrategy`.
 Suppose you have the following class you would like a builder for:
@@ -1054,6 +1058,10 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 
 The `@Builder` 'builderMethodName' and 'builderClassName' annotation attributes aren't applicable for this strategy.
+
+You can use the `ExternalStrategy` in conjunction with `@Canonical`. If your `@Builder` annotation doesn't have
+explicit `includes` or `excludes` annotation attributes but the `@Canonical` annotation of the class you are creating
+the builder for does, the ones from `@Canonical` will be re-used for `@Builder`.
 
 ==== Class design annotations
 

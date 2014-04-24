@@ -24,6 +24,7 @@ import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.BuilderASTTransformation;
 import org.objectweb.asm.Opcodes;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -72,23 +73,26 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIO
  * @author Paul King
  */
 public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
-    public void build(BuilderASTTransformation transform, ClassNode buildeeClass, AnnotationNode anno, List<String> excludes, List<String> includes) {
+    public void build(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
         if (unsupportedAttribute(transform, anno, "builderClassName")) return;
         if (unsupportedAttribute(transform, anno, "buildMethodName")) return;
         if (unsupportedAttribute(transform, anno, "builderMethodName")) return;
         if (unsupportedAttribute(transform, anno, "forClass")) return;
 
+        List<String> excludes = new ArrayList<String>();
+        List<String> includes = new ArrayList<String>();
+        if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         String prefix = transform.getMemberStringValue(anno, "prefix", "set");
-        List<FieldNode> fields = getInstancePropertyFields(buildeeClass);
+        List<FieldNode> fields = getInstancePropertyFields(buildee);
         for (String name : includes) {
             checkKnownField(transform, anno, name, fields);
         }
         for (FieldNode field : fields) {
             String fieldName = field.getName();
-            if (!AbstractASTTransformation.shouldSkip(fieldName, includes, excludes)) {
+            if (!AbstractASTTransformation.shouldSkip(fieldName, excludes, includes)) {
                 String methodName = getSetterName(prefix, fieldName);
                 Parameter parameter = param(field.getType(), fieldName);
-                buildeeClass.addMethod(methodName, Opcodes.ACC_PUBLIC, newClass(buildeeClass), params(parameter), NO_EXCEPTIONS, block(
+                buildee.addMethod(methodName, Opcodes.ACC_PUBLIC, newClass(buildee), params(parameter), NO_EXCEPTIONS, block(
                                 stmt(assignX(fieldX(field), varX(parameter))),
                                 returnS(varX("this")))
                 );

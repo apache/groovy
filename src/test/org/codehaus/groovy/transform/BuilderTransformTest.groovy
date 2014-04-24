@@ -95,6 +95,28 @@ class BuilderTransformTest extends CompilableTestSupport {
         """
     }
 
+    void testSimpleBuilderWithCanonicalAndExcludes() {
+        assertScript '''
+            import groovy.transform.builder.*
+            import groovy.transform.Canonical
+
+            @Canonical(excludes='age')
+            @Builder(builderStrategy=SimpleStrategy)
+            class Person {
+                String firstName
+                String lastName
+                int age
+            }
+            def p = new Person().setFirstName("Robert").setLastName("Lewandowski")
+            p.age = 21 // non-chained version should still be there
+            assert "$p.firstName $p.lastName $p.age" == 'Robert Lewandowski 21'
+            // chained method
+            assert Person.getMethod("setFirstName", String).returnType.name == 'Person'
+            // normal Groovy non-chained version
+            assert Person.getMethod("setAge", Integer.TYPE).returnType.name == 'void'
+        '''
+    }
+
     void testDefaultBuilder() {
         def shell = new GroovyShell()
         shell.parse """
@@ -253,6 +275,31 @@ class BuilderTransformTest extends CompilableTestSupport {
             assert personBuilder.metaClass.methods.find { it.name == "lastName" } == null
             assert personBuilder.metaClass.methods.find { it.name == "firstName" } != null
         """
+    }
+
+    void testExternalBuilderWithCanonicalAndExcludes() {
+        assertScript '''
+            import groovy.transform.builder.*
+            import groovy.transform.Canonical
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @Canonical(excludes='born')
+            class Person {
+                String first
+                String last
+                int born
+            }
+
+            @Builder(builderStrategy=ExternalStrategy, forClass=Person, buildMethodName='create', prefix='with')
+            class PersonBuilder { }
+
+            def p = new PersonBuilder().withFirst('Johnny').withLast('Depp').create()
+            assert "$p.first $p.last" == 'Johnny Depp'
+            assert PersonBuilder.getMethod("withFirst", String).returnType.name == 'PersonBuilder'
+            shouldFail(NoSuchMethodException) {
+                PersonBuilder.getMethod("withBorn", Integer.TYPE)
+            }
+        '''
     }
 
     void testInitializerStrategy() {
