@@ -101,7 +101,8 @@ expression:
     | expression ('||') expression #binaryExpression
     | STRING #constantExpression
     | NUMBER #constantExpression
-    | KW_NULL #nullExpression ;
+    | KW_NULL #nullExpression
+    | IDENTIFIER #variableExpression ;
 
 classModifiers: //JSL7 8.1 FIXME Now gramar allows modifier duplication. It's possible to make it more strict listing all 24 permutations.
 (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_STRICTFP)* ;

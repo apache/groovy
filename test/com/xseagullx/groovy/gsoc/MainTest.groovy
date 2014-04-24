@@ -120,6 +120,24 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/class/properties/ClassProperty_Issue4_1.groovy" | _
     }
 
+    def "test member access"() {
+        expect:
+        def file = new File(path)
+        def moduleNodeNew = new Main(Configuration.NEW).process(file)
+        def moduleNodeOld = new Main(Configuration.OLD).process(file)
+        def moduleNodeOld2 = new Main(Configuration.OLD).process(file)
+
+        use(ASTComparatorCategory) {
+            assert moduleNodeOld == moduleNodeOld2;
+            assert moduleNodeNew == moduleNodeOld
+            true
+        }
+
+        where:
+        path | output
+        "test_res/com/xseagullx/groovy/gsoc/class/memberAccess/MemberAccess_Issue14_1.groovy" | _
+    }
+
     def "test class file creation"() {
         expect:
         def sourceFile = new File("test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy")

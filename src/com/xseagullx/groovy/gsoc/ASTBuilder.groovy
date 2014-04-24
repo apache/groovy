@@ -163,6 +163,11 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.VariableExpressionContext ctx) {
+        setupNodeLocation(new VariableExpression(ctx.IDENTIFIER().text), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GroovyParser.FieldAccessExpressionContext ctx) {
         def op = ctx.getChild(1) as TerminalNode
         def text = ctx.IDENTIFIER().text
