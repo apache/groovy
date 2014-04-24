@@ -1,5 +1,8 @@
 
 grammar Groovy;
+@parser::members {
+    String currentClassName = null; // Used for correct constructor recognition.
+}
 
 // LEXER
 
@@ -51,9 +54,9 @@ packageDefinition:
 importStatement:
     KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)*);
 classDeclaration:
-    classModifiers KW_CLASS IDENTIFIER (NL)* '{' (classMember | NL | ';')* '}';
+    classModifiers KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } (NL)* '{' (classMember | NL | ';')* '}' ;
 classMember:
-    methodDeclaration | fieldDeclaration | constructorDeclaration;
+    constructorDeclaration | methodDeclaration | fieldDeclaration;
 
 // Members // FIXME Make more strict check for def keyword. There should be no way to ommit everything but IDENTIFIER.
 methodDeclaration:
@@ -61,8 +64,8 @@ methodDeclaration:
     IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}'; // Inner NL 's handling.
 fieldDeclaration:
     (memberModifier+ typeDeclaration? | typeDeclaration) IDENTIFIER ;
-constructorDeclaration:
-    VISIBILITY_MODIFIER? IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}'; // Inner NL 's handling.
+constructorDeclaration: { _input.LT(_input.LT(1).getType() == VISIBILITY_MODIFIER ? 2 : 1).getText().equals(currentClassName) }?
+    VISIBILITY_MODIFIER? IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}' ; // Inner NL 's handling.
 
 memberModifier:
     VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE ;
