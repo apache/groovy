@@ -44,6 +44,6 @@ eclipse.classpath.file {
             node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/$it/src/main/groovy"])
             node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/$it/src/main/java"])
         }
-        node.appendNode('classpathentry', [kind: 'src', path: '/groovy/subprojects/groovy-templates/src/main/java'])
+        node.appendNode('classpathentry', [kind: 'src', path: '/groovy/subprojects/groovy-templates/src/main/groovy'])
     }
 }
