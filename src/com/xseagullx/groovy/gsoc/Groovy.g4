@@ -77,9 +77,10 @@ argumentDeclaration:
     typeDeclaration? IDENTIFIER ;
 
 blockStatement: (statement | NL)+ ;
-statement: expressionStatement ;
 
-expressionStatement: expression ;
+statement:
+    expression #expressionStatement
+;
 
 expression:
     expression ('.' | '?.' | '*.' | '.@') IDENTIFIER #fieldAccessExpression
@@ -99,6 +100,8 @@ expression:
     | expression ('|') expression #binaryExpression
     | expression ('&&') expression #binaryExpression
     | expression ('||') expression #binaryExpression
+    | expression ('=') expression #assignmentExpression
+    | typeDeclaration IDENTIFIER ('=' expression)? #declarationExpression
     | STRING #constantExpression
     | NUMBER #constantExpression
     | KW_NULL #nullExpression

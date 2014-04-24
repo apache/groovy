@@ -102,7 +102,11 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     static Statement parseStatement(GroovyParser.StatementContext ctx) {
-        setupNodeLocation(new ExpressionStatement(parseExpression(ctx.expressionStatement().expression())), ctx)
+        throw new RuntimeException("Unsupported statement type! $ctx")
+    }
+
+    static Statement parseStatement(GroovyParser.ExpressionStatementContext ctx) {
+        setupNodeLocation(new ExpressionStatement(parseExpression(ctx.expression())), ctx)
     }
 
     static Expression parseExpression(GroovyParser.ExpressionContext ctx) {
@@ -206,6 +210,23 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.AssignmentExpressionContext ctx) {
+        def left = parseExpression(ctx.expression(0)) // TODO reference to AntlrParserPlugin line 2304 for error handling.
+        def right = parseExpression(ctx.expression(1))
+        setupNodeLocation(new BinaryExpression(left, createToken(ctx.getChild(1) as TerminalNode), right), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.DeclarationExpressionContext ctx) {
+        def left = new VariableExpression(ctx.IDENTIFIER().text)
+        def col = ctx.start.charPositionInLine + 1 // FIXME Why assignment token location is it's first occurence.
+        def token = new Token(Types.ASSIGN, '=', ctx.start.line, col)
+        def right = ctx.childCount == 2 ? new EmptyExpression() : parseExpression(ctx.expression())
+
+        setupNodeLocation(new DeclarationExpression(left, token, right), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     def parseMember(ClassNode classNode, GroovyParser.MethodDeclarationContext ctx) {
         //noinspection GroovyAssignabilityCheck
         def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier(), Opcodes.ACC_PUBLIC)
@@ -241,7 +262,7 @@ class ASTBuilder extends GroovyBaseListener {
     // Utility methods.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    static createToken(TerminalNode node) {
+    static Token createToken(TerminalNode node) {
         def text = node.text
         new Token(node.text == '..<' || node.text == '..' ? Types.RANGE_OPERATOR : Types.lookup(text, Types.ANY),
             text, node.symbol.line, node.symbol.charPositionInLine + 1)

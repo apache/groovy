@@ -260,7 +260,7 @@ class ASTComparatorCategory {
     }
 
     static equals(DeclarationExpression a, DeclarationExpression b) {
-        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"])
+        reflexiveEquals(a, b, ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber", "tupleExpression"])
     }
 
     static equals(ElvisOperatorExpression a, ElvisOperatorExpression b) {
