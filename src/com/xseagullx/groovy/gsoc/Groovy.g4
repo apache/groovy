@@ -53,17 +53,19 @@ importStatement:
 classDeclaration:
     classModifiers KW_CLASS IDENTIFIER (NL)* '{' (classMember | NL | ';')* '}';
 classMember:
-    constructorDeclaration | methodDeclaration | fieldDeclaration;
+    methodDeclaration | fieldDeclaration | constructorDeclaration;
 
 // Members // FIXME Make more strict check for def keyword. There should be no way to ommit everything but IDENTIFIER.
 methodDeclaration:
-    (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE) +
-    typeDeclaration? IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}'; // Inner NL 's handling.
+    (memberModifier+ typeDeclaration? | typeDeclaration)
+    IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}'; // Inner NL 's handling.
 fieldDeclaration:
-    (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE) +
-    typeDeclaration? IDENTIFIER ;
+    (memberModifier+ typeDeclaration? | typeDeclaration) IDENTIFIER ;
 constructorDeclaration:
     VISIBILITY_MODIFIER? IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}'; // Inner NL 's handling.
+
+memberModifier:
+    VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE ;
 
 typeDeclaration:
     (IDENTIFIER | KW_DEF)
