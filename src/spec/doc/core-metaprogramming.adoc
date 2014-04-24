@@ -962,7 +962,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 
 [[xform-Builder]]
-===== @groovy.lang.Sortable
+===== @groovy.transform.builder.Builder
 
 The `@Builder` AST transformation is used to help write classes that can be created using _fluent_ api calls.
 The transform supports multiple building strategies to cover a range of cases and there are a number
