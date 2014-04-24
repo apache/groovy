@@ -2,11 +2,11 @@
 
 <html>
 <head>
-    <title>${className} (Groovy JDK)</title>
+    <title>${docType.simpleClassName} (Groovy JDK)</title>
 
     <%
-    int dotCount = packageName.count('.')
-    String pathPref = '../' * (dotCount+1)
+    int dotCount = docType.packageName.count('.')
+    String pathPref = '../' * (dotCount + 1)
     %>
     <link rel="stylesheet" type="text/css" href="${pathPref}stylesheet.css" title="Style">
 
@@ -36,8 +36,8 @@
     <!-- ======== START OF class DATA ======== -->
 
     <div class="header">
-        <div class="subTitle">Package: <strong>${packageName}</strong></div>
-        <h2>${classDesc} ${className}</h2>
+        <div class="subTitle">Package: <strong>${docType.packageName}</strong></div>
+        <h2>${docType.interface ? 'Interface' : 'Class'} ${docType.simpleClassName}</h2>
     </div>
 
     <div class="contentContainer">
@@ -62,21 +62,20 @@
                                             <th>Name and parameters</th>
                                         </tr>
                                         <tbody>
-                                            <% methods.eachWithIndex { method, i -> %>
+                                            <% docType.docMethods.eachWithIndex { docMethod, i -> %>
                                             <tr class="${i % 2 == 0 ? 'altColor' : 'rawColor'}">
                                                 <td align="right" valign="top" width="1%">
-                                                    <span> <code>${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl}</code></span>
+                                                    <span> <code>${docMethod.isStatic() ? 'static ' : ''}${docMethod.returnTypeDocUrl}</code></span>
                                                 </td>
                                                 <td>
-                                                    <code><strong><a href="#${method.name}(${method.parametersSignature})">${method.name}</a></strong>(${method.parametersDocUrl})</code>
+                                                    <code><strong><a href="#${docMethod.name}(${docMethod.parametersSignature})">${docMethod.name}</a></strong>(${docMethod.parametersDocUrl})</code>
                                                     <br>
-                                                    ${method.shortComment}
+                                                    ${docMethod.shortComment}
                                                 </td>
                                             </tr>
                                             <% } %>
                                         </tbody>
                                     </table>
-
                             </ul>
                         </li>
                     </ul>
@@ -96,45 +95,45 @@
                         <li class="blockList">
                             <h3>Methods Detail</h3>
 
-                            <% methods.eachWithIndex { method, i -> %>
-                            <a name="${method.name}(${method.parametersSignature})"><!-- --></a>
+                            <% docType.docMethods.eachWithIndex { docMethod, i -> %>
+                            <a name="${docMethod.name}(${docMethod.parametersSignature})"><!-- --></a>
 
                             <ul class="blockListLast">
                                 <li class="blockList">
 
-                                    <h4>public ${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl} <b>${method.name}</b>(${method.parametersDocUrl})</h4>
+                                    <h4>public ${docMethod.isStatic() ? 'static ' : ''}${docMethod.returnTypeDocUrl} <b>${docMethod.name}</b>(${docMethod.parametersDocUrl})</h4>
 
-                                    <p>${method.comment}</p>
-                                    
-                                    <% if (method.parametersSignature) { %>
+                                    <p>${docMethod.comment}</p>
+
+                                    <% if (docMethod.parametersSignature) { %>
                                     <dl>
                                         <dt><b>Parameters:</b></dt>
-                                        <% method.parameters.each { param -> %>
-                                        <dd><code>${param.name}</code> - ${param.comment}.</dd>
+                                        <% docMethod.parameterComments.each { name, comment -> %>
+                                        <dd><code>${name}</code> - ${comment}</dd>
                                         <% } %>
                                     </dl>
                                     <%
                                     } %>
 
-                                    <% if (method.returnComment) { %>
+                                    <% if (docMethod.returnComment) { %>
                                     <dl>
                                         <dt><b>Returns:</b></dt>
-                                        <dd>${method.returnComment}</dd>
+                                        <dd>${docMethod.returnComment}</dd>
                                     </dl>
                                     <% } %>
 
-                                    <%if (method.since) { %>
+                                    <%if (docMethod.sinceComment) { %>
                                     <dl>
                                         <dt><b>Since:</b></dt>
-                                        <dd>${method.since}</dd>
+                                        <dd>${docMethod.sinceComment}</dd>
                                     </dl>
                                     <%}%>
 
-                                    <% if (method.seeComments) { %>
+                                    <% if (docMethod.seeComments) { %>
                                     <dl>
-                                        <dt><b>See:</b></dt>
-                                        <% method.seeComments.each { param -> %>
-                                        <dd>${param.target}.</dd>
+                                        <dt><b>See Also:</b></dt>
+                                        <% docMethod.seeComments.each { %>
+                                        <dd>${it}</dd>
                                         <% }%>
                                     </dl>
                                     <% } %>
