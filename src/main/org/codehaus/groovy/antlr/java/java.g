@@ -1763,7 +1763,7 @@ SL_COMMENT
             // '\uffff' means the EOF character.
             ~('\n'|'\r'|'\uffff')
         )*
-		{$setType(Token.SKIP); newline();}
+		{$setType(Token.SKIP);}
 	;
 
 // multiple-line comments
