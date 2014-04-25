@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 package org.codehaus.groovy.tools
 
 import groovy.grape.Grape
+import groovy.transform.Field
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
 import org.apache.commons.cli.*
 
 //commands
 
-install = {arg, cmd ->
+@Field install = {arg, cmd ->
     if (arg.size() > 5 || arg.size() < 3) {
         println 'install requires two to four arguments: <group> <module> [<version>] [<classifier>]'
         return
@@ -51,7 +52,7 @@ install = {arg, cmd ->
     }
 }
 
-uninstall = {arg, cmd ->
+@Field uninstall = {arg, cmd ->
     if (arg.size() != 4) {
         println 'uninstall requires three arguments: <group> <module> <version>'
         // TODO make version optional? support classifier?
@@ -88,7 +89,7 @@ uninstall = {arg, cmd ->
     Grape.instance.uninstallArtifact(group, module, ver)
 }
 
-list = {arg, cmd ->
+@Field list = {arg, cmd ->
     println ""
 
     int moduleCount = 0
@@ -110,7 +111,7 @@ list = {arg, cmd ->
     println "$versionCount Grape module versions cached"
 }
 
-resolve = {arg, cmd ->
+@Field resolve = {arg, cmd ->
     Options options = new Options();
     options.addOption(
         OptionBuilder.hasArg(false)
@@ -210,7 +211,9 @@ resolve = {arg, cmd ->
     }
 }
 
-def commands = [
+@Field help = { arg, cmd -> grapeHelp() }
+
+@Field commands = [
     'install': [closure: install,
         shortHelp: 'Installs a particular grape'],
     'uninstall': [closure: uninstall,
@@ -218,11 +221,54 @@ def commands = [
     'list': [closure: list,
         shortHelp: 'Lists all installed grapes'],
     'resolve': [closure: resolve,
-        shortHelp: 'Enumerates the jars used by a grape']
+        shortHelp: 'Enumerates the jars used by a grape'],
+    'help': [closure: help,
+        shortHelp: 'Usage information']
 ]
 
+@Field grapeHelp = {
+    int spacesLen = commands.keySet().max {it.length()}.length() + 3
+    String spaces = ' ' * spacesLen
+
+    PrintWriter pw = new PrintWriter(binding.variables.out ?: System.out)
+    new HelpFormatter().printHelp(
+            pw,
+            80,
+            "grape [options] <command> [args]\n",
+            "options:",
+            options,
+            2,
+            4,
+            null, // footer
+            true);
+    pw.flush()
+
+    println ""
+    println "commands:"
+    commands.each {String k, v ->
+        println "  ${(k + spaces).substring(0, spacesLen)} $v.shortHelp"
+    }
+    println ""
+}
+
+@Field setupLogging = {int defaultLevel = 2 -> // = Message.MSG_INFO -> some parsing error :(
+    if (cmd.hasOption('q')) {
+        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_ERR))
+    } else if (cmd.hasOption('w')) {
+        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_WARN))
+    } else if (cmd.hasOption('i')) {
+        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_INFO))
+    } else if (cmd.hasOption('V')) {
+        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_VERBOSE))
+    } else if (cmd.hasOption('d')) {
+        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_DEBUG))
+    } else {
+        Message.setDefaultLogger(new DefaultMessageLogger(defaultLevel))
+    }
+}
+
 // command line parsing
-Options options = new Options();
+@Field Options options = new Options();
 
 options.addOption(
     OptionBuilder.withLongOpt("define")
@@ -284,48 +330,9 @@ options.addOption(
 );
 
 
-CommandLine cmd = new GroovyInternalPosixParser().parse(options, args, true);
+@Field CommandLine cmd
 
-grapeHelp = {
-    int spacesLen = commands.keySet().max {it.length()}.length() + 3
-    String spaces = ' ' * spacesLen
-
-    PrintWriter pw = new PrintWriter(binding.variables.out ?: System.out)
-    new HelpFormatter().printHelp(
-        pw,
-        80,
-        "grape [options] <command> [args]\n",
-        "options:",
-        options,
-        2,
-        4,
-        null, // footer
-        true);
-    pw.flush()
-
-    println ""
-    println "commands:"
-    commands.each {String k, v ->
-        println "  ${(k + spaces).substring(0, spacesLen)} $v.shortHelp"
-    }
-    println ""
-}
-
-setupLogging = {int defaultLevel = 2 -> // = Message.MSG_INFO -> some parsing error :(
-    if (cmd.hasOption('q')) {
-        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_ERR))
-    } else if (cmd.hasOption('w')) {
-        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_WARN))
-    } else if (cmd.hasOption('i')) {
-        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_INFO))
-    } else if (cmd.hasOption('V')) {
-        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_VERBOSE))
-    } else if (cmd.hasOption('d')) {
-        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_DEBUG))
-    } else {
-        Message.setDefaultLogger(new DefaultMessageLogger(defaultLevel))
-    }
-}
+cmd = new GroovyInternalPosixParser().parse(options, args, true);
 
 if (cmd.hasOption('h')) {
     grapeHelp()
