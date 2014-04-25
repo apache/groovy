@@ -16,6 +16,7 @@
 
 package groovy.transform.builder;
 
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -52,7 +53,13 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
     private static final Expression DEFAULT_INITIAL_VALUE = null;
 
-    public void build(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
+    public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
+        if (!(annotatedNode instanceof ClassNode)) {
+            transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME + " processing: building for " +
+                    annotatedNode.getClass().getSimpleName() + " not supported by " + getClass().getSimpleName(), annotatedNode);
+            return;
+        }
+        ClassNode buildee = (ClassNode) annotatedNode;
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;

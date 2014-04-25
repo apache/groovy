@@ -16,6 +16,7 @@
 
 package groovy.transform.builder;
 
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -60,8 +61,11 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
  * This strategy is used with the {@code @Builder) AST transform to create a builder helper class
- * for the fluent and type-safe creation of instances of a specified class.
- * You define classes which use this builder pattern as follows:
+ * for the fluent and type-safe creation of instances of a specified class. It is modelled roughly
+ * on the design outlined here:
+ * http://michid.wordpress.com/2008/08/13/type-safe-builder-pattern-in-java/
+ *
+ * You define classes which use the type-safe initializer pattern as follows:
  * <pre>
  * import groovy.transform.builder.*
  * import groovy.transform.*
@@ -76,7 +80,7 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * While it isn't required to do so, the benefit of this builder strategy comes in conjunction with static compilation. Typical usage is as follows:
  * <pre>
  * {@code @CompileStatic}
- * def method() {
+ * def main() {
  *     println new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21))
  * }
  * </pre>
@@ -106,7 +110,13 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private static final Expression DEFAULT_INITIAL_VALUE = null;
 
-    public void build(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
+    public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
+        if (!(annotatedNode instanceof ClassNode)) {
+            transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME + " processing: building for " +
+                    annotatedNode.getClass().getSimpleName() + " not supported by " + getClass().getSimpleName(), annotatedNode);
+            return;
+        }
+        ClassNode buildee = (ClassNode) annotatedNode;
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
