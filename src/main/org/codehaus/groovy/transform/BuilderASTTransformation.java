@@ -23,7 +23,9 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -54,18 +56,17 @@ public class BuilderASTTransformation extends AbstractASTTransformation {
         AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(anno.getClassNode())) return;
 
-        if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
-            if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
-
+        if (parent instanceof ClassNode || parent instanceof MethodNode) {
+            if (parent instanceof ClassNode && !checkNotInterface((ClassNode) parent, MY_TYPE_NAME)) return;
+            if (parent instanceof MethodNode && !checkStatic((MethodNode) parent, MY_TYPE_NAME)) return;
             final BuilderStrategy strategy = createBuilderStrategy(anno, source.getClassLoader());
             if (strategy == null) return;
-            strategy.build(this, cNode, anno);
+            strategy.build(this, parent, anno);
         }
     }
 
     public interface BuilderStrategy {
-        void build(BuilderASTTransformation transform, ClassNode cNode, AnnotationNode anno);
+        void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno);
     }
 
     public abstract static class AbstractBuilderStrategy implements BuilderStrategy {
@@ -163,6 +164,15 @@ public class BuilderASTTransformation extends AbstractASTTransformation {
                 this.type = type;
             }
         }
+    }
+
+    private boolean checkStatic(MethodNode mNode, String annotationName) {
+        if (!mNode.isStatic() && !mNode.isStaticConstructor() && !(mNode instanceof ConstructorNode)) {
+            addError("Error processing method '" + mNode.getName() + "'. " +
+                    annotationName + " not allowed for instance methods.", mNode);
+            return false;
+        }
+        return true;
     }
 
     private BuilderStrategy createBuilderStrategy(AnnotationNode anno, GroovyClassLoader loader) {

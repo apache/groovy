@@ -60,7 +60,7 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.BuilderStra
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE})
+@Target({ ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.BuilderASTTransformation")
 public @interface Builder {
 
