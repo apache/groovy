@@ -20,9 +20,11 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
@@ -31,8 +33,10 @@ import org.codehaus.groovy.transform.BuilderASTTransformation;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
@@ -46,6 +50,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIONS;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_PARAMS;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -54,12 +59,35 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     private static final Expression DEFAULT_INITIAL_VALUE = null;
 
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
-        if (!(annotatedNode instanceof ClassNode)) {
-            transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME + " processing: building for " +
-                    annotatedNode.getClass().getSimpleName() + " not supported by " + getClass().getSimpleName(), annotatedNode);
-            return;
+        if (annotatedNode instanceof ClassNode) {
+            buildClass(transform, (ClassNode) annotatedNode, anno);
+        } else if (annotatedNode instanceof MethodNode) {
+            buildMethod(transform, (MethodNode) annotatedNode, anno);
         }
-        ClassNode buildee = (ClassNode) annotatedNode;
+    }
+
+    public void buildMethod(BuilderASTTransformation transform, MethodNode mNode, AnnotationNode anno) {
+        if (transform.getMemberValue(anno, "includes") != null || transform.getMemberValue(anno, "includes") != null) {
+            transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
+                    " processing: includes/excludes only allowed on classes", anno);
+        }
+        String prefix = transform.getMemberStringValue(anno, "prefix", "");
+        if (unsupportedAttribute(transform, anno, "forClass")) return;
+        final int visibility = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
+        ClassNode buildee = mNode.getDeclaringClass();
+        String builderClassName = transform.getMemberStringValue(anno, "builderClassName", buildee.getName() + "Builder");
+        final String fullName = buildee.getName() + "$" + builderClassName;
+        ClassNode builder = new InnerClassNode(buildee, fullName, visibility, ClassHelper.OBJECT_TYPE);
+        buildee.getModule().addClass(builder);
+        buildee.addMethod(createBuilderMethod(transform, anno, builder));
+        for (Parameter parameter : mNode.getParameters()) {
+            builder.addField(createFieldCopy(buildee, parameter));
+            builder.addMethod(createBuilderMethodForProp(builder, new PropertyInfo(parameter.getName(), parameter.getType()), prefix));
+        }
+        builder.addMethod(createBuildMethodForMethod(transform, anno, buildee, mNode, mNode.getParameters()));
+    }
+
+    public void buildClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
@@ -75,9 +103,23 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         List<FieldNode> filteredFields = selectFieldsFromExistingClass(fields, includes, excludes);
         for (FieldNode fieldNode : filteredFields) {
             builder.addField(createFieldCopy(buildee, fieldNode));
-            builder.addMethod(createBuilderMethodForField(builder, fieldNode, prefix));
+            builder.addMethod(createBuilderMethodForProp(builder, new PropertyInfo(fieldNode.getName(), fieldNode.getType()), prefix));
         }
         builder.addMethod(createBuildMethod(transform, anno, buildee, filteredFields));
+    }
+
+    private MethodNode createBuildMethodForMethod(BuilderASTTransformation transform, AnnotationNode anno, ClassNode buildee, MethodNode mNode, Parameter[] params) {
+        String buildMethodName = transform.getMemberStringValue(anno, "buildMethodName", "build");
+        final BlockStatement body = new BlockStatement();
+        ClassNode returnType;
+        if (mNode instanceof ConstructorNode) {
+            returnType = newClass(buildee);
+            body.addStatement(returnS(ctorX(newClass(mNode.getDeclaringClass()), args(params))));
+        } else {
+            body.addStatement(returnS(callX(newClass(mNode.getDeclaringClass()), mNode.getName(), args(params))));
+            returnType = newClass(mNode.getReturnType());
+        }
+        return new MethodNode(buildMethodName, ACC_PUBLIC, returnType, NO_PARAMS, NO_EXCEPTIONS, body);
     }
 
     private static MethodNode createBuilderMethod(BuilderASTTransformation transform, AnnotationNode anno, ClassNode builder) {
@@ -92,20 +134,24 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         String buildMethodName = transform.getMemberStringValue(anno, "buildMethodName", "build");
         final BlockStatement body = new BlockStatement();
         body.addStatement(returnS(initializeInstance(buildee, fields, body)));
-        return new MethodNode(buildMethodName, ACC_PUBLIC, buildee, NO_PARAMS, NO_EXCEPTIONS, body);
+        return new MethodNode(buildMethodName, ACC_PUBLIC, newClass(buildee), NO_PARAMS, NO_EXCEPTIONS, body);
     }
 
-    private MethodNode createBuilderMethodForField(ClassNode builder, FieldNode fieldNode, String prefix) {
-        String fieldName = fieldNode.getName();
+    private MethodNode createBuilderMethodForProp(ClassNode builder, PropertyInfo pinfo, String prefix) {
+        String fieldName = pinfo.getName();
         String setterName = getSetterName(prefix, fieldName);
-        return new MethodNode(setterName, ACC_PUBLIC, newClass(builder), params(param(fieldNode.getType(), fieldName)), NO_EXCEPTIONS, block(
+        return new MethodNode(setterName, ACC_PUBLIC, newClass(builder), params(param(pinfo.getType(), fieldName)), NO_EXCEPTIONS, block(
                 stmt(assignX(propX(varX("this"), constX(fieldName)), varX(fieldName))),
                 returnS(varX("this", builder))
         ));
     }
 
+    private static FieldNode createFieldCopy(ClassNode buildee, Parameter param) {
+        return new FieldNode(param.getName(), ACC_PRIVATE, ClassHelper.make(param.getType().getName()), buildee, param.getInitialExpression());
+    }
+
     private static FieldNode createFieldCopy(ClassNode buildee, FieldNode fNode) {
-        return new FieldNode(fNode.getName(), fNode.getModifiers(), ClassHelper.make(fNode.getType().getName()), buildee, DEFAULT_INITIAL_VALUE);
+        return new FieldNode(fNode.getName(), ACC_PRIVATE, ClassHelper.make(fNode.getType().getName()), buildee, DEFAULT_INITIAL_VALUE);
     }
 
     private static List<FieldNode> selectFieldsFromExistingClass(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes) {

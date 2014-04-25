@@ -1090,6 +1090,18 @@ some of which are used in the example here:
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_default_custom,indent=0]
 ----
 
+This strategy also supports annotating static methods and constructors. In this case, the static method or constructor
+parameters become the properties to use for building purposes and in the case of static methods, the return type
+of the method becomes the target class being built. If you have more than one `@Builder` annotation used within
+a class (at either the class, method or constructor positions) then it is up to you to ensure that the generated
+helper classes and factory methods have unique names (i.e. no more than one can use the default name values).
+Here is an example highlighting method and constructor usage (and also illustrating the renaming required for unique names).
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_default_methods,indent=0]
+----
+
 The `forClass` annotation attribute is not supported for this strategy.
 
 .InitializerStrategy

@@ -963,6 +963,44 @@ def p = Person.maker().withFirstName("Robert").withLastName("Lewandowski").make(
 assert "$p.firstName $p.lastName" == "Robert Lewandowski"
 // end::builder_default_custom[]
         '''
+        assertScript '''
+// tag::builder_default_methods[]
+import groovy.transform.builder.*
+import groovy.transform.*
+
+@ToString
+@Builder
+class Person {
+  String first, last
+  int born
+
+  Person(){}
+
+  @Builder(builderClassName='MovieBuilder', builderMethodName='byRoleBuilder')
+  Person(String roleName) {
+     if (roleName == 'Jack Sparrow') {
+         this.first = 'Johnny'; this.last = 'Depp'; this.born = 1963
+     }
+  }
+
+  @Builder(builderClassName='NameBuilder', builderMethodName='nameBuilder', prefix='having', buildMethodName='fullName')
+  static String join(String first, String last) {
+      first + ' ' + last
+  }
+
+  @Builder(builderClassName='SplitBuilder', builderMethodName='splitBuilder')
+  static Person split(String name, int year) {
+      def parts = name.split(' ')
+      new Person(first: parts[0], last: parts[1], born: year)
+  }
+}
+
+assert Person.splitBuilder().name("Johnny Depp").year(1963).build().toString() == 'Person(Johnny, Depp, 1963)'
+assert Person.byRoleBuilder().roleName("Jack Sparrow").build().toString() == 'Person(Johnny, Depp, 1963)'
+assert Person.nameBuilder().havingFirst('Johnny').havingLast('Depp').fullName() == 'Johnny Depp'
+assert Person.builder().first("Johnny").last('Depp').born(1963).build().toString() == 'Person(Johnny, Depp, 1963)'
+// end::builder_default_methods[]
+        '''
     }
 
     void testBuilderInitializer() {

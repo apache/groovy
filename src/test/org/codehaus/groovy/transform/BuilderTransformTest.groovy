@@ -197,6 +197,20 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
+    void testDefaultBuilderInvalidIncludeWithMethodAnnotation() {
+        def message = shouldNotCompile """
+            import groovy.transform.builder.*
+
+            class NameUtil {
+                @Builder(includes='first')
+                static String join(String first, String last) {
+                    first + ' ' + last
+                }
+            }
+        """
+        assert message.contains("includes/excludes only allowed on classes")
+    }
+
     void testExternalBuilder() {
         assertScript """
             import groovy.transform.builder.*
