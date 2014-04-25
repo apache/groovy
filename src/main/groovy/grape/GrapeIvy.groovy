@@ -462,10 +462,10 @@ class GrapeIvy implements GrapeEngine {
                             for (int j=0; j<artifacts.length; j++) {
                                 def artifact = artifacts.item(j)
                                 def attrs = artifact.attributes
-                                def name = attrs.getNamedItem('name')+ "-$rev"
-                                def classifier = attrs.getNamedItemNS("m", "classifier")
+                                def name = attrs.getNamedItem('name').getTextContent() + "-$rev"
+                                def classifier = attrs.getNamedItemNS("m", "classifier")?.getTextContent()
                                 if (classifier) name += "-$classifier"
-                                name += ".${attrs.getNamedItem('ext')}"
+                                name += ".${attrs.getNamedItem('ext').getTextContent()}"
                                 def jarfile = new File(jardir, name)
                                 if (jarfile.exists()) {
                                     println "Deleting ${jarfile.name}"
