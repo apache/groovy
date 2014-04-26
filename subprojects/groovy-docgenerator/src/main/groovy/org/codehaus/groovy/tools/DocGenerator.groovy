@@ -191,15 +191,27 @@ class DocGenerator {
         packages.each {curPackage, packageClasses ->
             def packageName = curPackage ? curPackage : 'primitive-types'
             packageClasses.each {className ->
+                def simpleClassName = className.replaceAll('.*\\.', '')
+                def fullClassName = packageName + '.' + simpleClassName
+
+                // Class
+                index.add([
+                    'index': simpleClassName.getAt(0).toUpperCase(),
+                    'packageName': packageName,
+                    'simpleClassName': simpleClassName,
+                    'className': fullClassName,
+                    'shortComment': "", // empty because cannot get a comment of JDK
+                ])
+
+                // Methods
                 def listOfMethods = jdkEnhancedClasses[className]
                 listOfMethods.each {method ->
                     def methodName = method.name
-                    final String simpleClassName = className.replaceAll('.*\\.', '')
                     index.add([
                             'index': methodName.getAt(0).toUpperCase(),
                             'packageName': packageName,
                             'simpleClassName': simpleClassName,
-                            'class': packageName + '.' + simpleClassName,
+                            'className': fullClassName,
                             'method': method,
                             'parametersSignature': getParametersDecl(method),
                             'shortComment': linkify(getFirstSentence(getComment(method)), curPackage),
@@ -208,11 +220,10 @@ class DocGenerator {
             }
         }
         def indexMap = new TreeMap()
-        def methodNameComparator = [compare: {a, b ->
-            final String aMethodAndSignature = a.method.name + ' ' + getParametersDecl(a.method) + ' ' + a.class
-            final String bMethodAndSignature = b.method.name + ' ' + getParametersDecl(b.method) + ' ' + b.class
-
-            return aMethodAndSignature.compareTo(bMethodAndSignature)
+        def indexListComparator = [compare: {a, b ->
+            final String aSortKey = (a.method) ? (a.method.name + ' ' + getParametersDecl(a.method) + ' ' + a.className) : a.className
+            final String bSortKey = (b.method) ? (b.method.name + ' ' + getParametersDecl(b.method) + ' ' + b.className) : b.className
+            return aSortKey.compareTo(bSortKey)
         }] as Comparator
 
         for (indexEntry in index) {
@@ -221,7 +232,7 @@ class DocGenerator {
                 def indexEntryList = indexMap.get(key)
                 indexEntryList.add(indexEntry)
             } else {
-                final TreeSet indexEntryList = new TreeSet(methodNameComparator)
+                final TreeSet indexEntryList = new TreeSet(indexListComparator)
                 indexEntryList.add(indexEntry)
                 indexMap.put(key, indexEntryList)
             }
