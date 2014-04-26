@@ -62,7 +62,7 @@ class DocGenerator {
         sources.each {source ->
             def classes = source.getClasses()
             classes.each {aClass ->
-                methods.addAll(aClass.methods.findAll { !it.annotations.any { it.type.fullQualifiedName == 'java.lang.Deprecated' } })
+                methods.addAll(aClass.methods.findAll { !it.annotations.any { it.type.fullyQualifiedName == 'java.lang.Deprecated' } })
             }
         }
 
@@ -193,6 +193,7 @@ class DocGenerator {
             packageClasses.each {className ->
                 def simpleClassName = className.replaceAll('.*\\.', '')
                 def fullClassName = packageName + '.' + simpleClassName
+                def listOfMethods = jdkEnhancedClasses[className]
 
                 // Class
                 index.add([
@@ -200,11 +201,12 @@ class DocGenerator {
                     'packageName': packageName,
                     'simpleClassName': simpleClassName,
                     'className': fullClassName,
+                    // hack, don't have class info at this point but trace back through any method - TODO: refactor
+                    'classDesc': getClassDesc(listOfMethods[0], fullClassName),
                     'shortComment': "", // empty because cannot get a comment of JDK
                 ])
 
                 // Methods
-                def listOfMethods = jdkEnhancedClasses[className]
                 listOfMethods.each {method ->
                     def methodName = method.name
                     index.add([
@@ -212,6 +214,7 @@ class DocGenerator {
                             'packageName': packageName,
                             'simpleClassName': simpleClassName,
                             'className': fullClassName,
+                            'classDesc': getClassDesc(method, fullClassName),
                             'method': method,
                             'parametersSignature': getParametersDecl(method),
                             'shortComment': linkify(getFirstSentence(getComment(method)), curPackage),
@@ -238,6 +241,14 @@ class DocGenerator {
             }
         }
         return indexMap
+    }
+
+    private String getClassDesc(methodToSearchBy, fullClassName) {
+        // TODO handle arrays?
+        def foundDgmMethodForClass = methodToSearchBy.parentClass.methods.find {
+            it.parameters.size() > 0 && it.parameters[0].type.javaClass.fullyQualifiedName == fullClassName
+        }
+        (foundDgmMethodForClass && foundDgmMethodForClass.parameters[0]?.type?.javaClass?.interface) ? 'interface' : 'class'
     }
 
     private getFirstSentence(text) {
@@ -287,6 +298,7 @@ class DocGenerator {
 
         def binding = [
                 className: aClass.replaceAll(/.*\./, ''),
+                classDesc: getClassDesc(listOfMethods[0], aClass).capitalize(),
                 packageName: curPackage,
                 methods: methods,
                 title: TITLE
@@ -329,9 +341,11 @@ class DocGenerator {
             curPackage.split('\\.').size().times { apiBaseUrl += '../'}
             title = "GDK enhancement for ${target[0]}"
         } else if (type.startsWith("groovy") || type.startsWith("org.codehaus.groovy")) {
+            // TODO don't hardcode
             apiBaseUrl = "http://groovy.codehaus.org/gapi/"
             title = "Groovy class in $packageName"
         } else {
+            // TODO don't hardcode
             apiBaseUrl = "http://docs.oracle.com/javase/7/docs/api/"
             title = "JDK class in $packageName"
         }
@@ -419,6 +433,7 @@ class DocGenerator {
      * Main entry point.
      */
     static void main(args) {
+        // TODO don't hardcode
         def outFolder = new File("target/html/groovy-jdk")
         outFolder.mkdirs()
         def start = System.currentTimeMillis()

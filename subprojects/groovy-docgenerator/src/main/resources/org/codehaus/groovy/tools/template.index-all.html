@@ -42,10 +42,10 @@ function asd()
             <% final String classUrl = it.className.replaceAll('\\.','/') + '.html' %>
             <% if (it.method) { %>
             <% final String methodUrl = classUrl + '#' + it.method.name + '(' + it.parametersSignature + ')' %>
-            <dt><a href="${methodUrl}"><b>${it.method.name}(${it.parametersSignature})</b></a> - Method in class ${it.packageName}.<a href="${classUrl}">${it.simpleClassName}</a>
+            <dt><a href="${methodUrl}"><b>${it.method.name}(${it.parametersSignature})</b></a> - Method in ${it.classDesc} ${it.packageName}.<a href="${classUrl}">${it.simpleClassName}</a>
             </dt>
             <% } else { %>
-            <dt><a href="${classUrl}"><b>${it.simpleClassName}</b></a> - Class in ${it.packageName}
+            <dt><a href="${classUrl}"><b>${it.simpleClassName}</b></a> - ${it.classDesc} in ${it.packageName}
             </dt>
             <% } %>
             <dd>
