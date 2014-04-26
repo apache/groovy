@@ -66,8 +66,6 @@ public class SecurityTest extends SecurityTestSupport {
     }
 
     public void testClosureListenerTest() {
-        //if (System.getProperty("java.version").startsWith("1.5") && notYetImplemented()) return;
-        if (System.getProperty("java.version").startsWith("1.5")) return;
         assertExecute(new File("src/test/groovy/ClosureListenerTest.groovy"), null);
     }
 

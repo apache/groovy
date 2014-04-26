@@ -430,23 +430,16 @@ apply from: 'gradle/assemble.gradle'
 apply from: 'gradle/upload.gradle'
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
-if (!JavaVersion.current().java6Compatible) {
-    // do nothing on JDK 5 as sardine is built for Java 6
-    logger.warn 'You must run on JDK 6+ to be able to deploy to codehaus.'
-} else {
-    apply from: 'gradle/codehaus.gradle'
-}
 
 // If a local configuration file for tweaking the build is present, apply it
 if (file('user.gradle').exists()) {
     apply from: 'user.gradle'
 }
 
-// produce warning if running on 1.5 or 1.6
-if (!JavaVersion.current().java6Compatible) {
+if (!JavaVersion.current().java7Compatible) {
     logger.lifecycle '''
     **************************************** WARNING **********************************************
-    ****** You are running the build with an older JDK. NEVER try to release with 1.5 or 1.6 ******
+    ****** You are running the build with an older JDK. NEVER try to release with 1.6.       ******
     ****** You must use a JDK 1.7+ in order to compile all features of the language.         ******
     ***********************************************************************************************
 '''
