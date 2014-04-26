@@ -666,7 +666,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Printf to a console (Only works with JDK1.5 or later).
+     * Printf to a console.
      *
      * @param self   any Object
      * @param format a format string
@@ -681,7 +681,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sprintf to a string (Only works with JDK1.5 or later).
+     * Sprintf to a string.
      *
      * @param self   any Object
      * @param format a format string

@@ -36,7 +36,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * This method is called by the ++ operator for enums. It will invoke
      * Groovy's default next behaviour for enums do not have their own
-     * next method (Only works with JDK1.5 or later).
+     * next method.
      *
      * @param self an Enum
      * @return the next defined enum from the enum class
@@ -57,7 +57,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * This method is called by the -- operator for enums. It will invoke
      * Groovy's default previous behaviour for enums that do not have
-     * their own previous method (Only works with JDK1.5 or later).
+     * their own previous method.
      *
      * @param self an Enum
      * @return the previous defined enum from the enum class
@@ -76,8 +76,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Standard Groovy size() method for StringBuilders
-     * (Only works with JDK1.5 or later).
+     * Standard Groovy size() method for StringBuilders.
      *
      * @param builder a StringBuilder
      * @return the length of the StringBuilder
@@ -88,7 +87,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Overloads the left shift operator to provide an easy way to append multiple
-     * objects as string representations to a StringBuilder (Only works with JDK1.5 or later).
+     * objects as string representations to a StringBuilder.
      *
      * @param self  a StringBuilder
      * @param value a value to append
@@ -102,7 +101,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the range subscript operator for StringBuilder (Only works with JDK1.5 or later).
+     * Support the range subscript operator for StringBuilder.
      * Index values are treated as characters within the builder.
      *
      * @param self  a StringBuilder
@@ -115,7 +114,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the range subscript operator for StringBuilder (Only works with JDK1.5 or later).
+     * Support the range subscript operator for StringBuilder.
      *
      * @param self  a StringBuilder
      * @param range a Range
@@ -127,7 +126,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Appends a String to this StringBuilder (Only works with JDK1.5 or later).
+     * Appends a String to this StringBuilder.
      *
      * @param self  a StringBuilder
      * @param value a String
