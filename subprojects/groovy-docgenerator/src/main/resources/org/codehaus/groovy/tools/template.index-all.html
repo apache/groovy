@@ -38,30 +38,20 @@ function asd()
         <A NAME="_${indexMapEntry.key}_"><!-- --></A>
         <H2><B>${indexMapEntry.key}</B></H2>
         <DL>
-            <!--
-            <DT><A HREF="com/thoughtworks/qdox/model/AbstractJavaEntity.html">
-            <B>AbstractJavaEntity</B></A> 
-            - class com.thoughtworks.qdox.model.
-            <A HREF="com/thoughtworks/qdox/model/AbstractJavaEntity.html">AbstractJavaEntity</A>.
-            
-            <DT><A HREF="com/thoughtworks/qdox/model/ClassLibrary.html#add(java.lang.String)"><B>add(String)</B></A> - 
-            Method in class com.thoughtworks.qdox.model.<A HREF="com/thoughtworks/qdox/model/ClassLibrary.html">ClassLibrary</A>
-            <DD>&nbsp;
-            -->
-            
-            <% indexMapEntry.value.each{ it -> %>
-            <DT><% if (it.'method') { 
-            final String href1 = it.class.replaceAll('\\.','/') + '.html'
-            final String href2 = href1 + 
-            '#' + it.method.name + '(' + it.parametersSignature + ')'
-            %><a href="${href2}"><b>${it.method.name}(${it.parametersSignature})</b></a> - 
-            Method in class ${it.packageName}.<a href="${href1}">${it.simpleClassName}</a>
+            <% indexMapEntry.value.each { it -> %>
+            <% final String classUrl = it.className.replaceAll('\\.','/') + '.html' %>
+            <% if (it.method) { %>
+            <% final String methodUrl = classUrl + '#' + it.method.name + '(' + it.parametersSignature + ')' %>
+            <dt><a href="${methodUrl}"><b>${it.method.name}(${it.parametersSignature})</b></a> - Method in class ${it.packageName}.<a href="${classUrl}">${it.simpleClassName}</a>
+            </dt>
+            <% } else { %>
+            <dt><a href="${classUrl}"><b>${it.simpleClassName}</b></a> - Class in ${it.packageName}
+            </dt>
             <% } %>
-            </DT>
-            <DD>
+            <dd>
             ${it.shortComment}
-            </DD>
-            &nbsp;            
+            </dd>
+            &nbsp;
             <% } %>
         </DL>
         <% } %>
