@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -32,8 +31,8 @@ import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
@@ -55,11 +54,11 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         if (!MY_TYPE.equals(node.getClassNode())) return;
 
         if (parent instanceof ClassNode) {
-            processClass((ClassNode) parent, source);
+            processClass((ClassNode) parent);
         }
     }
 
-    private void processClass(ClassNode cNode, SourceUnit source) {
+    private void processClass(ClassNode cNode) {
         if (cNode.isInterface()) {
             addError("Error processing interface '" + cNode.getName() +
                     "'. " + MY_TYPE_NAME + " only allowed for classes.", cNode);
@@ -72,7 +71,7 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
             // so force that order here. The transformation is benign on an already
             // processed node so processing twice in any order won't matter bar
             // a very small time penalty.
-            processClass(sNode, source);
+            processClass(sNode);
         }
         for (ConstructorNode cn : sNode.getDeclaredConstructors()) {
             addConstructorUnlessAlreadyExisting(cNode, cn);
@@ -92,9 +91,7 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
             theArgs.add(varX(p.getName(), p.getType()));
         }
         if (isExisting(classNode, params)) return;
-        BlockStatement body = new BlockStatement();
-        body.addStatement(stmt(ctorX(ClassNode.SUPER, args(theArgs))));
-        classNode.addConstructor(consNode.getModifiers(), params, consNode.getExceptions(), body);
+        classNode.addConstructor(consNode.getModifiers(), params, consNode.getExceptions(), block(ctorSuperS(args(theArgs))));
     }
 
     private boolean isExisting(ClassNode classNode, Parameter[] params) {
