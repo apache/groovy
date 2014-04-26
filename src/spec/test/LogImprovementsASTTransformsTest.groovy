@@ -119,8 +119,6 @@ g.greet()
     }
 
     void testLog4j2ASTTransformation() {
-        if (testEnabled) {
-            try {
                 assertScript '''
     // tag::log4j2_spec[]
     @groovy.util.logging.Log4j2
@@ -153,10 +151,6 @@ g.greet()
     def g = new Greeter()
     g.greet()
     '''
-            } catch (UnsupportedClassVersionError e) {
-                // running on older, unsupported, JDK
-            }
-        }
     }
 
     void testSlf4jASTTransformation() {
