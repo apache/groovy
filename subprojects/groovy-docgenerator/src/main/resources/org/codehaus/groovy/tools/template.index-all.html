@@ -45,7 +45,7 @@ function asd()
             <dt><a href="${methodUrl}"><b>${it.method.name}(${it.parametersSignature})</b></a> - Method in ${it.classDesc} ${it.packageName}.<a href="${classUrl}">${it.simpleClassName}</a>
             </dt>
             <% } else { %>
-            <dt><a href="${classUrl}"><b>${it.simpleClassName}</b></a> - ${it.classDesc} in ${it.packageName}
+            <dt><a href="${classUrl}"><b>${it.simpleClassName}</b></a> - ${it.classDesc.capitalize()} in ${it.packageName}
             </dt>
             <% } %>
             <dd>
