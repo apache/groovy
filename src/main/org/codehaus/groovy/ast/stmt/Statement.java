@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,30 +17,45 @@ package org.codehaus.groovy.ast.stmt;
 
 import org.codehaus.groovy.ast.ASTNode;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * Base class for any statement
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class Statement extends ASTNode {
 
-    private String statementLabel;
+    private List<String> statementLabels;
 
     public Statement() {
-        statementLabel = null;
+        statementLabels = null;
     }
 
+    public List<String> getStatementLabels() {
+        return statementLabels;
+    }
+
+    // TODO @Deprecated
     public String getStatementLabel() {
-        return statementLabel;
+        // last label by default which is added first by APP
+        return statementLabels == null ? null : statementLabels.get(0);
     }
 
-    public void setStatementLabel( String label ) {
-        statementLabel = label;
+    // TODO @Deprecated
+    public void setStatementLabel(String label) {
+        if (statementLabels == null) statementLabels = new LinkedList<String>();
+        statementLabels.add(label);
+    }
+
+    public void addStatementLabel(String label) {
+        if (statementLabels == null) statementLabels = new LinkedList<String>();
+        statementLabels.add(label);
     }
 
     public boolean isEmpty() {
         return false;
     }
-    
+
 }

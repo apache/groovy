@@ -254,7 +254,7 @@ public class CompileStack implements Opcodes {
     }
 
     public BytecodeVariable getVariable(String variableName ) {
-        return getVariable(variableName,true);
+        return getVariable(variableName, true);
     }
 
     /**
@@ -442,20 +442,49 @@ public class CompileStack implements Opcodes {
      * Should be called when descending into a loop that defines
      * also a scope. Calls pushVariableScope and prepares labels
      * for a loop structure. Creates a element for the state stack
-     * so pop has to be called later
+     * so pop has to be called later, TODO: @Deprecate
      */
     public void pushLoop(VariableScope el, String labelName) {
         pushVariableScope(el);
-        initLoopLabels(labelName);
+        continueLabel = new Label();
+        breakLabel = new Label();
+        if (labelName != null) {
+            initLoopLabels(labelName);
+        }
+    }
+
+    /**
+     * Should be called when descending into a loop that defines
+     * also a scope. Calls pushVariableScope and prepares labels
+     * for a loop structure. Creates a element for the state stack
+     * so pop has to be called later
+     */
+    public void pushLoop(VariableScope el, List<String> labelNames) {
+        pushVariableScope(el);
+        continueLabel = new Label();
+        breakLabel = new Label();
+        if (labelNames != null) {
+            for (String labelName : labelNames) {
+                initLoopLabels(labelName);
+            }
+        }
     }
 
     private void initLoopLabels(String labelName) {
+        namedLoopBreakLabel.put(labelName,breakLabel);
+        namedLoopContinueLabel.put(labelName,continueLabel);
+    }
+
+    /**
+     * Should be called when descending into a loop that does
+     * not define a scope. Creates a element for the state stack
+     * so pop has to be called later, TODO: @Deprecate
+     */
+    public void pushLoop(String labelName) {
+        pushState();
         continueLabel = new Label();
         breakLabel = new Label();
-        if (labelName!=null) {
-            namedLoopBreakLabel.put(labelName,breakLabel);
-            namedLoopContinueLabel.put(labelName,continueLabel);
-        }
+        initLoopLabels(labelName);
     }
 
     /**
@@ -463,9 +492,15 @@ public class CompileStack implements Opcodes {
      * not define a scope. Creates a element for the state stack
      * so pop has to be called later
      */
-    public void pushLoop(String labelName) {
+    public void pushLoop(List<String> labelNames) {
         pushState();
-        initLoopLabels(labelName);
+        continueLabel = new Label();
+        breakLabel = new Label();
+        if (labelNames != null) {
+            for (String labelName : labelNames) {
+                initLoopLabels(labelName);
+            }
+        }
     }
 
     /**

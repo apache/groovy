@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.stmt.WhileStatement;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * This class checks the handling of labels in the AST
@@ -64,20 +65,24 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
     }
 
     public void visitStatement(Statement statement) {
-        String label = statement.getStatementLabel();
+        List<String> labels = statement.getStatementLabels();
 
-        if (label != null) {
-            for (Iterator<BreakStatement> iter = breakLabels.iterator(); iter.hasNext(); ) {
-                BreakStatement element = iter.next();
-                if (element.getLabel().equals(label)) iter.remove();
+        if (labels != null) {
+            for (String label : labels) {
+                if (breakLabels != null) {
+                    for (Iterator<BreakStatement> iter = breakLabels.iterator(); iter.hasNext(); ) {
+                        if (iter.next().getLabel().equals(label)) iter.remove();
+                    }
+                }
+                if (continueLabels != null) {
+                    for (Iterator<ContinueStatement> iter = continueLabels.iterator(); iter.hasNext(); ) {
+                        if (iter.next().getLabel().equals(label)) iter.remove();
+                    }
+                }
+                if (visitedLabels != null) {
+                    visitedLabels.add(label);
+                }
             }
-
-            for (Iterator<ContinueStatement> iter = continueLabels.iterator(); iter.hasNext(); ) {
-                ContinueStatement element = iter.next();
-                if (element.getLabel().equals(label)) iter.remove();
-            }
-
-            visitedLabels.add(label);
         }
 
         super.visitStatement(statement);

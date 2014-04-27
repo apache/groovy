@@ -59,7 +59,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
 
-        compileStack.pushLoop(loop.getVariableScope(), loop.getStatementLabel());
+        compileStack.pushLoop(loop.getVariableScope(), loop.getStatementLabels());
 
         // Declare the loop counter.
         BytecodeVariable variable = compileStack.defineVariable(loop.getVariable(), false);
