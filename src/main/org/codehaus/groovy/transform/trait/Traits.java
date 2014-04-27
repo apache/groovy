@@ -63,9 +63,6 @@ public abstract class Traits {
     static final String FIELD_PREFIX = "$ins";
     static final String PUBLIC_FIELD_PREFIX = "$0";
     static final String PRIVATE_FIELD_PREFIX = "$1";
-
-
-
     static final String SUPER_TRAIT_METHOD_PREFIX = "trait$super$";
 
     static String fieldHelperClassName(final ClassNode traitNode) {
@@ -234,9 +231,12 @@ public abstract class Traits {
      * @param origName the name of a method
      * @return null if the name doesn't start with the super trait prefix, otherwise the name without the prefix
      */
-    public static String getNameWithoutSuperTrait(String origName) {
-        if (origName.startsWith(SUPER_TRAIT_METHOD_PREFIX)) {
-            return origName.substring(SUPER_TRAIT_METHOD_PREFIX.length());
+    public static String[] decomposeSuperCallName(String origName) {
+        if (origName.contains(SUPER_TRAIT_METHOD_PREFIX)) {
+            int endIndex = origName.indexOf(SUPER_TRAIT_METHOD_PREFIX);
+            String tName = origName.substring(0, endIndex).replace('_','.').replace("..","_");
+            String fName = origName.substring(endIndex+SUPER_TRAIT_METHOD_PREFIX.length());
+            return new String[]{tName, fName};
         }
         return null;
     }
@@ -259,6 +259,10 @@ public abstract class Traits {
             collectAllInterfacesReverseOrder(anInterface, interfaces);
         }
         return interfaces;
+    }
+
+    static String getSuperTraitMethodName(ClassNode trait, String method) {
+        return trait.getName().replace("_","__").replace('.','_')+SUPER_TRAIT_METHOD_PREFIX+method;
     }
 
     /**

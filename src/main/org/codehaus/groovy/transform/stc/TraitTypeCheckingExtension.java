@@ -52,29 +52,27 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
 
     @Override
     public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCall call) {
-        String nameWithoutPrefix = Traits.getNameWithoutSuperTrait(name);
-        if (nameWithoutPrefix != null && argumentTypes.length > 0) {
-            ClassNode firstArgType = argumentTypes[0];
-            if (ClassHelper.CLASS_Type.equals(firstArgType) && StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType(firstArgType)) {
-                return convertToDynamicCall(call, receiver, nameWithoutPrefix, argumentTypes);
-            }
+        String[] decomposed = Traits.decomposeSuperCallName(name);
+        if (decomposed != null) {
+            return convertToDynamicCall(call, receiver, decomposed, argumentTypes);
         }
         return NOTFOUND;
     }
 
-    private List<MethodNode> convertToDynamicCall(MethodCall call, ClassNode receiver, String name, ClassNode[] argumentTypes) {
+    private List<MethodNode> convertToDynamicCall(MethodCall call, ClassNode receiver, String[] decomposed, ClassNode[] argumentTypes) {
+        String traitName = decomposed[0];
+        String name = decomposed[1];
         LinkedHashSet<ClassNode> traitsAsList = Traits.collectAllInterfacesReverseOrder(receiver, new LinkedHashSet<ClassNode>());
         ClassNode[] implementedTraits = traitsAsList.toArray(new ClassNode[traitsAsList.size()]);
-        ClassNode currentTrait = argumentTypes[0].getGenericsTypes()[0].getType();
         ClassNode nextTrait = null;
         for (int i = 0; i < implementedTraits.length - 1; i++) {
             ClassNode implementedTrait = implementedTraits[i];
-            if (implementedTrait.equals(currentTrait)) {
+            if (implementedTrait.getName().equals(traitName)) {
                 nextTrait = implementedTraits[i + 1];
             }
         }
-        ClassNode[] newArgs = new ClassNode[argumentTypes.length - 1];
-        System.arraycopy(argumentTypes, 1, newArgs, 0, newArgs.length);
+        ClassNode[] newArgs = new ClassNode[argumentTypes.length];
+        System.arraycopy(argumentTypes, 0, newArgs, 0, newArgs.length);
         ClassNode inferredReturnType = inferTraitMethodReturnType(nextTrait, name, newArgs);
 
         return Arrays.asList(makeDynamic(call, inferredReturnType));

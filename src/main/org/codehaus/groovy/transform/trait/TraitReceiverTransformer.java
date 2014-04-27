@@ -257,7 +257,6 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
         Expression arguments = transform(call.getArguments());
         ArgumentListExpression superCallArgs = new ArgumentListExpression();
-        superCallArgs.addExpression(new ClassExpression(traitClass));
         if (arguments instanceof ArgumentListExpression) {
             ArgumentListExpression list = (ArgumentListExpression) arguments;
             for (Expression expression : list) {
@@ -268,7 +267,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         }
         MethodCallExpression transformed = new MethodCallExpression(
                 weaved,
-                Traits.SUPER_TRAIT_METHOD_PREFIX+method,
+                Traits.getSuperTraitMethodName(traitClass, method),
                 superCallArgs
         );
         transformed.setSourcePosition(call);
