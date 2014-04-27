@@ -74,6 +74,17 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
     }
 
 
+    public void testParseThenLoadByName() {
+        def loader = new GroovyClassLoader()
+        def clazz = loader.parseClass("println 'howdy'")
+        assert clazz == loader.loadClass(clazz.name)
+    }
+
+    public void testParseThenLoadByNameWeak() {
+        def loader = new GroovyClassLoader()
+        assert null != loader.loadClass(loader.parseClass("println 'howdy'").name)
+    }
+
     public void testClassNotFoundIsNotHidden() {
         def paths = []
         def loader = this.class.classLoader
