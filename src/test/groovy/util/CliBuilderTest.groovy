@@ -440,6 +440,19 @@ usage: groovy
         assert options.arguments() == ['bar', 'foo', '@baz']
     }
 
+    void testArgumentFileExpansionArgOrdering() {
+        def cli = new CliBuilder(usage: 'test usage')
+        def args = ['one', '@temp1.args', 'potato', '@temp2.args', 'four']
+        def temp1 = new File('temp1.args')
+        temp1.deleteOnExit()
+        temp1.text = 'potato two'
+        def temp2 = new File('temp2.args')
+        temp2.deleteOnExit()
+        temp2.text = 'three potato'
+        def options = cli.parse(args)
+        assert options.arguments() == 'one potato two potato three potato four'.split()
+    }
+
     void testArgumentFileExpansionTurnedOff() {
         def cli = new CliBuilder(usage: 'test usage', expandArgumentFiles:false)
         cli.h(longOpt: 'help', 'usage information')
