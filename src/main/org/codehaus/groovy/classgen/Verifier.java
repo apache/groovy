@@ -1369,9 +1369,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private Parameter[] cleanParameters(Parameter[] parameters) {
         Parameter[] params = new Parameter[parameters.length];
         for (int i = 0; i < params.length; i++) {
-            params[i] = new Parameter(parameters[i].getType().getPlainNodeReference(), parameters[i].getName());
+            params[i] = new Parameter(cleanType(parameters[i].getType()), parameters[i].getName());
         }
         return params;
+    }
+
+    private static ClassNode cleanType(ClassNode type) {
+        // todo: should this be directly handled by getPlainNodeReference?
+        if (type.isArray()) return cleanType(type.getComponentType()).makeArray();
+        return type.getPlainNodeReference();
     }
 
     private void storeMissingCovariantMethods(Collection methods, MethodNode method, Map methodsToAdd, Map genericsSpec) {
