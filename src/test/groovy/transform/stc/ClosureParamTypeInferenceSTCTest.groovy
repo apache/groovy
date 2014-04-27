@@ -1183,4 +1183,20 @@ void foo(@ClosureParams(value = FromString, options = "java.lang.Number")
 foo { Integer i -> println i }
 ''', 'Expected parameter of type java.lang.Number but got java.lang.Integer'
     }
+
+    void testGroovy6729() {
+        assertScript '''import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.FirstParam
+
+    static <T> List<T> callee01(List<T>self, @ClosureParams(FirstParam.FirstGenericType) Closure c) {
+        self.each {
+            c.call(it)
+        }
+        return self
+    }
+        callee01(["a","b","c"]) { a ->
+            println(a.toUpperCase()) // [Static type checking] - Cannot find matching method java.lang.Object#toUpperCase(). Please check if the declared type is right and if the method exists.
+        }
+    '''
+    }
 }
