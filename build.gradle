@@ -156,7 +156,9 @@ dependencies {
     compile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
     }
-    runtime "org.codehaus.gpars:gpars:$gparsVersion"
+    runtime("org.codehaus.gpars:gpars:$gparsVersion") {
+        exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
+    }
     testCompile "jmock:jmock:$jmockVersion"
     testCompile "jmock:jmock-cglib:$jmockVersion"
     testCompile "xmlunit:xmlunit:$xmlunitVersion"
