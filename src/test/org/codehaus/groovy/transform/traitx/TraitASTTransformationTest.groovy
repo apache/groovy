@@ -1817,9 +1817,9 @@ class BasicIntQueue implements IntQueue{
 class Sub extends BasicIntQueue implements Incrementing, Filtering {}
 
 def queue = new Sub()
-queue.put(-1)
-queue.put(0)
-queue.put(1)
+//queue.put(-1) // filtering -> sink
+queue.put(0) // filtering ok -> incrementing.put -> 1
+queue.put(1)  // filtering ok -> goes to incrementing.put -> 2
 assert queue.get() == 1
 assert queue.get() == 2
 assert queue.toString() == "[]"
@@ -1827,9 +1827,9 @@ assert queue.toString() == "[]"
 class Sub2 extends BasicIntQueue implements Filtering, Incrementing {}
 
 def queue2 = new Sub2()
-queue2.put(-1)
-queue2.put(0)
-queue2.put(1)
+queue2.put(-1) // incrementing -> put(0) -> filtering ok -> 0
+queue2.put(0) // incrementing -> put(1) -> filtering ok -> 1
+queue2.put(1) // incrementing -> put(2) -> filtering ok -> 2
 assert queue2.get() == 0
 assert queue2.get() == 1
 assert queue2.get() == 2
@@ -1860,17 +1860,17 @@ class BasicIntQueue implements IntQueue{
 }
 
 def queue = new BasicIntQueue().withTraits Incrementing, Filtering
-queue.put(-1)
-queue.put(0)
-queue.put(1)
+queue.put(-1) // filtering -> skink
+queue.put(0) // filtering ok -> incrementing -> [1]
+queue.put(1) // filtering ok -> incrementing -> [1,2]
 assert queue.get() == 1
 assert queue.get() == 2
 assert queue.proxyTarget.toString() == "[]"
 
 def queue2 = new BasicIntQueue().withTraits Filtering, Incrementing
-queue2.put(-1)
-queue2.put(0)
-queue2.put(1)
+queue2.put(-1) // incrementing -> 0 -> filtering -> ok -> [0]
+queue2.put(0) // incrementing -> 1 -> filtering ok -> [0,1]
+queue2.put(1) // incrementing -> 2 -> filtering ok -> [0,1,2]
 assert queue2.get() == 0
 assert queue2.get() == 1
 assert queue2.get() == 2
@@ -1920,6 +1920,38 @@ trait B extends A {
     int foo(int x) { 2*super.foo(x)}
 }
 class C implements B {}
+def c = new C()
+assert c.foo(2) == 6
+'''
+    }
+
+    void testStaticallyCompiledTraitWithCallToSuperInPackage() {
+        assertScript '''package blah
+@groovy.transform.CompileStatic
+trait A {
+    int foo(int x) { 1+x }
+}
+@groovy.transform.CompileStatic
+trait B extends A {
+    int foo(int x) { 2*super.foo(x)}
+}
+class C implements B {}
+def c = new C()
+assert c.foo(2) == 6
+'''
+    }
+
+    void testStaticallyCompiledTraitWithCallToSuperInPackageAndUnderscoreInClassName() {
+        assertScript '''package blah
+@groovy.transform.CompileStatic
+trait A {
+    int foo(int x) { 1+x }
+}
+@groovy.transform.CompileStatic
+trait B_B extends A {
+    int foo(int x) { 2*super.foo(x)}
+}
+class C implements B_B {}
 def c = new C()
 assert c.foo(2) == 6
 '''
@@ -2008,6 +2040,48 @@ trait Bottom<X> extends Top<X> {}
 class A implements Bottom<Integer> {}
 def a = new A()
 assert a.self(15) == 15
+'''
+    }
+
+    void testSuperCallInTraitAndDeepHierarchy() {
+        assertScript '''
+interface IntQueue {
+    Integer get()
+    void put(Integer x)
+}
+
+trait Incrementing/* implements IntQueue */{
+    void put(Integer x) {
+        println 'Incrementing'
+        super.put(x+1)
+    }
+}
+trait Filtering/* implements IntQueue */{
+    void put(Integer x) {
+        println 'Filtering'
+        if(x > 0) {
+          println "Value $x, delegating to super"
+          super.put(x)
+       }
+    }
+}
+
+class BasicIntQueue implements IntQueue {
+    private buf = new ArrayList<Integer>()
+    Integer get() { buf.remove(0) }
+    void put(Integer x) { println 'BasicIntQueue'; buf << x}
+    String toString() { buf.toString() }
+}
+
+class IncrementingQueue extends BasicIntQueue implements Incrementing {}
+class FilteringIncrementingQueue extends IncrementingQueue implements Filtering {}
+
+def queue = new FilteringIncrementingQueue()
+queue.put(-1)
+queue.put(0)
+queue.put(1)
+assert queue.get() == 2
+assert queue.toString() == "[]"
 '''
     }
 
