@@ -2085,6 +2085,34 @@ assert queue.toString() == "[]"
 '''
     }
 
+    void testCallToSuperTraitWithStackable() {
+        assertScript '''trait T2 {
+    void foo() {
+        println 'T2'
+        super.foo()
+    }
+}
+trait T3 {
+    void foo() {
+        println 'T3'
+        super.foo()
+    }
+}
+class D implements T2, T3 {
+    void foo() {
+        T3.super.foo() // explicit call
+        println "D::foo"
+    }
+}
+def d = new D()
+try {
+d.foo()
+} catch (MissingMethodException) {
+    // will fail because T2 calls super.foo() and D.super doesn't define foo
+}
+'''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

@@ -481,7 +481,7 @@ not called anymore.
 If a class implements multiple traits and that a call to an unqualified `super` is found, then:
 
 . if the class implements another trait, the call delegates to the next trait in the chain
-. if there isn't any trait left in the chain, `super` refers to the implementing class (_this_)
+. if there isn't any trait left in the chain, `super` refers to the super class of the implementing class (_this_)
 
 For example, it is possible to decorate final classes thanks to this behavior:
 
