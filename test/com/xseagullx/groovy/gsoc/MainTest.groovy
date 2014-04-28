@@ -4,18 +4,13 @@ import org.codehaus.groovy.control.ErrorCollector
 import spock.lang.Specification
 
 class MainTest extends Specification {
-    def "test arguments handling"() {
-        // TODO ask someone for help. IDK how to test arguments without global mocking as described here.
-        // http://spock-framework.readthedocs.org/en/latest/interaction_based_testing.html#mocking-constructors
-    }
 
-    def "test process method"() {
+    def "test ast builder"() {
         setup:
-        def sourceFile = new File("test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy")
-
-        def moduleNodeNew = new Main(Configuration.NEW).process(sourceFile)
-        def moduleNodeOld = new Main(Configuration.OLD).process(sourceFile)
-        def moduleNodeOld2 = new Main(Configuration.OLD).process(sourceFile)
+        def file = new File(path)
+        def moduleNodeNew = new Main(Configuration.NEW).process(file)
+        def moduleNodeOld = new Main(Configuration.OLD).process(file)
+        def moduleNodeOld2 = new Main(Configuration.OLD).process(file)
 
         expect:
         use(ASTComparatorCategory) {
@@ -23,22 +18,21 @@ class MainTest extends Specification {
             assert moduleNodeNew == moduleNodeOld
             true
         }
-    }
 
-    def "test class modifiers"() {
-        setup:
-        def sourceFile = new File("test_res/com/xseagullx/groovy/gsoc/ClassModifiers_Issue_2.groovy")
-
-        def moduleNodeNew = new Main(Configuration.NEW).process(sourceFile)
-        def moduleNodeOld = new Main(Configuration.OLD).process(sourceFile)
-        def moduleNodeOld2 = new Main(Configuration.OLD).process(sourceFile)
-
-        expect:
-        use(ASTComparatorCategory) {
-            assert moduleNodeOld == moduleNodeOld2;
-            assert moduleNodeNew == moduleNodeOld
-            true
-        }
+        where:
+        path | output
+        "test_res/com/xseagullx/groovy/gsoc/ClassConstructorBug_Issue13_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/ClassMembers_Issue3_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/ClassMembers_Issue3_2.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/ClassModifiers_Issue_2.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/ClassProperty_Issue4_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_2.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/MemberAccess_Issue14_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/MethodBody_Issue7_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/MethodCall_Issue15_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/Operators_Issue9_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy" | _
     }
 
     def "test invalid class modifiers"() {
@@ -62,126 +56,5 @@ class MainTest extends Specification {
         path | output
         "test_res/com/xseagullx/groovy/gsoc/ClassModifiersInvalid_Issue1_2.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ClassModifiersInvalid_Issue2_2.groovy" | _
-    }
-
-    def "test class members"() {
-        expect:
-        def file = new File(path)
-        def moduleNodeNew = new Main(Configuration.NEW).process(file)
-        def moduleNodeOld = new Main(Configuration.OLD).process(file)
-        def moduleNodeOld2 = new Main(Configuration.OLD).process(file)
-
-        use(ASTComparatorCategory) {
-            assert moduleNodeOld == moduleNodeOld2;
-            assert moduleNodeNew == moduleNodeOld
-            true
-        }
-
-        where:
-        path | output
-        "test_res/com/xseagullx/groovy/gsoc/class/members/ClassMembers_Issue3_1.groovy" | _
-        "test_res/com/xseagullx/groovy/gsoc/class/members/ClassMembers_Issue3_2.groovy" | _
-    }
-
-    def "test methods"() {
-        expect:
-        def file = new File(path)
-        def moduleNodeNew = new Main(Configuration.NEW).process(file)
-        def moduleNodeOld = new Main(Configuration.OLD).process(file)
-        def moduleNodeOld2 = new Main(Configuration.OLD).process(file)
-
-        use(ASTComparatorCategory) {
-            assert moduleNodeOld == moduleNodeOld2;
-            assert moduleNodeNew == moduleNodeOld
-            true
-        }
-
-        where:
-        path | output
-        "test_res/com/xseagullx/groovy/gsoc/class/statements/MethodBody_Issue7_1.groovy" | _
-        "test_res/com/xseagullx/groovy/gsoc/class/statements/Operators_Issue9_1.groovy" | _
-    }
-
-    def "test properties"() {
-        expect:
-        def file = new File(path)
-        def moduleNodeNew = new Main(Configuration.NEW).process(file)
-        def moduleNodeOld = new Main(Configuration.OLD).process(file)
-        def moduleNodeOld2 = new Main(Configuration.OLD).process(file)
-
-        use(ASTComparatorCategory) {
-            assert moduleNodeOld == moduleNodeOld2;
-            assert moduleNodeNew == moduleNodeOld
-            true
-        }
-
-        where:
-        path | output
-        "test_res/com/xseagullx/groovy/gsoc/class/properties/ClassProperty_Issue4_1.groovy" | _
-    }
-
-    def "test member access"() {
-        expect:
-        def file = new File(path)
-        def moduleNodeNew = new Main(Configuration.NEW).process(file)
-        def moduleNodeOld = new Main(Configuration.OLD).process(file)
-        def moduleNodeOld2 = new Main(Configuration.OLD).process(file)
-
-        use(ASTComparatorCategory) {
-            assert moduleNodeOld == moduleNodeOld2;
-            assert moduleNodeNew == moduleNodeOld
-            true
-        }
-
-        where:
-        path | output
-        "test_res/com/xseagullx/groovy/gsoc/class/memberAccess/MemberAccess_Issue14_1.groovy" | _
-        "test_res/com/xseagullx/groovy/gsoc/class/methodCall/MethodCall_Issue15_1.groovy" | _
-    }
-
-
-    def "test class constructor recognition"() {
-        expect:
-        def file = new File(path)
-        def moduleNodeNew = new Main(Configuration.NEW).process(file)
-        def moduleNodeOld = new Main(Configuration.OLD).process(file)
-        def moduleNodeOld2 = new Main(Configuration.OLD).process(file)
-
-        use(ASTComparatorCategory) {
-            assert moduleNodeOld == moduleNodeOld2;
-            assert moduleNodeNew == moduleNodeOld
-            true
-        }
-
-        where:
-        path | output
-        "test_res/com/xseagullx/groovy/gsoc/class/members/ClassConstructorBug_Issue13_1.groovy" | _
-    }
-
-    def "test import recognition"() {
-        expect:
-        def file = new File(path)
-        def moduleNodeNew = new Main(Configuration.NEW).process(file)
-        def moduleNodeOld = new Main(Configuration.OLD).process(file)
-        def moduleNodeOld2 = new Main(Configuration.OLD).process(file)
-
-        use(ASTComparatorCategory) {
-            assert moduleNodeOld == moduleNodeOld2;
-            assert moduleNodeNew == moduleNodeOld
-            true
-        }
-
-        where:
-        path | output
-        "test_res/com/xseagullx/groovy/gsoc/class/import/ImportRecognition_Issue6_1.groovy" | _
-        "test_res/com/xseagullx/groovy/gsoc/class/import/ImportRecognition_Issue6_2.groovy" | _
-    }
-
-    def "test class file creation"() {
-        expect:
-        def sourceFile = new File("test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy")
-
-        def main = new Main(Configuration.NEW)
-        main.compile(sourceFile)
     }
 }
