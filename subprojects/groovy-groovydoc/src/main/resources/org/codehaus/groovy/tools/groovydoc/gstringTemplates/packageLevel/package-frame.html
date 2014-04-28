@@ -6,6 +6,7 @@
     // TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
     def classTypes = [
     "Interface" : { it.isInterface() },
+    "Trait" : { it.isTrait() },
     "Class" : { it.isClass() && !it.parentClasses*.qualifiedTypeName().contains('java.lang.Throwable') },
     "Enum" : { it.isEnum() },
     "Exception" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Exception') },
@@ -40,9 +41,9 @@ if (packageDoc.allClasses().any{ isVisible(it) && v(it) }) {
         <%
         for (classDoc in packageDoc.allClasses().findAll{ isVisible(it) && v(it) }) {
         %><li><a href="${classDoc.name()}.html" title="${k.toLowerCase()} in ${packageDoc.nameWithDots()}" target="classFrame"><%
-        if (classDoc.isInterface()) { %><em><% }
+        if (classDoc.isInterface() || classDoc.isTrait()) { %><em><% }
             %>${classDoc.name()}<%
-            if (classDoc.isInterface()) { %></em><% }
+            if (classDoc.isInterface() || classDoc.isTrait()) { %></em><% }
         %></a></li><%
         }
         %>
