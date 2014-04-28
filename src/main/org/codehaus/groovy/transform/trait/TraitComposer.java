@@ -160,9 +160,6 @@ public abstract class TraitComposer {
                     origParams[i-1] = parameter;
                     argList.addExpression(new VariableExpression(params[i - 1]));
                 }
-                if (shouldSkipMethod(cNode, name, params)) {
-                    continue;
-                }
                 createForwarderMethod(trait, cNode, methodNode, helperClassNode, genericsSpec, helperMethodParams, origParams, params, argList);
             }
         }
@@ -301,7 +298,9 @@ public abstract class TraitComposer {
                 bridgeAnnotation
         );
 
-        targetNode.addMethod(forwarder);
+        if (!shouldSkipMethod(targetNode, forwarder.getName(), forwarderParams)) {
+            targetNode.addMethod(forwarder);
+        }
 
         createSuperForwarder(targetNode, forwarder, genericsSpec);
     }
