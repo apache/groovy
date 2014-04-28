@@ -865,8 +865,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a CharSequence
      * @param regex   the capturing regex CharSequence
-     * @param closure the closure that will be passed the full match, plus each of the capturing groups
-     * @return a CharSequence containing the result of the closure, or null if the regex pattern doesn't match
+     * @param closure the closure that will be passed the full match, plus each of the capturing groups (if any)
+     * @return a CharSequence containing the result of calling the closure (calling toString() if needed), or null if the regex pattern doesn't match
      * @see #find(String, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.8.2
      */
@@ -893,8 +893,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a CharSequence
      * @param pattern the compiled regex Pattern
-     * @param closure the closure that will be passed the full match, plus each of the capturing groups
-     * @return a CharSequence containing the result of the closure, or null if the regex pattern doesn't match
+     * @param closure the closure that will be passed the full match, plus each of the capturing groups (if any)
+     * @return a CharSequence containing the result of calling the closure (calling toString() if needed), or null if the regex pattern doesn't match
      * @see #find(String, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.8.2
      */
@@ -987,8 +987,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a String
      * @param pattern the compiled regex Pattern
-     * @param closure the closure that will be passed the full match, plus each of the capturing groups
-     * @return a String containing the result of the closure, or null if the regex pattern doesn't match
+     * @param closure the closure that will be passed the full match, plus each of the capturing groups (if any)
+     * @return a String containing the result of calling the closure (calling toString() if needed), or null if the regex pattern doesn't match
      * @since 1.6.1
      */
     public static String find(String self, Pattern pattern, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure closure) {
@@ -1086,8 +1086,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a String
      * @param regex   the capturing regex string
-     * @param closure the closure that will be passed the full match, plus each of the capturing groups
-     * @return a String containing the result of the closure, or null if the regex pattern doesn't match
+     * @param closure the closure that will be passed the full match, plus each of the capturing groups (if any)
+     * @return a String containing the result of the closure (calling toString() if needed), or null if the regex pattern doesn't match
      * @since 1.6.1
      */
     public static String find(String self, String regex, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure closure) {
@@ -1112,8 +1112,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a CharSequence
      * @param regex   the capturing regex CharSequence
-     * @param closure will be passed the full match plus each of the capturing groups
-     * @return a List containing all full matches of the regex within the CharSequence, an empty list will be returned if there are no matches
+     * @param closure will be passed the full match plus each of the capturing groups (if any)
+     * @return a List containing all results from calling the closure with each full match (and potentially capturing groups) of the regex within the CharSequence, an empty list will be returned if there are no matches
      * @see #findAll(String, String, groovy.lang.Closure)
      * @since 1.8.2
      */
@@ -1139,8 +1139,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a CharSequence
      * @param pattern the compiled regex Pattern
-     * @param closure will be passed the full match plus each of the capturing groups
-     * @return a List containing all full matches of the regex Pattern within the CharSequence, an empty list will be returned if there are no matches
+     * @param closure will be passed the full match plus each of the capturing groups (if any)
+     * @return a List containing all results from calling the closure with each full match (and potentially capturing groups) of the regex pattern within the CharSequence, an empty list will be returned if there are no matches
      * @see #findAll(String, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.8.2
      */
@@ -1201,8 +1201,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a String
      * @param pattern the compiled regex Pattern
-     * @param closure will be passed the full match plus each of the capturing groups
-     * @return a List containing all full matches of the regex Pattern within the string, an empty list will be returned if there are no matches
+     * @param closure will be passed the full match plus each of the capturing groups (if any)
+     * @return a List containing all results from calling the closure with each full match (and potentially capturing groups) of the regex pattern within the String, an empty list will be returned if there are no matches
      * @since 1.6.1
      */
     public static <T> List<T> findAll(String self, Pattern pattern, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) {
@@ -1256,8 +1256,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a String
      * @param regex   the capturing regex String
-     * @param closure will be passed the full match plus each of the capturing groups
-     * @return a List containing all full matches of the regex within the string, an empty list will be returned if there are no matches
+     * @param closure will be passed the full match plus each of the capturing groups (if any)
+     * @return a List containing all results from calling the closure with each full match (and potentially capturing groups) of the regex within the String, an empty list will be returned if there are no matches
      * @since 1.6.1
      */
     public static <T> List<T> findAll(String self, String regex, @ClosureParams(value=SimpleType.class, options="java.lang.String[]") Closure<T> closure) {
