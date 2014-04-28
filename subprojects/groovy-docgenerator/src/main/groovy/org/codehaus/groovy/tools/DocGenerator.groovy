@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.tools
 
+import com.thoughtworks.qdox.model.JavaClass
+import com.thoughtworks.qdox.model.JavaMethod
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import com.thoughtworks.qdox.JavaDocBuilder
 import org.codehaus.groovy.tools.shell.util.Logger
@@ -33,9 +35,10 @@ class DocGenerator {
     File outputFolder
     JavaDocBuilder builder
     // categorize all groovy methods per core JDK class to which it applies
-    def jdkEnhancedClasses = [:]
-    def packages = [:]
-    def sortedPackages
+    Map<String, List<JavaMethod>> enhancedMethodsForClass = [:]
+    Map<String, JavaClass> enhancedClasses = [:]
+    Map<String, String> packages = [:]
+    Set<String> sortedPackages
 
     DocGenerator(sourceFiles, File outputFolder) {
         this.sourceFiles = sourceFiles
@@ -68,26 +71,31 @@ class DocGenerator {
 
         for (method in methods) {
             if (method.isPublic() && method.isStatic()) {
-                def parameters = method.getParameters()
-                def jdkClass = parameters[0].getType().toString()
-                if (jdkClass.equals('T') || jdkClass.equals('U') || jdkClass.equals('K') || jdkClass.equals('V') || jdkClass.equals('G')) {
+                def parameters = method.parameters
+                if (parameters.size() == 0) continue
+                String jdkClass = parameters[0].type.toString()
+                if (jdkClass.equals('T') || jdkClass.equals('U') || jdkClass.equals('E') || jdkClass.equals('K') || jdkClass.equals('V') || jdkClass.equals('G')) {
                     jdkClass = 'java.lang.Object'
-                } else if (jdkClass.equals('T[]')) {
+                } else if (jdkClass.equals('T[]') || jdkClass.equals('E[]')) {
                     jdkClass = 'java.lang.Object[]'
                 }
                 if (jdkClass.startsWith('groovy')) {
-                    // nothing, skip it
+                    log.debug "skipping $jdkClass"
+                    continue
                 }
-                else if (jdkEnhancedClasses.containsKey(jdkClass)) {
-                    List l = jdkEnhancedClasses[jdkClass];
+                String key = jdkClass //.endsWith('[]') ? jdkClass[0..-3] : jdkClass
+                if (enhancedMethodsForClass.containsKey(key)) {
+                    List l = enhancedMethodsForClass[key];
                     l.add(method)
                 }
-                else
-                    jdkEnhancedClasses[jdkClass] = [method]
+                else {
+                    enhancedMethodsForClass[key] = [method]
+                    enhancedClasses[key] = parameters[0].type.javaClass
+                }
             }
         }
 
-        jdkEnhancedClasses.keySet().each {className ->
+        enhancedMethodsForClass.keySet().each {className ->
             def thePackage = className.contains(".") ? className.replaceFirst(/\.[^\.]*$/, "") : ""
             if (!packages.containsKey(thePackage)) {
                 packages[thePackage] = []
@@ -135,7 +143,7 @@ class DocGenerator {
         def templateAllClasses = createTemplate(engine, 'template.allclasses-frame.html')
         out = new File(outputFolder, 'allclasses-frame.html')
         def fixPrimitivePackage = {className -> className.contains('.') ? className : "${PRIMITIVE_TYPE_PSEUDO_PACKAGE}.$className"}
-        binding = [classes: jdkEnhancedClasses.keySet().collect(fixPrimitivePackage).sort {it.replaceAll('.*\\.', '')}]
+        binding = [classes: enhancedMethodsForClass.keySet().collect(fixPrimitivePackage).sort {it.replaceAll('.*\\.', '')}]
         out.withWriter {
             it << templateAllClasses.make(binding)
         }
@@ -193,7 +201,6 @@ class DocGenerator {
             packageClasses.each {className ->
                 def simpleClassName = className.replaceAll('.*\\.', '')
                 def fullClassName = packageName + '.' + simpleClassName
-                def listOfMethods = jdkEnhancedClasses[className]
 
                 // Class
                 index.add([
@@ -201,12 +208,12 @@ class DocGenerator {
                     'packageName': packageName,
                     'simpleClassName': simpleClassName,
                     'className': fullClassName,
-                    // hack, don't have class info at this point but trace back through any method - TODO: refactor
-                    'classDesc': getClassDesc(listOfMethods[0], fullClassName),
+                    'classDesc': enhancedClasses[className].interface ? 'interface' : 'class',
                     'shortComment': "", // empty because cannot get a comment of JDK
                 ])
 
                 // Methods
+                def listOfMethods = enhancedMethodsForClass[className]
                 listOfMethods.each {method ->
                     def methodName = method.name
                     index.add([
@@ -214,7 +221,7 @@ class DocGenerator {
                             'packageName': packageName,
                             'simpleClassName': simpleClassName,
                             'className': fullClassName,
-                            'classDesc': getClassDesc(method, fullClassName),
+                            'classDesc': enhancedClasses[className].interface ? 'interface' : 'class',
                             'method': method,
                             'parametersSignature': getParametersDecl(method),
                             'shortComment': linkify(getFirstSentence(getComment(method)), curPackage),
@@ -243,14 +250,6 @@ class DocGenerator {
         return indexMap
     }
 
-    private String getClassDesc(methodToSearchBy, fullClassName) {
-        // TODO handle arrays?
-        def foundDgmMethodForClass = methodToSearchBy.parentClass.methods.find {
-            it.parameters.size() > 0 && it.parameters[0].type.javaClass.fullyQualifiedName == fullClassName
-        }
-        (foundDgmMethodForClass && foundDgmMethodForClass.parameters[0]?.type?.javaClass?.interface) ? 'interface' : 'class'
-    }
-
     private getFirstSentence(text) {
         def boundary = java.text.BreakIterator.getSentenceInstance(Locale.getDefault()) // todo - allow locale to be passed in
         boundary.setText(text)
@@ -267,7 +266,7 @@ class DocGenerator {
         def dir = new File(outputFolder, packagePath)
         dir.mkdirs()
         def out = new File(dir, aClass.replaceAll('.*\\.', '') + '.html')
-        def listOfMethods = jdkEnhancedClasses[aClass].sort {it.name}
+        def listOfMethods = enhancedMethodsForClass[aClass].sort {it.name}
         def methods = []
         listOfMethods.each {method ->
             def parameters = method.getTagsByName("param").collect {
@@ -298,7 +297,7 @@ class DocGenerator {
 
         def binding = [
                 className: aClass.replaceAll(/.*\./, ''),
-                classDesc: getClassDesc(listOfMethods[0], aClass).capitalize(),
+                classDesc: enhancedClasses[aClass].interface ? 'Interface' : 'Class',
                 packageName: curPackage,
                 methods: methods,
                 title: TITLE
@@ -366,7 +365,9 @@ class DocGenerator {
         def dir = new File(outputFolder, packagePath)
         dir.mkdirs()
         def out = new File(dir, 'package-frame.html')
-        def binding = [classes: packageClasses.sort().collect {it.replaceAll(/.*\./, '')},
+        def binding = [
+                classes: packageClasses.findAll{ !enhancedClasses[it].interface }.sort().collect {it.replaceAll(/.*\./, '')},
+                interfaces: packageClasses.findAll{ enhancedClasses[it].interface }.sort().collect {it.replaceAll(/.*\./, '')},
                 packageName: curPackage]
         out.withWriter {
             it << templatePackageFrame.make(binding)
