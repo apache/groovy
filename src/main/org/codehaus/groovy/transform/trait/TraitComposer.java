@@ -35,7 +35,6 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
@@ -160,9 +159,6 @@ public abstract class TraitComposer {
                     params[i - 1] = newParam;
                     origParams[i-1] = parameter;
                     argList.addExpression(new VariableExpression(params[i - 1]));
-                }
-                if (shouldSkipMethod(cNode, name, params)) {
-                    continue;
                 }
                 createForwarderMethod(trait, cNode, methodNode, helperClassNode, genericsSpec, helperMethodParams, origParams, params, argList);
             }
@@ -302,7 +298,9 @@ public abstract class TraitComposer {
                 bridgeAnnotation
         );
 
-        targetNode.addMethod(forwarder);
+        if (!shouldSkipMethod(targetNode, forwarder.getName(), forwarderParams)) {
+            targetNode.addMethod(forwarder);
+        }
 
         createSuperForwarder(targetNode, forwarder, genericsSpec);
     }
@@ -349,30 +347,22 @@ public abstract class TraitComposer {
      */
     private static void doCreateSuperForwarder(ClassNode targetNode, MethodNode forwarderMethod, ClassNode[] interfacesToGenerateForwarderFor, Map genericsSpec) {
         Parameter[] parameters = forwarderMethod.getParameters();
-        String name = forwarderMethod.getName();
-        String superForwarderName = Traits.SUPER_TRAIT_METHOD_PREFIX+ name;
-        if (targetNode.getDeclaredMethod(superForwarderName, parameters)!=null) {
-            // a forwarder already exists
-            return;
-        }
-        Parameter[] superForwarderParams = new Parameter[parameters.length+1];
-        superForwarderParams[0] = new Parameter(ClassHelper.CLASS_Type.getPlainNodeReference(), "clazz");
+        Parameter[] superForwarderParams = new Parameter[parameters.length];
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
             ClassNode originType = parameter.getOriginType();
-            superForwarderParams[i+1] = new Parameter(correctToGenericsSpecRecurse(genericsSpec, originType), parameter.getName());
+            superForwarderParams[i] = new Parameter(correctToGenericsSpecRecurse(genericsSpec, originType), parameter.getName());
         }
-        BlockStatement body = new BlockStatement();
-        VariableExpression clazz = new VariableExpression(superForwarderParams[0]);
-        for (int i = 0; i < interfacesToGenerateForwarderFor.length-1; i++) {
+        for (int i = 0; i < interfacesToGenerateForwarderFor.length; i++) {
             final ClassNode current = interfacesToGenerateForwarderFor[i];
-            final ClassNode next = interfacesToGenerateForwarderFor[i+1];
-            body.addStatement(createDelegatingForwarder(forwarderMethod, current, next, clazz));
+            final ClassNode next = i<interfacesToGenerateForwarderFor.length-1?interfacesToGenerateForwarderFor[i+1]:null;
+            String forwarderName = Traits.getSuperTraitMethodName(current, forwarderMethod.getName());
+            if (targetNode.getDeclaredMethod(forwarderName, superForwarderParams)==null) {
+            ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, forwarderMethod.getReturnType());
+            Statement delegate = next==null?createSuperFallback(forwarderMethod, returnType):createDelegatingForwarder(forwarderMethod, next);
+            targetNode.addMethod(forwarderName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, returnType, superForwarderParams, ClassNode.EMPTY_ARRAY, delegate);
+            }
         }
-        // last fallback is calling the method on the object itself
-        ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, forwarderMethod.getReturnType());
-        body.addStatement(createSuperFallback(forwarderMethod, returnType));
-        MethodNode methodNode = targetNode.addMethod(superForwarderName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, returnType, superForwarderParams, ClassNode.EMPTY_ARRAY, body);
     }
 
     private static Statement createSuperFallback(MethodNode forwarderMethod, ClassNode returnType) {
@@ -404,14 +394,8 @@ public abstract class TraitComposer {
         return stmt;
     }
 
-    private static Statement createDelegatingForwarder(final MethodNode forwarderMethod, final ClassNode current, final ClassNode next, final VariableExpression clazz) {
-        // if (clazz.is(current)) { next$Trait$Helper.method(this, arg1, arg2) }
-        MethodCallExpression isExpression = new MethodCallExpression(
-                clazz,
-                "is",
-                new ClassExpression(current)
-        );
-        isExpression.setImplicitThis(false);
+    private static Statement createDelegatingForwarder(final MethodNode forwarderMethod, final ClassNode next) {
+        // generates --> next$Trait$Helper.method(this, arg1, arg2)
         TraitHelpersTuple helpers = Traits.findHelpers(next);
         ArgumentListExpression args = new ArgumentListExpression();
         args.addExpression(new VariableExpression("this"));
@@ -424,14 +408,14 @@ public abstract class TraitComposer {
                 forwarderMethod.getName(),
                 args
         );
-        IfStatement result;
+        Statement result;
         if (ClassHelper.VOID_TYPE.equals(forwarderMethod.getReturnType())) {
             BlockStatement stmt = new BlockStatement();
             stmt.addStatement(new ExpressionStatement(delegateCall));
             stmt.addStatement(new ReturnStatement(new ConstantExpression(null)));
-            result = new IfStatement(new BooleanExpression(isExpression), stmt, new EmptyStatement());
+            result = stmt;
         } else {
-            result = new IfStatement(new BooleanExpression(isExpression), new ReturnStatement(delegateCall), new EmptyStatement());
+            result = new ReturnStatement(delegateCall);
         }
         return result;
     }

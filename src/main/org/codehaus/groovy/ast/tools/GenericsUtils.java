@@ -284,6 +284,9 @@ public class GenericsUtils {
     }
 
     public static ClassNode correctToGenericsSpecRecurse(Map<String,ClassNode> genericsSpec, ClassNode type) {
+        if (type.isArray()) {
+            return correctToGenericsSpecRecurse(genericsSpec, type.getComponentType()).makeArray();
+        }
         if (type.isGenericsPlaceHolder()) {
             String name = type.getGenericsTypes()[0].getName();
             type = genericsSpec.get(name);
@@ -334,6 +337,9 @@ public class GenericsUtils {
     }
 
     public static ClassNode correctToGenericsSpec(Map<String,ClassNode> genericsSpec, ClassNode type) {
+        if (type.isArray()) {
+            return correctToGenericsSpec(genericsSpec, type.getComponentType()).makeArray();
+        }
         if (type.isGenericsPlaceHolder()) {
             String name = type.getGenericsTypes()[0].getName();
             type = genericsSpec.get(name);
