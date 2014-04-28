@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -259,6 +259,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
                 case GroovyTokenTypes.STRING_LITERAL                :   v.visitStringLiteral(ast,n);                break;
                 case GroovyTokenTypes.STRING_NL                     :   v.visitStringNl(ast,n);                     break;
                 case GroovyTokenTypes.SUPER_CTOR_CALL               :   v.visitSuperCtorCall(ast,n);                break;
+                case GroovyTokenTypes.TRAIT_DEF                     :   v.visitTraitDef(ast,n);                     break;
                 case GroovyTokenTypes.TRIPLE_DOT                    :   v.visitTripleDot(ast,n);                    break;
                 case GroovyTokenTypes.TYPE                          :   v.visitType(ast,n);                         break;
                 case GroovyTokenTypes.TYPECAST                      :   v.visitTypecast(ast,n);                     break;

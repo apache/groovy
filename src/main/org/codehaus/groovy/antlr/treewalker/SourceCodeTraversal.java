@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -188,6 +188,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.SR: // a >> b
                 case GroovyTokenTypes.STAR: // a * b   or    import foo.*
                 case GroovyTokenTypes.STAR_STAR: // x ** 3
+                case GroovyTokenTypes.TRAIT_DEF: // trait Foo...
                     accept_FirstChild_v_RestOfTheChildren(t);
                     break;
 
