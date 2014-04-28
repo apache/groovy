@@ -46,10 +46,17 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @Override void exitImportStatement(@NotNull GroovyParser.ImportStatementContext ctx) {
-        def clazz = classLoader.loadClass(ctx.IDENTIFIER().join('.'))
-        moduleNode.addImport(clazz.simpleName, ClassHelper.make(clazz))
-        setupNodeLocation(moduleNode.imports.last(), ctx)
-        setupNodeLocation(moduleNode.imports.last().type, ctx)
+        ImportNode node
+        if (ctx.getChild(ctx.childCount - 1).text == '*') {
+            moduleNode.addStarImport(ctx.IDENTIFIER().join('.') + '.')
+            node = moduleNode.starImports.last()
+        }
+        else {
+            moduleNode.addImport(ctx.IDENTIFIER()[-1].text, ClassHelper.make(ctx.IDENTIFIER().join('.')))
+            node = moduleNode.imports.last()
+            setupNodeLocation(node.type, ctx)
+        }
+        setupNodeLocation(node, ctx)
     }
 
     @Override void enterPackageDefinition(@NotNull GroovyParser.PackageDefinitionContext ctx) {

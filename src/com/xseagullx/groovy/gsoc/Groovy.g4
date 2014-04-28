@@ -52,7 +52,7 @@ compilationUnit: (NL*) packageDefinition? (NL | ';')* (importStatement | NL)* (N
 packageDefinition:
     KW_PACKAGE (IDENTIFIER ('.' IDENTIFIER)*);
 importStatement:
-    KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)*);
+    KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)* ('.' '*')?);
 classDeclaration:
     classModifiers KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } (NL)* '{' (classMember | NL | ';')* '}' ;
 classMember:
