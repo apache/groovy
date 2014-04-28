@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -907,7 +907,16 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitSuperCtorCall(GroovySourceAST t,int visit) {
         printUpdatingTabLevel(t,visit,"super("," ",")");
     }
-    
+
+    public void visitTraitDef(GroovySourceAST t,int visit) {
+        print(t,visit,"trait ",null,null);
+
+        if (visit == OPENING_VISIT) {
+            // store name of class away for use in constructor ident
+            className = t.childOfType(GroovyTokenTypes.IDENT).getText();
+        }
+    }
+
     // visit TripleDot, not used in the AST
     
     public void visitType(GroovySourceAST t,int visit) {

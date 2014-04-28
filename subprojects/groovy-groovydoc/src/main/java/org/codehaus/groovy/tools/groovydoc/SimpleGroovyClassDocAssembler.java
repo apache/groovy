@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,11 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     @Override
     public void visitInterfaceDef(GroovySourceAST t, int visit) {
+        visitClassDef(t, visit);
+    }
+
+    @Override
+    public void visitTraitDef(GroovySourceAST t, int visit) {
         visitClassDef(t, visit);
     }
 
@@ -396,7 +401,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private boolean isTopLevelConstruct(GroovySourceAST node) {
         if (node == null) return false;
         int type = node.getType();
-        return type == CLASS_DEF || type == INTERFACE_DEF || type == ANNOTATION_DEF || type == ENUM_DEF;
+        return type == CLASS_DEF || type == INTERFACE_DEF || type == TRAIT_DEF || type == ANNOTATION_DEF || type == ENUM_DEF;
     }
 
     private void adjustForAutomaticEnumMethods(SimpleGroovyClassDoc currentClassDoc) {
@@ -599,7 +604,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private boolean isMajorType(GroovySourceAST t) {
         if (t == null) return false;
         int tt = t.getType();
-        return tt == CLASS_DEF || tt == INTERFACE_DEF || tt == METHOD_DEF || tt == ANNOTATION_DEF || tt == ENUM_DEF ||
+        return tt == CLASS_DEF || tt == TRAIT_DEF || tt == INTERFACE_DEF || tt == METHOD_DEF || tt == ANNOTATION_DEF || tt == ENUM_DEF ||
                 tt == VARIABLE_DEF || tt == ANNOTATION_FIELD_DEF || tt == ENUM_CONSTANT_DEF || tt == CTOR_IDENT;
     }
 

@@ -199,7 +199,7 @@ if (classDoc.isInterface()) {
     if (interfaces) {
         %>
             <dl>
-                <dt>All Implemented Interfaces:</dt>
+                <dt>All Implemented Interfaces and Traits:</dt>
                 <dd>${interfaces.collect{ linkable(it) }.join(', ')}</dd>
             </dl>
             <!-- todo: direct known subclasses -->
@@ -439,7 +439,7 @@ if (classDoc.isInterface()) {
             classes.addAll(classDoc.interfaces().toList())
         } else {
             if (classDoc.superclass()) classes += classDoc.superclass()
-            else classes += new org.codehaus.groovy.tools.groovydoc.ExternalGroovyClassDoc(Object.class)
+            else if (!classDoc.isTrait()) classes += new org.codehaus.groovy.tools.groovydoc.ExternalGroovyClassDoc(Object.class)
         }
         Set visited = [classDoc] as Set
         while (classes) {
