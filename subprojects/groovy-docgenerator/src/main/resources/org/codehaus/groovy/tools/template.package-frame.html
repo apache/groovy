@@ -3,7 +3,7 @@
 <html>
 <head>
     <title>
-        ${packageName} (Java 2 Platform SE 5.0)
+        ${packageName} (Groovy enhanced JDK classes)
     </title>
 
 <%
@@ -18,17 +18,31 @@
 
 <body class="left">
 
-<div class="indexContainer">
-    <h2 title="${packageName}">${packageName}</h2>
+<div class="indexHeader">
+    <b><!--<a href="package-summary.html" target="classFrame">-->${packageName}<!--</a>--></b>
 </div>
 
+<% if (classes) { %>
 <div class="indexContainer">
-    <ul title="Packages">
+    <h2 title="Classes">Classes</h2>
+    <ul>
         <% classes.grep().each { %>
         <li><a href="${it}.html" title="class in ${packageName}" target="classFrame">${it}</a></li>
         <% } %>
     </ul>
 </div>
+<% } %>
+
+<% if (interfaces) { %>
+<div class="indexContainer">
+    <h2 title="Interfaces">Interfaces</h2>
+    <ul>
+        <% interfaces.grep().each { %>
+        <li><a href="${it}.html" title="interface in ${packageName}" target="classFrame"><I>${it}</I></a></li>
+        <% } %>
+    </ul>
+</div>
+<% } %>
 
 </body>
 </html>
