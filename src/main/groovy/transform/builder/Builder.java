@@ -26,10 +26,12 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.BuilderStrategy;
 
 /**
- * The {@code @Builder} AST transformation is used to help write classes that can be created using _fluent_ api calls.
+ * The {@code @Builder} AST transformation is used to help write classes that can be created using <em>fluent</em> api calls.
  * The transform supports multiple building strategies to cover a range of cases and there are a number
  * of configuration options to customize the building process. If you're an AST hacker, you can also define your
- * own strategy class. The following strategies are bundled with Groovy:
+ * own strategy class.
+ *
+ * The following strategies are bundled with Groovy:
  * <ul>
  *     <li><b>SimpleStrategy</b> for creating chained setters</li>
  *     <li><b>ExternalStrategy</b> where you annotate an explicit builder class while leaving some buildee class being built untouched</li>
