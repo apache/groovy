@@ -7,6 +7,7 @@ def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 
 
 def classTypes = [
     "Interface" : { it.isInterface() && it.isDeprecated() },
+    "Trait" : { it.isTrait() && it.isDeprecated() },
     "Class" : { it.isClass() && !it.parentClasses*.qualifiedTypeName().contains('java.lang.Throwable') && it.isDeprecated() },
     "Enum" : { it.isEnum() && it.isDeprecated() },
     "Exception" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Exception') && it.isDeprecated() },
@@ -165,9 +166,9 @@ classTypes.each{ k, v ->
                     def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
                     %><tr class="${i%2==0?'altColor':'rowColor'}">
                 <td class="colOne"><a href="${classDoc.fullPathName}.html"><%
-                        if (classDoc.isInterface()) { %><i><% }
+                        if (classDoc.isInterface() || classDoc.isTrait()) { %><i><% }
                         %>${classDoc.name()}<%
-                        if (classDoc.isInterface()) { %></i><% }
+                        if (classDoc.isInterface() || classDoc.isTrait()) { %></i><% }
                         %></a>
                     <div class="block"><i>${classDoc.firstSentenceCommentText()}</i></div>
                 </td>

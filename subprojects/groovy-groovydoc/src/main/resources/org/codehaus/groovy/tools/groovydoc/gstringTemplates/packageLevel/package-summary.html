@@ -7,6 +7,7 @@ def title = packageDoc.nameWithDots() + (props.windowTitle ? " ($props.windowTit
 // TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
 def classTypes = [
     "Interface" : { it.isInterface() },
+    "Trait" : { it.isTrait() },
     "Class" : { it.isClass() && !it.parentClasses*.qualifiedTypeName().contains('java.lang.Throwable') },
     "Enum" : { it.isEnum() },
     "Exception" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Exception') },
