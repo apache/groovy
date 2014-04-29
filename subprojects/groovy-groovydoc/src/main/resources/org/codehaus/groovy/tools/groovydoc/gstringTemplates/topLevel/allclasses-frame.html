@@ -16,7 +16,7 @@
   def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
   for (classDoc in rootDoc.classes().findAll(isVisible)) {
     def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
-    %><li><a href="${classDoc.getFullPathName()}.html" title="${classDoc.typeDescription.toLowerCase()} in ${packageOrInnerName}" target="classFrame">${classDoc.isInterface()?'<I>':''}${classDoc.name()}${classDoc.isInterface()?'</I>':''}</a></li>
+    %><li><a href="${classDoc.getFullPathName()}.html" title="${classDoc.typeDescription.toLowerCase()} in ${packageOrInnerName}" target="classFrame">${classDoc.isInterface()||classDoc.isTrait()?'<I>':''}${classDoc.name()}${classDoc.isInterface()||classDoc.isTrait()?'</I>':''}</a></li>
 <% } %>
         </ul>
     </div>
