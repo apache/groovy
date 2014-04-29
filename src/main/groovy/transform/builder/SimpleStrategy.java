@@ -41,7 +41,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIONS;
 
 /**
- * This strategy is used with the {@code @Builder} AST transform to modify your Groovy objects so that the
+ * This strategy is used with the {@link @Builder} AST transform to modify your Groovy objects so that the
  * setter methods for properties return the original object, thus allowing chained usage of the setters.
  *
  * You use it as follows:

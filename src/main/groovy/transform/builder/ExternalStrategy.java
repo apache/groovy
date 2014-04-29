@@ -53,7 +53,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 
 /**
- * This strategy is used with the {@code @Builder} AST transform to populate a builder helper class
+ * This strategy is used with the {@link @Builder} AST transform to populate a builder helper class
  * so that it can be used for the fluent creation of instances of a specified class.&nbsp;The specified class is not modified in any way and may be a Java class.
  *
  * You use it by creating and annotating an explicit builder class which will be filled in by during
