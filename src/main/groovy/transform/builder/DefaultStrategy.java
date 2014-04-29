@@ -55,6 +55,106 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
+/**
+ * This strategy is used with the {@code @Builder} AST transform to modify your Groovy objects so that the
+ * setter methods for properties return the original object, thus allowing chained usage of the setters.
+ *
+ * You use it as follows:
+ * <pre>
+ * import groovy.transform.builder.*
+ *
+ * {@code @Builder}
+ * class Person {
+ *     String firstName
+ *     String lastName
+ *     int age
+ * }
+ * def person = Person.builder().firstName("Robert").lastName("Lewandowski").age(21)
+ * assert person.firstName == "Robert"
+ * assert person.lastName == "Lewandowski"
+ * assert person.age == 21
+ * </pre>
+ * The {@code prefix} annotation attribute can be used to create setters with a different naming convention. The default is the
+ * empty string but you could change that to "set" as follows:
+ * <pre>
+ * {@code @Builder}(prefix='set')
+ * class Person {
+ *     String firstName
+ *     String lastName
+ *     int age
+ * }
+ * def p2 = Person.builder().setFirstName("Robert").setLastName("Lewandowski").setAge(21)
+ * </pre>
+ * or using a prefix of 'with' would result in usage like this:
+ * <pre>
+ * def p3 = Person.builder().withFirstName("Robert").withLastName("Lewandowski").withAge(21)
+ * </pre>
+ *
+ * You can also use the {@code @Builder} annotation in combination with this strategy on one or more constructor or
+ * static method instead of or in addition to using it at the class level. An example with a constructor follows:
+ * <pre>
+ * import groovy.transform.ToString
+ * import groovy.transform.builder.Builder
+ *
+ * {@code @ToString}
+ * class Person {
+ *     String first, last
+ *     int born
+ *
+ *     {@code @Builder}
+ *     Person(String roleName) {
+ *         if (roleName == 'Jack Sparrow') {
+ *             first = 'Johnny'; last = 'Depp'; born = 1963
+ *         }
+ *     }
+ * }
+ * assert Person.builder().roleName("Jack Sparrow").build().toString() == 'Person(Johnny, Depp, 1963)'
+ * </pre>
+ * In this case, the parameter(s) for the constructor or static method become the properties available
+ * in the builder. For the case of a static method, the return type of the static method becomes the
+ * class of the instance being created. For static factory methods, this is normally the class containing the
+ * static method but in general it can be any class.
+ *
+ * Note: if using more than one {@code @Builder} annotation, which is only possible when using static method
+ * or constructor variants, it is up to you to ensure that any generated helper classes or builder methods
+ * have unique names. E.g.&nbsp;we can modify the previous example to have three builders. At least two of the builders
+ * in our case will need to set the 'builderClassName' and 'builderMethodName' annotation attributes to ensure
+ * we have unique names. This is shown in the following example:
+ * <pre>
+ * import groovy.transform.builder.*
+ * import groovy.transform.*
+ *
+ * {@code @ToString}
+ * {@code @Builder}
+ * class Person {
+ *     String first, last
+ *     int born
+ *
+ *     Person(){} // required to retain no-arg constructor
+ *
+ *     {@code @Builder}(builderClassName='MovieBuilder', builderMethodName='byRoleBuilder')
+ *     Person(String roleName) {
+ *         if (roleName == 'Jack Sparrow') {
+ *             this.first = 'Johnny'; this.last = 'Depp'; this.born = 1963
+ *         }
+ *     }
+ *
+ *     {@code @Builder}(builderClassName='SplitBuilder', builderMethodName='splitBuilder')
+ *     static Person split(String name, int year) {
+ *         def parts = name.split(' ')
+ *         new Person(first: parts[0], last: parts[1], born: year)
+ *     }
+ * }
+ *
+ * assert Person.splitBuilder().name("Johnny Depp").year(1963).build().toString() == 'Person(Johnny, Depp, 1963)'
+ * assert Person.byRoleBuilder().roleName("Jack Sparrow").build().toString() == 'Person(Johnny, Depp, 1963)'
+ * assert Person.builder().first("Johnny").last('Depp').born(1963).build().toString() == 'Person(Johnny, Depp, 1963)'
+ * </pre>
+ *
+ * The 'forClass' annotation attribute for the {@code @Builder} transform isn't applicable for this strategy.
+ *
+ * @author Paul King
+ */
 public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
     private static final Expression DEFAULT_INITIAL_VALUE = null;
 
