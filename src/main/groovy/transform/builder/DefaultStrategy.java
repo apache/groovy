@@ -56,8 +56,9 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
- * This strategy is used with the {@code @Builder} AST transform to modify your Groovy objects so that the
- * setter methods for properties return the original object, thus allowing chained usage of the setters.
+ * This strategy is used with the {@code @Builder} AST transform to create a builder helper class
+ * for the fluent creation of instances of a specified class.&nbsp;It can be used at the class,
+ * static method or constructor levels.
  *
  * You use it as follows:
  * <pre>
