@@ -82,7 +82,6 @@ subprojects {
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
 //    mavenCentral() // default, tools
-    maven { url 'http://repository.codehaus.org' } // temp repo for gpars
     maven { url 'http://www.aQute.biz/repo' } // tools
     maven { url 'http://repository.jboss.org/maven2' } // examples, tools
 }
