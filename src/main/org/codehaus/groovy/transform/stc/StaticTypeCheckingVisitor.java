@@ -2202,7 +2202,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 addError("Incorrect number of parameters. Expected "+inferred.length+" but found "+closureParams.length, expression);
                             }
                     }
-                    if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, i== length -1)) {
+                    boolean lastArg = i == length - 1;
+                    if (lastArg && inferredType.isArray()) {
+                        if (inferredType.getComponentType().equals(originType)) {
+                            inferredType = originType;
+                        }
+                    } else if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, lastArg)) {
                         addError("Expected parameter of type "+ inferredType.toString(false)+" but got "+originType.toString(false), closureParam.getType());
                     }
                     typeCheckingContext.controlStructureVariables.put(closureParam, inferredType);
