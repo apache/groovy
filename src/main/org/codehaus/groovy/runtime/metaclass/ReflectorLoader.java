@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Reflector creation helper. This class is used to define the Refloctor classes.
+ * Reflector creation helper. This class is used to define the Reflector classes.
  * For each ClassLoader such a loader will be created by MetaClass.
  * Special about this loader is, that it knows the classes form the 
  * Groovy Runtime. The Reflector class is resolved in different ways: During
