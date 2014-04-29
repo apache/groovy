@@ -35,7 +35,6 @@ class ASTComparatorCategory {
         (MixinNode): [],
         (ModuleNode): ["context"],
         (PackageNode): [],
-        (PackageNode): [],
         (Parameter): [],
         (PropertyNode): ['declaringClass', 'initialValueExpression'],
         (Variable): [],
