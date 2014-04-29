@@ -100,24 +100,43 @@ ghi"""
     }
 
     void testFind() {
-        assertScript '''
-        assert "foobarbaz".find('b(a)(r)') { full, a, b -> assert "BAR"=="B$a$b".toUpperCase() }
-        '''
+        checkFind("'foobarbaz'")
+        checkFind('''"${'foobarbaz'}"''')
+        checkFind("new StringBuilder('foobarbaz')")
     }
+
+    private checkFind(CharSequence s) {
+        assertScript 'assert ' + s + '.find("b(a)(r)") { full, a, r -> assert "BAR"=="B" + a.toUpperCase() + r.toUpperCase() }'
+    }
+
     void testFindPattern() {
-        assertScript '''
-        assert "foobarbaz".find(~'b(a)(r)') { full, a, b -> assert "BAR"=="B$a$b".toUpperCase() }
-        '''
+        checkFindPattern("'foobarbaz'")
+        checkFindPattern('''"${'foobarbaz'}"''')
+        checkFindPattern("new StringBuilder('foobarbaz')")
     }
+
+    private checkFindPattern(CharSequence s) {
+        assertScript 'assert ' + s + '.find(~"b(a)(r)") { full, a, r -> assert "BAR"=="B" + a.toUpperCase() + r.toUpperCase() }'
+    }
+
     void testFindAll() {
-        assertScript '''
-        assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B$a".toUpperCase() }.size() == 2
-        '''
+        checkFindAll("'foobarbaz'")
+        checkFindAll('''"${'foobarbaz'}"''')
+        checkFindAll("new StringBuilder('foobarbaz')")
     }
+
+    private checkFindAll(CharSequence s) {
+        assertScript 'assert ' + s + '.findAll("b(a)([rz])") { full, a, rz -> assert "BA"=="B" + a.toUpperCase() }.size() == 2'
+    }
+
     void testFindAllPattern() {
-        assertScript '''
-        assert "foobarbaz".findAll(~'b(a)([rz])') { full, a, b -> assert "BA"=="B$a".toUpperCase() }.size() == 2
-        '''
+        checkFindAllPattern("'foobarbaz'")
+        checkFindAllPattern('''"${'foobarbaz'}"''')
+        checkFindAllPattern("new StringBuilder('foobarbaz')")
+    }
+
+    private checkFindAllPattern(CharSequence s) {
+        assertScript 'assert ' + s + '.findAll(~"b(a)([rz])") { full, a, rz -> assert "BA"=="B" + a.toUpperCase() }.size() == 2'
     }
 
     void testReplaceAll() {
