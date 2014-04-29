@@ -566,6 +566,17 @@ class DelegateTransformTest extends CompilableTestSupport {
             // ok
         }
     }
+
+    //
+    void testShouldNotReuseRawClassNode() {
+        assertScript '''import org.codehaus.groovy.transform.DelegateMap
+class Foo {
+    DelegateMap dm = new DelegateMap()
+}
+def foo = new Foo()
+assert foo.dm.x == '123'
+'''
+    }
 }
 
 interface DelegateFoo {
@@ -619,4 +630,10 @@ interface SomeOtherInterface4619 extends SomeInterface4619 {}
 class SomeClass4619 {
     @Delegate
     SomeOtherInterface4619 delegate
+}
+
+// DO NOT MOVE INSIDE THE TEST SCRIPT OR IT WILL NOT TEST
+// WHAT IT IS SUPPOSED TO TEST ANYMORE !
+class DelegateMap {
+    protected final @Delegate Map props = [x:'123']
 }

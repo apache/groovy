@@ -319,7 +319,7 @@ public class GenericsUtils {
                     fixed.setWildcard(true);
                     newgTypes[i] = fixed;
                 } else {
-                    newgTypes[i] = new GenericsType(correctToGenericsSpec(genericsSpec, oldgType));
+                    newgTypes[i] = new GenericsType(correctToGenericsSpecRecurse(genericsSpec,correctToGenericsSpec(genericsSpec, oldgType)));
                 }
             }
         }
