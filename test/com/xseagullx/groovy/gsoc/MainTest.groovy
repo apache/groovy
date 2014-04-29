@@ -13,10 +13,12 @@ class MainTest extends Specification {
         def moduleNodeOld2 = new Main(Configuration.OLD).process(file)
 
         expect:
-        use(ASTComparatorCategory) {
-            assert moduleNodeOld == moduleNodeOld2;
+        ASTComparatorCategory.apply {
+            assert moduleNodeOld == moduleNodeOld2
+        }
+
+        ASTComparatorCategory.apply {
             assert moduleNodeNew == moduleNodeOld
-            true
         }
 
         where:

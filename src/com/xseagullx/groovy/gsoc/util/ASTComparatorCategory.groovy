@@ -14,8 +14,13 @@ class ASTComparatorCategory {
     static { log.level = Level.WARNING }
     static private List<String> EXPRESSION_IGNORE_LIST = ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"]
 
-    static objects = [] as Set
+    /**
+     *  Keeps all checked object pairs and their comparison result.
+     *  Will be cleared at {@link #apply(groovy.lang.Closure)} method }
+     */
+    static objects = [:] as Map<List<Object>, Boolean>
     static String lastName
+
     static Map<Class, List<String>> DEFAULT_CONFIGURATION = [
         (ClassNode): ['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode"],
         (ConstructorNode): ['declaringClass'],
@@ -99,6 +104,7 @@ class ASTComparatorCategory {
 
     static void apply(Closure cl, config = DEFAULT_CONFIGURATION) {
         configuration = config
+        objects.clear()
         use(ASTComparatorCategory, cl)
         configuration = DEFAULT_CONFIGURATION
     }
@@ -111,10 +117,12 @@ class ASTComparatorCategory {
      * @return
      */
     static reflexiveEquals(a, b, ignore = []) {
-        if (a in objects)
-            log.info('=' * 100 + "\nHehe. Recursion detected!\n" + '=' * 100)
+        Boolean res = objects[[a, b]]
+        if (res != null) {
+            log.info("Skipping [$a, $b] comparison as they are ${ res ? "" : "un" }equal.")
+            return res;
+        }
 
-        objects << a
         log.info("Equals was called for ${ a.getClass() } ${ a.hashCode() }, $lastName")
         if (a.is(b))
             return true
@@ -131,7 +139,11 @@ class ASTComparatorCategory {
             log.warning("Difference was found! $difference.name:: ${ a."$difference.name" } != ${ b."$difference.name" }")
         else
             log.info(" ==== Exit ${ a.getClass() } ${ a.hashCode() } ====== ")
-        difference == null
+
+        res = difference == null
+        objects[[a, b]] = res
+        objects[[b, a]] = res
+        res
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
