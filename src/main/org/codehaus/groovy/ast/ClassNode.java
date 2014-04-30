@@ -1385,7 +1385,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         ClassNode n = new ClassNode(name, modifiers, superClass,null,null);
         n.isPrimaryNode = false;
         n.setRedirect(redirect());
-        n.componentType = redirect().getComponentType();
+        if (isArray()) {
+            n.componentType = redirect().getComponentType();
+        } 
         return n;
     }
 
