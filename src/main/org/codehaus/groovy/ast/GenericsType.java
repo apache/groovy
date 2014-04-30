@@ -230,7 +230,8 @@ public class GenericsType extends ASTNode {
                     if (lowerBound!=null) return genericsTypes[0].getName().equals(lowerBound.getUnresolvedName());
                     if (upperBounds!=null) {
                         for (ClassNode upperBound : upperBounds) {
-                            if (genericsTypes[0].getName().equals(upperBound.getUnresolvedName())) return true;
+                            String name = upperBound.getGenericsTypes()[0].getName();
+                            if (genericsTypes[0].getName().equals(name)) return true;
                         }
                         return false;
                     }
