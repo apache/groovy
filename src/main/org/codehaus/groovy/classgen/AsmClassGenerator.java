@@ -140,6 +140,14 @@ public class AsmClassGenerator extends ClassGenerator {
                     BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
             );
             cv.visitSource(sourceFile, null);
+            if (classNode instanceof InnerClassNode) {
+                InnerClassNode innerClass = (InnerClassNode) classNode;
+                MethodNode enclosingMethod = innerClass.getEnclosingMethod();
+                if (enclosingMethod != null) {
+                    String outerClassName = BytecodeHelper.getClassInternalName(innerClass.getOuterClass().getName());
+                    cv.visitOuterClass(outerClassName, enclosingMethod.getName(), BytecodeHelper.getMethodDescriptor(enclosingMethod));
+                }
+            }
             if (classNode.getName().endsWith("package-info")) {
                 PackageNode packageNode = classNode.getPackage();
                 if (packageNode != null) {
