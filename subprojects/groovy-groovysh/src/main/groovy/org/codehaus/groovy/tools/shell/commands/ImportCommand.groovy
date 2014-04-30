@@ -73,7 +73,15 @@ class ImportCommand
         }
 
         def importSpec = args.join(' ')
-        if (! (importSpec ==~ '[a-zA-Z_. *]+;?$')) {
+
+        // technically java conventions don't allow numerics at the start of package/class names so the regex below
+        // is a bit lacking.  this approach works reasonably well ->
+        // "(\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*\\.)+((\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart})|\\*)+;?$"
+        // but there's something preventing it from working when class names end in a "d" or "D" like
+        // "java.awt.TextField" so it is not implemented as such here.  Perhaps this could be made to be more
+        // intelligent if someone could figure out why that is happening or could write a nicer batch of regex to
+        // solve the problem
+        if (! (importSpec ==~ '[\\da-zA-Z_. *]+;?$')) {
             def msg = "Invalid import definition: '${importSpec}'" // TODO: i18n
             log.debug(msg)
             fail(msg)

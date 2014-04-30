@@ -36,5 +36,8 @@ class ImportCommandTest
         assert null == shell << 'import java.awt.TextField; println("foo")'
         // test *, recognizing unnecessary imports sadly not implemented
         assert 'java.awt.TextArea, java.awt.TextField, java.awt.*' == shell << 'import java.awt.*'
+        // test numerics being allowed in class/package names
+        assert 'java.awt.TextArea, java.awt.TextField, java.awt.*, org.w3c.dom.*' == shell << 'import org.w3c.dom.*'
+        assert 'java.awt.TextArea, java.awt.TextField, java.awt.*, org.w3c.dom.*, java.awt.Graphics2D' == shell << 'import java.awt.Graphics2D'
     }
 }
