@@ -1354,7 +1354,10 @@ public abstract class StaticTypeCheckingSupport {
             }
             GenericsType gt = connection;
             if (!connection.isWildcard()) gt = buildWildcardType(connection);
-            if (gt.isPlaceholder() && gt.getUpperBounds().length==1 && !gt.getUpperBounds()[0].isGenericsPlaceHolder() && gt.getUpperBounds()[0].getName().equals("java.lang.Object")) {
+            if (    resolved.isPlaceholder() && resolved.getUpperBounds()!=null && 
+                    resolved.getUpperBounds().length==1 && !resolved.getUpperBounds()[0].isGenericsPlaceHolder() && 
+                    resolved.getUpperBounds()[0].getName().equals("java.lang.Object")) 
+            {
                 return true;
             }
             ClassNode compareNode;
