@@ -1377,6 +1377,45 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert  result == 6
         '''
     }
+    
+    //GROOVY-6723, GROOVY-6415
+    void testIndirectMethodLevelGenerics() {
+        assertScript '''
+            class C1<A> {
+                def void m1(A a) {C1.m2(a)}
+                static <B> void m2(B b) {}
+            }
+            new C1().m1(null) // the call does not really matter
+        '''
+        assertScript '''
+            class Test1 {
+                static <A, B> void pair1(A a, B b) {}
+                static <A, B> void pair2(A a, B b) {pair1(a, a)}
+                static <A> List<A> list1(A a) {[a]}
+                static <B> List<B> list2(B b) {list1(b)}
+                static <A> List<A> list3(A a) {list1(a)}
+            }
+            Test1.pair2(1,2) // the call does not really matter
+        '''
+        
+        assertScript '''
+            class Foo {
+                String method() {
+                    return callT('abc')
+                }
+            
+                private <T> T callT(T t) {
+                    return callV(t)
+                }
+            
+                private <V> V callV(V v) {
+                    return v
+                }
+            }
+            
+            println new Foo().method()
+        '''
+    }
 
     static class MyList extends LinkedList<String> {}
 
