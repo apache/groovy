@@ -1135,7 +1135,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private ClassNode getTypeForMapPropertyExpression(ClassNode testClass, ClassNode objectExpressionType, PropertyExpression pexp) {
         if (!implementsInterfaceOrIsSubclassOf(testClass, MAP_TYPE)) return null;
-        ClassNode intf = GenericsUtils.parameterizeType(objectExpressionType, MAP_TYPE.getPlainNodeReference());
+        ClassNode intf;
+        if (objectExpressionType.getGenericsTypes()!=null) {
+            intf = GenericsUtils.parameterizeType(objectExpressionType, MAP_TYPE.getPlainNodeReference());
+        } else {
+            intf = MAP_TYPE.getPlainNodeReference();
+        }
         // 0 is the key, 1 is the value
         GenericsType[] types = intf.getGenericsTypes();
         if (types == null || types.length != 2) return OBJECT_TYPE;
