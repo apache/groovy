@@ -881,6 +881,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
         resolveOrFail(ve.getType(), ve);
+        ClassNode origin = ve.getOriginType();
+        if (origin!=ve.getType()) resolveOrFail(origin, ve);
         return ve;
     }
 
