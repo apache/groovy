@@ -3912,12 +3912,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return resolvedPlaceholders;
     }
 
-    private static void addMethodLevelDeclaredGenerics(MethodNode method, Map<String, GenericsType> resolvedPlaceholders) {
-        ClassNode dummy = OBJECT_TYPE.getPlainNodeReference();
-        dummy.setGenericsTypes(method.getGenericsTypes());
-        GenericsUtils.extractPlaceholders(dummy, resolvedPlaceholders);
-    }
-
     private static Map<String, GenericsType> extractPlaceHolders(MethodNode method, ClassNode receiver, ClassNode declaringClass) {
         if (declaringClass.equals(OBJECT_TYPE)) {
             Map<String, GenericsType> resolvedPlaceholders = new HashMap<String, GenericsType>();
