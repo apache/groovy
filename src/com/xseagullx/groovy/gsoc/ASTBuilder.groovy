@@ -65,12 +65,12 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @Override void exitClassDeclaration(@NotNull GroovyParser.ClassDeclarationContext ctx) {
-        def classNode = new ClassNode("${moduleNode.packageName ?: ""}${ctx.IDENTIFIER()}", Modifier.PUBLIC, ClassHelper.make("java.lang.Object"))
+        def classNode = new ClassNode("${moduleNode.packageName ?: ""}${ctx.IDENTIFIER()}", Modifier.PUBLIC, ClassHelper.OBJECT_TYPE)
         setupNodeLocation(classNode, ctx)
         moduleNode.addClass(classNode)
         classNode.modifiers = parseClassModifiers(ctx.classModifiers())
         classNode.syntheticPublic = (classNode.modifiers & Opcodes.ACC_SYNTHETIC) != 0
-        classNode.modifiers &= ~Opcodes.ACC_SYNTHETIC // FIXME Magic with syntetic modifier.
+        classNode.modifiers &= ~Opcodes.ACC_SYNTHETIC // FIXME Magic with synthetic modifier.
 
         parseMembers(classNode, ctx.classMember())
     }
@@ -97,6 +97,10 @@ class ASTBuilder extends GroovyBaseListener {
         constructorNode.syntheticPublic = ctx.VISIBILITY_MODIFIER() == null
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Statements.
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     static Statement parseBlockStatement(GroovyParser.BlockStatementContext ctx) {
         def statement = new BlockStatement()
         if (!ctx)
@@ -112,9 +116,14 @@ class ASTBuilder extends GroovyBaseListener {
         throw new RuntimeException("Unsupported statement type! $ctx")
     }
 
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Statement parseStatement(GroovyParser.ExpressionStatementContext ctx) {
         setupNodeLocation(new ExpressionStatement(parseExpression(ctx.expression())), ctx)
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Expressions.
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     static Expression parseExpression(GroovyParser.ExpressionContext ctx) {
         throw new RuntimeException("Unsupported expression type! $ctx")
@@ -226,7 +235,7 @@ class ASTBuilder extends GroovyBaseListener {
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GroovyParser.DeclarationExpressionContext ctx) {
         def left = new VariableExpression(ctx.IDENTIFIER().text)
-        def col = ctx.start.charPositionInLine + 1 // FIXME Why assignment token location is it's first occurence.
+        def col = ctx.start.charPositionInLine + 1 // FIXME Why assignment token location is it's first occurrence.
         def token = new Token(Types.ASSIGN, '=', ctx.start.line, col)
         def right = ctx.childCount == 2 ? new EmptyExpression() : parseExpression(ctx.expression())
 
@@ -255,6 +264,10 @@ class ASTBuilder extends GroovyBaseListener {
         expression
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // End of Expressions.
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     private static ArgumentListExpression createArgumentList(GroovyParser.ArgumentListContext ctx) {
         def argumentListExpression = new ArgumentListExpression()
         ctx?.expression()?.each {
@@ -281,17 +294,15 @@ class ASTBuilder extends GroovyBaseListener {
         def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier())
 
         def typeDeclaration = parseTypeDeclaration(ctx.typeDeclaration())
-        if (!hasVisibilityModifier) { // no visibility specified. Generate property node.
-            def prpertyModifier = modifiers | Opcodes.ACC_PUBLIC
-            def propertyNode = classNode.addProperty(ctx.IDENTIFIER().text, prpertyModifier, typeDeclaration, null, null, null)
+        if (hasVisibilityModifier)
+            setupNodeLocation(classNode.addField(ctx.IDENTIFIER().text, modifiers, typeDeclaration, null), ctx)
+        else { // no visibility specified. Generate property node.
+            def propertyModifier = modifiers | Opcodes.ACC_PUBLIC
+            def propertyNode = classNode.addProperty(ctx.IDENTIFIER().text, propertyModifier, typeDeclaration, null, null, null)
             propertyNode.field.modifiers = modifiers | Opcodes.ACC_PRIVATE
             propertyNode.field.synthetic = true
             setupNodeLocation(propertyNode.field, ctx)
             setupNodeLocation(propertyNode, ctx)
-        }
-        else {
-            def fieldNode = classNode.addField(ctx.IDENTIFIER().text, modifiers, typeDeclaration, null)
-            setupNodeLocation(fieldNode, ctx)
         }
     }
 
@@ -374,6 +385,13 @@ class ASTBuilder extends GroovyBaseListener {
         opcode
     }
 
+    /**
+     * Traverse through modifiers, and combine them in one int value. Raise an error if there is multiple occurrences of same modifier.
+     * @param ctxList modifiers list.
+     * @param defaultVisibilityModifier Default visibility modifier. Can be null. Applied if providen, and no visibility modifier exists in the ctxList.
+     * @return tuple of int modifier and boolean flag, signalising visibility modifiers presence(true if there is visibility modifier in list, false otherwise).
+     * @see #checkModifierDuplication(int, int, org.antlr.v4.runtime.tree.TerminalNode)
+     */
     def parseModifiers(List<GroovyParser.MemberModifierContext> ctxList, Integer defaultVisibilityModifier = null) {
         int modifiers = 0;
         boolean hasVisibilityModifier = false;
@@ -428,7 +446,4 @@ class ASTBuilder extends GroovyBaseListener {
 
         parseVisibilityModifiers(modifiers[0])
     }
-
-
-
 }
