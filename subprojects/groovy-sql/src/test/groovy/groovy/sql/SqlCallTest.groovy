@@ -99,6 +99,30 @@ class SqlCallTest extends GroovyTestCase {
               SET answer = ('Found total ' + total);
             END;
         """
+
+        //Results in both multiple Out Parameters and multiple ResultSets
+        sql.execute """
+          CREATE PROCEDURE FindAllByFirstAndFindAllByLastWithTotals(IN p_firstname VARCHAR(10), IN p_lastname VARCHAR(10), OUT first_answer VARCHAR(25), OUT last_answer VARCHAR(25))
+            READS SQL DATA DYNAMIC RESULT SETS 2
+            BEGIN ATOMIC
+              DECLARE firstTotal INTEGER;
+              DECLARE lastTotal INTEGER;
+              DECLARE firstResultSet CURSOR WITHOUT HOLD WITH RETURN FOR
+                SELECT id, firstname, lastname FROM person where firstname like (p_firstname + '%')
+                  order by id asc
+                FOR READ ONLY;
+              DECLARE lastResultSet CURSOR WITHOUT HOLD WITH RETURN FOR
+                SELECT id, firstname, lastname FROM person where lastname like (p_lastname + '%')
+                  order by id asc
+                FOR READ ONLY;
+              OPEN firstResultSet;
+              OPEN lastResultSet;
+              SELECT count(*) into firstTotal FROM person where firstname like (p_firstname + '%');
+              SELECT count(*) into lastTotal FROM person where lastname like (p_lastname + '%');
+              SET first_answer = ('Found total ' + firstTotal);
+              SET last_answer = ('Found total ' + lastTotal);
+            END;
+        """
     }
 
     @Override
@@ -188,6 +212,72 @@ class SqlCallTest extends GroovyTestCase {
         assert rows[1].id == 4
         assert rows[1].firstname == 'Jean'
         assert rows[1].lastname == 'Gabin'
+    }
+
+    void testCallWithAllRows() {
+        String foundFirst
+        String foundLast
+        List<GroovyRowResult> firstRows
+        List<GroovyRowResult> lastRows
+
+        List<List<GroovyRowResult>> rowList = sql.callWithAllRows '{call FindAllByFirstAndFindAllByLastWithTotals(?, ?, ?, ?)}', ['J', 'V', Sql.VARCHAR, Sql.VARCHAR], { firstTotal, lastTotal ->
+            foundFirst = firstTotal
+            foundLast = lastTotal
+        }
+        assert foundFirst == 'Found total 2'
+        assert foundLast == 'Found total 1'
+
+        assert rowList.size() == 2
+
+        firstRows = rowList.get(0)
+
+        assert firstRows[0].id == 1
+        assert firstRows[0].firstname == 'James'
+        assert firstRows[0].lastname == 'Strachan'
+        assert firstRows[1].id == 4
+        assert firstRows[1].firstname == 'Jean'
+        assert firstRows[1].lastname == 'Gabin'
+
+        lastRows = rowList.get(1)
+
+        assert lastRows[0].id == 5
+        assert lastRows[0].firstname == 'Lino'
+        assert lastRows[0].lastname == 'Ventura'
+
+    }
+
+    void testCallWithAllRowsGString() {
+        def first = 'J'
+        def last = 'V'
+
+        String foundFirst
+        String foundLast
+        List<GroovyRowResult> firstRows
+        List<GroovyRowResult> lastRows
+
+        List<List<GroovyRowResult>> rowList = sql.callWithAllRows "{call FindAllByFirstAndFindAllByLastWithTotals($first, $last, ${Sql.VARCHAR}, ${Sql.VARCHAR})}", { firstTotal, lastTotal ->
+            foundFirst = firstTotal
+            foundLast = lastTotal
+        }
+        assert foundFirst == 'Found total 2'
+        assert foundLast == 'Found total 1'
+
+        assert rowList.size() == 2
+
+        firstRows = rowList.get(0)
+
+        assert firstRows[0].id == 1
+        assert firstRows[0].firstname == 'James'
+        assert firstRows[0].lastname == 'Strachan'
+        assert firstRows[1].id == 4
+        assert firstRows[1].firstname == 'Jean'
+        assert firstRows[1].lastname == 'Gabin'
+
+        lastRows = rowList.get(1)
+
+        assert lastRows[0].id == 5
+        assert lastRows[0].firstname == 'Lino'
+        assert lastRows[0].lastname == 'Ventura'
     }
 
 }
