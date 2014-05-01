@@ -14,7 +14,7 @@ function asd()
 }
 </script>
     <body class="center" onload="asd();">
-        
+
         <!-- ========== START OF NAVBAR ========== -->
         <a name="navbar_top"><!-- --></a>
 
@@ -27,42 +27,39 @@ function asd()
         </div>
         <!-- =========== END OF NAVBAR =========== -->
         <!--
-        <A HREF="#_A_">A</A> 
+        <a HREF="#_A_">A</a>
         -->
-        <% indexMap.each{ it -> %>
-        <A HREF="#_${it.key}_">${it.key}</A>
+        <% indexMap.each { it -> %>
+        <a HREF="#_${it.key}_">${it.key}</a>
         <% } %>
-        <HR>
-        
+        <hr>
+
         <% indexMap.each { indexMapEntry -> %>
-        <A NAME="_${indexMapEntry.key}_"><!-- --></A>
-        <H2><B>${indexMapEntry.key}</B></H2>
-        <DL>
+        <a name="_${indexMapEntry.key}_"><!-- --></a>
+        <h2><b>${indexMapEntry.key}</b></h2>
+        <dl>
             <% indexMapEntry.value.each { it -> %>
-            <% final String classUrl = it.className.replaceAll('\\.','/') + '.html' %>
-            <% if (it.method) { %>
-            <% final String methodUrl = classUrl + '#' + it.method.name + '(' + it.parametersSignature + ')' %>
-            <dt><a href="${methodUrl}"><b>${it.method.name}(${it.parametersSignature})</b></a> - Method in ${it.classDesc} ${it.packageName}.<a href="${classUrl}">${it.simpleClassName}</a>
-            </dt>
+            <% final String classUrl = it.docType.fullyQualifiedClassName.replaceAll('\\.','/') + '.html' %>
+            <% if (it.docMethod) { %>
+            <% final String methodUrl = classUrl + '#' + it.docMethod.name + '(' + it.docMethod.parametersSignature + ')' %>
+            <dt><a href="${methodUrl}"><b>${it.docMethod.name}(${it.docMethod.parametersSignature})</b></a> - Method in ${it.docType.interface ? 'interface' : 'class'} ${it.docType.packageName}.<a href="${classUrl}">${it.docType.simpleClassName}</a></dt>
+            <dd> ${it.docMethod.shortComment}</dd>
             <% } else { %>
-            <dt><a href="${classUrl}"><b>${it.simpleClassName}</b></a> - ${it.classDesc.capitalize()} in ${it.packageName}
-            </dt>
+            <dt><a href="${classUrl}"><b>${it.docType.simpleClassName}</b></a> - ${it.docType.interface ? 'Interface' : 'Class'} in ${it.docType.packageName}</dt>
+            <dd> ${it.docType.shortComment}</dd>
             <% } %>
-            <dd>
-            ${it.shortComment}
-            </dd>
             &nbsp;
             <% } %>
-        </DL>
+        </dl>
         <% } %>
-        
+
         <!--
-        <A HREF="#_A_">A</A> 
+        <a HREF="#_A_">A</a>
         -->
-        <% indexMap.each{ it -> %>
+        <% indexMap.each { it -> %>
         <a href="#_${it.key}_">${it.key}</a>
         <% } %>
-        
+
         <!-- ========== START OF NAVBAR ========== -->
         <a name="navbar_bottom"><!-- --></a>
         <div class="topNav">
@@ -73,6 +70,6 @@ function asd()
             </ul>
         </div>
         <!-- =========== END OF NAVBAR =========== -->
-        
+
     </body>
 </html>

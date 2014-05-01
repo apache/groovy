@@ -13,12 +13,15 @@
 
 <div class="indexContainer">
     <h2 title="All Classes">All Classes</h2>
-</div>
-
-<div class="indexContainer">
-    <ul title="All Classes">
-        <% classes.each { %>
-        <li><a href="${it.replaceAll('\\.', '/')}.html" target="classFrame">${it.replaceAll('.*\\.', '')}</a></li>
+    <ul>
+        <% docTypes.each { docType -> %>
+        <li><a href="${docType.fullyQualifiedClassName.replaceAll(/\./, '/')}.html" title="${docType.interface ? 'interface' : 'class'} in ${docType.packageName}"  target="classFrame">
+            <% if (docType.interface) { %>
+            <i>${docType.simpleClassName}</i>
+            <% } else { %>
+            ${docType.simpleClassName}
+            <% } %>
+        </a></li>
         <% } %>
     </ul>
 </div>

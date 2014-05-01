@@ -2179,7 +2179,8 @@ table.overviewSummary tr th, .contentContainer ul li table tr th {
     padding: 10px;
     font-weight: bold;
     font-size: 1em;
-    text-align: left
+    text-align: left;
+    white-space: nowrap;
 }
 
 table.overviewSummary tr td, .contentContainer ul li table tr td {
