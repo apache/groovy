@@ -44,8 +44,10 @@ class ASTComparatorCategoryTest extends GroovyTestCase {
         def b = new AstBuilder().buildFromString CompilePhase.SEMANTIC_ANALYSIS, source1
         def c = new AstBuilder().buildFromString CompilePhase.SEMANTIC_ANALYSIS, source2
 
-        use(ASTComparatorCategory) {
+        ASTComparatorCategory.apply {
             assert a == b
+        }
+        ASTComparatorCategory.apply {
             assert a != c
         }
     }

@@ -1,6 +1,7 @@
 
 package com.xseagullx.groovy.gsoc
 
+import groovy.util.logging.Log
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -12,6 +13,7 @@ enum Configuration {
     NEW,
 }
 
+@Log
 class Main {
 
     private CompilerConfiguration configuration
@@ -28,7 +30,7 @@ class Main {
     }
 
     public static void main(String[] args) {
-        println("GSoC started!")
+        log.info("GSoC started!")
 
         if (args.size() != 2) {
             displayHelp()
@@ -67,10 +69,10 @@ class Main {
             su.completePhase()
             su.nextPhase()
             su.convert()
-            println("Processed $file")
+            log.info("Processed $file")
             return su.AST
         } catch (any) {
-            println("Failed $file")
+            log.info("Failed $file")
             any.printStackTrace()
             return null
         }
@@ -89,7 +91,7 @@ class Main {
         unit.configure(config)
         unit.addSource(file)
         unit.compile()
-        println(unit)
+        log.info(unit.toString())
     }
 
     static def displayHelp() {
