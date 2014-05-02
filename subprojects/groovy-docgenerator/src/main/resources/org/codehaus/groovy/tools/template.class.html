@@ -79,6 +79,35 @@
                                     </table>
                             </ul>
                         </li>
+                        <% if (docType.inheritedMethods) { %>
+                        <li class="blockList">
+                            <h3>Inherited Methods Summary</h3>
+                            <ul class="blockList">
+                                <table border="0" cellpadding="3" cellspacing="0" class="overviewSummary">
+                                    <caption><span>Methods</span><span class="tabEnd">&nbsp;</span></caption>
+                                    <tbody>
+                                    <tr>
+                                        <th>Methods inherited from class</th>
+                                        <th>Name</th>
+                                    </tr>
+                                    <% docType.inheritedMethods.each { inhDocType, inhDocMethods -> %>
+                                    <tr>
+                                        <td>${inhDocType.interface ? 'Interface' : 'Class'} ${docType.linkAnchor(inhDocType)}</td>
+                                        <td>
+                                            <%= inhDocMethods.collectMany { docMethod ->
+                                                docMethod.isStatic() ?
+                                                [] :
+                                                ["""<code><strong><a
+                                                    href="${pathPref}${inhDocType.fullyQualifiedClassName.replace('.', '/')}.html#${docMethod.name}(${docMethod.parametersSignature})">${docMethod.name}</a>
+                                                    </strong></code>"""] }.join(', ') %>
+                                        </td>
+                                    </tr>
+                                    <% } %>
+                                    </tbody>
+                                </table>
+                            </ul>
+                        </li>
+                        <% } %>
                     </ul>
                 </li>
             </ul>

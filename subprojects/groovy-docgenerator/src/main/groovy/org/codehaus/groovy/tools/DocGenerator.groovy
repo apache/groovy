@@ -16,6 +16,7 @@
 package org.codehaus.groovy.tools
 
 import com.thoughtworks.qdox.JavaDocBuilder
+import com.thoughtworks.qdox.model.JavaClass
 import com.thoughtworks.qdox.model.JavaMethod
 import com.thoughtworks.qdox.model.JavaParameter
 import com.thoughtworks.qdox.model.Type
@@ -80,6 +81,7 @@ class DocGenerator {
             }
             docSource.add(firstParamType, method)
         }
+        docSource.populateInheritedMethods()
         return docSource
     }
 
@@ -250,6 +252,28 @@ class DocGenerator {
             docType.docMethods << docMethod
         }
 
+        void populateInheritedMethods() {
+            def allTypes = allDocTypes.collectEntries{ [it.fullyQualifiedClassName, it] }
+            allTypes.each { name, docType ->
+                if (name.endsWith('[]') || name.startsWith('primitive-types')) return
+                Type next = docType.javaClass.superClass
+                while (next != null) {
+                    if (allTypes.keySet().contains(next.value)) {
+                        docType.inheritedMethods[allTypes[next.value]] = allTypes[next.value].docMethods
+                    }
+                    next = next.javaClass.superClass
+                }
+                def remaining = docType.javaClass.implementedInterfaces.toList()
+                while (!remaining.isEmpty()) {
+                    def nextInt = remaining.remove(0)
+                    if (allTypes.keySet().contains(nextInt.fullyQualifiedName)) {
+                        docType.inheritedMethods[allTypes[nextInt.fullyQualifiedName]] = allTypes[nextInt.fullyQualifiedName].docMethods
+                    }
+                    remaining.addAll(nextInt.implementedInterfaces.toList())
+                }
+            }
+        }
+
         SortedSet<DocType> getAllDocTypes() {
             def allSet = new TreeSet(SORT_KEY_COMPARATOR)
             allSet.addAll(packages.collectMany { it.docTypes })
@@ -275,6 +299,11 @@ class DocGenerator {
         private Type type
         final String shortComment = "" // empty because cannot get a comment of JDK
         SortedSet<DocMethod> docMethods = new TreeSet<DocMethod>(SORT_KEY_COMPARATOR)
+        Map<String, List<DocMethod>> inheritedMethods = new LinkedHashMap<String, List<DocMethod>>()
+
+        JavaClass getJavaClass() {
+            type.javaClass
+        }
 
         String getPackageName() {
             if (type.primitive) {
@@ -304,6 +333,10 @@ class DocGenerator {
 
         String getSortKey() {
             simpleClassName + ' ' + fullyQualifiedClassName
+        }
+
+        String linkAnchor(DocType otherDocType) {
+            DocUtil.getLinkAnchor(otherDocType.fullyQualifiedClassName, packageName)
         }
     }
 
