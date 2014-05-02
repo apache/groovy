@@ -1,18 +1,22 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<!--NewPage-->
 <html>
 <head>
     <title>
         ${docPackage.name} (Groovy enhanced JDK classes)
     </title>
 
-    <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
+    <%
+    int dotCount = docPackage.name.count('.')
+    String pathPref = '../' * (dotCount + 1)
+    %>
+
+    <link rel="stylesheet" type="text/css" href="${pathPref}stylesheet.css" title="Style">
 </head>
 
 <body class="left">
 
 <div class="indexHeader">
-    <b>${docPackage.name}</b>
+    <b><a href="package-summary.html" target="classFrame">${docPackage.name}</a></b>
 </div>
 
 <% if (docPackage.docTypes.any { it.interface }) { %>

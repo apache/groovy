@@ -121,10 +121,14 @@ class DocGenerator {
 
         // the package-frame.html for each package
         def packageFrameTemplate = createTemplate(engine, 'template.package-frame.html')
+        def packageSummaryTemplate = createTemplate(engine, 'template.package-summary.html')
         docSource.packages.each { DocPackage docPackage ->
             def dir = DocUtil.createPackageDirectory(outputDir, docPackage.name)
             new File(dir, 'package-frame.html').withWriter {
                 it << packageFrameTemplate.make(docPackage: docPackage)
+            }
+            new File(dir, 'package-summary.html').withWriter {
+                it << packageSummaryTemplate.make(docPackage: docPackage)
             }
         }
 
