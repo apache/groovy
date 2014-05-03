@@ -2159,6 +2159,20 @@ h1, h2, h3 {
     display: inline
 }
 
+table.overviewSummary tr {
+    border-left: 1px solid #EEE;
+    border-right: 1px solid #EEE;
+}
+
+table.overviewSummary tr:first-child {
+    border-top: 1px solid #EEE;
+    border-bottom: 1px solid #EEE;
+}
+
+table.overviewSummary tr:last-child {
+    border-bottom: 1px solid #EEE;
+}
+
 table.overviewSummary, .contentContainer ul li table {
     width: 100%;
     margin: 20px 0
@@ -2176,18 +2190,18 @@ table.overviewSummary caption, .contentContainer ul li table caption {
 }
 
 table.overviewSummary tr th, .contentContainer ul li table tr th {
-    padding: 10px;
+    padding: 5px 10px;
     font-weight: bold;
     font-size: 1em;
     text-align: left;
     white-space: nowrap;
+    background: #f2f2f2
 }
 
 table.overviewSummary tr td, .contentContainer ul li table tr td {
     vertical-align: top;
     font-size: .9em;
-    padding: 5px 10px;
-    border-top: 1px solid #EEE
+    padding: 5px 10px
 }
 
 table.overviewSummary tbody > tr:nth-child(odd) > td, .contentContainer ul li table tbody > tr:nth-child(odd) > td {

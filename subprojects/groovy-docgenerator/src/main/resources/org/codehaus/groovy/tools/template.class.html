@@ -49,60 +49,39 @@
                     <ul class="blockList">
                         <li class="blockList">
                             <h3>Methods Summary</h3>
-                                <ul class="blockList">
-
-                                    <table border="0" cellpadding="3" cellspacing="0" class="overviewSummary">
-                                        <caption><span>Methods</span><span class="tabEnd">&nbsp;</span></caption>
-
-                                        <tr>
-                                            <th>Return type</th>
-                                            <th>Name and parameters</th>
-                                        </tr>
-                                        <tbody>
-                                            <% docType.docMethods.eachWithIndex { docMethod, i -> %>
-                                            <tr class="${i % 2 == 0 ? 'altColor' : 'rawColor'}">
-                                                <td align="right" valign="top" width="1%">
-                                                    <span> <code>${docMethod.isStatic() ? 'static ' : ''}${docMethod.returnTypeDocUrl}</code></span>
-                                                </td>
-                                                <td>
-                                                    <code><strong><a href="#${docMethod.name}(${docMethod.parametersSignature})">${docMethod.name}</a></strong>(${docMethod.parametersDocUrl})</code>
-                                                    <br>
-                                                    ${docMethod.shortComment}
-                                                </td>
-                                            </tr>
-                                            <% } %>
-                                        </tbody>
-                                    </table>
-                            </ul>
-                        </li>
-                        <% if (docType.inheritedMethods) { %>
-                        <li class="blockList">
-                            <h3>Inherited Methods Summary</h3>
-                            <ul class="blockList">
-                                <table border="0" cellpadding="3" cellspacing="0" class="overviewSummary">
-                                    <caption><span>Methods</span><span class="tabEnd">&nbsp;</span></caption>
-                                    <tbody>
+                            <table border="0" cellpadding="3" cellspacing="0" class="overviewSummary">
+                               <caption><span>Methods</span><span class="tabEnd">&nbsp;</span></caption>
+                                <tbody>
                                     <tr>
-                                        <th>Methods inherited from class</th>
-                                        <th>Name</th>
+                                        <th>Return type</th>
+                                        <th>Name and parameters</th>
                                     </tr>
-                                    <% docType.inheritedMethods.each { inhDocType, inhDocMethods -> %>
-                                    <tr>
-                                        <td>${inhDocType.interface ? 'Interface' : 'Class'} ${docType.linkAnchor(inhDocType)}</td>
+                                    <% docType.docMethods.eachWithIndex { docMethod, i -> %>
+                                    <tr class="${i % 2 == 0 ? 'altColor' : 'rawColor'}">
+                                        <td align="right" valign="top" width="1%">
+                                            <span> <code>${docMethod.isStatic() ? 'static ' : ''}${docMethod.returnTypeDocUrl}</code></span>
+                                        </td>
                                         <td>
-                                            <%= inhDocMethods.collectMany { docMethod ->
-                                                docMethod.isStatic() ?
-                                                [] :
-                                                ["""<code><strong><a
-                                                    href="${pathPref}${inhDocType.fullyQualifiedClassName.replace('.', '/')}.html#${docMethod.name}(${docMethod.parametersSignature})">${docMethod.name}</a>
-                                                    </strong></code>"""] }.join(', ') %>
+                                            <code><strong><a href="#${docMethod.name}(${docMethod.parametersSignature})">${docMethod.name}</a></strong>(${docMethod.parametersDocUrl})</code>
+                                            <br>
+                                            ${docMethod.shortComment}
                                         </td>
                                     </tr>
                                     <% } %>
-                                    </tbody>
-                                </table>
-                            </ul>
+                                </tbody>
+                            </table>
                         </li>
+                        <% docType.inheritedMethods.each { inhDocType, inhDocMethods -> %>
+                        <ul class="blockList">
+                            <li class="blockList">
+                            <h4>Methods inherited from ${inhDocType.interface ? 'interface' : 'class'} ${docType.packageName}.${docType.linkAnchor(inhDocType)}</h4>
+                                <p>
+                                    <%= inhDocMethods.findAll { !it.static }.collect { docMethod ->
+                                        """<code><strong><a href="${pathPref}${inhDocType.fullyQualifiedClassName.replace('.', '/')}.html#${docMethod.name}(${docMethod.parametersSignature})">${docMethod.name}</a></strong></code>"""
+                                    }.join(", ") %>
+                                </p>
+                            </li>
+                        </ul>
                         <% } %>
                     </ul>
                 </li>
