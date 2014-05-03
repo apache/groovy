@@ -115,6 +115,10 @@ task docGDK {
                      outputproperty: 'odr') {
                     arg(value: '-title')
                     arg(value: 'Groovy JDK enhancements')
+                    arg(value: '-link')
+                    arg(value: 'groovy,org.codehaus.groovy=http://groovy.codehaus.org/gapi/')
+                    arg(value: '-link')
+                    arg(value: 'java,org.xml,javax,org.w3c=http://docs.oracle.com/javase/7/docs/api/')
                     // either package name if in core or fully qualified path otherwise
                     arg(value: 'org.codehaus.groovy.runtime.DefaultGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.DefaultGroovyStaticMethods')

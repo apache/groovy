@@ -28,6 +28,7 @@ import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
 
 import java.text.BreakIterator
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Generate documentation about the methods provided by the Groovy Development Kit
@@ -39,6 +40,7 @@ class DocGenerator {
     private static final MessageSource messages = new MessageSource(DocGenerator)
     private static final Logger log = Logger.create(DocGenerator)
     private static final Comparator SORT_KEY_COMPARATOR = [compare: { a, b -> return a.sortKey.compareTo(b.sortKey) }] as Comparator
+    private static final Map<String, String> CONFIG = new ConcurrentHashMap<String, String>();
 
     List<File> sourceFiles
     File outputDir
@@ -89,26 +91,26 @@ class DocGenerator {
     /**
      * Builds an HTML page from the structure of DefaultGroovyMethods.
      */
-    void generateAll(Map<String, String> config) {
+    void generateAll() {
         def engine = new SimpleTemplateEngine()
 
         // the index.html
         def indexTemplate = createTemplate(engine, 'index.html')
         new File(outputDir, 'index.html').withWriter {
-            it << indexTemplate.make(title: config.title)
+            it << indexTemplate.make(title: CONFIG.title)
         }
 
         // the overview-summary.html
         def overviewTemplate = createTemplate(engine, 'overview-summary.html')
         new File(outputDir, 'overview-summary.html').withWriter {
-            it << overviewTemplate.make(title: config.title)
+            it << overviewTemplate.make(title: CONFIG.title)
         }
 
         // the overview-frame.html
         def overviewFrameTemplate = createTemplate(engine, 'template.overview-frame.html')
         new File(outputDir, 'overview-frame.html').withWriter {
             def docPackagesExceptPrimitiveType = docSource.packages.findAll { !it.primitive }
-            it << overviewFrameTemplate.make(packages: docPackagesExceptPrimitiveType, title: config.title)
+            it << overviewFrameTemplate.make(packages: docPackagesExceptPrimitiveType, title: CONFIG.title)
         }
 
         // the package-list
@@ -119,7 +121,7 @@ class DocGenerator {
         // the allclasses-frame.html
         def allClassesTemplate = createTemplate(engine, 'template.allclasses-frame.html')
         new File(outputDir, 'allclasses-frame.html').withWriter {
-            it << allClassesTemplate.make(docTypes: docSource.allDocTypes, title: config.title)
+            it << allClassesTemplate.make(docTypes: docSource.allDocTypes, title: CONFIG.title)
         }
 
         // the package-frame.html and package-summary.html for each package
@@ -128,10 +130,10 @@ class DocGenerator {
         docSource.packages.each { DocPackage docPackage ->
             def dir = DocUtil.createPackageDirectory(outputDir, docPackage.name)
             new File(dir, 'package-frame.html').withWriter {
-                it << packageFrameTemplate.make(docPackage: docPackage, title: config.title)
+                it << packageFrameTemplate.make(docPackage: docPackage, title: CONFIG.title)
             }
             new File(dir, 'package-summary.html').withWriter {
-                it << packageSummaryTemplate.make(docPackage: docPackage, title: config.title)
+                it << packageSummaryTemplate.make(docPackage: docPackage, title: CONFIG.title)
             }
         }
 
@@ -140,14 +142,14 @@ class DocGenerator {
         docSource.allDocTypes.each { DocType docType ->
             def dir = DocUtil.createPackageDirectory(outputDir, docType.packageName)
             new File(dir, docType.simpleClassName + '.html').withWriter {
-                it << classTemplate.make(docType: docType, title: config.title)
+                it << classTemplate.make(docType: docType, title: CONFIG.title)
             }
         }
 
         // the index-all.html
         def indexAllTemplate = createTemplate(engine, 'template.index-all.html')
         new File(outputDir, 'index-all.html').withWriter {
-            it << indexAllTemplate.make('indexMap': generateIndexMap(), title: config.title)
+            it << indexAllTemplate.make('indexMap': generateIndexMap(), title: CONFIG.title)
         }
 
         // copy resources
@@ -209,14 +211,17 @@ class DocGenerator {
         cli._(longOpt: 'version', messages['cli.option.version.description'])
         cli.o(longOpt: 'outputDir', args:1, argName: 'path', messages['cli.option.output.dir.description'])
         cli.title(longOpt: 'title', args:1, argName: 'text', messages['cli.option.title.description'])
+        cli.link(args:2, valueSeparator:'=', argName:'comma-separated-package-prefixes=url',
+                messages['cli.option.link.patterns.description'])
         def options = cli.parse(args)
-        System.err.println args
-        System.err.println options.dump()
-        System.err.println options.arguments()
 
         if (options.help) {
             cli.usage()
             return
+        }
+
+        if (options.links && options.links.size() % 2 == 1) {
+            throw new IllegalArgumentException("Links should be specified in pattern=url pairs")
         }
 
         if (options.version) {
@@ -228,7 +233,11 @@ class DocGenerator {
 
         def outputDir = new File(options.outputDir ?: "target/html/groovy-jdk")
         outputDir.mkdirs()
-        def config = [title: options.title ?: "Groovy JDK"]
+        CONFIG.title = options.title ?: "Groovy JDK"
+        if (options.links) {
+            CONFIG.links = options.links.collate(2).collectMany{ prefixes, url -> prefixes.tokenize(',').collect{[it, url]} }.collectEntries()
+        }
+        CONFIG.locale = Locale.default  // TODO allow locale to be passed in
 
         def srcFiles = options.arguments().collect { DocUtil.sourceFileOf(it) }
         try {
@@ -245,7 +254,7 @@ class DocGenerator {
         }
 
         def docGen = new DocGenerator(srcFiles, outputDir)
-        docGen.generateAll(config)
+        docGen.generateAll()
 
         def end = System.currentTimeMillis()
         log.debug "Done. Took ${end - start} milliseconds."
@@ -460,7 +469,7 @@ class DocGenerator {
         }
 
         static String getFirstSentence(String text) {
-            def boundary = BreakIterator.getSentenceInstance(Locale.default) // TODO allow locale to be passed in
+            def boundary = BreakIterator.getSentenceInstance(CONFIG.locale)
             boundary.setText(text)
             int start = boundary.first()
             int end = boundary.next()
@@ -496,12 +505,13 @@ class DocGenerator {
             if (inGdk) {
                 apiBaseUrl = '../' * (originPackageName.count('.') + 1)
                 title = "GDK enhancement for ${fullyQualifiedClassName}"
-            } else if (packageName.startsWith("groovy") || packageName.startsWith("org.codehaus.groovy")) {
-                apiBaseUrl = "http://groovy.codehaus.org/gapi/" // TODO don't hardcode
-                title = "Groovy class in $packageName"
             } else {
-                apiBaseUrl = "http://docs.oracle.com/javase/7/docs/api/" // TODO don't hardcode
-                title = "JDK class in $packageName"
+                title = "Class in $packageName"
+                apiBaseUrl = './'
+                String key = CONFIG.links.keySet().find{ packageName.startsWith(it) }
+                if (key) {
+                    apiBaseUrl = CONFIG.links[key]
+                }
             }
 
             def url = "${apiBaseUrl}${packageName.replace('.', '/')}/${simpleClassName}.html${methodSignatureHash}"
