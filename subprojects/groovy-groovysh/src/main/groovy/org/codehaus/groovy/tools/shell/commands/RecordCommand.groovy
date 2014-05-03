@@ -81,7 +81,7 @@ class RecordCommand
 
     def do_start = {List<String> args ->
         if (isRecording()) {
-            fail("Already recording to: $file")
+            fail("Already recording to: \"$file\"")
         }
 
         if (args.size() == 0) {
@@ -98,7 +98,7 @@ class RecordCommand
         writer.println("// OPENED: " + new Date())
         writer.flush()
         
-        io.out.println("Recording session to: $file")
+        io.out.println("Recording session to: \"$file\"")
 
         return file
     }
@@ -114,7 +114,7 @@ class RecordCommand
         writer.close()
         writer = null
 
-        io.out.println("Recording stopped; session saved as: $file (${file.length()} bytes)")
+        io.out.println("Recording stopped; session saved as: \"$file\" (${file.length()} bytes)")
 
         def tmp = file
         file = null
@@ -129,7 +129,7 @@ class RecordCommand
             return null
         }
 
-        io.out.println("Recording to file: $file (${file.length()} bytes)")
+        io.out.println("Recording to file: \"$file\" (${file.length()} bytes)")
 
         return file
     }

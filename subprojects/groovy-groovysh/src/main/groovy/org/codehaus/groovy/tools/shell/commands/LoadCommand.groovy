@@ -49,7 +49,7 @@ class LoadCommand
         for (source in args) {
             URL url
             
-            log.debug("Attempting to load: $url")
+            log.debug("Attempting to load: \"$url\"")
             
             try {
                 url = new URL("$source")
@@ -58,7 +58,7 @@ class LoadCommand
                 def file = new File("$source")
                 
                 if (!file.exists()) {
-                    fail("File not found: $file") // TODO: i18n
+                    fail("File not found: \"$file\"") // TODO: i18n
                 }
                 
                 url = file.toURI().toURL()

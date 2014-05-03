@@ -59,12 +59,12 @@ class SaveCommand
         def file = new File("${args[0]}")
 
         if (io.verbose) {
-            io.out.println("Saving current buffer to file: $file") // TODO: i18n
+            io.out.println("Saving current buffer to file: \"$file\"") // TODO: i18n
         }
 
         def dir = file.parentFile
         if (dir && !dir.exists()) {
-            log.debug("Creating parent directory path: $dir")
+            log.debug("Creating parent directory path: \"$dir\"")
             
             dir.mkdirs()
         }
