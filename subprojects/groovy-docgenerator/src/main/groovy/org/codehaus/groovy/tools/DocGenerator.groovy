@@ -40,7 +40,7 @@ class DocGenerator {
     private static final MessageSource messages = new MessageSource(DocGenerator)
     private static final Logger log = Logger.create(DocGenerator)
     private static final Comparator SORT_KEY_COMPARATOR = [compare: { a, b -> return a.sortKey.compareTo(b.sortKey) }] as Comparator
-    private static final Map<String, String> CONFIG = new ConcurrentHashMap<String, String>();
+    private static final Map<String, Object> CONFIG = new ConcurrentHashMap<String, Object>();
 
     List<File> sourceFiles
     File outputDir
@@ -459,8 +459,8 @@ class DocGenerator {
 
         private static String linkify(String text, String packageName) {
             text.replaceAll(/\{@link\s+([^}]*)\s*\}/) { String all, String destination ->
-                // A class name cannot be omitted: https://jira.codehaus.org/browse/GROOVY-6740
-                DocUtil.getLinkAnchor(destination, packageName)
+                // A class name cannot be omitted: https://jira.codehaus.org/browse/GROOVY-6740?? TODO find correct Jira reference
+                getLinkAnchor(destination, packageName)
             }
         }
 
