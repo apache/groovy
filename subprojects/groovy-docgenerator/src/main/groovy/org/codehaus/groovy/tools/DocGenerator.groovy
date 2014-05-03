@@ -25,6 +25,7 @@ import groovy.text.Template
 import groovy.text.TemplateEngine
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import org.codehaus.groovy.tools.shell.util.Logger
+import org.codehaus.groovy.tools.shell.util.MessageSource
 
 import java.text.BreakIterator
 
@@ -35,8 +36,9 @@ import java.text.BreakIterator
  * @author Guillaume Laforge, John Wilson, Bernhard Huber, Paul King, Yasuharu Nakano
  */
 class DocGenerator {
+    private static final MessageSource messages = new MessageSource(DocGenerator)
     private static final Logger log = Logger.create(DocGenerator)
-    private static final String TITLE = "Groovy JDK"
+    private static String TITLE // TODO remove static to make thread-safe
     private static final Comparator SORT_KEY_COMPARATOR = [compare: { a, b -> return a.sortKey.compareTo(b.sortKey) }] as Comparator
 
     List<File> sourceFiles
@@ -203,13 +205,33 @@ class DocGenerator {
      * Main entry point.
      */
     static void main(String... args) {
+        def cli = new CliBuilder(usage : 'DocGenerator [options] [sourcefiles]', posix:false)
+        cli.help(longOpt: 'help', messages['cli.option.help.description'])
+        cli._(longOpt: 'version', messages['cli.option.version.description'])
+        cli.o(longOpt: 'outputDir', args:1, argName: 'path', messages['cli.option.output.dir.description'])
+        cli.title(longOpt: 'title', args:1, argName: 'text', messages['cli.option.title.description'])
+        def options = cli.parse(args)
+        System.err.println args
+        System.err.println options.dump()
+        System.err.println options.arguments()
+
+        if (options.help) {
+            cli.usage()
+            return
+        }
+
+        if (options.version) {
+            println messages.format('cli.info.version', GroovySystem.version)
+            return
+        }
+
         def start = System.currentTimeMillis()
 
-        // TODO don't hardcode
-        def outputDir = new File("target/html/groovy-jdk")
+        def outputDir = new File(options.outputDir ?: "target/html/groovy-jdk")
         outputDir.mkdirs()
+        TITLE = options.title ?: "Groovy JDK"
 
-        def srcFiles = args.collect { DocUtil.sourceFileOf(it) }
+        def srcFiles = options.arguments().collect { DocUtil.sourceFileOf(it) }
         try {
             DefaultGroovyMethods.additionals.each { aClass ->
                 def className = aClass.name.replaceAll(/\$.*/, '')

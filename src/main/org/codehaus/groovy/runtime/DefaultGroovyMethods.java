@@ -151,7 +151,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     public static final Class[] DGM_LIKE_CLASSES = new Class[]{
             DefaultGroovyMethods.class,
-            EncodingGroovyMethods.class,
             DateGroovyMethods.class,
             EncodingGroovyMethods.class,
             IOGroovyMethods.class,
@@ -162,7 +161,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             // TODO provide alternative way for these to be registered
 //            SqlGroovyMethods.class,
 //            SwingGroovyMethods.class,
-//            XmlGroovyMethods.class
+//            XmlGroovyMethods.class,
+//            NioGroovyMethods.class
     };
 
     /**
