@@ -443,14 +443,16 @@ class Groovysh extends Shell {
     // Interactive Shell
     //
 
-    int run(final String[] args) {
-        String commandLine = null
+    int run(final String evalString, final List<String> filenames) {
+        List<String> startCommands = []
 
-        if (args != null && args.length > 0) {
-            commandLine = args.join(' ')
+        if (evalString != null && evalString.trim().size() > 0) {
+            startCommands.add(evalString)
         }
-
-        return run(commandLine as String)
+        if (filenames != null && filenames.size() > 0) {
+            startCommands.addAll(filenames.collect({String it -> ":load $it"}))
+        }
+        return run(startCommands.join('\n'))
     }
 
     int run(final String commandLine) {

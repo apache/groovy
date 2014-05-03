@@ -70,6 +70,7 @@ class Main
         cli.v(longOpt: 'verbose', messages['cli.option.verbose.description'])
         cli.q(longOpt: 'quiet', messages['cli.option.quiet.description'])
         cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
+        cli.e(longOpt: 'evaluate', args: 1, optionalArg: false, messages['cli.option.evaluate.description'])
         cli.C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
         cli.D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.define.description'])
         cli.T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
@@ -124,16 +125,21 @@ class Main
             io.verbosity = IO.Verbosity.QUIET
         }
 
-        String[] shellArguments = options.arguments()
+        String evalString = null;
+        if (options.e) {
+            evalString = options.getOptionValue('e')
+        }
+
+        List<String> filenames = options.arguments()
         Main main = new Main(io);
-        main.startGroovysh(shellArguments)
+        main.startGroovysh(evalString, filenames)
     }
 
     /**
      * @param evalString commands that will be executed at startup after loading files given with filenames param
      * @param filenames files that will be loaded at startup
      */
-    protected void startGroovysh(String evalString) {
+    protected void startGroovysh(String evalString, List<String> filenames) {
         int code
         Groovysh shell = getGroovysh()
 
@@ -146,7 +152,6 @@ class Main
             if (code == null) {
                 // Give the user a warning when the JVM shutdown abnormally, normal shutdown
                 // will set an exit code through the proper channels
-
 
                 println('WARNING: Abnormal JVM shutdown detected')
             }
@@ -161,7 +166,7 @@ class Main
         System.setSecurityManager(new NoExitSecurityManager())
 
         try {
-            code = shell.run(shellArguments as String[])
+            code = shell.run(evalString, filenames)
         }
         finally {
             System.setSecurityManager(psm)
