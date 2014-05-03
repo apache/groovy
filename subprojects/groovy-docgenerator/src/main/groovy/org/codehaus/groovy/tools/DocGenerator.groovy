@@ -38,7 +38,6 @@ import java.text.BreakIterator
 class DocGenerator {
     private static final MessageSource messages = new MessageSource(DocGenerator)
     private static final Logger log = Logger.create(DocGenerator)
-    private static String TITLE // TODO remove static to make thread-safe
     private static final Comparator SORT_KEY_COMPARATOR = [compare: { a, b -> return a.sortKey.compareTo(b.sortKey) }] as Comparator
 
     List<File> sourceFiles
@@ -90,26 +89,26 @@ class DocGenerator {
     /**
      * Builds an HTML page from the structure of DefaultGroovyMethods.
      */
-    void generateAll() {
+    void generateAll(Map<String, String> config) {
         def engine = new SimpleTemplateEngine()
 
         // the index.html
         def indexTemplate = createTemplate(engine, 'index.html')
         new File(outputDir, 'index.html').withWriter {
-            it << indexTemplate.make()
+            it << indexTemplate.make(title: config.title)
         }
 
         // the overview-summary.html
         def overviewTemplate = createTemplate(engine, 'overview-summary.html')
         new File(outputDir, 'overview-summary.html').withWriter {
-            it << overviewTemplate.make()
+            it << overviewTemplate.make(title: config.title)
         }
 
         // the overview-frame.html
         def overviewFrameTemplate = createTemplate(engine, 'template.overview-frame.html')
         new File(outputDir, 'overview-frame.html').withWriter {
             def docPackagesExceptPrimitiveType = docSource.packages.findAll { !it.primitive }
-            it << overviewFrameTemplate.make(packages: docPackagesExceptPrimitiveType, title: TITLE)
+            it << overviewFrameTemplate.make(packages: docPackagesExceptPrimitiveType, title: config.title)
         }
 
         // the package-list
@@ -120,19 +119,19 @@ class DocGenerator {
         // the allclasses-frame.html
         def allClassesTemplate = createTemplate(engine, 'template.allclasses-frame.html')
         new File(outputDir, 'allclasses-frame.html').withWriter {
-            it << allClassesTemplate.make(docTypes: docSource.allDocTypes)
+            it << allClassesTemplate.make(docTypes: docSource.allDocTypes, title: config.title)
         }
 
-        // the package-frame.html for each package
+        // the package-frame.html and package-summary.html for each package
         def packageFrameTemplate = createTemplate(engine, 'template.package-frame.html')
         def packageSummaryTemplate = createTemplate(engine, 'template.package-summary.html')
         docSource.packages.each { DocPackage docPackage ->
             def dir = DocUtil.createPackageDirectory(outputDir, docPackage.name)
             new File(dir, 'package-frame.html').withWriter {
-                it << packageFrameTemplate.make(docPackage: docPackage)
+                it << packageFrameTemplate.make(docPackage: docPackage, title: config.title)
             }
             new File(dir, 'package-summary.html').withWriter {
-                it << packageSummaryTemplate.make(docPackage: docPackage)
+                it << packageSummaryTemplate.make(docPackage: docPackage, title: config.title)
             }
         }
 
@@ -141,14 +140,14 @@ class DocGenerator {
         docSource.allDocTypes.each { DocType docType ->
             def dir = DocUtil.createPackageDirectory(outputDir, docType.packageName)
             new File(dir, docType.simpleClassName + '.html').withWriter {
-                it << classTemplate.make(docType: docType, title: TITLE)
+                it << classTemplate.make(docType: docType, title: config.title)
             }
         }
 
         // the index-all.html
         def indexAllTemplate = createTemplate(engine, 'template.index-all.html')
         new File(outputDir, 'index-all.html').withWriter {
-            it << indexAllTemplate.make('indexMap': generateIndexMap(), title: TITLE)
+            it << indexAllTemplate.make('indexMap': generateIndexMap(), title: config.title)
         }
 
         // copy resources
@@ -229,7 +228,7 @@ class DocGenerator {
 
         def outputDir = new File(options.outputDir ?: "target/html/groovy-jdk")
         outputDir.mkdirs()
-        TITLE = options.title ?: "Groovy JDK"
+        def config = [title: options.title ?: "Groovy JDK"]
 
         def srcFiles = options.arguments().collect { DocUtil.sourceFileOf(it) }
         try {
@@ -246,7 +245,7 @@ class DocGenerator {
         }
 
         def docGen = new DocGenerator(srcFiles, outputDir)
-        docGen.generateAll()
+        docGen.generateAll(config)
 
         def end = System.currentTimeMillis()
         log.debug "Done. Took ${end - start} milliseconds."
@@ -523,12 +522,12 @@ class DocGenerator {
             return packageName.replaceAll(/\./, fileSep)
         }
 
-        static File sourceFileOf(String className) {
+        static File sourceFileOf(String pathOrClassName) {
             // TODO don't hardcode like this
-            if (className.contains("/")) {
-                return new File(className)
+            if (pathOrClassName.contains("/")) {
+                return new File(pathOrClassName)
             }
-            new File("src/main/" + className.replace('.', '/') + ".java")
+            new File("src/main/" + pathOrClassName.replace('.', '/') + ".java")
         }
     }
 }

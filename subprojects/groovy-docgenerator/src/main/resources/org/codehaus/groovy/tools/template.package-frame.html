@@ -1,15 +1,11 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-    <title>
-        ${docPackage.name} (Groovy enhanced JDK classes)
-    </title>
-
+    <title>${docPackage.name} ($title)</title>
     <%
     int dotCount = docPackage.name.count('.')
     String pathPref = '../' * (dotCount + 1)
     %>
-
     <link rel="stylesheet" type="text/css" href="${pathPref}stylesheet.css" title="Style">
 </head>
 
