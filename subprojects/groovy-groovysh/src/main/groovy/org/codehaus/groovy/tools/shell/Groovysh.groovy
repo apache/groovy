@@ -473,50 +473,48 @@ class Groovysh extends Shell {
 
         try {
             loadUserScript('groovysh.profile')
+            loadUserScript('groovysh.rc')
+
+            // Setup the interactive runner
+            runner = new InteractiveShellRunner(
+                    this,
+                    this.&renderPrompt as Closure,
+                    Integer.valueOf(Preferences.get(METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
 
             // if args were passed in, just execute as a command
             // (but cygwin gives an empty string, so ignore that)
             if (commandLine != null && commandLine.trim().size() > 0) {
-                // Run the given commands
-                execute(commandLine)
-            } else {
-                loadUserScript('groovysh.rc')
-
-                // Setup the interactive runner
-                runner = new InteractiveShellRunner(
-                        this,
-                        this.&renderPrompt as Closure,
-                        Integer.valueOf(Preferences.get(METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
-
-                // Setup the history
-                File histFile = new File(userStateDirectory, 'groovysh.history')
-                history = new FileHistory(histFile)
-                runner.setHistory(history)
-
-                // Setup the error handler
-                runner.errorHandler = this.&displayError
-
-                // Display the welcome banner
-                if (!io.quiet) {
-                    int width = term.getWidth()
-
-                    // If we can't tell, or have something bogus then use a reasonable default
-                    if (width < 1) {
-                        width = 80
-                    }
-
-                    io.out.println(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version']))
-                    io.out.println(messages['startup_banner.1'])
-                    io.out.println('-' * (width - 1))
-                }
-
-                // And let 'er rip... :-)
-                runner.run()
+                runner.wrappedInputStream.insert(commandLine + '\n')
             }
 
+            // Setup the history
+            File histFile = new File(userStateDirectory, 'groovysh.history')
+            history = new FileHistory(histFile)
+            runner.setHistory(history)
+
+            // Setup the error handler
+            runner.errorHandler = this.&displayError
+
+            // Display the welcome banner
+            if (!io.quiet) {
+                int width = term.getWidth()
+
+                // If we can't tell, or have something bogus then use a reasonable default
+                if (width < 1) {
+                    width = 80
+                }
+
+                io.out.println(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version']))
+                io.out.println(messages['startup_banner.1'])
+                io.out.println('-' * (width - 1))
+            }
+
+            // And let 'er rip... :-)
+            runner.run()
+
+
             code = 0
-        }
-        catch (ExitNotification n) {
+        } catch (ExitNotification n) {
             log.debug("Exiting w/code: ${n.code}")
 
             code = n.code
