@@ -37,8 +37,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ClassInfo {
 
-    private static final Set<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
-
     private final LazyCachedClassRef cachedClassRef;
     private final LazyClassLoaderRef artifactClassLoader;
     private final LockableObject lock = new LockableObject();
@@ -56,6 +54,8 @@ public class ClassInfo {
     private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
     private static ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
     
+    private static final ManagedLinkedList<ClassInfo> modifiedExpandos = new ManagedLinkedList<ClassInfo>(weakBundle);
+
     private static final GroovyClassValue<ClassInfo> globalClassValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<ClassInfo>(){
 		@Override
 		public ClassInfo computeValue(Class<?> type) {
@@ -95,11 +95,13 @@ public class ClassInfo {
     }
 
     public static void clearModifiedExpandos() {
-        for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
-            ClassInfo info = it.next();
-            it.remove();
-            info.setStrongMetaClass(null);
-        }
+        synchronized(modifiedExpandos){
+	        for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
+	            ClassInfo info = it.next();
+	            it.remove();
+	            info.setStrongMetaClass(null);
+	        }
+	    }
     }
 
     public CachedClass getCachedClass() {
@@ -153,14 +155,29 @@ public class ClassInfo {
         
         if (strongRef instanceof ExpandoMetaClass) {
           ((ExpandoMetaClass)strongRef).inRegistry = false;
-          modifiedExpandos.remove(this);
+          synchronized(modifiedExpandos){
+            for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
+              ClassInfo info = it.next();
+              if(info == this){
+                it.remove();
+              }
+            }
+          }
         }
 
         strongMetaClass = answer;
 
         if (answer instanceof ExpandoMetaClass) {
           ((ExpandoMetaClass)answer).inRegistry = true;
-          modifiedExpandos.add(this);
+          synchronized(modifiedExpandos){
+            for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
+              ClassInfo info = it.next();
+                if(info == this){
+                  it.remove();
+                }
+             }
+             modifiedExpandos.add(this);
+          }
         }
 
         replaceWeakMetaClassRef(null);
