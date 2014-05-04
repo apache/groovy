@@ -496,10 +496,6 @@ class Groovysh extends Shell {
                 // Setup the error handler
                 runner.errorHandler = this.&displayError
 
-                //
-                // TODO: See if we want to add any more language specific completions, like for println for example?
-                //
-
                 // Display the welcome banner
                 if (!io.quiet) {
                     int width = term.getWidth()
