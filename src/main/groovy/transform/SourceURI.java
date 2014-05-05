@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package groovy.transform;
 
-import groovy.lang.Script;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.ElementType;
@@ -27,7 +26,7 @@ import java.lang.annotation.Target;
 /**
  * Variable annotation used for getting the URI of the current script.
  * <p>
- * The type of the variable annotated with {@BaseScript} must be assignment compatible with {@link java.net.URI}.
+ * The type of the variable annotated with {@code @BaseScript} must be assignment compatible with {@link java.net.URI}.
  * It will be used to hold a URI object that references the source for the current script.
  * </p><p>By default the URI
  * will be made absolute (which is to say it will have an authority) in the case where a relative path was used
@@ -37,7 +36,7 @@ import java.lang.annotation.Target;
  *
  * Example usage:
  * <pre>
- * @groovy.transform.SourceURI def sourceURI
+ * {@code @groovy.transform.SourceURI} def sourceURI
  *
  * assert sourceURI instanceof java.net.URI
  * </pre>

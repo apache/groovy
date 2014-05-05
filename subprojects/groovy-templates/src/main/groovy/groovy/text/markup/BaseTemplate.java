@@ -140,8 +140,8 @@ public abstract class BaseTemplate implements Writable {
      *     &lt;?xml-stylesheet href='mystyle.css' type='text/css'?&gt;
      * </pre>
      *
-     * @param attrs
-     * @return
+     * @param attrs the attributes to render
+     * @return this template instance
      * @throws IOException
      */
     public BaseTemplate pi(Map<?, ?> attrs) throws IOException {
@@ -202,8 +202,8 @@ public abstract class BaseTemplate implements Writable {
      * </ul>
      * <p>or a combination of (attributes,string), (attributes,closure)</p>
      * @param tagName the name of the tag
-     * @param args tag generation arguments.
-     * @return
+     * @param args tag generation arguments
+     * @return this template instance
      * @throws IOException
      */
     public Object methodMissing(String tagName, Object args) throws IOException {
@@ -285,7 +285,8 @@ public abstract class BaseTemplate implements Writable {
 
     /**
      * Includes contents of another file, not as a template but as escaped text.
-     * @param templatePath
+     *
+     * @param templatePath the path to the other file
      * @throws IOException
      */
     public void includeEscaped(String templatePath) throws IOException {
@@ -295,7 +296,8 @@ public abstract class BaseTemplate implements Writable {
 
     /**
      * Includes contents of another file, not as a template but as unescaped text.
-     * @param templatePath
+     *
+     * @param templatePath the path to the other file
      * @throws IOException
      */
     public void includeUnescaped(String templatePath) throws IOException {
@@ -318,7 +320,8 @@ public abstract class BaseTemplate implements Writable {
 
     /**
      * Convenience method to return the current writer instance.
-     * @return
+     *
+     * @return the current writer
      */
     public Writer getOut() {
         return out;

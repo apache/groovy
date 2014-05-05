@@ -60,7 +60,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
- * This strategy is used with the {@link @Builder} AST transform to create a builder helper class
+ * This strategy is used with the {@link Builder} AST transform to create a builder helper class
  * for the fluent and type-safe creation of instances of a specified class.
  *
  * It is modelled roughly on the design outlined here:
