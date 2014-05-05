@@ -1120,7 +1120,7 @@ public class Groovyc extends MatchingTask {
             }
 
             if (failOnError) {
-                log.info(message);
+                log.error(message);
                 throw new BuildException("Compilation Failed", t, getLocation());
             } else {
                 log.error(message);
