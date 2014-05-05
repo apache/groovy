@@ -776,6 +776,10 @@ public class Sql {
     public static InParameter VARBINARY(Object value) { return in(Types.VARBINARY, value); }
     public static InParameter VARCHAR(Object value) { return in(Types.VARCHAR, value); }
 
+    public static final int NO_RESULT_SETS = 0;
+    public static final int FIRST_RESULT_SET = 1;
+    public static final int ALL_RESULT_SETS = 2;
+
     /**
      * Create a new InParameter
      *
@@ -2805,7 +2809,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public void call(String sql, List<Object> params, Closure closure) throws Exception {
-        callWithRows(sql, params, false, closure);
+        callWithRows(sql, params, NO_RESULT_SETS, closure);
     }
 
     /**
@@ -2903,30 +2907,90 @@ public class Sql {
      * @see #callWithRows(GString, Closure)
      */
     public List<GroovyRowResult> callWithRows(String sql, List<Object> params, Closure closure) throws SQLException {
-        return callWithRows(sql, params, true, closure);
+        return callWithRows(sql, params, FIRST_RESULT_SET, closure).get(0);
     }
 
     /**
-     * Base internal method for both call() and callWithRows() style of methods.
-     * <p>
      * Performs a stored procedure call with the given parameters,
      * calling the closure once with all result objects,
-     * and also returning the rows of the ResultSet (if processResultSet is set to true)
+     * and also returning a list of lists with the rows of the ResultSet(s).
      * <p>
-     * Main purpose of processResultSet param is to retain original call() method
-     * performance when this is set to false
+     * Use this when calling a stored procedure that utilizes both
+     * output parameters and returns multiple ResultSets.
+     * <p>
+     * Once created, the stored procedure can be called like this:
+     * <pre>
+     * def first = 'Jeff'
+     * def last = 'Sheets'
+     * def rowsList = sql.callWithAllRows "{call Hemisphere2($first, $last, ${Sql.VARCHAR})}", { dwells ->
+     *     println dwells
+     * }
+     * </pre>
+     * <p>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param closure called once with all out parameter results
+     * @return a list containing lists of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @see #callWithAllRows(String, List, Closure)
+     */
+    public List<List<GroovyRowResult>> callWithAllRows(GString gstring, Closure closure) throws SQLException {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return callWithAllRows(sql, params, closure);
+    }
+
+    /**
+     * Performs a stored procedure call with the given parameters,
+     * calling the closure once with all result objects,
+     * and also returning a list of lists with the rows of the ResultSet(s).
+     * <p>
+     * Use this when calling a stored procedure that utilizes both
+     * output parameters and returns multiple ResultSets.
+     * <p>
+     * Once created, the stored procedure can be called like this:
+     * <pre>
+     * def rowsList = sql.callWithAllRows '{call Hemisphere2(?, ?, ?)}', ['Guillaume', 'Laforge', Sql.VARCHAR], { dwells ->
+     *     println dwells
+     * }
+     * </pre>
      * <p>
      * Resource handling is performed automatically where appropriate.
      *
      * @param sql     the sql statement
      * @param params  a list of parameters
-     * @param processResultSet true to collect result set rows, false to skip result set processing
+     * @param closure called once with all out parameter results
+     * @return a list containing lists of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @see #callWithRows(GString, Closure)
+     */
+    public List<List<GroovyRowResult>> callWithAllRows(String sql, List<Object> params, Closure closure) throws SQLException {
+        return callWithRows(sql, params, ALL_RESULT_SETS, closure);
+    }
+
+    /**
+     * Base internal method for call(), callWithRows(), and callWithAllRows() style of methods.
+     * <p>
+     * Performs a stored procedure call with the given parameters,
+     * calling the closure once with all result objects,
+     * and also returning the rows of the ResultSet(s) (if processResultSets is set to
+     * Sql.FIRST_RESULT_SET, Sql.ALL_RESULT_SETS)
+     * <p>
+     * Main purpose of processResultSets param is to retain original call() method
+     * performance when this is set to Sql.NO_RESULT_SETS
+     * <p>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param sql     the sql statement
+     * @param params  a list of parameters
+     * @param processResultsSets the result sets to process, either Sql.NO_RESULT_SETS, Sql.FIRST_RESULT_SET, or Sql.ALL_RESULT_SETS
      * @param closure called once with all out parameter results
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      * @see #callWithRows(String, List, Closure)
      */
-    protected List<GroovyRowResult> callWithRows(String sql, List<Object> params, boolean processResultSet, Closure closure) throws SQLException {
+    protected List<List<GroovyRowResult>> callWithRows(String sql, List<Object> params, int processResultsSets, Closure closure) throws SQLException {
         Connection connection = createConnection();
         CallableStatement statement = null;
         List<GroovyResultSet> resultSetResources = new ArrayList<GroovyResultSet>();
@@ -2960,13 +3024,24 @@ public class Sql {
                 indx++;
             }
             closure.call(results.toArray(new Object[inouts]));
-
-            //Check both hasResultSet and getMoreResults() because of differences in vendor behavior
-            if (processResultSet && (hasResultSet || statement.getMoreResults())) {
-                // TODO handle multiple ResultSets (GROOVY-6551)
-                return asList(sql, statement.getResultSet());
+            List<List<GroovyRowResult>> resultSets = new ArrayList<List<GroovyRowResult>>();
+            if (processResultsSets == NO_RESULT_SETS) {
+                resultSets.add(new ArrayList<GroovyRowResult>());
+                return resultSets;
             }
-            return new ArrayList<GroovyRowResult>();
+            //Check both hasResultSet and getMoreResults() because of differences in vendor behavior
+            if (!hasResultSet) {
+                hasResultSet = statement.getMoreResults();
+            }
+            while (hasResultSet && (processResultsSets != NO_RESULT_SETS)) {
+                resultSets.add(asList(sql, statement.getResultSet()));
+                if (processResultsSets == FIRST_RESULT_SET) {
+                    break;
+                } else {
+                    hasResultSet = statement.getMoreResults();
+                }
+            }
+            return resultSets;
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
