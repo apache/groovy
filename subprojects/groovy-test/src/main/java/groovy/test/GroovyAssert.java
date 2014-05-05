@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 /**
  * <p>{@code GroovyAssert} contains a set of static assertion and test helper methods and is supposed to be a Groovy
  * extension of JUnit 4's {@link org.junit.Assert} class. In case JUnit 3 is the choice, the {@link groovy.util.GroovyTestCase}
- * is ment to be used for writing tests based on {@link junit.framework.TestCase}.
+ * is meant to be used for writing tests based on {@link junit.framework.TestCase}.
  * </p>
  *
  * <p>
