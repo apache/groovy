@@ -17,7 +17,7 @@
 apply plugin: 'asciidoctor'
 
 asciidoctor {
-    def (full, major, minor, patch, flavor) = (groovyVersion =~ /(\d+)\.(\d++)\.(\d+)-?(.+)/)[0]
+    def (full, major, minor, patch, flavor) = (groovyVersion =~ /(\d+)\.(\d++)\.(\d+)(?:-(.+))?/)[0]
     logDocuments = true
     sourceDir = project.file('src/spec/doc')
     options = [
