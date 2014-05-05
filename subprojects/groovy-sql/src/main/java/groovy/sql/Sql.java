@@ -1689,6 +1689,8 @@ public class Sql {
      */
     public List<GroovyRowResult> rows(String sql, int offset, int maxRows, Closure metaClosure) throws SQLException {
         AbstractQueryCommand command = createQueryCommand(sql);
+        // for efficiency set maxRows (adjusted for the first offset rows we are going to skip the cursor over)
+        command.setMaxRows(offset + maxRows);
         ResultSet rs = null;
         try {
             rs = command.execute();
@@ -1943,6 +1945,8 @@ public class Sql {
             throws SQLException {
 
         AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
+        // for efficiency set maxRows (adjusted for the first offset rows we are going to skip the cursor over)
+        command.setMaxRows(offset + maxRows);
         try {
             return asList(sql, command.execute(), offset, maxRows, metaClosure);
         } finally {
@@ -4227,6 +4231,7 @@ public class Sql {
         protected final String sql;
         protected Statement statement;
         private Connection connection;
+        private int maxRows = 0;
 
         protected AbstractQueryCommand(String sql) {
             // Don't create statement in subclass constructors to avoid throw in constructors
@@ -4285,6 +4290,24 @@ public class Sql {
          * @throws SQLException if a database error occurs
          */
         protected abstract ResultSet runQuery(Connection connection) throws SQLException;
+
+        /**
+         * Set the maximum number of rows to return in the ResultSet
+         *
+         * @param maxRows the maximum number of rows
+         */
+        protected void setMaxRows(int maxRows) {
+            this.maxRows = maxRows;
+        }
+
+        /**
+         * Get the maximum number of rows to return in the ResultSet
+         *
+         * @return the maximum number of rows
+         */
+        protected int getMaxRows() {
+            return maxRows;
+        }
     }
 
     private final class PreparedQueryCommand extends AbstractQueryCommand {
@@ -4299,6 +4322,7 @@ public class Sql {
         protected ResultSet runQuery(Connection connection) throws SQLException {
             PreparedStatement s = getPreparedStatement(connection, sql, params);
             statement = s;
+            if (getMaxRows() != 0) statement.setMaxRows(getMaxRows());
             return s.executeQuery();
         }
     }
@@ -4312,6 +4336,7 @@ public class Sql {
         @Override
         protected ResultSet runQuery(Connection connection) throws SQLException {
             statement = getStatement(connection, sql);
+            if (getMaxRows() != 0) statement.setMaxRows(getMaxRows());
             return statement.executeQuery(sql);
         }
     }
