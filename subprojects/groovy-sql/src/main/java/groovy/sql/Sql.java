@@ -3046,10 +3046,10 @@ public class Sql {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         } finally {
-            closeResources(connection, statement);
             for (GroovyResultSet rs : resultSetResources) {
                 closeResources(null, null, rs);
             }
+            closeResources(connection, statement);
         }
     }
 
