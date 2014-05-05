@@ -1264,12 +1264,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return source;
     }
 
-    private void resolveGenericsTypes(GenericsType[] types) {
-        if (types == null) return;
+    private boolean resolveGenericsTypes(GenericsType[] types) {
+        if (types == null) return true;
         currentClass.setUsingGenerics(true);
+        boolean resolved = true;
         for (GenericsType type : types) {
-            resolveGenericsType(type);
+            // attempt resolution on all types, so don't short-circuit and stop if we've previously failed
+            resolved = resolveGenericsType(type) && resolved;
         }
+        return resolved;
     }
 
     private void resolveGenericsHeader(GenericsType[] types) {
@@ -1298,8 +1301,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
-    private void resolveGenericsType(GenericsType genericsType) {
-        if (genericsType.isResolved()) return;
+    private boolean resolveGenericsType(GenericsType genericsType) {
+        if (genericsType.isResolved()) return true;
         currentClass.setUsingGenerics(true);
         ClassNode type = genericsType.getType();
         // save name before redirect
@@ -1326,8 +1329,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (genericsType.getLowerBound() != null) {
             resolveOrFail(genericsType.getLowerBound(), genericsType);
         }
-        resolveGenericsTypes(type.getGenericsTypes());
-        genericsType.setResolved(genericsType.getType().isResolved());
+
+        if (resolveGenericsTypes(type.getGenericsTypes())) {
+            genericsType.setResolved(genericsType.getType().isResolved());
+        }
+        return genericsType.isResolved();
+
     }
 
     public void setClassNodeResolver(ClassNodeResolver classNodeResolver) {
