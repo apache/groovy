@@ -82,8 +82,7 @@ subprojects {
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
     maven { url 'http://www.aQute.biz/repo' } // tools
-//    maven { url 'http://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // examples, tools
-    maven { url 'http://repository.jboss.org/maven2' } // examples, tools
+    maven { url 'http://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // examples, tools
 }
 
 // todo do we need compile and runtime scope for examples?
@@ -105,7 +104,7 @@ ext {
     coberturaVersion = '1.9.4.1'
     commonsCliVersion = '1.2'
     commonsHttpClientVersion = '3.1'
-    eclipseOsgiVersion = '3.5.0.v20090520'
+    eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.0'
     ivyVersion = '2.3.0'
     jansiVersion = '1.11'
@@ -115,7 +114,7 @@ ext {
     logbackVersion = '1.0.13'
     log4jVersion = '1.2.17'
     log4j2Version = '2.0-rc1'
-    luceneVersion = '4.3.1'
+    luceneVersion = '4.7.2'
     openejbVersion = '1.0'
     qdoxVersion = '1.12.1'
     simianVersion = '2.2.4'
@@ -281,7 +280,7 @@ sourceSets {
         resources {
             srcDirs = ['src/examples']
         }
-        compileClasspath = configurations.examplesRuntime + sourceSets.main.output
+        compileClasspath = configurations.examplesRuntime + sourceSets.main.output + project(':groovy-xml').sourceSets.main.output
         output.classesDir = "$buildDir/examples-classes" as File
     }
 }
