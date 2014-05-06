@@ -81,8 +81,8 @@ subprojects {
 
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
-//    mavenCentral() // default, tools
     maven { url 'http://www.aQute.biz/repo' } // tools
+//    maven { url 'http://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // examples, tools
     maven { url 'http://repository.jboss.org/maven2' } // examples, tools
 }
 
@@ -97,7 +97,7 @@ configurations {
 }
 
 ext {
-    antVersion = '1.9.3'
+    antVersion = '1.9.4'
     asmVersion = '5.0.2'
     antlrVersion = '2.7.7'
     bndVersion = '0.0.401'
