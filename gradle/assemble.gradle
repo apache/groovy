@@ -77,7 +77,6 @@ ext.allManifest = manifest {
             'Bundle-Version': groovyBundleVersion,
             'Bundle-Vendor': 'The Codehaus',
             'Bundle-ClassPath': '.',
-            'Bundle-RequiredExecutionEnvironment': 'J2SE-1.6',
             'Eclipse-BuddyPolicy': 'dependent',
             'DynamicImport-Package': '*',
             'Main-class': 'groovy.ui.GroovyMain')
