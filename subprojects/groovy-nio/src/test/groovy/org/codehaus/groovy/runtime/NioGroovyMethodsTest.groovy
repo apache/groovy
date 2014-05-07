@@ -160,6 +160,21 @@ class NioGroovyMethodsTest extends Specification {
         file?.delete()
     }
 
+    def testSetText() {
+
+        when:
+        def file = new File('test_setBytes')
+        file.toPath().setText('Ciao mundo!')
+        // invoke twice to make sure that the content is truncated by the setText method
+        file.toPath().setText('Hello world!')
+        then:
+        file.text == 'Hello world!'
+
+        cleanup:
+        file?.delete()
+
+    }
+
     def testWrite( )  {
 
         when:
@@ -220,6 +235,20 @@ class NioGroovyMethodsTest extends Specification {
 
         cleanup:
         file.delete()
+    }
+
+    def testLeftShift() {
+        setup:
+        def file = Paths.get('test-shift')
+        Files.deleteIfExists(file)
+        when:
+        file << 'Hello '
+        file << 'world!'
+        then:
+        file.text == 'Hello world!'
+        cleanup:
+        Files.deleteIfExists(file)
+
     }
 
     def testEachFile() {
