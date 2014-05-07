@@ -455,7 +455,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void write(Path self, String text) throws IOException {
         Writer writer = null;
         try {
-            writer = new OutputStreamWriter(Files.newOutputStream(self, CREATE, APPEND), Charset.defaultCharset());
+            writer = new OutputStreamWriter(Files.newOutputStream(self), Charset.defaultCharset());
             writer.write(text);
             writer.flush();
 
