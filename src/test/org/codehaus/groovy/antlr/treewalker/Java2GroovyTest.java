@@ -18,7 +18,7 @@
 package org.codehaus.groovy.antlr.treewalker;
 
 import groovy.util.GroovyTestCase;
-import org.codehaus.groovy.antlr.java.Java2GroovyMain;
+import org.codehaus.groovy.antlr.java.Java2GroovyProcessor;
 
 public class Java2GroovyTest extends GroovyTestCase {
 
@@ -32,15 +32,15 @@ public class Java2GroovyTest extends GroovyTestCase {
     }
 
     private String convert(String input) throws Exception {
-        return Java2GroovyMain.convert("Java2GroovyTest.java", input);
+        return Java2GroovyProcessor.convert("Java2GroovyTest.java", input);
     }
 
     private String mindmap(String input) throws Exception {
-        return Java2GroovyMain.mindmap(input);
+        return Java2GroovyProcessor.mindmap(input);
     }
 
     private String nodePrinter(String input) throws Exception {
-        return Java2GroovyMain.nodePrinter(input);
+        return Java2GroovyProcessor.nodePrinter(input);
     }
 }
 
