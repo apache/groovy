@@ -1378,6 +1378,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6760
+    void testGenericsAtMethodLevelWithGenericsInTypeOfGenericType() {
+        assertScript '''
+            @Grab(group='com.netflix.rxjava', module='rxjava-core', version='0.18.1') 
+            import rx.Observable
+            import java.util.concurrent.Callable
+
+            static <T> Observable<T> observe(Callable<Iterable<T>> callable) {
+                Observable.from(callable.call())
+            }
+            observe({ ["foo"] }) map {
+                it.toUpperCase() // <- compiler doesn't know 'it' is a string
+            } subscribe {
+                assert it == "FOO"
+            }
+        '''
+    }
+
     // GROOVY-6135
     void testGenericField() {
         assertScript '''
