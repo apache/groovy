@@ -1561,6 +1561,8 @@ public abstract class StaticTypeCheckingSupport {
                         }
                     }
                 }
+            } else {
+                extractGenericsConnections(connections, ui.getType(), di.getType());
             }
         }
     }
