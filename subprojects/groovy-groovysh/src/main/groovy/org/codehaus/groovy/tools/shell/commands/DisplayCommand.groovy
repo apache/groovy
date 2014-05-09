@@ -20,7 +20,7 @@ import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 
 /**
- * The 'display' command.
+ * The 'display' command. Displays the current buffer (e.g. while method declaration was not finished).
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
