@@ -223,7 +223,7 @@ sourceSets {
             }.visit { details ->
                 exclude "groovy/ui/$details.path"
             }
-            if (!useIndy()) {
+            if (!JavaVersion.current().isJava7Compatible()) {
                 exclude '**/indy/*'
                 exclude '**/v7/*'
                 exclude '**/vm7/*'
@@ -234,7 +234,7 @@ sourceSets {
                     'src/main',
                     "$generatedDirectory/src/main"
             ]
-            if (!useIndy()) {
+            if (!JavaVersion.current().isJava7Compatible()) {
                 exclude '**/indy/*'
                 exclude '**/v7/*'
                 exclude '**/vm7/*'
