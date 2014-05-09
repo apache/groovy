@@ -1220,7 +1220,7 @@ public abstract class StaticTypeCheckingSupport {
     protected static boolean typeCheckMethodArgumentWithGenerics(ClassNode parameterType, ClassNode argumentType, boolean lastArg) {
         if (UNKNOWN_PARAMETER_TYPE == argumentType) {
             // called with null
-            return true;
+            return !ClassHelper.isPrimitiveType(parameterType);
         }
         if (!isAssignableTo(argumentType, parameterType) && !lastArg) {
             // incompatible assignment
