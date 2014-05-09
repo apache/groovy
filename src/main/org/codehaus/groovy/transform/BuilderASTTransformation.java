@@ -16,6 +16,7 @@
 package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.transform.CompilationUnitAware;
 import groovy.transform.builder.Builder;
 import groovy.transform.builder.DefaultStrategy;
 import org.codehaus.groovy.ast.ASTNode;
@@ -27,6 +28,7 @@ import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -36,19 +38,21 @@ import java.util.List;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 
 /**
- * Handles generation of code for the @Builder annotation.
+ * Handles generation of code for the {@link Builder} annotation.
  *
  * @author Marcin Grzejszczak
  * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-public class BuilderASTTransformation extends AbstractASTTransformation {
+public class BuilderASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
     private static final Class MY_CLASS = Builder.class;
     private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     public static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     public static final ClassNode[] NO_EXCEPTIONS = ClassNode.EMPTY_ARRAY;
     public static final Parameter[] NO_PARAMS = Parameter.EMPTY_ARRAY;
+
+    private CompilationUnit compilationUnit;
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -59,7 +63,8 @@ public class BuilderASTTransformation extends AbstractASTTransformation {
         if (parent instanceof ClassNode || parent instanceof MethodNode) {
             if (parent instanceof ClassNode && !checkNotInterface((ClassNode) parent, MY_TYPE_NAME)) return;
             if (parent instanceof MethodNode && !checkStatic((MethodNode) parent, MY_TYPE_NAME)) return;
-            final BuilderStrategy strategy = createBuilderStrategy(anno, source.getClassLoader());
+            final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
+            final BuilderStrategy strategy = createBuilderStrategy(anno, classLoader);
             if (strategy == null) return;
             strategy.build(this, parent, anno);
         }
@@ -199,5 +204,9 @@ public class BuilderASTTransformation extends AbstractASTTransformation {
             addError("Can't load builderStrategy '" + className + "' " + e, anno);
             return null;
         }
+    }
+
+    public void setCompilationUnit(final CompilationUnit unit) {
+        this.compilationUnit = unit;
     }
 }
