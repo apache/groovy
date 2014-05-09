@@ -1005,6 +1005,18 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             assert foo("2","1") == "Strings"
         '''
     }
+    
+    //GROOVY-6776
+    void testPrimtiveParameterAndNullArgument() {
+        shouldFailWithMessages '''
+            def foo(int i){}
+            def bar() {
+                foo null
+            }
+            bar()
+        ''',
+        '#foo(int) with arguments [<unknown parameter type>]'
+    }
 
     static class MyMethodCallTestClass {
 
