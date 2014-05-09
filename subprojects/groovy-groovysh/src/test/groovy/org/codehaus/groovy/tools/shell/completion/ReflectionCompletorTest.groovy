@@ -67,12 +67,12 @@ class ReflectionCompletorTest extends GroovyTestCase {
         assert 'containsKey(' in result
         assert 'clear()' in result
         // 'class' as key can cause bugs where .class is used instead of getClass()
-        result = ReflectionCompletor.getPublicFieldsAndMethods(['class': '42', 'club': 53], "").collect({it.value})
-        assert 'clear()' in result
-        assert 'containsKey(' in result
-        assert 'clear()' in result
-        assert 'class' in result
-        assert 'club' in result
+        result = ReflectionCompletor.getPublicFieldsAndMethods(
+                ['class': '42', 'club': 53, 'a b' : 'space', 'a.b' : 'dot', "G\$tring'" : 'gstring'], "")
+                .collect({it.value.toString()})
+        for (String expected : ["\"a b\"", "\"a.b\"", "\"G\\\$tring\\'\"", 'clear()', 'containsKey(', 'class', 'club']) {
+            assert expected in result
+        }
         result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "size").collect({it.value})
         // e.g. don't show non-public inherited size field
         assert ["size()"] == result
