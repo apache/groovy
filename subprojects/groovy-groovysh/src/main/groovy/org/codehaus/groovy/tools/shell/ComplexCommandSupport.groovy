@@ -89,7 +89,7 @@ abstract class ComplexCommandSupport
         
         try {
             return this."do_${name}"
-        } catch (MissingFieldException e) {
+        } catch (MissingPropertyException e) {
             fail("Failed to load delegate function: $e")
         }
     }
