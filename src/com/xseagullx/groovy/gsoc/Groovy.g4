@@ -19,6 +19,18 @@ KW_IMPORT: 'import' ;
 KW_DEF: 'def' ;
 KW_NULL: 'null' ;
 
+KW_IN: 'in' ;
+KW_FOR: 'for' ;
+KW_IF: 'if' ;
+KW_ELSE: 'else' ;
+KW_WHILE: 'while' ;
+KW_SWITCH: 'switch' ;
+KW_CASE: 'case' ;
+KW_DEFAULT: 'default' ;
+KW_CONTINUE: 'continue' ;
+KW_BREAK: 'break' ;
+KW_RETURN: 'return' ;
+
 STRING: QUOTE STRING_BODY QUOTE ;
 fragment STRING_BODY: (~'\'')* ;
 fragment QUOTE: '\'';
@@ -83,6 +95,18 @@ blockStatement: (statement | NL)+ ;
 
 statement:
     expression #expressionStatement
+    | KW_FOR '(' (typeDeclaration? IDENTIFIER ('=' expression)?)? ';' expression? ';' expression? ')' '{' (statement | ';' | NL)* '}' #classicForStatement
+    | KW_FOR '(' typeDeclaration? IDENTIFIER KW_IN expression')' '{' (statement | ';' | NL)* '}' #forInStatement
+    | KW_IF '(' expression ')' '{' (statement | ';' | NL)*  '}' (KW_ELSE '{' (statement | ';' | NL)* '}')? #ifStatement
+    | KW_WHILE '(' expression ')' '{' (statement | ';' | NL)*  '}'  #whileStatement
+    | KW_SWITCH '(' expression ')' '{'
+        (
+          ((KW_CASE expression ':' (statement | ';' | NL)* ) | NL)*
+          (KW_DEFAULT ':' (statement | ';' | NL)*)?
+        )
+      '}' #switchStatement
+    | (KW_CONTINUE | KW_BREAK) #controlStatement
+    | KW_RETURN expression? #returnStatement
 ;
 
 expression:
