@@ -160,6 +160,13 @@ public class AsmClassGenerator extends ClassGenerator {
                 visitAnnotations(classNode, cv);
             }
 
+            // GROOVY-6750: Make sure the inner class table is called first
+            for (Iterator<InnerClassNode> iter = classNode.getInnerClasses(); iter.hasNext();) {
+                InnerClassNode innerClass = iter.next();
+                makeInnerClassEntry(innerClass);
+            }
+            makeInnerClassEntry(classNode);
+
             if (classNode.isInterface()) {
                 ClassNode owner = classNode;
                 if (owner instanceof InnerClassNode) {
@@ -180,12 +187,6 @@ public class AsmClassGenerator extends ClassGenerator {
                 controller.getCallSiteWriter().generateCallSiteArray();
                 createSyntheticStaticFields();
             }
-
-            for (Iterator<InnerClassNode> iter = classNode.getInnerClasses(); iter.hasNext();) {
-                InnerClassNode innerClass = iter.next();
-                makeInnerClassEntry(innerClass);
-            }
-            makeInnerClassEntry(classNode);
 
             cv.visitEnd();
         } catch (GroovyRuntimeException e) {
@@ -230,7 +231,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * for what flags are allowed depending on the fact we are writing the inner class table
      * or the class itself
      */
-    private int adjustedClassModifiersForInnerClassTable(ClassNode classNode) {
+    private static int adjustedClassModifiersForInnerClassTable(ClassNode classNode) {
         int modifiers = classNode.getModifiers();
         modifiers = modifiers & ~ACC_SUPER;
         // (JLS §9.1.1.1). Such a class file must not have its ACC_FINAL, ACC_SUPER or ACC_ENUM flags set.
@@ -238,21 +239,11 @@ public class AsmClassGenerator extends ClassGenerator {
             modifiers = modifiers & ~ACC_ENUM;
             modifiers = modifiers & ~ACC_FINAL;
         }
+        modifiers = fixInnerClassModifiers(classNode, modifiers);
         return modifiers;
     }
 
-    /*
-     * Classes but not interfaces should have ACC_SUPER set
-     * See http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7.6-300-D.2-5
-     * for what flags are allowed depending on the fact we are writing the inner class table
-     * or the class itself
-     */
-    private int adjustedClassModifiersForClassWriting(ClassNode classNode) {
-        int modifiers = classNode.getModifiers();
-        boolean needsSuper = !classNode.isInterface();
-        modifiers = needsSuper ? modifiers | ACC_SUPER : modifiers & ~ACC_SUPER;
-        // eliminate static
-        modifiers = modifiers & ~ACC_STATIC;
+    private static int fixInnerClassModifiers(final ClassNode classNode, int modifiers) {
         // on the inner class node itself, private/protected are not allowed
         if (classNode instanceof InnerClassNode) {
             if (Modifier.isPrivate(modifiers)) {
@@ -264,6 +255,23 @@ public class AsmClassGenerator extends ClassGenerator {
                 modifiers = (modifiers & ~Modifier.PROTECTED) | Modifier.PUBLIC;
             }
         }
+        return modifiers;
+    }
+
+    /*
+     * Classes but not interfaces should have ACC_SUPER set
+     * See http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7.6-300-D.2-5
+     * for what flags are allowed depending on the fact we are writing the inner class table
+     * or the class itself
+     */
+    private static int adjustedClassModifiersForClassWriting(ClassNode classNode) {
+        int modifiers = classNode.getModifiers();
+        boolean needsSuper = !classNode.isInterface();
+        modifiers = needsSuper ? modifiers | ACC_SUPER : modifiers & ~ACC_SUPER;
+        // eliminate static
+        modifiers = modifiers & ~ACC_STATIC;
+        modifiers = fixInnerClassModifiers(classNode, modifiers);
+
         // (JLS §9.1.1.1). Such a class file must not have its ACC_FINAL, ACC_SUPER or ACC_ENUM flags set.
         if (classNode.isInterface()) {
             modifiers = modifiers & ~ACC_ENUM;
@@ -271,6 +279,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         return modifiers;
     }
+
 
     public void visitGenericType(GenericsType genericsType) {
         ClassNode type = genericsType.getType();
