@@ -1,5 +1,4 @@
 package com.xseagullx.groovy.gsoc
-
 import groovyjarjarasm.asm.Opcodes
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
@@ -10,9 +9,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
-import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.codehaus.groovy.ast.stmt.ExpressionStatement
-import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.SyntaxException
@@ -113,12 +110,119 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     static Statement parseStatement(GroovyParser.StatementContext ctx) {
-        throw new RuntimeException("Unsupported statement type! $ctx")
+        throw new RuntimeException("Unsupported statement type! $ctx.text")
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Statement parseStatement(GroovyParser.ExpressionStatementContext ctx) {
         setupNodeLocation(new ExpressionStatement(parseExpression(ctx.expression())), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(GroovyParser.IfStatementContext ctx) {
+        def trueBranch = new BlockStatement()
+        def falseBranch = null
+        def s = trueBranch
+        for (c in ctx.children) {
+            if (c instanceof GroovyParser.StatementContext) {
+                s.addStatement(parseStatement(c))
+            }
+            else if (c instanceof TerminalNode) {
+                if (c.symbol.type == GroovyLexer.KW_ELSE) {
+                    falseBranch = new BlockStatement()
+                    s = falseBranch
+                }
+
+            }
+        }
+
+        if (!falseBranch)
+            falseBranch = EmptyStatement.INSTANCE
+
+        def expression = new BooleanExpression(parseExpression(ctx.expression()))
+        setupNodeLocation(new IfStatement(expression, trueBranch, falseBranch), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(GroovyParser.WhileStatementContext ctx) {
+        def statement = new BlockStatement() // TODO refactor block statement creation. label #BSC
+        for (stmt in ctx.statement())
+            statement.addStatement parseStatement(stmt)
+
+        setupNodeLocation(new WhileStatement(new BooleanExpression(parseExpression(ctx.expression())), statement), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(GroovyParser.ClassicForStatementContext ctx) {
+        def statement = new BlockStatement() // #BSC
+        for (stmt in ctx.statement())
+            statement.addStatement parseStatement(stmt)
+
+        def expression = new ClosureListExpression()
+
+        def captureNext = false
+        for (c in ctx.children) {
+            // FIXME terrible logic.
+            def isSemicolon = c instanceof TerminalNode && (c.symbol.text == ';' || c.symbol.text == '(' || c.symbol.text == ')')
+            if (captureNext && isSemicolon)
+                expression.addExpression(EmptyExpression.INSTANCE)
+            else if (captureNext && c instanceof GroovyParser.ExpressionContext)
+                expression.addExpression(parseExpression(c))
+            captureNext = isSemicolon
+        }
+
+        def parameter = ForStatement.FOR_LOOP_DUMMY
+        setupNodeLocation(new ForStatement(parameter, expression, statement), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(GroovyParser.ForInStatementContext ctx) {
+        def parameter = new Parameter(parseTypeDeclaration(ctx.typeDeclaration()), ctx.IDENTIFIER().text)
+        parameter = setupNodeLocation(parameter, ctx.IDENTIFIER().symbol)
+
+        def statement = new BlockStatement() // #BSC
+        for (stmt in ctx.statement())
+            statement.addStatement parseStatement(stmt)
+
+        setupNodeLocation(new ForStatement(parameter, parseExpression(ctx.expression()), statement), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(GroovyParser.SwitchStatementContext ctx) {
+        List<CaseStatement> caseStatements = []
+        for (caseStmt in ctx.caseStatement()) {
+            def stmt = new BlockStatement() // #BSC
+            for (GroovyParser.StatementContext st in caseStmt.statement())
+                stmt.addStatement(parseStatement(st))
+
+            caseStatements << setupNodeLocation(new CaseStatement(parseExpression(caseStmt.expression()), stmt),
+                    caseStmt.KW_CASE().symbol) // There only 'case' kw was highlighted in parser old version.
+        }
+
+        Statement defaultStatement
+        if (ctx.KW_DEFAULT()) {
+            defaultStatement = new BlockStatement() // #BSC
+            for (GroovyParser.StatementContext stmt in ctx.statement())
+                defaultStatement.addStatement(parseStatement(stmt))
+        }
+        else
+            defaultStatement = EmptyStatement.INSTANCE // TODO Refactor empty stataements and expressions.
+
+        new SwitchStatement(parseExpression(ctx.expression()), caseStatements, defaultStatement)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(GroovyParser.ControlStatementContext ctx) {
+        // TODO check validity. Labeling support.
+        // Fake inspection result should be suppressed.
+        //noinspection GroovyConditionalWithIdenticalBranches
+        setupNodeLocation( ctx.KW_BREAK() ? new BreakStatement() : new ContinueStatement() , ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(GroovyParser.ReturnStatementContext ctx) {
+        def expression = ctx.expression()
+        setupNodeLocation(new ReturnStatement(expression ? parseExpression(expression) : EmptyExpression.INSTANCE), ctx)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -216,7 +320,7 @@ class ASTBuilder extends GroovyBaseListener {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
-        def val = ctx.NUMBER() ? Integer.parseInt(ctx.NUMBER().text) : ctx.text[1..-2]
+        def val = ctx.NUMBER() ? Integer.parseInt(ctx.NUMBER().text) : ctx.text[1..-2] // FIXME Bug with empty string.
         setupNodeLocation(new ConstantExpression(val, true), ctx)
     }
 

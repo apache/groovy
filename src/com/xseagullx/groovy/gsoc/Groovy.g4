@@ -95,19 +95,21 @@ blockStatement: (statement | NL)+ ;
 
 statement:
     expression #expressionStatement
-    | KW_FOR '(' (typeDeclaration? IDENTIFIER ('=' expression)?)? ';' expression? ';' expression? ')' '{' (statement | ';' | NL)* '}' #classicForStatement
+    | KW_FOR '(' (expression)? ';' expression? ';' expression? ')' '{' (statement | ';' | NL)* '}' #classicForStatement
     | KW_FOR '(' typeDeclaration? IDENTIFIER KW_IN expression')' '{' (statement | ';' | NL)* '}' #forInStatement
     | KW_IF '(' expression ')' '{' (statement | ';' | NL)*  '}' (KW_ELSE '{' (statement | ';' | NL)* '}')? #ifStatement
     | KW_WHILE '(' expression ')' '{' (statement | ';' | NL)*  '}'  #whileStatement
     | KW_SWITCH '(' expression ')' '{'
         (
-          ((KW_CASE expression ':' (statement | ';' | NL)* ) | NL)*
+          (caseStatement | NL)*
           (KW_DEFAULT ':' (statement | ';' | NL)*)?
         )
       '}' #switchStatement
     | (KW_CONTINUE | KW_BREAK) #controlStatement
     | KW_RETURN expression? #returnStatement
 ;
+
+caseStatement: (KW_CASE expression ':' (statement | ';' | NL)* );
 
 expression:
     expression ('.' | '?.' | '*.') IDENTIFIER '(' argumentList ')' #methodCallExpression

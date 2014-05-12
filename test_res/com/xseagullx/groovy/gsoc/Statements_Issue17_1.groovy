@@ -11,37 +11,40 @@ class A {
         if (5) {
         } else { if (a == 4) {
         } else {
-        } }
+        }}
     }
 
     private def testFor() {
         for (; ;) {
+            return 5
         }
-        for (int a = 1; a < 10; a++) {
+        for (def a = 1; a < 10; a++) {
             println(a)
         }
         def a
         for (; a < 10; a++) {
             println(a)
+            break
         }
         for (a = 0; a; ++a) {
             println(a)
             println(a + 1)
+            continue
         }
     }
 
     private def testForIn() {
         for (a in Collections.EMPTY_LIST) {
-            println(a.hashCode())
+            println(hashCode())
         }
 
         for (def b in Collections.EMPTY_LIST) {
-            b.hashCode().toInteger()
+            println(this)
         }
     }
 
     private def testWhile() {
-        while (true) {
+        while (a) {
             println('!')
         }
     }
@@ -64,12 +67,11 @@ class A {
 
     private def testComplexSwitch() {
         def x
-        def result = ''
+        def result = ' '
 
         switch (x) {
             case 'foo':
                 result = 'found foo'
-        // lets fall through
 
             case 'bar':
                 result = result + 'bar'
@@ -93,7 +95,5 @@ class A {
             default:
                 result = 'default'
         }
-
-        assert result == 'number'
     }
 }
