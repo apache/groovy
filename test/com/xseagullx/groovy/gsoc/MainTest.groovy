@@ -34,6 +34,7 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/MethodBody_Issue7_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/MethodCall_Issue15_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Operators_Issue9_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/Statements_Issue17_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy" | _
     }
 
