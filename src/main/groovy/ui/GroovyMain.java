@@ -42,6 +42,8 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -499,11 +501,31 @@ public class GroovyMain {
         return GroovyMain.searchForGroovyScriptFile(input);
     }
 
+    // GROOVY-6771
+    private static void setupContextClassLoader(GroovyShell shell) {
+        final Thread current = Thread.currentThread();
+        class DoSetContext implements PrivilegedAction {
+            ClassLoader classLoader;
+
+            public DoSetContext(ClassLoader loader) {
+                classLoader = loader;
+            }
+
+            public Object run() {
+                current.setContextClassLoader(classLoader);
+                return null;
+            }
+        }
+
+        AccessController.doPrivileged(new DoSetContext(shell.getClassLoader()));
+    }
+
     /**
      * Process the input files.
      */
     private void processFiles() throws CompilationFailedException, IOException, URISyntaxException {
         GroovyShell groovy = new GroovyShell(conf);
+        setupContextClassLoader(groovy);
 
         Script s = groovy.parse(getScriptSource(isScriptFile, script));
 
@@ -624,6 +646,7 @@ public class GroovyMain {
      */
     private void processOnce() throws CompilationFailedException, IOException, URISyntaxException {
         GroovyShell groovy = new GroovyShell(conf);
+        setupContextClassLoader(groovy);
         groovy.run(getScriptSource(isScriptFile, script), args);
     }
 }
