@@ -61,7 +61,7 @@ class Main
      * @param main must have a Groovysh member that has an IO member.
      */
     public static void main(final String[] args) {
-        CliBuilder cli = new CliBuilder(usage : 'groovysh [options] [...]', formatter: new HelpFormatter())
+        CliBuilder cli = new CliBuilder(usage : 'groovysh [options] [...]', formatter: new HelpFormatter(), stopAtNonOption: false)
         MessageSource messages = new MessageSource(Main.class)
         cli.classpath(messages['cli.option.classpath.description'])
         cli.cp(longOpt: 'classpath', messages['cli.option.cp.description'])
@@ -76,6 +76,11 @@ class Main
         cli.T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
 
         OptionAccessor options = cli.parse(args)
+
+        if (options == null) {
+            // CliBuilder prints error, but does not exit
+            System.exit(22) // Invalid Args
+        }
 
         if (options.h) {
             cli.usage()
@@ -99,7 +104,13 @@ class Main
         if (options.hasOption('T')) {
             type = options.getOptionValue('T')
         }
-        setTerminalType(type, suppressColor)
+        try {
+            setTerminalType(type, suppressColor)
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage())
+            cli.usage()
+            System.exit(22) // Invalid Args
+        }
 
         // IO must be constructed AFTER calling setTerminalType()/AnsiConsole.systemInstall(),
         // else wrapped System.out does not work on Windows.
@@ -209,6 +220,9 @@ class Main
                 // Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
                 enableAnsi = false;
                 break;
+            default:
+                // Should never happen
+                throw new IllegalArgumentException("Invalid Terminal type: $type")
         }
         if (enableAnsi) {
             installAnsi() // must be called before IO(), since it modifies System.in
