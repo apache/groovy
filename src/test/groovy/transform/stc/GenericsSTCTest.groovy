@@ -1445,6 +1445,38 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             println new Foo().method()
         '''
     }
+    
+    void testConcreteTypeInsteadOfGenerifiedInterface() {
+        assertScript '''
+            import groovy.transform.ASTTest
+            import static org.codehaus.groovy.transform.stc.StaticTypesMarker.*
+            import static org.codehaus.groovy.ast.ClassHelper.*
+
+            interface Converter<F, T> {
+            T convertC(F from)
+            }
+            class Holder<T> {
+               T thing
+               Holder(T thing) {
+                this.thing = thing
+               }
+               def <R> Holder<R> convertH(Converter<? super T, ? extends R> func1) {
+                  new Holder(func1.convertC(thing))
+               }
+            }
+            class IntToFloatConverter implements Converter<Integer,Float> {
+                public Float convertC(Integer from) { from.floatValue() } 
+            }
+            void foo() {
+                @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                    def holderType = node.getNodeMetaData(INFERRED_TYPE)
+                    assert holderType.genericsTypes[0].type == Float_TYPE
+                })
+                def h1 = new Holder<Integer>(2).convertH(new IntToFloatConverter())
+            }
+            foo()
+        '''
+    }
 
     static class MyList extends LinkedList<String> {}
 
