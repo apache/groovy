@@ -1477,6 +1477,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             foo()
         '''
     }
+    
+    // GROOVY-6748
+    void testCleanGenerics() {
+        assertScript '''
+            class Class1 {
+                static <A, B> void method1(A a, B b) {
+                    method2(a, b)
+                }
+                static <A, B> void method2(A a, B b) {}
+                static <A, B> void method3(List<A> list1, List<B> list2) {
+                    method1(list1.get(0), list2.get(0))
+                }
+            }
+            new Class1().method3(["a"],["b"])
+        '''
+    }
 
     static class MyList extends LinkedList<String> {}
 

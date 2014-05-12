@@ -1665,6 +1665,14 @@ public abstract class StaticTypeCheckingSupport {
             GenericsType[] gt= newBound.getGenericsTypes();
             boolean hasBounds = gt[0].getLowerBound()!=null || gt[0].getUpperBounds()!=null;
             if (hasBounds || !gt[0].isPlaceholder()) return getCombinedBoundType(gt[0]);
+            String placeHolderName = newBound.getGenericsTypes()[0].getName();
+            if (!placeHolderName.equals(newBound.getUnresolvedName())) {
+                // we should produce a clean placeholder ClassNode here
+                ClassNode clean = ClassHelper.make(placeHolderName);
+                clean.setGenericsTypes(newBound.getGenericsTypes());
+                clean.setRedirect(newBound);
+                newBound = clean;
+            }
             newBound.setGenericsPlaceHolder(true);
         }
         return newBound;
