@@ -24,6 +24,17 @@ import org.fusesource.jansi.Ansi
 import org.fusesource.jansi.AnsiConsole
 
 /**
+ * A Main instance has a Groovysh member representing the shell,
+ * and a startGroovysh() method to run an interactive shell.
+ * Subclasses should preferably extend createIO() or configure the shell
+ * via getShell prior to invoking startGroovysh.
+ * Clients may use configureAndStartGroovysh to provide the same CLI params
+ * but a different Groovysh implementation (implementing getIO() and run()).
+ *
+ *
+ * The class also has static utility methods to manipulate the
+ * static ansi state using the jAnsi library.
+ *
  * Main CLI entry-point for <tt>groovysh</tt>.
  *
  * @version $Id$
@@ -31,22 +42,27 @@ import org.fusesource.jansi.AnsiConsole
  */
 class Main
 {
-    static {
-        // Install the system adapters
-        AnsiConsole.systemInstall()
+    final Groovysh groovysh;
 
-        // Register jline ansi detector
-        Ansi.setDetector(new AnsiDetector())
+    /**
+     * @param io: may just be new IO(), which is the default
+     */
+    public Main(IO io) {
+        Logger.io = io
+        groovysh = new Groovysh(io)
     }
 
-    private static final MessageSource messages = new MessageSource(Main)
+    Groovysh getGroovysh() {
+        return groovysh
+    }
 
-    static void main(final String[] args) {
-        IO io = new IO()
-        Logger.io = io
-
-        CliBuilder cli = new CliBuilder(usage : 'groovysh [options] [...]', formatter: new HelpFormatter(), writer: io.out)
-
+    /**
+     * create a Main instance, configures it according to CLI arguments, and starts the shell.
+     * @param main must have a Groovysh member that has an IO member.
+     */
+    public static void main(final String[] args) {
+        CliBuilder cli = new CliBuilder(usage : 'groovysh [options] [...]', formatter: new HelpFormatter(), stopAtNonOption: false)
+        MessageSource messages = new MessageSource(Main.class)
         cli.classpath(messages['cli.option.classpath.description'])
         cli.cp(longOpt: 'classpath', messages['cli.option.cp.description'])
         cli.h(longOpt: 'help', messages['cli.option.help.description'])
@@ -54,11 +70,17 @@ class Main
         cli.v(longOpt: 'verbose', messages['cli.option.verbose.description'])
         cli.q(longOpt: 'quiet', messages['cli.option.quiet.description'])
         cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
+        cli.e(longOpt: 'evaluate', args: 1, optionalArg: false, messages['cli.option.evaluate.description'])
         cli.C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
         cli.D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.define.description'])
         cli.T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
 
         OptionAccessor options = cli.parse(args)
+
+        if (options == null) {
+            // CliBuilder prints error, but does not exit
+            System.exit(22) // Invalid Args
+        }
 
         if (options.h) {
             cli.usage()
@@ -66,14 +88,33 @@ class Main
         }
 
         if (options.V) {
-            io.out.println(messages.format('cli.info.version', GroovySystem.version))
+            System.out.println(messages.format('cli.info.version', GroovySystem.version))
             System.exit(0)
         }
 
-        if (options.hasOption('T')) {
-            def type = options.getOptionValue('T')
-            setTerminalType(type)
+        boolean suppressColor = false
+        if (options.hasOption('C')) {
+            def value = options.getOptionValue('C')
+            if (value != null) {
+                suppressColor = !Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
+            }
         }
+
+        String type ='auto'
+        if (options.hasOption('T')) {
+            type = options.getOptionValue('T')
+        }
+        try {
+            setTerminalType(type, suppressColor)
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage())
+            cli.usage()
+            System.exit(22) // Invalid Args
+        }
+
+        // IO must be constructed AFTER calling setTerminalType()/AnsiConsole.systemInstall(),
+        // else wrapped System.out does not work on Windows.
+        IO io = new IO()
 
         if (options.hasOption('D')) {
             def values = options.getOptionValues('D')
@@ -95,15 +136,23 @@ class Main
             io.verbosity = IO.Verbosity.QUIET
         }
 
-        if (options.hasOption('C')) {
-            def value = options.getOptionValue('C')
-            setColor(value)
+        String evalString = null;
+        if (options.e) {
+            evalString = options.getOptionValue('e')
         }
 
-        int code
+        List<String> filenames = options.arguments()
+        Main main = new Main(io);
+        main.startGroovysh(evalString, filenames)
+    }
 
-        // Boot up the shell... :-)
-        final Groovysh shell = new Groovysh(io)
+    /**
+     * @param evalString commands that will be executed at startup after loading files given with filenames param
+     * @param filenames files that will be loaded at startup
+     */
+    protected void startGroovysh(String evalString, List<String> filenames) {
+        int code
+        Groovysh shell = getGroovysh()
 
         // Add a hook to display some status when shutting down...
         addShutdownHook {
@@ -114,7 +163,6 @@ class Main
             if (code == null) {
                 // Give the user a warning when the JVM shutdown abnormally, normal shutdown
                 // will set an exit code through the proper channels
-
 
                 println('WARNING: Abnormal JVM shutdown detected')
             }
@@ -129,7 +177,7 @@ class Main
         System.setSecurityManager(new NoExitSecurityManager())
 
         try {
-            code = shell.run(options.arguments() as String[])
+            code = shell.run(evalString, filenames)
         }
         finally {
             System.setSecurityManager(psm)
@@ -142,11 +190,15 @@ class Main
         System.exit(code)
     }
 
-    static void setTerminalType(String type) {
+    /**
+     * @param type: one of 'auto', 'unix', ('win', 'windows'), ('false', 'off', 'none')
+     * @param suppressColor only has effect when ansi is enabled
+     */
+    static void setTerminalType(String type, boolean suppressColor) {
         assert type != null
         
         type = type.toLowerCase();
-
+        boolean enableAnsi = true;
         switch (type) {
             case 'auto':
                 type = null;
@@ -166,8 +218,17 @@ class Main
             case 'none':
                 type = 'jline.UnsupportedTerminal'
                 // Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
-                Ansi.enabled = false
+                enableAnsi = false;
                 break;
+            default:
+                // Should never happen
+                throw new IllegalArgumentException("Invalid Terminal type: $type")
+        }
+        if (enableAnsi) {
+            installAnsi() // must be called before IO(), since it modifies System.in
+            Ansi.enabled = !suppressColor
+        } else {
+            Ansi.enabled = false
         }
 
         if (type != null) {
@@ -175,18 +236,15 @@ class Main
         }
     }
 
-    static void setColor(String value) {
-        boolean ansiEnabled
+    static void installAnsi() {
+        // Install the system adapters, replaces System.out and System.err
+        // Must be called before using IO(), because IO stores refs to System.out and System.err
+        AnsiConsole.systemInstall()
 
-        if (value == null) {
-            ansiEnabled = true // --color is the same as --color=true
-        }
-        else {
-            ansiEnabled = Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
-        }
-
-        Ansi.enabled = ansiEnabled
+        // Register jline ansi detector
+        Ansi.setDetector(new AnsiDetector())
     }
+
 
     static void setSystemProperty(final String nameValue) {
         String name
