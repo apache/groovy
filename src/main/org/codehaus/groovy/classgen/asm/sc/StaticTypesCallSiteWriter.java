@@ -522,25 +522,42 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         ClassNode classNode = controller.getClassNode();
         ClassNode rType = typeChooser.resolveType(receiver, classNode);
         ClassNode aType = typeChooser.resolveType(arguments, classNode);
+        if (trySubscript(receiver, message, arguments, rType, aType)) {
+            return;
+        }
+        // new try with flow type instead of declaration type
+        rType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (rType!=null && trySubscript(receiver, message, arguments, rType, aType)) {
+            return;
+        }
+        // todo: more cases
+        throw new GroovyBugError(
+                "At line "+receiver.getLineNumber() + " column " + receiver.getColumnNumber() + "\n" +
+                "On receiver: "+receiver.getText() + " with message: "+message+" and arguments: "+arguments.getText()+"\n"+
+                "This method should not have been called. Please try to create a simple example reproducing this error and file" +
+                "a bug report at http://jira.codehaus.org/browse/GROOVY");
+    }
+
+    private boolean trySubscript(final Expression receiver, final String message, final Expression arguments, ClassNode rType, final ClassNode aType) {
         if (getWrapper(rType).isDerivedFrom(Number_TYPE)
                 && getWrapper(aType).isDerivedFrom(Number_TYPE)) {
             if ("plus".equals(message) || "minus".equals(message) || "multiply".equals(message) || "div".equals(message)) {
                 writeNumberNumberCall(receiver, message, arguments);
-                return;
+                return true;
             } else if ("power".equals(message)) {
                 writePowerCall(receiver, arguments, rType, aType);
-                return;
+                return true;
             } else if ("mod".equals(message)) {
                 writeModCall(receiver, arguments, rType, aType);
-                return;
+                return true;
             }
         } else if (STRING_TYPE.equals(rType) && "plus".equals(message)) {
             writeStringPlusCall(receiver, message, arguments);
-            return;
+            return true;
         } else if ("getAt".equals(message)) {
             if (rType.isArray() && getWrapper(aType).isDerivedFrom(Number_TYPE)) {
                 writeArrayGet(receiver, arguments, rType, aType);
-                return;
+                return true;
             } else {
                 // check if a getAt method can be found on the receiver
                 ClassNode current = rType;
@@ -564,9 +581,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     call.setImplicitThis(false);
                     call.setMethodTarget(getAtNode);
                     call.visit(controller.getAcg());
-                    return;
+                    return true;
                 }
-        
+
                 // make sure Map#getAt() and List#getAt handled with the bracket syntax are properly compiled
                 ClassNode[] args = {aType};
                 boolean acceptAnyMethod =
@@ -590,7 +607,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     call.setImplicitThis(false);
                     call.setMethodTarget(methodNode);
                     call.visit(controller.getAcg());
-                    return;
+                    return true;
                 }
                 if (implementsInterfaceOrIsSubclassOf(rType, MAP_TYPE)) {
                     // fallback to Map#get
@@ -603,16 +620,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     call.setSourcePosition(arguments);
                     call.setImplicitThis(false);
                     call.visit(controller.getAcg());
-                    return;
+                    return true;
                 }
             }
         }
-        // todo: more cases
-        throw new GroovyBugError(
-                "At line "+receiver.getLineNumber() + " column " + receiver.getColumnNumber() + "\n" +
-                "On receiver: "+receiver.getText() + " with message: "+message+" and arguments: "+arguments.getText()+"\n"+
-                "This method should not have been called. Please try to create a simple example reproducing this error and file" +
-                "a bug report at http://jira.codehaus.org/browse/GROOVY");
+        return false;
     }
 
     private void writeArrayGet(final Expression receiver, final Expression arguments, final ClassNode rType, final ClassNode aType) {
