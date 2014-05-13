@@ -452,6 +452,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // in case of the "in" operator, the receiver and the arguments are reversed
                 // so we use the reversedExpression and get the target method from it
                 storeTargetMethod(expression, (MethodNode) reversedBinaryExpression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+            } else if (op == LEFT_SQUARE_BRACKET
+                    && leftExpression instanceof VariableExpression
+                    && leftExpression.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE)==null) {
+                storeType(leftExpression, lType);
             }
             if (resultType == null) {
                 resultType = lType;
