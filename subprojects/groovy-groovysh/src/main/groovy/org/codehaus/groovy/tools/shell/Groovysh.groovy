@@ -456,7 +456,7 @@ class Groovysh extends Shell {
             startCommands.add(evalString)
         }
         if (filenames != null && filenames.size() > 0) {
-            startCommands.addAll(filenames.collect({String it -> ":load $it"}))
+            startCommands.addAll(filenames.collect({String it -> "${LoadCommand.COMMAND_NAME} $it"}))
         }
         return run(startCommands.join('\n'))
     }
