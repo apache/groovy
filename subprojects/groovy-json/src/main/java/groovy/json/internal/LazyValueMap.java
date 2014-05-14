@@ -202,13 +202,20 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
 
     private final void buildMap() {
 
-        map = new HashMap<String, Object>(items.length);
 
-        for (Entry<String, Value> miv : items) {
-            if (miv == null) {
+        /** added to avoid hash collision attack. */
+        if (Sys.is1_7OrLater() && System.getProperty("jdk.map.althashing.threshold") != null) {
+            map = new HashMap<String, Object>( items.length );
+        } else {
+            map = new TreeMap<String, Object>();
+        }
+
+
+        for ( Entry<String, Value> miv : items ) {
+            if ( miv == null ) {
                 break;
             }
-            map.put(miv.getKey(), miv.getValue().toValue());
+            map.put( miv.getKey(), miv.getValue().toValue() );
         }
 
         len = 0;
