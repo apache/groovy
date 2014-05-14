@@ -20,6 +20,8 @@ package groovy.json.internal;
 
 
 import java.math.BigDecimal;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 class Sys {
@@ -66,7 +68,11 @@ class Sys {
         } else if ("1.8.0".equals(sversion)) {
             v = new BigDecimal("1.8");
         } else {
-            v = new BigDecimal ( sversion );
+            Pattern p = Pattern.compile("^([1-9]\\.[0-9]+)");
+            Matcher matcher = p.matcher(sversion);
+            if (matcher.find()) {
+                v = new BigDecimal ( matcher.group(0) );
+            }
         }
 
         version = v;
@@ -88,9 +94,4 @@ class Sys {
     public static boolean is1_8() {
         return is1_8;
     }
-
-
-
-
-
 }
