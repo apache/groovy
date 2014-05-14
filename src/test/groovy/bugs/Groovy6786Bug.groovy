@@ -5,7 +5,6 @@ import groovy.transform.stc.StaticTypeCheckingTestCase
 
 class Groovy6786Bug extends StaticTypeCheckingTestCase {
     
-    @NotYetImplemented
     void testGenericAddAll() {
         assertScript '''
 
@@ -31,7 +30,6 @@ class Groovy6786Bug extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented
     void testGuavaCacheBuilderLikeGenerics() {
         assertScript '''
             class Class1 {

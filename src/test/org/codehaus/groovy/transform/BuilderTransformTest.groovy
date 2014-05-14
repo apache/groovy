@@ -373,7 +373,7 @@ class BuilderTransformTest extends CompilableTestSupport {
                 new Person(Person.createInitializer().firstName("John").lastName("Smith"))
             }
         '''
-        assert message.contains('[Static type checking] - Cannot find matching method Person#<init>')
+        assert message.contains('[Static type checking] - Cannot call Person#<init>')
         assert message =~ /.*SET.*SET.*UNSET.*/
     }
 

@@ -955,7 +955,7 @@ public abstract class StaticTypeCheckingSupport {
                 Person p = foo(b)
              */
 
-            Parameter[] params = parameterizeArguments(actualReceiver, safeNode);
+            Parameter[] params = makeRawTypes(safeNode.getParameters());
             if (params.length == safeArgs.length) {
                 int allPMatch = allParametersAndArgumentsMatch(params, safeArgs);
                 boolean firstParamMatches = true;
@@ -1034,6 +1034,16 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
         return bestChoices;
+    }
+
+    private static Parameter[] makeRawTypes(Parameter[] params) {
+        Parameter[] newParam = new Parameter[params.length];
+        for (int i=0; i<params.length; i++) {
+            Parameter oldP = params[i];
+            Parameter newP = new Parameter(makeRawType(oldP.getType()),oldP.getName());
+            newParam[i] = newP;
+        }
+        return newParam;
     }
 
     private static ClassNode makeRawType(final ClassNode receiver) {
@@ -1265,11 +1275,10 @@ public abstract class StaticTypeCheckingSupport {
         }
         if (CLASS_Type.equals(receiver)
                 && receiver.isUsingGenerics()
-                && candidateMethod.getDeclaringClass() != receiver
+                && !candidateMethod.getDeclaringClass().equals(receiver)
                 && !(candidateMethod instanceof ExtensionMethodNode)) {
             return typeCheckMethodsWithGenerics(receiver.getGenericsTypes()[0].getType(), arguments, candidateMethod);
         }
-        boolean failure = false;
         // both candidate method and receiver have generic information so a check is possible
         Parameter[] parameters = candidateMethod.getParameters();
         GenericsType[] genericsTypes = candidateMethod.getGenericsTypes();
@@ -1280,10 +1289,15 @@ public abstract class StaticTypeCheckingSupport {
             dgmArgs[0] = receiver;
             System.arraycopy(arguments, 0, dgmArgs, 1, arguments.length);
             MethodNode extensionMethodNode = ((ExtensionMethodNode) candidateMethod).getExtensionMethodNode();
-            return typeCheckMethodsWithGenerics(extensionMethodNode.getDeclaringClass(), dgmArgs, extensionMethodNode);
-
-
+            return typeCheckMethodsWithGenerics(extensionMethodNode.getDeclaringClass(), dgmArgs, extensionMethodNode, true);
+        } else {
+            return typeCheckMethodsWithGenerics(receiver, arguments, candidateMethod, false);
         }
+    }
+
+    private static boolean typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, MethodNode candidateMethod, boolean isExtensionMethod) {
+        boolean failure = false;
+        Parameter[] parameters = candidateMethod.getParameters();
         Map<String, GenericsType> classGTs = GenericsUtils.extractPlaceholders(receiver);
         if (parameters.length > arguments.length || parameters.length==0) {
             // this is a limitation that must be removed in a future version
@@ -1300,33 +1314,62 @@ public abstract class StaticTypeCheckingSupport {
         for (String key: resolvedMethodGenerics.keySet()) classGTs.remove(key); 
         // then we use the remaining information to refine the given generics
         applyGenericsConnections(classGTs,resolvedMethodGenerics);
+        // and then start our checks with the receiver
+        failure |= inferenceCheck(Collections.EMPTY_SET, resolvedMethodGenerics, candidateMethod.getDeclaringClass(), receiver, false);
+        // the outside context parts till now define placeholder we are not allowed to
+        // generalize, thus we save that for later use...
+        // extension methods are special, since they set the receiver as 
+        // first parameter. While we normally allow generalization for the first
+        // parameter, in case of an extension method we must not. 
+        Set<String> fixedGenericsPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
+
         for (int i = 0; i < arguments.length; i++) {
             int pindex = Math.min(i, parameters.length - 1);
-            Map<String, GenericsType> connections = new HashMap<String, GenericsType>();
             ClassNode wrappedArgument = arguments[i];
-            ClassNode type = parameters[pindex].getType();
-            if (ClassHelper.isPrimitiveType(wrappedArgument)) wrappedArgument = ClassHelper.getWrapper(wrappedArgument);
-            // the context we compare with in the end is the one of the callsite
-            // so far we specified the context of the method declaration only
-            // thus for each argument, we try to find the connected generics first
-            extractGenericsConnections(connections, wrappedArgument, type);
-            // each found connection must comply with already found connections
-            failure |= !compatibleConnections(connections, resolvedMethodGenerics);
-            // and then apply the found information to refine the method level
-            // information. This way the method level information slowly turns
-            // into information for the callsite
-            applyGenericsConnections(connections, resolvedMethodGenerics);
-            // since it is possible that the callsite uses some generics as well, 
-            // we may have to add additional elements here
-            addMissingEntries(connections, resolvedMethodGenerics);
-            // to finally see if the parameter and the argument fit togehter,
-            // we use the provided information to transform the parameter
-            // into something that can exist in the callsite context
-            type = applyGenericsContext(resolvedMethodGenerics, type);
-            // there of course transformed parameter type and argument must fit
-            failure |= !typeCheckMethodArgumentWithGenerics(type, wrappedArgument, i >= parameters.length - 1);
+            ClassNode type = parameters[pindex].getOriginType();
+
+            failure |= inferenceCheck(fixedGenericsPlaceHolders, resolvedMethodGenerics, type, wrappedArgument,i >= parameters.length - 1);
+
+            // set real fixed generics for extension methods
+            if (isExtensionMethod && i==0) fixedGenericsPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
         }
         return !failure;
+    }
+
+    private static Set<String> extractResolvedPlaceHolders(Map<String, GenericsType> resolvedMethodGenerics) {
+        if (resolvedMethodGenerics.isEmpty()) return Collections.EMPTY_SET;
+        Set<String> result = new HashSet<String>();
+        for (Map.Entry<String, GenericsType> entry : resolvedMethodGenerics.entrySet()) {
+            GenericsType value = entry.getValue();
+            if (value.isPlaceholder() || value.isPlaceholder()) continue;
+            result.add(entry.getKey());
+        }
+        return result;
+    }
+
+    private static boolean inferenceCheck(Set<String> fixedGenericsPlaceHolders, Map<String, GenericsType> resolvedMethodGenerics, ClassNode type, ClassNode wrappedArgument, boolean lastArg) {
+        Map<String, GenericsType> connections = new HashMap<String, GenericsType>();
+        if (ClassHelper.isPrimitiveType(wrappedArgument)) wrappedArgument = ClassHelper.getWrapper(wrappedArgument);
+        // the context we compare with in the end is the one of the callsite
+        // so far we specified the context of the method declaration only
+        // thus for each argument, we try to find the connected generics first
+        extractGenericsConnections(connections, wrappedArgument, type);
+        // each found connection must comply with already found connections
+        boolean failure = !compatibleConnections(connections, resolvedMethodGenerics, fixedGenericsPlaceHolders);
+        // and then apply the found information to refine the method level
+        // information. This way the method level information slowly turns
+        // into information for the callsite
+        applyGenericsConnections(connections, resolvedMethodGenerics);
+        // since it is possible that the callsite uses some generics as well, 
+        // we may have to add additional elements here
+        addMissingEntries(connections, resolvedMethodGenerics);
+        // to finally see if the parameter and the argument fit togehter,
+        // we use the provided information to transform the parameter
+        // into something that can exist in the callsite context
+        type = applyGenericsContext(resolvedMethodGenerics, type);
+        // there of course transformed parameter type and argument must fit
+        failure |= !typeCheckMethodArgumentWithGenerics(type, wrappedArgument, lastArg);
+        return failure;
     }
 
     private static GenericsType buildWildcardType(GenericsType origin) {
@@ -1340,7 +1383,7 @@ public abstract class StaticTypeCheckingSupport {
         return gt;
     }
 
-    private static boolean compatibleConnections(Map<String, GenericsType> connections, Map<String, GenericsType> resolvedMethodGenerics) 
+    private static boolean compatibleConnections(Map<String, GenericsType> connections, Map<String, GenericsType> resolvedMethodGenerics, Set<String> fixedGenericsPlaceHolders) 
     {
         for (Map.Entry<String, GenericsType> entry : connections.entrySet()) {
             GenericsType resolved = resolvedMethodGenerics.get(entry.getKey());
@@ -1352,24 +1395,41 @@ public abstract class StaticTypeCheckingSupport {
             {
                 continue;
             }
-            GenericsType gt = connection;
-            if (!connection.isWildcard()) gt = buildWildcardType(connection);
-            if (    resolved.isPlaceholder() && resolved.getUpperBounds()!=null && 
-                    resolved.getUpperBounds().length==1 && !resolved.getUpperBounds()[0].isGenericsPlaceHolder() && 
-                    resolved.getUpperBounds()[0].getName().equals("java.lang.Object")) 
-            {
-                return true;
+            if (!compatibleConnection(resolved,connection)) {
+                if (    !(resolved.isPlaceholder() || resolved.isWildcard()) &&
+                        !fixedGenericsPlaceHolders.contains(entry.getKey()) &&
+                        compatibleConnection(connection,resolved)) 
+                {
+                    // we did for example find T=String and now check against
+                    // T=Object, which fails the first compatibleConnection check
+                    // but since T=Object works for both, the second one will pass
+                    // and we need to change the type for T to the more general one
+                    resolvedMethodGenerics.put(entry.getKey(),connection);
+                } else {
+                    return false;
+                }
             }
-            ClassNode compareNode;
-            if (resolved.getLowerBound()!=null || resolved.getUpperBounds()!=null) {
-                compareNode = getCombinedBoundType(resolved);
-                compareNode = compareNode.redirect().getPlainNodeReference();
-            } else {
-                compareNode = resolved.getType().getPlainNodeReference();
-            }
-            if (!gt.isCompatibleWith(compareNode)) return false; 
         }
         return true;
+    }
+
+    private static boolean compatibleConnection(GenericsType resolved, GenericsType connection) {
+        GenericsType gt = connection;
+        if (!connection.isWildcard()) gt = buildWildcardType(connection);
+        if (    resolved.isPlaceholder() && resolved.getUpperBounds()!=null && 
+                resolved.getUpperBounds().length==1 && !resolved.getUpperBounds()[0].isGenericsPlaceHolder() && 
+                resolved.getUpperBounds()[0].getName().equals("java.lang.Object")) 
+        {
+            return true;
+        }
+        ClassNode compareNode;
+        if (resolved.getLowerBound()!=null || resolved.getUpperBounds()!=null) {
+            compareNode = getCombinedBoundType(resolved);
+            compareNode = compareNode.redirect().getPlainNodeReference();
+        } else {
+            compareNode = resolved.getType().getPlainNodeReference();
+        }
+        return gt.isCompatibleWith(compareNode);
     }
 
     private static void addMissingEntries(Map<String, GenericsType> connections, Map<String, GenericsType> resolved) {
