@@ -16,9 +16,11 @@
 
 package org.codehaus.groovy.ast;
 
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import groovy.lang.*;
 
 import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ManagedConcurrentMap;
 import org.codehaus.groovy.util.ReferenceBundle;
@@ -435,5 +437,38 @@ public class ClassHelper {
         if (visible !=0 && asp == 0) return true;
         if (c.equals(OBJECT_TYPE)) return false;
         return hasUsableImplementation(c.getSuperClass(), m);
+    }
+
+    /**
+     * Returns a super class or interface for a given class depending on a given target.
+     * If the target is no super class or interface, then null will be returned.
+     * @param clazz the start class
+     * @param goalClazz the goal class
+     * @return the next super class or interface
+     */
+    public static ClassNode getNextSuperClass(ClassNode clazz, ClassNode goalClazz) {
+        if (clazz.isArray()) {
+            ClassNode cn = getNextSuperClass(clazz.getComponentType(),goalClazz.getComponentType());
+            if (cn!=null) cn = cn.makeArray();
+            return cn;
+        }
+
+        if (!goalClazz.isInterface()) {
+            if (clazz.isInterface()) {
+                if (OBJECT_TYPE.equals(clazz)) return null;
+                return OBJECT_TYPE;
+            } else {
+                return clazz.getUnresolvedSuperClass();
+            }
+        }
+
+        ClassNode[] interfaces = clazz.getUnresolvedInterfaces();
+        for (int i=0; i<interfaces.length; i++) {
+            if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(interfaces[i],goalClazz)) {
+                return interfaces[i];
+            }
+        }
+        //none of the interfaces here match, so continue with super class
+        return clazz.getUnresolvedSuperClass();
     }
 }
