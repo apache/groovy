@@ -22,7 +22,7 @@ package groovy.json.internal;
 import java.math.BigDecimal;
 
 
-public class Sys {
+class Sys {
 
     private final static boolean is1_7OorLater;
     private final static BigDecimal version;
