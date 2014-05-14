@@ -302,10 +302,11 @@ int compareTo(Object) {0}; int priv; static int priv2; public int foo; public st
         // tests that import are taken into account when evaluating for completion
         IO testio = new IO()
         Groovysh groovysh = new Groovysh(new URLClassLoader(), new Binding(), testio)
-        int code = groovysh.run("import " + GroovyException.name)
-        assert code == 0
+        def result = groovysh.execute("import " + GroovyException.name)
+        assert result == GroovyException.canonicalName
         ReflectionCompletor compl = new ReflectionCompletor(groovysh)
         def candidates = []
+
         compl.complete(TokenUtilTest.tokenList("GroovyException."), candidates)
         assert candidates.size() == 0
         compl.complete(TokenUtilTest.tokenList("GroovyException.find"), candidates)
