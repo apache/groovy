@@ -73,7 +73,8 @@ class CommandRegistry
             if (name in [ c.name, c.shortcut ]) {
                 return c
             }
-            if (name.equals(':' + c.name)) {
+            // also allow :import
+            if (!c.name.startsWith(':') && name.equals(':' + c.name)) {
                 return c
             }
         }
