@@ -25,22 +25,22 @@ class PurgeCommandTest
     extends CommandTestSupport
 {
     void testPurgeVariables() {
-        shell << ':purge variables'
+        shell.execute(PurgeCommand.COMMAND_NAME + ' variables')
     }
 
     void testPurgeClasses() {
-        shell << ':purge classes'
+        shell.execute(PurgeCommand.COMMAND_NAME + ' classes')
     }
 
     void testPurgeImports() {
-        shell << ':purge imports'
+        shell.execute(PurgeCommand.COMMAND_NAME + ' imports')
     }
 
     void testPurgePreferences() {
-        shell << ':purge preferences'
+        shell.execute(PurgeCommand.COMMAND_NAME + ' preferences')
     }
 
     void testPurgeAll() {
-        shell << ':purge all'
+        shell.execute(PurgeCommand.COMMAND_NAME + ' all')
     }
 }

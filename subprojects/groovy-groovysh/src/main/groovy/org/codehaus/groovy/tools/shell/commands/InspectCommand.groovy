@@ -34,8 +34,10 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 class InspectCommand
     extends CommandSupport
 {
+    public static final String COMMAND_NAME = ':inspect'
+
     InspectCommand(final Groovysh shell) {
-        super(shell, ':inspect', ':n')
+        super(shell, COMMAND_NAME, ':n')
     }
     
     def lafInitialized = false

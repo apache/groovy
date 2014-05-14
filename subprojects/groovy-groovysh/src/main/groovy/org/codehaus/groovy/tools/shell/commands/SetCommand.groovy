@@ -31,8 +31,10 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 class SetCommand
     extends CommandSupport
 {
+    public static final String COMMAND_NAME = ':set'
+
     SetCommand(final Groovysh shell) {
-        super(shell, ':set', ':=')
+        super(shell, COMMAND_NAME, ':=')
     }
 
     protected List createCompleters() {

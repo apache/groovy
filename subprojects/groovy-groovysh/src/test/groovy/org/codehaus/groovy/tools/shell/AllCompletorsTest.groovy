@@ -18,6 +18,14 @@ package org.codehaus.groovy.tools.shell
 
 import jline.console.completer.Completer
 import jline.console.history.FileHistory
+import org.codehaus.groovy.tools.shell.commands.DocCommand
+import org.codehaus.groovy.tools.shell.commands.EditCommand
+import org.codehaus.groovy.tools.shell.commands.ExitCommand
+import org.codehaus.groovy.tools.shell.commands.HelpCommand
+import org.codehaus.groovy.tools.shell.commands.InspectCommand
+import org.codehaus.groovy.tools.shell.commands.PurgeCommand
+import org.codehaus.groovy.tools.shell.commands.SetCommand
+import org.codehaus.groovy.tools.shell.commands.ShowCommand
 
 
 /**
@@ -94,18 +102,18 @@ class AllCompletorsTest extends GroovyTestCase {
 
     void testEmpty() {
         def result = complete("", 0)
-        assertTrue(':help' in result[0])
-        assertTrue(':exit' in result[0])
+        assertTrue(HelpCommand.COMMAND_NAME in result[0])
+        assertTrue(ExitCommand.COMMAND_NAME in result[0])
         assertTrue('import' in result[0])
-        assertTrue(':show' in result[0])
-        assertTrue(':set' in result[0])
-        assertTrue(':inspect' in result[0])
-        assertTrue(':doc' in result[0])
+        assertTrue(ShowCommand.COMMAND_NAME in result[0])
+        assertTrue(SetCommand.COMMAND_NAME in result[0])
+        assertTrue(InspectCommand.COMMAND_NAME in result[0])
+        assertTrue(DocCommand.COMMAND_NAME in result[0])
         assert 0 == result[1]
     }
 
     void testExitEdit() {
-        assert [[":exit ", ":e", ":edit"], 0] == complete(":e", 0)
+        assert [["${ExitCommand.COMMAND_NAME} ", ":e", EditCommand.COMMAND_NAME], 0] == complete(":e", 0)
     }
 
     void testShow() {
@@ -114,12 +122,12 @@ class AllCompletorsTest extends GroovyTestCase {
     }
 
     void testShowV() {
-        String prompt = ":show v"
+        String prompt = ShowCommand.COMMAND_NAME + " v"
         assert [["variables "], prompt.length() - 1] == complete(prompt, prompt.length())
     }
 
     void testShowVariables() {
-        String prompt = ":show variables "
+        String prompt = ShowCommand.COMMAND_NAME + " variables "
         assertNull(complete(prompt, prompt.length()))
     }
 
@@ -134,7 +142,7 @@ class AllCompletorsTest extends GroovyTestCase {
 
     void testShowVariablesJava() {
         // tests against interaction with ReflectionCompleter
-        String prompt = "show variables java"
+        String prompt = ShowCommand.COMMAND_NAME + " variables java"
         assertNull(complete(prompt, prompt.length()))
     }
 
@@ -147,11 +155,11 @@ class AllCompletorsTest extends GroovyTestCase {
     void testCommandAndKeyword() {
         // tests against interaction with ReflectionCompleter
         String prompt = ":pu" // purge, public
-        assert [[":purge "], 0] == complete(prompt, prompt.length())
+        assert [["${PurgeCommand.COMMAND_NAME} "], 0] == complete(prompt, prompt.length())
     }
 
     void testDoc() {
-        String prompt = ":doc j"
+        String prompt = DocCommand.COMMAND_NAME + " j"
         def result = complete(prompt, prompt.length())
         assert result
         assert prompt.length() - 1 == result[1]

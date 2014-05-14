@@ -27,15 +27,15 @@ class RecordCommandTest
     extends CommandTestSupport
 {
     void testStopNotStarted() {
-        shell << ':record stop'
+        shell.execute(RecordCommand.COMMAND_NAME + ' stop')
     }
 
     void testStartAlreadyStarted() {
-        shell << ':record start'
+        shell.execute(RecordCommand.COMMAND_NAME + ' start')
 
-        shell << ':record start'
+        shell.execute(RecordCommand.COMMAND_NAME + ' start')
 
-        File file = shell << ':record stop'
+        File file = shell.execute(RecordCommand.COMMAND_NAME + ' stop')
 
         file.delete()
     }
@@ -45,7 +45,7 @@ class RecordCommandTest
 
         try {
             // too many args
-            command.do_start([1, 2, 3])
+            command.do_start(['1', '2', '3'])
             fail()
         } catch (CommandException e) {
             // pass

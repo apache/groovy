@@ -25,6 +25,6 @@ class LoadCommandTest
     extends CommandTestSupport
 {
     void testLoad() {
-        shell << ':load'
+        shell.execute(LoadCommand.COMMAND_NAME)
     }
 }

@@ -31,15 +31,17 @@ import org.codehaus.groovy.tools.shell.Command
 class RegisterCommand
     extends CommandSupport
 {
+    public static final String COMMAND_NAME = ':register'
+
     RegisterCommand(final Groovysh shell) {
-        super(shell, ":register", ":rc")
+        super(shell, COMMAND_NAME, ":rc")
     }
 
     public Object execute(List<String> args) {
         assert args != null
 
         if (args.size() < 1) {
-            fail("Command 'register' requires at least 1 arguments") // TODO: i18n
+            fail("Command '$COMMAND_NAME' requires at least 1 arguments") // TODO: i18n
         }
 
         String classname = args.get(0)

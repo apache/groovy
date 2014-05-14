@@ -25,8 +25,8 @@ class AliasCommandTest
     extends CommandTestSupport
 {
     void testAlias() {
-        shell.execute(':alias')
-        shell.execute(':alias foo bar')
-        shell.execute(':alias history foo') // cannot rebind
+        shell.execute(AliasCommand.COMMAND_NAME)
+        shell.execute(AliasCommand.COMMAND_NAME + ' foo bar')
+        shell.execute(AliasCommand.COMMAND_NAME + ' history foo') // cannot rebind
     }
 }

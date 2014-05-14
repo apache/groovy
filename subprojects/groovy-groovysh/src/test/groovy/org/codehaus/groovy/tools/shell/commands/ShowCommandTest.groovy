@@ -25,6 +25,6 @@ class ShowCommandTest
     extends CommandTestSupport
 {
     void testShow() {
-        shell << ':show nocommandhere'
+        shell.execute(ShowCommand.COMMAND_NAME + ' nocommandhere')
     }
 }

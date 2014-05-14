@@ -29,8 +29,10 @@ import org.codehaus.groovy.tools.shell.Groovysh
 class SaveCommand
     extends CommandSupport
 {
+    public static final String COMMAND_NAME = ':save'
+
     SaveCommand(final Groovysh shell) {
-        super(shell, ':save', ':s')
+        super(shell, COMMAND_NAME, ':s')
     }
 
     protected List createCompleters() {
@@ -44,7 +46,7 @@ class SaveCommand
         assert args != null
         
         if (args.size() != 1) {
-            fail("Command 'save' requires a single file argument") // TODO: i18n
+            fail("Command '$COMMAND_NAME' requires a single file argument") // TODO: i18n
         }
 
         if (buffer.isEmpty()) {

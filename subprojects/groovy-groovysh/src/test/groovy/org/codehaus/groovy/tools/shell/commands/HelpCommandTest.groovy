@@ -25,14 +25,14 @@ class HelpCommandTest
     extends CommandTestSupport
 {
     void testList() {
-        shell << ':help'
+        shell.execute(HelpCommand.COMMAND_NAME)
     }
     
     void testCommandHelp() {
-        shell << ':help exit'
+        shell.execute(HelpCommand.COMMAND_NAME + ' exit')
     }
     
     void testCommandHelpInvalidCommand() {
-        shell << ':help no-such-command'
+        shell.execute(HelpCommand.COMMAND_NAME + ' no-such-command')
     }
 }

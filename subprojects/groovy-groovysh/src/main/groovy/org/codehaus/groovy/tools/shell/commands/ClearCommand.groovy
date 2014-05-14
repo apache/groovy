@@ -28,8 +28,10 @@ import org.codehaus.groovy.tools.shell.Groovysh
 class ClearCommand
     extends CommandSupport
 {
+    public static final String COMMAND_NAME = ':clear'
+
     ClearCommand(final Groovysh shell) {
-        super(shell, ':clear', ':c')
+        super(shell, COMMAND_NAME, ':c')
     }
     
     Object execute(final List<String> args) {
