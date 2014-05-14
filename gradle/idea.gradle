@@ -59,11 +59,21 @@ idea {
                 }
 
                 def compilerConfig = node.component.find { it.@name == 'CompilerConfiguration' }
-                ['/groovy/inspect/swingui/AstBrowserProperties.groovy',
+                ['/**/org.codehaus.groovy.runtime.ExtensionModule',
+                '*.jar',
+                'test-resources:/**/*.groovy','test-resources:/**/*.java',
+                '!?*.groovy',
+                '/groovy/inspect/swingui/AstBrowserProperties.groovy',
+                '/groovy/inspect/swingui/AstBrowserProperties.groovy',
+                '/**/org.codehaus.groovy.runtime.ExtensionModule;*.jar',
+                '/groovy/inspect/swingui/AstBrowserProperties.groovy',
                 '/**/org.codehaus.groovy.runtime.ExtensionModule',
                 '*.jar'].each {
                     appendNode(compilerConfig.wildcardResourcePatterns[0], "<entry name=\"$it\" />")
                 }
+                appendNode(compilerConfig,'''<excludeFromCompile>
+      <directory url="file://$PROJECT_DIR$/src/test-resources" includeSubdirectories="true" />
+    </excludeFromCompile>''')
             }
         }
     }
