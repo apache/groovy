@@ -17,8 +17,10 @@ package org.codehaus.groovy.tools.shell
 
 import org.codehaus.groovy.GroovyException
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.tools.shell.completion.ReflectionCompletionCandidate
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 import org.codehaus.groovy.tools.shell.completion.TokenUtilTest
+import org.codehaus.groovy.tools.shell.util.JAnsiHelper
 
 class GroovyshTest extends GroovyTestCase {
 
@@ -254,10 +256,11 @@ class GroovyshCompletorTest extends GroovyTestCase {
 -*/
         IO testio = new IO()
         Groovysh groovysh = new Groovysh(testio)
-        Object result = groovysh.interp.evaluate(["import " + ReflectionCompletor.getCanonicalName(), """class Foo extends HashSet implements Comparable {
+        List result = groovysh.interp.evaluate(["import " + ReflectionCompletor.getCanonicalName(), """class Foo extends HashSet implements Comparable {
 int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""", "ReflectionCompletor.getPublicFieldsAndMethods(Foo, \"\")"])
         assert result
         assert result.size() > 0
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert [] == result.findAll({it.startsWith("_")})
         assert [] == result.findAll({it.startsWith("super\$")})
         assert [] == result.findAll({it.startsWith("this\$")})
@@ -279,19 +282,20 @@ int compareTo(Object) {0}; int priv; static int priv2; public int foo; public st
 -*/
         IO testio = new IO()
         Groovysh groovysh = new Groovysh(testio)
-        Object result = groovysh.interp.evaluate(["import " + ReflectionCompletor.getCanonicalName(), """class Foo extends HashSet implements Comparable {
+        List result = groovysh.interp.evaluate(["import " + ReflectionCompletor.getCanonicalName(), """class Foo extends HashSet implements Comparable {
 int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""",
                 "ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), \"\")"])
         assertNotNull(result)
         assert result.size() > 0
+        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert [] == result.findAll({it.startsWith("_")})
         assert [] == result.findAll({it.startsWith("super\$")})
         assert [] == result.findAll({it.startsWith("this\$")})
-        assert 'bar' in result
+        assert ! ('bar' in result)
         assert ! ('priv' in result)
         assert ! ('priv2' in result)
         assert 'foom()' in result
-        assert 'barm()' in result
+        assert !('barm()' in result)
     }
 
     void testImportedClassStaticMember() {
@@ -300,9 +304,22 @@ int compareTo(Object) {0}; int priv; static int priv2; public int foo; public st
         Groovysh groovysh = new Groovysh(new URLClassLoader(), new Binding(), testio)
         int code = groovysh.run("import " + GroovyException.name)
         assert code == 0
-        ReflectionCompletor compl = new ReflectionCompletor(groovysh, 0)
+        ReflectionCompletor compl = new ReflectionCompletor(groovysh)
         def candidates = []
         compl.complete(TokenUtilTest.tokenList("GroovyException."), candidates)
+        assert candidates.size() == 0
+        compl.complete(TokenUtilTest.tokenList("GroovyException.find"), candidates)
         assert candidates.size() > 0
+    }
+
+    void testSortCandidates() {
+        // tests that import are taken into account when evaluating for completion
+        IO testio = new IO()
+        Groovysh groovysh = new Groovysh(new URLClassLoader(), new Binding(), testio)
+        ReflectionCompletor compl = new ReflectionCompletor(groovysh)
+        def candidates = []
+        compl.complete(TokenUtilTest.tokenList("['a':3, 'b':4]."), candidates)
+        assert candidates.size() > 1
+        assert candidates.reverse().subList(0, 2).collect({String it -> JAnsiHelper.stripAnsi(it)}) == ['b', 'a']
     }
 }

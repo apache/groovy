@@ -49,6 +49,7 @@ class SetCommand
             set << Preferences.SANITIZE_STACK_TRACE_KEY
             set << Preferences.SHOW_LAST_RESULT_KEY
             set << Groovysh.AUTOINDENT_PREFERENCE_KEY
+            set << Groovysh.COLORS_PREFERENCE_KEY
             set << Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY
             set << PackageHelper.IMPORT_COMPLETION_PREFERENCE_KEY
 

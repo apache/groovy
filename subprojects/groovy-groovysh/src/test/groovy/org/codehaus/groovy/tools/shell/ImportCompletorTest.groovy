@@ -40,32 +40,32 @@ extends GroovyTestCase {
     }
 
     void testPattern() {
-        assertTrue("" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assertTrue("j" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assertTrue("java." ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assertTrue("java.util" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assertTrue("java.util." ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assertTrue("java.util.T" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assertTrue("org.w3c.T" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assertTrue("java.util.Test" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assertTrue("java.util.Test123" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert "" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN
+        assert "j" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN
+        assert "java." ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN
+        assert "java.util" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN
+        assert "java.util." ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN
+        assert "java.util.T" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN
+        assert "org.w3c.T" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN
+        assert "java.util.Test" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN
+        assert "java.util.Test123" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN
         // inverse
         assertFalse("." ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assertFalse("Upper" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN )
+        assertFalse("Upper" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
         assertFalse("java.util.Test123." ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
         assertFalse("java.util.Test123.foo" ==~ ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
 
-        assertTrue("" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assertTrue("j" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assertTrue("java." ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assertTrue("java.util" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assertTrue("java.util." ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assertTrue("java.util.T" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assertTrue("org.w3c.T" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assertTrue("java.util.Test" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assertTrue("java.util.Test123" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assertTrue("java.util.Test123." ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assertTrue("java.util.Test123.foo" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert "" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN
+        assert "j" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN
+        assert "java." ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN
+        assert "java.util" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN
+        assert "java.util." ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN
+        assert "java.util.T" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN
+        assert "org.w3c.T" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN
+        assert "java.util.Test" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN
+        assert "java.util.Test123" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN
+        assert "java.util.Test123." ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN
+        assert "java.util.Test123.foo" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN
         //inverse
         assertFalse("." ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
         assertFalse("Upper" ==~ ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
@@ -81,8 +81,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, false);
             def candidates = []
             String buffer = ""
-            assertEquals(0, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["groovy.", "java."], candidates.sort())
+            assert 0 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["groovy.", "java."] == candidates.sort()
         }}
     }
 
@@ -93,8 +93,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, true);
             def candidates = []
             String buffer = ""
-            assertEquals(0, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["groovy.", "java."], candidates.sort())
+            assert 0 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["groovy.", "java."] == candidates.sort()
         }}
     }
 
@@ -105,8 +105,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, false);
             def candidates = []
             String buffer = "j"
-            assertEquals(0, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["java.", "javax."], candidates.sort())
+            assert 0 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["java.", "javax."] == candidates.sort()
         }
     }}
 
@@ -117,8 +117,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, true);
             def candidates = []
             String buffer = "j"
-            assertEquals(0, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["java.", "javax."], candidates.sort())
+            assert 0 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["java.", "javax."] == candidates.sort()
         }
     }}
 
@@ -129,8 +129,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, false);
             def candidates = []
             String buffer = "co"
-            assertEquals(0, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["com."], candidates.sort())
+            assert 0 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["com."] == candidates.sort()
         }
     }}
 
@@ -141,8 +141,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, false);
             def candidates = []
             String buffer = "java."
-            assertEquals(5, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["* ", "math.", "util."], candidates.sort())
+            assert 5 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["* ", "math.", "util."] == candidates.sort()
         }
     }}
 
@@ -153,8 +153,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, true);
             def candidates = []
             String buffer = "java."
-            assertEquals(5, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["math.", "util."], candidates.sort())
+            assert 5 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["math.", "util."] == candidates.sort()
         }
     }}
 
@@ -165,8 +165,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, false);
             def candidates = []
             String buffer = "java.u"
-            assertEquals(5, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["util."], candidates.sort())
+            assert 5 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["util."] == candidates.sort()
         }
     }}
 
@@ -177,8 +177,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, false);
             def candidates = []
             String buffer = "java.util"
-            assertEquals(5, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["util."], candidates.sort())
+            assert 5 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["util."] == candidates.sort()
         }
     }}
 
@@ -189,8 +189,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, false);
             def candidates = []
             String buffer = "java.util."
-            assertEquals(10, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["* ", "jar.", "zip."], candidates.sort())
+            assert 10 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["* ", "jar.", "zip."] == candidates.sort()
         }
     }}
 
@@ -201,8 +201,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, false);
             def candidates = []
             String buffer = "java.util.zip"
-            assertEquals(10, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["zip."], candidates.sort())
+            assert 10 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["zip."] == candidates.sort()
         }
     }}
 
@@ -213,8 +213,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, false);
             def candidates = []
             String buffer = "java.util.zip."
-            assertEquals(14, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["* ", "Test1 ", "Test2 "], candidates.sort())
+            assert 14 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["* ", "Test1 ", "Test2 "] == candidates.sort()
         }
     }}
 
@@ -225,8 +225,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, true);
             def candidates = []
             String buffer = "java.util.zip."
-            assertEquals(14, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["Test1.", "Test2."], candidates.sort())
+            assert 14 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["Test1.", "Test2."] == candidates.sort()
         }
     }}
 
@@ -237,8 +237,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, false);
             def candidates = []
             String buffer = "java.util.zip.T"
-            assertEquals(14, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["Test "], candidates.sort())
+            assert 14 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["Test "] == candidates.sort()
         }
     }}
 
@@ -249,8 +249,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, null, true);
             def candidates = []
             String buffer = "java.util.zip.T"
-            assertEquals(14, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["Test "], candidates.sort())
+            assert 14 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["Test "] == candidates.sort()
         }
     }}
 
@@ -261,11 +261,11 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, mockInterp, true);
             def candidates = ['previousitem']
             String buffer = "java.util.zip.Test."
-            assertEquals(19, compl.complete(buffer, buffer.length(), candidates))
+            assert 19 == compl.complete(buffer, buffer.length(), candidates)
             // using Math as mock class
-            assertTrue('* ' in candidates)
-            assertTrue(candidates.toString(), 'abs ' in candidates)
-            assertTrue('previousitem' in candidates)
+            assert '* ' in candidates
+            assert candidates.toString(), 'abs ' in candidates
+            assert 'previousitem' in candidates
         }
     }}
 
@@ -276,8 +276,8 @@ extends GroovyTestCase {
             ImportCompleter compl = new ImportCompleter(packageHelper2, mockInterp, true);
             def candidates = []
             String buffer = "java.util.zip.Test.ma"
-            assertEquals(19, compl.complete(buffer, buffer.length(), candidates))
-            assertEquals(["max "], candidates.sort())
+            assert 19 == compl.complete(buffer, buffer.length(), candidates)
+            assert ["max "] == candidates.sort()
         }
     }}
 }
@@ -294,9 +294,9 @@ extends CompletorTestSupport {
             ImportCommand iCom = new ImportCommand(groovyshMock)
             Completer completer = iCom.getCompleter()
             def candidates = []
-            assertEquals(0, completer.complete("", 0, candidates))
+            assert 0 == completer.complete("", 0, candidates)
             // order changed by sort
-            assertEquals([":i", ":i", "import", "import"], candidates.sort())
+            assert [":i", ":i", "import", "import"] == candidates.sort()
         }
     }
 
@@ -309,9 +309,9 @@ extends CompletorTestSupport {
             ImportCommand iCom = new ImportCommand(groovyshMock)
             Completer completer = iCom.getCompleter()
             def candidates = []
-            assertEquals(7, completer.complete("import ", "import ".length(), candidates))
+            assert 7 == completer.complete("import ", "import ".length(), candidates)
             // order changed by sort, needed to make tests run on different JDks
-            assertEquals(["java.", "static ", "test."], candidates.sort())
+            assert ["java.", "static ", "test."] == candidates.sort()
         }
     }
 
@@ -325,8 +325,8 @@ extends CompletorTestSupport {
             Completer completer = iCom.getCompleter()
             def candidates = []
             // argument completer completes after "import "
-            assertEquals(7, completer.complete("import j", "import j".length(), candidates))
-            assertEquals(["java."], candidates)
+            assert 7 == completer.complete("import j", "import j".length(), candidates)
+            assert ["java."] == candidates
         }
     }
 
@@ -341,9 +341,9 @@ extends CompletorTestSupport {
             def candidates = []
             // argument completer completes after "import "
             String buffer = "import java."
-            assertEquals(12, completer.complete(buffer, buffer.length(), candidates))
+            assert 12 == completer.complete(buffer, buffer.length(), candidates)
             // order changed by sort, needed to run tests on different JDKs
-            assertEquals(["* ", "java.", "test."], candidates.sort())
+            assert ["* ", "java.", "test."] == candidates.sort()
         }
     }
 
@@ -358,9 +358,9 @@ extends CompletorTestSupport {
             def candidates = []
             // argument completer completes after "import "
             String buffer = "import java.lang."
-            assertEquals(17, completer.complete(buffer, buffer.length(), candidates))
+            assert 17 == completer.complete(buffer, buffer.length(), candidates)
             // order changed by sort, needed to make tests run on different JDks
-            assertEquals(["* ", "java.", "test."], candidates.sort())
+            assert ["* ", "java.", "test."] == candidates.sort()
         }
     }
 
@@ -375,8 +375,8 @@ extends CompletorTestSupport {
             def candidates = []
             // mock package
             String buffer = "import java.test "
-            assertEquals(17, completer.complete(buffer, buffer.length(), candidates))
-            assertEquals(["as "], candidates)
+            assert 17 == completer.complete(buffer, buffer.length(), candidates)
+            assert ["as "] == candidates
         }
     }
 }

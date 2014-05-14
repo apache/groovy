@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.shell.completion
 
 import org.codehaus.groovy.antlr.GroovySourceToken
+import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.tools.shell.Groovysh
 
 /**
@@ -35,7 +36,7 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
     }
 
     @Override
-    public boolean complete(final List<GroovySourceToken> tokens, List candidates) {
+    public boolean complete(final List<GroovySourceToken> tokens, List<String> candidates) {
         String prefix = tokens.last().getText()
         boolean foundMatch = findMatchingPreImportedClasses(prefix, candidates)
         for (String importName in shell.imports) {
@@ -44,7 +45,7 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
         return foundMatch
     }
 
-    boolean findMatchingImportedClassesCached(final String prefix, final String importSpec, List candidates) {
+    boolean findMatchingImportedClassesCached(final String prefix, final String importSpec, List<String> candidates) {
         Collection<String> cached
         if (! cachedImports.containsKey(importSpec)) {
             cached = new HashSet<String>()
@@ -53,7 +54,7 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
         } else {
             cached = cachedImports.get(importSpec)
         }
-        Collection<String> matches = cached.findAll {String it -> it.startsWith(prefix)}
+        Collection<String> matches = cached.findAll({String it -> it.startsWith(prefix)})
         if (matches) {
             candidates.addAll(matches)
             return true
@@ -61,14 +62,14 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
         return false
     }
 
-    boolean findMatchingPreImportedClasses(final String prefix, Collection matches) {
+    boolean findMatchingPreImportedClasses(final String prefix, Collection<String> matches) {
         boolean foundMatch = false
         if (preimportedClassNames == null) {
             preimportedClassNames = []
-            for (packname in org.codehaus.groovy.control.ResolveVisitor.DEFAULT_IMPORTS) {
+            for (packname in ResolveVisitor.DEFAULT_IMPORTS) {
                 Set<String> packnames = shell.packageHelper.getContents(packname[0..-2])
                 if (packnames) {
-                    preimportedClassNames.addAll(packnames.findAll{String it -> it[0] in "A".."Z"})
+                    preimportedClassNames.addAll(packnames.findAll({String it -> it[0] in "A".."Z"}))
                 }
             }
             preimportedClassNames.add("BigInteger")
@@ -77,7 +78,7 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
         // preimported names
         for (String preImpClassname in preimportedClassNames) {
             if (preImpClassname.startsWith(prefix)) {
-                matches << preImpClassname
+                matches.add(preImpClassname)
                 foundMatch = true
             }
         }
@@ -93,7 +94,7 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
      * @param matches
      * @return
      */
-    void collectImportedSymbols(String importSpec, Collection matches) {
+    void collectImportedSymbols(String importSpec, Collection<String> matches) {
         String asKeyword = " as "
         int asIndex = importSpec.indexOf(asKeyword)
         if (asIndex > -1) {
@@ -112,9 +113,9 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
                 }
                 Class clazz = shell.interp.evaluate([importSpec]) as Class
                 if (clazz != null) {
-                    Collection<String> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, '')
+                    Collection<String> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, '').collect({it.value})
                     for (member in members) {
-                        matches << member
+                        matches.add(member)
                     }
                 }
             }

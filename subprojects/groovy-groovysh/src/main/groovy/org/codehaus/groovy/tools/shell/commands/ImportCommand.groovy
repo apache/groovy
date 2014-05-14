@@ -21,10 +21,11 @@ import jline.console.completer.ArgumentCompleter
 import jline.console.completer.Completer
 import jline.console.completer.StringsCompleter
 import org.codehaus.groovy.control.CompilationFailedException
-
+import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Interpreter
+import org.codehaus.groovy.tools.shell.completion.ReflectionCompletionCandidate
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.PackageHelper
@@ -172,9 +173,9 @@ class ImportCompleter implements Completer {
                 Set<String> classnames = packageHelper.getContents(currentImportExpression[0..-2])
                 if (classnames) {
                     if (staticImport) {
-                        result.addAll(classnames.collect { String it -> it + "."})
+                        result.addAll(classnames.collect({ String it -> it + "."}))
                     } else {
-                        result.addAll(classnames.collect { String it -> filterMatches(it) })
+                        result.addAll(classnames.collect({ String it -> filterMatches(it) }))
                     }
                 }
                 if (! staticImport) {
@@ -184,8 +185,8 @@ class ImportCompleter implements Completer {
             } else if (staticImport && currentImportExpression ==~ QUALIFIED_CLASS_DOT_PATTERN) {
                 Class clazz = interpreter.evaluate([currentImportExpression[0..-2]]) as Class
                 if (clazz != null) {
-                    Collection<String> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, "")
-                    result.addAll(members.collect({ String it -> it.replace('(', '').replace(')', '') + " " }))
+                    Collection<ReflectionCompletionCandidate> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, "")
+                    result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + " " }))
                 }
                 result.add('* ')
                 return currentImportExpression.length()
@@ -207,7 +208,7 @@ class ImportCompleter implements Completer {
             Set<String> candidates = packageHelper.getContents(baseString)
             if (candidates == null || candidates.size() == 0) {
                 // At least give standard package completion, else static keyword is highly annoying
-                Collection<String> standards = org.codehaus.groovy.control.ResolveVisitor.DEFAULT_IMPORTS.findAll {String it -> it.startsWith(currentImportExpression)}
+                Collection<String> standards = ResolveVisitor.DEFAULT_IMPORTS.findAll({ String it -> it.startsWith(currentImportExpression)})
                 if (standards) {
                     result.addAll(standards)
                     return 0
@@ -216,17 +217,17 @@ class ImportCompleter implements Completer {
             }
 
             log.debug(prefix)
-            Collection<String> matches = candidates.findAll { String it -> it.startsWith(prefix) }
+            Collection<String> matches = candidates.findAll({ String it -> it.startsWith(prefix) })
             if (matches) {
-                result.addAll(matches.collect { String it -> filterMatches(it) })
+                result.addAll(matches.collect({ String it -> filterMatches(it) }))
                 return lastDot <= 0 ? 0 : lastDot + 1
             }
         } else if (staticImport) {
             Class clazz = interpreter.evaluate([baseString]) as Class
             if (clazz != null) {
-                Collection<String> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, prefix)
+                Collection<ReflectionCompletionCandidate> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, prefix)
                 if (members) {
-                    result.addAll(members.collect({ String it -> it.replace('(', '').replace(')', '') + " " }))
+                    result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + " " }))
                     return lastDot <= 0 ? 0 : lastDot + 1
                 }
             }

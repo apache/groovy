@@ -59,8 +59,9 @@ extends CompletorTestSupport {
     void testSet() {
         CommandsMultiCompleter completor = new CommandsMultiCompleter()
         def candidates = []
-        groovyshMocker.demand.getAUTOINDENT_PREFERENCE_KEY(1){"autoindent"}
-        groovyshMocker.demand.getMETACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY(1){"meta-completion-prefix-length"}
+        groovyshMocker.demand.getAUTOINDENT_PREFERENCE_KEY(1){'autoindent'}
+        groovyshMocker.demand.getCOLORS_PREFERENCE_KEY(1){'colors'}
+        groovyshMocker.demand.getMETACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY(1){'meta-completion-prefix-length'}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             completor.add(new SetCommand(groovyshMock))
@@ -72,6 +73,7 @@ extends CompletorTestSupport {
             assert 5 == completor.complete(":set ", ":set ".length(), candidates)
         }
         assert Groovysh.AUTOINDENT_PREFERENCE_KEY in candidates
+        assert Groovysh.COLORS_PREFERENCE_KEY in candidates
         assert Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY in candidates
         assert Preferences.EDITOR_KEY in candidates
         assert Preferences.PARSER_FLAVOR_KEY in candidates
@@ -118,8 +120,9 @@ extends CompletorTestSupport {
     void testSaveSetShow() {
         CommandsMultiCompleter completor = new CommandsMultiCompleter()
         def candidates = []
-        groovyshMocker.demand.getAUTOINDENT_PREFERENCE_KEY(1){"autoindent"}
-        groovyshMocker.demand.getMETACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY(1){"meta-completion-prefix-length"}
+        groovyshMocker.demand.getAUTOINDENT_PREFERENCE_KEY(1){'autoindent'}
+        groovyshMocker.demand.getCOLORS_PREFERENCE_KEY(1){'colors'}
+        groovyshMocker.demand.getMETACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY(1){'meta-completion-prefix-length'}
         groovyshMocker.demand.getIo(1){testio}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()

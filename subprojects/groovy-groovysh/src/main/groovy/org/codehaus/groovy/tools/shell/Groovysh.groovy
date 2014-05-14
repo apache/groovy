@@ -44,6 +44,7 @@ class Groovysh extends Shell {
     final List<String> imports = []
 
     public static final String AUTOINDENT_PREFERENCE_KEY = "autoindent"
+    public static final String COLORS_PREFERENCE_KEY = "colors"
     // after how many prefix characters we start displaying all metaclass methods
     public static final String METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY = "meta-completion-prefix-length"
     int indentSize = 2
@@ -215,7 +216,7 @@ class Groovysh extends Shell {
 
         def groovyshellProperty = System.getProperty("groovysh.prompt")
         if (groovyshellProperty) {
-            return  "@|bold ${groovyshellProperty}:|@${lineNum}@|bold >|@ "
+            return "@|bold ${groovyshellProperty}:|@${lineNum}@|bold >|@ "
         }
         def groovyshellEnv = System.getenv("GROOVYSH_PROMPT")
         if (groovyshellEnv) {
@@ -480,8 +481,7 @@ class Groovysh extends Shell {
             // Setup the interactive runner
             runner = new InteractiveShellRunner(
                     this,
-                    this.&renderPrompt as Closure,
-                    Integer.valueOf(Preferences.get(METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
+                    this.&renderPrompt as Closure)
 
             // if args were passed in, just execute as a command
             // (but cygwin gives an empty string, so ignore that)
