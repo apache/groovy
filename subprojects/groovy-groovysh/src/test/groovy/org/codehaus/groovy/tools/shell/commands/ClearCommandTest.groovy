@@ -25,10 +25,10 @@ class ClearCommandTest
     extends CommandTestSupport
 {
     void testClear() {
-        shell << ':clear'
+        shell.execute(ClearCommand.COMMAND_NAME)
     }
 
     void testClearWithArgs() {
-        shell << ':clear foo'
+        shell.execute(ClearCommand.COMMAND_NAME + ' foo')
     }
 }

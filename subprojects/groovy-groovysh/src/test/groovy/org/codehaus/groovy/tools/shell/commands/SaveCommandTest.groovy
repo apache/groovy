@@ -25,7 +25,6 @@ class SaveCommandTest
     extends CommandTestSupport
 {
     void testSave() {
-        shell << ':save'
-
+        shell.execute(SaveCommand.COMMAND_NAME)
     }
 }

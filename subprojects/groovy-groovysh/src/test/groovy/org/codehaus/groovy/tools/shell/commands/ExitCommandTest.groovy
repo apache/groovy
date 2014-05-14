@@ -28,7 +28,7 @@ class ExitCommandTest
 {
     void testWithNoArgs() {
         try {
-            shell << ':exit'
+            shell.execute(ExitCommand.COMMAND_NAME)
             fail()
         }
         catch (ExitNotification e) {

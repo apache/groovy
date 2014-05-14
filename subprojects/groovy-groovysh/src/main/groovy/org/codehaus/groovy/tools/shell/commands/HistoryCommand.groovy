@@ -30,8 +30,11 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 class HistoryCommand
     extends ComplexCommandSupport
 {
+
+    public static final String COMMAND_NAME = ':history'
+
     HistoryCommand(final Groovysh shell) {
-        super(shell, ':history', ':H', [ 'show', 'clear', 'flush', 'recall' ], 'show')
+        super(shell, COMMAND_NAME, ':H', [ 'show', 'clear', 'flush', 'recall' ], 'show')
     }
 
     protected List createCompleters() {

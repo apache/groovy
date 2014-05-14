@@ -25,10 +25,10 @@ class DisplayCommandTest
     extends CommandTestSupport
 {
     void testDisplay() {
-        shell << ':display'
+        shell.execute(DisplayCommand.COMMAND_NAME)
     }
 
     void testDisplayWithArgs() {
-        shell << ':display foo'
+        shell.execute(DisplayCommand.COMMAND_NAME + ' foo')
     }
 }
