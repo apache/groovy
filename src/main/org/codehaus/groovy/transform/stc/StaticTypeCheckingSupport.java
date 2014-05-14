@@ -1570,32 +1570,6 @@ public abstract class StaticTypeCheckingSupport {
         }
     }
 
-    static ClassNode getNextSuperClass(ClassNode clazz, ClassNode goalClazz) {
-        if (clazz.isArray()) {
-            ClassNode cn = getNextSuperClass(clazz.getComponentType(),goalClazz.getComponentType());
-            if (cn!=null) cn = cn.makeArray();
-            return cn;
-        }
-
-        if (!goalClazz.isInterface()) {
-            if (clazz.isInterface()) {
-                if (OBJECT_TYPE.equals(clazz)) return null;
-                return OBJECT_TYPE;
-            } else {
-                return clazz.getUnresolvedSuperClass();
-            }
-        }
-
-        ClassNode[] interfaces = clazz.getUnresolvedInterfaces();
-        for (int i=0; i<interfaces.length; i++) {
-            if (implementsInterfaceOrIsSubclassOf(interfaces[i],goalClazz)) {
-                return interfaces[i];
-            }
-        }
-        //none of the interfaces here match, so continue with super class
-        return clazz.getUnresolvedSuperClass();
-    }
-
     private static void extractGenericsConnections(Map<String, GenericsType> connections, GenericsType[] usage, GenericsType[] declaration) {
         // if declaration does not provide generics, there is no connection to make 
         if (usage==null || declaration==null || declaration.length==0) return;

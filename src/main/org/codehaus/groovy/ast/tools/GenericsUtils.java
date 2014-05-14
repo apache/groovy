@@ -15,12 +15,15 @@
  */
 package org.codehaus.groovy.ast.tools;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -374,5 +377,77 @@ public class GenericsUtils {
             }
         }
         return ret;
+    }
+
+    public static void extractSuperClassGenerics(ClassNode type, ClassNode target, Map<String,ClassNode> spec) {
+        // TODO: this method is very similar to StaticTypesCheckingSupport#extractGenericsConnections,
+        // but operates on ClassNodes instead of GenericsType
+        if (target==null || type==target) return;
+        if (type.isArray() && target.isArray()) {
+            extractSuperClassGenerics(type.getComponentType(), target.getComponentType(), spec);
+        } else if (target.isGenericsPlaceHolder() || type.equals(target) || !StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(type, target)) {
+            // structural match route
+            if (target.isGenericsPlaceHolder()) {
+                spec.put(target.getGenericsTypes()[0].getName(),type);
+            } else {
+                extractSuperClassGenerics(type.getGenericsTypes(), target.getGenericsTypes(), spec);
+            }
+        } else {
+            // have first to find matching super class or interface
+            Map <String,ClassNode> genSpec = createGenericsSpec(type,Collections.EMPTY_MAP);
+            ClassNode superClass = ClassHelper.getNextSuperClass(type,target);
+            if (superClass!=null){
+                ClassNode corrected = GenericsUtils.correctToGenericsSpecRecurse(genSpec, superClass);
+                extractSuperClassGenerics(corrected, target, spec);
+            } else {
+                // if we reach here, we have an unhandled case 
+                throw new GroovyBugError("The type "+type+" seems not to normally extend "+target+". Sorry, I cannot handle this.");
+            }
+        }
+    }
+
+    private static void extractSuperClassGenerics(GenericsType[] usage, GenericsType[] declaration, Map<String, ClassNode> spec) {
+        // if declaration does not provide generics, there is no connection to make 
+        if (usage==null || declaration==null || declaration.length==0) return;
+        if (usage.length!=declaration.length) return;
+
+        // both have generics
+        for (int i=0; i<usage.length; i++) {
+            GenericsType ui = usage[i];
+            GenericsType di = declaration[i];
+            if (di.isPlaceholder()) {
+                spec.put(di.getName(), ui.getType());
+            } else if (di.isWildcard()){
+                if (ui.isWildcard()) {
+                    extractSuperClassGenerics(ui.getLowerBound(), di.getLowerBound(), spec);
+                    extractSuperClassGenerics(ui.getUpperBounds(), di.getUpperBounds(), spec);
+                } else {
+                    ClassNode cu = ui.getType();
+                    extractSuperClassGenerics(cu, di.getLowerBound(), spec);
+                    ClassNode[] upperBounds = di.getUpperBounds();
+                    if (upperBounds!=null) {
+                        for (ClassNode cn : upperBounds) {
+                            extractSuperClassGenerics(cu, cn, spec);
+                        }
+                    }
+                }
+            } else {
+                extractSuperClassGenerics(ui.getType(), di.getType(), spec);
+            }
+        }
+    }
+
+    private static void extractSuperClassGenerics(ClassNode[] usage, ClassNode[] declaration, Map<String, ClassNode> spec) {
+        if (usage==null || declaration==null || declaration.length==0) return;
+        // both have generics
+        for (int i=0; i<usage.length; i++) {
+            ClassNode ui = usage[i];
+            ClassNode di = declaration[i];
+            if (di.isGenericsPlaceHolder()) {
+                spec.put(di.getGenericsTypes()[0].getName(), di);
+            } else if (di.isUsingGenerics()){
+                extractSuperClassGenerics(ui.getGenericsTypes(), di.getGenericsTypes(), spec);
+            }
+        }
     }
 }

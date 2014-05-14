@@ -17,6 +17,7 @@ package org.codehaus.groovy.transform;
 
 import groovy.lang.Delegate;
 import groovy.lang.GroovyObject;
+
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -58,6 +59,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
 
 /**
  * Handles generation of code for the <code>@Delegate</code> annotation
@@ -135,7 +137,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
             final Set<ClassNode> allInterfaces = getInterfacesAndSuperInterfaces(type);
             final Set<ClassNode> ownerIfaces = owner.getAllInterfaces();
-            Map genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap());
+            Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap<String,ClassNode>());
             genericsSpec = createGenericsSpec(fieldNode.getType(), genericsSpec);
             for (ClassNode iface : allInterfaces) {
                 if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface)) {
@@ -190,8 +192,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
         if (shouldSkip(candidate.getName(), excludes, includes)) return;
 
-        Map genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap());
-        genericsSpec = createGenericsSpec(fieldNode.getType(), genericsSpec);
+        Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap<String,ClassNode>());
+        extractSuperClassGenerics(fieldNode.getType(), candidate.getDeclaringClass(), genericsSpec);
 
         if (!excludeTypes.isEmpty() || !includeTypes.isEmpty()) {
             MethodNode correctedMethodNode = correctToGenericsSpec(genericsSpec, candidate);
@@ -290,5 +292,4 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
         return delegateAnnotations;
     }
-
 }
