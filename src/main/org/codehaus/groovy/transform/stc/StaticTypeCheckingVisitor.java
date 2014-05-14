@@ -1604,6 +1604,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (node != null) {
             if (node.getParameters().length == 0 && args.length == 1 && implementsInterfaceOrIsSubclassOf(args[0], MAP_TYPE)) {
                 node = typeCheckMapConstructor(call, receiver, arguments);
+            } else {
+                typeCheckMethodsWithGenericsOrFail(receiver, args, node, call);
             }
             if (node != null) storeTargetMethod(call, node);
         }
@@ -3544,8 +3546,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return node;
         } else if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;
-            if (vexp == VariableExpression.THIS_EXPRESSION) return typeCheckingContext.getEnclosingClassNode();
-            if (vexp == VariableExpression.SUPER_EXPRESSION) return typeCheckingContext.getEnclosingClassNode().getSuperClass();
+            if (vexp == VariableExpression.THIS_EXPRESSION) return makeThis();
+            if (vexp == VariableExpression.SUPER_EXPRESSION) return makeSuper();
             final Variable variable = vexp.getAccessedVariable();
             if (variable instanceof FieldNode) {
                 checkOrMarkPrivateAccess((FieldNode) variable);
@@ -3636,6 +3638,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return ((PropertyNode) exp).getOriginType();
         }
         return exp instanceof VariableExpression ? ((VariableExpression) exp).getOriginType() : ((Expression) exp).getType();
+    }
+
+    private ClassNode makeSuper() {
+        ClassNode ret = typeCheckingContext.getEnclosingClassNode().getSuperClass();
+        if (typeCheckingContext.isInStaticContext) {
+            ClassNode staticRet = CLASS_Type.getPlainNodeReference();
+            GenericsType gt = new GenericsType(ret);
+            staticRet.setGenericsTypes(new GenericsType[]{gt});
+            ret = staticRet;
+        }
+        return ret;
+    }
+
+    private ClassNode makeThis() {
+        ClassNode ret = typeCheckingContext.getEnclosingClassNode(); 
+        if (typeCheckingContext.isInStaticContext) {
+            ClassNode staticRet = CLASS_Type.getPlainNodeReference();
+            GenericsType gt = new GenericsType(ret);
+            staticRet.setGenericsTypes(new GenericsType[]{gt});
+            ret = staticRet;
+        }
+        return ret;
     }
 
     /**

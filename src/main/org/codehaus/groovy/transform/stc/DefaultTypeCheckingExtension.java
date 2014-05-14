@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.transform.stc;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.*;
@@ -103,7 +104,13 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
     public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCall call) {
         List<MethodNode> result = new LinkedList<MethodNode>();
         for (TypeCheckingExtension handler : handlers) {
-            result.addAll(handler.handleMissingMethod(receiver, name, argumentList, argumentTypes, call));
+            List<MethodNode> handlerResult = handler.handleMissingMethod(receiver, name, argumentList, argumentTypes, call);
+            for (MethodNode mn : handlerResult) {
+                if (mn.getDeclaringClass()==null) {
+                    mn.setDeclaringClass(ClassHelper.OBJECT_TYPE);
+                }
+            }
+            result.addAll(handlerResult);
         }
         return result;
     }

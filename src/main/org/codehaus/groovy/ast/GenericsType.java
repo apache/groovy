@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.ast;
 
+import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
+
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 
@@ -192,6 +194,10 @@ public class GenericsType extends ASTNode {
                     || type.isDerivedFrom(superOrInterface)
                     || type.implementsInterface(superOrInterface);
             if (result) {
+                return true;
+            }
+            if (GROOVY_OBJECT_TYPE.equals(superOrInterface) && type.getCompileUnit()!=null) {
+                // type is being compiled so it will implement GroovyObject later
                 return true;
             }
             if (superOrInterface instanceof WideningCategories.LowestUpperBoundClassNode) {
