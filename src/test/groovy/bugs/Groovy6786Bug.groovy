@@ -78,7 +78,6 @@ class Groovy6786Bug extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented
     void testIfWithInstanceOfAndAnotherConditionAfter() {
         assertScript '''
             class Class1 {
