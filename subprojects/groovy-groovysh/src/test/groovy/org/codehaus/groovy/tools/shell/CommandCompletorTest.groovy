@@ -16,13 +16,7 @@
 
 package org.codehaus.groovy.tools.shell
 
-import groovy.mock.interceptor.MockFor
-import org.codehaus.groovy.tools.shell.commands.AliasCommand
-import org.codehaus.groovy.tools.shell.commands.ClearCommand
-import org.codehaus.groovy.tools.shell.commands.ImportCommand
-import org.codehaus.groovy.tools.shell.commands.SaveCommand
-import org.codehaus.groovy.tools.shell.commands.SetCommand
-import org.codehaus.groovy.tools.shell.commands.ShowCommand
+import org.codehaus.groovy.tools.shell.commands.*
 import org.codehaus.groovy.tools.shell.util.Preferences
 
 class CommandCompletorTest
@@ -49,10 +43,10 @@ extends CompletorTestSupport {
             completor.refresh()
 
             assert 0 == completor.complete(":a", ":a".length(), candidates)
-            assert [':a', ':alias'] == candidates
+            assert [':a', AliasCommand.COMMAND_NAME] == candidates
             candidates = []
             assert 3 == completor.complete(":a ", ":a ".length(), candidates)
-            assert [':=', ':S', ':set', ':show'] == candidates
+            assert [':=', ':S', SetCommand.COMMAND_NAME, ShowCommand.COMMAND_NAME] == candidates
         }
     }
 
@@ -68,9 +62,10 @@ extends CompletorTestSupport {
             completor.refresh()
 
             assert 0 == completor.complete(":s", ":s".length(), candidates)
-            assert [':set '] == candidates
+            String buffer = SetCommand.COMMAND_NAME + ' '
+            assert [buffer] == candidates
             candidates = []
-            assert 5 == completor.complete(":set ", ":set ".length(), candidates)
+            assert 5 == completor.complete(buffer, buffer.length(), candidates)
         }
         assert Groovysh.AUTOINDENT_PREFERENCE_KEY in candidates
         assert Groovysh.COLORS_PREFERENCE_KEY in candidates
@@ -92,9 +87,10 @@ extends CompletorTestSupport {
             completor.refresh()
 
             assert 0 == completor.complete(":s", ":s".length(), candidates)
-            assert [':s', ':save'] == candidates
+            assert [':s', SaveCommand.COMMAND_NAME] == candidates
             candidates = []
-            assert 6 == completor.complete(":save ", ":save ".length(), candidates)
+            String buffer = SaveCommand.COMMAND_NAME + ' '
+            assert 6 == completor.complete(buffer, buffer.length(), candidates)
             assert candidates.size() > 0 // completes filenames from testing dir
         }
     }
@@ -108,7 +104,7 @@ extends CompletorTestSupport {
             completor.refresh()
 
             assert 0 == completor.complete(":c", ":c".length(), candidates)
-            assert [':c', ':clear'] == candidates
+            assert [':c', ClearCommand.COMMAND_NAME] == candidates
             candidates = []
             assert -1 == completor.complete(":c ", ":c ".length(), candidates)
             assert [] == candidates
@@ -132,9 +128,10 @@ extends CompletorTestSupport {
             completor.refresh()
 
             assert 0 == completor.complete(":s", ":s".length(), candidates)
-            assert [':s', ':save', ':set ', ':show '] == candidates
+            assert [':s', SaveCommand.COMMAND_NAME, SetCommand.COMMAND_NAME + ' ', ShowCommand.COMMAND_NAME + ' '] == candidates
             candidates = []
-            assert 6 == completor.complete(":save ", ":save ".length(), candidates)
+            String buffer = SaveCommand.COMMAND_NAME + ' '
+            assert 6 == completor.complete(buffer, buffer.length(), candidates)
             assert ! candidates.contains('all')
             candidates = []
             assert 3 == completor.complete(":s ", ":s ".length(), candidates)

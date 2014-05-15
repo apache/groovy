@@ -32,8 +32,10 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 class AliasCommand
     extends CommandSupport
 {
+    public static final String COMMAND_NAME = ':alias'
+
     AliasCommand(final Groovysh shell) {
-        super(shell, ':alias', ':a', )
+        super(shell, COMMAND_NAME, ':a', )
     }
 
     protected List createCompleters() {

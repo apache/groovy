@@ -22,6 +22,8 @@ import jline.TerminalFactory
 import jline.console.history.FileHistory
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
+import org.codehaus.groovy.tools.shell.commands.LoadCommand
+import org.codehaus.groovy.tools.shell.commands.RecordCommand
 import org.codehaus.groovy.tools.shell.util.*
 import org.fusesource.jansi.AnsiRenderer
 
@@ -280,13 +282,17 @@ class Groovysh extends Shell {
         return dir.canonicalFile
     }
 
-    private void loadUserScript(final String filename) {
+    /**
+     * Loads file from within user groovy state directory
+     * @param filename
+     */
+    protected void loadUserScript(final String filename) {
         assert filename
         
-        def file = new File(userStateDirectory, filename)
+        File file = new File(getUserStateDirectory(), filename)
         
         if (file.exists()) {
-            Command command = registry['load'] as Command
+            Command command = registry[LoadCommand.COMMAND_NAME] as Command
 
             if (command) {
                 log.debug("Loading user-script: $file")
@@ -302,9 +308,8 @@ class Groovysh extends Shell {
                     // Restore the result hook
                     resultHook = previousHook
                 }
-            }
-            else {
-                log.error("Unable to load user-script, missing 'load' command")
+            } else {
+                log.error("Unable to load user-script, missing '$LoadCommand.COMMAND_NAME' command")
             }
         }
     }
@@ -314,7 +319,7 @@ class Groovysh extends Shell {
     //
 
     private void maybeRecordInput(final String line) {
-        def record = registry['record']
+        def record = registry[RecordCommand.COMMAND_NAME]
 
         if (record != null) {
             record.recordInput(line)
@@ -322,7 +327,7 @@ class Groovysh extends Shell {
     }
 
     private void maybeRecordResult(final Object result) {
-        def record = registry['record']
+        def record = registry[RecordCommand.COMMAND_NAME]
 
         if (record != null) {
             record.recordResult(result)
@@ -330,7 +335,7 @@ class Groovysh extends Shell {
     }
 
     private void maybeRecordError(Throwable cause) {
-        def record = registry['record']
+        def record = registry[RecordCommand.COMMAND_NAME]
 
         if (record != null) {
             boolean sanitize = Preferences.sanitizeStackTrace
@@ -451,7 +456,7 @@ class Groovysh extends Shell {
             startCommands.add(evalString)
         }
         if (filenames != null && filenames.size() > 0) {
-            startCommands.addAll(filenames.collect({String it -> ":load $it"}))
+            startCommands.addAll(filenames.collect({String it -> "${LoadCommand.COMMAND_NAME} $it"}))
         }
         return run(startCommands.join('\n'))
     }

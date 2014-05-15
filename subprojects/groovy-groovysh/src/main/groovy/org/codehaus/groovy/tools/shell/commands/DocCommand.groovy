@@ -36,6 +36,8 @@ import org.codehaus.groovy.tools.shell.commands.ImportCompleter
  */
 class DocCommand extends CommandSupport {
 
+    public static final String COMMAND_NAME = ':doc'
+
     private static final String ENV_BROWSER = "BROWSER"
     private static final String ENV_BROWSER_GROOVYSH = "GROOVYSH_BROWSER"
 
@@ -65,7 +67,7 @@ class DocCommand extends CommandSupport {
     }
 
     DocCommand(final Groovysh shell) {
-        super(shell, ':doc', ':D')
+        super(shell, COMMAND_NAME, ':D')
     }
 
     @Override

@@ -28,21 +28,21 @@ class RegisterCommandTest
     extends CommandTestSupport
 {
     void testRegister() {
-        shell << ':register org.codehaus.groovy.tools.shell.commands.EchoCommand'
+        shell.execute(RegisterCommand.COMMAND_NAME + ' org.codehaus.groovy.tools.shell.commands.EchoCommand')
     }
 
     void testRegisterDupes() {
-        shell << ':register org.codehaus.groovy.tools.shell.commands.EchoCommand'
-        shell << ':register org.codehaus.groovy.tools.shell.commands.EchoCommand echo2 \\e2'
+        shell.execute(RegisterCommand.COMMAND_NAME + ' org.codehaus.groovy.tools.shell.commands.EchoCommand')
+        shell.execute(RegisterCommand.COMMAND_NAME + ' org.codehaus.groovy.tools.shell.commands.EchoCommand echo2 \\e2')
     }
 
     void testRegisterDupesFail() {
-        shell << ':register org.codehaus.groovy.tools.shell.commands.EchoCommand'
-        shell << ':register org.codehaus.groovy.tools.shell.commands.EchoCommand'
+        shell.execute(RegisterCommand.COMMAND_NAME + ' org.codehaus.groovy.tools.shell.commands.EchoCommand')
+        shell.execute(RegisterCommand.COMMAND_NAME + ' org.codehaus.groovy.tools.shell.commands.EchoCommand')
     }
 
     void testRegisterFail() {
-            shell << ':register'
+            shell.execute(RegisterCommand.COMMAND_NAME)
         }
 }
 

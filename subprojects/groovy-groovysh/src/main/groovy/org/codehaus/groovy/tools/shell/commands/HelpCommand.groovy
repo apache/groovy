@@ -32,8 +32,11 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 class HelpCommand
     extends CommandSupport
 {
+
+    public static final String COMMAND_NAME = ':help'
+
     HelpCommand(final Groovysh shell) {
-        super(shell, ':help', ':h')
+        super(shell, COMMAND_NAME, ':h')
 
         alias('?', ':?')
     }

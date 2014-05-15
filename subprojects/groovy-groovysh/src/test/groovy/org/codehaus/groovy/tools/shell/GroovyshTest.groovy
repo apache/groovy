@@ -223,7 +223,28 @@ class GroovyshTest extends GroovyTestCase {
         groovysh.buffers.buffers.add(["Foo {{"])
         groovysh.buffers.select(2)
         assert " " * groovysh.indentSize * 2 == groovysh.getIndentPrefix()
+    }
 
+    void testLoadUserScript() {
+        final File file = createTemporaryGroovyScriptFile('1 / 0')
+        Groovysh groovysh = new Groovysh(testio) {
+            @Override
+            File getUserStateDirectory() {
+                return file.getParentFile()
+            }
+        }
+        try {
+            groovysh.loadUserScript(file.getName())
+            fail('Expected ArithmeticException')
+        } catch (ArithmeticException e) {}
+    }
+
+    File createTemporaryGroovyScriptFile(content) {
+        String testName = "GroovyshTest" + System.currentTimeMillis()
+        File groovyCode = new File(System.getProperty("java.io.tmpdir"), testName)
+        groovyCode.write(content)
+        groovyCode.deleteOnExit()
+        return groovyCode
     }
 }
 
@@ -302,10 +323,11 @@ int compareTo(Object) {0}; int priv; static int priv2; public int foo; public st
         // tests that import are taken into account when evaluating for completion
         IO testio = new IO()
         Groovysh groovysh = new Groovysh(new URLClassLoader(), new Binding(), testio)
-        int code = groovysh.run("import " + GroovyException.name)
-        assert code == 0
+        def result = groovysh.execute("import " + GroovyException.name)
+        assert result == GroovyException.canonicalName
         ReflectionCompletor compl = new ReflectionCompletor(groovysh)
         def candidates = []
+
         compl.complete(TokenUtilTest.tokenList("GroovyException."), candidates)
         assert candidates.size() == 0
         compl.complete(TokenUtilTest.tokenList("GroovyException.find"), candidates)

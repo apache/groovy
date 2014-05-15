@@ -28,11 +28,11 @@ import org.codehaus.groovy.tools.shell.Groovysh
 class HistoryCommandTest extends CommandTestSupport
 {
     void testHistory() {
-        shell << ':history nocommandhere'
+        shell.execute(HistoryCommand.COMMAND_NAME + ' nocommandhere')
     }
 
     void testHistoryNoArg() {
-        shell << ':history'
+        shell.execute(HistoryCommand.COMMAND_NAME)
     }
 }
 

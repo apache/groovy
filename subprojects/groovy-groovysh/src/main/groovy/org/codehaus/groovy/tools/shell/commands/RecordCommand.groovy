@@ -29,8 +29,10 @@ import org.codehaus.groovy.tools.shell.Groovysh
 class RecordCommand
     extends ComplexCommandSupport
 {
+    public static final String COMMAND_NAME = ':record'
+
     RecordCommand(final Groovysh shell) {
-        super(shell, ':record', ':r', [ 'start', 'stop', 'status' ], 'status')
+        super(shell, COMMAND_NAME, ':r', [ 'start', 'stop', 'status' ], 'status')
 
         addShutdownHook {
             if (isRecording()) {
