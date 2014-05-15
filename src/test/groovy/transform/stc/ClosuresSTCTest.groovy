@@ -478,5 +478,25 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert val == 42
         '''
     }
+
+    // GROOVY-6343
+    void testAccessStaticFieldFromNestedClosures() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class A {
+
+              public static final CONST = "a"
+
+              public static List doSomething() {
+                return (0..1).collect{ int x ->
+                  (0..1).collect{ int y ->
+                    return CONST
+                  }
+                }
+              }
+            }
+            A.doSomething()
+        '''
+    }
 }
 
