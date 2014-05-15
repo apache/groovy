@@ -482,7 +482,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6343
     void testAccessStaticFieldFromNestedClosures() {
         assertScript '''
-            @groovy.transform.CompileStatic
             class A {
 
               public static final CONST = "a"
