@@ -730,4 +730,24 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5998
+    void testSubscriptOperatorOnPropertiesWithBuilder() {
+        assertScript '''
+            import static groovy.lang.Closure.*
+
+            class DatasourceBuilder {
+                Map<String,String> attrs = [:]
+            }
+
+            void datasource(@DelegatesTo(strategy = DELEGATE_FIRST, value = DatasourceBuilder) Closure c) {}
+
+            void foo() {
+               datasource {
+                   attrs['some'] = 'foo'
+               }
+            }
+
+            foo()
+        '''
+    }
 }
