@@ -435,8 +435,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     rightExpression.visit(this);
                 }
             } else {
-                rightExpression.visit(this);
                 leftExpression.visit(this);
+                rightExpression.visit(this);
             }
             ClassNode lType = getType(leftExpression);
             ClassNode rType = getType(rightExpression);
