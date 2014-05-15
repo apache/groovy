@@ -58,7 +58,6 @@ class Groovy6786Bug extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented
     void testOverrideGenericMethod() {
         assertScript '''
             abstract class AbstractManager <T> {

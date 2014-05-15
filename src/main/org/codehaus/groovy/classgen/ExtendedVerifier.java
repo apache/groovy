@@ -195,7 +195,12 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
                             ifaces.addAll(Arrays.asList(iNode.getInterfaces()));
                         }
                     }
-                    next = next.getUnresolvedSuperClass();
+                    ClassNode superClass = next.getUnresolvedSuperClass();
+                    if (superClass!=null) {
+                        next =  correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
+                    } else {
+                        next = null;
+                    }
                 }
                 if (next == null) {
                     addError("Method '" + origMethod.getName() + "' from class '" + cNode.getName() + "' does not override " +
