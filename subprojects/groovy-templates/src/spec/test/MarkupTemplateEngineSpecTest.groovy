@@ -655,6 +655,42 @@ pages.each { page ->
         assertError 'No such property: text for class: MarkupTemplateEngineSpecTest$Page'
     }
 
+    void testFragment() {
+        model = new HashMap<String,Object>();
+        model.put("pages", Arrays.asList("Page 1", "Page 2"));
+        templateContents = '''
+// tag::fragment_template[]
+ul {
+    pages.each {
+        fragment "li(line)", line:it
+    }
+}
+// end::fragment_template[]
+'''
+        expectedRendered = stripAsciidocMarkup '''
+// tag::fragment_expected[]
+<ul><li>Page 1</li><li>Page 2</li></ul>
+// end::fragment_expected[]
+'''
+        assertRendered()
+    }
+
+    void testLayout() {
+        templateContents = '''
+// tag::layout_template[]
+layout 'layout-main.tpl',                                   // <1>
+    title: 'Layout example',                                // <2>
+    bodyContents: contents { p('This is the body') }        // <3>
+// end::layout_template[]
+'''
+        expectedRendered = stripAsciidocMarkup '''
+// tag::layout_expected[]
+<html><head><title>Layout example</title></head><body><p>This is the body</p></body></html>
+// end::layout_expected[]
+'''
+        assertRendered()
+    }
+
     // tag::page_class[]
     public class Page {
 

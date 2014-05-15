@@ -766,6 +766,41 @@ html {
 
     }
 
+    void testFragment() {
+        def config = new TemplateConfiguration()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(config)
+        def template = engine.createTemplate '''
+html {
+    body {
+        [Index: 'index.html',
+        Page1: 'page.html',
+        Page2: 'page2.html'].each { k,v ->
+            fragment(page:v,title:k, 'a(href:page, title)')
+        }
+    }
+}
+'''
+        StringWriter rendered = new StringWriter()
+        template.make().writeTo(rendered)
+        assert rendered.toString() == "<html><body><a href='index.html'>Index</a><a href='page.html'>Page1</a><a href='page2.html'>Page2</a></body></html>"
+    }
+
+    void testLayout() {
+        def config = new TemplateConfiguration()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(config)
+        def template = engine.createTemplate '''
+layout 'includes/body.tpl', bodyContents: contents {
+    div {
+        p('This is the body')
+    }
+}, title: 'This is the title'
+'''
+
+        StringWriter rendered = new StringWriter()
+        template.make().writeTo(rendered)
+        assert rendered.toString() == "<html><head><title>This is the title</title></head><body><div><p>This is the body</p></div></body></html>"
+    }
+
     void testSimplePIRenderedProperly() {
         def config = new TemplateConfiguration()
         config.newLineString=''
