@@ -1509,6 +1509,43 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6731
+    void testContravariantMethodResolution() {
+        assertScript '''interface Function<T, R> {
+
+    R apply(T t)
+
+}
+public <I, O> void transform(Function<? super I, ? extends O> function) { function.apply('')}
+
+String result = null
+transform(new Function<String, String>() {
+
+    String apply(String input) {
+        result = "ok"
+    }
+})
+
+assert result == 'ok\''''
+    }
+    void testContravariantMethodResolutionWithImplicitCoercion() {
+        assertScript '''interface Function<T, R> {
+
+    R apply(T t)
+
+}
+public <I, O> void transform(Function<? super I, ? extends O> function) { function.apply('')}
+
+String result = null
+transform {
+        result = "ok"
+}
+
+
+assert result == 'ok'
+'''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
