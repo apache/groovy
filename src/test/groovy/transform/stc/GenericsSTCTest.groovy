@@ -1546,6 +1546,31 @@ assert result == 'ok'
 '''
     }
 
+    void testGROOVY5981(){
+        assertScript '''
+            import javax.swing.*
+            import java.awt.*
+
+            class ComponentFixture<T extends Component> {}
+            class JButtonFixture extends ComponentFixture<JButton> {}
+            class ContainerFixture<T extends Container> extends ComponentFixture<T> {}
+            abstract class ComponentAdapter<Fixture extends ComponentFixture> {
+                Fixture getFixture() {
+                    return fixture
+                }
+            }
+            abstract class ContainerAdapter<Fixture extends ContainerFixture> extends ComponentAdapter<Fixture> {}
+
+            class ButtonComponent extends ComponentAdapter<JButtonFixture> {
+                void setFixtureResolver(final ContainerAdapter<? extends ContainerFixture> containerAdapter) {
+                    final ContainerFixture containerFixture = containerAdapter.getFixture()
+                }
+            }
+
+            new ButtonComponent()
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
