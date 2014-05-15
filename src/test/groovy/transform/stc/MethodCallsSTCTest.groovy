@@ -1018,6 +1018,25 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '#foo(int) with arguments [<unknown parameter type>]'
     }
 
+    // GROOVY-6751
+    void testMethodInBothInterfaceAndSuperclass() {
+        assertScript '''
+            interface Ifc {
+              Object getProperty(String s)
+            }
+
+            class DuplicateMethodInIfc implements Ifc {}  // implemented in groovy.lang.GroovyObject
+
+            class Tester {
+              DuplicateMethodInIfc dup = new DuplicateMethodInIfc()
+              Object obj = dup.getProperty("foo")
+            }
+
+            try { new Tester()}
+            catch(groovy.lang.MissingPropertyException expected) {}
+            '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
