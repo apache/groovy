@@ -1,7 +1,8 @@
 = The MarkupTemplateEngine
 
-This template engine is a template engine primarily aimed at generating XML-like markup (XML, XHTML, HTML5, ...). Unlike
-traditional template engines, this one relies on a DSL that uses the builder syntax. Here is a sample template:
+This template engine is a template engine primarily aimed at generating XML-like markup (XML, XHTML, HTML5, ...), but that
+can be used to generate any text based content. Unlike traditional template engines, this one relies on a DSL that uses the
+builder syntax. Here is a sample template:
 
 [source,groovy]
 ----
