@@ -106,7 +106,7 @@ ext {
     commonsCliVersion = '1.2'
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.5.0.v20090520'
-    gparsVersion = '1.2.0'
+    gparsVersion = '1.2.1'
     ivyVersion = '2.3.0'
     jansiVersion = '1.11'
     jarjarVersion = '1.3'
