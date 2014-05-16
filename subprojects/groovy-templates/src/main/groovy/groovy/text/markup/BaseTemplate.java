@@ -17,12 +17,15 @@ package groovy.text.markup;
 
 import groovy.lang.Closure;
 import groovy.lang.Writable;
+import groovy.text.Template;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.Writer;
 import java.net.URL;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static groovy.xml.XmlUtil.escapeXml;
@@ -49,6 +52,7 @@ public abstract class BaseTemplate implements Writable {
     private final Map<String,String> modelTypes;
     private final MarkupTemplateEngine engine;
     private final TemplateConfiguration configuration;
+    private final Map<String, Template> cachedFragments;
 
     private Writer out;
     private boolean doWriteIndent;
@@ -58,6 +62,7 @@ public abstract class BaseTemplate implements Writable {
         this.engine = templateEngine;
         this.configuration = configuration;
         this.modelTypes = modelTypes;
+        this.cachedFragments = new LinkedHashMap<String, Template>();
     }
 
     public Map getModel() {
@@ -335,6 +340,72 @@ public abstract class BaseTemplate implements Writable {
     public void newLine() throws IOException {
         yieldUnescaped(configuration.getNewLineString());
         doWriteIndent = true;
+    }
+
+    /**
+     * Renders an embedded template as a fragment. Fragments are cached in a template, meaning that
+     * if you use the same fragment in a template, it will only be compiled once, but once <b>per template
+     * instance</b>. This is less performant than using {@link #layout(java.util.Map, String)}.
+     *
+     * @param model model to be passed to the template
+     * @param templateText template body
+     * @return this template instance
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public Object fragment(Map model, String templateText) throws IOException, ClassNotFoundException {
+        Template template = cachedFragments.get(templateText);
+        if (template==null) {
+            template = engine.createTemplate(new StringReader(templateText));
+            cachedFragments.put(templateText, template);
+        }
+        template.make(model).writeTo(out);
+        return this;
+    }
+
+    /**
+     * Imports a template and renders it using the specified model, allowing fine grained composition
+     * of templates and layouting. This works similarily to a template include but allows a distinct
+     * model to be used.
+     * @param model model to be passed to the template
+     * @param templateName the name of the template to be used as a layout
+     * @return this template instance
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public Object layout(Map model, String templateName) throws IOException, ClassNotFoundException {
+        URL resource = engine.resolveTemplate(templateName);
+        engine.createTypeCheckedModelTemplate(resource, modelTypes).make(model).writeTo(out);
+        return this;
+    }
+
+    /**
+     * Wraps a closure so that it can be used as a prototype for inclusion in layouts. This is useful when
+     * you want to use a closure in a model, but that you don't want to render the result of the closure but instead
+     * call it as if it was a specification of a template fragment.
+     * @param cl the fragment to be wrapped
+     * @return a wrapped closure returning an empty string
+     */
+    public Closure contents(final Closure cl) {
+        return new Closure(cl.getOwner(), cl.getThisObject()) {
+            @Override
+            public Object call() {
+                cl.call();
+                return "";
+            }
+
+            @Override
+            public Object call(final Object... args) {
+                cl.call(args);
+                return "";
+            }
+
+            @Override
+            public Object call(final Object arguments) {
+                cl.call(arguments);
+                return "";
+            }
+        };
     }
 
     /**

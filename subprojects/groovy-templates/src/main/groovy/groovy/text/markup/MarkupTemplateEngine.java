@@ -111,7 +111,11 @@ public class MarkupTemplateEngine extends TemplateEngine {
     }
 
     public Template createTemplate(final Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
-        return new MarkupTemplateMaker(reader, null);
+        return new MarkupTemplateMaker(reader, null, null);
+    }
+
+    public Template createTemplate(final Reader reader, String sourceName) throws CompilationFailedException, ClassNotFoundException, IOException {
+        return new MarkupTemplateMaker(reader, sourceName, null);
     }
 
     public Template createTemplateByPath(final String templatePath) throws CompilationFailedException, ClassNotFoundException, IOException {
@@ -119,11 +123,19 @@ public class MarkupTemplateEngine extends TemplateEngine {
     }
 
     public Template createTypeCheckedModelTemplate(final String source, Map<String, String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
-        return new MarkupTemplateMaker(new StringReader(source), modelTypes);
+        return new MarkupTemplateMaker(new StringReader(source), null, modelTypes);
+    }
+
+    public Template createTypeCheckedModelTemplate(final String source, String sourceName, Map<String, String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
+        return new MarkupTemplateMaker(new StringReader(source), sourceName, modelTypes);
     }
 
     public Template createTypeCheckedModelTemplate(final Reader reader, Map<String, String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
-        return new MarkupTemplateMaker(reader, modelTypes);
+        return new MarkupTemplateMaker(reader, null, modelTypes);
+    }
+
+    public Template createTypeCheckedModelTemplate(final Reader reader, String sourceName, Map<String, String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
+        return new MarkupTemplateMaker(reader, sourceName, modelTypes);
     }
 
     public Template createTypeCheckedModelTemplateByPath(final String templatePath, Map<String, String> modelTypes) throws CompilationFailedException, ClassNotFoundException, IOException {
@@ -151,7 +163,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         return templateConfiguration;
     }
 
-    URL resolveTemplate(String templatePath) throws IOException {
+    protected URL resolveTemplate(String templatePath) throws IOException {
         MarkupTemplateEngine.TemplateResource templateResource = MarkupTemplateEngine.TemplateResource.parse(templatePath);
         String configurationLocale = templateConfiguration.getLocale().toString().replace("-", "_");
         URL resource = templateResource.hasLocale()?groovyClassLoader.getResource(templateResource.toString()):null;
@@ -179,8 +191,9 @@ public class MarkupTemplateEngine extends TemplateEngine {
         final Map<String, String> modeltypes;
 
         @SuppressWarnings("unchecked")
-        public MarkupTemplateMaker(final Reader reader, Map<String, String> modelTypes) {
-            templateClass = groovyClassLoader.parseClass(new GroovyCodeSource(reader, "GeneratedMarkupTemplate" + counter.getAndIncrement(), ""), modelTypes);
+        public MarkupTemplateMaker(final Reader reader, String sourceName, Map<String, String> modelTypes) {
+            String name = sourceName!=null?sourceName:"GeneratedMarkupTemplate" + counter.getAndIncrement();
+            templateClass = groovyClassLoader.parseClass(new GroovyCodeSource(reader, name, ""), modelTypes);
             this.modeltypes = modelTypes;
         }
 

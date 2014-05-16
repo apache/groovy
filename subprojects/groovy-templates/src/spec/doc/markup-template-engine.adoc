@@ -31,6 +31,7 @@ The key features of this template engine are:
 * optional type checking of the model
 * includes
 * internationalization support
+* fragments/layouts
 
 == The template format
 === Basics
@@ -217,6 +218,67 @@ an optional `ClassLoader` as constructor argument (the other reason being that y
 
 If you don't want your templates to be on classpath, the `MarkupTemplateEngine` accepts a convenient constructor that lets you define the directory where
 templates are to be found.
+
+=== Fragments
+
+Fragments are nested templates. They can be used to provide improved composition in a single template. A fragment consists of
+a string, the inner template, and a model, used to render this template. Consider the following template:
+
+[source,groovy]
+----
+include::{rootdir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=fragment_template,indent=0]
+----
+
+The `fragment` element creates a nested template, and renders it with a model which is specific to this template. Here,
+we have the `li(line)` fragment, where `line` is bound to `it`. Since `it` corresponds to the iteration of `pages`,
+we will generate a single `li` element for each page in our model:
+
+[source,html]
+----
+include::{rootdir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=fragment_expected,indent=0]
+----
+
+Fragments are interesting to factorize template elements. They come at the price of the compilation of a fragment per template, and they cannot
+be externalized.
+
+=== Layouts
+
+Layouts, unlike fragments, refer to other templates. They can be used to compose templates and share common structures. This is often
+interesting if you have, for example, a common HTML page setup, and that you only want to replace the body. This can be done easily
+with a _layout_. First of all, you need to create a layout template:
+
+[source,groovy]
+.layout-main.tpl
+----
+include::{rootdir}/subprojects/groovy-templates/src/spec/test-resources/layout-main.tpl[indent=0]
+----
+<1> the `title` variable (inside the title tag) is a layout variable
+<2> the `bodyContents` call will render the body
+
+Then what you need is a template that includes the layout:
+
+[source,groovy]
+----
+include::{rootdir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=layout_template,indent=0]
+----
+<1> use the `main-layout.tpl` layout file
+<2> set the `title` variable
+<3> set the `bodyContents`
+
+As you can see, `bodyContents` will be rendered inside the layout, thanks to the `bodyContents()` call in the layout file. As
+a result, the template will be rendered as this:
+
+[source,html]
+----
+include::{rootdir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=layout_expected,indent=0]
+----
+
+The call to the `contents` method is used to tell the template engine that the block of code is in fact a specification of a
+template, instead of a helper function to be rendered directly. If you don't add `contents` before your specification, then
+the contents would be rendered, but you would also see a random string generated, corresponding to the result value of the block.
+
+Layouts are a powerful way to share common elements across multiple
+templates, without having to rewrite everything or use includes.
 
 == Rendering contents
 === Creation of a template engine
