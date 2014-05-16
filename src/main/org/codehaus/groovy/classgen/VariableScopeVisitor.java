@@ -201,8 +201,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         VariableScope scope = currentScope;
         Variable var = new DynamicVariable(name, currentScope.isInStaticContext());
+        Variable orig = var;
         // try to find a declaration of a variable
+        boolean crossingStaticContext = false;
         while (true) {
+            crossingStaticContext = crossingStaticContext || scope.isInStaticContext();
             Variable var1;
             var1 = scope.getDeclaredVariable(var.getName());
 
@@ -227,7 +230,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             if (classScope != null) {
                 Variable member = findClassMember(classScope, var.getName());
                 if (member != null) {
-                    boolean staticScope = currentScope.isInStaticContext() || isSpecialConstructorCall;
+                    boolean staticScope = crossingStaticContext || isSpecialConstructorCall;
                     boolean staticMember = member.isInStaticContext();
                     // We don't allow a static context (e.g. a static method) to access
                     // a non-static variable (e.g. a non-static field).
@@ -237,6 +240,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 break;
             }
             scope = scope.getParent();
+        }
+        if (var == orig && crossingStaticContext) {
+            var = new DynamicVariable(var.getName(), true);
         }
 
         VariableScope end = scope;
@@ -417,7 +423,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             currentScope.putDeclaredVariable(var);
         }
 
+        pushState(false);
         super.visitClosureExpression(expression);
+        popState();
         markClosureSharedVariables();
 
         popState();
