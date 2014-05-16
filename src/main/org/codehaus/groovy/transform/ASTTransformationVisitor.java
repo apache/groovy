@@ -201,7 +201,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 String className;
                 BufferedReader svcIn = null;
                 try {
-                    svcIn = new BufferedReader(new InputStreamReader(service.openStream()));
+                    svcIn = new BufferedReader(new InputStreamReader(service.openStream(), "UTF-8"));
                     try {
                         className = svcIn.readLine();
                     } catch (IOException ioe) {
