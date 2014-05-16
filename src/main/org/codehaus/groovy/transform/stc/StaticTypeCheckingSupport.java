@@ -1297,25 +1297,43 @@ public abstract class StaticTypeCheckingSupport {
 
     private static boolean typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, MethodNode candidateMethod, boolean isExtensionMethod) {
         boolean failure = false;
+
+        // correct receiver for inner class
+        // we assume the receiver is an instance of the declaring class of the 
+        // candidate method, but findMethod returns also outer class methods
+        // for that receiver. For now we skip receiver based checks in that case
+        // TODO: correct generics for when receiver is to be skipped
+        boolean skipBecauseOfInnerClassNotReceiver = isOuterClassOf(receiver, candidateMethod.getDeclaringClass());
+
         Parameter[] parameters = candidateMethod.getParameters();
-        Map<String, GenericsType> classGTs = GenericsUtils.extractPlaceholders(receiver);
+        Map<String, GenericsType> classGTs;
+        if (skipBecauseOfInnerClassNotReceiver) {
+            classGTs = Collections.EMPTY_MAP;
+        } else {
+            classGTs = GenericsUtils.extractPlaceholders(receiver);
+        }
         if (parameters.length > arguments.length || parameters.length==0) {
             // this is a limitation that must be removed in a future version
             // we cannot check generic type arguments if there are default parameters!
             return true;
         }
+
         // we have here different generics contexts we have to deal with.
         // There is firstly the context given through the class, and the method.
         // The method context may hide generics given through the class, but use 
         // the non-hidden ones.
         Map<String, GenericsType> resolvedMethodGenerics = new HashMap<String, GenericsType>();
-        addMethodLevelDeclaredGenerics(candidateMethod,resolvedMethodGenerics);
+        if (!skipBecauseOfInnerClassNotReceiver) {
+            addMethodLevelDeclaredGenerics(candidateMethod,resolvedMethodGenerics);
+        }
         // so first we remove hidden generics
         for (String key: resolvedMethodGenerics.keySet()) classGTs.remove(key); 
         // then we use the remaining information to refine the given generics
         applyGenericsConnections(classGTs,resolvedMethodGenerics);
         // and then start our checks with the receiver
-        failure |= inferenceCheck(Collections.EMPTY_SET, resolvedMethodGenerics, candidateMethod.getDeclaringClass(), receiver, false);
+        if (!skipBecauseOfInnerClassNotReceiver) {
+            failure |= inferenceCheck(Collections.EMPTY_SET, resolvedMethodGenerics, candidateMethod.getDeclaringClass(), receiver, false);
+        }
         // the outside context parts till now define placeholder we are not allowed to
         // generalize, thus we save that for later use...
         // extension methods are special, since they set the receiver as 
@@ -1334,6 +1352,11 @@ public abstract class StaticTypeCheckingSupport {
             if (isExtensionMethod && i==0) fixedGenericsPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
         }
         return !failure;
+    }
+
+    private static boolean isOuterClassOf(ClassNode receiver, ClassNode type) {
+        if (implementsInterfaceOrIsSubclassOf(receiver,type)) return false;
+        return true;
     }
 
     private static Set<String> extractResolvedPlaceHolders(Map<String, GenericsType> resolvedMethodGenerics) {
