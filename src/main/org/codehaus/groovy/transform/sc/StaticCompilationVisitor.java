@@ -343,4 +343,12 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         return exists;
     }
 
+    @Override
+    public void visitPropertyExpression(final PropertyExpression pexp) {
+        super.visitPropertyExpression(pexp);
+        Object dynamic = pexp.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
+        if (dynamic !=null) {
+            pexp.getObjectExpression().putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, dynamic);
+        }
+    }
 }

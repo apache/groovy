@@ -811,6 +811,19 @@ layout 'includes/body.tpl', bodyContents: contents {
         assert rendered.toString() == '<?FOO bar?>'
     }
 
+    // GROOVY-6794
+    void testShouldNotThrowForbiddenPropertyAccess() {
+        def config = new TemplateConfiguration()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(config)
+        def template = engine.createTemplate '''messages.each { message ->
+    yield message.summary
+}'''
+        StringWriter rendered = new StringWriter()
+        def model = [messages: [new Message(summary: 'summary')]]
+        template.make(model).writeTo(rendered)
+        assert rendered.toString() == 'summary'
+
+    }
 
     class SimpleTagLib {
         def emoticon = { attrs, body ->
@@ -820,6 +833,18 @@ layout 'includes/body.tpl', bodyContents: contents {
 
     public static class Person {
         String name
+    }
+
+    private static class Message {
+        private String summary
+
+        String getSummary() {
+            return summary
+        }
+
+        void setSummary(final String summary) {
+            this.summary = summary
+        }
     }
 
 }
