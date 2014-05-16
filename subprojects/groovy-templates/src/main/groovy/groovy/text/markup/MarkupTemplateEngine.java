@@ -66,12 +66,17 @@ public class MarkupTemplateEngine extends TemplateEngine {
     private final CompilerConfiguration compilerConfiguration;
     private final TemplateConfiguration templateConfiguration;
     private final Map<String, GroovyCodeSource> codeSourceCache = new LinkedHashMap<String, GroovyCodeSource>();
+    private final TemplateResolver templateResolver;
 
     public MarkupTemplateEngine(final TemplateConfiguration tplConfig) {
         this(MarkupTemplateEngine.class.getClassLoader(), tplConfig);
     }
 
     public MarkupTemplateEngine(final ClassLoader parentLoader, final TemplateConfiguration tplConfig) {
+        this(parentLoader, tplConfig, null);
+    }
+
+    public MarkupTemplateEngine(final ClassLoader parentLoader, final TemplateConfiguration tplConfig, final TemplateResolver resolver) {
         compilerConfiguration = new CompilerConfiguration();
         templateConfiguration = tplConfig;
         compilerConfiguration.addCompilationCustomizers(new TemplateASTTransformer(tplConfig));
@@ -92,6 +97,8 @@ public class MarkupTemplateEngine extends TemplateEngine {
                 return new TemplateGroovyClassLoader(parentLoader, compilerConfiguration);
             }
         });
+        templateResolver = resolver == null ? new DefaultTemplateResolver() : resolver;
+        templateResolver.configure(groovyClassLoader, templateConfiguration);
     }
 
     /**
@@ -101,7 +108,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
      * @param tplConfig         template engine configuration
      */
     public MarkupTemplateEngine(ClassLoader parentLoader, File templateDirectory, TemplateConfiguration tplConfig) {
-        this(new URLClassLoader(buildURLs(templateDirectory), parentLoader), tplConfig);
+        this(new URLClassLoader(buildURLs(templateDirectory), parentLoader), tplConfig, null);
     }
 
     private static URL[] buildURLs(final File templateDirectory) {
@@ -165,23 +172,8 @@ public class MarkupTemplateEngine extends TemplateEngine {
         return templateConfiguration;
     }
 
-    protected URL resolveTemplate(String templatePath) throws IOException {
-        MarkupTemplateEngine.TemplateResource templateResource = MarkupTemplateEngine.TemplateResource.parse(templatePath);
-        String configurationLocale = templateConfiguration.getLocale().toString().replace("-", "_");
-        URL resource = templateResource.hasLocale()?groovyClassLoader.getResource(templateResource.toString()):null;
-        if (resource == null) {
-            // no explicit locale in the template path or resource not found
-            // fallback to the default configuration locale
-            resource = groovyClassLoader.getResource(templateResource.withLocale(configurationLocale).toString());
-        }
-        if (resource == null) {
-            // no resource found with the default locale, try without any locale
-            resource = groovyClassLoader.getResource(templateResource.withLocale(null).toString());
-        }
-        if (resource == null) {
-            throw new IOException("Unable to load template:" + templatePath);
-        }
-        return resource;
+    public URL resolveTemplate(String templatePath) throws IOException {
+        return templateResolver.resolveTemplate(templatePath);
     }
 
     /**
@@ -194,7 +186,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
 
         @SuppressWarnings("unchecked")
         public MarkupTemplateMaker(final Reader reader, String sourceName, Map<String, String> modelTypes) {
-            String name = sourceName!=null?sourceName:"GeneratedMarkupTemplate" + counter.getAndIncrement();
+            String name = sourceName != null ? sourceName : "GeneratedMarkupTemplate" + counter.getAndIncrement();
             templateClass = groovyClassLoader.parseClass(new GroovyCodeSource(reader, name, ""), modelTypes);
             this.modeltypes = modelTypes;
         }
@@ -208,7 +200,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
                 // will always read from the URL even if it's cached
                 String key = resource.toExternalForm();
                 codeSource = codeSourceCache.get(key);
-                if (codeSource==null) {
+                if (codeSource == null) {
                     codeSource = new GroovyCodeSource(resource);
                     codeSourceCache.put(key, codeSource);
                 }
@@ -278,7 +270,39 @@ public class MarkupTemplateEngine extends TemplateEngine {
         }
 
         public boolean hasLocale() {
-            return locale!=null && !"".equals(locale);
+            return locale != null && !"".equals(locale);
+        }
+    }
+
+    public static class DefaultTemplateResolver implements TemplateResolver {
+        private TemplateConfiguration templateConfiguration;
+        private ClassLoader templateClassLoader;
+
+        public DefaultTemplateResolver() {
+        }
+
+        public void configure(final ClassLoader templateClassLoader, final TemplateConfiguration configuration) {
+            this.templateClassLoader = templateClassLoader;
+            this.templateConfiguration = configuration;
+        }
+
+        public URL resolveTemplate(final String templatePath) throws IOException {
+            MarkupTemplateEngine.TemplateResource templateResource = MarkupTemplateEngine.TemplateResource.parse(templatePath);
+            String configurationLocale = templateConfiguration.getLocale().toString().replace("-", "_");
+            URL resource = templateResource.hasLocale() ? templateClassLoader.getResource(templateResource.toString()) : null;
+            if (resource == null) {
+                // no explicit locale in the template path or resource not found
+                // fallback to the default configuration locale
+                resource = templateClassLoader.getResource(templateResource.withLocale(configurationLocale).toString());
+            }
+            if (resource == null) {
+                // no resource found with the default locale, try without any locale
+                resource = templateClassLoader.getResource(templateResource.withLocale(null).toString());
+            }
+            if (resource == null) {
+                throw new IOException("Unable to load template:" + templatePath);
+            }
+            return resource;
         }
     }
 
