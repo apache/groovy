@@ -34,6 +34,7 @@ public class TemplateConfiguration {
     private boolean autoNewLine = false;
     private Class<? extends BaseTemplate> baseTemplateClass = BaseTemplate.class;
     private Locale locale = Locale.getDefault();
+    private boolean cacheTemplates = true;
 
     public TemplateConfiguration() {
     }
@@ -169,5 +170,18 @@ public class TemplateConfiguration {
 
     public void setLocale(final Locale locale) {
         this.locale = locale;
+    }
+
+    public boolean isCacheTemplates() {
+        return cacheTemplates;
+    }
+
+    /**
+     * If cache is enabled, then templates are compiled once for each source (URL or File). It is recommanded to keep
+     * this flag to true unless you are in development mode and want automatic reloading of templates.
+     * @param cacheTemplates should templates be cached
+     */
+    public void setCacheTemplates(final boolean cacheTemplates) {
+        this.cacheTemplates = cacheTemplates;
     }
 }

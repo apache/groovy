@@ -42,6 +42,7 @@ import java.net.URLClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
@@ -64,6 +65,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
     private final TemplateGroovyClassLoader groovyClassLoader;
     private final CompilerConfiguration compilerConfiguration;
     private final TemplateConfiguration templateConfiguration;
+    private final Map<String, GroovyCodeSource> codeSourceCache = new LinkedHashMap<String, GroovyCodeSource>();
 
     public MarkupTemplateEngine(final TemplateConfiguration tplConfig) {
         this(MarkupTemplateEngine.class.getClassLoader(), tplConfig);
@@ -199,7 +201,22 @@ public class MarkupTemplateEngine extends TemplateEngine {
 
         @SuppressWarnings("unchecked")
         public MarkupTemplateMaker(final URL resource, Map<String, String> modelTypes) throws IOException {
-            templateClass = groovyClassLoader.parseClass(new GroovyCodeSource(resource), modelTypes);
+            boolean cache = templateConfiguration.isCacheTemplates();
+            GroovyCodeSource codeSource;
+            if (cache) {
+                // we use a map in addition to the internal caching mechanism of Groovy because the latter
+                // will always read from the URL even if it's cached
+                String key = resource.toExternalForm();
+                codeSource = codeSourceCache.get(key);
+                if (codeSource==null) {
+                    codeSource = new GroovyCodeSource(resource);
+                    codeSourceCache.put(key, codeSource);
+                }
+            } else {
+                codeSource = new GroovyCodeSource(resource);
+            }
+            codeSource.setCachable(cache);
+            templateClass = groovyClassLoader.parseClass(codeSource, modelTypes);
             this.modeltypes = modelTypes;
         }
 
