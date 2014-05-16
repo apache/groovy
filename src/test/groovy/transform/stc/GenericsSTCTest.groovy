@@ -1475,6 +1475,32 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             println new Foo().method()
         '''
     }
+
+    // GROOVY-6358
+    void testGenericsReturnedFromStaticMethodWithInnerClosureAndAsType() {
+        assertScript '''
+            import java.lang.reflect.Method
+
+            interface Ifc {
+               void method()
+            }
+            class Generator {
+                static <T> T create (Class<T> clazz ){
+                    return clazz.methods.collectEntries { Method method ->
+                            [ (method.name) : { println "${method.name} called"} ]
+                        }.asType(clazz)
+                }
+            }
+            class User {
+                static void main() {
+                    Ifc ifc = Generator.create(Ifc)
+                    ifc.method()
+                }
+            }
+
+            User.main()
+        '''
+    }
     
     void testConcreteTypeInsteadOfGenerifiedInterface() {
         assertScript '''
