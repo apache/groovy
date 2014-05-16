@@ -1275,6 +1275,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitProperty(PropertyNode node) {
+        final boolean osc = typeCheckingContext.isInStaticContext;
+        try {
+            typeCheckingContext.isInStaticContext = node.isInStaticContext();
+            super.visitProperty(node);
+        } finally {
+            typeCheckingContext.isInStaticContext = osc;
+        }
+    }
+
+    @Override
     public void visitField(final FieldNode node) {
         final boolean osc = typeCheckingContext.isInStaticContext;
         try {

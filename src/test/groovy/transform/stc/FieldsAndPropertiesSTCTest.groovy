@@ -566,6 +566,15 @@ class FooWorker {
 new FooWorker().doSomething()''', 'Incompatible generic argument types. Cannot assign java.util.ArrayList <Integer> to: java.util.List <String>'
     }
 
+    void testAICAsStaticProperty() {
+        assertScript '''
+            class Foo {
+                static x = new Object() {}
+            }
+            assert Foo.x instanceof Object
+        '''
+    }
+
     public static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
     }
