@@ -333,6 +333,36 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6126
+    void testChoosesCorrectMethodOfParameterizedReturnType() {
+        assertScript '''
+            class Loader {
+                public <T> T load(Class<T> entityClass, Serializable id) {entityClass.newInstance()}
+                public void load(final Object entity, final Serializable id) {}
+            }
+
+            class MyClass<D> {
+                Class<D> persistentClass
+                Loader hibernateTemplate = new Loader()
+                MyClass(Class<D> c) {
+                    this.persistentClass = c
+                }
+
+                D load(Serializable id) {
+                    id = convertIdentifier(id)
+                    if (id != null) {
+                        return hibernateTemplate.load(persistentClass, id)
+                    }
+                }
+
+                Serializable convertIdentifier(Serializable s) {"1"}
+            }
+            class Foo{}
+
+            MyClass<Foo> mc = new MyClass(Foo)
+            Foo foo = mc.load("2")'''
+    }
+
     void testMethodCallWithClassParameterUsingClassLiteralArg() {
         assertScript '''
             class A {}
