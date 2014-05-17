@@ -353,33 +353,14 @@ class ReflectionCompletor {
             }
         }
 
-        addOtherCompletionsThatAreCommonlyPossibleWithProperties(isClass, instance, prefix, rv)
-
-        return rv.sort()
-    }
-
-    /**
-     * Offering completions that are not properties or method for objects such as map.
-     * It will wrap strings that contain not only alphanumeric characters with double quotes (")
-     * and escape ", ' and $
-     */
-    static void addOtherCompletionsThatAreCommonlyPossibleWithProperties(
-            boolean isClass, instance, String prefix, Set<ReflectionCompletionCandidate> rv) {
-
+        // other completions that are commonly possible with properties
         if (!isClass) {
-            Set<String> candidates = new HashSet<String>();
-            Set<String> properties = new HashSet<String>();
-            propertiesCompleter.addCompletions(instance, prefix, properties)
-            for (String property : properties) {
-                if (property =~ "[^a-zA-Z0-9_]+") {
-                    property = property.replace('\"', '\\').replace('\"', '\\\"').replace('\'', '\\\'')
-                    candidates.add('\'' + property + '\'')
-                } else {
-                    candidates.add(property)
-                }
-            }
+            Set<String> candidates = new HashSet<String>()
+            propertiesCompleter.addCompletions(instance, prefix, candidates)
             rv.addAll(candidates.collect({String it -> new ReflectionCompletionCandidate(it, AnsiRenderer.Code.MAGENTA.name())}))
         }
+
+        return rv.sort()
     }
 
     /**

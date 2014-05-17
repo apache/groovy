@@ -33,11 +33,14 @@ class NavigablePropertiesCompleterTest extends GroovyTestCase {
                 'id': 'FX-17',
                 name: 'Turnip',
                 99: 123,
+                'a b' : 'space',
+                'a.b' : 'dot',
+                'G$tring\'' : 'string'
         ]
 
         Set candidates = [] as Set
         completer.addCompletions(map, '', candidates)
-        assert ['id', 'name'] as Set == candidates
+        assert ['\'a b\'', '\'a.b\'', '\'G$tring\\\'\'', 'id', 'name'] as Set == candidates
     }
 
     void testNodeList() {
