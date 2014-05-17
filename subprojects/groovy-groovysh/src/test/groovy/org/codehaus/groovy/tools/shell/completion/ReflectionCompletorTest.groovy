@@ -68,9 +68,9 @@ class ReflectionCompletorTest extends GroovyTestCase {
         assert 'clear()' in result
         // 'class' as key can cause bugs where .class is used instead of getClass()
         result = ReflectionCompletor.getPublicFieldsAndMethods(
-                ['class': '42', 'club': 53, 'a b' : 'space', 'a.b' : 'dot', "G\$tring'" : 'gstring'], "")
+                ['class': '42', 'club': 53, 'a b' : 'space', 'a.b' : 'dot', 'G\$tring\'' : 'gstring'], "")
                 .collect({it.value.toString()})
-        for (String expected : ["\"a b\"", "\"a.b\"", "\"G\\\$tring\\'\"", 'clear()', 'containsKey(', 'class', 'club']) {
+        for (String expected : ['\'a b\'', '\'a.b\'', '\'G$tring\\\'\'', 'clear()', 'containsKey(', 'class', 'club']) {
             assert expected in result
         }
         result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "size").collect({it.value})

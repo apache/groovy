@@ -372,8 +372,8 @@ class ReflectionCompletor {
             propertiesCompleter.addCompletions(instance, prefix, properties)
             for (String property : properties) {
                 if (property =~ "[^a-zA-Z0-9_]+") {
-                    property = property.replace("\"", "\\").replace("\"", "\\\"").replace("\'", "\\\'").replace("\$", "\\\$")
-                    candidates.add("\"" + property + "\"")
+                    property = property.replace('\"', '\\').replace('\"', '\\\"').replace('\'', '\\\'')
+                    candidates.add('\'' + property + '\'')
                 } else {
                     candidates.add(property)
                 }
