@@ -77,7 +77,9 @@ class ASTBuilder extends GroovyBaseListener {
             def memberContext = member.children[0]
             assert memberContext instanceof GroovyParser.ConstructorDeclarationContext ||
                     memberContext instanceof GroovyParser.MethodDeclarationContext ||
-                    memberContext instanceof GroovyParser.FieldDeclarationContext
+                    memberContext instanceof GroovyParser.FieldDeclarationContext ||
+                    memberContext instanceof GroovyParser.ObjectInitializerContext ||
+                    memberContext instanceof GroovyParser.ClassInitializerContext
 
             // This inspection is suppressed cause I use Runtime multimethods dispatching mechanics of Groovy.
             //noinspection GroovyAssignabilityCheck
@@ -86,10 +88,52 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    def parseMember(ClassNode classNode, GroovyParser.MethodDeclarationContext ctx) {
+        //noinspection GroovyAssignabilityCheck
+        def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier(), Opcodes.ACC_PUBLIC)
+        def statement = parseStatement(ctx.blockStatement() as GroovyParser.BlockStatementContext)
+
+        def params = parseParameters(ctx.argumentDeclarationList())
+        def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, parseTypeDeclaration(ctx.typeDeclaration()), params, [] as ClassNode[], statement)
+        setupNodeLocation(methodNode, ctx)
+        methodNode.syntheticPublic = !hasVisibilityModifier
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    def parseMember(ClassNode classNode, GroovyParser.FieldDeclarationContext ctx) {
+        //noinspection GroovyAssignabilityCheck
+        def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier())
+
+        def typeDeclaration = parseTypeDeclaration(ctx.typeDeclaration())
+        if (hasVisibilityModifier)
+            setupNodeLocation(classNode.addField(ctx.IDENTIFIER().text, modifiers, typeDeclaration, null), ctx)
+        else { // no visibility specified. Generate property node.
+            def propertyModifier = modifiers | Opcodes.ACC_PUBLIC
+            def propertyNode = classNode.addProperty(ctx.IDENTIFIER().text, propertyModifier, typeDeclaration, null, null, null)
+            propertyNode.field.modifiers = modifiers | Opcodes.ACC_PRIVATE
+            propertyNode.field.synthetic = true
+            setupNodeLocation(propertyNode.field, ctx)
+            setupNodeLocation(propertyNode, ctx)
+        }
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    def parseMember(ClassNode classNode, GroovyParser.ClassInitializerContext ctx) {
+        (getOrCreateClinitMethod(classNode).code as BlockStatement).addStatement(parseStatement(ctx.blockStatement()))
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static def parseMember(ClassNode classNode, GroovyParser.ObjectInitializerContext ctx) {
+        def statement = new BlockStatement()
+        statement.addStatement(parseStatement(ctx.blockStatement()))
+        classNode.addObjectInitializerStatements(statement)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static def parseMember(ClassNode classNode, GroovyParser.ConstructorDeclarationContext ctx) {
         int modifiers = ctx.VISIBILITY_MODIFIER() ? parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER()) : Opcodes.ACC_PUBLIC
 
-        def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), [] as ClassNode[], parseBlockStatement(ctx.blockStatement()))
+        def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), [] as ClassNode[], parseStatement(ctx.blockStatement() as GroovyParser.BlockStatementContext))
         setupNodeLocation(constructorNode, ctx)
         constructorNode.syntheticPublic = ctx.VISIBILITY_MODIFIER() == null
     }
@@ -98,7 +142,12 @@ class ASTBuilder extends GroovyBaseListener {
     // Statements.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    static Statement parseBlockStatement(GroovyParser.BlockStatementContext ctx) {
+
+    static Statement parseStatement(GroovyParser.StatementContext ctx) {
+        throw new RuntimeException("Unsupported statement type! $ctx.text")
+    }
+
+    static Statement parseStatement(GroovyParser.BlockStatementContext ctx) {
         def statement = new BlockStatement()
         if (!ctx)
             return statement
@@ -106,11 +155,7 @@ class ASTBuilder extends GroovyBaseListener {
         ctx.statement().each {
             statement.addStatement(parseStatement(it))
         }
-        statement
-    }
-
-    static Statement parseStatement(GroovyParser.StatementContext ctx) {
-        throw new RuntimeException("Unsupported statement type! $ctx.text")
+        setupNodeLocation(statement, ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -380,36 +425,6 @@ class ASTBuilder extends GroovyBaseListener {
         argumentListExpression
     }
 
-    @SuppressWarnings("GroovyUnusedDeclaration")
-    def parseMember(ClassNode classNode, GroovyParser.MethodDeclarationContext ctx) {
-        //noinspection GroovyAssignabilityCheck
-        def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier(), Opcodes.ACC_PUBLIC)
-        def statement = parseBlockStatement(ctx.blockStatement())
-
-        def params = parseParameters(ctx.argumentDeclarationList())
-        def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, parseTypeDeclaration(ctx.typeDeclaration()), params, [] as ClassNode[], statement)
-        setupNodeLocation(methodNode, ctx)
-        methodNode.syntheticPublic = !hasVisibilityModifier
-    }
-
-    @SuppressWarnings("GroovyUnusedDeclaration")
-    def parseMember(ClassNode classNode, GroovyParser.FieldDeclarationContext ctx) {
-        //noinspection GroovyAssignabilityCheck
-        def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier())
-
-        def typeDeclaration = parseTypeDeclaration(ctx.typeDeclaration())
-        if (hasVisibilityModifier)
-            setupNodeLocation(classNode.addField(ctx.IDENTIFIER().text, modifiers, typeDeclaration, null), ctx)
-        else { // no visibility specified. Generate property node.
-            def propertyModifier = modifiers | Opcodes.ACC_PUBLIC
-            def propertyNode = classNode.addProperty(ctx.IDENTIFIER().text, propertyModifier, typeDeclaration, null, null, null)
-            propertyNode.field.modifiers = modifiers | Opcodes.ACC_PRIVATE
-            propertyNode.field.synthetic = true
-            setupNodeLocation(propertyNode.field, ctx)
-            setupNodeLocation(propertyNode, ctx)
-        }
-    }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Utility methods.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -428,6 +443,17 @@ class ASTBuilder extends GroovyBaseListener {
         ctx.argumentDeclaration().collect {
             setupNodeLocation(new Parameter(parseTypeDeclaration(it.typeDeclaration()), it.IDENTIFIER().text), it)
         }
+    }
+
+    static MethodNode getOrCreateClinitMethod(ClassNode classNode)
+    {
+        def methodNode = classNode.methods.find { it.name == "<clinit>" }
+        if (!methodNode) {
+            methodNode = new MethodNode("<clinit>", Opcodes.ACC_STATIC, ClassHelper.VOID_TYPE, [] as Parameter[], [] as ClassNode[], new BlockStatement())
+            methodNode.synthetic = true
+            classNode.addMethod(methodNode)
+        }
+        methodNode
     }
 
     /**

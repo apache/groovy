@@ -68,7 +68,7 @@ importStatement:
 classDeclaration:
     classModifiers KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } (NL)* '{' (classMember | NL | ';')* '}' ;
 classMember:
-    constructorDeclaration | methodDeclaration | fieldDeclaration;
+    constructorDeclaration | methodDeclaration | fieldDeclaration | objectInitializer | classInitializer;
 
 // Members // FIXME Make more strict check for def keyword. There should be no way to ommit everything but IDENTIFIER.
 methodDeclaration:
@@ -78,6 +78,8 @@ fieldDeclaration:
     (memberModifier+ typeDeclaration? | typeDeclaration) IDENTIFIER ;
 constructorDeclaration: { _input.LT(_input.LT(1).getType() == VISIBILITY_MODIFIER ? 2 : 1).getText().equals(currentClassName) }?
     VISIBILITY_MODIFIER? IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}' ; // Inner NL 's handling.
+objectInitializer: '{' blockStatement? '}' ;
+classInitializer: KW_STATIC '{' blockStatement? '}' ;
 
 memberModifier:
     VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE ;
