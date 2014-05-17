@@ -114,7 +114,8 @@ statement:
 caseStatement: (KW_CASE expression ':' (statement | ';' | NL)* );
 
 expression:
-    expression ('.' | '?.' | '*.') IDENTIFIER '(' argumentList ')' #methodCallExpression
+    '{' argumentDeclarationList '->' blockStatement? '}' #closureExpression
+    | expression ('.' | '?.' | '*.') IDENTIFIER '(' argumentList ')' #methodCallExpression
     | expression ('.' | '?.' | '*.' | '.@') IDENTIFIER #fieldAccessExpression
     | expression '(' argumentList? ')' #callExpression
     | expression ('--' | '++') #postfixExpression

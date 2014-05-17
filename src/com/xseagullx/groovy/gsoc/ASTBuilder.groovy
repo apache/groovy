@@ -118,7 +118,7 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    def parseMember(ClassNode classNode, GroovyParser.ClassInitializerContext ctx) {
+    static def parseMember(ClassNode classNode, GroovyParser.ClassInitializerContext ctx) {
         (getOrCreateClinitMethod(classNode).code as BlockStatement).addStatement(parseStatement(ctx.blockStatement()))
     }
 
@@ -276,6 +276,14 @@ class ASTBuilder extends GroovyBaseListener {
 
     static Expression parseExpression(GroovyParser.ExpressionContext ctx) {
         throw new RuntimeException("Unsupported expression type! $ctx")
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.ClosureExpressionContext ctx) {
+        def parameters = parseParameters(ctx.argumentDeclarationList())
+
+        def statement = parseStatement(ctx.blockStatement() as GroovyParser.BlockStatementContext)
+        setupNodeLocation(new ClosureExpression(parameters ?: null, statement), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
