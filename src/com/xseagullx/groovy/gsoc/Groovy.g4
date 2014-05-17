@@ -115,6 +115,8 @@ caseStatement: (KW_CASE expression ':' (statement | ';' | NL)* );
 
 expression:
     '{' argumentDeclarationList '->' blockStatement? '}' #closureExpression
+    | '[' (expression (',' expression)*)?']' #listConstructor
+    | '[' (':' | (mapEntry (',' mapEntry)*) )']' #mapConstructor
     | expression ('.' | '?.' | '*.') IDENTIFIER '(' argumentList ')' #methodCallExpression
     | expression ('.' | '?.' | '*.' | '.@') IDENTIFIER #fieldAccessExpression
     | expression '(' argumentList? ')' #callExpression
@@ -140,6 +142,12 @@ expression:
     | NUMBER #constantExpression
     | KW_NULL #nullExpression
     | IDENTIFIER #variableExpression ;
+
+mapEntry:
+    STRING ':' expression
+    | IDENTIFIER ':' expression
+    | '(' expression ')' ':' expression
+;
 
 classModifiers: //JSL7 8.1 FIXME Now gramar allows modifier duplication. It's possible to make it more strict listing all 24 permutations.
 (VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_STRICTFP)* ;

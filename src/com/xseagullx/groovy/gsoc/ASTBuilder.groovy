@@ -278,6 +278,30 @@ class ASTBuilder extends GroovyBaseListener {
         throw new RuntimeException("Unsupported expression type! $ctx")
     }
 
+    static Expression parseExpression(GroovyParser.ListConstructorContext ctx) {
+        def expression = new ListExpression(ctx.expression().collect(ASTBuilder.&parseExpression))
+        setupNodeLocation(expression, ctx)
+    }
+
+    static Expression parseExpression(GroovyParser.MapConstructorContext ctx) {
+        setupNodeLocation(new MapExpression(ctx.mapEntry()?.collect(ASTBuilder.&parseExpression) ?: []), ctx)
+    }
+
+    static Expression parseExpression(GroovyParser.MapEntryContext ctx) {
+        Expression keyExpr, valueExpr
+        def expressions = ctx.expression()
+        if (expressions.size() == 1) {
+            def key = ctx.IDENTIFIER() ? ctx.IDENTIFIER().text : parseString(ctx.STRING())
+            keyExpr = new ConstantExpression(key)
+            valueExpr = parseExpression(expressions[0])
+        }
+        else {
+            keyExpr = parseExpression(expressions[0])
+            valueExpr = parseExpression(expressions[1])
+        }
+        setupNodeLocation(new MapEntryExpression(keyExpr, valueExpr), ctx)
+    }
+
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GroovyParser.ClosureExpressionContext ctx) {
         def parameters = parseParameters(ctx.argumentDeclarationList())
@@ -583,5 +607,15 @@ class ASTBuilder extends GroovyBaseListener {
         }
 
         parseVisibilityModifiers(modifiers[0])
+    }
+
+    /**
+     * Method for construct string from string literal handling empty strings.
+     * @param node
+     * @return
+     */
+    static String parseString(TerminalNode node) {
+        def t = node.text
+        t ? t[1..-2] : t
     }
 }
