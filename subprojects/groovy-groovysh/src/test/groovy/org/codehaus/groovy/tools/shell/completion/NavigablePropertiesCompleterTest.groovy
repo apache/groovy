@@ -37,6 +37,7 @@ class NavigablePropertiesCompleterTest extends GroovyTestCase {
                 [] : 'some non string object',
                 'a b' : 'space',
                 'a.b' : 'dot',
+                'a\rb' : 'control',
                 'a\'b' : 'quote',
                 'a\\b' : 'escape',
                 'a\nb' : 'new line',
@@ -44,12 +45,13 @@ class NavigablePropertiesCompleterTest extends GroovyTestCase {
                 'G$\\"tring' : 'string',
                 '!@#$%^&*()_+={}[]~`<>,./?:;|_' : 'operators',
                 '_ !@#$%^&*()_+={}[]~`<>,./?:;|' : 'operators',
-                '☃' : 'snowman'
+                'snowman ☃' : 'Olaf',
+                'Japan ぁ' : '77'
         ]
 
         Set candidates = [] as Set
-        Set expected = ['id', 'name', '\'a b\'', '\'a.b\'', '\'a\\\'b\'', '\'a\\\\b\'', '\'a\\nb\'', '\'a\\tb\'',
-                        '\'G$\\\\"tring\'', '\'_ !@#$%^&*()_+={}[]~`<>,./?:;|\''] as Set
+        Set expected = ['id', 'name', '\'a b\'', '\'a.b\'', '\'a\\\'b\'', '\'a\\\\b\'',
+                        '\'G$\\\\"tring\'', '\'_ !@#$%^&*()_+={}[]~`<>,./?:;|\'', '\'snowman ☃\'', '\'Japan ぁ\''] as Set
         completer.addCompletions(map, '', candidates)
         assert expected == candidates
     }
