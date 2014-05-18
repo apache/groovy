@@ -31,8 +31,8 @@ public class NavigablePropertiesCompleter {
     void addMapProperties(Map instance, String prefix, final Set<CharSequence> candidates) {
         // key can be any Object but only Strings will be completed
         for (String key in instance.keySet().findAll {it instanceof String}) {
-            if (key =~ '^[a-zA-Z_]+[^\\p{Cntrl}]*$' && key.startsWith(prefix)) {
-                if (key =~ "[^a-zA-Z0-9_]+") {
+            if (key =~ '^[a-zA-Z0-9_\\$]+[^\\p{Cntrl}]*$' && key.startsWith(prefix)) {
+                if (key =~ '^[0-9]+|^.*[ @#%\\^&§\  \(\\)\\+\\-=\\{\\}\\[\\]~`´<>,\\.\\\\"\'/!\\?:;\\|]+.*$') {
                     key = key.replace('\\', '\\\\').replace('\'', '\\\'')
                     key = '\'' + key + '\''
                 }
