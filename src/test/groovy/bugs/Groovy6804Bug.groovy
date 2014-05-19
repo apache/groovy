@@ -13,14 +13,10 @@ class Groovy6804Bug extends StaticTypeCheckingTestCase {
                 
                 void delete(V value) {}
             }
-            class Foo extends Base<String, Integer> {
-            }
+
+            class Foo extends Base<String, Integer> {}
+
             public class Class1 {
-            
-            public static void main(String[] args){
-              
-            }
-            
                 Class1() {
                     Foo foo = new Foo();
                     
