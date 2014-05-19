@@ -35,6 +35,9 @@ public class StandardPropertiesModuleFactory extends PropertiesModuleFactory {
         if (factoryName!=null) {
             try {
                 Class<? extends PropertiesModuleFactory> factoryClass = (Class<? extends PropertiesModuleFactory>) classLoader.loadClass(factoryName);
+                System.err.println("Factory class classloader           = " + dump(factoryClass.getClassLoader()));
+                System.err.println("PropertiesModuleFactory classloader = " + dump(PropertiesModuleFactory.class.getClassLoader()));
+                System.err.println("ExtensionModule classloader         = " + dump(ExtensionModule.class.getClassLoader()));
                 PropertiesModuleFactory delegate = factoryClass.newInstance();
                 return delegate.newModule(properties, classLoader);
             } catch (ClassNotFoundException e) {
@@ -46,5 +49,19 @@ public class StandardPropertiesModuleFactory extends PropertiesModuleFactory {
             }
         }
         return MetaInfExtensionModule.newModule(properties, classLoader);
+    }
+
+    private String dump(ClassLoader cl) {
+        StringBuilder sb = new StringBuilder();
+        dump(cl, sb, 0);
+        return sb.toString();
+    }
+    private void dump(ClassLoader cl, StringBuilder sb, int depth) {
+        for (int i=0;i<4*depth;i++) sb.append("|--");
+        sb.append(cl);
+        sb.append('\n');
+        if (cl.getParent()!=null) {
+            dump(cl.getParent(), sb, depth+1);
+        }
     }
 }
