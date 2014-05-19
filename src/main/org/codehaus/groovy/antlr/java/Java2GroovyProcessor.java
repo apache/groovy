@@ -63,7 +63,7 @@ public class Java2GroovyProcessor {
 
         // output AST in format suitable for opening in http://freemind.sourceforge.net
         // which is a really nice way of seeing the AST, folding nodes etc
-        if ("mindmap".equals(System.getProperty("antlr.ast"))) {
+        if ("mindmap".equals(System.getProperty("ANTLR.AST".toLowerCase()))) { // uppercase to hide from jarjar
             try {
                 PrintStream out = new PrintStream(new FileOutputStream(filename + ".mm"));
                 Visitor visitor = new MindMapPrinter(out, tokenNames);
