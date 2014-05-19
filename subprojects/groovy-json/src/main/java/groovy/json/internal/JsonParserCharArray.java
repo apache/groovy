@@ -77,6 +77,7 @@ public class JsonParserCharArray extends BaseJsonParser {
                 __index++;
                 return __currentChar = charArray[__index];
             } else {
+                // TODO move unicode 0 to separate file to avoid doc parsing issues
                 return '\u0000';
             }
         } catch (Exception ex) {

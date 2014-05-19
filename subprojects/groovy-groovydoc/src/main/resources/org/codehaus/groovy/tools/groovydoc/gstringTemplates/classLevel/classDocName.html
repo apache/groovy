@@ -29,7 +29,8 @@
         }
         if (t instanceof org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc) {
             if (t.fullPathName == 'def') return classDoc.getDocUrl("java.lang.Object def", b)
-            return "<a href='" + classDoc.relativeRootPath + t.fullPathName + ".html'>" + (b ? t.qualifiedTypeName() : t.name()) + "</a>" + (isArray ? "[]" : "")
+            if (!t.qualifiedTypeName().contains("<"))
+                return "<a href='" + classDoc.relativeRootPath + t.fullPathName + ".html'>" + (b ? t.qualifiedTypeName() : t.name()) + "</a>" + (isArray ? "[]" : "")
         }
         return classDoc.getDocUrl(t.qualifiedTypeName(), b) + (isArray ? "[]" : "")
     }
