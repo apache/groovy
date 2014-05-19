@@ -65,7 +65,7 @@ new Outer().test()
         }
 
         public int bar() {
-            (Integer) [1,2,3].collect { int x ->
+            (Integer) [1,2,3].collect { int it ->
                 foo(it)
             }.sum()
         }
