@@ -1063,7 +1063,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 // GROOVY-5568, the property may be defined by DGM
-                List<MethodNode> methods = findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), testClass, "get" + capName, ClassNode.EMPTY_ARRAY);
+                List<MethodNode> methods = findDGMMethodsByNameAndArguments(getTransformLoader(), testClass, "get" + capName, ClassNode.EMPTY_ARRAY);
                 if (!methods.isEmpty()) {
                     List<MethodNode> methodNodes = chooseBestMethod(testClass, methods, ClassNode.EMPTY_ARRAY);
                     if (methodNodes.size() == 1) {
@@ -1845,7 +1845,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (rtype != null && node.getAnnotations(TYPECHECKING_INFO_NODE).isEmpty()) {
             AnnotationNode anno = new AnnotationNode(TYPECHECKING_INFO_NODE);
             anno.setMember("version", CURRENT_SIGNATURE_PROTOCOL);
-            SignatureCodec codec = SignatureCodecFactory.getCodec(CURRENT_SIGNATURE_PROTOCOL_VERSION, getSourceUnit().getClassLoader());
+            SignatureCodec codec = SignatureCodecFactory.getCodec(CURRENT_SIGNATURE_PROTOCOL_VERSION, getTransformLoader());
             String genericsSignature = codec.encode(rtype);
             if (genericsSignature != null) {
                 ConstantExpression signature = new ConstantExpression(genericsSignature);
@@ -2096,9 +2096,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // initialize hints
         List<ClassNode[]> closureSignatures = null;
         try {
-            CompilationUnit compilationUnit = typeCheckingContext.getCompilationUnit();
-            @SuppressWarnings("resource")
-            GroovyClassLoader transformLoader = compilationUnit!=null?compilationUnit.getTransformLoader():getSourceUnit().getClassLoader();
+            ClassLoader transformLoader = getTransformLoader();
             @SuppressWarnings("unchecked")
             Class<? extends ClosureSignatureHint> hint = (Class<? extends ClosureSignatureHint>) transformLoader.loadClass(hintClass.getText());
             ClosureSignatureHint hintInstance = hint.newInstance();
@@ -2115,6 +2113,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             throw new GroovyBugError(e);
         }
         return closureSignatures;
+    }
+
+    private ClassLoader getTransformLoader() {
+        CompilationUnit compilationUnit = typeCheckingContext.getCompilationUnit();
+        return compilationUnit!=null?compilationUnit.getTransformLoader():getSourceUnit().getClassLoader();
     }
 
     private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression options) {
@@ -3498,7 +3501,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         // lookup in DGM methods too
-        findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), receiver, name, args, methods);
+        findDGMMethodsByNameAndArguments(getTransformLoader(), receiver, name, args, methods);
         List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
         if (!chosen.isEmpty()) return chosen;
 
