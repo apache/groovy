@@ -131,6 +131,7 @@ public class CharScanner {
         int startCurrentLineIndex = 0;
         int currentLineLength = 1;
 
+        // TODO move unicode 0 to separate file to avoid doc parsing issues
         char c = '\u0000';
         int index = 0;
 

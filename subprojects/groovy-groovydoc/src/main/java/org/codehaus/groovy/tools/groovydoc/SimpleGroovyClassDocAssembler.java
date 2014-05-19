@@ -653,8 +653,19 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private String getTypeNodeAsText(GroovySourceAST typeNode, String defaultText) {
-        if (typeNode != null && typeNode.getType() == TYPE && typeNode.getNumberOfChildren() > 0) {
+        // TODO refactor to retain richer type information rather than converting to String
+        if (typeNode == null) {
+            return defaultText;
+        }
+        if (typeNode.getType() == TYPE) {
             return getAsText(typeNode, defaultText);
+        } else if (typeNode.getType() == TYPE_ARGUMENT) {
+            return getTypeNodeAsText((GroovySourceAST) typeNode.getFirstChild(), defaultText);
+        } else if (typeNode.getType() == WILDCARD_TYPE) {
+            AST next = typeNode.getNextSibling();
+            if (next == null) return "?";
+            if (next.getType() == TYPE_UPPER_BOUNDS) return "? extends " + getTypeNodeAsText((GroovySourceAST) next.getFirstChild(), defaultText);
+            if (next.getType() == TYPE_LOWER_BOUNDS) return "? super " + getTypeNodeAsText((GroovySourceAST) next.getFirstChild(), defaultText);
         }
         return defaultText;
     }
@@ -665,6 +676,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private String getAsTextCurrent(GroovySourceAST node, String defaultText) {
+        if (node == null) return defaultText;
         switch (node.getType()) {
             // literals
             case LITERAL_boolean:
@@ -692,18 +704,46 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 return "java/lang/Object[]";
             // identifiers
             case IDENT:
-                return node.getText();
+                StringBuilder ident = new StringBuilder();
+                ident.append(node.getText());
+                GroovySourceAST identChild = (GroovySourceAST) node.getFirstChild();
+                getTypeArguments(identChild, ident, defaultText);
+                return ident.toString();
             case DOT:
-                List<String> result = new ArrayList<String>();
-                GroovySourceAST child = (GroovySourceAST) node.getFirstChild();
-                while (child != null) {
-                    if (child.getType() == IDENT) { result.add(child.getText()); }
-                    else if (child.getType() == DOT) { result.add(getAsTextCurrent(child, defaultText)); }
-                    child = (GroovySourceAST) child.getNextSibling();
+                StringBuilder dot = new StringBuilder();
+                GroovySourceAST dotChild = (GroovySourceAST) node.getFirstChild();
+                while (dotChild != null) {
+                    if (dotChild.getType() == IDENT) {
+                        if (dot.length() > 0) dot.append("/");
+                        dot.append(getAsTextCurrent(dotChild, defaultText));
+                    } else if (dotChild.getType() == DOT) {
+                        if (dot.length() > 0) dot.append("/");
+                        dot.append(getAsTextCurrent(dotChild, defaultText));
+                    } else if (dotChild.getType() == TYPE_ARGUMENTS) {
+                        getTypeArguments(dotChild, dot, defaultText);
+                    }
+                    dotChild = (GroovySourceAST) dotChild.getNextSibling();
                 }
-                return DefaultGroovyMethods.join(result, "/");
+                return dot.toString();
         }
         return defaultText;
+    }
+
+    private void getTypeArguments(GroovySourceAST child, StringBuilder result, String defaultText) {
+        // TODO support extends, super
+        if (child != null && child.getType() == TYPE_ARGUMENTS && child.getNumberOfChildren() > 0) {
+            result.append("<");
+            GroovySourceAST typeArgumentsChild = (GroovySourceAST) child.getFirstChild();
+            List<String> typeArgumentTypeParts = new ArrayList<String>();
+            while (typeArgumentsChild != null) {
+                if (typeArgumentsChild.getType() == TYPE_ARGUMENT && typeArgumentsChild.getNumberOfChildren() > 0) {
+                    typeArgumentTypeParts.add(getTypeNodeAsText((GroovySourceAST) typeArgumentsChild.getFirstChild(), defaultText));
+                }
+                typeArgumentsChild = (GroovySourceAST) typeArgumentsChild.getNextSibling();
+            }
+            result.append(DefaultGroovyMethods.join(typeArgumentTypeParts, ", "));
+            result.append(">");
+        }
     }
 
     private void addParametersTo(GroovySourceAST t, SimpleGroovyExecutableMemberDoc executableMemberDoc) {

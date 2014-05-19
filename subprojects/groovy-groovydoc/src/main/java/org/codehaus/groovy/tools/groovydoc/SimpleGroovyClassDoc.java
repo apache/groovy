@@ -416,10 +416,33 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         if (type == null)
             return type;
         type = type.trim();
-        if (isPrimitiveType(type)) return type;
+        if (isPrimitiveType(type) || type.equals("?")) return type;
         if (type.equals("def")) type = "java.lang.Object def";
+        // cater for explicit href in e.g. @see, TODO: push this earlier?
+        if (type.startsWith("<a href=")) return type;
 
         String label = null;
+        int lt = type.indexOf("<");
+        if (lt != -1) {
+            String outerType = type.substring(0, lt);
+            int gt = type.lastIndexOf(">");
+            if (gt != -1) {
+                if (gt > lt) {
+                    String typeArg = type.substring(lt + 1, gt);
+                    if (!typeArg.contains(",")) {
+                        String outerText = getDocUrl(outerType, full, links, relativePath, rootDoc, classDoc);
+                        if (typeArg.startsWith("? extends ")) {
+                            return outerText + "&lt;? extends " + getDocUrl(typeArg.substring(10), full, links, relativePath, rootDoc, classDoc) + "&gt;";
+                        }
+                        if (typeArg.startsWith("? super ")) {
+                            return outerText + "&lt;? super " + getDocUrl(typeArg.substring(8), full, links, relativePath, rootDoc, classDoc) + "&gt;";
+                        }
+                        return outerText + "&lt;" + getDocUrl(typeArg, full, links, relativePath, rootDoc, classDoc) + "&gt;";
+                    }
+                }
+                return type.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+            }
+        }
         Matcher matcher = REF_LABEL_REGEX.matcher(type);
         if (matcher.find()) {
             type = matcher.group(1);

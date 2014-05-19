@@ -769,6 +769,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
             //throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
 
+        // TODO GroovyDoc doesn't parse this file as our java.g doesn't handle this JDK7 syntax
         try ( DirectoryStream<Path> stream = Files.newDirectoryStream(self) ) {
             Iterator<Path> itr = stream.iterator();
             while( itr.hasNext() ) {
