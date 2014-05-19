@@ -3050,6 +3050,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     ClassNode curNode = receiver;
                     while (property == null && curNode != null) {
                         property = curNode.getProperty(pname);
+                        ClassNode svCur = curNode;
+                        while (property==null && svCur instanceof InnerClassNode && !svCur.isStaticClass()) {
+                            svCur = svCur.getOuterClass();
+                            property = svCur.getProperty(pname);
+                            if (property!=null) {
+                                receiver = svCur;
+                                break;
+                            }
+                        }
                         curNode = curNode.getSuperClass();
                     }
                     if (property != null) {

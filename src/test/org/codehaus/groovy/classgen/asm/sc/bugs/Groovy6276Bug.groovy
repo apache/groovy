@@ -37,7 +37,7 @@ class Groovy6276Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             assert outerField == 1            // #1
             assert outerMethod() == 2         // #2
             assert outerProperty == 3         // #3
-            //assert getOuterProperty() == 3    // #4
+            assert getOuterProperty() == 3    // #4
         }
     }
 
