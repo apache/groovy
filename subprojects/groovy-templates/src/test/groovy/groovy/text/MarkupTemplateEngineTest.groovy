@@ -46,9 +46,8 @@ html {
     }
 }
 '''
-        StringWriter rendered = new StringWriter()
-        template.make().writeTo(rendered)
-        assert rendered.toString() == '<html><body>It works!</body></html>'
+        String rendered = template.make()
+        assert rendered == '<html><body>It works!</body></html>'
     }
 
     void testSimpleTemplateWithModel() {

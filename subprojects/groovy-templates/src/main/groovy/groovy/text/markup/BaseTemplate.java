@@ -18,10 +18,12 @@ package groovy.text.markup;
 import groovy.lang.Closure;
 import groovy.lang.Writable;
 import groovy.text.Template;
+import org.codehaus.groovy.runtime.ExceptionUtils;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.util.Collections;
@@ -458,5 +460,15 @@ public abstract class BaseTemplate implements Writable {
             }
             return this;
         }
+    }
+
+    public String toString() {
+        StringWriter wrt = new StringWriter(512);
+        try {
+            writeTo(wrt);
+        } catch (IOException e) {
+            ExceptionUtils.sneakyThrow(e);
+        }
+        return wrt.toString();
     }
 }
