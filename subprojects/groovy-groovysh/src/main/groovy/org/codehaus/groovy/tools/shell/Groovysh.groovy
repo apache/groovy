@@ -25,6 +25,7 @@ import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.commands.LoadCommand
 import org.codehaus.groovy.tools.shell.commands.RecordCommand
 import org.codehaus.groovy.tools.shell.util.*
+import org.codehaus.groovy.tools.shell.util.ScriptVariableAnalyzer
 import org.fusesource.jansi.AnsiRenderer
 
 /**
@@ -45,6 +46,9 @@ class Groovysh extends Shell {
     
     final List<String> imports = []
 
+    public static final String COLLECTED_BOUND_VARS_MAP_VARNAME = "groovysh_collected_boundvars"
+
+    public static final String INTERPRETER_MODE_PREFERENCE_KEY = "interpreterMode"
     public static final String AUTOINDENT_PREFERENCE_KEY = "autoindent"
     public static final String COLORS_PREFERENCE_KEY = "colors"
     // after how many prefix characters we start displaying all metaclass methods
@@ -121,7 +125,7 @@ class Groovysh extends Shell {
 
         maybeRecordInput(line)
 
-        def result
+        Object result
         
         // First try normal command execution
         if (isExecutable(line)) {
@@ -154,10 +158,14 @@ class Groovysh extends Shell {
                     displayBuffer(current)
                 }
 
-                // Evaluate the current buffer w/imports and dummy statement
-                List buff = [importsSpec] + [ 'true' ] + current
+                if (isTypeorMethodDeclaration(current) || ! Boolean.valueOf(Preferences.get(INTERPRETER_MODE_PREFERENCE_KEY, 'false'))) {
+                    // Evaluate the current buffer w/imports and dummy statement
+                    List buff = [importsSpec] + [ 'true' ] + current
+                    setLastResult(result = interp.evaluate(buff))
+                } else {
+                    result = evaluateWithStoredBoundVars(current)
+                }
 
-                setLastResult(result = interp.evaluate(buff))
                 buffers.clearSelected()
                 break
 
@@ -176,6 +184,49 @@ class Groovysh extends Shell {
 
         return result
     }
+
+    /**
+     * return true if the buffer can be recognized as a type declaration statement
+     * @param strings
+     * @return
+     */
+    boolean isTypeorMethodDeclaration(List<String> buffer) {
+        boolean isTypeDef = buffer.join('') ==~ '^\\s*((?:public|protected|private|static|abstract|final)\\s+)*(?:class|enum|interface).*'
+        boolean isMethodDef = buffer.join('') ==~ '^\\s*((?:public|protected|private|static|abstract|final|synchronized)\\s+)*[a-zA-Z_.]+[a-zA-Z_.<>]+\\s+[a-zA-Z_]+\\(.*'
+        return isTypeDef || isMethodDef
+    }
+/*
+     * to simulate an interpreter mode, this method wraps the statements into a try/finally block that
+     * stores bound variables like unbound variables
+     */
+    private Object evaluateWithStoredBoundVars(ArrayList<String> current) {
+        Object result
+        String variableBlocks = ''
+        // To make groovysh behave more like an interpreter, we need to retrive all bound
+        // vars at the end of script execution, and then update them into the groovysh Binding context.
+        Set<String> boundVars = ScriptVariableAnalyzer.getBoundVars(current.join(Parser.NEWLINE))
+        variableBlocks += "$COLLECTED_BOUND_VARS_MAP_VARNAME = new HashMap();"
+        if (boundVars) {
+            boundVars.each({ String varname ->
+                // bound vars can be in global or some local scope.
+                // We discard locally scoped vars by ignoring MissingPropertyException
+                variableBlocks += """
+try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
+} catch (MissingPropertyException e){}"""
+            })
+        }
+
+        // Evaluate the current buffer w/imports and dummy statement
+        List buff = imports + ['try {'] + ['true'] + current + ['} finally {' + variableBlocks + '}']
+
+        setLastResult(result = interp.evaluate(buff))
+
+        Map<String, Object> boundVarValues = interp.context.getVariable(COLLECTED_BOUND_VARS_MAP_VARNAME)
+        boundVarValues.each({ String name, Object value -> interp.context.setVariable(name, value) })
+        return result
+    }
+
+
 
     protected Object executeCommand(final String line) {
         return super.execute(line)

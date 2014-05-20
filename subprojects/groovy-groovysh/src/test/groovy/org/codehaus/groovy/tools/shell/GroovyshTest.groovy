@@ -21,6 +21,7 @@ import org.codehaus.groovy.tools.shell.completion.ReflectionCompletionCandidate
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 import org.codehaus.groovy.tools.shell.completion.TokenUtilTest
 import org.codehaus.groovy.tools.shell.util.JAnsiHelper
+import org.codehaus.groovy.tools.shell.util.Preferences
 
 class GroovyshTest extends GroovyTestCase {
 
@@ -42,6 +43,22 @@ class GroovyshTest extends GroovyTestCase {
         assert mockOut.toString().length() > 0
         assert " 3\n" == mockOut.toString().normalize()[-3..-1]
     }
+
+    void testClassDef() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.execute("class Foo {}")
+        assert mockOut.toString().length() > 0
+        assert " true\n" == mockOut.toString().normalize()[-6..-1]
+    }
+
+    void testmethodDef() {
+        Groovysh groovysh = new Groovysh(testio)
+        groovysh.execute("int foo() {42}")
+        assert mockOut.toString().length() > 0
+        assert " true\n" == mockOut.toString().normalize()[-6..-1]
+    }
+
+
 
     void testIncompleteExpr() {
         Groovysh groovysh = new Groovysh(testio)
@@ -246,6 +263,49 @@ class GroovyshTest extends GroovyTestCase {
         groovyCode.deleteOnExit()
         return groovyCode
     }
+}
+
+/**
+ * Runs all tests of groovyshTests with interpreter mode enabled
+ */
+class GroovyshInterpreterModeTest extends GroovyshTest {
+
+    @Override
+    void setUp() {
+        super.setUp()
+        Preferences.put(Groovysh.INTERPRETER_MODE_PREFERENCE_KEY, 'true')
+    }
+
+    @Override
+    void tearDown() {
+        super.tearDown()
+        Preferences.put(Groovysh.INTERPRETER_MODE_PREFERENCE_KEY, 'false')
+    }
+
+    void testBoundVar() {
+        Groovysh groovysh = new Groovysh(testio)
+        // default is false
+
+        groovysh.execute("int x = 3")
+        assert mockOut.toString().length() > 0
+        assert " 3\n" == mockOut.toString().normalize()[-3..-1]
+        groovysh.execute("x")
+        assert mockOut.toString().length() > 0
+        assert " 3\n" == mockOut.toString().normalize()[-3..-1]
+    }
+
+    void testBoundVarmultiple() {
+        Groovysh groovysh = new Groovysh(testio)
+        // default is false
+        Preferences.put(Groovysh.INTERPRETER_MODE_PREFERENCE_KEY, 'true')
+        groovysh.execute("int x, y, z")
+        assert mockOut.toString().length() > 0
+        assert " 0\n" == mockOut.toString().normalize()[-3..-1]
+        groovysh.execute("y")
+        assert mockOut.toString().length() > 0
+        assert " 0\n" == mockOut.toString().normalize()[-3..-1]
+    }
+
 }
 
 
