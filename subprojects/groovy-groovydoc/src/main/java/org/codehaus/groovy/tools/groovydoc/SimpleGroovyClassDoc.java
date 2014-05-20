@@ -64,6 +64,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     private String fullPathName;
     private boolean isgroovy;
     private GroovyRootDoc savedRootDoc = null;
+    private String nameWithTypeArgs;
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, Map<String, String> aliases, String name, List<LinkArgument> links) {
         super(name);
@@ -416,7 +417,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         if (type == null)
             return type;
         type = type.trim();
-        if (isPrimitiveType(type) || type.equals("?")) return type;
+        if (isPrimitiveType(type) || type.length() == 1) return type;
         if (type.equals("def")) type = "java.lang.Object def";
         // cater for explicit href in e.g. @see, TODO: push this earlier?
         if (type.startsWith("<a href=")) return type;
@@ -529,9 +530,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             if (componentClass != null) return new ArrayClassDocWrapper(componentClass);
             return null;
         }
-        if (name.equals("T") || name.equals("U") || name.equals("K") || name.equals("V") || name.equals("G")) {
-            name = "java/lang/Object";
-        }
+//        if (name.equals("T") || name.equals("U") || name.equals("K") || name.equals("V") || name.equals("G")) {
+//            name = "java/lang/Object";
+//        }
         GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(name);
         if (doc != null) return doc;
         int slashIndex = name.lastIndexOf("/");
@@ -914,7 +915,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     }
 
     public static String encodeAngleBrackets(String text) {
-        return text.replace("<", "&lt;").replace(">", "&gt;");
+        return text == null ? null : text.replace("<", "&lt;").replace(">", "&gt;");
     }
 
     public static String encodeSpecialSymbols(String text) {
@@ -925,4 +926,11 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         return text.replaceAll("&at;", "@");
     }
 
+    public void setNameWithTypeArgs(String nameWithTypeArgs) {
+        this.nameWithTypeArgs = nameWithTypeArgs;
+    }
+
+    public String getNameWithTypeArgs() {
+        return nameWithTypeArgs;
+    }
 }

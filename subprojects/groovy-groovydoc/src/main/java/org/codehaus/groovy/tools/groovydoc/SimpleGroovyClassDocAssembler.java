@@ -134,6 +134,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             current.setRawCommentText(getJavaDocCommentsBeforeNode(t));
             current.setFullPathName(packagePath + FS + current.name());
             current.setTokenType(t.getType());
+            current.setNameWithTypeArgs(getIdentPlusTypeArgsFor(t));
             processAnnotations(t, current);
             processModifiers(t, current);
             classDocs.put(current.getFullPathName(), current);
@@ -668,8 +669,11 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 next = typeNode.getFirstChild();
             }
             if (next == null) return "?";
-            if (next.getType() == TYPE_UPPER_BOUNDS) return "? extends " + getTypeNodeAsText((GroovySourceAST) next.getFirstChild(), defaultText);
-            if (next.getType() == TYPE_LOWER_BOUNDS) return "? super " + getTypeNodeAsText((GroovySourceAST) next.getFirstChild(), defaultText);
+            String boundType = getTypeNodeAsText((GroovySourceAST) next.getFirstChild(), defaultText);
+            if (next.getType() == TYPE_UPPER_BOUNDS) return "? extends " + boundType;
+            if (next.getType() == TYPE_LOWER_BOUNDS) return "? super " + boundType;
+        } else if (typeNode.getType() == IDENT) {
+            return getAsTextCurrent(typeNode, defaultText);
         }
         return defaultText;
     }
@@ -734,18 +738,33 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private void getTypeArguments(GroovySourceAST child, StringBuilder result, String defaultText) {
-        // TODO support extends, super
         if (child != null && child.getType() == TYPE_ARGUMENTS && child.getNumberOfChildren() > 0) {
             result.append("<");
-            GroovySourceAST typeArgumentsChild = (GroovySourceAST) child.getFirstChild();
-            List<String> typeArgumentTypeParts = new ArrayList<String>();
-            while (typeArgumentsChild != null) {
-                if (typeArgumentsChild.getType() == TYPE_ARGUMENT && typeArgumentsChild.getNumberOfChildren() > 0) {
-                    typeArgumentTypeParts.add(getTypeNodeAsText((GroovySourceAST) typeArgumentsChild.getFirstChild(), defaultText));
+            GroovySourceAST typeArgumentsNext = (GroovySourceAST) child.getFirstChild();
+            List<String> typeArgumentParts = new ArrayList<String>();
+            while (typeArgumentsNext != null) {
+                if (typeArgumentsNext.getType() == TYPE_ARGUMENT && typeArgumentsNext.getNumberOfChildren() > 0) {
+                    typeArgumentParts.add(getTypeNodeAsText((GroovySourceAST) typeArgumentsNext.getFirstChild(), defaultText));
                 }
-                typeArgumentsChild = (GroovySourceAST) typeArgumentsChild.getNextSibling();
+                typeArgumentsNext = (GroovySourceAST) typeArgumentsNext.getNextSibling();
             }
-            result.append(DefaultGroovyMethods.join(typeArgumentTypeParts, ", "));
+            result.append(DefaultGroovyMethods.join(typeArgumentParts, ", "));
+            result.append(">");
+        }
+    }
+
+    private void getTypeParameters(GroovySourceAST child, StringBuilder result, String defaultText) {
+        if (child != null && child.getType() == TYPE_PARAMETERS && child.getNumberOfChildren() > 0) {
+            result.append("<");
+            GroovySourceAST typeParametersNext = (GroovySourceAST) child.getFirstChild();
+            List<String> typeParameterParts = new ArrayList<String>();
+            while (typeParametersNext != null) {
+                if (typeParametersNext.getType() == TYPE_PARAMETER && typeParametersNext.getNumberOfChildren() > 0) {
+                    typeParameterParts.add(getTypeNodeAsText((GroovySourceAST) typeParametersNext.getFirstChild(), defaultText));
+                }
+                typeParametersNext = (GroovySourceAST) typeParametersNext.getNextSibling();
+            }
+            result.append(DefaultGroovyMethods.join(typeParameterParts, ", "));
             result.append(">");
         }
     }
@@ -845,5 +864,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     private String getIdentFor(GroovySourceAST gpn) {
         return gpn.childOfType(IDENT).getText();
+    }
+
+    private String getIdentPlusTypeArgsFor(GroovySourceAST gpn) {
+        GroovySourceAST groovySourceAST = gpn.childOfType(IDENT);
+        StringBuilder ident = new StringBuilder();
+        ident.append(groovySourceAST.getText());
+        GroovySourceAST typeParams = (GroovySourceAST) groovySourceAST.getNextSibling();
+        getTypeParameters(typeParams, ident, "def");
+        return ident.toString();
     }
 }
