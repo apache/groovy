@@ -663,6 +663,10 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             return getTypeNodeAsText((GroovySourceAST) typeNode.getFirstChild(), defaultText);
         } else if (typeNode.getType() == WILDCARD_TYPE) {
             AST next = typeNode.getNextSibling();
+            if (next == null && typeNode.getFirstChild() != null) {
+                // Java2Groovy produces a slightly different tree structure (TODO fix converter or java.g instead?)
+                next = typeNode.getFirstChild();
+            }
             if (next == null) return "?";
             if (next.getType() == TYPE_UPPER_BOUNDS) return "? extends " + getTypeNodeAsText((GroovySourceAST) next.getFirstChild(), defaultText);
             if (next.getType() == TYPE_LOWER_BOUNDS) return "? super " + getTypeNodeAsText((GroovySourceAST) next.getFirstChild(), defaultText);
