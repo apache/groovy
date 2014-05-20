@@ -29,7 +29,7 @@
         }
         if (t instanceof org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc) {
             if (t.fullPathName == 'def') return classDoc.getDocUrl("java.lang.Object def", b)
-            if (!t.qualifiedTypeName().contains("<"))
+            if (!t.qualifiedTypeName().contains("<") && t.name().size() > 1)
                 return "<a href='" + classDoc.relativeRootPath + t.fullPathName + ".html'>" + (b ? t.qualifiedTypeName() : t.name()) + "</a>" + (isArray ? "[]" : "")
         }
         return classDoc.getDocUrl(t.qualifiedTypeName(), b) + (isArray ? "[]" : "")
@@ -157,7 +157,7 @@ if (location.href.indexOf('is-external=true') == -1) {
 <div class="header">
 <%
 def pkg = classDoc.containingPackage().nameWithDots()
-String classDesc = "${classDoc.isGroovy() ? "[Groovy]" : "[Java]"} ${classDoc.typeDescription} ${classDoc.name()}"
+String classDesc = "${classDoc.isGroovy() ? "[Groovy]" : "[Java]"} ${classDoc.typeDescription} ${org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(classDoc.getNameWithTypeArgs())}"
 if (pkg != "DefaultPackage") {
 %>
     <div class="subTitle">Package: <strong>${pkg}</strong></div>
