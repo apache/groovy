@@ -59,7 +59,7 @@ include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=custom_env
 ----
 <1> Once the new block is registered `ConfigSlurper` can parse it.
 
-For Java integration purposes the `toProperies` method can be used to convert the `ConfigObject` to a `java.util.Properties`
+For Java integration purposes the `toProperties` method can be used to convert the `ConfigObject` to a `java.util.Properties`
 object that might be stored to a `*.properties` text file. Be aware though that the configuration values are converted to
 `String` instances during adding them to the newly created `Properties` instance.
 
