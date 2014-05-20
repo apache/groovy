@@ -72,9 +72,9 @@ letters.each { letter ->
             def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
             def packageName = classDoc.qualifiedTypeName() - ('.' + classDoc.name())
             def desc = classDoc.typeDescription + ' in '
-            entries[classLower] = """
+            entries.put(classLower, """
 <dt><span class="strong"><a href="${classDoc.fullPathName}.html" title="${desc + packageOrInnerName}">${classDoc.name()}</a></span> - ${desc}<a href="./${packageName.replace('.', '/')}/package-summary.html">${packageName}</a>
-</dt><dd><div class="block">${classDoc.firstSentenceCommentText()}</div></dd>"""
+</dt><dd><div class="block">${classDoc.firstSentenceCommentText()}</div></dd>""")
         }
         elementTypes.each { k, v ->
             def elements = v(classDoc)
