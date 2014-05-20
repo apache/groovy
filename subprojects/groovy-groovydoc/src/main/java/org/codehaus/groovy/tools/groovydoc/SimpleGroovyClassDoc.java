@@ -420,6 +420,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         if (type.equals("def")) type = "java.lang.Object def";
         // cater for explicit href in e.g. @see, TODO: push this earlier?
         if (type.startsWith("<a href=")) return type;
+        if (type.startsWith("? extends ")) return "? extends " + getDocUrl(type.substring(10), full, links, relativePath, rootDoc, classDoc);
+        if (type.startsWith("? super ")) return "? super " + getDocUrl(type.substring(8), full, links, relativePath, rootDoc, classDoc);
 
         String label = null;
         int lt = type.indexOf("<");
@@ -428,17 +430,32 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             int gt = type.lastIndexOf(">");
             if (gt != -1) {
                 if (gt > lt) {
-                    String typeArg = type.substring(lt + 1, gt);
-                    if (!typeArg.contains(",")) {
-                        String outerText = getDocUrl(outerType, full, links, relativePath, rootDoc, classDoc);
-                        if (typeArg.startsWith("? extends ")) {
-                            return outerText + "&lt;? extends " + getDocUrl(typeArg.substring(10), full, links, relativePath, rootDoc, classDoc) + "&gt;";
+                    String allTypeArgs = type.substring(lt + 1, gt);
+                    List<String> typeArgs = new ArrayList<String>();
+                    int nested = 0;
+                    StringBuilder sb = new StringBuilder();
+                    for (char ch : allTypeArgs.toCharArray()) {
+                        if (ch == '<') nested++;
+                        else if (ch == '>') nested--;
+                        else if (ch == ',' && nested == 0) {
+                            typeArgs.add(sb.toString().trim());
+                            sb = new StringBuilder();
+                            continue;
                         }
-                        if (typeArg.startsWith("? super ")) {
-                            return outerText + "&lt;? super " + getDocUrl(typeArg.substring(8), full, links, relativePath, rootDoc, classDoc) + "&gt;";
-                        }
-                        return outerText + "&lt;" + getDocUrl(typeArg, full, links, relativePath, rootDoc, classDoc) + "&gt;";
+                        sb.append(ch);
                     }
+                    if (sb.length() > 0) {
+                        typeArgs.add(sb.toString().trim());
+                    }
+                    List<String> typeUrls = new ArrayList<String>();
+                    for (String typeArg : typeArgs) {
+                        typeUrls.add(getDocUrl(typeArg, full, links, relativePath, rootDoc, classDoc));
+                    }
+                    sb = new StringBuilder(getDocUrl(outerType, full, links, relativePath, rootDoc, classDoc));
+                    sb.append("&lt;");
+                    sb.append(DefaultGroovyMethods.join(typeUrls, ", "));
+                    sb.append("&gt;");
+                    return sb.toString();
                 }
                 return type.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
             }
