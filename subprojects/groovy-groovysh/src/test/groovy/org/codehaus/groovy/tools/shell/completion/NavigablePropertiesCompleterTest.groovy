@@ -43,7 +43,6 @@ class NavigablePropertiesCompleterTest extends GroovyTestCase {
                 'a\nb' : 'new line',
                 'a\tb' : 'tab',
                 'G$\\"tring' : 'string',
-                '!@#$%^&*()_+={}[]~`<>,./?:;|_' : 'operators',
                 '_ !@#$%^&*()_+={}[]~`<>,./?:;|' : 'operators',
                 'snowman ☃' : 'Olaf',
                 'Japan ぁ' : '77',
