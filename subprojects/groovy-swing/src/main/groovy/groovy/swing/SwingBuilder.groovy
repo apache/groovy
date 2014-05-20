@@ -314,7 +314,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
 
     /**
      * Utility method to run a closure in EDT,
-     * using <code>SwingUtilities.invokeAndWait</cod>.
+     * using <code>SwingUtilities.invokeAndWait</code>.
      *
      * @param c this closure is run in the EDT
      */
@@ -346,7 +346,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
 
     /**
      * Utility method to run a closure in EDT,
-     * using <code>SwingUtilities.invokeLater</cod>.
+     * using <code>SwingUtilities.invokeLater</code>.
      *
      * @param c this closure is run in the EDT
      */
