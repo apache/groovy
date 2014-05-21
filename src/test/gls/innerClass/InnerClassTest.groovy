@@ -458,7 +458,41 @@ import org.codehaus.groovy.classgen.Verifier
         assert a.x == 123
         '''
     }
-} 
+
+    // GROOVY-6810
+    void testThisReferenceForAICInOpenBlock() {
+        assertScript '''
+            import java.security.AccessController
+            import java.security.PrivilegedAction
+
+            static void injectVariables(final def instance, def variables) {
+                instance.class.declaredFields.each { field ->
+                    if (variables[field.name]) {
+                        AccessController.doPrivileged(new PrivilegedAction() {
+                            @Override
+                            public Object run() {
+                                boolean wasAccessible = field.isAccessible()
+                                try {
+                                    field.accessible = true
+                                    field.set(instance, variables[field.name])
+                                    return null; // return nothing...
+                                } catch (IllegalArgumentException | IllegalAccessException ex) {
+                                    throw new IllegalStateException("Cannot set field: " + field, ex)
+                                } finally {
+                                    field.accessible = wasAccessible
+                                }
+                            }
+                        })
+                    }
+                }
+            }
+
+            class Test {def p}
+            def t = new Test() 
+            injectVariables(t, ['p': 'q'])
+        '''
+    }
+}
 
 class MyOuterClass4028 {
     def foo() {
