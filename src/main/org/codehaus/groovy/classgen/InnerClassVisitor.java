@@ -145,8 +145,6 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         VariableScope scope = innerClass.getVariableScope();
         if (scope == null) return;
 
-
-        boolean isStatic = scope.isInStaticContext();
         // expressions = constructor call arguments
         List<Expression> expressions = ((TupleExpression) call.getArguments()).getExpressions();
         // block = init code for the constructor we produce
@@ -182,7 +180,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         // this is saved in a field named this$0
         pCount = 0;
         expressions.add(pCount, VariableExpression.THIS_EXPRESSION);
-        ClassNode outerClassType = getClassNode(innerClass.getOuterClass(), isStatic).getPlainNodeReference();
+        ClassNode outerClassType = getClassNode(innerClass.getOuterClass(), isStaticThis(innerClass,scope)).getPlainNodeReference();
         Parameter thisParameter = new Parameter(outerClassType, "p" + pCount);
         parameters.add(pCount, thisParameter);
 
@@ -210,6 +208,14 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         }
 
         innerClass.addConstructor(ACC_SYNTHETIC, parameters.toArray(new Parameter[0]), ClassNode.EMPTY_ARRAY, block);
+    }
+
+    private boolean isStaticThis(InnerClassNode innerClass, VariableScope scope) {
+        boolean ret = scope.isInStaticContext() || innerClass.isStaticClass();
+        if (innerClass.getEnclosingMethod()!=null) {
+            ret = ret || innerClass.getEnclosingMethod().isStatic();
+        }
+        return ret;
     }
 
     // this is the counterpart of addThisReference(). To non-static inner classes, outer this should be
