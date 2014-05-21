@@ -1165,5 +1165,17 @@ assert it.next() == 1G
     assert text(String) == 'java.lang.String'
     '''
     }
+
+    // GROOVY-6342
+    void testShouldNotThrowNPEIfElvisOperatorIsUsedInsideTernary() {
+        assertScript '''class Inner {
+    int somestuff
+}
+Inner inner = null
+int someInt = inner?.somestuff ?: 0
+println someInt
+
+'''
+    }
 }
 
