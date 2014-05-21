@@ -18,7 +18,9 @@ package groovy.inspect.swingui
 
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template
+import groovy.transform.ThreadInterrupt
 import org.codehaus.groovy.classgen.asm.BytecodeHelper
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
 import java.util.concurrent.atomic.AtomicBoolean
 import org.codehaus.groovy.GroovyBugError
