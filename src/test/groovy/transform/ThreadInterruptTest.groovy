@@ -1,7 +1,10 @@
 package groovy.transform
 
 import groovy.mock.interceptor.StubFor
+import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
+
+import java.lang.reflect.Modifier
 
 /**
  * Test for @ThreadInterrupt.
@@ -9,8 +12,31 @@ import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
  * @author Hamlet D'Arcy
  */
 class ThreadInterruptTest extends GroovyTestCase {
+    private Map<String,MethodNode> oldValues = [:]
     @Override protected void tearDown() {
         Thread.metaClass = null
+        ['CURRENTTHREAD_METHOD', 'ISINTERRUPTED_METHOD'].each {
+            def ov = ThreadInterruptibleASTTransformation.getDeclaredField(it)
+            def modifiersField = ov.class.getDeclaredField("modifiers")
+            modifiersField.accessible = true
+            modifiersField.setInt(ov, ov.modifiers & ~Modifier.FINAL);
+            ov.accessible = true
+            ov.set(ThreadInterruptibleASTTransformation, oldValues[it])
+        }
+    }
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp()
+        ['CURRENTTHREAD_METHOD', 'ISINTERRUPTED_METHOD'].each {
+            def ov = ThreadInterruptibleASTTransformation.getDeclaredField(it)
+            def modifiersField = ov.class.getDeclaredField("modifiers")
+            modifiersField.accessible = true
+            modifiersField.setInt(ov, ov.modifiers & ~Modifier.FINAL);
+            ov.accessible = true
+            oldValues[it] = ov.get(ThreadInterruptibleASTTransformation)
+            ov.set(ThreadInterruptibleASTTransformation, null)
+        }
     }
 
     void testDefaultParameters_Method() {
