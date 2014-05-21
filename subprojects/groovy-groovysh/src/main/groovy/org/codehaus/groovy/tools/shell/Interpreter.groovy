@@ -74,7 +74,7 @@ class Interpreter
             // Keep only the methods that have been defined in the script
             type.declaredMethods.each { Method m ->
                 if (!(m.name in [ 'main', 'run' ] || m.name.startsWith('super$') || m.name.startsWith('class$') || m.name.startsWith('$'))) {
-                    log.debug("Saving method definition: $m")
+                    log.debug("Saving method definition: $m.name")
 
                     context["${m.name}"] = new MethodClosure(type.newInstance(), m.name)
                 }
