@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 
 /**
  * Handles generation of code for the {@link Builder} annotation.
@@ -188,17 +189,18 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             return null;
         }
 
-        if (!BuilderStrategy.class.isAssignableFrom(strategyClass.getTypeClass())) {
-            addError("The builderStrategy class '" + strategyClass.getName() + "' on " + MY_TYPE_NAME + " is not a builderStrategy", anno);
-            return null;
-        }
-
         String className = strategyClass.getName();
         try {
             Object instance = loader.loadClass(className).newInstance();
             if (instance == null) {
                 addError("Can't load builderStrategy '" + className + "'", anno);
+                return null;
             }
+            if (!BuilderStrategy.class.isAssignableFrom(instance.getClass())) {
+                addError("The builderStrategy class '" + strategyClass.getName() + "' on " + MY_TYPE_NAME + " is not a builderStrategy", anno);
+                return null;
+            }
+
             return (BuilderStrategy) instance;
         } catch (Exception e) {
             addError("Can't load builderStrategy '" + className + "' " + e, anno);
