@@ -144,10 +144,9 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     final ClassNode[] ifaces = owner.getInterfaces();
                     final ClassNode[] newIfaces = new ClassNode[ifaces.length + 1];
                     for (int i = 0; i < ifaces.length; i++) {
-                        final ClassNode classNode = ifaces[i];
-                        newIfaces[i] = correctToGenericsSpecRecurse(genericsSpec, classNode);
+                        newIfaces[i] = correctToGenericsSpecRecurse(genericsSpec, ifaces[i]);
                     }
-                    newIfaces[ifaces.length] = iface;
+                    newIfaces[ifaces.length] = correctToGenericsSpecRecurse(genericsSpec, iface);
                     owner.setInterfaces(newIfaces);
                 }
             }
