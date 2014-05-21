@@ -49,6 +49,7 @@ class NavigablePropertiesCompleterTest extends GroovyTestCase {
                 'a☃$4ä_' : 'no hypehns',
                 '$123' : 'digits',
                 '123$' : 'digits',
+                '\u0002foo' : 'bar'
         ]
 
         Set candidates = [] as Set
