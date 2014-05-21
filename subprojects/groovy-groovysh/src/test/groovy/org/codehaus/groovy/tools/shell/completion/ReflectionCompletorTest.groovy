@@ -70,7 +70,6 @@ class ReflectionCompletorTest extends GroovyTestCase {
         result = ReflectionCompletor.getPublicFieldsAndMethods(['class': '42', 'club': 53], "").collect({it.value})
         assert 'clear()' in result
         assert 'containsKey(' in result
-        assert 'clear()' in result
         assert 'class' in result
         assert 'club' in result
         result = ReflectionCompletor.getPublicFieldsAndMethods(['id': '42'], "size").collect({it.value})
