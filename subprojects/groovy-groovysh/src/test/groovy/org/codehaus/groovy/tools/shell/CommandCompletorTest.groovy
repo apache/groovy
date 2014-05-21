@@ -53,6 +53,7 @@ extends CompletorTestSupport {
     void testSet() {
         CommandsMultiCompleter completor = new CommandsMultiCompleter()
         def candidates = []
+        groovyshMocker.demand.getINTERPRETER_MODE_PREFERENCE_KEY(1){"interpreterMode"}
         groovyshMocker.demand.getAUTOINDENT_PREFERENCE_KEY(1){'autoindent'}
         groovyshMocker.demand.getCOLORS_PREFERENCE_KEY(1){'colors'}
         groovyshMocker.demand.getMETACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY(1){'meta-completion-prefix-length'}
@@ -116,6 +117,7 @@ extends CompletorTestSupport {
     void testSaveSetShow() {
         CommandsMultiCompleter completor = new CommandsMultiCompleter()
         def candidates = []
+        groovyshMocker.demand.getINTERPRETER_MODE_PREFERENCE_KEY(1){"interpreterMode"}
         groovyshMocker.demand.getAUTOINDENT_PREFERENCE_KEY(1){'autoindent'}
         groovyshMocker.demand.getCOLORS_PREFERENCE_KEY(1){'colors'}
         groovyshMocker.demand.getMETACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY(1){'meta-completion-prefix-length'}
