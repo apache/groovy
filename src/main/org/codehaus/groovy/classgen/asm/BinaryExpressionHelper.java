@@ -791,6 +791,9 @@ public class BinaryExpressionHelper {
         int mark = operandStack.getStackLength();
         boolPart.visit(controller.getAcg());
         operandStack.dup();
+        if (ClassHelper.isPrimitiveType(truePartType) && !ClassHelper.isPrimitiveType(operandStack.getTopOperand())) {
+            truePartType = ClassHelper.getWrapper(truePartType);
+        }
         int retValueId = compileStack.defineTemporaryVariable("$t", truePartType, true);
         operandStack.castToBool(mark,true);
         
