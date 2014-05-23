@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,9 @@ import java.util.Set;
 
 /**
  * Represents an extent of objects.
- * It's used in the oneRow method to be able to access the result
- * of a SQL query by the name of the column, or by the column number.
+ * It's primarily used by methods of Groovy's {@link groovy.sql.Sql} class to return {@code ResultSet} data in map
+ * form; allowing access to the result of a SQL query by the name of the column, or by the column number.
  *
- * @version $Revision$
  * @author Jean-Louis Berliet
  */
 public class GroovyRowResult extends GroovyObjectSupport implements Map {
@@ -40,7 +39,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
     }
 
     /**
-     * Retrieve the value of the property by its name
+     * Retrieve the value of the property by its (case-insensitive) name.
      *
      * @param property is the name of the property to look at
      * @return the value of the property
@@ -116,6 +115,12 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
         result.clear();
     }
 
+    /**
+     * Checks if the result contains (ignoring case) the given key.
+     *
+     * @param key the property name to look for
+     * @return true if the result contains this property name
+     */
     public boolean containsKey(Object key) {
         return lookupKeyIgnoringCase(key) != null;
     }
@@ -132,6 +137,12 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
         return result.equals(o);
     }
 
+    /**
+     * Find the property value for the given name (ignoring case).
+     *
+     * @param property the name of the property to get
+     * @return the property value
+     */
     public Object get(Object property) {
         if (property instanceof String)
             return getProperty((String)property);
@@ -150,14 +161,35 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
         return result.keySet();
     }
 
+    /**
+     * Associates the specified value with the specified property name in this result.
+     *
+     * @param key the property name for the result
+     * @param value the property value for the result
+     * @return the previous value associated with <tt>key</tt>, or
+     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     *         (A <tt>null</tt> return can also indicate that the map
+     *         previously associated <tt>null</tt> with <tt>key</tt>.)
+     */
     @SuppressWarnings("unchecked")
     public Object put(Object key, Object value) {
-        return result.put(key, value);
+        // avoid different case keys being added by explicit remove
+        Object orig = remove(key);
+        result.put(key, value);
+        return orig;
     }
 
+    /**
+     * Copies all of the mappings from the specified map to this result.
+     *
+     * @param t the mappings to store in this result
+     */
     @SuppressWarnings("unchecked")
     public void putAll(Map t) {
-        result.putAll(t);
+        // don't delegate to putAll since we want case handling from put
+        for (Entry next : (Set<Entry>) t.entrySet()) {
+            put(next.getKey(), next.getValue());
+        }
     }
 
     public Object remove(Object rawKey) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,4 +119,13 @@ class GroovyRowResultTest extends GroovyTestCase {
         return row
     }
 
+    void testCaseInsensitivePut() {
+        def row = new GroovyRowResult(SOMEKEY: "v1")
+        assert row.someKEY == 'v1'
+        row.somekey = "v2"
+        assert row.someKEY == 'v2'
+        assert row.put('sOmEkEy', 'v3') == 'v2'
+        assert row.someKEY == 'v3'
+        assert row.size() == 1
+    }
 }
