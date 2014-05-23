@@ -181,6 +181,9 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
 
     /**
      * Copies all of the mappings from the specified map to this result.
+     * If the map contains different case versions of the same (case-insensitive) key
+     * only the last (according to the natural ordering of the supplied map) will remain
+     * after the {@code putAll} method has returned.
      *
      * @param t the mappings to store in this result
      */
