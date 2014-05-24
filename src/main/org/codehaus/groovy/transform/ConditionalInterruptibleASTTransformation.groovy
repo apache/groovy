@@ -18,6 +18,7 @@ package org.codehaus.groovy.transform
 import groovy.transform.ConditionalInterrupt
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
+import org.codehaus.groovy.ast.tools.ClosureUtils
 import org.codehaus.groovy.control.CompilePhase
 
 /**
@@ -120,31 +121,11 @@ public class ConditionalInterruptibleASTTransformation extends AbstractInterrupt
    * @param expression a closure
    * @return the source the closure was created from
    */
-  // TODO should this be moved to ClosureExpression? It also appears in AstBuilderTransformation
   private String convertClosureToSource(ClosureExpression expression) {
-    if (expression == null) throw new IllegalArgumentException('Null: expression')
-
-    def lineRange = (expression.lineNumber..expression.lastLineNumber)
-
-    def source = lineRange.collect {
-      def line = source.source.getLine(it, null)
-      if (line == null) {
-        return "Error calculating source code for expression. Trying to read line $it from ${source.source.class}"
-      }
-      if (it == expression.lastLineNumber) {
-        line = line.substring(0, expression.lastColumnNumber - 1)
-      }
-      if (it == expression.lineNumber) {
-        line = line.substring(expression.columnNumber - 1)
-      }
-      return line
-    }?.join('\n')?.trim()   //restoring line breaks is important b/c of lack of semicolons
-
-    if (!source.startsWith('{')) {
-      return 'Error converting ClosureExpression into source code. ' +
-          "Closures must start with {. Found: $source"
+    try {
+        return ClosureUtils.convertClosureToSource(this.source.source, expression);
+    } catch(Exception e) {
+        return e.message
     }
-
-    return source
   }
 }
