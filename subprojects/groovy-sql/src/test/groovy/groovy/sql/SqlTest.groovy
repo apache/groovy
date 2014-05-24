@@ -109,6 +109,13 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
+    void testExecuteWithProcessResultsClosure() {
+        sql.execute("insert into LOG (value) values ('log entry')") {
+            isResultSet, result ->
+                assert isResultSet == false && result == 1
+        }
+    }
+
     void testMetaData() {
         sql.eachRow('select * from PERSON') {
             assert it[0] != null

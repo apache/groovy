@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,8 @@ import javax.sql.DataSource;
 
 import groovy.lang.Tuple;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.SqlGroovyMethods;
+
+import static org.codehaus.groovy.runtime.SqlGroovyMethods.toRowResult;
 
 /**
  * A facade over Java's normal JDBC APIs providing greatly simplified
@@ -2263,10 +2264,64 @@ public class Sql {
         Statement statement = null;
         try {
             statement = getStatement(connection, sql);
-            // TODO handle multiple results
             boolean isResultSet = statement.execute(sql);
             this.updateCount = statement.getUpdateCount();
             return isResultSet;
+        } catch (SQLException e) {
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
+            throw e;
+        } finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
+     * Executes the given piece of SQL.
+     * Also calls the provided processResults Closure to process any ResultSet or UpdateCount results that executing the SQL might produce.
+     * <p>
+     * Example usages:
+     * <pre>
+     * boolean first = true
+     * sql.execute "{call FindAllByFirst('J')}", { isResultSet, result ->
+     *   if (first) {
+     *     first = false
+     *     assert !isResultSet && result == 0
+     *   } else {
+     *     assert isResultSet && result == [[ID:1, FIRSTNAME:'James', LASTNAME:'Strachan'], [ID:4, FIRSTNAME:'Jean', LASTNAME:'Gabin']]
+     *   }
+     * }
+     * </pre>
+     * <p>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param sql the SQL to execute
+     * @param processResults a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                       derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                       The closure will be called for each result produced from executing the SQL.
+     * @throws SQLException if a database access error occurs
+     * @since 2.3.2
+     */
+    public void execute(String sql, Closure processResults) throws SQLException {
+        Connection connection = createConnection();
+        Statement statement = null;
+        try {
+            statement = getStatement(connection, sql);
+            boolean isResultSet = statement.execute(sql);
+            int updateCount = statement.getUpdateCount();
+            while(isResultSet || updateCount != -1) {
+                if (processResults.getMaximumNumberOfParameters() != 2) {
+                    throw new SQLException("Incorrect number of parameters for processResults Closure");
+                }
+                if (isResultSet) {
+                    ResultSet resultSet = statement.getResultSet();
+                    List<GroovyRowResult> rowResult = resultSet == null ? null : asList(sql, resultSet);
+                    processResults.call(isResultSet, rowResult);
+                } else {
+                    processResults.call(isResultSet, updateCount);
+                }
+                isResultSet = statement.getMoreResults();
+                updateCount = statement.getUpdateCount();
+            }
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
@@ -2304,10 +2359,56 @@ public class Sql {
         PreparedStatement statement = null;
         try {
             statement = getPreparedStatement(connection, sql, params);
-            // TODO handle multiple results
             boolean isResultSet = statement.execute();
             this.updateCount = statement.getUpdateCount();
             return isResultSet;
+        } catch (SQLException e) {
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
+            throw e;
+        } finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
+     * Executes the given piece of SQL with parameters.
+     * Also calls the provided processResults Closure to process any ResultSet or UpdateCount results that executing the SQL might produce.
+     * <p>
+     * This method supports named and named ordinal parameters.
+     * See the class Javadoc for more details.
+     * <p>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @param processResults a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                       derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                       The closure will be called for each result produced from executing the SQL.
+     * @throws SQLException if a database access error occurs
+     * @see #execute(String, Closure)
+     * @since 2.3.2
+     */
+    public void execute(String sql, List<Object> params, Closure processResults) throws SQLException {
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        try {
+            statement = getPreparedStatement(connection, sql, params);
+            boolean isResultSet = statement.execute();
+            int updateCount = statement.getUpdateCount();
+            while(isResultSet || updateCount != -1) {
+                if (processResults.getMaximumNumberOfParameters() != 2) {
+                    throw new SQLException("Incorrect number of parameters for processResults Closure");
+                }
+                if (isResultSet) {
+                    ResultSet resultSet = statement.getResultSet();
+                    List<GroovyRowResult> rowResult = resultSet == null ? null : asList(sql, resultSet);
+                    processResults.call(isResultSet, rowResult);
+                } else {
+                    processResults.call(isResultSet, updateCount);
+                }
+                isResultSet = statement.getMoreResults();
+                updateCount = statement.getUpdateCount();
+            }
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
@@ -2333,6 +2434,22 @@ public class Sql {
     }
 
     /**
+     * A variant of {@link #execute(String, java.util.List, Closure)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params a map containing the named parameters
+     * @param sql    the SQL statement
+     * @param processResults a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                       derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                       The closure will be called for each result produced from executing the SQL.
+     * @throws SQLException if a database access error occurs
+     * @since 2.3.2
+     */
+    public void execute(Map params, String sql, Closure processResults) throws SQLException {
+        execute(sql, singletonList(params), processResults);
+    }
+
+    /**
      * Executes the given piece of SQL with parameters.
      * <p>
      * An Object array variant of {@link #execute(String, List)}.
@@ -2349,6 +2466,27 @@ public class Sql {
      */
     public boolean execute(String sql, Object[] params) throws SQLException {
         return execute(sql, Arrays.asList(params));
+    }
+
+    /**
+     * Executes the given piece of SQL with parameters.
+     * <p>
+     * An Object array variant of {@link #execute(String, List, Closure)}.
+     * <p>
+     * This method supports named and named ordinal parameters by supplying such
+     * parameters in the <code>params</code> array. See the class Javadoc for more details.
+     *
+     * @param sql    the SQL statement
+     * @param params an array of parameters
+     * @param processResults a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                       derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                       The closure will be called for each result produced from executing the SQL.
+     * @throws SQLException if a database access error occurs
+     * @see #execute(String, List, Closure)
+     * @since 2.3.2
+     */
+    public void execute(String sql, Object[] params, Closure processResults) throws SQLException {
+        execute(sql, Arrays.asList(params), processResults);
     }
 
     /**
@@ -2377,6 +2515,26 @@ public class Sql {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return execute(sql, params);
+    }
+
+    /**
+     * Executes the given SQL with embedded expressions inside.
+     * Also calls the provided processResults Closure to process any ResultSet or UpdateCount results that executing the SQL might produce.
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param processResults a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                       derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                       The closure will be called for each result produced from executing the SQL.
+     * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
+     * @see #execute(String, List, Closure)
+     * @since 2.3.2
+     */
+    public void execute(GString gstring, Closure processResults) throws SQLException {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        execute(sql, params, processResults);
     }
 
     /**
@@ -3635,7 +3793,7 @@ public class Sql {
 
             int i = 0;
             while ((maxRows <= 0 || i++ < maxRows) && rs.next()) {
-                results.add(SqlGroovyMethods.toRowResult(rs));
+                results.add(toRowResult(rs));
             }
             return (results);
         } catch (SQLException e) {
