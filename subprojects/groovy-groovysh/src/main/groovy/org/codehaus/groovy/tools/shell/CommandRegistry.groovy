@@ -42,7 +42,7 @@ class CommandRegistry
         assert command
 
         // Make sure that the command name and shortcut are unique
-        assert !names.contains(command.name) : "Duplicate comamnd name: $command.name"
+        assert !names.contains(command.name) : "Duplicate command name: $command.name"
         names << command.name
         
         assert !names.contains(command.shortcut) : "Duplicate command shortcut: $command.shortcut"
