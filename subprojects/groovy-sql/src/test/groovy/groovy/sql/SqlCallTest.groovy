@@ -181,6 +181,18 @@ class SqlCallTest extends GroovyTestCase {
         assert rows[1].lastname == 'Gabin'
     }
 
+    void testStoredProcedureExecuteWithProcessResultsClosure() {
+        boolean first = true
+        sql.execute "{call FindAllByFirst('J')}", { isResultSet, result ->
+            if (first) {
+                first = false
+                assert !isResultSet && result == 0
+            } else {
+                assert isResultSet && result == [[ID:1, FIRSTNAME:'James', LASTNAME:'Strachan'], [ID:4, FIRSTNAME:'Jean', LASTNAME:'Gabin']]
+            }
+        }
+    }
+
     void testCallWithRows() {
         String found
         List<GroovyRowResult> rows = sql.callWithRows '{call FindAllByFirstWithTotal(?, ?)}', ['J', Sql.VARCHAR], { total ->
