@@ -97,7 +97,7 @@ configurations {
 
 ext {
     antVersion = '1.9.4'
-    asmVersion = '5.0.2'
+    asmVersion = '5.0.3'
     antlrVersion = '2.7.7'
     bndVersion = '0.0.401'
     checkstyleVersion = '4.4'
