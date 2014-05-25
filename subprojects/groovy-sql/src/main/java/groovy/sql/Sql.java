@@ -233,6 +233,7 @@ public class Sql {
     protected static final Logger LOG = Logger.getLogger(Sql.class.getName());
 
     private static final List<Object> EMPTY_LIST = Collections.emptyList();
+    private static final int USE_COLUMN_NAMES = -1;
 
     private DataSource dataSource;
 
@@ -261,6 +262,7 @@ public class Sql {
     private final Map<String, Statement> statementCache = new HashMap<String, Statement>();
     private final Map<String, String> namedParamSqlCache = new HashMap<String, String>();
     private final Map<String, List<Tuple>> namedParamIndexPropCache = new HashMap<String, List<Tuple>>();
+    private List<String> keyColumnNames;
 
     /**
      * Creates a new Sql instance given a JDBC connection URL.
@@ -2602,7 +2604,47 @@ public class Sql {
     }
 
     /**
-     * A variant of {@link #firstRow(String, java.util.List)}
+     * Executes the given SQL statement (typically an INSERT statement).
+     * Use this variant when you want to receive the values of any auto-generated columns,
+     * such as an autoincrement ID field (or fields) and you know the column name(s) of the ID field(s).
+     * The query may contain placeholder question marks which match the given list of parameters.
+     * See {@link #executeInsert(GString)} for more details.
+     * <p>
+     * This method supports named and named ordinal parameters.
+     * See the class Javadoc for more details.
+     * <p>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param sql    The SQL statement to execute
+     * @param params The parameter values that will be substituted
+     *               into the SQL statement's parameter slots
+     * @param keyColumnNames a list of column names indicating the columns that should be returned from the
+     *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
+     * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
+     * @throws SQLException if a database access error occurs
+     * @see Connection#prepareStatement(String, String[])
+     * @since 2.3.2
+     */
+    public List<GroovyRowResult> executeInsert(String sql, List<Object> params, List<String> keyColumnNames) throws SQLException {
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        try {
+            this.keyColumnNames = keyColumnNames;
+            statement = getPreparedStatement(connection, sql, params, USE_COLUMN_NAMES);
+            this.keyColumnNames = null;
+            this.updateCount = statement.executeUpdate();
+            ResultSet keys = statement.getGeneratedKeys();
+            return asList(sql, keys);
+        } catch (SQLException e) {
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
+            throw e;
+        } finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
+     * A variant of {@link #executeInsert(String, java.util.List)}
      * useful when providing the named parameters as named arguments.
      *
      * @param params a map containing the named parameters
@@ -2614,6 +2656,25 @@ public class Sql {
      */
     public List<List<Object>> executeInsert(Map params, String sql) throws SQLException {
         return executeInsert(sql, singletonList(params));
+    }
+
+    /**
+     * A variant of {@link #executeInsert(String, List, List)}
+     * useful when providing the named parameters as named arguments.
+     * This variant allows you to receive the values of any auto-generated columns,
+     * such as an autoincrement ID field (or fields) when you know the column name(s) of the ID field(s).
+     *
+     * @param params a map containing the named parameters
+     * @param sql    The SQL statement to execute
+     * @param keyColumnNames a list of column names indicating the columns that should be returned from the
+     *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
+     * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
+     * @throws SQLException if a database access error occurs
+     * @see Connection#prepareStatement(String, String[])
+     * @since 2.3.2
+     */
+    public List<GroovyRowResult> executeInsert(Map params, String sql, List<String> keyColumnNames) throws SQLException {
+        return executeInsert(sql, singletonList(params), keyColumnNames);
     }
 
     /**
@@ -2680,6 +2741,28 @@ public class Sql {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return executeInsert(sql, params);
+    }
+
+    /**
+     * Executes the given SQL statement (typically an INSERT statement).
+     * Use this variant when you want to receive the values of any auto-generated columns,
+     * such as an autoincrement ID field (or fields) and you know the column name(s) of the ID field(s).
+     * <p>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param keyColumnNames a list of column names indicating the columns that should be returned from the
+     *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
+     * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
+     * @throws SQLException if a database access error occurs
+     * @see Connection#prepareStatement(String, String[])
+     * @see #expand(Object)
+     * @since 2.3.2
+     */
+    public List<GroovyRowResult> executeInsert(GString gstring, List<String> keyColumnNames) throws SQLException {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return executeInsert(sql, params, keyColumnNames);
     }
 
     /**
@@ -4361,6 +4444,9 @@ public class Sql {
         }
 
         protected PreparedStatement execute(Connection connection, String sql) throws SQLException {
+            if (returnGeneratedKeys == USE_COLUMN_NAMES && keyColumnNames != null) {
+                return connection.prepareStatement(sql, keyColumnNames.toArray(new String[keyColumnNames.size()]));
+            }
             if (returnGeneratedKeys != 0) {
                 return connection.prepareStatement(sql, returnGeneratedKeys);
             }
