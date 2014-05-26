@@ -12,7 +12,8 @@ import java.util.logging.Level
 @Log @SuppressWarnings("GroovyUnusedDeclaration")
 class ASTComparatorCategory {
     static { log.level = Level.WARNING }
-    static private List<String> EXPRESSION_IGNORE_LIST = ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"]
+    static private List<String> LOCATION_IGNORE_LIST = ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"]
+    static private List<String> EXPRESSION_IGNORE_LIST = ["text"] + LOCATION_IGNORE_LIST
 
     /**
      *  Keeps all checked object pairs and their comparison result.
@@ -22,7 +23,7 @@ class ASTComparatorCategory {
     static String lastName
 
     static Map<Class, List<String>> DEFAULT_CONFIGURATION = [
-        (ClassNode): ['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode"],
+        (ClassNode): (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode" ] + LOCATION_IGNORE_LIST) as List<String>,
         (ConstructorNode): ['declaringClass'],
         (DynamicVariable): [],
         (EnumConstantClassNode): [],

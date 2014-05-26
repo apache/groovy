@@ -70,6 +70,8 @@ class ASTBuilder extends GroovyBaseListener {
         if (ctx.KW_IMPLEMENTS())
             classNode.setInterfaces(ctx.classNameExpression()[(ctx.KW_EXTENDS() ? 1 : 0)..-1].collect { parseExpression(it) } as ClassNode[])
 
+        classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
+        classNode.usingGenerics = classNode.genericsTypes || classNode.superClass.usingGenerics || classNode.interfaces.any { it.usingGenerics }
         classNode.modifiers = parseClassModifiers(ctx.classModifiers())
         classNode.syntheticPublic = (classNode.modifiers & Opcodes.ACC_SYNTHETIC) != 0
         classNode.modifiers &= ~Opcodes.ACC_SYNTHETIC // FIXME Magic with synthetic modifier.
@@ -100,6 +102,8 @@ class ASTBuilder extends GroovyBaseListener {
 
         def params = parseParameters(ctx.argumentDeclarationList())
         def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, parseTypeDeclaration(ctx.typeDeclaration()), params, [] as ClassNode[], statement)
+        methodNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
+
         setupNodeLocation(methodNode, ctx)
         methodNode.syntheticPublic = !hasVisibilityModifier
     }
@@ -459,7 +463,14 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     static ClassNode parseExpression(GroovyParser.ClassNameExpressionContext ctx) {
-        setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().join('.')), ctx)
+        def classNode = ClassHelper.make(ctx.IDENTIFIER().join('.'))
+
+        classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
+        setupNodeLocation(classNode, ctx)
+    }
+
+    static GenericsType[] parseGenericDeclaration(GroovyParser.GenericDeclarationListContext ctx) {
+        ctx ? ctx.classNameExpression().collect { setupNodeLocation(new GenericsType(parseExpression(it)), it) } : null
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -485,7 +496,7 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     static ClassNode parseTypeDeclaration(GroovyParser.TypeDeclarationContext ctx) {
-        !ctx || ctx.KW_DEF() ? ClassHelper.OBJECT_TYPE : setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().text), ctx)
+        !ctx || ctx.KW_DEF() ? ClassHelper.OBJECT_TYPE : setupNodeLocation(parseExpression(ctx.classNameExpression()), ctx)
     }
 
     static Parameter[] parseParameters(GroovyParser.ArgumentDeclarationListContext ctx) {

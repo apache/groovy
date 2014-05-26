@@ -32,6 +32,7 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/ClassProperty_Issue4_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Closure_Issue21_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Extendsimplements_Issue25_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/Generics_Issue26_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_2.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ListsAndMaps_Issue22_1.groovy" | _
