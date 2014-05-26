@@ -109,14 +109,26 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
-    void testExecuteInsertWithColumnNames() {
+    void testExecuteInsertWithColumnNamesListParams() {
         def value = 'log entry'
         if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
             def keys = sql.executeInsert('insert into LOG (value) values (?)', [value], ['ID'])
             assert keys == [[ID:0]]
-        } else {
-            def count = sql.executeUpdate('insert into LOG (value) values (?)', [value])
-            assert 1 == count
+        }
+    }
+
+    void testExecuteInsertWithColumnNamesVarargParams() {
+        def value = 'log entry'
+        if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
+            def keys = sql.executeInsert('insert into LOG (value) values (?)', ['ID'] as String[], value)
+            assert keys == [[ID:0]]
+        }
+    }
+
+    void testExecuteInsertWithColumnNamesNoVarargs() {
+        if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
+            def keys = sql.executeInsert("insert into LOG (value) values 'log entry'", ['ID'] as String[])
+            assert keys == [[ID:0]]
         }
     }
 
