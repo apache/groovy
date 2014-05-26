@@ -3788,7 +3788,7 @@ public class Sql {
     public int[] withBatch(int batchSize, String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
         List<Tuple> indexPropList = null;
-        SqlWithParams preCheck = preCheckForNamedParams(sql);
+        SqlWithParams preCheck = buildSqlWithIndexedProps(sql);
         boolean savedWithinBatch = withinBatch;
         BatchingPreparedStatementWrapper psWrapper = null;
         if (preCheck != null) {
@@ -4361,7 +4361,7 @@ public class Sql {
     }
 
     public SqlWithParams checkForNamedParams(String sql, List<Object> params) {
-        SqlWithParams preCheck = preCheckForNamedParams(sql);
+        SqlWithParams preCheck = buildSqlWithIndexedProps(sql);
         if (preCheck == null) {
             return new SqlWithParams(sql, params);
         }
