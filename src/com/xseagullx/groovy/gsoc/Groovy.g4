@@ -156,7 +156,7 @@ expression:
     | expression ('|') expression #binaryExpression
     | expression ('&&') expression #binaryExpression
     | expression ('||') expression #binaryExpression
-    | expression ('=') expression #assignmentExpression
+    | expression ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '^=' | '|=' | '<<=' | '>>=' | '>>>=') expression #assignmentExpression
     | typeDeclaration IDENTIFIER ('=' expression)? #declarationExpression
     | STRING #constantExpression
     | NUMBER #constantExpression
