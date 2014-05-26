@@ -865,6 +865,17 @@ public class AsmClassGenerator extends ClassGenerator {
             // A.B and this.this$0.this$0 return A.
             ClassNode type = objectExpression.getType();
             ClassNode iterType = classNode;
+            if (controller.getCompileStack().isInSpecialConstructorCall() && classNode instanceof InnerClassNode) {
+                boolean staticInnerClass = classNode.isStaticClass();
+                // Outer.this in a special constructor call
+                if (classNode.getOuterClass().equals(type)) {
+                    ConstructorNode ctor = controller.getConstructorNode();
+                    Expression receiver = !staticInnerClass ? new VariableExpression(ctor.getParameters()[0]) : new ClassExpression(type);
+                    receiver.setSourcePosition(expression);
+                    receiver.visit(this);
+                    return;
+                }
+            }
             mv.visitVarInsn(ALOAD, 0);
             while (!iterType.equals(type)) {
                 String ownerName = BytecodeHelper.getClassInternalName(iterType);

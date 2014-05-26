@@ -127,6 +127,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             super.writeSpecialConstructorCall(call);
             return;
         }
+        controller.getCompileStack().pushInSpecialConstructorCall();
         ConstructorNode cn;
         if (mn instanceof ConstructorNode) {
             cn = (ConstructorNode) mn;
@@ -143,6 +144,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength() - before);
         // on a special call, there's no object on stack
         controller.getOperandStack().remove(1);
+        controller.getCompileStack().pop();
     }
 
     /**
