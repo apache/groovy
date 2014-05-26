@@ -142,6 +142,20 @@ class SqlTransactionTestCase extends GroovyTestCase {
         assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
     }
 
+    void testWithTransactionRollbackFromException() {
+        assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
+        try {
+            sql.withTransaction { ->
+                personFood.add(personid: 5, food: "veg")
+                throw new Exception("Force rollback")
+            }
+            fail("Should have thrown an exception before now")
+        } catch (SQLException se) {
+            assert se.message.toLowerCase().contains('unexpected exception during transaction')
+        }
+        assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
+    }
+
     void testWithTransactionRollbackUsingDataSet() {
         assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
         def numAdds = 0

@@ -3392,6 +3392,9 @@ public class Sql {
         } catch (Error e) {
             handleError(connection, e);
             throw e;
+        } catch (Exception e) {
+            handleError(connection, e);
+            throw new SQLException("Unexpected exception during transaction", e);
         } finally {
             if (connection != null) {
                 try {
