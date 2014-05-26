@@ -1,5 +1,16 @@
 
 grammar Groovy;
+
+@lexer::members {
+    enum Brace {
+       ROUND,
+       SQUARE,
+       CURVE,
+    };
+    java.util.Deque<Brace> braceStack = new java.util.ArrayDeque<Brace>();
+    Brace topBrace = null;
+}
+
 @parser::members {
     String currentClassName = null; // Used for correct constructor recognition.
 }
@@ -10,7 +21,6 @@ LINE_COMMENT: '//' .*? '\n' -> type(NL) ;
 BLOCK_COMMENT: '/*' .*? '*/' -> type(NL) ;
 
 WS: [ \t]+ -> skip;
-
 
 KW_CLASS: 'class' ;
 KW_PACKAGE: 'package' ;
@@ -51,6 +61,15 @@ KW_VOLATILE: 'volatile' ; // Fields only
 KW_SYNCHRONIZED: 'synchronized' ; // Methods and fields.
 KW_STRICTFP: 'strictfp';
 
+LPAREN : '(' { braceStack.push(Brace.ROUND); topBrace = braceStack.peekFirst(); } ;
+RPAREN : ')' { braceStack.pop(); topBrace = braceStack.peekFirst(); } ;
+LBRACK : '[' { braceStack.push(Brace.SQUARE); topBrace = braceStack.peekFirst(); } ;
+RBRACK : ']' { braceStack.pop(); topBrace = braceStack.peekFirst(); } ;
+LCURVE : '{' { braceStack.push(Brace.CURVE); topBrace = braceStack.peekFirst(); } ;
+RCURVE : '}' { braceStack.pop(); topBrace = braceStack.peekFirst(); } ;
+
+/** Nested newline within a (..) or [..] are ignored. */
+IGNORE_NEWLINE : '\r'? '\n' { topBrace == Brace.ROUND || topBrace == Brace.SQUARE }? -> skip ;
 
 // Match both UNIX and Windows newlines
 NL: '\r'? '\n';

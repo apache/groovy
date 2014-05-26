@@ -13,11 +13,16 @@ class A {
     }
 
     private void map() {
-        def a = [key1: value, key2: 12, key3: 12 + 23]
+        def a = [
+                key1: value,
+                key2: 12,
+                key3: 12 + 23]
     }
 
     private void mapStringKey() {
         def a = ['stringKey': value]
+        println(12, 123
+        ,14, 15)
     }
 
     private void mapVariableKey() {
