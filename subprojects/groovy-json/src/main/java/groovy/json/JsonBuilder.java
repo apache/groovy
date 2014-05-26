@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.json
+package groovy.json;
+
+import groovy.lang.Closure;
+import groovy.lang.GroovyObjectSupport;
+import groovy.lang.Writable;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.*;
 
 /**
  * A builder for creating JSON payloads.
@@ -49,22 +57,22 @@ package groovy.json
  * </code></pre>
  *
  * @author Guillaume Laforge
+ * @author Andrey Bloshetsov
  * @since 1.8.0
  */
-class JsonBuilder implements Writable {
+public class JsonBuilder extends GroovyObjectSupport implements Writable {
 
-    /**
-     * Resulting data structure made of lists and maps, representing a JSON payload
-     */
-    def content
+    private Object content;
 
-    /**
-     * Instanciates a JSON builder, possibly with some existing data structure.
-     *
-     * @param content a pre-existing data structure, default to null
-     */
-    JsonBuilder(content = null) {
-        this.content = content
+    public JsonBuilder() {
+    }
+
+    public JsonBuilder(Object content) {
+        this.content = content;
+    }
+
+    public Object getContent() {
+        return content;
     }
 
     /**
@@ -81,9 +89,10 @@ class JsonBuilder implements Writable {
      * @param m a map of key / value pairs
      * @return a map of key / value pairs
      */
-    def call(Map m) {
-        this.content = m
-        return content
+    public Object call(Map m) {
+        content = m;
+
+        return content;
     }
 
     /**
@@ -101,9 +110,10 @@ class JsonBuilder implements Writable {
      * @param l a list of values
      * @return a list of values
      */
-    def call(List l) {
-        this.content = l
-        return content
+    public Object call(List l) {
+        content = l;
+
+        return content;
     }
 
     /**
@@ -121,9 +131,14 @@ class JsonBuilder implements Writable {
      * @param args an array of values
      * @return a list of values
      */
-    def call(Object... args) {
-        this.content = args.toList()
-        return this.content
+    public Object call(Object... args) {
+        List<Object> listContent = new ArrayList<Object>();
+        for (Object it : args) {
+            listContent.add(it);
+        }
+        content = listContent;
+
+        return content;
     }
 
     /**
@@ -148,9 +163,16 @@ class JsonBuilder implements Writable {
      * @param c a closure used to convert the objects of coll
      * @return a list of values
      */
-    def call(Collection coll, Closure c) {
-        this.content = coll.collect {JsonDelegate.curryDelegateAndGetContent(c, it)}
-        return content
+    public Object call(Collection coll, Closure c) {
+        List<Object> listContent = new ArrayList<Object>();
+        if (coll != null) {
+            for (Object it : coll) {
+                listContent.add(JsonDelegate.curryDelegateAndGetContent(c, it));
+            }
+        }
+        content = listContent;
+
+        return content;
     }
 
     /**
@@ -171,9 +193,10 @@ class JsonBuilder implements Writable {
      * @param c a closure whose method call statements represent key / values of a JSON object
      * @return a map of key / value pairs
      */
-    def call(Closure c) {
-        this.content = JsonDelegate.cloneDelegateAndGetContent(c)
-        return content
+    public Object call(Closure c) {
+        content = JsonDelegate.cloneDelegateAndGetContent(c);
+
+        return content;
     }
 
     /**
@@ -232,28 +255,46 @@ class JsonBuilder implements Writable {
      * @param args the value associated with the key
      * @return a map with a single key
      */
-    def invokeMethod(String name, Object args) {
-        if (args?.size() == 0) {
-            this.content = [(name): [:]]
-            return content
-        } else if (args?.size() == 1) {
-            if (args[0] instanceof Closure) {
-                this.content = [(name): JsonDelegate.cloneDelegateAndGetContent(args[0])]
-                return content
-            } else if (args[0] instanceof Map) {
-                this.content = [(name): args[0]]
-                return content
+    public Object invokeMethod(String name, Object args) {
+        if (args != null && Object[].class.isAssignableFrom(args.getClass())) {
+            Object[] arr = (Object[]) args;
+            if (arr.length == 0) {
+                return setAndGetContent(name, new HashMap<String, Object>());
+            } else if (arr.length == 1) {
+                if (arr[0] instanceof Closure) {
+                    return setAndGetContent(name, JsonDelegate.cloneDelegateAndGetContent((Closure) arr[0]));
+                } else if (arr[0] instanceof Map) {
+                    return setAndGetContent(name, arr[0]);
+                }
+            } else if (arr.length == 2)  {
+                if (arr[0] instanceof Map && arr[1] instanceof Closure) {
+                    Map subMap = new LinkedHashMap();
+                    subMap.putAll((Map) arr[0]);
+                    subMap.putAll(JsonDelegate.cloneDelegateAndGetContent((Closure) arr[1]));
+
+                    return setAndGetContent(name, subMap);
+                } else if (arr[0] instanceof Collection && arr[1] instanceof Closure) {
+                    List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+                    for (Object it : (Collection) arr[0]) {
+                        list.add(JsonDelegate.curryDelegateAndGetContent((Closure) arr[1], it));
+                    }
+
+                    return setAndGetContent(name, list);
+                }
             }
-        } else if (args?.size() == 2) {
-            if (args[0] instanceof Map && args[1] instanceof Closure) {
-                this.content = [(name): [*:args[0], *:JsonDelegate.cloneDelegateAndGetContent(args[1])]]
-                return content
-            } else if (args[0] instanceof Collection && args[1] instanceof Closure) {
-                this.content = [(name): args[0].collect {JsonDelegate.curryDelegateAndGetContent(args[1],it)}]
-                return content
-            }
+
+            throw new JsonException("Expected no arguments, a single map, a single closure, or a map and closure as arguments.");
+        } else {
+            return setAndGetContent(name, new HashMap<String, Object>());
         }
-        throw new JsonException("Expected no arguments, a single map, a single closure, or a map and closure as arguments.")
+    }
+
+    private Object setAndGetContent(String name, Object value) {
+        Map<String, Object> contentMap = new LinkedHashMap<String, Object>();
+        contentMap.put(name, value);
+        content = contentMap;
+
+        return content;
     }
 
     /**
@@ -263,14 +304,14 @@ class JsonBuilder implements Writable {
      * <pre><code>
      * def json = new JsonBuilder()
      * json { temperature 37 }
-     * 
+     *
      * assert json.toString() == '{"temperature":37}'
      * </code></pre>
      *
      * @return a JSON output
      */
-    String toString() {
-        JsonOutput.toJson(content)
+    public String toString() {
+        return JsonOutput.toJson(content);
     }
 
     /**
@@ -283,8 +324,8 @@ class JsonBuilder implements Writable {
      *
      * @return a pretty printed JSON output
      */
-    String toPrettyString() {
-        JsonOutput.prettyPrint(toString())
+    public String toPrettyString() {
+        return JsonOutput.prettyPrint(toString());
     }
 
     /**
@@ -299,13 +340,13 @@ class JsonBuilder implements Writable {
      * def out = new StringWriter()
      * out << json
      *
-     * assert out.toString() == '{"temperature":37}' 
+     * assert out.toString() == '{"temperature":37}'
      * </code></pre>
      *
      * @param out a writer on which to serialize the JSON payload
      * @return the writer
      */
-    Writer writeTo(Writer out) {
-        out << toString()
+    public Writer writeTo(Writer out) throws IOException {
+        return out.append(toString());
     }
 }
