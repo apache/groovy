@@ -279,6 +279,42 @@ class ASTBuilder extends GroovyBaseListener {
         setupNodeLocation(new ReturnStatement(expression ? parseExpression(expression) : EmptyExpression.INSTANCE), ctx)
     }
 
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(GroovyParser.ThrowStatementContext ctx) {
+        setupNodeLocation(new ThrowStatement(parseExpression(ctx.expression())), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(GroovyParser.TryCatchFinallyStatementContext ctx) {
+        def finallyStatement
+
+        GroovyParser.BlockStatementContext finallyBlockStatement = ctx.finallyBlock()?.blockStatement()
+        if (finallyBlockStatement) {
+            def fbs = new BlockStatement()
+            fbs.addStatement(parseStatement(finallyBlockStatement))
+            finallyStatement = setupNodeLocation(fbs, finallyBlockStatement)
+
+        }
+        else
+            finallyStatement = EmptyStatement.INSTANCE
+
+        def statement = new TryCatchStatement(parseStatement(ctx.tryBlock().blockStatement() as GroovyParser.BlockStatementContext), finallyStatement)
+        ctx.catchBlock().each {
+            def catchBlock = parseStatement(it.blockStatement() as GroovyParser.BlockStatementContext)
+            def var = it.IDENTIFIER().text
+
+            def classNameExpression = it.classNameExpression()
+            if (!classNameExpression)
+                statement.addCatch(setupNodeLocation(new CatchStatement(new Parameter(ClassHelper.OBJECT_TYPE, var), catchBlock), it))
+            else {
+                classNameExpression.each {
+                    statement.addCatch(setupNodeLocation(new CatchStatement(new Parameter(parseExpression(it as GroovyParser.ClassNameExpressionContext), var), catchBlock), it))
+                }
+            }
+        }
+        statement
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Expressions.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

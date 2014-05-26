@@ -42,6 +42,10 @@ KW_DEFAULT: 'default' ;
 KW_CONTINUE: 'continue' ;
 KW_BREAK: 'break' ;
 KW_RETURN: 'return' ;
+KW_TRY: 'try' ;
+KW_CATCH: 'catch' ;
+KW_FINALLY: 'finally' ;
+KW_THROW: 'throw' ;
 
 STRING: QUOTE STRING_BODY QUOTE ;
 fragment STRING_BODY: (~'\'')* ;
@@ -132,9 +136,15 @@ statement:
           (KW_DEFAULT ':' (statement | ';' | NL)*)?
         )
       '}' #switchStatement
+    |  tryBlock ((catchBlock+ finallyBlock?) | finallyBlock) #tryCatchFinallyStatement
     | (KW_CONTINUE | KW_BREAK) #controlStatement
     | KW_RETURN expression? #returnStatement
+    | KW_THROW expression #throwStatement
 ;
+
+tryBlock: KW_TRY '{' blockStatement? '}' NL*;
+catchBlock: KW_CATCH '(' ((classNameExpression ('|' classNameExpression)* IDENTIFIER) | IDENTIFIER) ')' '{' blockStatement? '}' NL*;
+finallyBlock: KW_FINALLY '{' blockStatement? '}';
 
 caseStatement: (KW_CASE expression ':' (statement | ';' | NL)* );
 
