@@ -2615,9 +2615,9 @@ public class Sql {
      * <p>
      * Resource handling is performed automatically where appropriate.
      *
-     * @param sql    The SQL statement to execute
-     * @param params The parameter values that will be substituted
-     *               into the SQL statement's parameter slots
+     * @param sql            The SQL statement to execute
+     * @param params         The parameter values that will be substituted
+     *                       into the SQL statement's parameter slots
      * @param keyColumnNames a list of column names indicating the columns that should be returned from the
      *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
      * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
@@ -2664,8 +2664,8 @@ public class Sql {
      * This variant allows you to receive the values of any auto-generated columns,
      * such as an autoincrement ID field (or fields) when you know the column name(s) of the ID field(s).
      *
-     * @param params a map containing the named parameters
-     * @param sql    The SQL statement to execute
+     * @param params         a map containing the named parameters
+     * @param sql            The SQL statement to execute
      * @param keyColumnNames a list of column names indicating the columns that should be returned from the
      *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
      * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
@@ -2698,6 +2698,58 @@ public class Sql {
 
     /**
      * Executes the given SQL statement (typically an INSERT statement).
+     * This variant allows you to receive the values of any auto-generated columns,
+     * such as an autoincrement ID field (or fields) when you know the column name(s) of the ID field(s).
+     * <p>
+     * This method supports named and named ordinal parameters by supplying such
+     * parameters in the <code>params</code> array. See the class Javadoc for more details.
+     *
+     * @param sql            The SQL statement to execute
+     * @param keyColumnNames an array of column names indicating the columns that should be returned from the
+     *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
+     * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
+     * @throws SQLException if a database access error occurs
+     */
+    public List<GroovyRowResult> executeInsert(String sql, String[] keyColumnNames) throws SQLException {
+        Connection connection = createConnection();
+        Statement statement = null;
+        try {
+            statement = getStatement(connection, sql);
+            this.updateCount = statement.executeUpdate(sql, keyColumnNames);
+            ResultSet keys = statement.getGeneratedKeys();
+            return asList(sql, keys);
+        } catch (SQLException e) {
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
+            throw e;
+        } finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
+     * Executes the given SQL statement (typically an INSERT statement).
+     * This variant allows you to receive the values of any auto-generated columns,
+     * such as an autoincrement ID field (or fields) when you know the column name(s) of the ID field(s).
+     * <p>
+     * An array variant of {@link #executeInsert(String, List, List)}.
+     * <p>
+     * This method supports named and named ordinal parameters by supplying such
+     * parameters in the <code>params</code> array. See the class Javadoc for more details.
+     *
+     * @param sql            The SQL statement to execute
+     * @param keyColumnNames an array of column names indicating the columns that should be returned from the
+     *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
+     * @param params         The parameter values that will be substituted
+     *                       into the SQL statement's parameter slots
+     * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
+     * @throws SQLException if a database access error occurs
+     */
+    public List<GroovyRowResult> executeInsert(String sql, String[] keyColumnNames, Object[] params) throws SQLException {
+        return executeInsert(sql, Arrays.asList(params), Arrays.asList(keyColumnNames));
+    }
+
+    /**
+     * Executes the given SQL statement (typically an INSERT statement).
      * Use this variant when you want to receive the values of any
      * auto-generated columns, such as an autoincrement ID field.
      * The query may contain GString expressions.
@@ -2713,20 +2765,20 @@ public class Sql {
      * a newly inserted row. In this example, we insert a single row
      * into a table in which the first column contains the autoincrement ID:
      * <pre>
-     *     def sql = Sql.newInstance("jdbc:mysql://localhost:3306/groovy",
-     *                               "user",
-     *                               "password",
-     *                               "com.mysql.jdbc.Driver")
+     * def sql = Sql.newInstance("jdbc:mysql://localhost:3306/groovy",
+     *                           "user",
+     *                           "password",
+     *                           "com.mysql.jdbc.Driver")
      *
-     *     def keys = sql.executeInsert("insert into test_table (INT_DATA, STRING_DATA) "
-     *                           + "VALUES (1, 'Key Largo')")
+     * def keys = sql.executeInsert("insert into test_table (INT_DATA, STRING_DATA) "
+     *                       + "VALUES (1, 'Key Largo')")
      *
-     *     def id = keys[0][0]
+     * def id = keys[0][0]
      *
-     *     // 'id' now contains the value of the new row's ID column.
-     *     // It can be used to update an object representation's
-     *     // id attribute for example.
-     *     ...
+     * // 'id' now contains the value of the new row's ID column.
+     * // It can be used to update an object representation's
+     * // id attribute for example.
+     * ...
      * </pre>
      * <p>
      * Resource handling is performed automatically where appropriate.
@@ -2750,7 +2802,7 @@ public class Sql {
      * <p>
      * Resource handling is performed automatically where appropriate.
      *
-     * @param gstring a GString containing the SQL query with embedded params
+     * @param gstring        a GString containing the SQL query with embedded params
      * @param keyColumnNames a list of column names indicating the columns that should be returned from the
      *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
      * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
