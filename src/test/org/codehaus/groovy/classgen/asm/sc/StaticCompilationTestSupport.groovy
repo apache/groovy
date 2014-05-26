@@ -67,6 +67,14 @@ class StaticCompilationTestSupport {
         shell.loader = new CompilationUnitAwareGroovyClassLoader(this.getClass().classLoader, config, this)
     }
 
+    void assertAndDump(String script) {
+        try {
+            assertScript(script)
+        } finally {
+            println astTrees
+        }
+    }
+
     public static class CompilationUnitAwareGroovyClassLoader extends GroovyClassLoader {
         StaticCompilationTestSupport testCase
 

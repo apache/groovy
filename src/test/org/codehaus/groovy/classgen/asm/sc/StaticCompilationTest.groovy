@@ -335,4 +335,35 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 'BASTORE'
         ])
     }
+
+    void testShouldTriggerDirectCallToOuterClassGetter() {
+        assert compile([method: 'fromInner',classNamePattern:'.*Inner.*'], '''
+class Holder {
+    String value
+}
+
+@groovy.transform.CompileStatic
+class Outer {
+    String outerProperty = 'outer'
+    private class Inner {
+        String fromInner() {
+            Holder holder = new Holder()
+            holder.value = outerProperty
+            holder.value
+        }
+    }
+
+    String blah() {
+        new Inner().fromInner()
+    }
+}
+
+def o = new Outer()
+assert o.blah() == 'outer'
+''').hasStrictSequence([
+        'GETFIELD Outer$Inner.this$0',
+        'INVOKEVIRTUAL Outer.getOuterProperty',
+        'INVOKEVIRTUAL Holder.setValue'
+])
+    }
 }
