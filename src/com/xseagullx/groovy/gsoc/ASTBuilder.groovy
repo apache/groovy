@@ -65,6 +65,11 @@ class ASTBuilder extends GroovyBaseListener {
         def classNode = new ClassNode("${moduleNode.packageName ?: ""}${ctx.IDENTIFIER()}", Modifier.PUBLIC, ClassHelper.OBJECT_TYPE)
         setupNodeLocation(classNode, ctx)
         moduleNode.addClass(classNode)
+        if (ctx.KW_EXTENDS())
+            classNode.setSuperClass(parseExpression(ctx.classNameExpression()[0]))
+        if (ctx.KW_IMPLEMENTS())
+            classNode.setInterfaces(ctx.classNameExpression()[(ctx.KW_EXTENDS() ? 1 : 0)..-1].collect { parseExpression(it) } as ClassNode[])
+
         classNode.modifiers = parseClassModifiers(ctx.classModifiers())
         classNode.syntheticPublic = (classNode.modifiers & Opcodes.ACC_SYNTHETIC) != 0
         classNode.modifiers &= ~Opcodes.ACC_SYNTHETIC // FIXME Magic with synthetic modifier.
@@ -278,19 +283,23 @@ class ASTBuilder extends GroovyBaseListener {
         throw new RuntimeException("Unsupported expression type! $ctx")
     }
 
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GroovyParser.ParenthesisExpressionContext ctx) {
         parseExpression(ctx.expression())
     }
 
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GroovyParser.ListConstructorContext ctx) {
         def expression = new ListExpression(ctx.expression().collect(ASTBuilder.&parseExpression))
         setupNodeLocation(expression, ctx)
     }
 
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GroovyParser.MapConstructorContext ctx) {
         setupNodeLocation(new MapExpression(ctx.mapEntry()?.collect(ASTBuilder.&parseExpression) ?: []), ctx)
     }
 
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GroovyParser.MapEntryContext ctx) {
         Expression keyExpr, valueExpr
         def expressions = ctx.expression()
@@ -328,11 +337,11 @@ class ASTBuilder extends GroovyBaseListener {
                 expression = new RangeExpression(left, right, !op.text.endsWith('<'))
                 break;
             case Types.KEYWORD_AS:
-                def classNode = setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().text), ctx.IDENTIFIER().symbol)
+                def classNode = setupNodeLocation(parseExpression(ctx.classNameExpression()), ctx.classNameExpression())
                 expression = CastExpression.asExpression(classNode, left)
                 break;
             case Types.KEYWORD_INSTANCEOF:
-                def classNode = setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().text), ctx.IDENTIFIER().symbol)
+                def classNode = setupNodeLocation(parseExpression(ctx.classNameExpression()), ctx.classNameExpression())
                 right = new ClassExpression(classNode)
             default:
                 if (!right)
@@ -447,6 +456,10 @@ class ASTBuilder extends GroovyBaseListener {
         expression.spreadSafe = op.text == '*.'
         expression.safe = op.text == '?.'
         expression
+    }
+
+    static ClassNode parseExpression(GroovyParser.ClassNameExpressionContext ctx) {
+        setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().join('.')), ctx)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

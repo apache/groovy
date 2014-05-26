@@ -25,6 +25,8 @@ WS: [ \t]+ -> skip;
 KW_CLASS: 'class' ;
 KW_PACKAGE: 'package' ;
 KW_IMPORT: 'import' ;
+KW_EXTENDS: 'extends' ;
+KW_IMPLEMENTS: 'implements' ;
 
 KW_DEF: 'def' ;
 KW_NULL: 'null' ;
@@ -85,7 +87,7 @@ packageDefinition:
 importStatement:
     KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)* ('.' '*')?);
 classDeclaration:
-    classModifiers KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } (NL)* '{' (classMember | NL | ';')* '}' ;
+    classModifiers KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } (KW_EXTENDS classNameExpression)? (KW_IMPLEMENTS classNameExpression (',' classNameExpression)*)? (NL)* '{' (classMember | NL | ';')* '}' ;
 classMember:
     constructorDeclaration | methodDeclaration | fieldDeclaration | objectInitializer | classInitializer;
 
@@ -148,7 +150,7 @@ expression:
     | expression ('*' | '/' | '%') expression #binaryExpression
     | expression ('+' | '-') expression #binaryExpression
     | expression ('<<' | '>>' | '>>>' | '..' | '..<') expression #binaryExpression
-    | expression ((('<' | '<=' | '>' | '>=' | 'in') expression) | (('as' | 'instanceof') IDENTIFIER)) #binaryExpression
+    | expression ((('<' | '<=' | '>' | '>=' | 'in') expression) | (('as' | 'instanceof') classNameExpression)) #binaryExpression
     | expression ('==' | '!=' | '<=>') expression #binaryExpression
     | expression ('=~' | '==~') expression #binaryExpression
     | expression ('&') expression #binaryExpression
@@ -162,6 +164,11 @@ expression:
     | NUMBER #constantExpression
     | KW_NULL #nullExpression
     | IDENTIFIER #variableExpression ;
+
+classNameExpression:
+    IDENTIFIER ('.' IDENTIFIER)*
+    | IDENTIFIER
+;
 
 mapEntry:
     STRING ':' expression
