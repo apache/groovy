@@ -109,6 +109,40 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
+    void testExecuteInsertWithColumnNamesListParams() {
+        def value = 'log entry'
+        if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
+            def keys = sql.executeInsert('insert into LOG (value) values (?)', [value], ['ID'])
+            assert keys == [[ID:0]]
+        }
+    }
+
+    void testExecuteInsertWithColumnNamesVarargParams() {
+        def value = 'log entry'
+        if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
+            def keys = sql.executeInsert('insert into LOG (value) values (?)', ['ID'] as String[], value)
+            assert keys == [[ID:0]]
+        }
+    }
+
+    void testExecuteInsertWithColumnNamesNoVarargs() {
+        if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
+            def keys = sql.executeInsert("insert into LOG (value) values 'log entry'", ['ID'] as String[])
+            assert keys == [[ID:0]]
+        }
+    }
+
+    void testExecuteInsertWithColumnNamesGString() {
+        def value = 'log entry'
+        if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
+            def keys = sql.executeInsert("insert into LOG (value) values $value", ['ID'])
+            assert keys == [[ID:0]]
+        } else {
+            def count = sql.executeUpdate("insert into LOG (value) values $value")
+            assert 1 == count
+        }
+    }
+
     void testExecuteWithProcessResultsClosure() {
         sql.execute("insert into LOG (value) values ('log entry')") {
             isResultSet, result ->
@@ -166,7 +200,7 @@ class SqlTest extends GroovyTestCase {
 
         sql.execute("create table PERSON ( firstname VARCHAR(10), lastname VARCHAR(10) )")
         sql.execute("create table FOOD ( type VARCHAR(10), name VARCHAR(10))")
-        sql.execute("create table LOG ( value VARCHAR(20), id INTEGER IDENTITY)")
+        sql.execute("create table LOG ( value VARCHAR(20), ID INTEGER IDENTITY)")
 
         // now let's populate the datasets
         def people = sql.dataSet("PERSON")
