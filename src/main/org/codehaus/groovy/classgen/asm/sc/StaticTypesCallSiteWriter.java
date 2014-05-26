@@ -462,6 +462,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             return true;
         }
 
+        if (receiverType instanceof InnerClassNode && !receiverType.isStaticClass()) {
+            if (makeGetPropertyWithGetter(receiver,  receiverType.getOuterClass(), methodName,  safe, implicitThis)) {
+                return true;
+            }
+        }
+
         // go upper level
         ClassNode superClass = receiverType.getSuperClass();
         if (superClass !=null) {
