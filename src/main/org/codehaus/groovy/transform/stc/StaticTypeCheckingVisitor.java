@@ -962,6 +962,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final ClassNode objectExpressionType = getType(objectExpression);
 
         boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
+        if ("this".equals(propertyName) && staticOnlyAccess) {
+            // Outer.this
+            ClassNode outerNode = objectExpressionType.getGenericsTypes()[0].getType();
+            ClassNode current = typeCheckingContext.getEnclosingClassNode();
+            if (!current.isStaticClass() && current instanceof InnerClassNode) {
+                InnerClassNode icn = (InnerClassNode) current;
+                if (outerNode.equals(icn.getOuterClass())) {
+                    storeType(pexp, outerNode);
+                    return true;
+                }
+            }
+        }
+
         if (objectExpressionType.isArray() && "length".equals(pexp.getPropertyAsString())) {
             storeType(pexp, int_TYPE);
             if (visitor != null) {

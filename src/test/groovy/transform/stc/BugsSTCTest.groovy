@@ -510,4 +510,20 @@ assert p.name == 'Bob'
 '''
     }
 
+    void testOuterDotThisNotation() {
+        assertScript '''
+class Outer {
+    int x
+    class Inner {
+        int foo() { 2*Outer.this.x }
+    }
+    int bar() {
+        new Inner().foo()
+    }
+}
+def o = new Outer(x:123)
+assert o.bar() == 2*o.x
+'''
+    }
+
 }
