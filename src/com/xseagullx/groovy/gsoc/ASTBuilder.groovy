@@ -278,6 +278,10 @@ class ASTBuilder extends GroovyBaseListener {
         throw new RuntimeException("Unsupported expression type! $ctx")
     }
 
+    static Expression parseExpression(GroovyParser.ParenthesisExpressionContext ctx) {
+        parseExpression(ctx.expression())
+    }
+
     static Expression parseExpression(GroovyParser.ListConstructorContext ctx) {
         def expression = new ListExpression(ctx.expression().collect(ASTBuilder.&parseExpression))
         setupNodeLocation(expression, ctx)

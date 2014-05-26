@@ -62,7 +62,7 @@ class ASTComparatorCategory {
         (ArgumentListExpression): EXPRESSION_IGNORE_LIST,
         (ArrayExpression): EXPRESSION_IGNORE_LIST,
         (AttributeExpression): EXPRESSION_IGNORE_LIST,
-        (BinaryExpression): ["text", "columnNumber", "lastColumnNumber"],
+        (BinaryExpression): EXPRESSION_IGNORE_LIST,
         (BitwiseNegationExpression): EXPRESSION_IGNORE_LIST,
         (BooleanExpression): EXPRESSION_IGNORE_LIST,
         (CastExpression): EXPRESSION_IGNORE_LIST,

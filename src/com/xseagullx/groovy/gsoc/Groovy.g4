@@ -133,7 +133,8 @@ statement:
 caseStatement: (KW_CASE expression ':' (statement | ';' | NL)* );
 
 expression:
-    '{' argumentDeclarationList '->' blockStatement? '}' #closureExpression
+    '(' expression ')' #parenthesisExpression
+    | '{' argumentDeclarationList '->' blockStatement? '}' #closureExpression
     | '[' (expression (',' expression)*)?']' #listConstructor
     | '[' (':' | (mapEntry (',' mapEntry)*) )']' #mapConstructor
     | expression ('.' | '?.' | '*.') IDENTIFIER '(' argumentList ')' #methodCallExpression
