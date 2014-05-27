@@ -17,6 +17,7 @@ package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
+import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -31,6 +32,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -52,7 +54,7 @@ import java.lang.reflect.Modifier;
  * @author Matthias Cullmann
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-public class LogASTTransformation extends AbstractASTTransformation {
+public class LogASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
     /**
      * This is just a dummy value used because String annotations values can not be null.
@@ -60,12 +62,15 @@ public class LogASTTransformation extends AbstractASTTransformation {
      */
     public static final String DEFAULT_CATEGORY_NAME = "##default-category-name##";
 
+    private CompilationUnit compilationUnit;
+
     public void visit(ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
         AnnotatedNode targetClass = (AnnotatedNode) nodes[1];
         AnnotationNode logAnnotation = (AnnotationNode) nodes[0];
 
-        final LoggingStrategy loggingStrategy = createLoggingStrategy(logAnnotation, source.getClassLoader());
+        final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
+        final LoggingStrategy loggingStrategy = createLoggingStrategy(logAnnotation, classLoader);
         if (loggingStrategy == null) return;
 
         final String logFieldName = lookupLogFieldName(logAnnotation);
@@ -173,7 +178,7 @@ public class LogASTTransformation extends AbstractASTTransformation {
 
         Class annotationClass;
         try {
-            annotationClass = Class.forName(annotationName);
+            annotationClass = Class.forName(annotationName, false, loader);
         } catch (Throwable e) {
             throw new RuntimeException("Could not resolve class named " + annotationName);
         }
@@ -259,5 +264,9 @@ public class LogASTTransformation extends AbstractASTTransformation {
                 throw new GroovyRuntimeException("Unable to load logging class", e);
             }
         }
+    }
+
+    public void setCompilationUnit(final CompilationUnit unit) {
+        this.compilationUnit = unit;
     }
 }
