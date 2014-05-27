@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * An enhancement of Groovy's Sql class providing support for accessing
@@ -75,7 +76,10 @@ public class DataSet extends Sql {
     private SqlOrderByVisitor sortVisitor;
     private String sql;
     private List<Object> params;
+    private List<Object> batchData;
+    private Set<String> batchKeys;
     private Sql delegate;
+    private boolean withinDataSetBatch = false;
 
     public DataSet(Sql sql, Class type) {
         super(sql);
@@ -154,7 +158,92 @@ public class DataSet extends Sql {
         delegate.rollback();
     }
 
+    /**
+     * Performs the closure (containing batch operations) within a batch.
+     * Uses a batch size of zero, i.e. no automatic partitioning of batches.
+     *
+     * @param closure the closure containing batch and optionally other statements
+     * @return an array of update counts containing one element for each
+     *         command in the batch.  The elements of the array are ordered according
+     *         to the order in which commands were added to the batch.
+     * @throws SQLException if a database access error occurs,
+     *                      or this method is called on a closed <code>Statement</code>, or the
+     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
+     *                      database fails to execute properly or attempts to return a result set.
+     */
+    @Override
+    public int[] withBatch(Closure closure) throws SQLException {
+        return withBatch(0, closure);
+    }
+
+    /**
+     * Performs the closure (containing batch operations) within a batch.
+     * For example:
+     * <pre>
+     * dataSet.withBatch(3) {
+     *     add(anint: 1, astring: "Groovy")
+     *     add(anint: 2, astring: "rocks")
+     *     add(anint: 3, astring: "the")
+     *     add(anint: 4, astring: "casbah")
+     * }
+     * </pre>
+     *
+     * @param batchSize partition the batch into batchSize pieces, i.e. after batchSize
+     *                  <code>addBatch()</code> invocations, call <code>executeBatch()</code> automatically;
+     *                  0 means manual calls to executeBatch are required
+     * @param closure   the closure containing batch and optionally other statements
+     * @return an array of update counts containing one element for each
+     *         command in the batch.  The elements of the array are ordered according
+     *         to the order in which commands were added to the batch.
+     * @throws SQLException if a database access error occurs, or the driver does not support batch statements.
+     *                      Throws {@link java.sql.BatchUpdateException} (a subclass of <code>SQLException</code>)
+     *                      if one of the commands sent to the database fails to execute properly.
+     */
+    @Override
+    public int[] withBatch(int batchSize, Closure closure) throws SQLException {
+        batchData = new ArrayList<Object>();
+        withinDataSetBatch = true;
+        closure.call(this);
+        withinDataSetBatch = false;
+        if (batchData.size() == 0) {
+            return new int[0];
+        }
+        Closure transformedClosure = new Closure(null) {
+            public void doCall(BatchingPreparedStatementWrapper stmt) throws SQLException {
+                for (Object next : batchData) {
+                    stmt.addBatch(new Object[]{next});
+                }
+            }
+        };
+        return super.withBatch(batchSize, buildMapQuery(), transformedClosure);
+    }
+
+    /**
+     * Adds the provided map of key-value pairs as a new row in the table represented by this DataSet.
+     *
+     * @param map the key (column-name), value pairs to add as a new row
+     * @throws SQLException if a database error occurs
+     */
     public void add(Map<String, Object> map) throws SQLException {
+        if (withinDataSetBatch) {
+            if (batchData.size() == 0) {
+                batchKeys = map.keySet();
+            } else {
+                if (!map.keySet().equals(batchKeys)) {
+                    throw new IllegalArgumentException("Inconsistent keys found for batch add!");
+                }
+            }
+            batchData.add(map);
+            return;
+        }
+        int answer = executeUpdate(buildListQuery(map), new ArrayList<Object>(map.values()));
+        if (answer != 1) {
+            LOG.warning("Should have updated 1 row not " + answer + " when trying to add: " + map);
+        }
+    }
+
+    private String buildListQuery(Map<String, Object> map) {
         StringBuilder buffer = new StringBuilder("insert into ");
         buffer.append(table);
         buffer.append(" (");
@@ -173,21 +262,57 @@ public class DataSet extends Sql {
         buffer.append(") values (");
         buffer.append(paramBuffer.toString());
         buffer.append(")");
-
-        int answer = executeUpdate(buffer.toString(), new ArrayList<Object>(map.values()));
-        if (answer != 1) {
-            LOG.warning("Should have updated 1 row not " + answer + " when trying to add: " + map);
-        }
+        return buffer.toString();
     }
 
+    private String buildMapQuery() {
+        StringBuilder buffer = new StringBuilder("insert into ");
+        buffer.append(table);
+        buffer.append(" (");
+        StringBuilder paramBuffer = new StringBuilder();
+        boolean first = true;
+        for (String column : batchKeys) {
+            if (first) {
+                first = false;
+                paramBuffer.append(":");
+            } else {
+                buffer.append(", ");
+                paramBuffer.append(", :");
+            }
+            paramBuffer.append(column);
+            buffer.append(column);
+        }
+        buffer.append(") values (");
+        buffer.append(paramBuffer.toString());
+        buffer.append(")");
+        return buffer.toString();
+    }
+
+    /**
+     * Return a lazy-implemented filtered view of this DataSet.
+     *
+     * @param where the filtering Closure
+     * @return the view DataSet
+     */
     public DataSet findAll(Closure where) {
         return new DataSet(this, where);
     }
 
+    /**
+     * Return a lazy-implemented re-ordered view of this DataSet.
+     *
+     * @param sort the ordering Closure
+     * @return the view DataSet
+     */
     public DataSet sort(Closure sort) {
         return new DataSet(this, null, sort);
     }
 
+    /**
+     * Return a lazy-implemented reverse-ordered view of this DataSet.
+     *
+     * @return the view DataSet
+     */
     public DataSet reverse() {
         if (sort == null) {
             throw new GroovyRuntimeException("reverse() only allowed immediately after a sort()");

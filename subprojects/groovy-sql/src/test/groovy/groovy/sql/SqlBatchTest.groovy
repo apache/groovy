@@ -41,6 +41,11 @@ class SqlBatchTest extends GroovyTestCase {
         people.add(id: 1, firstname: "James", lastname: "Strachan")
         people.add(id: 2, firstname: "Bob", lastname: "Mcwhirter")
         people.add(id: 3, firstname: "Sam", lastname: "Pullara")
+
+        // uncomment to see logging (or set FINEST in <JRE_HOME>/lib/logging.properties)
+//        def logger = java.util.logging.Logger.getLogger('groovy.sql')
+//        logger.level = java.util.logging.Level.FINE
+//        logger.addHandler(new java.util.logging.ConsoleHandler(level: java.util.logging.Level.FINE))
     }
 
     void testManualBatch() {

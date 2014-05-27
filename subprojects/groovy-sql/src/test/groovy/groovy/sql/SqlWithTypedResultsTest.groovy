@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,47 @@ package groovy.sql
 
 /**
  * @author Thomas Heller
- * @version $Revision$
+ * @author Paul King
  */
 class SqlWithTypedResultsTest extends SqlHelperTestCase {
 
     void testSqlQuery() {
         def sql = createEmptySql()
-
         sql.execute("create table groovytest ( anint INTEGER, astring VARCHAR(10) )");
 
-        def groovytest = sql.dataSet("groovytest")
-        groovytest.add(anint: 1, astring: "Groovy")
-        groovytest.add(anint: 2, astring: "rocks")
-
+        sql.dataSet("groovytest").with {
+            add(anint: 1, astring: "Groovy")
+            add(anint: 2, astring: "rocks")
+        }
         Integer id
-
         sql.eachRow("SELECT * FROM groovytest ORDER BY anint") {
             println "found ${it.astring} for id ${it.anint}"
             id = it.anint
         }
-
         assert id == 2
+        sql.close()
+    }
+
+    void testSqlQueryWithBatch() {
+        // uncomment to see logging (or set FINEST in <JRE_HOME>/lib/logging.properties)
+//        def logger = java.util.logging.Logger.getLogger('groovy.sql')
+//        logger.level = java.util.logging.Level.FINE
+//        logger.addHandler(new java.util.logging.ConsoleHandler(level: java.util.logging.Level.FINE))
+        def sql = createEmptySql()
+        sql.execute("create table groovytest ( anint INTEGER, astring VARCHAR(10) )");
+
+        sql.dataSet("groovytest").with {
+            withBatch(3) {
+                add(anint: 1, astring: "Groovy")
+                add(anint: 2, astring: "rocks")
+                add(anint: 3, astring: "the")
+                add(anint: 4, astring: "casbah")
+            }
+        }
+        assert sql.rows("SELECT * FROM groovytest").size() == 4
+        // end result the same as if no batching was in place but logging should show:
+        // FINE: Successfully executed batch with 3 command(s)
+        // FINE: Successfully executed batch with 1 command(s)
         sql.close()
     }
 }
