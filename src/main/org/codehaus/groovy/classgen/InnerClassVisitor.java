@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -47,6 +48,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
     private MethodNode currentMethod;
     private FieldNode currentField;
     private boolean processingObjInitStatements = false;
+    private boolean inClosure = false;
 
     public InnerClassVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
@@ -78,6 +80,14 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
             node.addInterface(node.getUnresolvedSuperClass());
             node.setUnresolvedSuperClass(ClassHelper.OBJECT_TYPE);
         }
+    }
+    
+    @Override
+    public void visitClosureExpression(ClosureExpression expression) {
+        boolean inClosureOld = inClosure;
+        inClosure = true;
+        super.visitClosureExpression(expression);
+        inClosure = inClosureOld;
     }
 
     @Override
@@ -180,7 +190,10 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         // this is saved in a field named this$0
         pCount = 0;
         expressions.add(pCount, VariableExpression.THIS_EXPRESSION);
-        ClassNode outerClassType = getClassNode(innerClass.getOuterClass(), isStaticThis(innerClass,scope)).getPlainNodeReference();
+        boolean isStatic = isStaticThis(innerClass,scope);
+        ClassNode outerClassType = getClassNode(innerClass.getOuterClass(), isStatic);
+        if (!isStatic && inClosure) outerClassType = ClassHelper.CLOSURE_TYPE;
+        outerClassType = outerClassType.getPlainNodeReference();
         Parameter thisParameter = new Parameter(outerClassType, "p" + pCount);
         parameters.add(pCount, thisParameter);
 
@@ -211,9 +224,14 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
     }
 
     private boolean isStaticThis(InnerClassNode innerClass, VariableScope scope) {
-        boolean ret = scope.isInStaticContext() || innerClass.isStaticClass();
-        if (innerClass.getEnclosingMethod()!=null) {
+        if (inClosure) return false;
+        boolean ret = innerClass.isStaticClass();
+        if (    innerClass.getEnclosingMethod()!=null) {
             ret = ret || innerClass.getEnclosingMethod().isStatic();
+        } else if (currentField!=null) {
+            ret = ret || currentField.isStatic();
+        } else if (currentMethod!=null && "<clinit>".equals(currentMethod.getName())) {
+            ret = true;
         }
         return ret;
     }

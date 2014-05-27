@@ -56,4 +56,22 @@ class ClosureMethodCallTest extends GroovyTestCase {
         def closure = System.out.&println
         closure("Hello world")
     }
+    
+    //GROOVY-6819
+    void test() {
+        assertScript '''
+            class Foo {
+                static justcallme(Closure block) {
+                    block()
+                }
+                static foo() {2}
+                static bar(Closure block) {
+                    this.justcallme {
+                        this.foo()
+                    }
+                }
+            }
+            assert Foo.bar() {} == 2
+        '''
+    }
 }
