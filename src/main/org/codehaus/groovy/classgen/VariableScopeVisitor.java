@@ -423,9 +423,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             currentScope.putDeclaredVariable(var);
         }
 
-        pushState(false);
         super.visitClosureExpression(expression);
-        popState();
         markClosureSharedVariables();
 
         popState();
