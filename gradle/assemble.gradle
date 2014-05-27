@@ -468,4 +468,9 @@ task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
     into('src') {
         with srcSpec
     }
+
+    if ((version.endsWith('SNAPSHOT') && !groovyBundleVersion.endsWith('SNAPSHOT'))
+        || (!version.endsWith('SNAPSHOT') && groovyBundleVersion.endsWith('SNAPSHOT'))) {
+        throw new GradleException("Incoherent versions. Found groovyVersion=$version and groovyBundleVersion=$groovyBundleVersion")
+    }
 }
