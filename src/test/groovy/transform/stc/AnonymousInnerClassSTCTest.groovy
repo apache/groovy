@@ -127,4 +127,23 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
                 s.size()
             }'''
     }
+    
+    void testAICInAICInStaticMethod() {
+        assertScript '''
+            class A {
+                public static foo() {
+                    return new Object() {
+                        public String toString() {
+                            return new Object() {
+                                public String toString() {
+                                    "ii"
+                                }
+                            }.toString()+" i"
+                        }
+                    }.toString()
+                }
+            }
+            assert A.foo() == "ii i"
+        '''
+    }
 }

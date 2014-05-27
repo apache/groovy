@@ -542,7 +542,14 @@ public class InvocationWriter {
         String ownerDescriptor = prepareConstructorCall(cn);
         
         List<Expression> args = makeArgumentList(call.getArguments()).getExpressions();
-        Parameter[] params = cn.getParameters(); 
+        Parameter[] params = cn.getParameters();
+        // if a this appears as parameter here, then it should be
+        // not static, unless we are in a static method. But since 
+        // ACG#visitVariableExpression does the opposite for this case, we
+        // push here an explicit this. This should not have any negative effect
+        // sine visiting a method call or property with implicit this will push
+        // a new value for this again.
+        controller.getCompileStack().pushImplicitThis(true);
         for (int i=0; i<params.length; i++) {
             Parameter p = params[i];
             Expression arg = args.get(i);
@@ -554,7 +561,7 @@ public class InvocationWriter {
             }
             os.doGroovyCast(p.getType());
         }
-        
+        controller.getCompileStack().popImplicitThis();
         finnishConstructorCall(cn, ownerDescriptor, args.size());
         return true;
     }
