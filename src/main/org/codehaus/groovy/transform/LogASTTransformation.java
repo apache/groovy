@@ -27,11 +27,13 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -39,6 +41,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Iterator;
 
 /**
  * This class provides an AST Transformation to add a log field to a class.
@@ -153,6 +156,14 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         };
         transformer.visitClass(classNode);
 
+        // TODO can we replace GROOOVY-6373 fix with something simpler? breaks tests ATM
+        // new VariableScopeVisitor(sourceUnit, true).visitClass(classNode);
+        // GROOVY-6373: added log field is already a field node in inner classes by now
+        VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(sourceUnit, true);
+        Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
+        while (innerClasses.hasNext()) {
+            scopeVisitor.visitClass(innerClasses.next());
+        }
     }
 
     private String lookupLogFieldName(AnnotationNode logAnnotation) {

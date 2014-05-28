@@ -1,9 +1,9 @@
 package groovy.util.logging
 
-import java.lang.reflect.*
+import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 import java.util.logging.*
 import groovy.mock.interceptor.MockFor
-import org.junit.Assert
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 /**
@@ -269,11 +269,11 @@ class LogTest extends GroovyTestCase {
                   log.info("info called")
                 }
             }""")
-        LogFormaterSpy logFormaterSpy = registerLogFormaterSpy('MyClass')
+        LogFormatterSpy logFormatterSpy = registerLogFormatterSpy('MyClass')
 
         clazz.newInstance().loggingMethod()
 
-        assert logFormaterSpy.messageReceived
+        assert logFormatterSpy.messageReceived
     }
 
     public void testCustomCategory() {
@@ -285,17 +285,17 @@ class LogTest extends GroovyTestCase {
                   log.info("info called")
                 }
             }""")
-        LogFormaterSpy logFormaterSpy = registerLogFormaterSpy(categoryName)
+        LogFormatterSpy logFormatterSpy = registerLogFormatterSpy(categoryName)
 
         clazz.newInstance().loggingMethod()
 
-        assert logFormaterSpy.messageReceived
+        assert logFormatterSpy.messageReceived
     }
 
-    private LogFormaterSpy registerLogFormaterSpy(String loggerName) {
+    private LogFormatterSpy registerLogFormatterSpy(String loggerName) {
         Logger logger = Logger.getLogger(loggerName)
         ConsoleHandler handler = new ConsoleHandler()
-        LogFormaterSpy loggerNameSpy = new LogFormaterSpy()
+        LogFormatterSpy loggerNameSpy = new LogFormatterSpy()
         handler.setFormatter(loggerNameSpy)
         logger.addHandler(handler)
         return loggerNameSpy
@@ -352,7 +352,7 @@ class LogTest extends GroovyTestCase {
     }
 }
 
-class LogFormaterSpy extends Formatter {
+class LogFormatterSpy extends Formatter {
 
     boolean messageReceived = false
 
