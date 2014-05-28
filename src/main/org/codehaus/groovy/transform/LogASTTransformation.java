@@ -156,14 +156,8 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         };
         transformer.visitClass(classNode);
 
-        // TODO can we replace GROOOVY-6373 fix with something simpler? breaks tests ATM
-        // new VariableScopeVisitor(sourceUnit, true).visitClass(classNode);
-        // GROOVY-6373: added log field is already a field node in inner classes by now
-        VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(sourceUnit, true);
-        Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
-        while (innerClasses.hasNext()) {
-            scopeVisitor.visitClass(innerClasses.next());
-        }
+        // GROOVY-6373: references to 'log' field are normally already FieldNodes by now, so revisit scoping
+        new VariableScopeVisitor(sourceUnit, true).visitClass(classNode);
     }
 
     private String lookupLogFieldName(AnnotationNode logAnnotation) {

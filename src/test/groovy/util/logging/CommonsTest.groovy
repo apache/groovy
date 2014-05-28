@@ -152,12 +152,19 @@ class CommonsTest extends GroovyTestCase {
             @groovy.util.logging.Commons
             class MyClass {
                 boolean traceCalled = false
-                MyClass() {
-                    log = new LogDecorator().wrap(log) as org.apache.commons.logging.Log
-                }
 
                 def loggingMethod() {
+                    overrideLog()
                     log.trace (traceCalled = true)
+                }
+
+                def overrideLog() {
+                    def field = MyClass.getDeclaredField('log')
+                    field.accessible = true
+                    def modifiersField = java.lang.reflect.Field.getDeclaredField("modifiers")
+                    modifiersField.accessible = true
+                    modifiersField.setInt(field, field.modifiers & ~java.lang.reflect.Modifier.FINAL)
+                    field.set(null, new LogDecorator().wrap(log) as org.apache.commons.logging.Log)
                 }
             }
             def o = new MyClass()
