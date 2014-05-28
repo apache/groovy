@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
     private boolean isSpecialConstructorCall = false;
     private boolean inConstructor = false;
+    private final boolean recurseInnerClasses;
 
     private LinkedList stateStack = new LinkedList();
 
@@ -61,9 +62,15 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    public VariableScopeVisitor(SourceUnit source) {
+    public VariableScopeVisitor(SourceUnit source, boolean recurseInnerClasses) {
         this.source = source;
         currentScope = headScope;
+        this.recurseInnerClasses = recurseInnerClasses;
+    }
+
+
+    public VariableScopeVisitor(SourceUnit source) {
+        this(source, false);
     }
 
     // ------------------------------
@@ -468,6 +475,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         prepareVisit(node);
 
         super.visitClass(node);
+        if (recurseInnerClasses) {
+            Iterator<InnerClassNode> innerClasses = node.getInnerClasses();
+            while (innerClasses.hasNext()) {
+                visitClass(innerClasses.next());
+            }
+        }
         popState();
     }
 
