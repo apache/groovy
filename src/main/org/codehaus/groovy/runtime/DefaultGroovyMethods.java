@@ -4814,6 +4814,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #min(Iterable)
      * @since 1.0
      */
+    @Deprecated 
     public static <T> T min(Collection<T> self) {
         return GroovyCollections.min(self);
     }
