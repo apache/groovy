@@ -227,6 +227,7 @@ public class Java5 implements VMPlugin {
             ListExpression le = (ListExpression) exp;
             int bitmap = 0;
             for (Expression e : le.getExpressions()) {
+                if (!(e instanceof PropertyExpression)) return;
                 PropertyExpression element = (PropertyExpression) e;
                 String name = element.getPropertyAsString();
                 ElementType value = ElementType.valueOf(name);
