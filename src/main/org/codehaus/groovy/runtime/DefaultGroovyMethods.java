@@ -2101,18 +2101,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Convert a Collection to a List. Always returns a new List
-     * even if the Collection is already a List.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">def x = [1,2,3] as HashSet
-     * assert x.class == HashSet
-     * assert x.toList() instanceof List</pre>
-     *
-     * @param self a collection
-     * @return a List
+     * @deprecated Use the Iterable version of toList instead
+     * @see #toList(Iterable)
      * @since 1.0
      */
+    @Deprecated
     public static <T> List<T> toList(Collection<T> self) {
         List<T> answer = new ArrayList<T>(self.size());
         answer.addAll(self);
@@ -3892,35 +3885,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts all collection members into (sub)groups determined by the supplied
-     * mapping closures. Each closure should return the key that this item
-     * should be grouped by. The returned LinkedHashMap will have an entry for each
-     * distinct 'key path' returned from the closures, with each value being a list
-     * of items for that 'group path'.
-     *
-     * Example usage:
-     * <pre class="groovyTestCase">def result = [1,2,3,4,5,6].groupBy([{ it % 2 }, { it < 4 }])
-     * assert result == [1:[(true):[1, 3], (false):[5]], 0:[(true):[2], (false):[4, 6]]]</pre>
-     *
-     * Another example:
-     * <pre>def sql = groovy.sql.Sql.newInstance(/&ast; ... &ast;/)
-     * def data = sql.rows("SELECT * FROM a_table").groupBy([{ it.column1 }, { it.column2 }, { it.column3 }])
-     * if (data.val1.val2.val3) {
-     *     // there exists a record where:
-     *     //   a_table.column1 == val1
-     *     //   a_table.column2 == val2, and
-     *     //   a_table.column3 == val3
-     * } else {
-     *     // there is no such record
-     * }</pre>
-     * If an empty list of closures is supplied the IDENTITY Closure will be used.
-     *
-     * @param self     a collection to group
-     * @param closures a list of closures, each mapping entries on keys
-     * @return a new Map grouped by keys on each criterion
+     * @deprecated Use the Iterable version of groupBy instead
+     * @see #groupBy(Iterable, List)
      * @since 1.8.1
-     * @see Closure#IDENTITY
      */
+    @Deprecated
     public static Map groupBy(Collection self, List<Closure> closures) {
         return groupBy((Iterable)self, closures);
     }
@@ -6701,27 +6670,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts this Collection using the given Closure to determine the correct ordering. If the Collection is a List,
-     * it is sorted in place and returned. Otherwise, the elements are first placed
-     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
-     * <p>
-     * If the Closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }</pre>
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a, b -> a.length() <=> b.length() }</pre>
-     *
-     * @param self    a Collection to be sorted
-     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
-     * @return a newly created sorted List
-     * @see #sort(Collection, boolean, Closure)
+     * @deprecated Use the Iterable version of sort instead
+     * @see #sort(Iterable, Closure)
      * @since 1.0
      */
+    @Deprecated
     public static <T> List<T> sort(Collection<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         return sort((Iterable<T>)self, closure);
     }
@@ -9069,14 +9022,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten a collection.  This collection and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
-     *
-     * @param self a Collection to flatten
-     * @return a flattened Collection
+     * @deprecated Use the Iterable version of flatten instead
+     * @see #flatten(Iterable)
      * @since 1.6.0
      */
+    @Deprecated
     public static Collection<?> flatten(Collection<?> self) {
         return flatten(self, createSimilarCollection(self));
     }
@@ -9217,17 +9167,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten a collection.  This collection and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     * For any non-Array, non-Collection object which represents some sort
-     * of collective type, the supplied closure should yield the contained items;
-     * otherwise, the closure should just return any element which corresponds to a leaf.
-     *
-     * @param self a Collection
-     * @param flattenUsing a closure to determine how to flatten non-Array, non-Collection elements
-     * @return a flattened Collection
+     * @deprecated Use the Iterable version of flatten instead
+     * @see #flatten(Iterable, Closure)
      * @since 1.6.0
      */
+    @Deprecated
     public static <T> Collection<T> flatten(Collection<T> self, Closure<? extends T> flattenUsing) {
         return flatten(self, createSimilarCollection(self), flattenUsing);
     }
