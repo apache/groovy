@@ -188,8 +188,7 @@ class Slf4jTest extends GroovyTestCase {
         assert events[ind].message == "trace called"
     }
 
-    // GROOVY-6373, GROOVY-6381
-    public void testLogWithInnerClasses() {
+    public void testLogWithInnerClasses_groovy6373() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Slf4j('logger')
             class MyClass {
@@ -200,18 +199,10 @@ class Slf4jTest extends GroovyTestCase {
                     def loggingMethod() {
                         logger.info  ("inner called")
                     }
-                    //GROOVY-6381 NYI
-                    //static class MyInnerInnerClass {
-                    //    def loggingMethod() {
-                    //        logger.info  ("inner inner called")
-                    //    }
-                    //}
                 }
             }
             new MyClass().loggingMethod()
             new MyClass.MyInnerClass().loggingMethod()
-            //GROOVY-6381 NYI
-            //new MyClass.MyInnerClass.MyInnerInnerClass().loggingMethod()
         ''')
 
         Script s = (Script) clazz.newInstance()
@@ -219,14 +210,11 @@ class Slf4jTest extends GroovyTestCase {
 
         def events = appender.getEvents()
         int ind = 0
-        assert events.size() == 2 //3
+        assert events.size() == 2
         assert events[ind].level == Level.INFO
         assert events[ind].message == "outer called"
         assert events[++ind].level == Level.INFO
         assert events[ind].message == "inner called"
-        //GROOVY-6381 NYI
-//        assert events[++ind].level == Level.INFO
-//        assert events[ind].message == "inner inner called"
     }
 
     public void testLogGuard() {
