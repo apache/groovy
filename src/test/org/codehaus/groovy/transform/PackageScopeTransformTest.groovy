@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ class PackageScopeTransformTest extends GroovyShellTestCase {
                 def method() {}
             }
             class Bar {
+                Bar() {}
+                @PackageScope Bar(String x) { this.x = x }
                 @PackageScope String x
                 @PackageScope def method() {}
             }
@@ -77,6 +79,26 @@ class PackageScopeTransformTest extends GroovyShellTestCase {
                 assert !Modifier.isProtected(c.modifiers)
             } else {
                 assert Modifier.isPublic(c.modifiers)
+            }
+            def cons = c.declaredConstructors
+            if (c.name == 'Bar') {
+                assert cons.size() == 2
+                cons.each { con ->
+                    if (con.parameterTypes*.name == []) {
+                        assert Modifier.isPublic(con.modifiers)
+                    } else {
+                        assert con.parameterTypes*.name == ['java.lang.String']
+                        assert !Modifier.isPrivate(con.modifiers)
+                        assert !Modifier.isPublic(con.modifiers)
+                        assert !Modifier.isProtected(con.modifiers)
+                    }
+
+                }
+                println cons[0].parameterTypes*.name
+                println cons[1].parameterTypes*.name
+            } else {
+                assert cons.size() == 1
+                assert Modifier.isPublic(cons[0].modifiers)
             }
         }
     }

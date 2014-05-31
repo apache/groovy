@@ -1888,6 +1888,10 @@ Should you want to create a package private field instead of a property (private
 include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=packagescope_property_javalike,indent=0]
 ----
 
+The `@PackageScope` annotation can also be used for methods and constructors. This feature is seldom used as part of normal Groovy conventions but
+is sometimes useful for factory methods that should be visible internally within a package or for methods or constructors provided for testing
+purposes, or when integrating with third-party libraries which require such visibility conventions.
+
 [[xform-AnnotationCollector]]
 ===== @groovy.transform.AnnotationCollector
 
