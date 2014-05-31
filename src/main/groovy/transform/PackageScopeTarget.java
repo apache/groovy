@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,5 +35,10 @@ public enum PackageScopeTarget {
     /**
      * Make the Class fields have package protected visibility.
      */
-    FIELDS
+    FIELDS,
+
+    /**
+     * Make the Class constructors have package protected visibility.
+     */
+    CONSTRUCTORS
 }

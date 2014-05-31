@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -102,6 +103,12 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         if (value.contains(groovy.transform.PackageScopeTarget.METHODS)) {
             final List<MethodNode> mList = cNode.getMethods();
             for (MethodNode mNode : mList) {
+                if (mNode.isSyntheticPublic()) revertVisibility(mNode);
+            }
+        }
+        if (value.contains(groovy.transform.PackageScopeTarget.CONSTRUCTORS)) {
+            final List<ConstructorNode> cList = cNode.getDeclaredConstructors();
+            for (MethodNode mNode : cList) {
                 if (mNode.isSyntheticPublic()) revertVisibility(mNode);
             }
         }
