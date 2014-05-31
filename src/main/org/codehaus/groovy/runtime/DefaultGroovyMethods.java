@@ -4810,14 +4810,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds min() method to Collection objects.
-     * <pre class="groovyTestCase">assert 2 == [4,2,5].min()</pre>
-     *
-     * @param self a Collection
-     * @return the minimum value
-     * @see groovy.util.GroovyCollections#min(java.util.Collection)
+     * @deprecated Use the Iterable version of min instead
+     * @see #min(Iterable)
      * @since 1.0
      */
+    @Deprecated 
     public static <T> T min(Collection<T> self) {
         return GroovyCollections.min(self);
     }
