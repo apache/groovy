@@ -94,8 +94,6 @@ class PackageScopeTransformTest extends GroovyShellTestCase {
                     }
 
                 }
-                println cons[0].parameterTypes*.name
-                println cons[1].parameterTypes*.name
             } else {
                 assert cons.size() == 1
                 assert Modifier.isPublic(cons[0].modifiers)

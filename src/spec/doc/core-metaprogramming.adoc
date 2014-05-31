@@ -1888,9 +1888,19 @@ Should you want to create a package private field instead of a property (private
 include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=packagescope_property_javalike,indent=0]
 ----
 
-The `@PackageScope` annotation can also be used for methods and constructors. This feature is seldom used as part of normal Groovy conventions but
-is sometimes useful for factory methods that should be visible internally within a package or for methods or constructors provided for testing
-purposes, or when integrating with third-party libraries which require such visibility conventions.
+The `@PackageScope` annotation can also be used for classes, methods and constructors. In addition, by specifying a list
+of `PackageScopeTarget` values as the annotation attribute at the class level, all members within that class that don't
+have an explicit modifier and match the provided `PackageScopeTarget` will remain package protected. For example to apply
+to fields within a class use the following annotation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=packagescope_property_usingtarget,indent=0]
+----
+
+The `@PackageScope` annotation is seldom used as part of normal Groovy conventions but is sometimes useful
+for factory methods that should be visible internally within a package or for methods or constructors provided
+for testing purposes, or when integrating with third-party libraries which require such visibility conventions.
 
 [[xform-AnnotationCollector]]
 ===== @groovy.transform.AnnotationCollector

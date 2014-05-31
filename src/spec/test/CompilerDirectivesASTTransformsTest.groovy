@@ -113,5 +113,21 @@ class Person {
 // end::packagescope_property_javalike[]
 assert Modifier.toString(Person.getDeclaredField('name').modifiers)==''
 '''
+
+        assertScript '''import groovy.transform.PackageScope
+import java.lang.reflect.Modifier
+// tag::packagescope_property_usingtarget[]
+import static groovy.transform.PackageScopeTarget.FIELDS
+@PackageScope(FIELDS)
+class Person {
+  String name     // not a property, package protected
+  Date dob        // not a property, package protected
+  private int age // explicit modifier, so won't be touched
+}
+// end::packagescope_property_usingtarget[]
+assert Modifier.toString(Person.getDeclaredField('name').modifiers)==''
+assert Modifier.toString(Person.getDeclaredField('dob').modifiers)==''
+assert Modifier.toString(Person.getDeclaredField('age').modifiers)=='private'
+'''
     }
 }
