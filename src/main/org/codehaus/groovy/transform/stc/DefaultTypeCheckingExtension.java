@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -170,7 +171,9 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
 
     @Override
     public void setup() {
-        for (TypeCheckingExtension handler : handlers) {
+        ArrayList<TypeCheckingExtension> copy = new ArrayList<TypeCheckingExtension>(handlers);
+        // we're using a copy here because new extensions can be added during the "setup" phase
+        for (TypeCheckingExtension handler : copy) {
             handler.setup();
         }
     }

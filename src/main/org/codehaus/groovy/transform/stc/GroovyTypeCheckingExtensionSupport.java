@@ -32,6 +32,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Opcodes;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
@@ -111,17 +113,33 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
             Class<?> clazz = transformLoader.loadClass(scriptPath, false, true);
             if (TypeCheckingDSL.class.isAssignableFrom(clazz)) {
                 script = (TypeCheckingDSL) clazz.newInstance();
+            } else if (TypeCheckingExtension.class.isAssignableFrom(clazz)) {
+                // since 2.4, we can also register precompiled type checking extensions which are not scripts
+                try {
+                    Constructor<?> declaredConstructor = clazz.getDeclaredConstructor(StaticTypeCheckingVisitor.class);
+                    TypeCheckingExtension extension = (TypeCheckingExtension) declaredConstructor.newInstance(typeCheckingVisitor);
+                    typeCheckingVisitor.addTypeCheckingExtension(extension);
+                    extension.setup();
+                    return;
+                } catch (InstantiationException e) {
+                    addLoadingError(config);
+                } catch (IllegalAccessException e) {
+                    addLoadingError(config);
+                } catch (NoSuchMethodException e) {
+                    context.getErrorCollector().addFatalError(
+                            new SimpleMessage("Static type checking extension '" + scriptPath + "' could not be loaded because it doesn't have a constructor accepting StaticTypeCheckingVisitor.",
+                                    config.getDebug(), typeCheckingVisitor.getSourceUnit())
+                    );
+                } catch (InvocationTargetException e) {
+                    addLoadingError(config);
+                }
             }
         } catch (ClassNotFoundException e) {
             // silent
         } catch (InstantiationException e) {
-            context.getErrorCollector().addFatalError(
-                    new SimpleMessage("Static type checking extension '" + scriptPath + "' could not be loaded.",
-                            config.getDebug(), typeCheckingVisitor.getSourceUnit()));
+            addLoadingError(config);
         } catch (IllegalAccessException e) {
-            context.getErrorCollector().addFatalError(
-                    new SimpleMessage("Static type checking extension '" + scriptPath + "' could not be loaded.",
-                            config.getDebug(), typeCheckingVisitor.getSourceUnit()));
+            addLoadingError(config);
         }
         if (script==null) {
             ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
@@ -163,6 +181,13 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                 }
             }
         }
+    }
+
+    private void addLoadingError(final CompilerConfiguration config) {
+        context.getErrorCollector().addFatalError(
+                new SimpleMessage("Static type checking extension '" + scriptPath + "' could not be loaded.",
+                        config.getDebug(), typeCheckingVisitor.getSourceUnit())
+        );
     }
 
     @Override

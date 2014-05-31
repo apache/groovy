@@ -491,4 +491,16 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         ''', 'Error thrown from extension'
 
     }
+
+    void testPrecompiledExtensionNotExtendingTypeCheckingDSL() {
+        extension = null
+        assertScript '''
+            println 'Everything is ok'
+        '''
+        extension = 'groovy.transform.stc.PrecompiledExtensionNotExtendingDSL'
+        shouldFailWithMessages '''
+            println 'Everything is ok'
+        ''', 'Error thrown from extension in setup', 'Error thrown from extension in onMethodSelection'
+
+    }
 }
