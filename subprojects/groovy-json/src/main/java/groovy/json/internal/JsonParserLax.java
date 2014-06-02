@@ -582,7 +582,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
         if (__currentChar == ']') {
             __index++;
-            return new ArrayList();
+            return new ValueContainer(new ArrayList());
         }
 
         List<Object> list;
