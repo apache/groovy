@@ -337,7 +337,7 @@ public class JsonParserCharArray extends BaseJsonParser {
         /* the list might be empty  */
             if (__currentChar == ']') {
                 __index++;
-                return Collections.EMPTY_LIST;
+                return new ArrayList();
             }
 
             list = new ArrayList();

@@ -29,8 +29,6 @@ import java.util.List;
  */
 public class JsonFastParser extends JsonParserCharArray {
 
-    private static ValueContainer EMPTY_LIST = new ValueContainer(Collections.emptyList());
-
     private final boolean useValues;
     private final boolean chop;
     private final boolean lazyChop;
@@ -240,7 +238,7 @@ public class JsonFastParser extends JsonParserCharArray {
         /* the list might be empty  */
         if (__currentChar == ']') {
             __index++;
-            return EMPTY_LIST;
+            return new ValueContainer(new ArrayList());
         }
 
         List<Object> list;
