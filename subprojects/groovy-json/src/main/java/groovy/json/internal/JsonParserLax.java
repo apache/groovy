@@ -26,8 +26,6 @@ import java.util.List;
  */
 public class JsonParserLax extends JsonParserCharArray {
 
-    private static ValueContainer EMPTY_LIST = new ValueContainer(Collections.emptyList());
-
     private final boolean useValues;
     private final boolean chop;
     private final boolean lazyChop;
@@ -584,7 +582,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
         if (__currentChar == ']') {
             __index++;
-            return EMPTY_LIST;
+            return new ArrayList();
         }
 
         List<Object> list;
