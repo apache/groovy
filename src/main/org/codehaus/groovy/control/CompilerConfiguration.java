@@ -161,6 +161,8 @@ public class CompilerConfiguration {
      */
     private Set<String> disabledGlobalASTTransformations;
 
+    private BytecodeProcessor bytecodePostprocessor;
+
     /**
      * Sets the Flags to defaults.
      */
@@ -827,5 +829,13 @@ public class CompilerConfiguration {
      */
     public void setDisabledGlobalASTTransformations(final Set<String> disabledGlobalASTTransformations) {
         this.disabledGlobalASTTransformations = disabledGlobalASTTransformations;
+    }
+
+    public BytecodeProcessor getBytecodePostprocessor() {
+        return bytecodePostprocessor;
+    }
+
+    public void setBytecodePostprocessor(final BytecodeProcessor bytecodePostprocessor) {
+        this.bytecodePostprocessor = bytecodePostprocessor;
     }
 }
