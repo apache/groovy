@@ -81,13 +81,18 @@ public class CachedClass {
             final Method[] declaredMethods = (Method[])
                AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
                    public /*Method[]*/ Object run() {
-                       final Method[] dm = getTheClass().getDeclaredMethods();
                        try {
-                           AccessibleObject.setAccessible(dm, true);
-                       } catch (SecurityException e) {
-                           // swallow for strict security managers
+                           final Method[] dm = getTheClass().getDeclaredMethods();
+                           try {
+                               AccessibleObject.setAccessible(dm, true);
+                           } catch (SecurityException e) {
+                               // swallow for strict security managers
+                           }
+                           return dm;
+                       } catch (Throwable e) {
+                           // Typically, Android can throw ClassNotFoundException
+                           return new Method[0];
                        }
-                       return dm;
                    }
                });
             List<CachedMethod> methods = new ArrayList<CachedMethod>(declaredMethods.length);

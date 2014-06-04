@@ -75,6 +75,10 @@ allprojects {
             if (indyJar.exists()) {
                 project.artifacts.add('archives', indyJar)
             }
+            def grooidJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1]+'-grooid.jar')
+            if (grooidJar.exists()) {
+                project.artifacts.add('archives', grooidJar)
+            }
         }
     }
 }
@@ -93,6 +97,10 @@ allprojects {
         def indyJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1] + '-indy.jar')
         if (indyJar.exists()) {
             project.artifacts.add('archives', indyJar)
+        }
+        def grooidJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1]+'-grooid.jar')
+        if (grooidJar.exists()) {
+            project.artifacts.add('archives', grooidJar)
         }
     }
 }

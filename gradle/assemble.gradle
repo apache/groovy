@@ -133,9 +133,10 @@ allprojects {
         classifier = jar.classifier
         includeEmptyDirs = false
         def target = new File("${archivePath}.tmp")
-        from zipTree(target)
 
         doFirst {
+            from zipTree(target)
+
             def keepUntouched = [
                     'org/codehaus/groovy/cli/GroovyPosixParser*.class',
                     'groovy/util/CliBuilder*.class',
@@ -154,7 +155,7 @@ allprojects {
                     // only groovy core will include the dependencies repackaged
                     if (isRoot) {
                         configurations.runtime.files.findAll { file ->
-                            ['antlr', 'asm', 'commons-cli'].any {
+                            ['antlr', 'asm', 'commons-cli', 'openbeans'].any {
                                 file.name.startsWith(it)
                             } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
                         }.each { jarjarFile ->
@@ -189,13 +190,43 @@ allprojects {
 
         }
         doLast {
-            // for some obscure reason, this produces a Gradle warning
             target.delete()
-            rootProject.isJarJar = false
         }
     }
-}
 
+    if (project.name in ['groovy', 'groovy-test']) {
+        task grooidjar(type: Jar) {
+            onlyIf {
+                !rootProject.useIndy()
+            }
+            destinationDir = jar.destinationDir
+            baseName = jar.baseName
+            appendix = jar.appendix
+            classifier = jar.classifier ? "${jar.classifier}grooid" : 'grooid'
+            includeEmptyDirs = false
+            def target = new File("${archivePath}.tmp")
+
+            doFirst {
+                from zipTree(target)
+                ant {
+                    taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: rootProject.configurations.tools.asPath
+                    jarjar(jarfile: target) {
+                        zipfileset(src: jarjar.archivePath)
+
+                        rule pattern: 'com.googlecode.openbeans.**', result: 'groovyjarjaropenbeans.@1'
+                        rule pattern: 'org.apache.harmony.beans.**', result: 'groovyjarjarharmonybeans.@1'
+                        rule pattern: 'java.beans.**', result: 'groovyjarjaropenbeans.@1'
+                    }
+                }
+
+            }
+            doLast {
+                target.delete()
+            }
+        }
+        jarjar.finalizedBy(grooidjar)
+    }
+}
 
 subprojects {
     jar {

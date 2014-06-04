@@ -335,22 +335,27 @@ public class GroovyClassLoader extends URLClassLoader {
     protected PermissionCollection getPermissions(CodeSource codeSource) {
         PermissionCollection perms;
         try {
-            perms = super.getPermissions(codeSource);
-        } catch (SecurityException e) {
+            try {
+                perms = super.getPermissions(codeSource);
+            } catch (SecurityException e) {
+                // We lied about our CodeSource and that makes URLClassLoader unhappy.
+                perms = new Permissions();
+            }
+
+            ProtectionDomain myDomain = AccessController.doPrivileged(new PrivilegedAction<ProtectionDomain>() {
+                public ProtectionDomain run() {
+                    return getClass().getProtectionDomain();
+                }
+            });
+            PermissionCollection myPerms = myDomain.getPermissions();
+            if (myPerms != null) {
+                for (Enumeration<Permission> elements = myPerms.elements(); elements.hasMoreElements();) {
+                    perms.add(elements.nextElement());
+                }
+            }
+        } catch (Throwable e) {
             // We lied about our CodeSource and that makes URLClassLoader unhappy.
             perms = new Permissions();
-        }
-
-        ProtectionDomain myDomain = AccessController.doPrivileged(new PrivilegedAction<ProtectionDomain>() {
-            public ProtectionDomain run() {
-                return getClass().getProtectionDomain();
-            }
-        });
-        PermissionCollection myPerms = myDomain.getPermissions();
-        if (myPerms != null) {
-            for (Enumeration<Permission> elements = myPerms.elements(); elements.hasMoreElements();) {
-                perms.add(elements.nextElement());
-            }
         }
         perms.setReadOnly();
         return perms;
@@ -474,8 +479,13 @@ public class GroovyClassLoader extends URLClassLoader {
         }
 
         protected Class createClass(byte[] code, ClassNode classNode) {
+            BytecodeProcessor bytecodePostprocessor = unit.getConfiguration().getBytecodePostprocessor();
+            byte[] fcode = code;
+            if (bytecodePostprocessor!=null) {
+                fcode = bytecodePostprocessor.processBytecode(classNode.getName(), fcode);
+            }
             GroovyClassLoader cl = getDefiningClassLoader();
-            Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
+            Class theClass = cl.defineClass(classNode.getName(), fcode, 0, fcode.length, unit.getAST().getCodeSource());
             this.loadedClasses.add(theClass);
 
             if (generatedClass == null) {

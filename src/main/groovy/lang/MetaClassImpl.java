@@ -16,7 +16,6 @@
 package groovy.lang;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -32,6 +31,7 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ExceptionUtils;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -68,6 +68,7 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.util.ComplexKeyHashMap;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.SingleKeyHashMap;
+import org.codehaus.groovy.reflection.android.AndroidSupport;
 import org.objectweb.asm.ClassVisitor;
 
 import java.beans.BeanInfo;
@@ -3043,7 +3044,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public synchronized void initialize() {
         if (!isInitialized()) {
             fillMethodIndex();
-            addProperties();
+            try {
+                addProperties();
+            } catch (Throwable e) {
+                if (!AndroidSupport.isRunningAndroid()) {
+                    ExceptionUtils.sneakyThrow(e);
+                }
+                // Introspection failure...
+                // May happen in Android
+            }
             initialized = true;
         }
     }

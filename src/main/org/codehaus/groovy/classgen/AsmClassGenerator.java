@@ -226,6 +226,10 @@ public class AsmClassGenerator extends ClassGenerator {
         int mods = adjustedClassModifiersForInnerClassTable(cn);
 
 
+        if (Modifier.isPrivate(mods)) {
+            mods = mods ^ Modifier.PRIVATE;
+            innerClass.setModifiers(mods);
+        }
         cv.visitInnerClass(
                 innerClassInternalName,
                 outerClassName,

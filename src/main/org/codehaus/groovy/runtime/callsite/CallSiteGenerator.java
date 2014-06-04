@@ -19,6 +19,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.android.AndroidSupport;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -242,7 +243,8 @@ public class CallSiteGenerator {
     }
 
     public static boolean isCompilable (CachedMethod method) {
-        return GroovySunClassLoader.sunVM != null || Modifier.isPublic(method.cachedClass.getModifiers()) && method.isPublic() && publicParams(method);
+        return (GroovySunClassLoader.sunVM != null || Modifier.isPublic(method.cachedClass.getModifiers()) && method.isPublic() && publicParams(method))
+                && !AndroidSupport.isRunningAndroid();
     }
 
     private static boolean publicParams(CachedMethod method) {
