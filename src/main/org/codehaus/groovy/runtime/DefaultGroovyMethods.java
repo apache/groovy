@@ -3436,7 +3436,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see    Iterator#remove()
      * @since 1.7.2
      */
-    public static <T> boolean retainAll(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> condition) {
+    public static <T> boolean retainAll(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
         Iterator iter = InvokerHelper.asIterator(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         boolean result = false;
