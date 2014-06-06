@@ -29,7 +29,7 @@ class ASTComparatorCategory {
         (EnumConstantClassNode): [],
         (FieldNode): ["owner", "declaringClass", "initialValueExpression"],
         (GenericsType): [],
-        (ImportNode): [],
+        (ImportNode): LOCATION_IGNORE_LIST,
         (InnerClassNode): [],
         (InterfaceHelperClassNode): [],
         (MethodNode): ["declaringClass"],
@@ -37,10 +37,11 @@ class ASTComparatorCategory {
         (ModuleNode): ["context"],
         (PackageNode): [],
         (Parameter): [],
-        (PropertyNode): ['declaringClass', 'initialValueExpression'],
+        (PropertyNode): (['declaringClass', 'initialValueExpression'] + LOCATION_IGNORE_LIST) as List<String>,
         (Variable): [],
         (VariableScope): ["clazzScope", "parent"],
         (Token): ["root", "startColumn"],
+        (AnnotationNode): (["text"] + LOCATION_IGNORE_LIST) as List<String>,
         (AssertStatement): ["text"],
         (BlockStatement): ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber", "text"],
         (BreakStatement): ["text"],
@@ -224,6 +225,10 @@ class ASTComparatorCategory {
 
     static equals(CompileUnit a, CompileUnit b) {
         true
+    }
+
+    static equals(AnnotationNode a, AnnotationNode b) {
+        reflexiveEquals(a, b, configuration[a.class])
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////

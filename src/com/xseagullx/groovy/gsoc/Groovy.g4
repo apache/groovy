@@ -87,13 +87,13 @@ IDENTIFIER: [A-Za-z][A-Za-z0-9_]*;
 compilationUnit: (NL*) packageDefinition? (NL | ';')* (importStatement | NL)* (NL | ';')* (classDeclaration | NL)* EOF;
 
 packageDefinition:
-    KW_PACKAGE (IDENTIFIER ('.' IDENTIFIER)*);
+    annotationClause* KW_PACKAGE (IDENTIFIER ('.' IDENTIFIER)*);
 importStatement:
-    KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)* ('.' '*')?);
+    annotationClause* KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)* ('.' '*')?);
 classDeclaration:
-    classModifiers KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? (KW_EXTENDS classNameExpression)? (KW_IMPLEMENTS classNameExpression (',' classNameExpression)*)? (NL)* '{' (classMember | NL | ';')* '}' ;
+    annotationClause* classModifiers KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? (KW_EXTENDS classNameExpression)? (KW_IMPLEMENTS classNameExpression (',' classNameExpression)*)? (NL)* '{' (classMember | NL | ';')* '}' ;
 classMember:
-    constructorDeclaration | methodDeclaration | fieldDeclaration | objectInitializer | classInitializer;
+    (annotationClause* (constructorDeclaration | methodDeclaration | fieldDeclaration)) | objectInitializer | classInitializer;
 
 // Members // FIXME Make more strict check for def keyword. There should be no way to ommit everything but IDENTIFIER.
 methodDeclaration:
@@ -113,6 +113,12 @@ typeDeclaration:
     (classNameExpression | KW_DEF)
 ;
 
+annotationClause: //FIXME handle assignment expression.
+    '@' classNameExpression ( '(' ((annotationElementPair (',' annotationElementPair)*) | annotationElement)? ')' )?
+;
+annotationElementPair: IDENTIFIER '=' annotationElement ;
+annotationElement: expression | annotationClause ;
+
 genericDeclarationList:
     '<' classNameExpression (',' classNameExpression)* '>'
 ;
@@ -120,7 +126,7 @@ genericDeclarationList:
 argumentDeclarationList:
     argumentDeclaration (',' argumentDeclaration)* | /* EMPTY ARGUMENT LIST */ ;
 argumentDeclaration:
-    typeDeclaration? IDENTIFIER ;
+    annotationClause* typeDeclaration? IDENTIFIER ;
 
 blockStatement: (statement | NL)+ ;
 
@@ -173,7 +179,7 @@ expression:
     | expression ('&&') expression #binaryExpression
     | expression ('||') expression #binaryExpression
     | expression ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '^=' | '|=' | '<<=' | '>>=' | '>>>=') expression #assignmentExpression
-    | typeDeclaration IDENTIFIER ('=' expression)? #declarationExpression
+    | annotationClause* typeDeclaration IDENTIFIER ('=' expression)? #declarationExpression
     | STRING #constantExpression
     | NUMBER #constantExpression
     | KW_NULL #nullExpression
