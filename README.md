@@ -10,5 +10,5 @@ For this prototype is planed to use CompilerConfiguration and replace parser via
 
 `com.xseagullx.groovy.gsoc.Main` class allows parse groovy source file and get `org.codehaus.groovy.ast.ModuleNode` via `process` method and compiling it to *.class file via `compile` method. 
 
-
-CI reports are available here. [TeamCity](http://xseagullx.com:8080/TeamCity-8.1.1/?guest=1)
+CI reports are available here. <a href="http://xseagullx.com:8080/TeamCity-8.1.1/viewType.html?buildTypeId=Antlrv4GroovyGrammar_Build&guest=1">
+<img src="http://xseagullx.com:8080/TeamCity-8.1.1/app/rest/builds/buildType:(id:Antlrv4GroovyGrammar_Build)/statusIcon"/></a>
