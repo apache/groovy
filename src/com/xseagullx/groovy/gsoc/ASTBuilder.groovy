@@ -131,10 +131,13 @@ class ASTBuilder extends GroovyBaseListener {
         //noinspection GroovyAssignabilityCheck
         def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier())
 
-        def typeDeclaration = parseTypeDeclaration(ctx.typeDeclaration())
+        def typeDeclaration = ctx.classNameExpression() ? parseExpression(ctx.classNameExpression()) : ClassHelper.OBJECT_TYPE
         AnnotatedNode node
-        if (hasVisibilityModifier)
-            node = setupNodeLocation(classNode.addField(ctx.IDENTIFIER().text, modifiers, typeDeclaration, null), ctx)
+        if (hasVisibilityModifier) {
+            def field = classNode.addField(ctx.IDENTIFIER().text, modifiers, typeDeclaration, null)
+            attachAnnotations(field, ctx.annotationClause())
+            node = setupNodeLocation(field, ctx)
+        }
         else { // no visibility specified. Generate property node.
             def propertyModifier = modifiers | Opcodes.ACC_PUBLIC
             def propertyNode = classNode.addProperty(ctx.IDENTIFIER().text, propertyModifier, typeDeclaration, null, null, null)

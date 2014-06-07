@@ -87,11 +87,11 @@ IDENTIFIER: [A-Za-z][A-Za-z0-9_]*;
 compilationUnit: (NL*) packageDefinition? (NL | ';')* (importStatement | NL)* (NL | ';')* (classDeclaration | NL)* EOF;
 
 packageDefinition:
-    annotationClause* KW_PACKAGE (IDENTIFIER ('.' IDENTIFIER)*);
+    (annotationClause (NL | annotationClause)*)? KW_PACKAGE (IDENTIFIER ('.' IDENTIFIER)*);
 importStatement:
-    annotationClause* KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)* ('.' '*')?);
+    (annotationClause (NL | annotationClause)*)? KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)* ('.' '*')?);
 classDeclaration:
-    (annotationClause | classModifier)* KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? (KW_EXTENDS classNameExpression)? (KW_IMPLEMENTS classNameExpression (',' classNameExpression)*)? (NL)* '{' (classMember | NL | ';')* '}' ;
+    ((annotationClause | classModifier) (NL | annotationClause | classModifier)*)? KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? (KW_EXTENDS classNameExpression)? (KW_IMPLEMENTS classNameExpression (',' classNameExpression)*)? (NL)* '{' (classMember | NL | ';')* '}' ;
 classMember:
     constructorDeclaration | methodDeclaration | fieldDeclaration | objectInitializer | classInitializer;
 
@@ -107,7 +107,9 @@ methodDeclaration:
     IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}'
 ;
 fieldDeclaration:
-    ((memberModifier | annotationClause)+ typeDeclaration? | typeDeclaration) IDENTIFIER ;
+    (memberModifier | annotationClause | KW_DEF) (memberModifier | annotationClause | KW_DEF | NL)* classNameExpression? IDENTIFIER
+    | classNameExpression IDENTIFIER
+;
 constructorDeclaration: { _input.LT(_input.LT(1).getType() == VISIBILITY_MODIFIER ? 2 : 1).getText().equals(currentClassName) }?
     VISIBILITY_MODIFIER? IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}' ; // Inner NL 's handling.
 objectInitializer: '{' blockStatement? '}' ;
