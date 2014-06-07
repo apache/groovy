@@ -54,9 +54,20 @@ STRING: QUOTE STRING_BODY QUOTE ;
 fragment STRING_BODY: (~'\'')* ;
 fragment QUOTE: '\'';
 
-INTEGER: ('-'|'+')? DIGITS ('G' | 'L' | 'I' | 'g' | 'l' | 'i')? ;
-DECIMAL: ('-'|'+')? DIGITS '.' DIGITS ('G' | 'D' | 'F' | 'g' | 'd' | 'f')?;
+// Numbers
+DECIMAL: SIGN? DIGITS ('.' DIGITS EXP_PART? | EXP_PART) DECIMAL_TYPE_MODIFIER?;
+INTEGER: SIGN? (('0x' | '0X') HEX_DIGITS | '0' OCT_DIGITS | DEC_DIGITS) INTEGER_TYPE_MODIFIER? ;
+
 fragment DIGITS: [0-9] | [0-9][0-9_]*[0-9] ;
+fragment DEC_DIGITS: [0-9] | [1-9][0-9_]*[0-9] ;
+fragment OCT_DIGITS: [0-7] | [0-7][0-7_]*[0-7] ;
+fragment HEX_DIGITS: [0-9abcdefABCDEF] | [0-9abcdefABCDEF][0-9abcdefABCDEF_]*[0-9abcdefABCDEF] ;  // Simplify by extracting one digit element?
+
+fragment SIGN: ('-'|'+') ;
+fragment EXP_PART: ([eE] SIGN? [0-9]+) ;
+
+fragment INTEGER_TYPE_MODIFIER: ('G' | 'L' | 'I' | 'g' | 'l' | 'i') ;
+fragment DECIMAL_TYPE_MODIFIER: ('G' | 'D' | 'F' | 'g' | 'd' | 'f') ;
 
 // Modifiers
 VISIBILITY_MODIFIER: (KW_PUBLIC | KW_PROTECTED | KW_PRIVATE) ;

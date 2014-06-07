@@ -1,71 +1,81 @@
 
 class Numbers {
     {
-        1.5
+        0x1234567890abcdef
+        0X1234567890ABCDEF
 
-        1.5g
-        1.5G
+        0x1234567890abcdefi
+        0x1234567890abcdefl
+        0x1234567890abcdefg
 
-        1.5f
-        1.5F
+        0x1234567890abcdefI
+        0x1234567890abcdefL
+        0x1234567890abcdefG
 
-        1.5d
-        1.5D
+        0xabcdef
+        0xABCDEF
 
-        10
+        -0xabcdef
+        -0xABCDEF
 
-        10g
-        10G
+        +0xabcdef
+        +0xABCDEF
+    }
 
-        10l
-        10L
+    {
+        01234567
+        -01234567
+        +01234567
 
-        10i
-        10I
+        01234567i
+        01234567l
+        01234567g
 
-        -1.5
+        01234567I
+        01234567L
+        01234567G
+    }
 
-        -1.5g
-        -1.5G
+    {
+        1__2
+        2_12_3
+        +2__12__3
+        +2__12__3.1__2
+        -2__12__3.1__2
 
-        -1.5f
-        -1.5F
+        12e10
+        12e-10
 
-        -1.5d
-        -10.5D
+        -12e10
+        -12e-10
 
-        -10
+        -12.12e10
+        -12.12e-10
+        -12.12e10
+        -12.12e-10
 
-        -10g
-        -10G
+        12.12e-10f
+        12.12e-10d
+        12.12e-10g
 
-        -10l
-        -10L
+        12e-10F
+        120e-10D
+        12e-10G
 
-        -10i
-        -10I
+        12.1__2e-10f
+        12.1_2e-10d
+        1__12_2.12e-10g
+        'Note NO _ in power part.'
 
-        +1.5
+        +0xab__cdef
+        +0xAB__CD_EF
 
-        +1.5g
-        +1.5G
+        012__34567L
+        'octal'
 
-        +1.5f
-        +1.5F
-
-        +1.5d
-        +1.5D
-
-        +10
-
-        +10g
-        +10G
-
-        +10l
-        +10L
-
-        +10i
-        +10I
-
+        'Note NO _ in power part.'
+        if('Comments lead tests to fail because of broken old parser location handling') {
+            //TODO add negative examples, and their hanling.
+        }
     }
 }
