@@ -23,16 +23,16 @@ class ASTComparatorCategory {
     static String lastName
 
     static Map<Class, List<String>> DEFAULT_CONFIGURATION = [
-        (ClassNode): (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode" ] + LOCATION_IGNORE_LIST) as List<String>,
+        (ClassNode): (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode", "allDeclaredMethods" ] + LOCATION_IGNORE_LIST) as List<String>,
         (ConstructorNode): ['declaringClass'],
         (DynamicVariable): [],
         (EnumConstantClassNode): [],
         (FieldNode): ["owner", "declaringClass", "initialValueExpression"],
         (GenericsType): [],
-        (ImportNode): [],
+        (ImportNode): LOCATION_IGNORE_LIST,
         (InnerClassNode): [],
         (InterfaceHelperClassNode): [],
-        (MethodNode): ["declaringClass"],
+        (MethodNode): ["text", "declaringClass"],
         (MixinNode): [],
         (ModuleNode): ["context"],
         (PackageNode): [],
@@ -41,6 +41,7 @@ class ASTComparatorCategory {
         (Variable): [],
         (VariableScope): ["clazzScope", "parent"],
         (Token): ["root", "startColumn"],
+        (AnnotationNode): (["text"] + LOCATION_IGNORE_LIST) as List<String>,
         (AssertStatement): ["text"],
         (BlockStatement): ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber", "text"],
         (BreakStatement): ["text"],
@@ -224,6 +225,10 @@ class ASTComparatorCategory {
 
     static equals(CompileUnit a, CompileUnit b) {
         true
+    }
+
+    static equals(AnnotationNode a, AnnotationNode b) {
+        reflexiveEquals(a, b, configuration[a.class])
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
