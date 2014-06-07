@@ -30,6 +30,8 @@ KW_IMPLEMENTS: 'implements' ;
 
 KW_DEF: 'def' ;
 KW_NULL: 'null' ;
+KW_TRUE: 'true' ;
+KW_FALSE: 'false' ;
 
 KW_IN: 'in' ;
 KW_FOR: 'for' ;
@@ -51,7 +53,10 @@ KW_THROWS: 'throws' ;
 STRING: QUOTE STRING_BODY QUOTE ;
 fragment STRING_BODY: (~'\'')* ;
 fragment QUOTE: '\'';
-NUMBER: '-'?[0-9]+ ;
+
+INTEGER: ('-'|'+')? DIGITS ('G' | 'L' | 'I' | 'g' | 'l' | 'i')? ;
+DECIMAL: ('-'|'+')? DIGITS '.' DIGITS ('G' | 'D' | 'F' | 'g' | 'd' | 'f')?;
+fragment DIGITS: [0-9] | [0-9][0-9_]*[0-9] ;
 
 // Modifiers
 VISIBILITY_MODIFIER: (KW_PUBLIC | KW_PROTECTED | KW_PRIVATE) ;
@@ -191,7 +196,8 @@ expression:
     | expression ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '^=' | '|=' | '<<=' | '>>=' | '>>>=') expression #assignmentExpression
     | annotationClause* typeDeclaration IDENTIFIER ('=' expression)? #declarationExpression
     | STRING #constantExpression
-    | NUMBER #constantExpression
+    | DECIMAL #constantDecimalExpression
+    | INTEGER #constantIntegerExpression
     | KW_NULL #nullExpression
     | IDENTIFIER #variableExpression ;
 

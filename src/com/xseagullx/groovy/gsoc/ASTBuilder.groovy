@@ -13,6 +13,7 @@ import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.syntax.Numbers
 import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
@@ -477,8 +478,20 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(GroovyParser.ConstantDecimalExpressionContext ctx) {
+        def text = ctx.DECIMAL().text
+        setupNodeLocation(new ConstantExpression(Numbers.parseDecimal(text), !text.startsWith('-')), ctx) // Why 10 is int but -10 is Integer?
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(GroovyParser.ConstantIntegerExpressionContext ctx) {
+        def text = ctx.INTEGER().text
+        setupNodeLocation(new ConstantExpression(Numbers.parseInteger(text), !text.startsWith('-')), ctx) //Why 10 is int but -10 is Integer?
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
-        def val = ctx.NUMBER() ? Integer.parseInt(ctx.NUMBER().text) : ctx.text[1..-2] // FIXME Bug with empty string.
+        def val = ctx.text[1..-2]
         setupNodeLocation(new ConstantExpression(val, true), ctx)
     }
 
