@@ -1,6 +1,7 @@
 
 class A1<T> {
     T a;
+    private def <K> K m() {}
 }
 
 class A2 {

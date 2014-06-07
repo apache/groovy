@@ -24,6 +24,7 @@ class MainTest extends Specification {
         where:
         path | output
         "test_res/com/xseagullx/groovy/gsoc/Annotations_Issue30_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/Annotations_Issue30_2.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/AssignmentOps_Issue23_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ClassConstructorBug_Issue13_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ClassInitializers_Issue_20_1.groovy" | _

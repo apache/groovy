@@ -23,7 +23,7 @@ class ASTComparatorCategory {
     static String lastName
 
     static Map<Class, List<String>> DEFAULT_CONFIGURATION = [
-        (ClassNode): (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode" ] + LOCATION_IGNORE_LIST) as List<String>,
+        (ClassNode): (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode", "allDeclaredMethods" ] + LOCATION_IGNORE_LIST) as List<String>,
         (ConstructorNode): ['declaringClass'],
         (DynamicVariable): [],
         (EnumConstantClassNode): [],
@@ -32,12 +32,12 @@ class ASTComparatorCategory {
         (ImportNode): LOCATION_IGNORE_LIST,
         (InnerClassNode): [],
         (InterfaceHelperClassNode): [],
-        (MethodNode): ["declaringClass"],
+        (MethodNode): ["text", "declaringClass"],
         (MixinNode): [],
         (ModuleNode): ["context"],
         (PackageNode): [],
         (Parameter): [],
-        (PropertyNode): (['declaringClass', 'initialValueExpression'] + LOCATION_IGNORE_LIST) as List<String>,
+        (PropertyNode): ['declaringClass', 'initialValueExpression'],
         (Variable): [],
         (VariableScope): ["clazzScope", "parent"],
         (Token): ["root", "startColumn"],

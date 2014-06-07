@@ -91,23 +91,27 @@ packageDefinition:
 importStatement:
     annotationClause* KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)* ('.' '*')?);
 classDeclaration:
-    annotationClause* classModifiers KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? (KW_EXTENDS classNameExpression)? (KW_IMPLEMENTS classNameExpression (',' classNameExpression)*)? (NL)* '{' (classMember | NL | ';')* '}' ;
+    (annotationClause | classModifier)* KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? (KW_EXTENDS classNameExpression)? (KW_IMPLEMENTS classNameExpression (',' classNameExpression)*)? (NL)* '{' (classMember | NL | ';')* '}' ;
 classMember:
-    (annotationClause* (constructorDeclaration | methodDeclaration | fieldDeclaration)) | objectInitializer | classInitializer;
+    constructorDeclaration | methodDeclaration | fieldDeclaration | objectInitializer | classInitializer;
 
-// Members // FIXME Make more strict check for def keyword. There should be no way to ommit everything but IDENTIFIER.
+// Members // FIXME Make more strict check for def keyword. It can't repeat.
 methodDeclaration:
-    (memberModifier+ genericDeclarationList? typeDeclaration? | genericDeclarationList? typeDeclaration)
-    IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}'; // Inner NL 's handling.
+    (
+        (memberModifier | annotationClause | KW_DEF) (memberModifier | annotationClause | KW_DEF | NL)* (
+            (genericDeclarationList classNameExpression) | typeDeclaration
+        )?
+    |
+        classNameExpression
+    )
+    IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}'
+;
 fieldDeclaration:
-    (memberModifier+ typeDeclaration? | typeDeclaration) IDENTIFIER ;
+    ((memberModifier | annotationClause)+ typeDeclaration? | typeDeclaration) IDENTIFIER ;
 constructorDeclaration: { _input.LT(_input.LT(1).getType() == VISIBILITY_MODIFIER ? 2 : 1).getText().equals(currentClassName) }?
     VISIBILITY_MODIFIER? IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}' ; // Inner NL 's handling.
 objectInitializer: '{' blockStatement? '}' ;
 classInitializer: KW_STATIC '{' blockStatement? '}' ;
-
-memberModifier:
-    VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE ;
 
 typeDeclaration:
     (classNameExpression | KW_DEF)
@@ -187,7 +191,7 @@ expression:
 
 classNameExpression:
     IDENTIFIER ('.' IDENTIFIER)* genericDeclarationList?
-    | IDENTIFIER genericDeclarationList?
+    | IDENTIFIER genericDeclarationList? // FIXME Merge?
 ;
 
 mapEntry:
@@ -196,7 +200,10 @@ mapEntry:
     | '(' expression ')' ':' expression
 ;
 
-classModifiers: //JSL7 8.1 FIXME Now gramar allows modifier duplication. It's possible to make it more strict listing all 24 permutations.
-(VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_STRICTFP)* ;
+classModifier: //JSL7 8.1 FIXME Now gramar allows modifier duplication. It's possible to make it more strict listing all 24 permutations.
+VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_STRICTFP ;
+
+memberModifier:
+    VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE ;
 
 argumentList: expression (',' expression)* ;

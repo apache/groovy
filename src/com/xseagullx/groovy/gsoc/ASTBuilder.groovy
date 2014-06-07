@@ -75,7 +75,7 @@ class ASTBuilder extends GroovyBaseListener {
 
         classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
         classNode.usingGenerics = classNode.genericsTypes || classNode.superClass.usingGenerics || classNode.interfaces.any { it.usingGenerics }
-        classNode.modifiers = parseClassModifiers(ctx.classModifiers())
+        classNode.modifiers = parseClassModifiers(ctx.classModifier())
         classNode.syntheticPublic = (classNode.modifiers & Opcodes.ACC_SYNTHETIC) != 0
         classNode.modifiers &= ~Opcodes.ACC_SYNTHETIC // FIXME Magic with synthetic modifier.
 
@@ -114,10 +114,14 @@ class ASTBuilder extends GroovyBaseListener {
         def statement = parseStatement(ctx.blockStatement() as GroovyParser.BlockStatementContext)
 
         def params = parseParameters(ctx.argumentDeclarationList())
-        def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, parseTypeDeclaration(ctx.typeDeclaration()), params, [] as ClassNode[], statement)
+
+        def returnType = ctx.typeDeclaration() ? parseTypeDeclaration(ctx.typeDeclaration()) :
+            ctx.classNameExpression() ? parseExpression(ctx.classNameExpression()) : ClassHelper.OBJECT_TYPE
+        def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, returnType, params, [] as ClassNode[], statement)
         methodNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
 
         setupNodeLocation(methodNode, ctx)
+        attachAnnotations(methodNode, ctx.annotationClause())
         methodNode.syntheticPublic = !hasVisibilityModifier
         methodNode
     }
@@ -137,6 +141,7 @@ class ASTBuilder extends GroovyBaseListener {
             propertyNode.field.modifiers = modifiers | Opcodes.ACC_PRIVATE
             propertyNode.field.synthetic = true
             node = setupNodeLocation(propertyNode.field, ctx)
+            attachAnnotations(propertyNode.field, ctx.annotationClause())
             setupNodeLocation(propertyNode, ctx)
         }
         node
@@ -627,13 +632,29 @@ class ASTBuilder extends GroovyBaseListener {
         astNode
     }
 
-    int parseClassModifiers(@NotNull GroovyParser.ClassModifiersContext ctx) {
-        int modifier = parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER(), Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC);
-        modifier |= parseModifier(ctx.KW_ABSTRACT(), Opcodes.ACC_ABSTRACT)
-        modifier |= parseModifier(ctx.KW_FINAL(), Opcodes.ACC_FINAL)
-        modifier |= parseModifier(ctx.KW_STATIC(), Opcodes.ACC_STATIC)
-        modifier |= parseModifier(ctx.KW_STRICTFP(), Opcodes.ACC_STRICT)
-        modifier
+    int parseClassModifiers(@NotNull List<GroovyParser.ClassModifierContext> ctxs) {
+
+        List<TerminalNode> visibilityModifiers = []
+        int modifiers = 0
+        for (child in ctxs.children) {
+            if (child instanceof List) {
+                assert child.size() == 1
+                child = child[0]
+            }
+            assert child instanceof TerminalNode
+            switch (child.symbol.type) {
+                case GroovyLexer.VISIBILITY_MODIFIER: visibilityModifiers << child; break
+                case GroovyLexer.KW_STATIC: modifiers |= checkModifierDuplication(modifiers, Opcodes.ACC_STATIC, child); break
+                case GroovyLexer.KW_ABSTRACT: modifiers |= checkModifierDuplication(modifiers, Opcodes.ACC_ABSTRACT, child); break
+                case GroovyLexer.KW_FINAL: modifiers |= checkModifierDuplication(modifiers, Opcodes.ACC_FINAL, child); break
+                case GroovyLexer.KW_STRICTFP: modifiers |= checkModifierDuplication(modifiers, Opcodes.ACC_STRICT, child); break
+            }
+        }
+        if (visibilityModifiers)
+            modifiers |= parseVisibilityModifiers(visibilityModifiers, 0) // Here we shouldn't pass any default value. Old code. Needs refactoring.
+        else
+            modifiers |= Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC
+        modifiers
     }
 
     int checkModifierDuplication(int modifier, int opcode, TerminalNode node) {
