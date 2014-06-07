@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ public class AntBuilder extends BuilderSupport {
     private final ProjectHelper2.TargetHandler antTargetHandler = new ProjectHelper2.TargetHandler();
     private final Target collectorTarget;
     private final Target implicitTarget;
+    private Target definingTarget;
     private Object lastCompletedNode;
     // true when inside a task so special ant.target handling occurs just at top level
     boolean insideTask;
@@ -225,6 +226,10 @@ public class AntBuilder extends BuilderSupport {
         if (parent != null && !(parent instanceof Target)) {
             log.finest("parent is not null: no perform on nodeCompleted");
             return; // parent will care about when children perform
+        }
+        if (definingTarget != null && definingTarget == parent && node instanceof Task) return; // inside defineTarget
+        if (definingTarget == node) {
+            definingTarget = null;
         }
 
         // as in Target.execute()
@@ -401,6 +406,8 @@ public class AntBuilder extends BuilderSupport {
             antXmlContext.setCurrentTarget(implicitTarget);
         } else if ("target".equals(name) && !insideTask) {
             return onStartTarget(attrs, tagName, ns);
+        } else if ("defineTarget".equals(name) && !insideTask) {
+            return onDefineTarget(attrs, "target", ns);
         }
 
         try {
@@ -411,8 +418,25 @@ public class AntBuilder extends BuilderSupport {
         }
 
         insideTask = true;
-        final RuntimeConfigurable wrapper = (RuntimeConfigurable) antXmlContext.getWrapperStack().lastElement();
+        final RuntimeConfigurable wrapper = antXmlContext.getWrapperStack().lastElement();
         return wrapper.getProxy();
+    }
+
+    private Target onDefineTarget(final Attributes attrs, String tagName, String ns) {
+        final Target target = new Target();
+        target.setProject(project);
+        target.setLocation(new Location(antXmlContext.getLocator()));
+        try {
+            antTargetHandler.onStartElement(ns, tagName, tagName, attrs, antXmlContext);
+            final Target newTarget = getProject().getTargets().get(attrs.getValue("name"));
+            antXmlContext.setCurrentTarget(newTarget);
+            definingTarget = newTarget;
+            return newTarget;
+        }
+        catch (final SAXParseException e) {
+            log.log(Level.SEVERE, "Caught: " + e, e);
+        }
+        return null;
     }
 
     private Target onStartTarget(final Attributes attrs, String tagName, String ns) {
@@ -421,7 +445,7 @@ public class AntBuilder extends BuilderSupport {
         target.setLocation(new Location(antXmlContext.getLocator()));
         try {
             antTargetHandler.onStartElement(ns, tagName, tagName, attrs, antXmlContext);
-            final Target newTarget = (Target) getProject().getTargets().get(attrs.getValue("name"));
+            final Target newTarget = getProject().getTargets().get(attrs.getValue("name"));
 
             // execute dependencies (if any)
             final Vector targets = new Vector();
