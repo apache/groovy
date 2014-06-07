@@ -46,6 +46,7 @@ KW_TRY: 'try' ;
 KW_CATCH: 'catch' ;
 KW_FINALLY: 'finally' ;
 KW_THROW: 'throw' ;
+KW_THROWS: 'throws' ;
 
 STRING: QUOTE STRING_BODY QUOTE ;
 fragment STRING_BODY: (~'\'')* ;
@@ -91,7 +92,7 @@ packageDefinition:
 importStatement:
     (annotationClause (NL | annotationClause)*)? KW_IMPORT (IDENTIFIER ('.' IDENTIFIER)* ('.' '*')?);
 classDeclaration:
-    ((annotationClause | classModifier) (NL | annotationClause | classModifier)*)? KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? (KW_EXTENDS classNameExpression)? (KW_IMPLEMENTS classNameExpression (',' classNameExpression)*)? (NL)* '{' (classMember | NL | ';')* '}' ;
+    ((annotationClause | classModifier) (NL | annotationClause | classModifier)*)? KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? (KW_EXTENDS genericClassNameExpression)? (KW_IMPLEMENTS genericClassNameExpression (',' genericClassNameExpression)*)? (NL)* '{' (classMember | NL | ';')* '}' ;
 classMember:
     constructorDeclaration | methodDeclaration | fieldDeclaration | objectInitializer | classInitializer;
 
@@ -99,35 +100,38 @@ classMember:
 methodDeclaration:
     (
         (memberModifier | annotationClause | KW_DEF) (memberModifier | annotationClause | KW_DEF | NL)* (
-            (genericDeclarationList classNameExpression) | typeDeclaration
+            (genericDeclarationList genericClassNameExpression) | typeDeclaration
         )?
     |
-        classNameExpression
+        genericClassNameExpression
     )
-    IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}'
+    IDENTIFIER '(' argumentDeclarationList ')' throwsClause? '{' blockStatement? '}'
 ;
+
 fieldDeclaration:
-    (memberModifier | annotationClause | KW_DEF) (memberModifier | annotationClause | KW_DEF | NL)* classNameExpression? IDENTIFIER
-    | classNameExpression IDENTIFIER
+    (memberModifier | annotationClause | KW_DEF) (memberModifier | annotationClause | KW_DEF | NL)* genericClassNameExpression? IDENTIFIER
+    | genericClassNameExpression IDENTIFIER
 ;
 constructorDeclaration: { _input.LT(_input.LT(1).getType() == VISIBILITY_MODIFIER ? 2 : 1).getText().equals(currentClassName) }?
-    VISIBILITY_MODIFIER? IDENTIFIER '(' argumentDeclarationList ')' '{' blockStatement? '}' ; // Inner NL 's handling.
+    VISIBILITY_MODIFIER? IDENTIFIER '(' argumentDeclarationList ')' throwsClause? '{' blockStatement? '}' ; // Inner NL 's handling.
 objectInitializer: '{' blockStatement? '}' ;
 classInitializer: KW_STATIC '{' blockStatement? '}' ;
 
 typeDeclaration:
-    (classNameExpression | KW_DEF)
+    (genericClassNameExpression | KW_DEF)
 ;
 
 annotationClause: //FIXME handle assignment expression.
-    '@' classNameExpression ( '(' ((annotationElementPair (',' annotationElementPair)*) | annotationElement)? ')' )?
+    '@' genericClassNameExpression ( '(' ((annotationElementPair (',' annotationElementPair)*) | annotationElement)? ')' )?
 ;
 annotationElementPair: IDENTIFIER '=' annotationElement ;
 annotationElement: expression | annotationClause ;
 
 genericDeclarationList:
-    '<' classNameExpression (',' classNameExpression)* '>'
+    '<' genericClassNameExpression (',' genericClassNameExpression)* '>'
 ;
+
+throwsClause: KW_THROWS classNameExpression (',' classNameExpression)*;
 
 argumentDeclarationList:
     argumentDeclaration (',' argumentDeclaration)* | /* EMPTY ARGUMENT LIST */ ;
@@ -176,7 +180,7 @@ expression:
     | expression ('*' | '/' | '%') expression #binaryExpression
     | expression ('+' | '-') expression #binaryExpression
     | expression ('<<' | '>>' | '>>>' | '..' | '..<') expression #binaryExpression
-    | expression ((('<' | '<=' | '>' | '>=' | 'in') expression) | (('as' | 'instanceof') classNameExpression)) #binaryExpression
+    | expression ((('<' | '<=' | '>' | '>=' | 'in') expression) | (('as' | 'instanceof') genericClassNameExpression)) #binaryExpression
     | expression ('==' | '!=' | '<=>') expression #binaryExpression
     | expression ('=~' | '==~') expression #binaryExpression
     | expression ('&') expression #binaryExpression
@@ -191,10 +195,9 @@ expression:
     | KW_NULL #nullExpression
     | IDENTIFIER #variableExpression ;
 
-classNameExpression:
-    IDENTIFIER ('.' IDENTIFIER)* genericDeclarationList?
-    | IDENTIFIER genericDeclarationList? // FIXME Merge?
-;
+classNameExpression: IDENTIFIER ('.' IDENTIFIER)* ;
+
+genericClassNameExpression: classNameExpression genericDeclarationList? ;
 
 mapEntry:
     STRING ':' expression

@@ -69,9 +69,9 @@ class ASTBuilder extends GroovyBaseListener {
         attachAnnotations(classNode, ctx.annotationClause())
         moduleNode.addClass(classNode)
         if (ctx.KW_EXTENDS())
-            classNode.setSuperClass(parseExpression(ctx.classNameExpression()[0]))
+            classNode.setSuperClass(parseExpression(ctx.genericClassNameExpression()[0]))
         if (ctx.KW_IMPLEMENTS())
-            classNode.setInterfaces(ctx.classNameExpression()[(ctx.KW_EXTENDS() ? 1 : 0)..-1].collect { parseExpression(it) } as ClassNode[])
+            classNode.setInterfaces(ctx.genericClassNameExpression()[(ctx.KW_EXTENDS() ? 1 : 0)..-1].collect { parseExpression(it) } as ClassNode[])
 
         classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
         classNode.usingGenerics = classNode.genericsTypes || classNode.superClass.usingGenerics || classNode.interfaces.any { it.usingGenerics }
@@ -116,8 +116,10 @@ class ASTBuilder extends GroovyBaseListener {
         def params = parseParameters(ctx.argumentDeclarationList())
 
         def returnType = ctx.typeDeclaration() ? parseTypeDeclaration(ctx.typeDeclaration()) :
-            ctx.classNameExpression() ? parseExpression(ctx.classNameExpression()) : ClassHelper.OBJECT_TYPE
-        def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, returnType, params, [] as ClassNode[], statement)
+            ctx.genericClassNameExpression() ? parseExpression(ctx.genericClassNameExpression()) : ClassHelper.OBJECT_TYPE
+
+        def exceptions = parseThrowsClause(ctx.throwsClause())
+        def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, returnType, params, exceptions, statement)
         methodNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
 
         setupNodeLocation(methodNode, ctx)
@@ -131,7 +133,7 @@ class ASTBuilder extends GroovyBaseListener {
         //noinspection GroovyAssignabilityCheck
         def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier())
 
-        def typeDeclaration = ctx.classNameExpression() ? parseExpression(ctx.classNameExpression()) : ClassHelper.OBJECT_TYPE
+        def typeDeclaration = ctx.genericClassNameExpression() ? parseExpression(ctx.genericClassNameExpression()) : ClassHelper.OBJECT_TYPE
         AnnotatedNode node
         if (hasVisibilityModifier) {
             def field = classNode.addField(ctx.IDENTIFIER().text, modifiers, typeDeclaration, null)
@@ -166,7 +168,8 @@ class ASTBuilder extends GroovyBaseListener {
     static AnnotatedNode parseMember(ClassNode classNode, GroovyParser.ConstructorDeclarationContext ctx) {
         int modifiers = ctx.VISIBILITY_MODIFIER() ? parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER()) : Opcodes.ACC_PUBLIC
 
-        def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), [] as ClassNode[], parseStatement(ctx.blockStatement() as GroovyParser.BlockStatementContext))
+        def exceptions = parseThrowsClause(ctx.throwsClause())
+        def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), exceptions, parseStatement(ctx.blockStatement() as GroovyParser.BlockStatementContext))
         setupNodeLocation(constructorNode, ctx)
         constructorNode.syntheticPublic = ctx.VISIBILITY_MODIFIER() == null
         constructorNode
@@ -402,11 +405,11 @@ class ASTBuilder extends GroovyBaseListener {
                 expression = new RangeExpression(left, right, !op.text.endsWith('<'))
                 break;
             case Types.KEYWORD_AS:
-                def classNode = setupNodeLocation(parseExpression(ctx.classNameExpression()), ctx.classNameExpression())
+                def classNode = setupNodeLocation(parseExpression(ctx.genericClassNameExpression()), ctx.genericClassNameExpression())
                 expression = CastExpression.asExpression(classNode, left)
                 break;
             case Types.KEYWORD_INSTANCEOF:
-                def classNode = setupNodeLocation(parseExpression(ctx.classNameExpression()), ctx.classNameExpression())
+                def classNode = setupNodeLocation(parseExpression(ctx.genericClassNameExpression()), ctx.genericClassNameExpression())
                 right = new ClassExpression(classNode)
             default:
                 if (!right)
@@ -526,14 +529,18 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     static ClassNode parseExpression(GroovyParser.ClassNameExpressionContext ctx) {
-        def classNode = ClassHelper.make(ctx.IDENTIFIER().join('.'))
+        setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().join('.')), ctx)
+    }
+
+    static ClassNode parseExpression(GroovyParser.GenericClassNameExpressionContext ctx) {
+        def classNode = parseExpression(ctx.classNameExpression())
 
         classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
         setupNodeLocation(classNode, ctx)
     }
 
     static GenericsType[] parseGenericDeclaration(GroovyParser.GenericDeclarationListContext ctx) {
-        ctx ? ctx.classNameExpression().collect { setupNodeLocation(new GenericsType(parseExpression(it)), it) } : null
+        ctx ? ctx.genericClassNameExpression().collect { setupNodeLocation(new GenericsType(parseExpression(it)), it) } : null
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -560,7 +567,7 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     static AnnotationNode parseAnnotation(GroovyParser.AnnotationClauseContext ctx) {
-        def node = new AnnotationNode(parseExpression(ctx.classNameExpression()))
+        def node = new AnnotationNode(parseExpression(ctx.genericClassNameExpression()))
         if (ctx.annotationElement())
             node.addMember("value", parseAnnotationElement(ctx.annotationElement()))
         else {
@@ -580,6 +587,11 @@ class ASTBuilder extends GroovyBaseListener {
             parseExpression(ctx.expression())
     }
 
+
+    static ClassNode[] parseThrowsClause(GroovyParser.ThrowsClauseContext ctx) {
+        ctx ? ctx.classNameExpression().collect { parseExpression(it) } : []
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Utility methods.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -591,7 +603,7 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     static ClassNode parseTypeDeclaration(GroovyParser.TypeDeclarationContext ctx) {
-        !ctx || ctx.KW_DEF() ? ClassHelper.OBJECT_TYPE : setupNodeLocation(parseExpression(ctx.classNameExpression()), ctx)
+        !ctx || ctx.KW_DEF() ? ClassHelper.OBJECT_TYPE : setupNodeLocation(parseExpression(ctx.genericClassNameExpression()), ctx)
     }
 
     static Parameter[] parseParameters(GroovyParser.ArgumentDeclarationListContext ctx) {

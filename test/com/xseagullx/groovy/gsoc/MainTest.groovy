@@ -46,6 +46,7 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/ParenthesisExpression_Issue24_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Statements_Issue17_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/ThrowDeclarations_Issue_28_1.groovy" | _
     }
 
     def "test invalid class modifiers"() {
