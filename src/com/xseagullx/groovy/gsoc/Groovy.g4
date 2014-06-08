@@ -50,12 +50,20 @@ KW_FINALLY: 'finally' ;
 KW_THROW: 'throw' ;
 KW_THROWS: 'throws' ;
 
-STRING: QUOTE STRING_BODY QUOTE ;
-fragment STRING_BODY: (~'\'')* ;
-fragment QUOTE: '\'';
+STRING:
+    '\'\'\'' STRING_ELEMENT*? '\'\'\''
+    | '"""' STRING_ELEMENT*? '"""'
+    | '\'' STRING_ELEMENT*? (NL | '\'')
+    | '"' STRING_ELEMENT*? (NL | '"')
+;
+
+fragment STRING_ELEMENT: ESC_SEQUENCE | . ;
+fragment ESC_SEQUENCE: '\\' [btnfr"'\\] | OCTAL_ESC_SEQ | UNICODE_ESC_SEQ ;
+fragment OCTAL_ESC_SEQ: '\\' [0-3]? [0-7]? [0-7] ;
+fragment UNICODE_ESC_SEQ: '\\u' [0-9abcdefABCDEF] [0-9abcdefABCDEF] [0-9abcdefABCDEF] [0-9abcdefABCDEF] ;
 
 // Numbers
-DECIMAL: SIGN? DIGITS ('.' DIGITS EXP_PART? | EXP_PART) DECIMAL_TYPE_MODIFIER?;
+DECIMAL: SIGN? DIGITS ('.' DIGITS EXP_PART? | EXP_PART) DECIMAL_TYPE_MODIFIER? ;
 INTEGER: SIGN? (('0x' | '0X') HEX_DIGITS | '0' OCT_DIGITS | DEC_DIGITS) INTEGER_TYPE_MODIFIER? ;
 
 fragment DIGITS: [0-9] | [0-9][0-9_]*[0-9] ;

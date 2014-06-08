@@ -12,7 +12,7 @@ import java.util.logging.Level
 @Log @SuppressWarnings("GroovyUnusedDeclaration")
 class ASTComparatorCategory {
     static { log.level = Level.WARNING }
-    static private List<String> LOCATION_IGNORE_LIST = ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"]
+    static List<String> LOCATION_IGNORE_LIST = ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"]
     static private List<String> EXPRESSION_IGNORE_LIST = ["text"] + LOCATION_IGNORE_LIST
 
     /**
@@ -103,7 +103,7 @@ class ASTComparatorCategory {
 
     static Map<Class, List<String>> configuration = DEFAULT_CONFIGURATION;
 
-    static void apply(Closure cl, config = DEFAULT_CONFIGURATION) {
+    static void apply(config = DEFAULT_CONFIGURATION, Closure cl) {
         configuration = config
         objects.clear()
         use(ASTComparatorCategory, cl)

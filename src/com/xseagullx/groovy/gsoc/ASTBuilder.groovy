@@ -1,5 +1,6 @@
 package com.xseagullx.groovy.gsoc
 
+import com.xseagullx.groovy.gsoc.util.StringUtil
 import groovyjarjarasm.asm.Opcodes
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
@@ -31,7 +32,7 @@ class ASTBuilder extends GroovyBaseListener {
         this.sourceUnit = sourceUnit
         moduleNode = new ModuleNode(sourceUnit)
 
-        def lexer = new GroovyLexer(new ANTLRInputStream(sourceUnit.source.reader))
+        def lexer = new GroovyLexer(new ANTLRInputStream(StringUtil.replaceHexEscapes(sourceUnit.source.reader.text)))
         CommonTokenStream tokens = new CommonTokenStream(lexer)
         def parser = new GroovyParser(tokens)
         ParseTree tree = parser.compilationUnit()
@@ -491,8 +492,18 @@ class ASTBuilder extends GroovyBaseListener {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
-        def val = ctx.text[1..-2]
-        setupNodeLocation(new ConstantExpression(val, true), ctx)
+        def text = ctx.text
+
+        //Remove start and end quotes.
+        if (text.startsWith(/'''/) || text.startsWith(/"""/))
+            text = text.length() == 6 ? '' : text[3..-4]
+        else if (text.startsWith(/'/) || text.startsWith(/"/))
+            text = text.length() == 2 ? '' : text[1..-2]
+
+        //Find escapes.
+        text = StringUtil.replaceStandardEscapes(StringUtil.replaceOctalEscapes(text))
+
+        setupNodeLocation(new ConstantExpression(text, true), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
