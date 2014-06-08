@@ -1564,6 +1564,71 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    public void testClassWithMethods() {
+        // class MyClass {
+        //   String myProp = 'foo'
+        //   String myMethod(String parameter) throws IOException { 'some result' }
+        //   String myOtherMethod() { 'some other result' }
+        // }
+
+        def result = new AstBuilder().buildFromSpec {
+            classNode 'MyClass', ACC_PUBLIC, {
+                classNode Object        //superclass
+                interfaces {
+                    classNode GroovyObject
+                }
+                mixins {}
+                method('myMethod', ACC_PUBLIC, String) {
+                    parameters {
+                        parameter 'parameter': String
+                    }
+                    exceptions {
+                        classNode IOException
+                    }
+                    block {
+                        returnStatement {
+                            constant 'some result'
+                        }
+                    }
+                }
+                method('myOtherMethod', ACC_PUBLIC, String) {
+                    parameters {}
+                    exceptions {}
+                    block {
+                        returnStatement {
+                            constant 'some other result'
+                        }
+                    }
+                }
+                propertyNode "myProp", ACC_PUBLIC, String, this.class, {
+                    constant "foo"
+                }
+            }
+        }
+
+        def expected = new ClassNode("MyClass", ACC_PUBLIC, ClassHelper.make(Object, false))
+        expected.addProperty(new PropertyNode("myProp", ACC_PUBLIC, ClassHelper.make(String, false),
+                ClassHelper.make(this.class, false), new ConstantExpression("foo"), null, null))
+        expected.addMethod(new MethodNode(
+                "myMethod",
+                ACC_PUBLIC,
+                ClassHelper.make(String, false),
+                [new Parameter(ClassHelper.make(String, false), "parameter")] as Parameter[],
+                [ClassHelper.make(IOException, false)] as ClassNode[],
+                new BlockStatement(
+                        [new ReturnStatement(new ConstantExpression('some result'))], new VariableScope()
+                )))
+        expected.addMethod(new MethodNode(
+                "myOtherMethod",
+                ACC_PUBLIC,
+                ClassHelper.make(String, false),
+                [] as Parameter[],
+                [] as ClassNode[],
+                new BlockStatement(
+                        [new ReturnStatement(new ConstantExpression('some other result'))], new VariableScope()
+                )))
+        AstAssert.assertSyntaxTree([expected], result)
+    }
 
     public void testGenericsType_WithLowerBounds() {
         // class MyClass<T, U extends Number> {}

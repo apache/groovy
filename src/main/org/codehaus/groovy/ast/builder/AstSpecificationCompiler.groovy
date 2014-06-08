@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -942,6 +942,33 @@ class AstSpecificationCompiler implements GroovyInterceptable {
 
     void classNode(String name, int modifiers, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
         captureAndCreateNode("ClassNode", argBlock) {
+            List<MethodNode> methods = []
+            List<FieldNode> fields = []
+            List<ConstructorNode> constructors = []
+            List<PropertyNode> properties = []
+            def index = 0
+            while (index < expression.size()) {
+                switch(expression[index].getClass()) {
+                    case MethodNode:
+                        constructors << expression[index]
+                        expression.remove(index)
+                        break
+                    case ConstructorNode:
+                        methods << expression[index]
+                        expression.remove(index)
+                        break
+                    case PropertyNode:
+                        properties << expression[index]
+                        expression.remove(index)
+                        break
+                    case FieldNode:
+                        fields << expression[index]
+                        expression.remove(index)
+                        break
+                    default:
+                        index++
+                }
+            }
             def result = new ClassNode(name, modifiers,
                     expression[0],
                     new ArrayList(expression[1]) as ClassNode[],
@@ -949,6 +976,16 @@ class AstSpecificationCompiler implements GroovyInterceptable {
             )
             if (expression[3]) {
                 result.setGenericsTypes(new ArrayList(expression[3]) as GenericsType[])
+            }
+            methods.each{ result.addMethod(it) }
+            constructors.each{ result.addMethod(it) }
+            properties.each{
+                it.field.owner = result
+                result.addProperty(it)
+            }
+            fields.each{
+                it.owner = result
+                result.addField(it)
             }
             result
         }
