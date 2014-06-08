@@ -1,5 +1,6 @@
 package com.xseagullx.groovy.gsoc
 import com.xseagullx.groovy.gsoc.util.ASTComparatorCategory
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.control.ErrorCollector
 import spock.lang.Specification
 
@@ -11,18 +12,19 @@ class MainTest extends Specification {
         def moduleNodeNew = new Main(Configuration.NEW).process(file)
         def moduleNodeOld = new Main(Configuration.OLD).process(file)
         def moduleNodeOld2 = new Main(Configuration.OLD).process(file)
+        config = config.is(_) ? ASTComparatorCategory.DEFAULT_CONFIGURATION : config
 
         expect:
-        ASTComparatorCategory.apply {
+        ASTComparatorCategory.apply(config) {
             assert moduleNodeOld == moduleNodeOld2
         }
 
-        ASTComparatorCategory.apply {
+        ASTComparatorCategory.apply(config) {
             assert moduleNodeNew == moduleNodeOld
         }
 
         where:
-        path | output
+        path | config
         "test_res/com/xseagullx/groovy/gsoc/Annotations_Issue30_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Annotations_Issue30_2.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/AssignmentOps_Issue23_1.groovy" | _
@@ -39,6 +41,10 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_2.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ListsAndMaps_Issue22_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/Literals_Numbers_Issue36_1.groovy" | _
+        'test_res/com/xseagullx/groovy/gsoc/Literals_Other_Issue36_4.groovy' | _
+        "test_res/com/xseagullx/groovy/gsoc/Literals_HexOctNumbers_Issue36_2.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/Literals_Strings_Issue36_3.groovy" | addIgnore(ExpressionStatement, ASTComparatorCategory.LOCATION_IGNORE_LIST)
         "test_res/com/xseagullx/groovy/gsoc/MemberAccess_Issue14_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/MethodBody_Issue7_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/MethodCall_Issue15_1.groovy" | _
@@ -47,6 +53,12 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/Statements_Issue17_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ThrowDeclarations_Issue_28_1.groovy" | _
+    }
+
+    def addIgnore(Class aClass, ArrayList<String> ignore) {
+        def c = ASTComparatorCategory.DEFAULT_CONFIGURATION.clone() as Map<Class, List<String>>;
+        c[aClass].addAll(ignore)
+        c
     }
 
     def "test invalid class modifiers"() {

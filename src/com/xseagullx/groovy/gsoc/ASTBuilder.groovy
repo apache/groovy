@@ -1,5 +1,6 @@
 package com.xseagullx.groovy.gsoc
 
+import com.xseagullx.groovy.gsoc.util.StringUtil
 import groovyjarjarasm.asm.Opcodes
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
@@ -13,6 +14,7 @@ import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.syntax.Numbers
 import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
@@ -30,7 +32,7 @@ class ASTBuilder extends GroovyBaseListener {
         this.sourceUnit = sourceUnit
         moduleNode = new ModuleNode(sourceUnit)
 
-        def lexer = new GroovyLexer(new ANTLRInputStream(sourceUnit.source.reader))
+        def lexer = new GroovyLexer(new ANTLRInputStream(StringUtil.replaceHexEscapes(sourceUnit.source.reader.text)))
         CommonTokenStream tokens = new CommonTokenStream(lexer)
         def parser = new GroovyParser(tokens)
         ParseTree tree = parser.compilationUnit()
@@ -477,9 +479,35 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(GroovyParser.ConstantDecimalExpressionContext ctx) {
+        def text = ctx.DECIMAL().text
+        setupNodeLocation(new ConstantExpression(Numbers.parseDecimal(text), !text.startsWith('-')), ctx) // Why 10 is int but -10 is Integer?
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(GroovyParser.ConstantIntegerExpressionContext ctx) {
+        def text = ctx.INTEGER().text
+        setupNodeLocation(new ConstantExpression(Numbers.parseInteger(text), !text.startsWith('-')), ctx) //Why 10 is int but -10 is Integer?
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(GroovyParser.BoolExpressionContext ctx) {
+        setupNodeLocation(new ConstantExpression(ctx.KW_FALSE() ? false : true, true), ctx)
+    }
+
     static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
-        def val = ctx.NUMBER() ? Integer.parseInt(ctx.NUMBER().text) : ctx.text[1..-2] // FIXME Bug with empty string.
-        setupNodeLocation(new ConstantExpression(val, true), ctx)
+        def text = ctx.text
+
+        //Remove start and end quotes.
+        if (text.startsWith(/'''/) || text.startsWith(/"""/))
+            text = text.length() == 6 ? '' : text[3..-4]
+        else if (text.startsWith(/'/) || text.startsWith(/"/))
+            text = text.length() == 2 ? '' : text[1..-2]
+
+        //Find escapes.
+        text = StringUtil.replaceStandardEscapes(StringUtil.replaceOctalEscapes(text))
+
+        setupNodeLocation(new ConstantExpression(text, true), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
