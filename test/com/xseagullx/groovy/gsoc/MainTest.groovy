@@ -42,6 +42,7 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_2.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ListsAndMaps_Issue22_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Literals_Numbers_Issue36_1.groovy" | _
+        'test_res/com/xseagullx/groovy/gsoc/Literals_Other_Issue36_4.groovy' | _
         "test_res/com/xseagullx/groovy/gsoc/Literals_HexOctNumbers_Issue36_2.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Literals_Strings_Issue36_3.groovy" | addIgnore(ExpressionStatement, ASTComparatorCategory.LOCATION_IGNORE_LIST)
         "test_res/com/xseagullx/groovy/gsoc/MemberAccess_Issue14_1.groovy" | _

@@ -491,6 +491,10 @@ class ASTBuilder extends GroovyBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(GroovyParser.BoolExpressionContext ctx) {
+        setupNodeLocation(new ConstantExpression(ctx.KW_FALSE() ? false : true, true), ctx)
+    }
+
     static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
         def text = ctx.text
 

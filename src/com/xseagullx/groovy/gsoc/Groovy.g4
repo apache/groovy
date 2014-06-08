@@ -218,6 +218,7 @@ expression:
     | DECIMAL #constantDecimalExpression
     | INTEGER #constantIntegerExpression
     | KW_NULL #nullExpression
+    | (KW_TRUE | KW_FALSE) #boolExpression
     | IDENTIFIER #variableExpression ;
 
 classNameExpression: IDENTIFIER ('.' IDENTIFIER)* ;
