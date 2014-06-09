@@ -260,6 +260,42 @@ finished: echo[message:echo from AntBuilder's target foo]
         ant.project.executeTarget('myTestTarget')
         assertEquals expectedSpoof, customListener.spoof.toString()
     }
+
+    void testDefineTarget_groovy2900() {
+        def ant = new AntBuilder()
+        def project = ant.project
+        def customListener = new SimpleListener()
+        project.addBuildListener customListener
+        ant.defineTarget(name: 'myTestTarget') {
+            echo(message: "myTestTarget")
+        }
+        ant.defineTarget(name: 'myTestTarget2', depends: 'myTestTarget') {
+            echo(message: "myTestTarget2")
+        }
+        ant.target(name: 'myTestTarget3', depends: 'myTestTarget') {
+            ant.defineTarget(name: 'myTestTarget4') {
+                echo(message: "myTestTarget4")
+            }
+            echo(message: "myTestTarget3")
+        }
+        ant.defineTarget(name: 'myTestTarget5', depends: 'myTestTarget4') {
+            echo(message: "myTestTarget5 should not appear")
+        }
+        project.executeTarget('myTestTarget2')
+        project.executeTarget('myTestTarget4')
+        assert customListener.spoof.toString() == '''\
+started: echo[message:myTestTarget]
+finished: echo[message:myTestTarget]
+started: echo[message:myTestTarget3]
+finished: echo[message:myTestTarget3]
+started: echo[message:myTestTarget]
+finished: echo[message:myTestTarget]
+started: echo[message:myTestTarget2]
+finished: echo[message:myTestTarget2]
+started: echo[message:myTestTarget4]
+finished: echo[message:myTestTarget4]
+'''
+    }
 }
 
 class SimpleListener extends org.apache.tools.ant.DefaultLogger {
