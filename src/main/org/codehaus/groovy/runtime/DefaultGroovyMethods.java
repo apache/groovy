@@ -2138,6 +2138,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Convert an Iterable to a List. The Iterable's iterator will
      * become exhausted of elements after making this conversion.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">def x = [1,2,3] as HashSet
+     * assert x.class == HashSet
+     * assert x.toList() instanceof List</pre>
      *
      * @param self an Iterable
      * @return a List
