@@ -558,9 +558,18 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         for (FieldNode field : innerClass.getFields()) {
             final Expression expression = field.getInitialExpression();
+            pushState(field.isStatic());
             if (expression != null) {
+                if (expression instanceof VariableExpression) {
+                    VariableExpression vexp = (VariableExpression) expression;
+                    if (vexp.getAccessedVariable() instanceof Parameter) {
+                        // workaround for GROOVY-6834: accessing a parameter which is not yet seen in scope
+                        continue;
+                    }
+                }
                 expression.visit(this);
             }
+            popState();
         }
 
         for (Statement statement : innerClass.getObjectInitializerStatements()) {

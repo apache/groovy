@@ -1,18 +1,21 @@
 package groovy.util.logging
 
-import java.lang.reflect.*
-import org.slf4j.LoggerFactory
-import ch.qos.logback.classic.Logger
-import ch.qos.logback.core.OutputStreamAppender
 import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.spi.LoggingEvent
+import ch.qos.logback.core.OutputStreamAppender
 import ch.qos.logback.core.layout.EchoLayout
+import org.slf4j.LoggerFactory
+
+import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 
 /**
  * @author Hamlet D'Arcy
  * @author Francesco Durbin
  * @author Tomasz Bujok
+ * @author Paul King
  */
 
 class Slf4jTest extends GroovyTestCase {
@@ -41,8 +44,7 @@ class Slf4jTest extends GroovyTestCase {
         logger.detachAppender(appender)
     }
 
-    public void testPrivateFinalStaticLogFieldAppears() {
-
+    void testPrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
                 @groovy.util.logging.Slf4j
                 class MyClass {
@@ -57,8 +59,7 @@ class Slf4jTest extends GroovyTestCase {
         }
     }
 
-    public void testPrivateFinalStaticNamedLogFieldAppears() {
-
+    void testPrivateFinalStaticNamedLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
                 @groovy.util.logging.Slf4j('logger')
                 class MyClass {
@@ -73,10 +74,8 @@ class Slf4jTest extends GroovyTestCase {
         }
     }
 
-    public void testClassAlreadyHasLogField() {
-
+    void testClassAlreadyHasLogField() {
         shouldFail {
-
             Class clazz = new GroovyClassLoader().parseClass('''
                 @groovy.util.logging.Slf4j
                 class MyClass {
@@ -87,10 +86,8 @@ class Slf4jTest extends GroovyTestCase {
         }
     }
 
-    public void testClassAlreadyHasNamedLogField() {
-
+    void testClassAlreadyHasNamedLogField() {
         shouldFail {
-
             Class clazz = new GroovyClassLoader().parseClass('''
                 @groovy.util.logging.Slf4j('logger')
                 class MyClass {
@@ -101,8 +98,7 @@ class Slf4jTest extends GroovyTestCase {
         }
     }
 
-    public void testLogInfo() {
-
+    void testLogInfo() {
         Class clazz = new GroovyClassLoader().parseClass('''
           @groovy.util.logging.Slf4j
           class MyClass {
@@ -154,8 +150,7 @@ class Slf4jTest extends GroovyTestCase {
         assert events[0].message == "(static) info called"
     }
 
-    public void testLogInfoWithNamedLogger() {
-
+    void testLogInfoWithNamedLogger() {
         Class clazz = new GroovyClassLoader().parseClass('''
           @groovy.util.logging.Slf4j('logger')
           class MyClass {
@@ -188,7 +183,27 @@ class Slf4jTest extends GroovyTestCase {
         assert events[ind].message == "trace called"
     }
 
-    public void testLogWithInnerClasses_groovy6373() {
+    void testLogTransformInteractionWithAIC_groovy6834() {
+        assertScript '''
+            @groovy.util.logging.Slf4j
+            class MyClass {
+                static myMethod() {
+                    String message = 'hello'
+                    String audience = 'world'
+                    String result
+                    new Runnable() {
+                        void run() {
+                            result = "$message $audience"
+                        }
+                    }.run()
+                    result
+                }
+            }
+            assert MyClass.myMethod() == 'hello world'
+        '''
+    }
+
+    void testLogWithInnerClasses_groovy6373() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Slf4j('logger')
             class MyClass {
@@ -217,7 +232,7 @@ class Slf4jTest extends GroovyTestCase {
         assert events[ind].message == "inner called"
     }
 
-    public void testLogGuard() {
+    void testLogGuard() {
         Class clazz = new GroovyClassLoader().parseClass('''
            @groovy.util.logging.Slf4j
             class MyClass {
@@ -249,7 +264,7 @@ class Slf4jTest extends GroovyTestCase {
         assert appender.getEvents().size() == 1
     }
 
-    public void testCustomCategory() {
+    void testCustomCategory() {
         LogbackInterceptingAppender appenderForCustomCategory = new LogbackInterceptingAppender()
         appenderForCustomCategory.setOutputStream(new ByteArrayOutputStream())
         appenderForCustomCategory.setLayout(new EchoLayout())
@@ -276,9 +291,9 @@ class Slf4jTest extends GroovyTestCase {
 
 class LogbackInterceptingAppender<E> extends OutputStreamAppender<E> {
 
-    List<LoggingEvent> events = new ArrayList<LoggingEvent>()
+    private List<LoggingEvent> events = new ArrayList<LoggingEvent>()
 
-    public List<LoggingEvent> getEvents() {
+    List<LoggingEvent> getEvents() {
         return events
     }
 
