@@ -108,7 +108,11 @@ public abstract class BaseJsonParser implements JsonParser {
     }
 
     public Object parse(byte[] bytes, String charset) {
-        return parse(bytes, charset);
+        try {
+            return parse(new String(bytes, charset));
+        } catch (UnsupportedEncodingException e) {
+            return Exceptions.handle(Object.class, e);
+        }
     }
 
     public Object parse(CharSequence charSequence) {
