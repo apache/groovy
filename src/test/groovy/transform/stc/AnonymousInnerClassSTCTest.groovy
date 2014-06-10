@@ -95,7 +95,6 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented
     void testAICIntoClass() {
         assertScript '''
             class Outer {
