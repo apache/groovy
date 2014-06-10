@@ -149,6 +149,13 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         }
 
         InnerClassNode innerClass = (InnerClassNode) call.getType();
+        ClassNode outerClass = innerClass.getOuterClass();
+        ClassNode superClass = innerClass.getSuperClass();
+        if (superClass instanceof InnerClassNode
+                && !superClass.isInterface()
+                && !(superClass.isStaticClass()||((superClass.getModifiers()&ACC_STATIC)==ACC_STATIC))) {
+            insertThis0ToSuperCall(call, innerClass);
+        }
         if (!innerClass.getDeclaredConstructors().isEmpty()) return;
         if ((innerClass.getModifiers() & ACC_STATIC) != 0) return;
 
@@ -191,7 +198,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         pCount = 0;
         expressions.add(pCount, VariableExpression.THIS_EXPRESSION);
         boolean isStatic = isStaticThis(innerClass,scope);
-        ClassNode outerClassType = getClassNode(innerClass.getOuterClass(), isStatic);
+        ClassNode outerClassType = getClassNode(outerClass, isStatic);
         if (!isStatic && inClosure) outerClassType = ClassHelper.CLOSURE_TYPE;
         outerClassType = outerClassType.getPlainNodeReference();
         Parameter thisParameter = new Parameter(outerClassType, "p" + pCount);
@@ -262,7 +269,11 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
             }
             return;
         }
+        insertThis0ToSuperCall(call, cn);
 
+    }
+
+    private void insertThis0ToSuperCall(final ConstructorCallExpression call, final ClassNode cn) {
         // calculate outer class which we need for this$0
         ClassNode parent = classNode;
         int level = 0;
