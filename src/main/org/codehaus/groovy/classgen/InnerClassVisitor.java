@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -214,6 +214,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
             parameters.add(pCount, p);
             p.setOriginType(var.getOriginType());
             final VariableExpression initial = new VariableExpression(p);
+            initial.setSynthetic(true);
             initial.setUseReferenceDirectly(true);
             final FieldNode pField = innerClass.addFieldFirst(ve.getName(), PUBLIC_SYNTHETIC,rawReferenceType, initial);
             pField.setHolder(true);
