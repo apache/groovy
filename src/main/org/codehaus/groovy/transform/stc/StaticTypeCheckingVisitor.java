@@ -1758,6 +1758,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         extension.afterVisitMethod(node);
     }
 
+    @Override
+    public void visitConstructor(final ConstructorNode node) {
+        if (shouldSkipMethodNode(node)) {
+            // method has already been visited by a static type checking visitor
+            return;
+        }
+        for (Parameter parameter : node.getParameters()) {
+            if (parameter.getInitialExpression()!=null) {
+                parameter.getInitialExpression().visit(this);
+            }
+        }
+        super.visitConstructor(node);
+    }
+
     protected void startMethodInference(final MethodNode node, ErrorCollector collector) {
         if (isSkipMode(node)) return;
 
