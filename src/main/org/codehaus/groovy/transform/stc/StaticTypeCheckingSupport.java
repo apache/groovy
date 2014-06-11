@@ -1777,7 +1777,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static Map<String, GenericsType> mergeGenerics(Map<String, GenericsType> current, GenericsType[] newGenerics) {
-        if (newGenerics == null || newGenerics.length == 0) return null;
+        if (newGenerics == null || newGenerics.length == 0) return current;
         if (current==null) current = new HashMap<String, GenericsType>();
         for (int i = 0; i < newGenerics.length; i++) {
             GenericsType gt = newGenerics[i];
