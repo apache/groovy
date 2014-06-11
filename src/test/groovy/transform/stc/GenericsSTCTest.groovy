@@ -1627,6 +1627,21 @@ assert result == 'ok'
         '''
     }
 
+    // GROOVY-6856
+    void testReturnTypeFitsInferredTypeWithBound() {
+        assertScript '''
+            class Wrapper {}
+
+            class Foo<W extends Wrapper> {
+                W doIt (List<W> l) {
+                    l.iterator().next()
+                }
+            }
+            Wrapper w = new Wrapper()
+            assert new Foo<Wrapper>().doIt([w]) == w
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
