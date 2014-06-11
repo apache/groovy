@@ -1948,7 +1948,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (mn.isEmpty()) {
                 addNoMatchingMethodError(receiver, name, args, call);
             } else {
-                mn = disambiguateMethods(mn, call);
+                mn = disambiguateMethods(mn, receiver, args, call);
                 if (mn.size() == 1) {
                     MethodNode directMethodCallCandidate = mn.get(0);
                     ClassNode returnType = getType(directMethodCallCandidate);
@@ -2612,7 +2612,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (areCategoryMethodCalls(mn, name, args)) {
                         addCategoryMethodCallError(call);
                     }
-                    mn = disambiguateMethods(mn, call);
+                    mn = disambiguateMethods(mn, chosenReceiver!=null?chosenReceiver.getType():null, args, call);
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         if (chosenReceiver==null) {
@@ -3314,7 +3314,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (areCategoryMethodCalls(methods, name, args)) {
                 addCategoryMethodCallError(expr);
             }
-            methods = disambiguateMethods(methods, expr);
+            methods = disambiguateMethods(methods, receiver, args, expr);
             if (methods.size() == 1) {
                 return methods.get(0);
             } else {
@@ -3324,8 +3324,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    private List<MethodNode> disambiguateMethods(List<MethodNode> methods, final Expression expr) {
-        if (methods.size()>1) {
+    private List<MethodNode> disambiguateMethods(List<MethodNode> methods, ClassNode receiver, ClassNode[] argTypes, final Expression expr) {
+        if (methods.size()>1 && receiver!=null && argTypes!=null) {
+            List<MethodNode> filteredWithGenerics = new LinkedList<MethodNode>();
+            for (MethodNode methodNode : methods) {
+                if (typeCheckMethodsWithGenerics(receiver, argTypes, methodNode)) {
+                    filteredWithGenerics.add(methodNode);
+                }
+            }
+            if (filteredWithGenerics.size()==1) {
+                return filteredWithGenerics;
+            }
             methods = extension.handleAmbiguousMethods(methods, expr);
         }
         return methods;
