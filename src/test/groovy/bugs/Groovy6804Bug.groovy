@@ -5,7 +5,6 @@ import groovy.transform.stc.StaticTypeCheckingTestCase
 
 class Groovy6804Bug extends StaticTypeCheckingTestCase {
 
-    @NotYetImplemented
     void testOverloadedMethod() {
         assertScript '''
             class Base<K extends Serializable, V> {
