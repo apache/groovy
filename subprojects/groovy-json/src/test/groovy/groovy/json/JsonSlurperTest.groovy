@@ -299,4 +299,11 @@ class JsonSlurperTest extends GroovyTestCase {
             parser.parseText('{"a":"c:\\\"}')
         }
     }
+  
+    void testParseWithByteArray() {
+        def slurper = new JsonSlurper()
+        
+        assert slurper.parse('{"a":true}'.bytes) == [a: true]
+        
+    }
 }
