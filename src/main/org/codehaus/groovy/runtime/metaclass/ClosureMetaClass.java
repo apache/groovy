@@ -323,6 +323,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                         // outside building a stack and try each delegate
                         LinkedList list = new LinkedList();
                         for (Object current = closure; current != thisObject;) {
+                            if (!(current instanceof Closure)) break;
                             Closure currentClosure = (Closure) current;
                             if (currentClosure.getDelegate() != null) list.add(current);
                             current = currentClosure.getOwner();
