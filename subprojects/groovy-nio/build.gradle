@@ -12,7 +12,7 @@ task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorT
 
 compileJava.dependsOn moduleDescriptor
 
-tasks.withType(Compile) {
+tasks.withType(JavaCompile) {
         sourceCompatibility = 1.7
         targetCompatibility = 1.7
 }

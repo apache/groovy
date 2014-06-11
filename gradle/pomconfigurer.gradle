@@ -7,7 +7,6 @@ project.ext.optional = { project.ext.optionalDeps << it }
 project.ext.provided = { project.ext.providedDeps << it }
 
 project.ext.pomConfigureClosureWithoutTweaks = {
-    scopeMappings.addMapping(10, configurations.groovy, 'compile')
     project {
         name 'Groovy'
         description 'Groovy: A powerful, dynamic language for the JVM'
@@ -517,9 +516,7 @@ project.ext.pomConfigureClosure = {
 
         if (project == rootProject) {
             // make dependencies optional
-            def groovyConfDeps =
-                project.configurations.groovy.dependencies.collect { dep -> dep.name } - project.configurations.compile.dependencies.collect { dep -> dep.name }
-            pom.dependencies.each { dep ->  if (!groovyConfDeps.contains(dep.artifactId)) { dep.optional = true }}
+            pom.dependencies.each { dep ->  dep.optional = true }
         }
 
         // add 'packaging' node

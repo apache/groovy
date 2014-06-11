@@ -411,7 +411,7 @@ allprojects {
             sourceCompatibility = 1.7
             targetCompatibility = 1.7
         }
-        tasks.withType(Compile) {
+        tasks.withType(JavaCompile) {
             sourceCompatibility = 1.7
             targetCompatibility = 1.7
         }
