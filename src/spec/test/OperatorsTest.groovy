@@ -139,4 +139,40 @@ class OperatorsTest extends CompilableTestSupport {
             // end::logical_or_shortcircuit[]
         '''
     }
+
+    void testConditionalOperators() {
+        // tag::conditional_op_not[]
+        assert (!true)    == false                      // <1>
+        assert (!'foo')   == false                      // <2>
+        assert (!'')      == true                       // <3>
+        // end::conditional_op_not[]
+        def result
+        def string = 'some string'
+        // tag::conditional_op_ternary_if[]
+        if (string!=null && string.length()>0) {
+            result = 'Found'
+        } else {
+            result = 'Not found'
+        }
+        // end::conditional_op_ternary_if[]
+        assert result == 'Found'
+        result = null
+        // tag::conditional_op_ternary_ternary[]
+        result = (string!=null && string.length()>0)?'Found':'Not found'
+        // end::conditional_op_ternary_ternary[]
+        assert result == 'Found'
+
+        // tag::conditional_op_ternary_groovytruth[]
+        result = string?'Found':'Not found'
+        // end::conditional_op_ternary_groovytruth[]
+        assert result == 'Found'
+
+        def user = [name: 'Bob']
+        def displayName
+        // tag::conditional_op_elvis[]
+        displayName = user.name ? user.name : 'Anonymous'   // <1>
+        displayName = user.name ?: 'Anonymous'              // <2>
+        // end::conditional_op_elvis[]
+
+    }
 }

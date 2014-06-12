@@ -205,11 +205,58 @@ primitive types are signed, meaning that for a bitwise negation, it is always go
 
 In Groovy, bitwise operators have the particularity of being <<Operator-Overloading,overloadable>>, meaning that you can define the behavior of those operators for any kind of object.
 
-== Conditional operators (TBD)
+== Conditional operators
 
-=== Not operator (TBD)
-=== Ternary operator (TBD)
-=== Elvis operator (TBD)
+=== Not operator
+
+The "not" operator is represented with an exclamation mark (`!`) and inverts the result of the underlying boolean expression. In
+particular, it is possible to combine the `not` operator with the <<Groovy-Truth,Groovy truth>>:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_not,indent=0]
+----
+<1> the negation of `true` is `false`
+<2> 'foo' is a non empty string, evaluating to `true`, so negation returns `false`
+<3> '' is an empty string, evaluating to `false`, so negation returns `true`
+
+=== Ternary operator
+
+The ternary operator is a shortcut expression that is equivalent to an if/else branch assigning some value to a variable.
+
+Instead of:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_ternary_if,indent=0]
+----
+
+You can write:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_ternary_ternary,indent=0]
+----
+
+The ternary operator is also compatible with the <<Groovy-Truth,Groovy truth>>, so you can make it even simpler:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_ternary_groovytruth,indent=0]
+----
+
+=== Elvis operator
+
+The "Elvis operator" is a shortening of the ternary operator. One instance of where this is handy is for returning
+a 'sensible default' value if an expression resolves to `false` or `null`. A simple example might look like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_elvis,indent=0]
+----
+<1> with the ternary operator, you have to repeat the value you want to assign
+<2> with the Elvis operator, the value which is tested is used if it is not `false` or `null`
+
+Usage of the Elvis operator reduces the verbosity of your code and reduces the risks of errors in case of refactorings,
+by removing the need to duplicate the expression which is tested in both the condition and the positive return value.
 
 == Object operators (TBD)
 
