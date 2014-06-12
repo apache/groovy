@@ -337,11 +337,57 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference_d
 <4> using the method reference with a `String` calls the `String` version of `doSomething`
 <5> using the method reference with an `Integer` calls the `Integer` version of `doSomething`
 
-== Regular expression operators (TBD)
+== Regular expression operators
 
-=== Pattern operator (TBD)
-=== Find operator (TBD)
-=== Match operator (TBD)
+=== Pattern operator
+
+The pattern operator (`~`) provides a simple way to create a `java.util.regex.Pattern` instance:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_op,indent=0]
+----
+
+while in general, you find the pattern operator with an expression in a slashy-string, it can be used with any kind of
+`String` in Groovy:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_op,indent=0]
+----
+<1> using single quote strings
+<2> using double quotes strings
+<3> the dollar-slashy string lets you use slashes and the dollar sign without having to escape them
+<4> you can also use a GString!
+
+=== Find operator
+
+Alternatively to building a pattern, you can directly use the find operator `=~` to build a `java.util.regex.Matcher`
+instance:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_op,indent=0]
+----
+<1> `~=` creates a matcher against the `text` variable, using the pattern on the right hand side
+<2> the return type of `~=` is a `Matcher`
+<3> equivalent to calling `if (!m.find())`
+
+Since a `Matcher` coerces to a `boolean` by calling its `find` method, the `=~` operator is consistent with the simple
+use of Perl's `=~` operator, when it appears as a predicate (in `if`, `while`, etc.).
+
+=== Match operator
+
+The match operator (`==~`) is a slight variation of the find operator, that does not return a `Matcher` but a boolean
+and requires a strict match of the input string:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_strict_op,indent=0]
+----
+<1> `~==` matches the subject with the regular expression, but match must be strict
+<2> the return type of `~==` is therefore a `boolean`
+<3> equivalent to calling `if (text ==~ /match/)`
 
 == Other operators (TBD)
 
