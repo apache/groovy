@@ -258,11 +258,84 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_elv
 Usage of the Elvis operator reduces the verbosity of your code and reduces the risks of errors in case of refactorings,
 by removing the need to duplicate the expression which is tested in both the condition and the positive return value.
 
-== Object operators (TBD)
+== Object operators
 
 === Safe navigation operator (TBD)
-=== Direct field access operator (TBD)
-=== Method reference operator (TBD)
+
+The Safe Navigation operator is used to avoid a `NullPointerException`. Typically when you have a reference to an object
+you might need to verify that it is not `null` before accessing methods or properties of the object. To avoid this, the safe
+navigation operator will simply return `null` instead of throwing an exception, like so:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=nullsafe,indent=0]
+----
+<1> `find` will return a `null` instance
+<2> use of the null-safe operator prevents from a `NullPointerException`
+<3> result is `null`
+
+=== Direct field access operator
+
+Normally in Groovy, when you write code like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=direct_field_class,indent=0]
+----
+<1> public field `name`
+<2> a getter for `name` that returns a custom string
+<3> calls the getter
+
+The `user.name` call triggers a call to the property of the same name, that is to say, here, to the getter for `name`. If
+you want to retrieve the field instead of calling the getter, you can use the direct field access operator:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=direct_field_op,indent=0]
+----
+<1> use of `.@` forces usage of the field instead of the getter
+
+=== Method reference operator
+
+The method reference operator (`.&`) call be used to store a reference to a method in a variable, in order to call it
+later:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference,indent=0]
+----
+<1> the `str` variable contains a `String`
+<2> we store a reference to the `toUpperCase` method on the `str` instance inside a variable named `fun`
+<3> `fun` can be called like a regular method
+<4> we can check that the result is the same as if we had called it directly on `str`
+
+There are multiple advantages in using method references. First of all, the type of such a method reference is
+a `groovy.lang.Closure`, so it can be used in any place a closure would be used. In particular, it is suitable to
+convert an existing method for the needs of the strategy pattern:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference,indent=0]
+----
+<1> the `transform` method takes each element of the list and calls the `action` closure on them, returning a new list
+<2> we define a function that takes a `Person` a returns a `String`
+<3> we create a method reference on that function
+<4> we create the list of elements we want to collect the descriptors
+<5> the method reference can be used where a `Closure` was expected
+
+Method references are bound by the receiver and a method name. Arguments are resolved at runtime, meaning that if you have
+multiple methods with the same name, the syntax is not different, only resolution of the appropriate method to be called
+will be done at runtime:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference_dispatch,indent=0]
+----
+<1> define an overloaded `doSomething` method accepting a `String` as an argument
+<2> define an overloaded `doSomething` method accepting an `Integer` as an argument
+<3> create a single method reference on `doSomething`, without specifying argument types
+<4> using the method reference with a `String` calls the `String` version of `doSomething`
+<5> using the method reference with an `Integer` calls the `Integer` version of `doSomething`
 
 == Regular expression operators (TBD)
 
