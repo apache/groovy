@@ -51,6 +51,13 @@ class JsonSlurperTest extends GroovyTestCase {
         }
     }
 
+    void testAddingToEmptyList() {
+        def list = parser.parseText('[]')
+        list << "Hello"
+        list << "World"
+        assert list == [ "Hello", "World" ]
+    }
+
     void testParseNum() {
         int i = parser.parseText('123')
         int i2 = 123
