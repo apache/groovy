@@ -281,6 +281,64 @@ assert user.@name == 'Bob'                                 // <1>
         // end::pattern_matcher_strict_op[]
     }
 
+    void testSpreadDotOperator() {
+        assertScript '''
+// tag::spreaddot[]
+class Car {
+    String make
+    String model
+}
+def cars = [new Car(make:'Peugeot', model:'508'), new Car(make:'Renault', model:'Clio')]        // <1>
+def makes = cars*.make                                                                          // <2>
+assert makes == ['Peugeot', 'Renault']                                                          // <3>
+// end::spreaddot
+// tag::spreaddot_nullsafe
+cars = [new Car(make:'Peugeot', model:'508'), null, new Car(make:'Renault', model:'Clio')]      // <1>
+assert cars*.make == ['Peugeot', null, 'Renault']                                               // <2>
+assert null*.make == null                                                                       // <3>
+// end::spreaddot_nullsafe
+'''
+        assertScript '''
+// tag::spreaddot_iterable[]
+class Component {
+    Long id
+    String name
+}
+class CompositeObject implements Iterable<Component> {
+    def components = [new Component(id:1, name: 'Foo'), new Component(id:2, name:'Bar')]
+
+    @Override
+    Iterator<Component> iterator() {
+        components.iterator()
+    }
+}
+def composite = new CompositeObject()
+assert composite*.id == [1,2]
+assert composite*.name == ['Foo','Bar']
+// end::spreaddot_iterable[]
+'''
+    }
+
+    void testSpreadMethodArguments() {
+        assertScript '''
+// tag::spreadmethodargs_method[]
+int function(int x, int y, int z) {
+    x*y+z
+}
+// end::spreadmethodargs_method[]
+// tag::spreadmethodargs_args[]
+def args = [4,5,6]
+// end::spreadmethodargs_args[]
+// tag::spreadmethodargs_assert[]
+assert function(*args) == 26
+// end::spreadmethodargs_assert[]
+// tag::spreadmethodargs_mixed[]
+args = [4]
+assert function(*args,5,6) == 26
+// end::spreadmethodargs_mixed[]
+'''
+    }
+
     private static class Person {
         Long id
         String name

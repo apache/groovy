@@ -391,8 +391,69 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_st
 
 == Other operators (TBD)
 
-=== Spread operator (TBD)
-==== Spreading method arguments (TBD)
+=== Spread operator
+
+The Spread Operator (`.*`) is used to invoke an action on all items of an aggregate object. It is equivalent to calling the action on each item
+and collecting the result into a list:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreaddot,indent=0]
+----
+<1> build a list of `Car` items. The list is an aggregate of objects.
+<2> call the spread operator on the list, accessing the `make` property of each item
+<3> returns a list of strings corresponding to the collection of `make` items
+
+The spread operator is null-safe, meaning that if an element of the collection is null, it will return null instead of throwing a `NullPointerException`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreaddot_nullsafe,indent=0]
+----
+<1> build a list for which of of the elements is `null`
+<2> using the spread operator will *not* throw a `NullPointerException`
+<3> the receiver might also be null, in which case the return value is `null`
+
+The spread operator can be used on any class which implements the `Iterable` interface:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreaddot_iterable,indent=0]
+----
+
+==== Spreading method arguments
+
+There may be situations when the arguments of a method call can be found in a list that you need to adapt to the method
+arguments. In such situations, you can use the spread operator to call the method. For example, imagine you have the
+following method signature:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreadmethodargs_method,indent=0]
+----
+
+then if you have the following list:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreadmethodargs_args,indent=0]
+----
+
+you can call the method without having to define intermediate variables:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreadmethodargs_assert,indent=0]
+----
+
+It is even possible to mix normal arguments with spread ones:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreadmethodargs_mixed,indent=0]
+----
+
+
 ==== Spread list elements (TBD)
 ==== Spread map elements (TBD)
 === Range operator (TBD)
