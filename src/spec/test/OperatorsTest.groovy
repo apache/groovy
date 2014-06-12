@@ -93,6 +93,24 @@ class OperatorsTest extends CompilableTestSupport {
         // end::logical_op[]
     }
 
+    void testBitwiseOperators() {
+        // tag::bitwise_op[]
+        int a = 0b00101010
+        assert a==42
+        int b = 0b00001000
+        assert b==8
+        assert (a & a) == a                     // <1>
+        assert (a & b) == b                     // <2>
+        assert (a | a) == a                     // <3>
+        assert (a | b) == a                     // <4>
+
+        int mask = 0b11111111                   // <5>
+        assert ((a ^ a) & mask) == 0b00000000   // <6>
+        assert ((a ^ b) & mask) == 0b00100010   // <7>
+        assert ((~a) & mask)    == 0b11010101   // <8>
+        // end::bitwise_op[]
+    }
+
     void testLogicalOperatorPrecedence() {
         // tag::logical_precendence_1[]
         assert !false && true    // <1>
