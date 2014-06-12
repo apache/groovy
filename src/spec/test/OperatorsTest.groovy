@@ -1,5 +1,8 @@
 import gls.CompilableTestSupport
 
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
 class OperatorsTest extends CompilableTestSupport {
 
     void testArithmeticOperators() {
@@ -245,6 +248,37 @@ assert user.@name == 'Bob'                                 // <1>
             assert reference(123)   == 246                                                      // <5>
             // end::method_reference_dispatch[]
         '''
+    }
+
+    void testRegularExpressionOperators() {
+        def pattern = 'foo'
+        // tag::pattern_op[]
+        def p = ~/foo/
+        assert p instanceof Pattern
+        // end::pattern_op[]
+        // tag::pattern_op_variants[]
+        p = ~'foo'                                                                              // <1>
+        p = ~'foo'                                                                              // <2>
+        p = ~$/dollar/slashy $ string/$                                                         // <3>
+        p = ~"${pattern}"                                                                       // <4>
+        // end::pattern_op_variants[]
+
+        // tag::pattern_matcher_op[]
+        def text = "some text to match"
+        def m = text =~ /match/                                                                 // <1>
+        assert m instanceof Matcher                                                             // <2>
+        if (!m) {                                                                               // <3>
+            throw new RuntimeException("Oops, text not found!")
+        }
+        // end::pattern_matcher_op[]
+
+        // tag::pattern_matcher_strict_op[]
+        m = text ==~ /match/                                                                    // <1>
+        assert m instanceof Boolean                                                             // <2>
+        if (m) {                                                                                // <3>
+            throw new RuntimeException("Should not reach that point!")
+        }
+        // end::pattern_matcher_strict_op[]
     }
 
     private static class Person {
