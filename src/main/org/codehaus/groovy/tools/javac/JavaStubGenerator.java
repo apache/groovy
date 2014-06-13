@@ -308,15 +308,16 @@ public class JavaStubGenerator {
     }
 
     private void printEnumFields(PrintWriter out, List<FieldNode> fields) {
-        if (fields.size() == 0) return;
-        boolean first = true;
-        for (FieldNode field : fields) {
-            if (!first) {
-                out.print(", ");
-            } else {
-                first = false;
+        if (fields.size() != 0) {
+            boolean first = true;
+            for (FieldNode field : fields) {
+                if (!first) {
+                    out.print(", ");
+                } else {
+                    first = false;
+                }
+                out.print(field.getName());
             }
-            out.print(field.getName());
         }
         out.println(";");
     }
