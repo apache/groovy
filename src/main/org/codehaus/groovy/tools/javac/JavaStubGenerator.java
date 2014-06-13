@@ -732,6 +732,7 @@ public class JavaStubGenerator {
             int lastIndex = parameters.length - 1;
             boolean vararg = parameters[lastIndex].getType().isArray();
             for (int i = 0; i != parameters.length; ++i) {
+                printAnnotations(out, parameters[i]);
                 if (i == lastIndex && vararg) {
                     printType(out, parameters[i].getType().getComponentType());
                     out.print("...");
