@@ -260,7 +260,7 @@ by removing the need to duplicate the expression which is tested in both the con
 
 == Object operators
 
-=== Safe navigation operator (TBD)
+=== Safe navigation operator
 
 The Safe Navigation operator is used to avoid a `NullPointerException`. Typically when you have a reference to an object
 you might need to verify that it is not `null` before accessing methods or properties of the object. To avoid this, the safe
@@ -315,7 +315,7 @@ convert an existing method for the needs of the strategy pattern:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference,indent=0]
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference_strategy,indent=0]
 ----
 <1> the `transform` method takes each element of the list and calls the `action` closure on them, returning a new list
 <2> we define a function that takes a `Person` a returns a `String`
@@ -389,7 +389,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_st
 <2> the return type of `~==` is therefore a `boolean`
 <3> equivalent to calling `if (text ==~ /match/)`
 
-== Other operators (TBD)
+== Other operators (WIP)
 
 === Spread operator
 
@@ -453,12 +453,102 @@ It is even possible to mix normal arguments with spread ones:
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreadmethodargs_mixed,indent=0]
 ----
 
+==== Spread list elements
 
-==== Spread list elements (TBD)
-==== Spread map elements (TBD)
-=== Range operator (TBD)
-=== Spaceship operator (TBD)
-=== Subscript operator (TBD)
+When used inside a list literal, the spread operator acts as if the spread element contents were inlined into the list:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spread_list,indent=0]
+----
+<1> `items` is a list
+<2> we want to insert the contents of the `items` list directly into `list` without having to call `addAll`
+<3> the contents of `items` has been inlined into `list`
+
+==== Spread map elements
+
+The spread map operator works in a similar manner as the spread list operator, but for maps. It allows you to inline
+the contents of a map into another map literal, like in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spread_map,indent=0]
+----
+<1> `m1` is the map that we want to inline
+<2> we use the `*:m1` notation to spread the contents of `m1` into `map`
+<3> `map` contains all the elements of `m1`
+
+The position of the spread map operator is relevant, like illustrated in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spread_map_position,indent=0]
+----
+<1> `m1` is the map that we want to inline
+<2> we use the `*:m1` notation to spread the contents of `m1` into `map`, but redefine the key `d` *after* spreading
+<3> `map` contains all the expected keys, but `d` was redefined
+
+=== Range operator
+
+Groovy supports the concept of ranges and provides a notation (`..`) to create ranges of objects:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=intrange,indent=0]
+----
+<1> a simple range of integers, stored into a local variable
+<2> an `IntRange`, with inclusive bounds
+<3> an `IntRange`, with exclusive upper bound
+<4> a `groovy.lang.Range` implements the `List` interface
+<5> meaning that you can call the `size` method on it
+
+Ranges implementation is lightweight, meaning that only the lower and upper bounds are stored. You can create a range
+from any `Comparable` object. For example, you can create a range of characters this way:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=charrange,indent=0]
+----
+
+=== Spaceship operator
+
+The spaceship operator (`<=>`) delegates to the `compareTo` method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spaceship,indent=0]
+----
+
+=== Subscript operator
+
+The subscript operator is a short hand notation for `getAt` or `putAt`, depending on whether you find it on
+the left hand side or the right hand side of an assignment:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=subscript_op,indent=0]
+----
+<1> `[2]` can be used instead of `getAt(2)`
+<2> if on left hand side of an assignment, will call `putAt`
+<3> `getAt` also supports ranges
+<4> so does `putAt`
+<5> the list is mutated
+
+The subscript operator, in combination with a custom implementation of `getAt`/`putAt` is a convenient way for destructuring
+objects:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=subscript_destructuring,indent=0]
+----
+<1> the `User` class defines a custom `getAt` implementation
+<2> the `User` class defines a custom `putAt` implementation
+<3> create a sample user
+<4> using the subscript operator with index 0 allows retrieving the user id
+<5> using the subscript operator with index 1 allows retrieving the user name
+<6> we can use the subscript operator to write to a property thanks to the delegation to `putAt`
+<7> and check that it's really the property `name` which was changed
+
 === Membership operator (TBD)
 === Identity operator (TBD)
 === Coercion operator (TBD)

@@ -288,15 +288,20 @@ class Car {
     String make
     String model
 }
-def cars = [new Car(make:'Peugeot', model:'508'), new Car(make:'Renault', model:'Clio')]        // <1>
-def makes = cars*.make                                                                          // <2>
-assert makes == ['Peugeot', 'Renault']                                                          // <3>
-// end::spreaddot
-// tag::spreaddot_nullsafe
-cars = [new Car(make:'Peugeot', model:'508'), null, new Car(make:'Renault', model:'Clio')]      // <1>
-assert cars*.make == ['Peugeot', null, 'Renault']                                               // <2>
-assert null*.make == null                                                                       // <3>
-// end::spreaddot_nullsafe
+def cars = [
+       new Car(make:'Peugeot', model:'508'),
+       new Car(make:'Renault', model:'Clio')]                                    // <1>
+def makes = cars*.make                                                           // <2>
+assert makes == ['Peugeot', 'Renault']                                           // <3>
+// end::spreaddot[]
+// tag::spreaddot_nullsafe[]
+cars = [
+   new Car(make:'Peugeot', model:'508'),
+   null,                                                                         // <1>
+   new Car(make:'Renault', model:'Clio')]
+assert cars*.make == ['Peugeot', null, 'Renault']                                // <2>
+assert null*.make == null                                                        // <3>
+// end::spreaddot_nullsafe[]
 '''
         assertScript '''
 // tag::spreaddot_iterable[]
@@ -305,7 +310,9 @@ class Component {
     String name
 }
 class CompositeObject implements Iterable<Component> {
-    def components = [new Component(id:1, name: 'Foo'), new Component(id:2, name:'Bar')]
+    def components = [
+        new Component(id:1, name: 'Foo'),
+        new Component(id:2, name:'Bar')]
 
     @Override
     Iterator<Component> iterator() {
@@ -337,6 +344,102 @@ args = [4]
 assert function(*args,5,6) == 26
 // end::spreadmethodargs_mixed[]
 '''
+    }
+
+    void testSpreadList() {
+        // tag::spread_list[]
+        def items = [4,5]                      // <1>
+        def list = [1,2,3,*items,6]            // <2>
+        assert list == [1,2,3,4,5,6]           // <3>
+        // end::spread_list[]
+    }
+
+    void testSpreadMap() {
+        assertScript '''
+        // tag::spread_map[]
+        def m1 = [c: 3, d: 4]                 // <1>
+        def map = [a:1, b:2, *:m1]            // <2>
+        assert map == [a:1, b:2, c:3, d:4]    // <3>
+        // end::spread_map[]
+        '''
+
+        assertScript '''
+        // tag::spread_map_position[]
+        def m1 = [c: 3, d: 4]                 // <1>
+        def map = [a:1, b:2, *:m1, d: 8]      // <2>
+        assert map == [a:1, b:2, c:3, d:8]    // <3>
+        // end::spread_map_position[]
+        '''
+
+    }
+
+    void testRangeOperator() {
+        assertScript '''
+        // tag::intrange[]
+        def range = 0..5                                    // <1>
+        assert (0..5).collect() == [0, 1, 2, 3, 4, 5]       // <2>
+        assert (0..<5).collect() == [0, 1, 2, 3, 4]         // <3>
+        assert (0..5) instanceof List                       // <4>
+        assert (0..5).size() == 6                           // <5>
+        // end::intrange[]
+        '''
+        assertScript '''
+        // tag::charrange[]
+        assert ('a'..'d').collect() == ['a','b','c','d']
+        // end::charrange[]
+        '''
+    }
+
+    void testSpaceshipOperator() {
+        assertScript '''
+        // tag::spaceship[]
+        assert (1 <=> 1) == 0
+        assert (1 <=> 2) == -1
+        assert (2 <=> 1) == 1
+        assert ('a' <=> 'z') == -1
+        // end::spaceship[]
+'''
+    }
+
+    void testSubscriptOperator() {
+        assertScript '''
+        // tag::subscript_op[]
+        def list = [0,1,2,3,4]
+        assert list[2] == 2                         // <1>
+        list[2] = 4                                 // <2>
+        assert list[0..2] == [0,1,4]                // <3>
+        list[0..2] = [6,6,6]                        // <4>
+        assert list == [6,6,6,3,4]                  // <5>
+        // end::subscript_op[]
+        '''
+
+        assertScript '''
+        // tag::subscript_destructuring[]
+        class User {
+            Long id
+            String name
+            def getAt(int i) {                                                  // <1>
+                switch (i) {
+                    case 0: return id
+                    case 1: return name
+                }
+                throw new IllegalArgumentException("No such element $i")
+            }
+            void putAt(int i, def value) {                                      // <2>
+                switch (i) {
+                    case 0: id = value; return
+                    case 1: name = value; return
+                }
+                throw new IllegalArgumentException("No such element $i")
+            }
+        }
+        def user = new User(id: 1, name: 'Alex')                                // <3>
+        assert user[0] == 1                                                     // <4>
+        assert user[1] == 'Alex'                                                // <5>
+        user[1] = 'Bob'                                                         // <6>
+        assert user.name == 'Bob'                                               // <7>
+        // end::subscript_destructuring[]
+        '''
     }
 
     private static class Person {
