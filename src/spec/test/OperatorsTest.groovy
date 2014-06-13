@@ -442,6 +442,80 @@ assert function(*args,5,6) == 26
         '''
     }
 
+    void testMembershipOperator() {
+        // tag::membership_op[]
+        def list = ['Grace','Rob','Emmy']
+        assert ('Emmy' in list)                     // <1>
+        // end::membership_op[]
+    }
+
+    void testIdentityOperator() {
+        // tag::identity_op[]
+        def list1 = ['Groovy 1.8','Groovy 2.0','Groovy 2.3']        // <1>
+        def list2 = ['Groovy 1.8','Groovy 2.0','Groovy 2.3']        // <2>
+        assert list1 == list2                                       // <3>
+        assert !list1.is(list2)                                     // <4>
+        // end::identity_op[]
+    }
+
+    void testCoercionOperator() {
+        try {
+            // tag::coerce_op_cast[]
+            Integer x = 123
+            String s = (String) x                                   // <1>
+            // end::coerce_op_cast[]
+        } catch (ClassCastException e) {
+            // tag::coerce_op[]
+            Integer x = 123
+            String s = x as String                                  // <1>
+            // end::coerce_op[]
+            assert s == '123'
+        }
+        assertScript '''
+        // tag::coerce_op_custom[]
+        class Identifiable {
+            String name
+        }
+        class User {
+            Long id
+            String name
+            def asType(Class target) {                                              // <1>
+                if (target==Identifiable) {
+                    return new Identifiable(name: name)
+                }
+                throw new ClassCastException("User cannot be coerced into $target")
+            }
+        }
+        def u = new User(name: 'Xavier')                                            // <2>
+        def p = u as Identifiable                                                   // <3>
+        assert p instanceof Identifiable                                            // <4>
+        assert !(p instanceof User)                                                 // <5>
+        // end::coerce_op_custom[]
+        '''
+    }
+
+    void testDiamondOperator() {
+        // tag::diamond_op[]
+        List<String> strings = new LinkedList<>()
+        // end::diamond_op[]
+    }
+
+    void testCallOperator() {
+        assertScript '''
+        // tag::call_op[]
+        class MyCallable {
+            int call(int x) {           // <1>
+                2*x
+            }
+        }
+
+        def mc = new MyCallable()
+        assert mc.call(2) == 4          // <2>
+        assert mc(2) == 4               // <3>
+        // end::call_op[]
+        '''
+    }
+
     private static class Person {
         Long id
         String name
