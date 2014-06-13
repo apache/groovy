@@ -29,6 +29,8 @@ class Groovy6855Bug extends StringSourcesStubTestCase {
                     package foo;
 
                     import bar.Get;
+                    import java.lang.annotation.Annotation;
+                    import java.lang.reflect.Constructor;
 
                     @Get public class Main {
                         public static void main(String[] args) throws Exception {
