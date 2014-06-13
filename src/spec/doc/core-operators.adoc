@@ -549,11 +549,89 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=subscript_destruct
 <6> we can use the subscript operator to write to a property thanks to the delegation to `putAt`
 <7> and check that it's really the property `name` which was changed
 
-=== Membership operator (TBD)
-=== Identity operator (TBD)
-=== Coercion operator (TBD)
-=== Diamond operator (TBD)
-=== Call operator (TBD)
+=== Membership operator
+
+The membership operator (`in`) is equivalent to calling the `isCase` method. In the context of a `List`, it is equivalent
+to calling `contains`, like in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=membership_op,indent=0]
+----
+<1> equivalent to calling `list.contains('Emmy')` or `list.isCase('Emmy')`
+
+=== Identity operator
+
+In Groovy, using `==` to test equality is different from using the same operator in Java. In Groovy, it is calling `equals`.
+If you want to compare reference equality, you should use `is` like in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=identity_op,indent=0]
+----
+<1> Create a list of strings
+<2> Create another list of strings containing the same elements
+<3> using `==`, we test object equality
+<4> but using `is`, we can check that references are distinct
+
+=== Coercion operator
+
+The coercion operator (`as`) is a variant of casting. Coercion converts object from one type to another *without* them
+being compatible for assignement. Let's take an example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=coerce_op_cast,indent=0]
+----
+<1> `Integer` is not assignable to a `String`, so it will produce a `ClassCastException` at runtime
+
+This can be fixed by using _coercion_ instead:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=coerce_op,indent=0]
+----
+<1> `Integer` is not assignable to a `String`, but use of `as` will _coerce_ it to a `String`
+
+When an object is coerced into another, unless the target type is the same as the source type, coercion will return a
+*new* object. The rules of coercion differ depending on the source and target types, and coercion may fail if no conversion
+rules are found. Custom conversion rules may be implemented thanks to the `asType` method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=coerce_op_custom,indent=0]
+----
+<1> the `User` class defines a custom conversion rule from `User` to `Identifiable`
+<2> we create an instance of `User`
+<3> we coerce the `User` instance into an `Identifiable`
+<4> the target is an instance of `Identifiable`
+<5> the target is not an instance of `User` anymore
+
+=== Diamond operator
+
+The diamond operator (`<>`) is a syntactic sugar only operator added to support compatibility with the operator of the
+same name in Java 7. It is used to indicate that generic types should be inferred from the declaration:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=diamond_op,indent=0]
+----
+
+In dynamic Groovy, this is totally unused. In statically type checked Groovy, it is also optional since the Groovy
+type checker performs type inference whether this operator is present or not.
+
+=== Call operator
+
+The call operator `()` is used to call a method named `call` implicitly. For any object which defines a `call` method,
+ you can omit the `.call` part and use the call operator instead:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=call_op,indent=0]
+----
+<1> `MyCallable` defines a method named `call`. Note that it doesn't need to implement `java.util.concurrent.Callable`
+<2> we can call the method using the classic method call syntax
+<3> or we can omit `.call` thanks to the call operator
 
 == Operator precedence (TBD)
 
