@@ -600,6 +600,10 @@ public class JavaStubGenerator {
 
     private void printValue(PrintWriter out, Expression re, boolean assumeClass) {
         if (assumeClass) {
+            if (re.getType().getName().equals("groovy.lang.Closure")) {
+                out.print("groovy.lang.Closure.class");
+                return;
+            }
             String className = re.getText();
             out.print(className);
             if (!className.endsWith(".class")) {

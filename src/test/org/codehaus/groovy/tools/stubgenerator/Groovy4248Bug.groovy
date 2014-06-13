@@ -19,7 +19,7 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- * Test that multi-dimensional arrays are compiled successfully.
+ * Test that Parameter annotations are kept in the Java stub.
  *
  * @author Paul King
  */
