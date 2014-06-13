@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,28 @@ import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
 /**
- * Compiles Groovy source files. This task can take the following arguments:
+ * Compiles Groovy source files using Ant.
+ * <p>
+ * Typically involves using Ant from the command-line and an Ant build file such as:
+ * <pre>
+ * &lt;?xml version="1.0"?&gt;
+ * &lt;project name="MyGroovyBuild" default="compile"&gt;
+ *   &lt;property name="groovy.home" value="/Path/To/Groovy"/&gt;
+ *   &lt;property name="groovy.version" value="X.Y.Z"/&gt;
+ *   &lt;path id="groovy.classpath"&gt;
+ *     &lt;fileset dir="${groovy.home}/embeddable"&gt;
+ *       &lt;include name="groovy-all-${groovy.version}.jar" /&gt;
+ *     &lt;/fileset&gt;
+ *   &lt;/path&gt;
+ *   &lt;taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovy.classpath"/&gt;
+ *
+ *   &lt;target name="compile" description="compile groovy sources"&gt;
+ *     &lt;groovyc srcdir="src" listfiles="true" classpathref="groovy.classpath"/&gt;
+ *   &lt;/target&gt;
+ * &lt;/project&gt;
+ * </pre>
+ * <p>
+ * This task can take the following arguments:
  * <ul>
  * <li>srcdir</li>
  * <li>scriptExtension</li>
@@ -103,7 +124,43 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
  * <p>When this task executes, it will recursively scan srcdir and destdir looking for Groovy source files
  * to compile. This task makes its compile decision based on timestamp.
  * <p>
+ * A more elaborate build file showing joint compilation:
+ * <pre>
+ * &lt;?xml version="1.0"?&gt;
+ * &lt;project name="MyJointBuild" default="compile"&gt;
+ *   &lt;property name="groovy.home" value="/Path/To/Groovy"/&gt;
+ *   &lt;property name="groovy.version" value="X.Y.Z"/&gt;
+ *
+ *   &lt;path id="groovy.classpath"&gt;
+ *     &lt;fileset dir="${groovy.home}/embeddable"&gt;
+ *       &lt;include name="groovy-all-${groovy.version}.jar" /&gt;
+ *     &lt;/fileset&gt;
+ *   &lt;/path&gt;
+ *
+ *   &lt;target name="clean" description="remove all built files"&gt;
+ *     &lt;delete dir="classes" /&gt;
+ *   &lt;/target&gt;
+ *
+ *   &lt;target name="compile" depends="init" description="compile java and groovy sources"&gt;
+ *     &lt;mkdir dir="classes" /&gt;
+ *     &lt;groovyc destdir="classes" srcdir="src" listfiles="true" keepStubs="true" stubdir="stubs"&gt;
+ *       &lt;javac debug="on" deprecation="true"/&gt;
+ *       &lt;classpath&gt;
+ *         &lt;fileset dir="classes"/&gt;
+ *         &lt;path refid="groovy.classpath"/&gt;
+ *       &lt;/classpath&gt;
+ *     &lt;/groovyc&gt;
+ *   &lt;/target&gt;
+ *
+ *   &lt;target name="init"&gt;
+ *     &lt;taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovy.classpath"/&gt;
+ *   &lt;/target&gt;
+ * &lt;/project&gt;
+ * </pre>
+ * <p>
  * Based heavily on the Javac implementation in Ant.
+ * <p>
+ * Can also be used from {@link groovy.util.AntBuilder} to allow the build file to be scripted in Groovy.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Hein Meling
