@@ -193,7 +193,7 @@ expression:
     | '{' argumentDeclarationList '->' blockStatement? '}' #closureExpression
     | '[' (expression (',' expression)*)?']' #listConstructor
     | '[' (':' | (mapEntry (',' mapEntry)*) )']' #mapConstructor
-    | expression ('.' | '?.' | '*.') IDENTIFIER '(' argumentList ')' #methodCallExpression
+    | expression ('.' | '?.' | '*.') IDENTIFIER '(' argumentList? ')' #methodCallExpression
     | expression ('.' | '?.' | '*.' | '.@') IDENTIFIER #fieldAccessExpression
     | expression '(' argumentList? ')' #callExpression
     | expression ('--' | '++') #postfixExpression

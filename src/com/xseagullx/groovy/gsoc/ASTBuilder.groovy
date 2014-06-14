@@ -538,10 +538,16 @@ class ASTBuilder extends GroovyBaseListener {
     static Expression parseExpression(GroovyParser.CallExpressionContext ctx) {
         def argumentListExpression = createArgumentList(ctx.argumentList())
 
-        if (ctx.expression() instanceof GroovyParser.VariableExpressionContext)
-            new MethodCallExpression(new VariableExpression("this"), new ConstantExpression(ctx.expression().text), argumentListExpression)
-        else
-            new MethodCallExpression(parseExpression(ctx.expression()), new ConstantExpression("call"), argumentListExpression)
+        def methodNode
+        if (ctx.expression() instanceof GroovyParser.VariableExpressionContext) {
+            methodNode = new MethodCallExpression(new VariableExpression("this"), new ConstantExpression(ctx.expression().text), argumentListExpression)
+            methodNode.implicitThis = true
+        }
+        else {
+            methodNode = new MethodCallExpression(parseExpression(ctx.expression()), new ConstantExpression("call"), argumentListExpression)
+            methodNode.implicitThis = false
+        }
+        methodNode
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
