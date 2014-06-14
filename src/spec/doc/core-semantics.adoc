@@ -2,22 +2,183 @@
 
 This chapter covers the semantic of the Groovy programming language.
 
-== Statements (TBD)
+== Statements
 
-=== Variable definition (TBD)
-=== Variable assignment (TBD)
-==== Multiple assignment (TBD)
-=== Control structures (TBD)
-==== Conditional structures (TBD)
-===== if / else (TBD)
-===== switch / case (TBD)
-==== Looping structures (TBD)
-===== Classic for loop (TBD)
-===== for in loop (TBD)
-===== while loop (TBD)
-==== Exception handling (TBD)
-==== try / catch / finally (TBD)
-==== Multi-catch (TBD)
+=== Variable definition
+
+Variables can be defined using either their type (like `String`) or by using the keyword `def`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=variable_definition_example,indent=0]
+----
+
+`def` is a replacement for a type name. In variable definitions it is used to indicate that you don't care about the type. In variable definitions it is mandatory to either provide a type name explicitly or to use "def" in replacement. This is needed to the make variable definitions detectable for the Groovy parser.
+
+You can think of `def` as an alias of `Object` and you will understand it in an instant.
+
+=== Variable assignment
+
+You can assign values to variables for later use. Try the following:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=variable_assignment_example,indent=0]
+----
+
+==== Multiple assignment
+
+Groovy supports multiple assignment, i.e. where multiple variables can be assigned at once, e.g.:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=multiple_assignment_example,indent=0]
+----
+
+You can provide types as part of the declaration if you wish:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=multiple_assignment_with_types,indent=0]
+----
+
+As well as used when declaring variables it also applies to existing variables:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=multiple_assignment_with_existing_variables,indent=0]
+----
+
+The syntax works for arrays as well as lists, as well as methods that return either of these:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=multiple_assignment_with_arrays_and_lists,indent=0]
+----
+
+==== Overflow and Underflow
+
+If the left hand side has too many variables, excess ones are filled with null's:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=multiple_assignment_underflow,indent=0]
+----
+
+If the right hand side has too many variables, the extra ones are ignored:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=multiple_assignment_overflow,indent=0]
+----
+
+=== Control structures (WIP)
+==== Conditional structures
+===== if / else
+
+Groovy supports the usual if - else syntax from Java
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=if_else_example,indent=0]
+----
+
+Groovy also supports the normal Java "nested" if then else if syntax:
+
+[source,groovy]
+----
+if ( ... ) {
+    ...
+} else if (...) {
+    ...
+} else {
+    ...
+}
+----
+
+===== switch / case
+
+The switch statement in Groovy is backwards compatible with Java code; so you can fall through cases sharing the same code for multiple matches.
+
+One difference though is that the Groovy switch statement can handle any kind of switch value and different kinds of matching can be performed.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=switch_case_example,indent=0]
+----
+
+Switch supports the following kinds of comparisons:
+
+* Class case values matches if the switch value is an instance of the class
+* Regular expression case value matches if the string of the switch value matches the regex
+* Collection case value matches if the switch value is contained in the collection. This also includes ranges (since they are Lists)
+* If none of the above are used then the case value matches if the case value equals the switch value
+
+NOTE: +default+ must go at the end of the switch/case. While in Java the default can be placed anywhere in the switch/case, the default in Groovy is used more as an else than assigning a default case.
+
+==== Looping structures
+===== Classic for loop
+
+Groovy supports the standard Java / C for loop:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=classic_for_loop_example,indent=0]
+----
+
+===== for in loop
+
+The for loop in Groovy is much simpler and works with any kind of array, collection, Map, etc.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=groovy_for_loop_example,indent=0]
+----
+
+===== while loop
+
+Groovy supports the usual while {...} loops like Java:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=while_loop_example,indent=0]
+----
+
+==== Exception handling
+
+Exception handling is the same as Java.
+
+==== try / catch / finally
+
+You can specify a complete +try-catch-finally+, a +try-catch+, or a +try-finally+ set of blocks.
+
+NOTE: Braces are required around each block's body.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=try_catch_example,indent=0]
+----
+
+We can put code within a 'finally' clause following a matching 'try' clause, so that regardless of whether the code in the 'try' clause throws an exception, the code in the finally clause will always execute:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=try_catch_finally_example,indent=0]
+----
+
+==== Multi-catch
+
+With the multi catch block (since Groovy 2.0), we're able to define several exceptions to be catch and treated by the same catch block:
+
+[source,groovy]
+----
+try {
+    /* ... */
+} catch ( IOException | NullPointerException e ) {
+    /* one block to handle 2 exceptions */
+}
+----
+
 === Power assertion (TBD)
 === Labeled statements (TBD)
 
