@@ -260,7 +260,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         /* the list might be empty  */
             if (this.characterSource.currentChar() == ']') {
                 characterSource.nextChar();
-                return Collections.EMPTY_LIST;
+                return new ArrayList();
             }
 
             list = new ArrayList();
