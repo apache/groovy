@@ -1,3 +1,6 @@
+@import url(http://fonts.googleapis.com/css?family=Open+Sans:400,600);
+@import url(http://fonts.googleapis.com/css?family=Source+Code+Pro:500,700);
+
 /* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
 article, aside, details, figcaption, figure, footer, header, hgroup, main, nav, section, summary {
     display: block;
@@ -71,7 +74,7 @@ mark {
 }
 
 code, kbd, pre, samp {
-    font-family: monospace, serif;
+    font-family: 'Source Code Pro', monospace, serif;
     font-size: 1em;
 }
 
@@ -297,7 +300,7 @@ p.lead, .paragraph.lead > p, #preamble > .sectionbody > .paragraph:first-of-type
     margin-bottom: 0.5em;
 }
 
-div, dl, dt, dd, ul, ol, li, h1, h2, h3, #toctitle, .sidebarblock > .content > .title, h4, h5, h6, pre, form, p, blockquote, th, td {
+div, dl, dt, dd, ul, ol, li, h1, h2, h3, #toctitle, .sidebarblock > .content > .title, h4, h5, h6, h7, pre, form, p, blockquote, th, td {
     margin: 0;
     padding: 0;
     direction: ltr;
@@ -332,7 +335,7 @@ p aside {
     font-style: italic;
 }
 
-h1, h2, h3, #toctitle, .sidebarblock > .content > .title, h4, h5, h6 {
+h1, h2, h3, #toctitle, .sidebarblock > .content > .title, h4, h5, h6, h7 {
     font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-style: normal;
     color: #222;
@@ -343,7 +346,7 @@ h1, h2, h3, #toctitle, .sidebarblock > .content > .title, h4, h5, h6 {
     font-weight: 200;
 }
 
-h1 small, h2 small, h3 small, #toctitle small, .sidebarblock > .content > .title small, h4 small, h5 small, h6 small {
+h1 small, h2 small, h3 small, #toctitle small, .sidebarblock > .content > .title small, h4 small, h5 small, h6 small, h7 small {
     font-size: 60%;
     color: #e99b8f;
     line-height: 0;
@@ -355,14 +358,17 @@ h1 {
 
 h2 {
     font-size: 1.6875em;
+    font-weight: bold;
 }
 
 h3, #toctitle, .sidebarblock > .content > .title {
     font-size: 1.375em;
+    font-weight: bold;
 }
 
 h4 {
     font-size: 1.125em;
+    font-weight: bold;
 }
 
 h5 {
@@ -372,13 +378,17 @@ h5 {
 }
 
 h6 {
-    font-size: 1em;
+    font-size: 1.08em;
     font-weight: normal;
     color: #db4800;
 }
 
 h7 {
     font-weight: bold;
+    color: #245f78;
+}
+
+h8 {
     color: #245f78;
 }
 
@@ -406,7 +416,7 @@ small {
 }
 
 code {
-    font-family: Consolas, "Liberation Mono", Courier, monospace;
+    font-family: 'Source Code Pro', Consolas, "Liberation Mono", Courier, monospace;
     font-weight: normal;
     color: #db4800;
 }
@@ -534,7 +544,7 @@ blockquote, blockquote p {
 }
 
 @media only screen and (min-width: 768px) {
-    h1, h2, h3, #toctitle, .sidebarblock > .content > .title, h4, h5, h6 {
+    h1, h2, h3, #toctitle, .sidebarblock > .content > .title, h4, h5, h6, h7 {
         line-height: 1.4;
     }
 
@@ -544,14 +554,40 @@ blockquote, blockquote p {
 
     h2 {
         font-size: 2.3125em;
+        font-weight: bold;
     }
 
     h3, #toctitle, .sidebarblock > .content > .title {
         font-size: 1.6875em;
+        font-weight: bold;
     }
 
     h4 {
         font-size: 1.4375em;
+        font-weight: bold;
+    }
+
+    h5 {
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #db4800;
+    }
+
+    h6 {
+        font-size: 1.2em;
+        font-weight: normal;
+        color: #db4800;
+    }
+
+    h7 {
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #245f78;
+    }
+
+    h8 {
+        font-size: 1.07em;
+        color: #245f78;
     }
 }
 
@@ -686,7 +722,7 @@ table thead tr th, table tfoot tr th, table tbody tr td, table tr td, table tfoo
 pre, pre > code {
     line-height: 1.4;
     color: inherit;
-    font-family: Consolas, "Liberation Mono", Courier, monospace;
+    font-family: 'Source Code Pro', Consolas, "Liberation Mono", Courier, monospace;
     font-weight: normal;
 }
 
