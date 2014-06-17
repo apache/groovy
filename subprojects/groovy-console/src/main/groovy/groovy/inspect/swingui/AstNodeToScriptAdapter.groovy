@@ -267,7 +267,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         print "class $node.name"
         visitGenerics node?.genericsTypes
         boolean first = true
-        node.interfaces?.each {
+        node.unresolvedInterfaces?.each {
             if (!first) {
                 print ', '
             } else {
@@ -277,7 +277,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
             visitType it
         }
         print ' extends '
-        visitType node.superClass
+        visitType node.unresolvedSuperClass
         print ' { '
         printDoubleBreak()
 
