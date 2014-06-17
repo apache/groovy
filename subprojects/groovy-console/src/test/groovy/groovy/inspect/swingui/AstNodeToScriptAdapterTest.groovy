@@ -103,7 +103,7 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
                    int size() {}
                 }'''
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
-        assert result.contains('public class MyList<E> implements java.util.List<E> extends java.util.AbstractList<E extends java.lang.Object> {')
+        assert result.contains('public class MyList<E> implements java.util.List<E> extends java.util.AbstractList<E> {')
     }
 
     void testGenericBoundsOnClass() {
@@ -112,7 +112,7 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('MyClass<T extends java.lang.String & java.util.concurrent.Callable<String>, U extends java.lang.Integer> ' +
                 'implements java.util.concurrent.Callable<? super java.lang.Number> ' +
-                'extends java.util.AbstractList<E extends java.lang.Object> {')
+                'extends java.util.AbstractList<String> {')
     }
 
     void testGenericsInVariables() {
