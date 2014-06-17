@@ -11,6 +11,9 @@ include::{projectdir}/src/spec/doc/core-syntax.adoc[]
 include::{projectdir}/src/spec/doc/core-operators.adoc[]
 include::{projectdir}/src/spec/doc/core-program-structure.adoc[]
 include::{projectdir}/src/spec/doc/core-object-orientation.adoc[]
+:leveloffset: 0
+
+:leveloffset: 2
 include::{projectdir}/src/spec/doc/core-closures.adoc[]
 include::{projectdir}/src/spec/doc/core-semantics.adoc[]
 :leveloffset: 0
