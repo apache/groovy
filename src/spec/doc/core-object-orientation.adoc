@@ -43,6 +43,6 @@ This chapter covers the object orientation of the Groovy programming language.
 
 === Generics (TBD)
 
-:leveloffset: 4
-include::{projectdir}/src/spec/doc/core-traits.adoc[]
 :leveloffset: 3
+include::{projectdir}/src/spec/doc/core-traits.adoc[]
+:leveloffset: 0
