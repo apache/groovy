@@ -2694,7 +2694,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param transform the closure used for transforming, which has an item from self as the parameter and
      *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
-     * @see #collectEntries(Collection, Closure)
+     * @see #collectEntries(Iterable, Closure)
      * @since 1.8.7
      */
     public static <K, V, E> Map<K, V> collectEntries(Iterator<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> transform) {
@@ -2738,7 +2738,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterator
      * @return a Map of the transformed entries
-     * @see #collectEntries(Collection)
+     * @see #collectEntries(Iterable)
      * @since 1.8.7
      */
     public static <K, V> Map<K, V> collectEntries(Iterator<?> self) {
@@ -2833,7 +2833,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      an Iterator
      * @param collector the Map into which the transformed entries are put
      * @return the collector with all transformed values added to it
-     * @see #collectEntries(Collection, Map)
+     * @see #collectEntries(Iterable, Map)
      * @since 1.8.7
      */
     public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Map<K, V> collector) {
@@ -2908,7 +2908,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param transform the closure used for transforming, which has an item from self as the parameter and
      *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
-     * @see #collectEntries(Collection, Map, Closure)
+     * @see #collectEntries(Iterable, Map, Closure)
      * @since 1.7.9
      */
     public static <K, V, E> Map<K, V> collectEntries(E[] self, @ClosureParams(FirstParam.Component.class) Closure<?> transform) {
