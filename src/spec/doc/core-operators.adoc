@@ -393,7 +393,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_st
 
 === Spread operator
 
-The Spread Operator (`.*`) is used to invoke an action on all items of an aggregate object. It is equivalent to calling the action on each item
+The Spread Operator (`*.`) is used to invoke an action on all items of an aggregate object. It is equivalent to calling the action on each item
 and collecting the result into a list:
 
 [source,groovy]
