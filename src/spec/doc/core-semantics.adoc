@@ -447,9 +447,73 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=fixed_as_usage,inde
 
 === Customizing the truth with asBoolean() methods (TBD)
 
-== Typing (TBD)
+== Typing (WIP)
 
-=== Optional typing (TBD)
+=== Optional typing
+
+Optional typing is the idea that a program can work even if you don't put an explicit type on a variable. Being a dynamic
+language, Groovy naturally implements that feature, for example when you declare a variable:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=optionaltyping_var,indent=0]
+----
+<1> `foo` is declared using an explicit type, `String`
+<2> we can call the `toUpperCase` method on a `String`
+
+Groovy will let you write this instead:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=optionaltyping_var_def,indent=0]
+----
+<1> `foo` is declared using `def`
+<2> we can still call the `toUpperCase` method, because the type of `aString` is resolved at runtime
+
+So it doesn't matter that you use an explicit type here. It is in particular interesting when you combine this feature
+with <<typechecking,static type checking>>, because the type checker performs type inference.
+
+Likewise, Groovy doesn't make it mandatory to declare the types of a parameter in a method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=optionaltyping_orig,indent=0]
+----
+
+can be rewritten using `def` as both return type and parameter types, in order to take advantage of duck typing, as
+illustrated in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=optionaltyping_def,indent=0]
+----
+<1> both the return type and the parameter types use `def`
+<2> it makes it possible to use the method with `String`
+<3> but also with `int`s since the `plus` method is defined
+
+TIP: Using the `def` keyword here is recommanded to describe the intent of a method which is supposed to work on any
+type, but technically, we could use `Object` instead and the result would be the same: `def` is, in Groovy, strictly
+equivalent to using `Object`.
+
+Eventually, the type can be removed altogether from both the return type and the descriptor. But if you want to remove
+it from the return type, you then need to add an explicit modifier for the method, so that the compiler can make a difference
+between a method declaration and a method call, like illustrated in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=optionaltyping_notype,indent=0]
+----
+<1> if we want to omit the return type, an explicit modifier has to be set.
+<2> it is still possible to use the method with `String`
+<3> and also with `int`s
+
+TIP: Omitting types is in general considered a bad practice in method parameters or method return types for public APIs.
+While using `def` in a local variable is not really a problem because the visibility of the variable is limited to the
+method itself, while set on a method parameter, `def` will be converted to `Object` in the method signature, making it
+difficult for users to know which is the expected type of the arguments. This means that you should limit this to cases
+where you are explicitly relying on duck typing.
+
+[[static-type-checking]]
 === Static type checking (TBD)
 === Static compilation (TBD)
 
