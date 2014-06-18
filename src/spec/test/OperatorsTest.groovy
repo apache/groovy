@@ -516,6 +516,46 @@ assert function(*args,5,6) == 26
         '''
     }
 
+    void testOperatorOverloading() {
+        assertScript '''
+// tag::operator_overload_class[]
+class Bucket {
+    int size
+
+    Bucket(int size) { this.size = size }
+
+    Bucket plus(Bucket other) {                     // <1>
+        return new Bucket(this.size + other.size)
+    }
+}
+// end::operator_overload_class[]
+// tag::operator_overload_op[]
+def b1 = new Bucket(4)
+def b2 = new Bucket(11)
+assert (b1 + b2).size == 15                         // <1>
+// end::operator_overload_op[]
+'''
+    }
+    void testOperatorOverloadingWithDifferentArgumentType() {
+        assertScript '''
+class Bucket {
+    int size
+
+    Bucket(int size) { this.size = size }
+
+// tag::operator_overload_mixed_class[]
+    Bucket plus(int capacity) {
+        return new Bucket(this.size + capacity)
+    }
+// end::operator_overload_mixed_class[]
+}
+def b1 = new Bucket(4)
+// tag::operator_overload_mixed_op[]
+assert (b1 + 11).size == 15
+// end::operator_overload_mixed_op[]
+'''
+    }
+
     private static class Person {
         Long id
         String name
