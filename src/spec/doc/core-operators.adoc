@@ -636,4 +636,94 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=call_op,indent=0]
 == Operator precedence (TBD)
 
 [[Operator-Overloading]]
-== Operator overloading (TBD)
+== Operator overloading
+
+Groovy allows you to overload the various operators so that they can be used with your own classes. Consider this simple
+class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=operator_overload_class,indent=0]
+----
+<1> `Bucket` implements a special method called `plus()`
+
+Just by implementing the `plus()` method, the `Bucket` class can now be used with the `+` operator like so:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=operator_overload_op,indent=0]
+----
+<1> The two `Bucket` objects can be added together with the `+` operator
+
+All (non-comparator) Groovy operators have a corresponding method that you can implement in your own classes. The only
+requirements are that your method is public, has the correct name, and has the correct number of arguments. The argument
+types depend on what types you want to support on the right hand side of the operator. For example, you could support
+the statement
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=operator_overload_mixed_op,indent=0]
+----
+
+by implementing the `plus()` method with this signature:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=operator_overload_mixed_class,indent=0]
+----
+
+Here is a complete list of the operators and their corresponding methods:
+
+[cols="1,1,1,1" options="header"]
+|====
+| Operator
+| Method
+| Operator
+| Method
+
+| +++
+| a.plus(b)
+| +a[b]+
+| a.getAt(b)
+
+| +-+
+| a.minus(b)
+| +a[b] = c+
+| a.putAt(b, c)
+
+| +*+
+| a.multiply(b)
+| +<<+
+| a.leftShift(b)
+
+| +/+
+| a.div(b)
+| +>>+
+| a.rightShift(b)
+
+| +%+
+| a.mod(b)
+| `++`
+| a.next()
+
+| +**+
+| a.power(b)
+| +--+
+| a.previous()
+
+| +\|+
+| a.or(b)
+| `+a`
+| a.positive()
+
+| +&+
+| a.and(b)
+| +-a+
+| a.negative()
+
+| +^+
+| a.xor(b)
+| +~a+
+| a.bitwiseNegative()
+|====
+
