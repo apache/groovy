@@ -514,6 +514,67 @@ difficult for users to know which is the expected type of the arguments. This me
 where you are explicitly relying on duck typing.
 
 [[static-type-checking]]
-=== Static type checking (TBD)
+=== Static type checking
+
+By default, Groovy doesn't perform any kind of type checking at compile time. Since it is primarily a dynamic language,
+no such thing can normally be done. Let' illustrate why in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_intro,indent=0]
+----
+<1> the `Person` class only defines two properties, `firstName` and `lastName`
+<2> we can create an instance of Person
+<3> and call a method named `formattedName`
+
+The code above doesn't throw any error. In Java, this would typically fail at compile time. However, in Groovy, it will
+not fail, neither at compile time *nor* runtime. In fact, to make this work at runtime, *one* possibility is to rely
+on runtime metaprogramming. So just adding this line after the declaration of the `Person` class is enough:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_intro_magic,indent=0]
+----
+
+This means that in general, in Groovy, you can't make any assumption about the type of an object beyond its declaration
+type, and even if you know it, you can't determine at compile time what method will be called, or which property will
+be retrieved, and this is *perfectly fine*. This is how dynamic languages work, and it has a lot of interest.
+
+However, if your program doesn't rely on dynamic features and that you come from the static world (in particular, from
+a Java mindset), not catching such "errors" at compile time can be surprising. As we have seen in the previous example,
+the compiler cannot be sure this is an error. To make it aware that it is, you have to explicitly instruct the compiler
+that you are switching to a type checked mode. This can be done by annotating a class or a method with `@groovy.lang.TypeChecked`.
+
+When type checking is activated, the compiler performs much more work:
+
+* type inference is activated, meaning that even if you use `def` on a local variable for example, the type checker will be
+able to infer the type of the variable from the assignments
+* method calls are resolved at compile time, meaning that if a method is not declared on a class, the compiler will throw an error
+* in general, all the compile time errors that you are used to find in a static language will appear: method not found, property not found,
+incompatible types for method calls, number precision errors, ...
+
+In this section, we will describe the behavior of the type checker in various situations and explain the limits of using
+`@TypeChecked` on your code.
+
+==== The `@TypeChecked` annotation
+
+The `groovy.lang.TypeChecked` annotation enabled type checking. It can be placed on a class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=typechecked_class,indent=0]
+----
+
+Or on a method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=typechecked_method,indent=0]
+----
+
+In the first case, all methods, properties, fields, inner classes, ... of the annotated class will be type checked, whereas
+in the second case, only the method and potential closures or anonymous inner classes that it contains will be type checked.
+
+
 === Static compilation (TBD)
 
