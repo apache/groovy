@@ -211,5 +211,34 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
             // end::stc_assign_to_byte[]
         '''
     }
+
+    void testGroovyConstructors() {
+        assertScript '''
+            // tag::stc_ctor_point_classic[]
+            @groovy.transform.TupleConstructor
+            class Person {
+                String firstName
+                String lastName
+            }
+            Person classic = new Person('Ada','Lovelace')
+            // end::stc_ctor_point_classic[]
+            // tag::stc_ctor_point_list[]
+            Person list = ['Ada','Lovelace']
+            // end::stc_ctor_point_list[]
+            // tag::stc_ctor_point_map[]
+            Person map = [firstName:'Ada', lastName:'Lovelace']
+            // end::stc_ctor_point_map[]
+        '''
+        shouldFailWithMessages '''
+            // tag::stc_ctor_fail[]
+            @groovy.transform.TupleConstructor
+            class Person {
+                String firstName
+                String lastName
+            }
+            Person map = [firstName:'Ada', lastName:'Lovelace', age: 24]     // <1>
+            // end::stc_ctor_fail[]
+        ''', 'No such property: age for class: Person'
+    }
 }
 
