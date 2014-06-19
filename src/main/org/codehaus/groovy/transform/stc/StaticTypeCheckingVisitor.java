@@ -900,8 +900,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         List<MethodNode> constructorList = findMethod(node, "<init>", arguments);
         if (constructorList.isEmpty()) {
-            addStaticTypeError("No matching constructor found: " + node + toMethodParametersString("<init>", arguments), source);
-            return null;
+            if (isBeingCompiled(node) && arguments.length==1 && LINKEDHASHMAP_CLASSNODE.equals(arguments[0])) {
+                // there will be a default hash map constructor added later
+                ConstructorNode cn = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{
+                        new Parameter(LINKEDHASHMAP_CLASSNODE, "args")
+                }, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                return cn;
+            } else {
+                addStaticTypeError("No matching constructor found: " + node + toMethodParametersString("<init>", arguments), source);
+                return null;
+            }
         } else if (constructorList.size()>1) {
             addStaticTypeError("Ambiguous constructor call " + node + toMethodParametersString("<init>", arguments), source);
             return null;

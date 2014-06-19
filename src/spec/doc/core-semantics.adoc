@@ -698,5 +698,43 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assi
 
 |===
 
+==== List and map constructors
+
+In addition to the assignment rules above, if an assignment is deemed invalid, in type checked mode, a _list_ literal or a _map_ literal `A` can be assigned
+to a variable of type `T` if:
+
+* the assignment is a variable declaration and `A` is a list literal and `T` has a constructor whose parameters match the types of the elements in the list literal
+* the assignment is a variable declaration and `A` is a map literal and `T` has a no-arg constructor and a property for each of the map keys
+
+For example, instead of writing:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_ctor_point_classic,indent=0]
+----
+
+You can use a "list constructor":
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_ctor_point_list,indent=0]
+----
+
+or a "map constructor":
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_ctor_point_map,indent=0]
+----
+
+If you use a map constructor, additional checks are done on the keys of the map to check if a property of the same name
+is defined. For example, the following will fail at compile time:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_ctor_fail,indent=0]
+----
+<1> The type checker will throw an error `No such property: age for class: Person` at compile time
+
 === Static compilation (TBD)
 
