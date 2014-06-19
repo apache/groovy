@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -346,7 +346,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         declaringClass.addMethod(
                 new MethodNode(
                         "addPropertyChangeListener",
-                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         new Parameter[]{new Parameter(pclClassNode, "listener")},
                         ClassNode.EMPTY_ARRAY,
@@ -364,7 +364,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         declaringClass.addMethod(
                 new MethodNode(
                         "addPropertyChangeListener",
-                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(pclClassNode, "listener")},
                         ClassNode.EMPTY_ARRAY,
@@ -382,7 +382,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         declaringClass.addMethod(
                 new MethodNode(
                         "removePropertyChangeListener",
-                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         new Parameter[]{new Parameter(pclClassNode, "listener")},
                         ClassNode.EMPTY_ARRAY,
@@ -397,7 +397,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         declaringClass.addMethod(
                 new MethodNode(
                         "removePropertyChangeListener",
-                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(pclClassNode, "listener")},
                         ClassNode.EMPTY_ARRAY,
@@ -415,7 +415,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         declaringClass.addMethod(
                 new MethodNode(
                         "firePropertyChange",
-                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(ClassHelper.OBJECT_TYPE, "oldValue"), new Parameter(ClassHelper.OBJECT_TYPE, "newValue")},
                         ClassNode.EMPTY_ARRAY,
@@ -436,7 +436,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         declaringClass.addMethod(
                 new MethodNode(
                         "getPropertyChangeListeners",
-                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ACC_PUBLIC,
                         pclClassNode.makeArray(),
                         Parameter.EMPTY_ARRAY,
                         ClassNode.EMPTY_ARRAY,
@@ -454,7 +454,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         declaringClass.addMethod(
                 new MethodNode(
                         "getPropertyChangeListeners",
-                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ACC_PUBLIC,
                         pclClassNode.makeArray(),
                         new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name")},
                         ClassNode.EMPTY_ARRAY,
