@@ -484,8 +484,6 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             if (pieces.length > 1) type += "#" + pieces[1];
             type = resolveMethodArgs(rootDoc, classDoc, type);
         }
-        if (type.indexOf('.') == -1)
-            return type;
 
         final String[] target = type.split("#");
         String shortClassName = target[0].replaceAll(".*\\.", "");
@@ -497,9 +495,12 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             String slashedName = target[0].replaceAll("\\.", "/");
             GroovyClassDoc doc = rootDoc.classNamed(classDoc, slashedName);
             if (doc != null) {
+                target[0] = doc.getFullPathName(); // if we added a package
                 return buildUrl(relativePath, target, label == null ? name : label);
             }
         }
+        if (type.indexOf('.') == -1)
+            return type;
 
         if (links != null) {
             for (LinkArgument link : links) {
