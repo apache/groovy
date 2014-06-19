@@ -516,8 +516,10 @@ where you are explicitly relying on duck typing.
 [[static-type-checking]]
 === Static type checking
 
-By default, Groovy doesn't perform any kind of type checking at compile time. Since it is primarily a dynamic language,
-no such thing can normally be done. Let' illustrate why in the following example:
+By default, Groovy performs minimal type checking at compile time. Since it is primarily a dynamic language,
+most checks that a static compiler would normally do aren't possible at compile time. A method added via runtime
+metaprogramming might alter a class or object's runtime behavior. Let's illustrate why in the
+following example:
 
 [source,groovy]
 ----
@@ -527,9 +529,10 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_intr
 <2> we can create an instance of Person
 <3> and call a method named `formattedName`
 
-The code above doesn't throw any error. In Java, this would typically fail at compile time. However, in Groovy, it will
-not fail, neither at compile time *nor* runtime. In fact, to make this work at runtime, *one* possibility is to rely
-on runtime metaprogramming. So just adding this line after the declaration of the `Person` class is enough:
+It is quite common in dynamic languages for code such as the above example not to throw any error. How can this be?
+In Java, this would typically fail at compile time. However, in Groovy, it will not fail at compile time, and if coded
+correctly, will also not fail at runtime. In fact, to make this work at runtime, *one* possibility is to rely on
+runtime metaprogramming. So just adding this line after the declaration of the `Person` class is enough:
 
 [source,groovy]
 ----
