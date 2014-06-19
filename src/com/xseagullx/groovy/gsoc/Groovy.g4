@@ -165,7 +165,8 @@ argumentDeclaration:
 blockStatement: (statement | NL)+ ;
 
 statement:
-    expression #expressionStatement
+    cmdExpressionRule #commandExpressionStatement
+    | expression #expressionStatement
     | KW_FOR '(' (expression)? ';' expression? ';' expression? ')' '{' (statement | ';' | NL)* '}' #classicForStatement
     | KW_FOR '(' typeDeclaration? IDENTIFIER KW_IN expression')' '{' (statement | ';' | NL)* '}' #forInStatement
     | KW_IF '(' expression ')' '{' (statement | ';' | NL)*  '}' (KW_ELSE '{' (statement | ';' | NL)* '}')? #ifStatement
@@ -188,15 +189,21 @@ finallyBlock: KW_FINALLY '{' blockStatement? '}';
 
 caseStatement: (KW_CASE expression ':' (statement | ';' | NL)* );
 
+cmdExpressionRule: pathExpression ( argumentList IDENTIFIER)* argumentList IDENTIFIER? ;
+pathExpression: (IDENTIFIER '.')* IDENTIFIER ;
+
+closureExpressionRule: '{' argumentDeclarationList '->' blockStatement? '}' ;
+
 expression:
-    '(' expression ')' #parenthesisExpression
-    | '{' argumentDeclarationList '->' blockStatement? '}' #closureExpression
+    closureExpressionRule #closureExpression
     | '[' (expression (',' expression)*)?']' #listConstructor
     | '[' (':' | (mapEntry (',' mapEntry)*) )']' #mapConstructor
     | expression ('.' | '?.' | '*.') IDENTIFIER '(' argumentList? ')' #methodCallExpression
     | expression ('.' | '?.' | '*.' | '.@') IDENTIFIER #fieldAccessExpression
     | expression '(' argumentList? ')' #callExpression
-    | expression ('--' | '++') #postfixExpression
+    | pathExpression closureExpressionRule+ #callExpression
+    | '(' expression ')' #parenthesisExpression
+    | expression ('--' | '++')  #postfixExpression
     | ('!' | '~') expression #unaryExpression
     | ('+' | '-') expression #unaryExpression
     | ('--' | '++') expression #prefixExpression
@@ -207,19 +214,20 @@ expression:
     | expression ((('<' | '<=' | '>' | '>=' | 'in') expression) | (('as' | 'instanceof') genericClassNameExpression)) #binaryExpression
     | expression ('==' | '!=' | '<=>') expression #binaryExpression
     | expression ('=~' | '==~') expression #binaryExpression
-    | expression ('&') expression #binaryExpression
-    | expression ('^') expression #binaryExpression
+    | expression '&' expression #binaryExpression
+    |<assoc=right> expression ('^') expression #binaryExpression
     | expression ('|') expression #binaryExpression
     | expression ('&&') expression #binaryExpression
     | expression ('||') expression #binaryExpression
     | expression ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '^=' | '|=' | '<<=' | '>>=' | '>>>=') expression #assignmentExpression
-    | annotationClause* typeDeclaration IDENTIFIER ('=' expression)? #declarationExpression
     | STRING #constantExpression
     | DECIMAL #constantDecimalExpression
     | INTEGER #constantIntegerExpression
     | KW_NULL #nullExpression
     | (KW_TRUE | KW_FALSE) #boolExpression
-    | IDENTIFIER #variableExpression ;
+    | IDENTIFIER #variableExpression
+    | annotationClause* typeDeclaration IDENTIFIER ('=' expression)? #declarationExpression
+;
 
 classNameExpression: IDENTIFIER ('.' IDENTIFIER)* ;
 
@@ -237,4 +245,4 @@ VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_STRICTFP ;
 memberModifier:
     VISIBILITY_MODIFIER | KW_STATIC | (KW_ABSTRACT | KW_FINAL) | KW_NATIVE | KW_SYNCHRONIZED | KW_TRANSIENT | KW_VOLATILE ;
 
-argumentList: expression (',' expression)* ;
+argumentList: ( (closureExpressionRule)+ | expression (',' expression)*) ;
