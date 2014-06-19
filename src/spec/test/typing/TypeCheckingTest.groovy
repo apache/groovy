@@ -240,5 +240,126 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
             // end::stc_ctor_fail[]
         ''', 'No such property: age for class: Person'
     }
+
+    void testMatchArgumentsWithParameters() {
+        assertScript '''
+            // tag::stc_argparam_equals[]
+            int sum(int x, int y) {
+                x+y
+            }
+            assert sum(3,4) == 7
+            // end::stc_argparam_equals[]
+        '''
+        assertScript '''
+            // tag::stc_argparam_specialcase[]
+            String format(String str) {
+                "Result: $str"
+            }
+            assert format("${3+4}") == "Result: 7"
+            // end::stc_argparam_specialcase[]
+        '''
+
+        assertScript '''
+            // tag::stc_argparam_null[]
+            String format(int value) {
+                "Result: $value"
+            }
+            assert format(7) == "Result: 7"
+            // end::stc_argparam_null[]
+        '''
+
+        shouldFailWithMessages '''
+            String format(int value) {
+                "Result: $value"
+            }
+            // tag::stc_argparam_null2prim[]
+            format(null)           // fails
+            // end::stc_argparam_null2prim[]
+        ''', 'Cannot call TestScripttestMatchArgumentsWithParameters3#format(int) with arguments [<unknown parameter type>]'
+
+        assertScript '''
+            // tag::stc_argparam_array[]
+            String format(String[] values) {
+                "Result: ${values.join(' ')}"
+            }
+            assert format(['a','b'] as String[]) == "Result: a b"
+            // end::stc_argparam_array[]
+        '''
+
+        shouldFailWithMessages '''
+            String format(String[] values) {
+                "Result: ${values.join(' ')}"
+            }
+            // tag::stc_argparam_array_fail[]
+            format([1,2] as int[])              // fails
+            // end::stc_argparam_array_fail[]
+        ''', 'Cannot find matching method TestScripttestMatchArgumentsWithParameters5#format(int[]). Please check if the declared type is right and if the method exists.'
+
+
+        assertScript '''
+            // tag::stc_argparam_superclass[]
+            String format(AbstractList list) {
+                list.join(',')
+            }
+            format(new ArrayList())              // passes
+            // end::stc_argparam_superclass[]
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_argparam_superclass_fail[]
+            String format(LinkedList list) {
+                list.join(',')
+            }
+            format(new ArrayList())              // fails
+            // end::stc_argparam_superclass_fail[]
+        ''', 'Cannot find matching method TestScripttestMatchArgumentsWithParameters7#format(java.util.ArrayList). Please check if the declared type is right and if the method exists.'
+
+        assertScript '''
+            // tag::stc_argparam_interface[]
+            String format(List list) {
+                list.join(',')
+            }
+            format(new ArrayList())                  // passes
+            // end::stc_argparam_interface[]
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_argparam_interface_fail[]
+            String format(RandomAccess list) {
+                'foo'
+            }
+            format(new LinkedList())                 // fails
+            // end::stc_argparam_interface_fail[]
+        ''', 'Cannot find matching method TestScripttestMatchArgumentsWithParameters9#format(java.util.LinkedList). Please check if the declared type is right and if the method exists.'
+
+        assertScript '''
+            // tag::stc_argparam_prim[]
+            int sum(int x, Integer y) {
+                x+y
+            }
+            assert sum(3, new Integer(4)) == 7
+            assert sum(new Integer(3), 4) == 7
+            assert sum(new Integer(3), new Integer(4)) == 7
+            assert sum(new Integer(3), 4) == 7
+            // end::stc_argparam_prim[]
+        '''
+
+        assertScript '''
+            // tag::stc_arg_closure_coercion[]
+            interface SAMType {
+                int doSomething()
+            }
+            int twice(SAMType sam) { 2*sam.doSomething() }
+            assert twice { 123 } == 246
+            abstract class AbstractSAM {
+                int calc() { 2* value() }
+                abstract int value()
+            }
+            int eightTimes(AbstractSAM sam) { 4*sam.calc() }
+            assert eightTimes { 123 } == 984
+            // end::stc_arg_closure_coercion[]
+        '''
+
+    }
 }
 
