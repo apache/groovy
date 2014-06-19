@@ -651,6 +651,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_clos
 
 [cols="1,1,2a"]
 .Number types (java.lang.XXX)
+[[number-assignment]]
 |===
 |T |A |Examples
 
@@ -735,6 +736,73 @@ is defined. For example, the following will fail at compile time:
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_ctor_fail,indent=0]
 ----
 <1> The type checker will throw an error `No such property: age for class: Person` at compile time
+
+==== Method resolution
+
+In type checked mode, methods are resolved at compile time. Resolution works by name and arguments. The return type is
+irrelevant to method selection. Types of arguments are matched against the types of the parameters following those rules:
+
+An argument `o` of type `A` can be used for a parameter of type `T` if and only if:
+[cols="1a,2a"]
+.Matching arguments with parameters
+|===
+|Rule | Examples
+
+| `T` equals `A`
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_equals,indent=0]
+----
+
+| _or_ `T` is a `String` and `A` is a `GString`
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_specialcase,indent=0]
+----
+
+| _or_ `o` is null and `T` is not a primitive type
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_null,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_null2prim,indent=0]
+----
+
+| _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_array,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_array_fail,indent=0]
+----
+
+| _or_ `T` is a superclass of `A`
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_superclass,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_superclass_fail,indent=0]
+----
+
+| _or_ `T` is an interface implemented by `A`
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_interface,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_interface_fail,indent=0]
+----
+
+| _or_ `T` or `A` are a primitive type and their boxed types are assignable
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_prim,indent=0]
+----
+
+| _or_ `T` extends `groovy.lang.Closure` and `A` is a SAM-type (single abstract method type)
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_arg_closure_coercion,indent=0]
+----
+
+2+>| _or_ `T` and `A` derive from `java.lang.Number` and conform to the same rules as <<number-assignment,assignment of numbers>>
+
+|===
 
 === Static compilation (TBD)
 
