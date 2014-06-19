@@ -45,6 +45,12 @@ asciidoctor {
 // skip the asciidoctor task if there's no directory with asciidoc files
 asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
 
+task asciidoctorAssets(type:Copy) {
+    from rootProject.file('src/spec/assets')
+    into "${asciidoctor.outputDir}/assets"
+}
+asciidoctor.finalizedBy asciidoctorAssets
+
 asciidoctor.doLast {
     // gapi macro expansion
     outputDir.eachFileMatch(~'.*html') { File file ->
@@ -64,10 +70,4 @@ asciidoctor.doLast {
         file.write(text, 'UTF-8')
     }
 
-    // copy style.css to the output directory
-    def cssDir = new File("${outputDir}/assets/css/")
-    if (!cssDir.exists()) {
-        cssDir.mkdirs()
-        new File(cssDir, 'style.css') << new File("${rootDir}/src/spec/assets/css/style.css").text
-    }
 }

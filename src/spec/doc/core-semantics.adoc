@@ -578,6 +578,125 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=typechec
 In the first case, all methods, properties, fields, inner classes, ... of the annotated class will be type checked, whereas
 in the second case, only the method and potential closures or anonymous inner classes that it contains will be type checked.
 
+==== Type checking assignments
+
+An object `o` of type `A` can be assigned to a variable of type `T` if and only if:
+[cols="1a,2a"]
+.Assignment rules
+|===
+|Rule | Examples
+
+| `T` equals `A`
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_equals,indent=0]
+----
+
+| _or_ `T` is one of `String`, `boolean`, `Boolean` or `Class`
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_specialcase,indent=0]
+----
+
+| _or_ `o` is null and `T` is not a primitive type
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_null,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_null2prim,indent=0]
+----
+
+| _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_array,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_fail,indent=0]
+----
+
+| _or_ `T` is an array and `A` is a list and the component type of `A` is assignable to the component type of `B`
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_list,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_list_fail,indent=0]
+----
+
+| _or_ `T` is a superclass of `A`
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_superclass,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_superclass_fail,indent=0]
+----
+
+| _or_ `T` is an interface implemented by `A`
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_interface,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_interface_fail,indent=0]
+----
+
+| _or_ `T` or `A` are a primitive type and their boxed types are assignable
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_prim,indent=0]
+----
+
+| _or_ `T` extends `groovy.lang.Closure` and `A` is a SAM-type (single abstract method type)
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_closure_coercion,indent=0]
+----
+
+2+>| _or_ `T` and `A` derive from `java.lang.Number` and conform to the following table
+
+|===
+
+[cols="1,1,2a"]
+.Number types (java.lang.XXX)
+|===
+|T |A |Examples
+
+|Double
+|Any but BigDecimal or BigInteger
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_double,indent=0]
+----
+
+|Float
+|Any type but BigDecimal, BigInteger or Double
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_float,indent=0]
+----
+
+|Long
+|Any type but BigDecimal, BigInteger, Double or Float
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_long,indent=0]
+----
+
+|Integer
+|Any type but BigDecimal, BigInteger, Double, Float or Long
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_int,indent=0]
+----
+
+|Short
+|Any type but BigDecimal, BigInteger, Double, Float, Long or Integer
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_short,indent=0]
+----
+
+|Byte
+|Byte
+| [source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_byte,indent=0]
+----
+
+|===
 
 === Static compilation (TBD)
 
