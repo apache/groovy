@@ -126,6 +126,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode SORTEDMAP_CLASSNODE = make(SortedMap.class);
     private static final ClassNode SET_CLASSNODE = make(Set.class);
     private static final ClassNode MAP_CLASSNODE = make(Map.class);
+    public static final String IMMUTABLE_SAFE_FLAG = "Immutable.Safe";
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -415,8 +416,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private boolean validateConstructors(ClassNode cNode) {
         List<ConstructorNode> declaredConstructors = cNode.getDeclaredConstructors();
         for (ConstructorNode constructorNode : declaredConstructors) {
-            // allow Synthetic constructors added by other transforms
-            if ((constructorNode.getModifiers() & ACC_SYNTHETIC) != 0) {
+            // allow constructors added by other transforms if flagged as safe
+            Object nodeMetaData = constructorNode.getNodeMetaData(IMMUTABLE_SAFE_FLAG);
+            if (nodeMetaData != null && ((Boolean)nodeMetaData)) {
                 continue;
             }
             // TODO: allow constructors which only call provided constructor?

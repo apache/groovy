@@ -20,6 +20,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -148,7 +149,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private ClassNode createInnerHelperClass(ClassNode buildee, String builderClassName, List<FieldNode> fields) {
         final String fullName = buildee.getName() + "$" + builderClassName;
-        final int visibility = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
+        final int visibility = ACC_PUBLIC | ACC_STATIC;
         ClassNode builder = new InnerClassNode(buildee, fullName, visibility, ClassHelper.OBJECT_TYPE);
         GenericsType[] gtypes = new GenericsType[fields.size()];
         for (int i = 0; i < gtypes.length; i++) {
@@ -162,7 +163,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         String builderMethodName = transform.getMemberStringValue(anno, "builderMethodName", "createInitializer");
         final BlockStatement body = new BlockStatement();
         body.addStatement(returnS(callX(builder, buildMethodName)));
-        final int visibility = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
+        final int visibility = ACC_PUBLIC | ACC_STATIC;
         ClassNode returnType = makeClassSafeWithGenerics(builder, unsetGenTypes(numFields));
         return new MethodNode(builderMethodName, visibility, returnType, NO_PARAMS, NO_EXCEPTIONS, body);
     }
@@ -198,8 +199,10 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
             argsList.add(propX(varX("initializer"), fieldNode.getName()));
         }
         Expression args = new ArgumentListExpression(argsList);
-        buildee.addConstructor(ACC_PUBLIC | ACC_SYNTHETIC, params(param(paramType, "initializer")), NO_EXCEPTIONS, block(ctorThisS(args)));
-        if (!transform.hasAnnotation(buildee, ImmutableASTTransformation.MY_TYPE)) {
+        ConstructorNode initializer = buildee.addConstructor(ACC_PUBLIC, params(param(paramType, "initializer")), NO_EXCEPTIONS, block(ctorThisS(args)));
+        if (transform.hasAnnotation(buildee, ImmutableASTTransformation.MY_TYPE)) {
+            initializer.putNodeMetaData(ImmutableASTTransformation.IMMUTABLE_SAFE_FLAG, Boolean.TRUE);
+        } else {
             final BlockStatement body = new BlockStatement();
             body.addStatement(ctorSuperS());
             initializeFields(fields, body);

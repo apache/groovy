@@ -53,7 +53,6 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_PARAMS;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
  * This strategy is used with the {@link Builder} AST transform to create a builder helper class
@@ -174,7 +173,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         }
         String prefix = transform.getMemberStringValue(anno, "prefix", "");
         if (unsupportedAttribute(transform, anno, "forClass")) return;
-        final int visibility = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
+        final int visibility = ACC_PUBLIC | ACC_STATIC;
         ClassNode buildee = mNode.getDeclaringClass();
         String builderClassName = transform.getMemberStringValue(anno, "builderClassName", buildee.getName() + "Builder");
         final String fullName = buildee.getName() + "$" + builderClassName;
@@ -194,7 +193,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         String prefix = transform.getMemberStringValue(anno, "prefix", "");
         if (unsupportedAttribute(transform, anno, "forClass")) return;
-        final int visibility = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
+        final int visibility = ACC_PUBLIC | ACC_STATIC;
         String builderClassName = transform.getMemberStringValue(anno, "builderClassName", buildee.getName() + "Builder");
         final String fullName = buildee.getName() + "$" + builderClassName;
         ClassNode builder = new InnerClassNode(buildee, fullName, visibility, ClassHelper.OBJECT_TYPE);
@@ -227,7 +226,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         String builderMethodName = transform.getMemberStringValue(anno, "builderMethodName", "builder");
         final BlockStatement body = new BlockStatement();
         body.addStatement(returnS(ctorX(builder)));
-        final int visibility = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
+        final int visibility = ACC_PUBLIC | ACC_STATIC;
         return new MethodNode(builderMethodName, visibility, builder, NO_PARAMS, NO_EXCEPTIONS, body);
     }
 
