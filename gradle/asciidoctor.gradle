@@ -52,6 +52,11 @@ task asciidoctorAssets(type:Copy) {
 asciidoctor.finalizedBy asciidoctorAssets
 
 asciidoctor.doLast {
+
+    def scripts = '''<link rel="stylesheet" href="assets/css/view-example.css">
+<script src='assets/js/jquery-2.1.1.min.js'></script>
+<script src='assets/js/view-example.js'></script>'''
+
     // gapi macro expansion
     outputDir.eachFileMatch(~'.*html') { File file ->
         def text = file.getText('UTF-8')
@@ -67,6 +72,9 @@ asciidoctor.doLast {
 
             "<a href='http://groovy.codehaus.org/gapi/index.html?${cPath}.html${anchor}' target='_blank'><code>$cName</code></a>"
         }
+
+        text = text.replaceAll('</head>', "$scripts</head>")
+
         file.write(text, 'UTF-8')
     }
 
