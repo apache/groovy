@@ -361,5 +361,49 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         '''
 
     }
+
+    void testNoMatchingMethodError() {
+        new GroovyShell().parse '''
+            // tag::method_not_type_checked[]
+            class MyService {
+                void doSomething() {
+                    printLine 'Do something'            // <1>
+                }
+            }
+            // end::method_not_type_checked[]
+        '''
+        shouldFailWithMessages '''
+            // tag::method_type_checked[]
+            @groovy.transform.TypeChecked
+            class MyService {
+                void doSomething() {
+                    printLine 'Do something'            // <1>
+                }
+            }
+            // end::method_type_checked[]
+        ''','Cannot find matching method MyService#printLine(java.lang.String)'
+    }
+
+    void testDuckTypingShouldFailWithTypeChecked() {
+        shouldFailWithMessages '''
+            // tag::ducktyping_failure[]
+            class Duck {
+                void quack() {              // <1>
+                    println 'Quack!'
+                }
+            }
+            class QuackingBird {
+                void quack() {              // <2>
+                    println 'Quack!'
+                }
+            }
+            @groovy.transform.TypeChecked
+            void accept(quacker) {
+                quacker.quack()             // <3>
+            }
+            accept(new Duck())              // <4>
+            // end::ducktyping_failure[]
+        ''', 'Cannot find matching method java.lang.Object#quack()'
+    }
 }
 

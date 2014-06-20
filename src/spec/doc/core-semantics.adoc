@@ -896,5 +896,52 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_arg_
 
 * _or_ `T` and `A` derive from `java.lang.Number` and conform to the same rules as <<number-assignment,assignment of numbers>>
 
+If a method with the appropriate name and arguments is not found at compile time, an error is thrown. The difference with "normal" Groovy is
+illustrated in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=method_not_type_checked,indent=0]
+----
+<1> `printLine` is an error, but since we're in a dynamic mode, the error is not caught at compile time
+
+The example above shows a class that Groovy will be able to compile. However, if you try to create an instance of `MyService` and call the
+`doSomething` method, then it will fail *at runtime*, because `printLine` doesn't exist. Of course, we already showed how Groovy could make
+this a perfectly valid call, for example by catching `MethodMissingException` or implementing a custom meta-class, but if you know you're
+not in such a case, `@TypeChecked` comes handy:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=method_not_type_checked,indent=0]
+----
+<1> `printLine` is this time a compile-time error
+
+Just adding `@TypeChecked` will trigger compile time method resolution. The type checker will try to find a method `printLine` accepting
+a `String` on the `MyService` class, but cannot find one. It will fail compilation with the following message:
+
+`Cannot find matching method MyService#printLine(java.lang.String)`
+
+====
+IMPORTANT: It is important to understand the logic behind the type checker: it is a compile-time check, so by definition, the type checker
+is not aware of any kind of *runtime* metaprogramming that you do. This means that code which is perfectly valid without `@TypeChecked` will
+*not* compile anymore if you activate type checking. This is in particular true if you think of duck typing: +
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=ducktyping_failure,indent=0]
+----
+<1> we define a `Duck` class which defines a `quack` method
+<2> we define another `QuackingBird` class which also defines a `quack` method
+<3> `quacker` is loosely typed, so since the method is `@TypeChecked`, we will obtain a compile-time error
+<4> even if in non type-checked Groovy, this would have passed
+
+There are possible workarounds, like introducing an interface, but basically, by activating type checking, you gain type safety
+but you loose some features of the language. Hopefully, Groovy introduces some features like flow typing to reduce the gap between
+type-checked and non type-checked Groovy.
+====
+
+
+
+
 === Static compilation (TBD)
 
