@@ -125,6 +125,14 @@ class SemanticsTest extends CompilableTestSupport {
                 result = "number"
                 break
 
+            case ~/fo*/: // toString() representation of x matches the pattern?
+                result = "foo regex"
+                break
+
+            case { it < 0 }: // or { x < 0 }
+                result = "negative"
+                break
+
             default:
                 result = "default"
         }
