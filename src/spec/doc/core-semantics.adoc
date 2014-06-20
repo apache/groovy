@@ -140,11 +140,14 @@ include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=switch_case_exampl
 Switch supports the following kinds of comparisons:
 
 * Class case values matches if the switch value is an instance of the class
-* Regular expression case value matches if the string of the switch value matches the regex
-* Collection case value matches if the switch value is contained in the collection. This also includes ranges (since they are Lists)
+* Regular expression case values match if the `toString()` representation of the switch value matches the regex
+* Collection case values match if the switch value is contained in the collection. This also includes ranges (since they are Lists)
+* Closure case values match if the calling the closure returns a result which is true according to the <<Groovy-Truth,Groovy truth>>
 * If none of the above are used then the case value matches if the case value equals the switch value
 
 NOTE: +default+ must go at the end of the switch/case. While in Java the default can be placed anywhere in the switch/case, the default in Groovy is used more as an else than assigning a default case.
+
+NOTE: when using a closure case value, the default `it` parameter is actually the switch value (in our example, variable `x`)
 
 ==== Looping structures
 ===== Classic for loop
@@ -164,6 +167,10 @@ The for loop in Groovy is much simpler and works with any kind of array, collect
 ----
 include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=groovy_for_loop_example,indent=0]
 ----
+
+[NOTE]
+Groovy also supports the Java colon variation with colons: `for (char c : text) {}`,
+where the type of the variable is mandatory.
 
 ===== while loop
 
