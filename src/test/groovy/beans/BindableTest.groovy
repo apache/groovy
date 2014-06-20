@@ -351,4 +351,9 @@ class BindableTest extends GroovyTestCase {
             assert sb.propertyChangeListeners.size() == 1
         """)
     }
+
+    void testPropertyChangeMethodsNotSynthetic() {
+        def clazz = new GroovyClassLoader().parseClass('class MyBean { @groovy.beans.Bindable String dummy }', 'dummyName')
+        assert clazz.getMethod('addPropertyChangeListener', java.beans.PropertyChangeListener).modifiers == 1
+    }
 }
