@@ -7,6 +7,10 @@ class A {
     private def method2() {
         !5
         ~5
+        -5
+        +5
+        // -a FIXME Return unary operators.
+        // +a
 
         5 + 10
         5 - 10

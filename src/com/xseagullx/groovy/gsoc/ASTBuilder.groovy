@@ -1,5 +1,6 @@
 package com.xseagullx.groovy.gsoc
 
+import com.xseagullx.groovy.gsoc.GroovyParser.ArgumentListContext
 import com.xseagullx.groovy.gsoc.util.StringUtil
 import groovyjarjarasm.asm.Opcodes
 import org.antlr.v4.runtime.ANTLRInputStream
@@ -345,6 +346,54 @@ class ASTBuilder extends GroovyBaseListener {
         statement
     }
 
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(GroovyParser.CommandExpressionStatementContext ctx) {
+        Expression expression = null
+        def list = ctx.cmdExpressionRule().children.collate(2)
+        for (c in list) {
+            def (c1, c0) = c
+            if (c.size() == 1)
+                expression = new PropertyExpression(expression, c1.text as String)
+            else {
+                assert c0 instanceof ArgumentListContext
+                if (c1 instanceof TerminalNode) {
+                    expression = new MethodCallExpression(expression, c1.text, createArgumentList(c0))
+                    expression.implicitThis = false
+                }
+                else if (c1 instanceof GroovyParser.PathExpressionContext) {
+                    String methodName
+                    boolean implicitThis
+                    //noinspection GroovyAssignabilityCheck
+                    (expression, methodName, implicitThis) = parsePathExpression(c1)
+
+                    expression = new MethodCallExpression(expression, methodName, createArgumentList(c0))
+                    expression.implicitThis = implicitThis
+                }
+            }
+        }
+
+        println("!> $expression.text")
+        new ExpressionStatement(expression)
+    }
+
+    /**
+     * Parse path expression.
+     * @param ctx
+     * @return tuple of 3 values: Expression, String methodName and boolean implicitThis flag.
+     */
+    static def parsePathExpression(GroovyParser.PathExpressionContext ctx) {
+        Expression expression
+        def identifiers = ctx.IDENTIFIER() as List<TerminalNode>
+        switch (identifiers.size()) {
+            case 1: expression = VariableExpression.THIS_EXPRESSION; break
+            case 2: expression = new VariableExpression(identifiers[0].text); break
+            default: expression = identifiers[1..-2].inject(new VariableExpression(identifiers[0].text)) { Expression expr, prop ->
+                new PropertyExpression(expr, prop.text)
+            }; break
+        }
+        [expression, identifiers[-1], identifiers.size() == 1]
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Expressions.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -387,6 +436,11 @@ class ASTBuilder extends GroovyBaseListener {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GroovyParser.ClosureExpressionContext ctx) {
+        parseExpression(ctx.closureExpressionRule())
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.ClosureExpressionRuleContext ctx) {
         def parameters = parseParameters(ctx.argumentDeclarationList())
 
         def statement = parseStatement(ctx.blockStatement() as GroovyParser.BlockStatementContext)
@@ -495,6 +549,7 @@ class ASTBuilder extends GroovyBaseListener {
         setupNodeLocation(new ConstantExpression(ctx.KW_FALSE() ? false : true, true), ctx)
     }
 
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
         def text = ctx.text
 
@@ -536,16 +591,34 @@ class ASTBuilder extends GroovyBaseListener {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GroovyParser.CallExpressionContext ctx) {
-        def argumentListExpression = createArgumentList(ctx.argumentList())
 
-        if (ctx.expression() instanceof GroovyParser.VariableExpressionContext)
-            new MethodCallExpression(new VariableExpression("this"), new ConstantExpression(ctx.expression().text), argumentListExpression)
-        else
-            new MethodCallExpression(parseExpression(ctx.expression()), new ConstantExpression("call"), argumentListExpression)
+        def methodNode
+        if (ctx.pathExpression()) {
+            // Collect closure's in argumentList expression.
+            def argumentListExpression = new ArgumentListExpression()
+            ctx.closureExpressionRule().each { argumentListExpression.addExpression(parseExpression(it)) }
+
+            //noinspection GroovyAssignabilityCheck
+            def (Expression expression, String methodName, boolean implicitThis) = parsePathExpression(ctx.pathExpression())
+            methodNode = new MethodCallExpression(expression, methodName, argumentListExpression)
+            methodNode.implicitThis = implicitThis
+        }
+        else {
+            def argumentListExpression = createArgumentList(ctx.argumentList())
+            if (ctx.expression() instanceof GroovyParser.VariableExpressionContext) {
+                methodNode = new MethodCallExpression(new VariableExpression("this"), new ConstantExpression(ctx.expression().text), argumentListExpression)
+                methodNode.implicitThis = true
+            }
+            else {
+                methodNode = new MethodCallExpression(parseExpression(ctx.expression()), new ConstantExpression("call"), argumentListExpression)
+                methodNode.implicitThis = false
+            }
+        }
+        methodNode
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.MethodCallExpressionContext ctx) {
+    static MethodCallExpression parseExpression(GroovyParser.MethodCallExpressionContext ctx) {
         def method = new ConstantExpression(ctx.IDENTIFIER().text)
         ArgumentListExpression argumentListExpression = createArgumentList(ctx.argumentList())
         def expression = new MethodCallExpression(parseExpression(ctx.expression()), method, argumentListExpression)
@@ -575,10 +648,14 @@ class ASTBuilder extends GroovyBaseListener {
     // End of Expressions.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    @SuppressWarnings("UnnecessaryQualifiedReference")
     private static ArgumentListExpression createArgumentList(GroovyParser.ArgumentListContext ctx) {
         def argumentListExpression = new ArgumentListExpression()
-        ctx?.expression()?.each {
-            argumentListExpression.addExpression(parseExpression(it))
+        ctx?.children?.each {
+            if (it instanceof GroovyParser.ExpressionContext)
+                argumentListExpression.addExpression(parseExpression(it))
+            else if (it instanceof GroovyParser.ClosureExpressionRuleContext)
+                argumentListExpression.addExpression(parseExpression(it))
         }
         argumentListExpression
     }

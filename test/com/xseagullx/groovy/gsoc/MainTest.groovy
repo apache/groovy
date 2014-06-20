@@ -37,6 +37,8 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/Closure_Issue21_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ExceptionHandling_Issue27_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Extendsimplements_Issue25_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/FieldAccessAndMethodCalls_Issue37_1.groovy" | _
+        'test_res/com/xseagullx/groovy/gsoc/FieldAccessAndMethodCalls_Issue37_2.groovy' | addIgnore(ExpressionStatement, ASTComparatorCategory.LOCATION_IGNORE_LIST)
         "test_res/com/xseagullx/groovy/gsoc/Generics_Issue26_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_2.groovy" | _
