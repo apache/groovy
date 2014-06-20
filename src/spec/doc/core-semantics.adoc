@@ -1,6 +1,6 @@
 = Semantics
 
-This chapter covers the semantic of the Groovy programming language.
+This chapter covers the semantics of the Groovy programming language.
 
 == Statements
 
@@ -16,6 +16,10 @@ include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=variable_definitio
 `def` is a replacement for a type name. In variable definitions it is used to indicate that you don't care about the type. In variable definitions it is mandatory to either provide a type name explicitly or to use "def" in replacement. This is needed to the make variable definitions detectable for the Groovy parser.
 
 You can think of `def` as an alias of `Object` and you will understand it in an instant.
+
+[NOTE]
+Variable definition types can be refined by using generics, like in `List<String> names`.
+To learn more about the generics support, please read the <<generics,generics section>>.
 
 === Variable assignment
 
@@ -62,15 +66,41 @@ If the left hand side has too many variables, excess ones are filled with null's
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=multiple_assignment_underflow,indent=0]
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=multiple_assignment_overflow,indent=0]
 ----
 
 If the right hand side has too many variables, the extra ones are ignored:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=multiple_assignment_overflow,indent=0]
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=multiple_assignment_underflow,indent=0]
 ----
+
+==== Object destructuring with multiple assignment
+
+In the section describing the various <<groovy-operators,Groovy operators>>,
+the case of the <<subscript-operator,subscript operator>> has been covered,
+explaining how you can override the `getAt()`/`putAt()` method.
+
+With this technique, we can combine multiple assignments and the subscript operator methods to implement _object destructuring_.
+
+Consider the following immutable `Coordinates` class, containing a pair of longitude and latitude doubles,
+and notice our implementation of the `getAt()` method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=coordinates-class,indent=0]
+----
+
+Now let's instantiate this class and destructure its longitude and latitude:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=destructuring,indent=0]
+----
+<1> we create an instance of the `Coordinates` class
+<2> then, we use a multiple assignment to get the individual longitude and latitude values
+<3> and we can finally assert their values.
 
 === Control structures (WIP)
 ==== Conditional structures

@@ -41,6 +41,7 @@ This chapter covers the object orientation of the Groovy programming language.
 
 === Inheritance (TBD)
 
+[[generics]]
 === Generics (TBD)
 
 :leveloffset: 3

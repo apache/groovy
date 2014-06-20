@@ -1,4 +1,5 @@
 import gls.CompilableTestSupport
+import groovy.transform.Immutable
 
 class SemanticsTest extends CompilableTestSupport {
 
@@ -232,4 +233,29 @@ class SemanticsTest extends CompilableTestSupport {
         }
         // end::try_catch_finally_example[]
     }
+
+    void testDestructuringMultipleAssignment() {
+        // tag::destructuring[]
+        def coordinates = new Coordinates(latitude: 43.23, longitude: 3.67) // <1>
+
+        def (la, lo) = coordinates                                          // <2>
+
+        assert la == 43.23                                                  // <3>
+        assert lo == 3.67
+        // end::destructuring[]
+    }
 }
+
+// tag::coordinates-class[]
+@Immutable
+class Coordinates {
+    double latitude
+    double longitude
+
+    double getAt(int idx) {
+        if (idx == 0) latitude
+        else if (idx == 1) longitude
+        else throw new Exception("Wrong coordinate index, use 0 or 1")
+    }
+}
+// end::coordinates-class[]
