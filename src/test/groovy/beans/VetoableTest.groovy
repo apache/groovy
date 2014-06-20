@@ -444,4 +444,17 @@ class VetoableTest extends GroovyTestCase {
             assert sb.vetoableChangeListeners.size() == 1
         """
     }
+
+    void testPropertyChangeMethodWithCompileStatic() {
+        assertScript """
+            import groovy.beans.Vetoable
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            class MyBean {
+                @Vetoable String test = "a test"
+            }
+            assert new MyBean()
+        """
+    }
 }
