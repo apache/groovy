@@ -16,11 +16,20 @@
 
 package groovy.beans;
 
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -36,6 +45,17 @@ import org.objectweb.asm.Opcodes;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the {@code @Bindable} annotation when {@code @Vetoable}
@@ -171,34 +191,21 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
             // Get the existing code block
             Statement code = setter.getCode();
 
-            VariableExpression oldValue = new VariableExpression("$oldValue");
-            VariableExpression newValue = new VariableExpression("$newValue");
+            Expression oldValue = varX("$oldValue");
+            Expression newValue = varX("$newValue");
             BlockStatement block = new BlockStatement();
 
             // create a local variable to hold the old value from the getter
-            block.addStatement(new ExpressionStatement(
-                new DeclarationExpression(oldValue,
-                    Token.newSymbol(Types.EQUALS, 0, 0),
-                    new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, ArgumentListExpression.EMPTY_ARGUMENTS))));
+            block.addStatement(declS(oldValue, callThisX(getterName)));
 
             // call the existing block, which will presumably set the value properly
             block.addStatement(code);
 
             // get the new value to emit in the event
-            block.addStatement(new ExpressionStatement(
-                new DeclarationExpression(newValue,
-                    Token.newSymbol(Types.EQUALS, 0, 0),
-                    new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, ArgumentListExpression.EMPTY_ARGUMENTS))));
+            block.addStatement(declS(newValue, callThisX(getterName)));
 
             // add the firePropertyChange method call
-            block.addStatement(new ExpressionStatement(new MethodCallExpression(
-                    VariableExpression.THIS_EXPRESSION,
-                    "firePropertyChange",
-                    new ArgumentListExpression(
-                            new Expression[]{
-                                    new ConstantExpression(propertyName),
-                                    oldValue,
-                                    newValue}))));
+            block.addStatement(stmt(callThisX("firePropertyChange", args(new ConstantExpression(propertyName), oldValue, newValue))));
 
             // replace the existing code block with our new one
             setter.setCode(block);
@@ -208,8 +215,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
     private void createListenerSetter(SourceUnit source, AnnotationNode node, ClassNode classNode, PropertyNode propertyNode) {
         String setterName = "set" + MetaClassHelper.capitalize(propertyNode.getName());
         if (classNode.getMethods(setterName).isEmpty()) {
-            Expression fieldExpression = new FieldExpression(propertyNode.getField());
-            Statement setterBlock = createBindableStatement(propertyNode, fieldExpression);
+            Statement setterBlock = createBindableStatement(propertyNode, fieldX(propertyNode.getField()));
 
             // create method void <setter>(<type> fieldName)
             createSetterMethod(classNode, propertyNode, setterName, setterBlock);
@@ -228,18 +234,16 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      */
     protected Statement createBindableStatement(PropertyNode propertyNode, Expression fieldExpression) {
         // create statementBody
-        return new ExpressionStatement(
-                new MethodCallExpression(
-                        VariableExpression.THIS_EXPRESSION,
+        return stmt(
+                callThisX(
                         "firePropertyChange",
-                        new ArgumentListExpression(
-                                new Expression[]{
-                                        new ConstantExpression(propertyNode.getName()),
+                        args(
+                                new ConstantExpression(propertyNode.getName()),
+                                fieldExpression,
+                                new BinaryExpression(
                                         fieldExpression,
-                                        new BinaryExpression(
-                                                fieldExpression,
-                                                Token.newSymbol(Types.EQUAL, 0, 0),
-                                                new VariableExpression("value"))})));
+                                        Token.newSymbol(Types.EQUAL, 0, 0),
+                                        varX("value")))));
     }
 
     /**
@@ -251,9 +255,13 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      * @param setterBlock    the statement representing the setter block
      */
     protected void createSetterMethod(ClassNode declaringClass, PropertyNode propertyNode, String setterName, Statement setterBlock) {
-        Parameter[] setterParameterTypes = {new Parameter(propertyNode.getType(), "value")};
-        MethodNode setter =
-                new MethodNode(setterName, propertyNode.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
+        MethodNode setter = new MethodNode(
+                setterName,
+                propertyNode.getModifiers(),
+                ClassHelper.VOID_TYPE,
+                params(param(propertyNode.getType(), "value")),
+                ClassNode.EMPTY_ARRAY,
+                setterBlock);
         setter.setSynthetic(true);
         // add it to the class
         declaringClass.addMethod(setter);
@@ -336,8 +344,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                 "this$propertyChangeSupport",
                 ACC_FINAL | ACC_PRIVATE | ACC_SYNTHETIC,
                 pcsClassNode,
-                new ConstructorCallExpression(pcsClassNode,
-                        new ArgumentListExpression(new Expression[]{new VariableExpression("this")})));
+                new ConstructorCallExpression(pcsClassNode, args(varX("this"))));
 
         // add method:
         // void addPropertyChangeListener(listener) {
@@ -348,14 +355,9 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                         "addPropertyChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(pclClassNode, "listener")},
+                        params(param(pclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        new ExpressionStatement(
-                                new MethodCallExpression(
-                                        new FieldExpression(pcsField),
-                                        "addPropertyChangeListener",
-                                        new ArgumentListExpression(
-                                                new Expression[]{new VariableExpression("listener")})))));
+                        stmt(callX(fieldX(pcsField), "addPropertyChangeListener", args(varX("listener", pclClassNode))))));
 
         // add method:
         // void addPropertyChangeListener(name, listener) {
@@ -366,14 +368,9 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                         "addPropertyChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(pclClassNode, "listener")},
+                        params(param(ClassHelper.STRING_TYPE, "name"), param(pclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        new ExpressionStatement(
-                                new MethodCallExpression(
-                                        new FieldExpression(pcsField),
-                                        "addPropertyChangeListener",
-                                        new ArgumentListExpression(
-                                                new Expression[]{new VariableExpression("name"), new VariableExpression("listener")})))));
+                        stmt(callX(fieldX(pcsField), "addPropertyChangeListener", args(varX("name", ClassHelper.STRING_TYPE), varX("listener", pclClassNode))))));
 
         // add method:
         // boolean removePropertyChangeListener(listener) {
@@ -384,14 +381,9 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                         "removePropertyChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(pclClassNode, "listener")},
+                        params(param(pclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        new ExpressionStatement(
-                                new MethodCallExpression(
-                                        new FieldExpression(pcsField),
-                                        "removePropertyChangeListener",
-                                        new ArgumentListExpression(
-                                                new Expression[]{new VariableExpression("listener")})))));
+                        stmt(callX(fieldX(pcsField), "removePropertyChangeListener", args(varX("listener", pclClassNode))))));
 
         // add method: void removePropertyChangeListener(name, listener)
         declaringClass.addMethod(
@@ -399,14 +391,9 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                         "removePropertyChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(pclClassNode, "listener")},
+                        params(param(ClassHelper.STRING_TYPE, "name"), param(pclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        new ExpressionStatement(
-                                new MethodCallExpression(
-                                        new FieldExpression(pcsField),
-                                        "removePropertyChangeListener",
-                                        new ArgumentListExpression(
-                                                new Expression[]{new VariableExpression("name"), new VariableExpression("listener")})))));
+                        stmt(callX(fieldX(pcsField), "removePropertyChangeListener", args(varX("name", ClassHelper.STRING_TYPE), varX("listener", pclClassNode))))));
 
         // add method:
         // void firePropertyChange(String name, Object oldValue, Object newValue) {
@@ -417,17 +404,9 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                         "firePropertyChange",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(ClassHelper.OBJECT_TYPE, "oldValue"), new Parameter(ClassHelper.OBJECT_TYPE, "newValue")},
+                        params(param(ClassHelper.STRING_TYPE, "name"), param(ClassHelper.OBJECT_TYPE, "oldValue"), param(ClassHelper.OBJECT_TYPE, "newValue")),
                         ClassNode.EMPTY_ARRAY,
-                        new ExpressionStatement(
-                                new MethodCallExpression(
-                                        new FieldExpression(pcsField),
-                                        "firePropertyChange",
-                                        new ArgumentListExpression(
-                                                new Expression[]{
-                                                        new VariableExpression("name"),
-                                                        new VariableExpression("oldValue"),
-                                                        new VariableExpression("newValue")})))));
+                        stmt(callX(fieldX(pcsField), "firePropertyChange", args(varX("name", ClassHelper.STRING_TYPE), varX("oldValue"), varX("newValue"))))));
 
         // add method:
         // PropertyChangeListener[] getPropertyChangeListeners() {
@@ -440,12 +419,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                         pclClassNode.makeArray(),
                         Parameter.EMPTY_ARRAY,
                         ClassNode.EMPTY_ARRAY,
-                        new ReturnStatement(
-                                new ExpressionStatement(
-                                        new MethodCallExpression(
-                                                new FieldExpression(pcsField),
-                                                "getPropertyChangeListeners",
-                                                ArgumentListExpression.EMPTY_ARGUMENTS)))));
+                        returnS(callX(fieldX(pcsField), "getPropertyChangeListeners"))));
 
         // add method:
         // PropertyChangeListener[] getPropertyChangeListeners(String name) {
@@ -456,14 +430,8 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                         "getPropertyChangeListeners",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         pclClassNode.makeArray(),
-                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name")},
+                        params(param(ClassHelper.STRING_TYPE, "name")),
                         ClassNode.EMPTY_ARRAY,
-                        new ReturnStatement(
-                                new ExpressionStatement(
-                                        new MethodCallExpression(
-                                                new FieldExpression(pcsField),
-                                                "getPropertyChangeListeners",
-                                                new ArgumentListExpression(
-                                                new Expression[]{new VariableExpression("name")}))))));
+                        returnS(callX(fieldX(pcsField), "getPropertyChangeListeners", args(varX("name", ClassHelper.STRING_TYPE))))));
     }
 }
