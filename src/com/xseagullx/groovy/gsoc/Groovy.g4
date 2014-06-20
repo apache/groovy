@@ -205,7 +205,7 @@ expression:
     | '(' expression ')' #parenthesisExpression
     | expression ('--' | '++')  #postfixExpression
     | ('!' | '~') expression #unaryExpression
-    | ('+' | '-') expression #unaryExpression
+//  | ('+' | '-') expression #unaryExpression // FIXME: return unary minus and plus expressions.
     | ('--' | '++') expression #prefixExpression
     | expression ('**') expression #binaryExpression
     | expression ('*' | '/' | '%') expression #binaryExpression
