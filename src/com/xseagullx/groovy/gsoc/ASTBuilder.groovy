@@ -372,7 +372,6 @@ class ASTBuilder extends GroovyBaseListener {
             }
         }
 
-        println("!> $expression.text")
         new ExpressionStatement(expression)
     }
 
@@ -788,20 +787,6 @@ class ASTBuilder extends GroovyBaseListener {
             sourceUnit.addError(new SyntaxException("Cannot repeat modifier: $symbol.text at line: $line column: $col. File: $sourceUnit.name", line, col))
             modifier
         }
-    }
-
-    int parseModifier(Collection<TerminalNode> nodes, int opcode) {
-        if (!nodes)
-            return 0
-
-        if (nodes.size() > 1) {
-            def modifier = nodes[1].symbol
-
-            def line = modifier.line
-            def col = modifier.charPositionInLine + 1
-            sourceUnit.addError(new SyntaxException("Cannot repeat modifier: $modifier.text at line: $line column: $col. File: $sourceUnit.name", line, col))
-        }
-        opcode
     }
 
     /**
