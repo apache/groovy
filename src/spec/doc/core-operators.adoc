@@ -1,3 +1,4 @@
+[[groovy-operators]]
 = Operators
 
 This chapter covers the operators of the Groovy programming language.
@@ -519,6 +520,7 @@ The spaceship operator (`<=>`) delegates to the `compareTo` method:
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spaceship,indent=0]
 ----
 
+[[subscript-operator]]
 === Subscript operator
 
 The subscript operator is a short hand notation for `getAt` or `putAt`, depending on whether you find it on
@@ -534,6 +536,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=subscript_op,inden
 <4> so does `putAt`
 <5> the list is mutated
 
+[[custom-subscript-operator]]
 The subscript operator, in combination with a custom implementation of `getAt`/`putAt` is a convenient way for destructuring
 objects:
 
