@@ -16,11 +16,17 @@
 
 package groovy.beans;
 
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -28,14 +34,26 @@ import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.beans.PropertyVetoException;
 import java.beans.VetoableChangeListener;
 import java.beans.VetoableChangeSupport;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the {@code @Vetoable} annotation, and {@code @Bindable}
@@ -58,7 +76,6 @@ import java.beans.VetoableChangeSupport;
 public class VetoableASTTransformation extends BindableASTTransformation {
 
     protected static ClassNode constrainedClassNode = ClassHelper.make(Vetoable.class);
-    protected ClassNode vcsClassNode = ClassHelper.make(VetoableChangeSupport.class);
 
     /**
      * Convenience method to see if an annotated node is {@code @Vetoable}.
@@ -88,7 +105,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         AnnotationNode node = (AnnotationNode) nodes[0];
 
         if (nodes[1] instanceof ClassNode) {
-            addListenerToClass(source, node, (ClassNode) nodes[1]);
+            addListenerToClass(source, (ClassNode) nodes[1]);
         } else {
             if ((((FieldNode)nodes[1]).getModifiers() & Opcodes.ACC_FINAL) != 0) {
                 source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
@@ -117,7 +134,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                                     node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
                             source));
                 } else {
-                    createListenerSetter(source, node, bindable, declaringClass, propertyNode);
+                    createListenerSetter(source, bindable, declaringClass, propertyNode);
                 }
                 return;
             }
@@ -130,15 +147,15 @@ public class VetoableASTTransformation extends BindableASTTransformation {
     }
 
 
-    private void addListenerToClass(SourceUnit source, AnnotationNode node, ClassNode classNode) {
+    private void addListenerToClass(SourceUnit source, ClassNode classNode) {
         boolean bindable = BindableASTTransformation.hasBindableAnnotation(classNode);
         for (PropertyNode propertyNode : classNode.getProperties()) {
             if (!hasVetoableAnnotation(propertyNode.getField())
-                && !((propertyNode.getField().getModifiers() & Opcodes.ACC_FINAL) != 0)
+                && !propertyNode.getField().isFinal()
                 && !propertyNode.getField().isStatic())
             {
-                createListenerSetter(source, node,
-                    bindable || BindableASTTransformation.hasBindableAnnotation(propertyNode.getField()),
+                createListenerSetter(source,
+                        bindable || BindableASTTransformation.hasBindableAnnotation(propertyNode.getField()),
                     classNode, propertyNode);
             }
         }
@@ -155,46 +172,27 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             // Get the existing code block
             Statement code = setter.getCode();
 
-            VariableExpression oldValue = new VariableExpression("$oldValue");
-            VariableExpression newValue = new VariableExpression("$newValue");
-            VariableExpression proposedValue = new VariableExpression(setter.getParameters()[0].getName());
+            Expression oldValue = varX("$oldValue");
+            Expression newValue = varX("$newValue");
+            Expression proposedValue = varX(setter.getParameters()[0].getName());
             BlockStatement block = new BlockStatement();
 
             // create a local variable to hold the old value from the getter
-            block.addStatement(new ExpressionStatement(
-                new DeclarationExpression(oldValue,
-                    Token.newSymbol(Types.EQUALS, 0, 0),
-                    new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, ArgumentListExpression.EMPTY_ARGUMENTS))));
+            block.addStatement(declS(oldValue, callThisX(getterName)));
 
             // add the fireVetoableChange method call
-            block.addStatement(new ExpressionStatement(new MethodCallExpression(
-                    VariableExpression.THIS_EXPRESSION,
-                    "fireVetoableChange",
-                    new ArgumentListExpression(
-                            new Expression[]{
-                                    new ConstantExpression(propertyName),
-                                    oldValue,
-                                    proposedValue}))));
+            block.addStatement(stmt(callThisX("fireVetoableChange", args(
+                    constX(propertyName), oldValue, proposedValue))));
 
             // call the existing block, which will presumably set the value properly
             block.addStatement(code);
 
             if (bindable) {
                 // get the new value to emit in the event
-                block.addStatement(new ExpressionStatement(
-                    new DeclarationExpression(newValue,
-                        Token.newSymbol(Types.EQUALS, 0, 0),
-                        new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, ArgumentListExpression.EMPTY_ARGUMENTS))));
+                block.addStatement(declS(newValue, callThisX(getterName)));
 
                 // add the firePropertyChange method call
-                block.addStatement(new ExpressionStatement(new MethodCallExpression(
-                        VariableExpression.THIS_EXPRESSION,
-                        "firePropertyChange",
-                        new ArgumentListExpression(
-                                new Expression[]{
-                                        new ConstantExpression(propertyName),
-                                        oldValue,
-                                        newValue}))));
+                block.addStatement(stmt(callThisX("firePropertyChange", args(constX(propertyName), oldValue, newValue))));
             }
 
             // replace the existing code block with our new one
@@ -202,7 +200,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         }
     }
 
-    private void createListenerSetter(SourceUnit source, AnnotationNode node, boolean bindable, ClassNode declaringClass, PropertyNode propertyNode) {
+    private void createListenerSetter(SourceUnit source, boolean bindable, ClassNode declaringClass, PropertyNode propertyNode) {
         if (bindable && needsPropertyChangeSupport(declaringClass, source)) {
             addPropertyChangeSupport(declaringClass);
         }
@@ -211,7 +209,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         }
         String setterName = "set" + MetaClassHelper.capitalize(propertyNode.getName());
         if (declaringClass.getMethods(setterName).isEmpty()) {
-            Expression fieldExpression = new FieldExpression(propertyNode.getField());
+            Expression fieldExpression = fieldX(propertyNode.getField());
             BlockStatement setterBlock = new BlockStatement();
             setterBlock.addStatement(createConstrainedStatement(propertyNode, fieldExpression));
             if (bindable) {
@@ -236,15 +234,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * @return the created statement
      */
     protected Statement createConstrainedStatement(PropertyNode propertyNode, Expression fieldExpression) {
-        return new ExpressionStatement(
-                new MethodCallExpression(
-                        VariableExpression.THIS_EXPRESSION,
-                        "fireVetoableChange",
-                        new ArgumentListExpression(
-                                new Expression[]{
-                                        new ConstantExpression(propertyNode.getName()),
-                                        fieldExpression,
-                                        new VariableExpression("value")})));
+        return stmt(callThisX("fireVetoableChange", args(constX(propertyNode.getName()), fieldExpression, varX("value"))));
     }
 
     /**
@@ -257,11 +247,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * @return the created statement
      */
     protected Statement createSetStatement(Expression fieldExpression) {
-        return new ExpressionStatement(
-                new BinaryExpression(
-                        fieldExpression,
-                        Token.newSymbol(Types.EQUAL, 0, 0),
-                        new VariableExpression("value")));
+        return assignS(fieldExpression, varX("value"));
     }
 
     /**
@@ -321,10 +307,14 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * @param setterBlock    the statement representing the setter block
      */
     protected void createSetterMethod(ClassNode declaringClass, PropertyNode propertyNode, String setterName, Statement setterBlock) {
-        Parameter[] setterParameterTypes = {new Parameter(propertyNode.getType(), "value")};
         ClassNode[] exceptions = {ClassHelper.make(PropertyVetoException.class)};
-        MethodNode setter =
-                new MethodNode(setterName, propertyNode.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, exceptions, setterBlock);
+        MethodNode setter = new MethodNode(
+                setterName,
+                propertyNode.getModifiers(),
+                ClassHelper.VOID_TYPE,
+                params(param(propertyNode.getType(), "value")),
+                exceptions,
+                setterBlock);
         setter.setSynthetic(true);
         // add it to the class
         declaringClass.addMethod(setter);
@@ -355,8 +345,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                 "this$vetoableChangeSupport",
                 ACC_FINAL | ACC_PRIVATE | ACC_SYNTHETIC,
                 vcsClassNode,
-                new ConstructorCallExpression(vcsClassNode,
-                        new ArgumentListExpression(new Expression[]{new VariableExpression("this")})));
+                ctorX(vcsClassNode, args(varX("this"))));
 
         // add method:
         // void addVetoableChangeListener(listener) {
@@ -367,14 +356,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                         "addVetoableChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(vclClassNode, "listener")},
+                        params(param(vclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        new ExpressionStatement(
-                                new MethodCallExpression(
-                                        new FieldExpression(vcsField),
-                                        "addVetoableChangeListener",
-                                        new ArgumentListExpression(
-                                                new Expression[]{new VariableExpression("listener")})))));
+                        stmt(callX(fieldX(vcsField), "addVetoableChangeListener", args(varX("listener"))))));
 
         // add method:
         // void addVetoableChangeListener(name, listener) {
@@ -385,14 +369,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                         "addVetoableChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(vclClassNode, "listener")},
+                        params(param(ClassHelper.STRING_TYPE, "name"), param(vclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        new ExpressionStatement(
-                                new MethodCallExpression(
-                                        new FieldExpression(vcsField),
-                                        "addVetoableChangeListener",
-                                        new ArgumentListExpression(
-                                                new Expression[]{new VariableExpression("name"), new VariableExpression("listener")})))));
+                        stmt(callX(fieldX(vcsField), "addVetoableChangeListener", args(varX("name"), varX("listener"))))));
 
         // add method:
         // boolean removeVetoableChangeListener(listener) {
@@ -403,14 +382,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                         "removeVetoableChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(vclClassNode, "listener")},
+                        params(param(vclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        new ExpressionStatement(
-                                new MethodCallExpression(
-                                        new FieldExpression(vcsField),
-                                        "removeVetoableChangeListener",
-                                        new ArgumentListExpression(
-                                                new Expression[]{new VariableExpression("listener")})))));
+                        stmt(callX(fieldX(vcsField), "removeVetoableChangeListener", args(varX("listener"))))));
 
         // add method: void removeVetoableChangeListener(name, listener)
         declaringClass.addMethod(
@@ -418,14 +392,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                         "removeVetoableChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(vclClassNode, "listener")},
+                        params(param(ClassHelper.STRING_TYPE, "name"), param(vclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        new ExpressionStatement(
-                                new MethodCallExpression(
-                                        new FieldExpression(vcsField),
-                                        "removeVetoableChangeListener",
-                                        new ArgumentListExpression(
-                                                new Expression[]{new VariableExpression("name"), new VariableExpression("listener")})))));
+                        stmt(callX(fieldX(vcsField), "removeVetoableChangeListener", args(varX("name"), varX("listener"))))));
 
         // add method:
         // void fireVetoableChange(String name, Object oldValue, Object newValue)
@@ -438,17 +407,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                         "fireVetoableChange",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(ClassHelper.OBJECT_TYPE, "oldValue"), new Parameter(ClassHelper.OBJECT_TYPE, "newValue")},
+                        params(param(ClassHelper.STRING_TYPE, "name"), param(ClassHelper.OBJECT_TYPE, "oldValue"), param(ClassHelper.OBJECT_TYPE, "newValue")),
                         new ClassNode[] {ClassHelper.make(PropertyVetoException.class)},
-                        new ExpressionStatement(
-                                new MethodCallExpression(
-                                        new FieldExpression(vcsField),
-                                        "fireVetoableChange",
-                                        new ArgumentListExpression(
-                                                new Expression[]{
-                                                        new VariableExpression("name"),
-                                                        new VariableExpression("oldValue"),
-                                                        new VariableExpression("newValue")})))));
+                        stmt(callX(fieldX(vcsField), "fireVetoableChange", args(varX("name"), varX("oldValue"), varX("newValue"))))));
 
         // add method:
         // VetoableChangeListener[] getVetoableChangeListeners() {
@@ -461,12 +422,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                         vclClassNode.makeArray(),
                         Parameter.EMPTY_ARRAY,
                         ClassNode.EMPTY_ARRAY,
-                        new ReturnStatement(
-                                new ExpressionStatement(
-                                        new MethodCallExpression(
-                                                new FieldExpression(vcsField),
-                                                "getVetoableChangeListeners",
-                                                ArgumentListExpression.EMPTY_ARGUMENTS)))));
+                        returnS(callX(fieldX(vcsField), "getVetoableChangeListeners"))));
 
         // add method:
         // VetoableChangeListener[] getVetoableChangeListeners(String name) {
@@ -477,15 +433,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                         "getVetoableChangeListeners",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         vclClassNode.makeArray(),
-                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name")},
+                        params(param(ClassHelper.STRING_TYPE, "name")),
                         ClassNode.EMPTY_ARRAY,
-                        new ReturnStatement(
-                                new ExpressionStatement(
-                                        new MethodCallExpression(
-                                                new FieldExpression(vcsField),
-                                                "getVetoableChangeListeners",
-                                                new ArgumentListExpression(
-                                                new Expression[]{new VariableExpression("name")}))))));
+                        returnS(callX(fieldX(vcsField), "getVetoableChangeListeners", args(varX("name"))))));
     }
 
 }

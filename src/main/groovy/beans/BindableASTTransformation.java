@@ -25,9 +25,6 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -37,8 +34,6 @@ import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.objectweb.asm.Opcodes;
@@ -47,8 +42,11 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
@@ -78,7 +76,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
     protected static ClassNode boundClassNode = ClassHelper.make(Bindable.class);
-    protected ClassNode pcsClassNode = ClassHelper.make(PropertyChangeSupport.class);
 
     /**
      * Convenience method to see if an annotated node is {@code @Bindable}.
@@ -128,7 +125,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
             }
             addListenerToProperty(source, node, declaringClass, (FieldNode) parent);
         } else if (parent instanceof ClassNode) {
-            addListenerToClass(source, node, (ClassNode) parent);
+            addListenerToClass(source, (ClassNode) parent);
         }
     }
 
@@ -146,7 +143,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                     if (needsPropertyChangeSupport(declaringClass, source)) {
                         addPropertyChangeSupport(declaringClass);
                     }
-                    createListenerSetter(source, node, declaringClass, propertyNode);
+                    createListenerSetter(declaringClass, propertyNode);
                 }
                 return;
             }
@@ -158,7 +155,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                 source));
     }
 
-    private void addListenerToClass(SourceUnit source, AnnotationNode node, ClassNode classNode) {
+    private void addListenerToClass(SourceUnit source, ClassNode classNode) {
         if (needsPropertyChangeSupport(classNode, source)) {
             addPropertyChangeSupport(classNode);
         }
@@ -176,7 +173,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                 // VetoableASTTransformation will handle both @Bindable and @Vetoable
                 continue;
             }
-            createListenerSetter(source, node, classNode, propertyNode);
+            createListenerSetter(classNode, propertyNode);
         }
     }
 
@@ -205,14 +202,14 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
             block.addStatement(declS(newValue, callThisX(getterName)));
 
             // add the firePropertyChange method call
-            block.addStatement(stmt(callThisX("firePropertyChange", args(new ConstantExpression(propertyName), oldValue, newValue))));
+            block.addStatement(stmt(callThisX("firePropertyChange", args(constX(propertyName), oldValue, newValue))));
 
             // replace the existing code block with our new one
             setter.setCode(block);
         }
     }
 
-    private void createListenerSetter(SourceUnit source, AnnotationNode node, ClassNode classNode, PropertyNode propertyNode) {
+    private void createListenerSetter(ClassNode classNode, PropertyNode propertyNode) {
         String setterName = "set" + MetaClassHelper.capitalize(propertyNode.getName());
         if (classNode.getMethods(setterName).isEmpty()) {
             Statement setterBlock = createBindableStatement(propertyNode, fieldX(propertyNode.getField()));
@@ -234,16 +231,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      */
     protected Statement createBindableStatement(PropertyNode propertyNode, Expression fieldExpression) {
         // create statementBody
-        return stmt(
-                callThisX(
-                        "firePropertyChange",
-                        args(
-                                new ConstantExpression(propertyNode.getName()),
-                                fieldExpression,
-                                new BinaryExpression(
-                                        fieldExpression,
-                                        Token.newSymbol(Types.EQUAL, 0, 0),
-                                        varX("value")))));
+        return stmt(callThisX("firePropertyChange", args(constX(propertyNode.getName()), fieldExpression, assignX(fieldExpression, varX("value")))));
     }
 
     /**
@@ -344,7 +332,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                 "this$propertyChangeSupport",
                 ACC_FINAL | ACC_PRIVATE | ACC_SYNTHETIC,
                 pcsClassNode,
-                new ConstructorCallExpression(pcsClassNode, args(varX("this"))));
+                ctorX(pcsClassNode, args(varX("this"))));
 
         // add method:
         // void addPropertyChangeListener(listener) {
