@@ -581,73 +581,123 @@ in the second case, only the method and potential closures or anonymous inner cl
 ==== Type checking assignments
 
 An object `o` of type `A` can be assigned to a variable of type `T` if and only if:
-[cols="1a,2a"]
-.Assignment rules
-|===
-|Rule | Examples
 
-| `T` equals `A`
-| [source,groovy]
+* `T` equals `A`
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_equals,indent=0]
 ----
+====
 
-| _or_ `T` is one of `String`, `boolean`, `Boolean` or `Class`
-| [source,groovy]
+* _or_ `T` is one of `String`, `boolean`, `Boolean` or `Class`
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_specialcase,indent=0]
 ----
+====
 
-| _or_ `o` is null and `T` is not a primitive type
-| [source,groovy]
+* _or_ `o` is null and `T` is not a primitive type
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_null,indent=0]
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_null2prim,indent=0]
 ----
+====
 
-| _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
-| [source,groovy]
+* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_array,indent=0]
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_fail,indent=0]
 ----
+====
 
-| _or_ `T` is an array and `A` is a list and the component type of `A` is assignable to the component type of `B`
-| [source,groovy]
+* _or_ `T` is an array and `A` is a list and the component type of `A` is assignable to the component type of `B`
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_list,indent=0]
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_list_fail,indent=0]
 ----
+====
 
-| _or_ `T` is a superclass of `A`
-| [source,groovy]
+* _or_ `T` is a superclass of `A`
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_superclass,indent=0]
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_superclass_fail,indent=0]
 ----
+====
 
-| _or_ `T` is an interface implemented by `A`
-| [source,groovy]
+* _or_ `T` is an interface implemented by `A`
+
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_interface,indent=0]
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_interface_fail,indent=0]
 ----
+====
 
-| _or_ `T` or `A` are a primitive type and their boxed types are assignable
-| [source,groovy]
+* _or_ `T` or `A` are a primitive type and their boxed types are assignable
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assign_prim,indent=0]
 ----
+====
 
-| _or_ `T` extends `groovy.lang.Closure` and `A` is a SAM-type (single abstract method type)
-| [source,groovy]
+* _or_ `T` extends `groovy.lang.Closure` and `A` is a SAM-type (single abstract method type)
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_closure_coercion,indent=0]
 ----
+====
 
-2+>| _or_ `T` and `A` derive from `java.lang.Number` and conform to the following table
+* _or_ `T` and `A` derive from `java.lang.Number` and conform to the following table
 
-|===
 
 [cols="1,1,2a"]
 .Number types (java.lang.XXX)
@@ -743,66 +793,108 @@ In type checked mode, methods are resolved at compile time. Resolution works by 
 irrelevant to method selection. Types of arguments are matched against the types of the parameters following those rules:
 
 An argument `o` of type `A` can be used for a parameter of type `T` if and only if:
-[cols="1a,2a"]
-.Matching arguments with parameters
-|===
-|Rule | Examples
 
-| `T` equals `A`
-| [source,groovy]
+* `T` equals `A`
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_equals,indent=0]
 ----
+====
 
-| _or_ `T` is a `String` and `A` is a `GString`
-| [source,groovy]
+* _or_ `T` is a `String` and `A` is a `GString`
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_specialcase,indent=0]
 ----
+====
 
-| _or_ `o` is null and `T` is not a primitive type
-| [source,groovy]
+* _or_ `o` is null and `T` is not a primitive type
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_null,indent=0]
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_null2prim,indent=0]
 ----
+====
 
-| _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
-| [source,groovy]
+* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_array,indent=0]
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_array_fail,indent=0]
 ----
+====
 
-| _or_ `T` is a superclass of `A`
-| [source,groovy]
+* _or_ `T` is a superclass of `A`
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_superclass,indent=0]
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_superclass_fail,indent=0]
 ----
+====
 
-| _or_ `T` is an interface implemented by `A`
-| [source,groovy]
+* _or_ `T` is an interface implemented by `A`
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_interface,indent=0]
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_interface_fail,indent=0]
 ----
+====
 
-| _or_ `T` or `A` are a primitive type and their boxed types are assignable
-| [source,groovy]
+* _or_ `T` or `A` are a primitive type and their boxed types are assignable
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argparam_prim,indent=0]
 ----
+====
 
-| _or_ `T` extends `groovy.lang.Closure` and `A` is a SAM-type (single abstract method type)
-| [source,groovy]
+* _or_ `T` extends `groovy.lang.Closure` and `A` is a SAM-type (single abstract method type)
+
++
+
+[.result]
+====
+[source,groovy]
 ----
 include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_arg_closure_coercion,indent=0]
 ----
+====
 
-2+>| _or_ `T` and `A` derive from `java.lang.Number` and conform to the same rules as <<number-assignment,assignment of numbers>>
-
-|===
+* _or_ `T` and `A` derive from `java.lang.Number` and conform to the same rules as <<number-assignment,assignment of numbers>>
 
 === Static compilation (TBD)
 
