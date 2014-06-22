@@ -332,7 +332,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         ifElse.getElseBlock().visit(this);
         popState();
     }
-    
+
     public void visitDeclarationExpression(DeclarationExpression expression) {
         // visit right side first to avoid the usage of a
         // variable before its declaration
@@ -564,6 +564,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     VariableExpression vexp = (VariableExpression) expression;
                     if (vexp.getAccessedVariable() instanceof Parameter) {
                         // workaround for GROOVY-6834: accessing a parameter which is not yet seen in scope
+                        popState();
                         continue;
                     }
                 }
