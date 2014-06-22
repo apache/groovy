@@ -17,6 +17,7 @@ package org.codehaus.groovy.transform
 
 import groovy.transform.AutoClone
 import groovy.transform.AutoExternalize
+import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.TupleConstructor
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
@@ -427,6 +428,17 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testAutoExternalizeHappyPathCompileStatic() {
+        new GroovyShell().evaluate """
+            import org.codehaus.groovy.transform.*
+            def orig = new Person8(name: new Name8('John', 'Smith'), address: new Address8(street: 'somewhere lane', town: 'my town'), age: 21, verified: true)
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream{ os -> os.writeObject(orig) }
+            def bais = new ByteArrayInputStream(baos.toByteArray())
+            bais.withObjectInputStream { is -> assert is.readObject().toString() == 'Person8(Name8(John, Smith), Address8(somewhere lane, my town), 21, true)' }
+        """
+    }
+
     // GROOVY-4570
     void testToStringForEnums() {
         assert Color.PURPLE.toString() == 'org.codehaus.groovy.transform.Color(r:255, g:0, b:255)'
@@ -505,6 +517,26 @@ class Person7 {
     int age
     Boolean verified
 }
+
+@ToString(includePackage=false)
+@AutoExternalize(checkPropertyTypes=true)
+@CompileStatic
+class Person8 {
+    Name8 name
+    Address8 address
+    int age
+    Boolean verified
+}
+
+@Canonical
+@CompileStatic
+@ToString(includePackage=false)
+class Name8 implements Serializable { String first, last }
+
+@AutoExternalize
+@ToString(includePackage=false)
+@CompileStatic
+class Address8 { String street, town }
 
 // GROOVY-4786
 @EqualsAndHashCode(excludes="y")
