@@ -1094,7 +1094,96 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=charRang
 |===
 
 As you can see, with the noticeable exception of the `IntRange`, the inferred type makes use of generics types to describe
-the contents of a collection.
+the contents of a collection. In case the collection contains elements of different types, the type checker still performs
+type inference of the components, but uses the notion of <<section-lub,least upper bound>>.
+
+[[section-lub]]
+===== Least upper bound
+
+In Groovy, the _least upper bound_ of two types `A` and `B` is defined as a type which:
+
+* superclass corresponds to the common super class of `A` and `B`
+* interfaces correspond to the interfaces implemented by both `A` and `B`
+* if `A` or `B` is a primitive type and that `A` isn't equal to `B`, the least upper bound of `A` and `B` is the least
+upper bound of their wrapper types
+
+If `A` and `B` only have one (1) interface in common and that their common superclass is `Object`, then the LUB of both
+is the common interface.
+
+The least upper bound represents the minimal type to which both `A` and `B` can be assigned. So for example, if `A` and `B`
+are both `String`, then the LUB (least upper bound) of both is also `String`.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=least_upper_bound_simple,indent=0]
+----
+<1> the LUB of `String` and `String` is `String`
+<2> the LUB of `ArrayList` and `LinkedList` is their common super type, `AbstractList`
+<3> the LUB of `ArrayList` and `List` is their only common interface, `List`
+<4> the LUB of two identical interfaces is the interface itself
+<5> the LUB of `Bottom1` and `Bottom2` is their superclass `Top`
+<6> the LUB of two types which have nothing in common is `Object`
+
+In those examples, the LUB is always representable as a normal, JVM supported, type. But Groovy internally represents the LUB
+as a type which can be more complex, and that you wouldn't be able to use to define a variable for example. To illustrate this,
+let's continue with this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=least_upper_bound_complex,indent=0]
+----
+
+What is the least upper bound of `Bottom` and `SerializableFooImpl`? They don't have a common super class (apart from `Object`),
+but they do share 2 interfaces (`Serializable` and `Foo`), so their least upper bound is a type which represents the union of
+two interfaces (`Serializable` and `Foo`). This type cannot be defined in the source code, yet Groovy knows about it.
+
+In the context of collection type inference (and generic type inference in general), this becomes handy, because the type of the
+components is inferred as the least upper bound. We can illustrate why this is important in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=least_upper_bound_collection_inference,indent=0]
+----
+<1> the `Greeter` interface defines a single method, `greet`
+<2> the `Salute`  interface defines a single method, `salute`
+<3> class `A` implements both `Greeter` and `Salute` but there's no explicit interface extending both
+<4> same for `B`
+<5> but `B` defines an additional `exit` method
+<6> the type of `list` is inferred as "list of the LUB of `A` and `B`"
+<7> so it is possible to call `greet` which is defined on both `A` and `B` through the `Greeter` interface
+<8> and it is possible to call `salut` which is defined on both `A` and `B` through the `Salut` interface
+<9> yet calling `exit` is a compile time error because it doesn't belong to the LUB of `A` and `B` (only defined in `B`)
+
+The error message will look like:
+
+----
+[Static type checking] - Cannot find matching method Greeter or Salute#exit()
+----
+
+which indicates that the `exit` method is neither defines on `Greeter` nor `Salute`, which are the two interfaces defined
+in the least upper bound of `A` and `B`.
+
+===== instanceof inference
+
+In normal, non type checked, Groovy, you can write things like:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=instanceof_inference,indent=0]
+----
+<1> guard the method call with an `instanceof` check
+<2> make the call
+
+The method call works because of dynamic dispatch (the method is selected at runtime). The equivalent code in Java would
+require to cast `o` to a `Greeter` before calling the `greeting` method, because methods are selected at compile time:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=instanceof_java_equiv,indent=0]
+----
+
+However, in Groovy, even if you add `@TypeChecked` (and thus activate type checking) on the `doSomething` method, the
+cast is *not* necessary. The compiler embeds _instanceof_ inference that makes the cast optional.
 
 
 === Static compilation (TBD)

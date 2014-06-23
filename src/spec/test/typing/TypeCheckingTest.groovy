@@ -538,5 +538,97 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
+    void testLeastUpperBound() {
+        assertScript '''import org.codehaus.groovy.ast.ClassHelper
+
+            import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound
+
+            Class leastUpperBound(Class a, Class b) {
+                lowestUpperBound(ClassHelper.make(a), ClassHelper.make(b)).typeClass
+            }
+
+            // tag::least_upper_bound_simple[]
+            class Top {}
+            class Bottom1 extends Top {}
+            class Bottom2 extends Top {}
+
+            assert leastUpperBound(String, String) == String                    // <1>
+            assert leastUpperBound(ArrayList, LinkedList) == AbstractList       // <2>
+            assert leastUpperBound(ArrayList, List) == List                     // <3>
+            assert leastUpperBound(List, List) == List                          // <4>
+            assert leastUpperBound(Bottom1, Bottom2) == Top                     // <5>
+            assert leastUpperBound(List, Serializable) == Object                // <6>
+            // end::least_upper_bound_simple[]
+        '''
+
+        assertScript '''import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.ClassNode
+
+import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound as leastUpperBound
+
+            // tag::least_upper_bound_complex[]
+            interface Foo {}
+            class Top {}
+            class Bottom extends Top implements Serializable, Foo {}
+            class SerializableFooImpl implements Serializable, Foo {}
+            // end::least_upper_bound_complex[]
+
+            def lub = leastUpperBound(ClassHelper.make(Bottom), ClassHelper.make(SerializableFooImpl))
+            assert lub instanceof ClassNode
+            assert lub.superClass == ClassHelper.OBJECT_TYPE
+            assert lub.interfaces.size() == 3 // because of Serializable, Foo and GroovyObject
+            assert (lub.interfaces as Set).containsAll([ClassHelper.make(Serializable), ClassHelper.make(Foo)])
+        '''
+    }
+
+    void testLUBInferenceInCombinationWithMethodCall() {
+        shouldFailWithMessages '''
+            // tag::least_upper_bound_collection_inference[]
+            interface Greeter { void greet() }                  // <1>
+            interface Salute { void salute() }                  // <2>
+
+            class A implements Greeter, Salute {                // <3>
+                void greet() { println "Hello, I'm A!" }
+                void salute() { println "Bye from A!" }
+            }
+            class B implements Greeter, Salute {                // <4>
+                void greet() { println "Hello, I'm B!" }
+                void salute() { println "Bye from B!" }
+                void exit() { println 'No way!' }               // <5>
+            }
+            def list = [new A(), new B()]                       // <6>
+            list.each {
+                it.greet()                                      // <7>
+                it.salute()                                     // <8>
+                it.exit()                                       // <9>
+            }
+            // end::least_upper_bound_collection_inference[]
+        ''', '[Static type checking] - Cannot find matching method Greeter or Salute#exit()'
+    }
+
+    void testInstanceOfInference() {
+        assertScript '''
+            // tag::instanceof_inference[]
+            class Greeter {
+                String greeting() { 'Hello' }
+            }
+
+            void doSomething(def o) {
+                if (o instanceof Greeter) {     // <1>
+                    println o.greeting()        // <2>
+                }
+            }
+
+            doSomething(new Greeter())
+            // end::instanceof_inference[]
+            /*
+            // tag::instanceof_java_equiv[]
+            if (o instanceof Greeter) {
+                System.out.println(((Greeter)o).greeting());
+            }
+            // end::instanceof_java_equiv[]
+            */
+        '''
+    }
 }
 
