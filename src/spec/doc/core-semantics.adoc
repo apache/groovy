@@ -977,7 +977,124 @@ but you loose some features of the language. Hopefully, Groovy introduces some f
 type-checked and non type-checked Groovy.
 ====
 
+[[type-inference]]
+==== Type inference
 
+===== Principles
+
+When code is annotated with `@TypeChecked`, the compiler performs type inference. It doesn't simply rely on static types, but also uses various
+techniques to infer the types of variables, return types, literals, ... so that the code remains as clean as possible even if you activate the
+type checker.
+
+The simplest example is infering the type of a variable:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=simple_var_type_inference,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=simple_var_type_inference_fail,indent=0]
+----
+<1> a variable is declared using the `def` keyword
+<2> calling `toUpperCase` is allowed by the type checker
+<3> calling `upper` will fail at compile time
+
+The reason the call to `toUpperCase` works is because the type of `message` was _inferred_ as being a `String`.
+
+===== Variables vs fields in type inference
+
+It is worth noting that although the compiler performs type inference on local variables, it does *not* perform any kind
+of type inference on fields, always falling back to the *declared type* of a field. To illustrate this, let's take a
+look at this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=typeinference_field_vs_local_variable,indent=0]
+----
+<1> `someUntypedField` uses `def` as a declaration type
+<2> `someTypedField` uses `String` as a declaration type
+<3> we can assign *anything* to `someUntypedField`
+<4> yet calling `toUpperCase` fails at compile time because the field is not typed properly
+<5> we can assign a `String` to a field of type `String`
+<6> and this time `toUpperCase` is allowed
+<7> if we assign a `String` to a local variable
+<8> then calling `toUpperCase` is allowed on the local variable
+
+Why such a difference? The reason is _thread safety_. At compile time, we can't make *any* guarantee about the type of
+a field. Any thread can access any field at any time and between the moment a field is assigned a variable of some
+type in a method and the time is is used the line after, another thread may have changed the contents of the field. This
+is not the case for local variables: we know if they "escape" or not, so we can make sure that the type of a variable is
+constant (or not) over time. Note that even if a field is final, the JVM makes no guarantee about it, so the type checker
+doesn't behave differently if a field is final or not.
+
+TIP: This is one of the reasons why we recommend to use *typed* fields. While using `def` for local variables is perfectly
+fine thanks to type inference, this is not the case for fields, which also belong to the public API of a class, hence the
+type is important.
+
+===== Collection literal type inference
+
+Groovy provides a syntax for various type literals. There are three native collection literals in Groovy:
+
+* lists, using the `[]` literal
+* maps, using the `[:]` literal
+* ranges, using the `(..,..)` literal
+
+The inferred type of a literal depends on the elements of the literal, as illustrated in the following table:
+
+[cols="2a,3a"]
+|===
+|Literal| Inferred type
+
+|[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=empty_list_literal_inference,indent=0]
+----
+|`java.util.List`
+
+|[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=list_literal_inference_simple,indent=0]
+----
+|`java.util.List<String>`
+
+|[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=list_literal_inference_gstring,indent=0]
+----
+|`java.util.List<GString>` be careful, a `GString` is *not* a `String`!
+
+|[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=empty_map_literal_inference,indent=0]
+----
+|`java.util.LinkedHashMap`
+
+|[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_simple,indent=0]
+----
+|`java.util.LinkedHashMap<String,String>`
+
+|[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_simple,indent=0]
+----
+|`java.util.LinkedHashMap<GString,String>` be careful, the key is a `GString`!
+
+|[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=intRange_literal_inference,indent=0]
+----
+|`groovy.lang.IntRange`
+
+|[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=charRange_literal_inference,indent=0]
+----
+|`groovy.lang.Range<String>` : uses the type of the bounds to infer the component type of the range
+
+|===
+
+As you can see, with the noticeable exception of the `IntRange`, the inferred type makes use of generics types to describe
+the contents of a collection.
 
 
 === Static compilation (TBD)
