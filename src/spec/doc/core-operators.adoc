@@ -354,7 +354,7 @@ while in general, you find the pattern operator with an expression in a slashy-s
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_op,indent=0]
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_op_variants,indent=0]
 ----
 <1> using single quote strings
 <2> using double quotes strings
