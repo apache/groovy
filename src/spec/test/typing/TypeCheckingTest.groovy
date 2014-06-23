@@ -405,5 +405,138 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
             // end::ducktyping_failure[]
         ''', 'Cannot find matching method java.lang.Object#quack()'
     }
+
+    void testTypeInference() {
+        assertScript '''
+        // tag::simple_var_type_inference[]
+        def message = 'Welcome to Groovy!'              // <1>
+        println message.toUpperCase()                   // <2>
+        // end::simple_var_type_inference[]
+        '''
+        shouldFailWithMessages '''
+        def message = 'Welcome to Groovy!'
+        // tag::simple_var_type_inference_fail[]
+        println message.upper() // compile time error   <3>
+        // end::simple_var_type_inference_fail[]
+        ''', 'Cannot find matching method java.lang.String#upper()'
+    }
+
+    void testCollectionLiteralInference() {
+        assertScript '''
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == make(List)
+        })
+        // tag::empty_list_literal_inference[]
+        def list = []
+        // end::empty_list_literal_inference[]
+        '''
+
+        assertScript '''
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            def inft = node.getNodeMetaData(INFERRED_TYPE)
+            assert inft == make(List)
+            assert inft.genericsTypes[0].type == make(String)
+        })
+        // tag::list_literal_inference_simple[]
+        def list = ['foo','bar']
+        // end::list_literal_inference_simple[]
+        '''
+
+        assertScript '''
+        def foo = 1
+        def bar = 2
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            def inft = node.getNodeMetaData(INFERRED_TYPE)
+            assert inft == make(List)
+            assert inft.genericsTypes[0].type == make(GString)
+        })
+        // tag::list_literal_inference_gstring[]
+        def list = ["${foo}","${bar}"]
+        // end::list_literal_inference_gstring[]
+        '''
+        assertScript '''
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == make(LinkedHashMap)
+        })
+        // tag::empty_map_literal_inference[]
+        def map = [:]
+        // end::empty_map_literal_inference[]
+        '''
+
+        assertScript '''
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+             def inft = node.getNodeMetaData(INFERRED_TYPE)
+             assert inft == make(LinkedHashMap)
+             assert inft.genericsTypes[0].type == make(String)
+             assert inft.genericsTypes[1].type == make(String)
+        })
+        // tag::map_literal_inference_simple[]
+        def map1 = [someKey: 'someValue']
+        def map2 = ['someKey': 'someValue']
+        // end::map_literal_inference_simple[]
+        '''
+
+        assertScript '''
+        def someKey = 123
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+             def inft = node.getNodeMetaData(INFERRED_TYPE)
+             assert inft == make(LinkedHashMap)
+             assert inft.genericsTypes[0].type == make(GString)
+             assert inft.genericsTypes[1].type == make(String)
+        })
+        // tag::map_literal_inference_gstring[]
+        def map = ["${someKey}": 'someValue']
+        // end::map_literal_inference_gstring[]
+        '''
+
+        assertScript '''
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == make(IntRange)
+        })
+        // tag::intRange_literal_inference[]
+        def intRange = (0..10)
+        // end::intRange_literal_inference[]
+        '''
+
+        assertScript '''
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            def inft = node.getNodeMetaData(INFERRED_TYPE)
+            assert inft == make(Range)
+            assert inft.genericsTypes[0].type == make(String)
+        })
+        // tag::charRange_literal_inference[]
+        def charRange = ('a'..'z')
+        // end::charRange_literal_inference[]
+        '''
+
+    }
+
+    void testTypeInferenceFieldVsLocalVariable() {
+        shouldFailWithMessages '''
+            // tag::typeinference_field_vs_local_variable[]
+            class SomeClass {
+                def someUntypedField                                                                // <1>
+                String someTypedField                                                               // <2>
+
+                void someMethod() {
+                    someUntypedField = '123'                                                        // <3>
+                    someUntypedField = someUntypedField.toUpperCase()  // compile-time error        // <4>
+                }
+
+                void someSafeMethod() {
+                    someTypedField = '123'                                                          // <5>
+                    someTypedField = someTypedField.toUpperCase()                                   // <6>
+                }
+
+                void someMethodUsingLocalVariable() {
+                    def localVariable = '123'                                                       // <7>
+                    someUntypedField = localVariable.toUpperCase()                                  // <8>
+                }
+            }
+            // end::typeinference_field_vs_local_variable[]
+            SomeClass
+        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
 }
 
