@@ -43,14 +43,14 @@ import java.lang.annotation.Target;
  *   Date since
  * }
  * </pre>
- * Which will create a class of the following form:
+ * Which will create a class roughly equivalent to the following:
  * <pre>
  * class Person implements Cloneable {
  *   ...
- *   public Object clone() throws CloneNotSupportedException {
- *     Object result = super.clone()
- *     result.favItems = favItems.clone()
- *     result.since = since.clone()
+ *   public Person clone() throws CloneNotSupportedException {
+ *     Person result = (Person) super.clone()
+ *     result.favItems = (List) favItems.clone()
+ *     result.since = (Date) since.clone()
  *     return result
  *   }
  *   ...
@@ -105,16 +105,16 @@ import java.lang.annotation.Target;
  *   final List favItems
  * }
  * </pre>
- * Which will create classes of the following form:
+ * Which will create classes roughly equivalent to the following:
  * <pre>
  * class Person implements Cloneable {
  *   ...
  *   protected Person(Person other) throws CloneNotSupportedException {
  *     first = other.first
  *     last = other.last
- *     birthday = other.birthday.clone()
+ *     birthday = (Date) other.birthday.clone()
  *   }
- *   public Object clone() throws CloneNotSupportedException {
+ *   public Person clone() throws CloneNotSupportedException {
  *     return new Person(this)
  *   }
  *   ...
@@ -124,9 +124,9 @@ import java.lang.annotation.Target;
  *   protected Customer(Customer other) throws CloneNotSupportedException {
  *     super(other)
  *     numPurchases = other.numPurchases
- *     favItems = other.favItems.clone()
+ *     favItems = (List) other.favItems.clone()
  *   }
- *   public Object clone() throws CloneNotSupportedException {
+ *   public Customer clone() throws CloneNotSupportedException {
  *     return new Customer(this)
  *   }
  *   ...
@@ -154,32 +154,32 @@ import java.lang.annotation.Target;
  *   final List favItems
  * }
  * </pre>
- * Which will create classes as follows:
+ * Which will create classes roughly equivalent to the following:
  * <pre>
  * class Person implements Cloneable {
  *   ...
- *   public Object clone() throws CloneNotSupportedException {
+ *   public Person clone() throws CloneNotSupportedException {
  *     def result = new Person()
  *     copyOrCloneMembers(result)
  *     return result
  *   }
- *   protected void copyOrCloneMembers(other) {
+ *   protected void copyOrCloneMembers(Person other) {
  *     other.first = first
  *     other.last = last
- *     other.birthday = birthday.clone()
+ *     other.birthday = (Date) birthday.clone()
  *   }
  *   ...
  * }
  * class Customer extends Person {
  *   ...
- *   public Object clone() throws CloneNotSupportedException {
+ *   public Customer clone() throws CloneNotSupportedException {
  *     def result = new Customer()
  *     copyOrCloneMembers(result)
  *     return result
  *   }
- *   protected void copyOrCloneMembers(other) {
+ *   protected void copyOrCloneMembers(Customer other) {
  *     super.copyOrCloneMembers(other)
- *     other.favItems = favItems.clone()
+ *     other.favItems = (List) favItems.clone()
  *   }
  *   ...
  * }
@@ -201,11 +201,11 @@ import java.lang.annotation.Target;
  * <pre>
  * class Person implements Cloneable, Serializable {
  *   ...
- *   Object clone() throws CloneNotSupportedException {
+ *   Person clone() throws CloneNotSupportedException {
  *     def baos = new ByteArrayOutputStream()
- *     baos.withObjectOutputStream{ it.writeObject(this) }
+ *     baos.withObjectOutputStream{ ObjectOutputStream oos -> oos.writeObject(this) }
  *     def bais = new ByteArrayInputStream(baos.toByteArray())
- *     bais.withObjectInputStream(getClass().classLoader){ it.readObject() }
+ *     (Person) bais.withObjectInputStream(getClass().classLoader){ ObjectInputStream ois -> ois.readObject() }
  *   }
  *   ...
  * }
@@ -216,6 +216,15 @@ import java.lang.annotation.Target;
  * allow fields to be final, will take up more memory as even immutable classes
  * like String will be cloned but does have the advantage that it performs
  * deep cloning automatically.
+ * <p>
+ * Note: the earlier examples used wording "create classes roughly equivalent to".
+ * This was to simplify the explanation of the generated code. In actuality, special
+ * code is generated that optimises the code that is called for the special cases of
+ * classes which definitely can't be Cloneable, e.g. int and String, classes which
+ * definitely are Cloneable, e.g. ArrayList, and for other cases has an instanceof check.
+ * This lets you declare fields as e.g. List which isn't Cloneable but have an
+ * implementation such as ArrayList which is Cloneable (and steps around Java's flaw
+ * of Cloneable being just a marker interface so that you can safely use @CompileStatic).
  * <p>
  * Further references on cloning:
  * <ul>
