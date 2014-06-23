@@ -17,6 +17,7 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.*;
 
+import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue;
 import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -34,14 +35,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Alex.Tkachman
  */
-public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
-
-    private static final Set<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
+public class ClassInfo {
 
     private final LazyCachedClassRef cachedClassRef;
     private final LazyClassLoaderRef artifactClassLoader;
     private final LockableObject lock = new LockableObject();
     public final int hash;
+    private final Class klazz;
 
     private volatile int version;
 
@@ -49,19 +49,31 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     private ManagedReference<MetaClass> weakMetaClass;
     MetaMethod[] dgmMetaMethods = CachedClass.EMPTY;
     MetaMethod[] newMetaMethods = CachedClass.EMPTY;
-    private ManagedConcurrentMap perInstanceMetaClassMap;
+    private ManagedConcurrentMap<Object, MetaClass> perInstanceMetaClassMap;
     
     private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
     private static ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
-    private static final ClassInfoSet globalClassSet = new ClassInfoSet(softBundle);
+    
+    private static final ManagedLinkedList<ClassInfo> modifiedExpandos = new ManagedLinkedList<ClassInfo>(weakBundle);
 
-    ClassInfo(ManagedConcurrentMap.Segment segment, Class klazz, int hash) {
-        super (softBundle, segment, klazz, hash);
+    private static final GroovyClassValue<ClassInfo> globalClassValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<ClassInfo>(){
+		@Override
+		public ClassInfo computeValue(Class<?> type) {
+			ClassInfo ret = new ClassInfo(type);
+			globalClassSet.add(ret);
+			return ret;
+		}
+	});
+    
+    private static final GlobalClassSet globalClassSet = new GlobalClassSet();
 
+    ClassInfo(Class klazz) {
+    	this.hash = System.identityHashCode(klazz);
+    	this.klazz = klazz;
         if (ClassInfo.DebugRef.debug)
           new DebugRef(klazz);
+        new ClassInfoCleanup(this);
 
-        this.hash = hash;
         cachedClassRef = new LazyCachedClassRef(softBundle, this);
         artifactClassLoader = new LazyClassLoaderRef(softBundle, this);
     }
@@ -83,11 +95,13 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     }
 
     public static void clearModifiedExpandos() {
-        for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
-            ClassInfo info = it.next();
-            it.remove();
-            info.setStrongMetaClass(null);
-        }
+        synchronized(modifiedExpandos){
+	        for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
+	            ClassInfo info = it.next();
+	            it.remove();
+	            info.setStrongMetaClass(null);
+	        }
+	    }
     }
 
     public CachedClass getCachedClass() {
@@ -101,7 +115,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     public static ClassInfo getClassInfo (Class cls) {
         LocalMap map = getLocalClassInfoMap();
         if (map!=null) return map.get(cls);
-        return (ClassInfo) globalClassSet.getOrPut(cls,null);
+        return (ClassInfo) globalClassValue.get(cls);
     }
 
     private static LocalMap getLocalClassInfoMap() {
@@ -118,7 +132,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         return localClassInfos != null ? localClassInfos : getAllGlobalClassInfo();
     }
 
-    private static Collection getAllGlobalClassInfo() {
+    private static Collection<ClassInfo> getAllGlobalClassInfo() {
         return globalClassSet.values();
     }
 
@@ -141,14 +155,29 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         
         if (strongRef instanceof ExpandoMetaClass) {
           ((ExpandoMetaClass)strongRef).inRegistry = false;
-          modifiedExpandos.remove(this);
+          synchronized(modifiedExpandos){
+            for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
+              ClassInfo info = it.next();
+              if(info == this){
+                it.remove();
+              }
+            }
+          }
         }
 
         strongMetaClass = answer;
 
         if (answer instanceof ExpandoMetaClass) {
           ((ExpandoMetaClass)answer).inRegistry = true;
-          modifiedExpandos.add(this);
+          synchronized(modifiedExpandos){
+            for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
+              ClassInfo info = it.next();
+                if(info == this){
+                  it.remove();
+                }
+             }
+             modifiedExpandos.add(this);
+          }
         }
 
         replaceWeakMetaClassRef(null);
@@ -206,7 +235,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
             return answer;
         }
 
-        answer = mccHandle.create(get(), metaClassRegistry);
+        answer = mccHandle.create(klazz, metaClassRegistry);
         answer.initialize();
 
         if (GroovySystem.isKeepJavaMetaClasses()) {
@@ -257,14 +286,6 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
     public static int fullSize () {
         return globalClassSet.fullSize();
-    }
-
-    public void finalizeRef() {
-        setStrongMetaClass(null);
-        cachedClassRef.clear();
-        artifactClassLoader.clear();
-
-        super.finalizeRef();
     }
 
     private static CachedClass createCachedClass(Class klazz, ClassInfo classInfo) {
@@ -343,7 +364,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
         if (metaClass != null) {
             if (perInstanceMetaClassMap == null)
-              perInstanceMetaClassMap = new ManagedConcurrentMap(ReferenceBundle.getWeakBundle()); 
+              perInstanceMetaClassMap = new ManagedConcurrentMap<Object, MetaClass>(ReferenceBundle.getWeakBundle()); 
 
             perInstanceMetaClassMap.put(obj, metaClass);
         }
@@ -356,29 +377,6 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
     public boolean hasPerInstanceMetaClasses () {
         return perInstanceMetaClassMap != null;
-    }
-
-    public static class ClassInfoSet extends ManagedConcurrentMap<Class,ClassInfo> {
-        public ClassInfoSet(ReferenceBundle bundle) {
-            super(bundle);
-        }
-
-        protected Segment createSegment(Object segmentInfo,  int cap) {
-            ReferenceBundle bundle = (ReferenceBundle) segmentInfo;
-            if (bundle==null) throw new IllegalArgumentException("bundle must not be null ");
-
-            return new Segment(bundle, cap);
-        }
-
-        static final class Segment extends ManagedConcurrentMap.Segment<Class,ClassInfo> {
-            Segment(ReferenceBundle bundle, int initialCapacity) {
-                super(bundle, initialCapacity);
-            }
-
-            protected ClassInfo createEntry(Class key, int hash, ClassInfo unused) {
-                return new ClassInfo(this, key, hash);
-            }
-        }
     }
 
     private static final class LocalMap extends HashMap<Class,ClassInfo> {
@@ -397,7 +395,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         private int nextCacheEntry;
 
         private final ClassInfo[] cache = new ClassInfo[CACHE_SIZE];
-        private static final ClassInfo NOINFO = new ClassInfo(null,null,0);
+        private static final ClassInfo NOINFO = new ClassInfo(Void.class);
 
         private LocalMap() {
             for (int i = 0; i < cache.length; i++) {
@@ -414,7 +412,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
             if (info != null)
               return putToCache(info);
 
-            return putToCache((ClassInfo) globalClassSet.getOrPut(key,null));
+            return putToCache((ClassInfo) globalClassValue.get(key));
         }
 
         private ClassInfo getFromCache (Class klazz) {
@@ -423,7 +421,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
                   k += CACHE_SIZE;
 
                 final ClassInfo info = cache[k];
-                if (klazz == info.get()) {
+                if (klazz == info.klazz) {
                     nextCacheEntry = k+1;
                     if (nextCacheEntry == CACHE_SIZE)
                       nextCacheEntry = 0;
@@ -481,7 +479,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         }
 
         public CachedClass initValue() {
-            return createCachedClass(info.get(), info);
+            return createCachedClass(info.klazz, info);
         }
     }
 
@@ -494,7 +492,21 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         }
 
         public ClassLoaderForClassArtifacts initValue() {
-            return new ClassLoaderForClassArtifacts(info.get());
+            return new ClassLoaderForClassArtifacts(info.klazz);
+        }
+    }
+    
+    private static class ClassInfoCleanup extends ManagedReference<ClassInfo> {
+
+        public ClassInfoCleanup(ClassInfo classInfo) {
+            super(weakBundle, classInfo);
+        }
+
+        public void finalizeRef() {
+        	ClassInfo classInfo = get();
+        	classInfo.setStrongMetaClass(null);
+        	classInfo.cachedClassRef.clear();
+        	classInfo.artifactClassLoader.clear();
         }
     }
 
@@ -515,5 +527,31 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
             System.out.println(name + " unloaded " + count.decrementAndGet() + " classes kept");
             super.finalizeReference();
         }
+    }
+    
+    private static class GlobalClassSet {
+    	
+    	private ManagedLinkedList<ClassInfo> items = new ManagedLinkedList<ClassInfo>(weakBundle);
+    	
+    	public int size(){
+		return values().size();
+    	}
+    	
+    	public int fullSize(){
+		return values().size();
+    	}
+    	
+    	public Collection<ClassInfo> values(){
+    		synchronized(items){
+    			return Arrays.asList(items.toArray(new ClassInfo[0]));
+    		}
+    	}
+    	
+    	public void add(ClassInfo value){
+    		synchronized(items){
+    			items.add(value);
+    		}
+    	}
+
     }
 }
