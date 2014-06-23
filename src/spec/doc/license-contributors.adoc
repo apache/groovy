@@ -9,6 +9,7 @@ The Groovy team would like to thank the contributors of this documentation (by a
 * http://twitter.com/werdnagreb[Andrew Eisenberg]
 * http://twitter.com/paulk_asert[Paul King]
 * http://twitter.com/glaforge[Guillaume Laforge]
+* http://twitter.com/pledbrook[Peter Ledbrook]
 * https://github.com/PascalSchumacher[Pascal Schumacher]
 * https://twitter.com/asteingr[André Steingreß]
 * http://grantmcconnaughey.github.io/[Grant McConnaughey]
