@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -169,12 +170,28 @@ public class GeneralUtils {
         return callX(receiver, methodName, MethodCallExpression.NO_ARGUMENTS);
     }
 
+    public static CastExpression castX(ClassNode type, Expression expression) {
+        return new CastExpression(type, expression);
+    }
+
+    public static CastExpression castX(ClassNode type, Expression expression, boolean ignoreAutoboxing) {
+        return new CastExpression(type, expression, ignoreAutoboxing);
+    }
+
     public static ClassExpression classX(ClassNode clazz) {
         return new ClassExpression(clazz);
     }
 
     public static ClassExpression classX(Class clazz) {
         return classX(ClassHelper.make(clazz).getPlainNodeReference());
+    }
+
+    public static ClosureExpression closureX(Parameter[] params, Statement code) {
+        return new ClosureExpression(params, code);
+    }
+
+    public static ClosureExpression closureX(Statement code) {
+        return closureX(Parameter.EMPTY_ARRAY, code);
     }
 
     public static Parameter[] cloneParams(Parameter[] source) {
@@ -481,8 +498,8 @@ public class GeneralUtils {
         return new BooleanExpression(new BinaryExpression(expr, EQ, new ConstantExpression(1)));
     }
 
-    public static boolean isOrImplements(ClassNode fieldType, ClassNode interfaceType) {
-        return fieldType.equals(interfaceType) || fieldType.implementsInterface(interfaceType);
+    public static boolean isOrImplements(ClassNode type, ClassNode interfaceType) {
+        return type.equals(interfaceType) || type.implementsInterface(interfaceType);
     }
 
     public static BooleanExpression isTrueX(Expression argExpr) {
