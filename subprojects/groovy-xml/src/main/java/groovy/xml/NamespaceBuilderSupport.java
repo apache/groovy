@@ -17,9 +17,13 @@ package groovy.xml;
 
 import groovy.util.BuilderSupport;
 import groovy.util.NodeBuilder;
+
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,6 +32,7 @@ import java.util.Map;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
  * @author Denver Dino
+ * @author Marc Guillemot
  */
 public class NamespaceBuilderSupport extends BuilderSupport {
     private boolean autoPrefix;
@@ -106,10 +111,40 @@ public class NamespaceBuilderSupport extends BuilderSupport {
         }
         String namespaceURI = nsMap.get(prefix);
         if (namespaceURI == null) {
-            namespaceURI = "";
-            prefix = "";
+        	return methodName;
         }
         return new QName(namespaceURI, localPart, prefix);
+    }
+
+    /**
+     * Allow automatic detection of namespace declared in the attributes
+     */
+    @Override
+    public Object invokeMethod(String methodName, Object args) {
+        // detect namespace declared on the added node like xmlns:foo="http:/foo"
+    	Map attributes = findAttributes(args);
+    	for (Iterator<Map.Entry> iter = attributes.entrySet().iterator(); iter.hasNext();) {
+    		Map.Entry entry = iter.next();
+    		String key = String.valueOf(entry.getKey());
+            if (key.startsWith("xmlns:")) {
+                String prefix = key.substring(6);
+                String uri = String.valueOf(entry.getValue());
+                namespace(uri, prefix);
+                iter.remove();
+            }
+        }
+
+        return super.invokeMethod(methodName, args);
+    }
+    
+    private Map findAttributes(Object args) {
+        List list = InvokerHelper.asList(args);
+        for (Object o : list) {
+        	if (o instanceof Map) {
+        		return (Map) o;
+        	}
+        }
+        return Collections.EMPTY_MAP;
     }
 
     @Override

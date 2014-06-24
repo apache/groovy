@@ -63,4 +63,41 @@ class NamespaceNodeTest extends TestXmlSupport {
         def attrNode = root[xsd.complexType][xsd.attribute]
         assert attrNode[0].@name == 'orderDate'
     }
+
+    void testNodeBuilderWithImplicitNamespace() {
+        def n = new Namespace('http://foo/bar')
+        def builder = NamespaceBuilder.newInstance(new NodeBuilder(), n.uri)
+
+        def result = builder.outer(id: "3") {
+            'ns1:innerWithNewNamespace'('xmlns:ns1': "http://foo/other", someAttr: 'someValue') {
+                'ns1:nested'("foo")
+            }
+            innerWithoutNewNamespace("bar")
+        }
+        
+        def expected = """<?xml version="1.0" encoding="UTF-8"?>\
+<outer xmlns="http://foo/bar" id="3">
+  <ns1:innerWithNewNamespace xmlns:ns1="http://foo/other" someAttr="someValue">
+    <ns1:nested>foo</ns1:nested>
+  </ns1:innerWithNewNamespace>
+  <innerWithoutNewNamespace>bar</innerWithoutNewNamespace>
+</outer>
+"""
+        assertEquals expected, XmlUtil.serialize(result).replaceAll("\r\n", "\n")
+    }
+
+    void testNamespaceBuilderWithoutNamespace() {
+        def builder = NamespaceBuilder.newInstance(new NodeBuilder())
+        def result = builder.outer(id: "3") {
+            inner(name: "foo")
+            inner("bar")
+        }
+        def expected = """<?xml version="1.0" encoding="UTF-8"?>\
+<outer id="3">
+  <inner name="foo"/>
+  <inner>bar</inner>
+</outer>
+"""
+        assertEquals expected, XmlUtil.serialize(result).replaceAll("\r\n", "\n")
+    }
 }
