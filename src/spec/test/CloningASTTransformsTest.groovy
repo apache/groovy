@@ -36,13 +36,10 @@ class Book implements Cloneable {
     List<String> authors
     Date publicationDate
 
-    public Object clone() throws CloneNotSupportedException {
-        def result = super.clone()
-        result.isbn = isbn.clone()
-        result.title = title.clone()
-        result.authors = authors instanceof Cloneable?authors.clone():authors
+    public Book clone() throws CloneNotSupportedException {
+        Book result = super.clone()
+        result.authors = authors instanceof Cloneable ? authors.clone() : authors
         result.publicationDate = publicationDate.clone()
-
         result
     }
 }

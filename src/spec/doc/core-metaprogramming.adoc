@@ -1507,8 +1507,7 @@ respectively named `@AutoClone` and `@AutoExternalize`.
 
 The `@AutoClone` annotation is aimed at implementing the `@java.lang.Cloneable` interface using various strategies, thanks to the `style` parameter:
 
-* the default `AutoCloneStyle.CLONE` strategy calls `super.clone()` first then `clone()` on each cloneable property (and
-just copies non `Cloneable` properties)
+* the default `AutoCloneStyle.CLONE` strategy calls `super.clone()` first then `clone()` on each cloneable property
 * the `AutoCloneStyle.SIMPLE` strategy uses a regular constructor call and copies properties from the source to the clone
 * the `AutoCloneStyle.COPY_CONSTRUCTOR` strategy creates and uses a copy constructor
 * the `AutoCloneStyle.SERIALIZATION` strategy uses serialization (or externalization) to clone the object
@@ -1528,6 +1527,8 @@ is equivalent to this:
 ----
 include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoclone_equiv,indent=0]
 ----
+
+Note that the String properties aren't explicitly handled because Strings are immutable and the `clone()` method from `Object` will copy the String references. The same would apply to primitive fields and most of the concrete subclasses of `java.lang.Number`.
 
 In addition to cloning styles, `@AutoClone` supports multiple options:
 

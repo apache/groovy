@@ -203,9 +203,9 @@ import java.lang.annotation.Target;
  *   ...
  *   Person clone() throws CloneNotSupportedException {
  *     def baos = new ByteArrayOutputStream()
- *     baos.withObjectOutputStream{ ObjectOutputStream oos -> oos.writeObject(this) }
+ *     baos.withObjectOutputStream{ it.writeObject(this) }
  *     def bais = new ByteArrayInputStream(baos.toByteArray())
- *     (Person) bais.withObjectInputStream(getClass().classLoader){ ObjectInputStream ois -> ois.readObject() }
+ *     (Person) bais.withObjectInputStream(getClass().classLoader){ it.readObject() }
  *   }
  *   ...
  * }
