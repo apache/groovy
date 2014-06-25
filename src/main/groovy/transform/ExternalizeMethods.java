@@ -55,10 +55,10 @@ import java.lang.annotation.Target;
  *   }
  *
  *   public void readExternal(ObjectInput oin) {
- *     first = oin.readObject()
- *     last = oin.readObject()
- *     favItems = oin.readObject()
- *     since = oin.readObject()
+ *     first = (String) oin.readObject()
+ *     last = (String) oin.readObject()
+ *     favItems = (List) oin.readObject()
+ *     since = (Date) oin.readObject()
  *   }
  *   ...
  * }
