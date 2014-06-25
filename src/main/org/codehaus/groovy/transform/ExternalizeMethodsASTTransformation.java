@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -38,8 +37,10 @@ import java.util.List;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -81,26 +82,26 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
 
     private void createWriteExternal(ClassNode cNode, List<String> excludes, List<FieldNode> list) {
         final BlockStatement body = new BlockStatement();
-        VariableExpression out = varX("out", OBJECTOUTPUT_TYPE);
+        Parameter out = param(OBJECTOUTPUT_TYPE, "out");
         for (FieldNode fNode : list) {
             if (excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
-            body.addStatement(stmt(callX(out, "write" + suffixForField(fNode), varX(fNode))));
+            body.addStatement(stmt(callX(varX(out), "write" + suffixForField(fNode), varX(fNode))));
         }
         ClassNode[] exceptions = {make(IOException.class)};
-        cNode.addMethod("writeExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(new Parameter(OBJECTOUTPUT_TYPE, "out")), exceptions, body);
+        cNode.addMethod("writeExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(out), exceptions, body);
     }
 
     private void createReadExternal(ClassNode cNode, List<String> excludes, List<FieldNode> list) {
         final BlockStatement body = new BlockStatement();
-        final Expression oin = varX("oin", OBJECTINPUT_TYPE);
+        Parameter oin = param(OBJECTINPUT_TYPE, "oin");
         for (FieldNode fNode : list) {
             if (excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
-            Expression readObject = callX(oin, "read" + suffixForField(fNode));
-            body.addStatement(assignS(varX(fNode), readObject));
+            Expression readObject = callX(varX(oin), "read" + suffixForField(fNode));
+            body.addStatement(assignS(varX(fNode), castX(fNode.getType(), readObject)));
         }
-        cNode.addMethod("readExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(new Parameter(OBJECTINPUT_TYPE, "oin")), ClassNode.EMPTY_ARRAY, body);
+        cNode.addMethod("readExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(oin), ClassNode.EMPTY_ARRAY, body);
     }
 
     private String suffixForField(FieldNode fNode) {
