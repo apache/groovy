@@ -23,7 +23,7 @@ class Groovy5687Bug extends GroovyTestCase {
     }
 
     static interface DateTimeFormatConstants {
-        SimpleDateFormat AM_PM_TIME_FORMAT = new SimpleDateFormat("h:mma")
+        SimpleDateFormat AM_PM_TIME_FORMAT = new SimpleDateFormat("h:mma", new Locale('en_US'))
         SimpleDateFormat MILITARY_TIME_FORMAT = new SimpleDateFormat("HH:mm")
     }
 
