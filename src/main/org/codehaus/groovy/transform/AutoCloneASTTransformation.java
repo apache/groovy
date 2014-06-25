@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -32,10 +33,12 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -110,24 +113,26 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         final Expression baos = varX("baos");
         body.addStatement(declS(baos, ctorX(BAOS_TYPE)));
 
-        // baos.withObjectOutputStream{ ObjectOutputStream oos -> oos.writeObject(this) }
-        Parameter oos = param(OOS_TYPE, "oos");
-        ClosureExpression writeClos = closureX(params(oos), block(stmt(callX(varX(oos), "writeObject", varX("this")))));
+        // baos.withObjectOutputStream{ it.writeObject(this) }
+        MethodCallExpression writeObject = callX(castX(OOS_TYPE, varX("it")), "writeObject", varX("this"));
+        writeObject.setImplicitThis(false);
+        ClosureExpression writeClos = closureX(block(stmt(writeObject)));
         writeClos.setVariableScope(new VariableScope());
         body.addStatement(stmt(callX(baos, "withObjectOutputStream", args(writeClos))));
 
         // def bais = new ByteArrayInputStream(baos.toByteArray())
         final Expression bais = varX("bais");
-        ConstructorCallExpression bytes = ctorX(BAIS_TYPE, args(callX(baos, "toByteArray")));
-        body.addStatement(declS(bais, bytes));
+        body.addStatement(declS(bais, ctorX(BAIS_TYPE, args(callX(baos, "toByteArray")))));
 
-        // return (<type>) bais.withObjectInputStream(getClass().classLoader){ ObjectInputStream ois -> ois.readObject() }
-        Parameter ois = param(OIS_TYPE, "ois");
-        ClosureExpression readClos = closureX(params(ois), block(stmt(callX(varX(ois), "readObject"))));
+        // return bais.withObjectInputStream(getClass().classLoader){ (<type>) it.readObject() }
+        MethodCallExpression readObject = callX(castX(OIS_TYPE, varX("it")), "readObject");
+        readObject.setImplicitThis(false);
+        ClosureExpression readClos = closureX(block(stmt(castX(GenericsUtils.nonGeneric(cNode), readObject))));
         readClos.setVariableScope(new VariableScope());
         Expression classLoader = callX(callThisX("getClass"), "getClassLoader");
-        body.addStatement(returnS(castX(cNode, callX(bais, "withObjectInputStream", args(classLoader, readClos)))));
+        body.addStatement(returnS(callX(bais, "withObjectInputStream", args(classLoader, readClos))));
 
+        new VariableScopeVisitor(sourceUnit, true).visitClass(cNode);
         ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
         cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, body);
     }
