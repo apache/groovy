@@ -43,13 +43,13 @@ import java.lang.annotation.Target;
  *   Date since
  * }
  * </pre>
- * Which will create a class roughly equivalent to the following:
+ * Which will create a class equivalent to the following:
  * <pre>
  * class Person implements Cloneable {
  *   ...
  *   public Person clone() throws CloneNotSupportedException {
  *     Person result = (Person) super.clone()
- *     result.favItems = (List) favItems.clone()
+ *     result.favItems = favItems instanceof Cloneable ? (List) favItems.clone()
  *     result.since = (Date) since.clone()
  *     return result
  *   }
@@ -105,7 +105,7 @@ import java.lang.annotation.Target;
  *   final List favItems
  * }
  * </pre>
- * Which will create classes roughly equivalent to the following:
+ * Which will create classes equivalent to the following:
  * <pre>
  * class Person implements Cloneable {
  *   ...
@@ -124,7 +124,7 @@ import java.lang.annotation.Target;
  *   protected Customer(Customer other) throws CloneNotSupportedException {
  *     super(other)
  *     numPurchases = other.numPurchases
- *     favItems = (List) other.favItems.clone()
+ *     favItems = other.favItems instanceof Cloneable ? (List) other.favItems.clone() : other.favItems
  *   }
  *   public Customer clone() throws CloneNotSupportedException {
  *     return new Customer(this)
@@ -154,7 +154,7 @@ import java.lang.annotation.Target;
  *   final List favItems
  * }
  * </pre>
- * Which will create classes roughly equivalent to the following:
+ * Which will create classes equivalent to the following:
  * <pre>
  * class Person implements Cloneable {
  *   ...
@@ -179,7 +179,7 @@ import java.lang.annotation.Target;
  *   }
  *   protected void copyOrCloneMembers(Customer other) {
  *     super.copyOrCloneMembers(other)
- *     other.favItems = (List) favItems.clone()
+ *     other.favItems = favItems instanceof Cloneable ? (List) favItems.clone() : favItems
  *   }
  *   ...
  * }
@@ -205,7 +205,7 @@ import java.lang.annotation.Target;
  *     def baos = new ByteArrayOutputStream()
  *     baos.withObjectOutputStream{ it.writeObject(this) }
  *     def bais = new ByteArrayInputStream(baos.toByteArray())
- *     (Person) bais.withObjectInputStream(getClass().classLoader){ it.readObject() }
+ *     bais.withObjectInputStream(getClass().classLoader){ (Person) it.readObject() }
  *   }
  *   ...
  * }
@@ -216,15 +216,6 @@ import java.lang.annotation.Target;
  * allow fields to be final, will take up more memory as even immutable classes
  * like String will be cloned but does have the advantage that it performs
  * deep cloning automatically.
- * <p>
- * Note: the earlier examples used wording "create classes roughly equivalent to".
- * This was to simplify the explanation of the generated code. In actuality, special
- * code is generated that optimises the code that is called for the special cases of
- * classes which definitely can't be Cloneable, e.g. int and String, classes which
- * definitely are Cloneable, e.g. ArrayList, and for other cases has an instanceof check.
- * This lets you declare fields as e.g. List which isn't Cloneable but have an
- * implementation such as ArrayList which is Cloneable (and steps around Java's flaw
- * of Cloneable being just a marker interface so that you can safely use @CompileStatic).
  * <p>
  * Further references on cloning:
  * <ul>

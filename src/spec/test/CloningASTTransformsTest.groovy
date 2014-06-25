@@ -38,7 +38,7 @@ class Book implements Cloneable {
 
     public Book clone() throws CloneNotSupportedException {
         Book result = super.clone()
-        result.authors = authors instanceof Cloneable ? authors.clone() : authors
+        result.authors = authors instanceof Cloneable ? (List) authors.clone() : authors
         result.publicationDate = publicationDate.clone()
         result
     }
@@ -127,8 +127,8 @@ class Book implements java.io.Externalizable {
     }
 
     public void readExternal(ObjectInput oin) {
-        isbn = oin.readObject()
-        title = oin.readObject()
+        isbn = (String) oin.readObject()
+        title = (String) oin.readObject()
         price = oin.readFloat()
     }
 

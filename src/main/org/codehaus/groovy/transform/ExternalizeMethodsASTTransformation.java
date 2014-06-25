@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -98,8 +99,9 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
         for (FieldNode fNode : list) {
             if (excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
-            Expression readObject = callX(varX(oin), "read" + suffixForField(fNode));
-            body.addStatement(assignS(varX(fNode), castX(fNode.getType(), readObject)));
+            String suffix = suffixForField(fNode);
+            Expression readObject = callX(varX(oin), "read" + suffix);
+            body.addStatement(assignS(varX(fNode), suffix.equals("Object") ? castX(GenericsUtils.nonGeneric(fNode.getType()), readObject) : readObject));
         }
         cNode.addMethod("readExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(oin), ClassNode.EMPTY_ARRAY, body);
     }
