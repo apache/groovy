@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -159,7 +160,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
         final BlockStatement body = new BlockStatement();
         VariableExpression other = varX("other");
-        body.addStatement(returnS(isInstanceOfX(other, cNode)));
+        body.addStatement(returnS(isInstanceOfX(other, GenericsUtils.nonGeneric(cNode))));
         cNode.addMethod(new MethodNode(
                 hasExistingCanEqual ? "_canEqual" : "canEqual",
                 hasExistingCanEqual ? ACC_PRIVATE : ACC_PUBLIC,
@@ -184,14 +185,17 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         body.addStatement(ifS(sameX(varX("this"), other), returnS(constX(Boolean.TRUE))));
 
         if (useCanEqual) {
-            body.addStatement(ifS(notX(isInstanceOfX(other, cNode)), returnS(constX(Boolean.FALSE))));
-            body.addStatement(ifS(notX(callX(other, "canEqual", varX("this"))), returnS(constX(Boolean.FALSE))));
+            body.addStatement(ifS(notX(isInstanceOfX(other, GenericsUtils.nonGeneric(cNode))), returnS(constX(Boolean.FALSE))));
         } else {
-            body.addStatement(ifS(notX(hasClassX(other, cNode)), returnS(constX(Boolean.FALSE))));
+            body.addStatement(ifS(notX(hasClassX(other, GenericsUtils.nonGeneric(cNode))), returnS(constX(Boolean.FALSE))));
         }
 
-        VariableExpression otherTyped = varX("otherTyped");
-        body.addStatement(declS(otherTyped, new CastExpression(cNode, other)));
+        VariableExpression otherTyped = varX("otherTyped", GenericsUtils.nonGeneric(cNode));
+        body.addStatement(declS(otherTyped, new CastExpression(GenericsUtils.nonGeneric(cNode), other)));
+
+        if (useCanEqual) {
+            body.addStatement(ifS(notX(callX(otherTyped, "canEqual", varX("this"))), returnS(constX(Boolean.FALSE))));
+        }
 
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
