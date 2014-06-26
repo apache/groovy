@@ -422,7 +422,9 @@ public abstract class BaseTemplate implements Writable {
             run();
             return out;
         } finally {
-            this.out.flush();
+            if (this.out!=null) {
+                this.out.flush();
+            }
             this.out = null;
         }
     }
