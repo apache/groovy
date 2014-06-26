@@ -161,8 +161,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         for (FieldNode fNode : list) {
             String name = fNode.getName();
             if (shouldSkip(name, excludes, includes)) continue;
-            params.add(createParam(fNode, name));
-            body.addStatement(assignS(propX(varX("this"), name), varX(name)));
+            Parameter nextParam = createParam(fNode, name);
+            params.add(nextParam);
+            body.addStatement(assignS(propX(varX("this"), name), varX(nextParam)));
         }
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
         // add map constructor if needed, don't do it for LinkedHashMap for now (would lead to duplicate signature)
