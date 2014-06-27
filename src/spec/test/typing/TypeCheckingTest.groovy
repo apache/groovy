@@ -774,5 +774,38 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             // end::closure_shared_variable_ex2[]
             ''','Cannot find matching method Top#methodFromBottom()'
     }
+
+    void testClosureReturnTypeInference() {
+        assertScript '''
+            // tag::closure_return_type_inf[]
+            @groovy.transform.TypeChecked
+            int testClosureReturnTypeInference(String arg) {
+                def cl = { "Arg: $arg" }                                // <1>
+                def val = cl()                                          // <2>
+
+                val.length()                                            // <3>
+            }
+            // end::closure_return_type_inf[]
+            assert testClosureReturnTypeInference('foo') == 8
+        '''
+    }
+
+    void testShouldNotRelyOnMethodReturnTypeInference() {
+        shouldFailWithMessages '''import groovy.transform.TypeChecked
+            // tag::method_return_type_matters[]
+            @TypeChecked
+            class A {
+                def compute() { 'some string' }             // <1>
+                def computeFully() {
+                    compute().toUpperCase()                 // <2>
+                }
+            }
+            @TypeChecked
+            class B extends A {
+                def compute() { 123 }                       // <3>
+            }
+            // end::method_return_type_matters[]
+        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
 }
 

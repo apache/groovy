@@ -1341,5 +1341,53 @@ Here, it is clear that when `methodFromBottom` is called, there's no guarantee, 
 type of `o` will _effectively_ be a `Bottom`. There are chances that it will be, but we can't make sure, because it's
 asynchronous. So the type checker will only allow calls on the <<section-lub,least upper bound>>, which is here a `Top`.
 
+==== Closures and type inference
+
+The type checker performs special inference on closures, resulting on additional checks on one side and improved fluency
+on the other side.
+
+===== Return type inference
+
+The first thing that the type checker is capable of doing is infering the _return type_ of a closure. This is simply
+ illustrated in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=closure_return_type_inf,indent=0]
+----
+<1> a closure is defined, and it returns a string (more precisely a `GString`)
+<2> we call the closure and assign the result to a variable
+<3> the type checker inferred that the closure would return a string, so calling `length()` is allowed
+
+As you can see, unlike a method which declares its return type explicitly, there's no need to declare the return type
+of a closure: its type is inferred from the body of the closure.
+
+.Closures vs methods
+****
+It's worth noting that return type inference is only applicable to closures. While the type checker could do the
+same on a method, it is in practice not desirable: _in general_, methods can be overriden and it is not statically
+possible to make sure that the method which is called is not an overriden version. So flow typing would actually
+think that a method returns something, while in reality, it could return something else, like illustrated in the
+following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=method_return_type_matters,indent=0]
+----
+<1> class `A` defines a method `compute` which effectively returns a `String`
+<2> this will fail compilation because the return type of `compute` is `def`(aka `Object`)
+<3> class `B` extends `A` and redefines `compute`, this type returning an `int`
+
+As you can see, if the type checker relied on the inferred return type of a method, with <<section-flow-typing,flow typing>>,
+the type checker could determine that it is ok to call `toUpperCase`. It is in fact an *error*, because a subclass can
+override `compute` and return a different object. Here, `B#compute` returns an `int`, so someone calling `computeFully`
+on an instance of `B` would see a runtime error. The compiler prevents this from happening by using the declared return
+type of methods instead of the inferred return type.
+
+For consistency, this behavior is the same for *every* method, even if they are static or final.
+****
+
+
+
 === Static compilation (TBD)
 
