@@ -432,13 +432,83 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert !('d' in list)
     }
 
-    void testFirstLastHeadTailForLists() {
+    void testFirstLastHeadTailInitForLists() {
         def list = ['a', 'b', 'c']
         assert 'a' == list.first()
-        assert 'c' == list.last()
         assert 'a' == list.head()
+        assert 'c' == list.last()
         assert ['b', 'c'] == list.tail()
+        assert ['a', 'b'] == list.init()
         assert list.size() == 3
+
+        list = []
+        shouldFail(NoSuchElementException) {
+            list.first()
+        }
+        shouldFail(NoSuchElementException) {
+            list.head()
+        }
+        shouldFail(NoSuchElementException) {
+            list.last()
+        }
+        shouldFail(NoSuchElementException) {
+            list.tail()
+        }
+        shouldFail(NoSuchElementException) {
+            list.init()
+        }
+        assert list.size() == 0
+    }
+
+    void testFirstLastHeadTailInitForIterables() {
+        int a
+        Iterable iterable = { [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator } as Iterable
+
+        a = 1
+        assert 1 == iterable.first()
+        a = 1
+        assert 5 == iterable.last()
+        a = 1
+        assert [1, 2, 3, 4] == iterable.init()
+
+        iterable = { [ hasNext:{ false }, next:{ 1 } ] as Iterator } as Iterable
+        shouldFail(NoSuchElementException) {
+            iterable.first()
+        }
+        shouldFail(NoSuchElementException) {
+            iterable.last()
+        }
+        shouldFail(NoSuchElementException) {
+            iterable.init()
+        }
+    }
+
+    void testFirstLastHeadTailInitForArrays() {
+        String[] ary = ['a', 'b', 'c'] as String[]
+        assert 'a' == ary.first()
+        assert 'a' == ary.head()
+        assert 'c' == ary.last()
+        assert ['b', 'c'] == ary.tail()
+        assert ['a', 'b'] == ary.init()
+        assert ary.length == 3
+
+        ary = [] as String[]
+        shouldFail(NoSuchElementException) {
+            ary.first()
+        }
+        shouldFail(NoSuchElementException) {
+            ary.head()
+        }
+        shouldFail(NoSuchElementException) {
+            ary.last()
+        }
+        shouldFail(NoSuchElementException) {
+            ary.tail()
+        }
+        shouldFail(NoSuchElementException) {
+            ary.init()
+        }
+        assert ary.length == 0
     }
 
     void testPushPopForLists() {
@@ -985,6 +1055,11 @@ class GroovyMethodsTest extends GroovyTestCase {
             assert it.take(  0 ) == []
             assert it.take(  2 ) == [ 1, 2 ]
             assert it.take(  4 ) == [ 1, 2, 3 ]
+
+            assert it.takeRight( -1 ) == []
+            assert it.takeRight(  0 ) == []
+            assert it.takeRight(  2 ) == [ 2, 3 ]
+            assert it.takeRight(  4 ) == [ 1, 2, 3 ]
         }
     }
 
@@ -995,6 +1070,11 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert items.take(  0 ) == [] as String[]
         assert items.take(  2 ) == [ 'ant', 'bee' ] as String[]
         assert items.take(  4 ) == [ 'ant', 'bee', 'cat' ] as String[]
+
+        assert items.takeRight( -1 ) == [] as String[]
+        assert items.takeRight(  0 ) == [] as String[]
+        assert items.takeRight(  2 ) == [ 'bee', 'cat' ] as String[]
+        assert items.takeRight(  4 ) == [ 'ant', 'bee', 'cat' ] as String[]
     }
 
     void testMapTake() {
@@ -1019,6 +1099,26 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert items.take(  0 ).collect { it } == []
         assert items.take(  2 ).collect { it } == [ 1, 2 ]
         assert items.take(  4 ).collect { it } == [ 3, 4, 5, 6 ]
+    }
+
+    void testIterableTake() {
+        int a = 1
+        Iterable items = { [ hasNext:{ true }, next:{ a++ } ] as Iterator } as Iterable
+
+        assert items.take( -1 ).collect { it } == []
+        assert items.take(  0 ).collect { it } == []
+        assert items.take(  2 ).collect { it } == [ 1, 2 ]
+        assert items.take(  4 ).collect { it } == [ 3, 4, 5, 6 ]
+
+        items = { [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator } as Iterable
+
+        assert items.takeRight( -1 ).collect { it } == []
+        a = 1
+        assert items.takeRight(  0 ).collect { it } == []
+        a = 1
+        assert items.takeRight(  2 ).collect { it } == [ 4, 5 ]
+        a = 1
+        assert items.takeRight(  4 ).collect { it } == [ 2, 3, 4, 5 ]
     }
 
     void testCharSequenceTake() {
@@ -1049,6 +1149,11 @@ class GroovyMethodsTest extends GroovyTestCase {
             assert it.drop(  0 ) == [ 1, 2, 3 ]
             assert it.drop(  2 ) == [ 3 ]
             assert it.drop(  4 ) == []
+
+            assert it.dropRight( -1 ) == [ 1, 2, 3 ]
+            assert it.dropRight(  0 ) == [ 1, 2, 3 ]
+            assert it.dropRight(  2 ) == [ 1 ]
+            assert it.dropRight(  4 ) == []
         }
     }
 
@@ -1059,6 +1164,11 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert items.drop(  4 ) == [] as String[]
         assert items.drop(  0 ) == [ 'ant', 'bee', 'cat' ] as String[]
         assert items.drop( -1 ) == [ 'ant', 'bee', 'cat' ] as String[]
+
+        assert items.dropRight(  2 ) == [ 'ant' ] as String[]
+        assert items.dropRight(  4 ) == [] as String[]
+        assert items.dropRight(  0 ) == [ 'ant', 'bee', 'cat' ] as String[]
+        assert items.dropRight( -1 ) == [ 'ant', 'bee', 'cat' ] as String[]
     }
 
     void testMapDrop() {
@@ -1088,6 +1198,28 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert items.drop( 5 ).collect { it } == []
     }
 
+    void testIterableDrop() {
+        int a = 1
+        Iterable items = { [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator } as Iterable
+
+        assert items.drop( 0 ).collect { it } == [ 1, 2, 3, 4, 5 ]
+        a = 1
+        assert items.drop( 2 ).collect { it } == [ 3, 4, 5 ]
+        a = 1
+        assert items.drop( 4 ).collect { it } == [ 5 ]
+        a = 1
+        assert items.drop( 5 ).collect { it } == []
+
+        a = 1
+        assert items.dropRight( 0 ).collect { it } == [ 1, 2, 3, 4, 5 ]
+        a = 1
+        assert items.dropRight( 2 ).collect { it } == [ 1, 2, 3 ]
+        a = 1
+        assert items.dropRight( 4 ).collect { it } == [ 1 ]
+        a = 1
+        assert items.dropRight( 5 ).collect { it } == []
+    }
+
     void testCharSequenceDrop() {
         def data = [ 'groovy',      // String
                      "${'groovy'}", // GString
@@ -1105,6 +1237,7 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testTakeDropClassSymmetry() {
+        int a
         // NOTES:
         // - Cannot test plain HashMap, as Groovy will always default to a LinkedHashMap
         //   See org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.java:183
@@ -1121,13 +1254,33 @@ class GroovyMethodsTest extends GroovyTestCase {
           (java.util.Hashtable)     : new Hashtable( [ a:1, b:2, c:3 ] ),
           // Iterators
           (java.util.Iterator)      : [ hasNext:{ true }, next:{ 'groovy' } ] as Iterator,
+          // Iterables
+          (java.lang.Iterable)      : { [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator } as Iterable,
           // CharSequences
           (java.lang.String)        : new String( 'groovy' ),
           (java.nio.CharBuffer)     : java.nio.CharBuffer.wrap( 'groovy' ),
         ]
         data.each { Class clazz, object ->
+            a = 1
             assert clazz.isInstance( object.take( 5 ) )
+            a = 1
             assert clazz.isInstance( object.drop( 5 ) )
+        }
+
+        data = [
+          // Lists
+          (java.util.ArrayList)     : new ArrayList( [ 1, 2, 3 ] ),
+          (java.util.LinkedList)    : new LinkedList( [ 1, 2, 3 ] ),
+          (java.util.Stack)         : new Stack() {{ addAll( [ 1, 2, 3 ] ) }},
+          (java.util.Vector)        : new Vector( [ 1, 2, 3 ] ),
+          // Iterables
+          (java.lang.Iterable)      : { [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator } as Iterable,
+        ]
+        data.each { Class clazz, object ->
+            a = 1
+            assert clazz.isInstance( object.takeRight( 5 ) )
+            a = 1
+            assert clazz.isInstance( object.dropRight( 5 ) )
         }
     }
 

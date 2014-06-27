@@ -397,13 +397,13 @@ class ReflectionCompletor {
                     'combinations()',
                     'count(',
                     'countBy(',
-                    'drop(',
-                    'dropWhile(',
+                    'drop(', 'dropRight(', 'dropWhile(',
                     'each()', 'each(',
                     'eachPermutation(',
                     'every()', 'every(',
                     'find(', 'findResult(', 'findResults(',
                     'flatten()',
+                    'init()',
                     'inject(',
                     'intersect(',
                     'join(',
@@ -412,7 +412,7 @@ class ReflectionCompletor {
                     'size()',
                     'sort()',
                     'split(',
-                    'take(', 'takeWhile(',
+                    'take(', 'takeRight(', 'takeWhile(',
                     'toSet()',
                     'retainAll(', 'removeAll(',
                     'unique()', 'unique('
@@ -461,12 +461,12 @@ class ReflectionCompletor {
                     'collect()', 'collect(',
                     'count(',
                     'countBy(',
-                    'drop(',
-                    'dropWhile(',
+                    'drop(', 'dropRight(', 'dropWhile(',
                     'each()', 'each(',
                     'every()', 'every(',
                     'find(', 'findResult(',
                     'flatten()',
+                    'init()',
                     'inject(',
                     'join(',
                     'max()', 'min()',
@@ -474,7 +474,7 @@ class ReflectionCompletor {
                     'size()',
                     'sort()',
                     'split(',
-                    'take(', 'takeWhile('
+                    'take(', 'takeRight(', 'takeWhile('
             ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
         }
         return candidates
