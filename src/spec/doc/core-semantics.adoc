@@ -1185,6 +1185,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=instance
 However, in Groovy, even if you add `@TypeChecked` (and thus activate type checking) on the `doSomething` method, the
 cast is *not* necessary. The compiler embeds _instanceof_ inference that makes the cast optional.
 
+[[section-flow-typing]]
 ===== Flow typing
 
 Flow typing is an important concept of Groovy in type checked mode and an extension of type inference. The idea is that
@@ -1280,6 +1281,65 @@ So in type checked Groovy, flow typing is a very important concept, which also i
 methods are selected based on the _inferred types_ of the arguments, not on the declared types. This doesn't ensure 100%
 type safety, because the type checker _may_ select a wrong method, but it ensures the closest semantics to dynamic Groovy.
 
+
+===== Advanced type inference
+
+A combination of <<section-flow-typing,flow typing>> and <<section-lub,least upper bound inference>> is used to perform
+advanced type inference and ensure type safety in multiple situations. In particular, program control structures are
+likely to alter the inferred type of a variable:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flow_lub_ifelse_header,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flow_lub_ifelse_test,indent=0]
+----
+<1> if `someCondition` is true, `o` is assigned a `Top`
+<2> if `someCondition` is false, `o` is assigned a `Bottom`
+<3> calling `methodFromTop` is safe
+<4> but calling `methodFromBottom` is not, so it's a compile time error
+
+When the type checker visits an `if/else` control structure, it checks all variables which are assigned in `if/else` branches
+and computes the <<section-lub,least upper bound>> of all assignments. This type is the type of the inferred variable
+after the `if/else` block, so in this example, `o` is assigned a `Top` in the `if` branch and a `Bottom` in the `else`
+branch. The <<section-lub,LUB>> of those is a `Top`, so after the conditional branches, the compiler infers `o` as being
+a `Top`. Calling `methodFromTop` will therefore be allowed, but not `methodFromBottom`.
+
+The same reasoning exists with closures and in particular closure shared variables. A closure shared variable is a variable
+which is defined outside of a closure, but used inside a closure, as in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_definition,indent=0]
+----
+<1> a variable named `text` is declared
+<2> `text` is used from inside a closure. It is a _closure shared variable_.
+
+Groovy allows developers to use those variables without requiring them to be final. This means that a closure shared
+variable can be reassigned inside a closure:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_ex1,indent=0]
+----
+
+The problem is that a closure is an independent block of code that can be executed (or not) at *any* time. In particular,
+`doSomething` may be asynchronous, for example. This means that the body of a closure doesn't belong to the main control
+flow. For that reason, the type checker also computes, for each closure shared variable, the <<section-lub,LUB>> of all
+assignments of the variable, and will use that `LUB` as the inferred type outside of the scope of the closure, like in
+this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_ex2,indent=0]
+----
+<1> a closure-shared variable is first assigned a `Top`
+<2> inside the closure, it is assigned a `Bottom`
+<3> `methodFromTop` is allowed
+<4> `methodFromBottom` is a compilation error
+
+Here, it is clear that when `methodFromBottom` is called, there's no guarantee, at compile-time or runtime that the
+type of `o` will _effectively_ be a `Bottom`. There are chances that it will be, but we can't make sure, because it's
+asynchronous. So the type checker will only allow calls on the <<section-lub,least upper bound>>, which is here a `Top`.
 
 === Static compilation (TBD)
 

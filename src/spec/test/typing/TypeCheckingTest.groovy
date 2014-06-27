@@ -710,5 +710,69 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             assert result == 6
         '''
     }
+
+    void testIfElse() {
+        shouldFailWithMessages '''
+            // tag::flow_lub_ifelse_header[]
+            class Top {
+               void methodFromTop() {}
+            }
+            class Bottom extends Top {
+               void methodFromBottom() {}
+            }
+            // end::flow_lub_ifelse_header[]
+            [true, false].each { someCondition ->
+                // tag::flow_lub_ifelse_test[]
+                def o
+                if (someCondition) {
+                    o = new Top()                               // <1>
+                } else {
+                    o = new Bottom()                            // <2>
+                }
+                o.methodFromTop()                               // <3>
+                o.methodFromBottom()  // compilation error      // <4>
+                // end::flow_lub_ifelse_test[]
+            }
+        ''','Cannot find matching method Top#methodFromBottom()'
+    }
+
+    void testClosureSharedVariable(){
+        assertScript '''
+            // tag::closure_shared_variable_definition[]
+            def text = 'Hello, world!'                          // <1>
+            def closure = {
+                println text                                    // <2>
+            }
+            // end::closure_shared_variable_definition[]
+        '''
+
+        assertScript '''
+            void doSomething(Closure cl) { cl('hello') }
+            // tag::closure_shared_variable_ex1[]
+            String result
+            doSomething { String it ->
+                result = "Result: $it"
+            }
+            result = result?.toUpperCase()
+            // end::closure_shared_variable_ex1[]
+        '''
+
+        shouldFailWithMessages '''
+            // tag::closure_shared_variable_ex2[]
+            class Top {
+               void methodFromTop() {}
+            }
+            class Bottom extends Top {
+               void methodFromBottom() {}
+            }
+            def o = new Top()                               // <1>
+            Thread.start {
+                o = new Bottom()                            // <2>
+            }
+            o.methodFromTop()                               // <3>
+            o.methodFromBottom()  // compilation error      // <4>
+            // end::closure_shared_variable_ex2[]
+            ''','Cannot find matching method Top#methodFromBottom()'
+    }
 }
 
