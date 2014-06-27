@@ -236,7 +236,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
      *
      * @return a {@link Writable} to render the markup
      */
-    public Writable bind(closure) {
+    public bind(closure) {
         def boundClosure = this.builder.bind(closure);
         def enc = encoding; // take a snapshot of the encoding when the closure is bound to the builder
 
