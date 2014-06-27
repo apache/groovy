@@ -27,7 +27,7 @@ public class TypeCheckingJavaTest {
         Object result = compute(string);        // <2>
         System.out.println(result);             // <3>
         // end::java_method_selection_body[]
-        assertEquals(0, result);
+        assertEquals("Nope", result);
     }
 
     // tag::java_method_selection_head[]
