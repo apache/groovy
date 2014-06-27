@@ -536,12 +536,30 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert !('d' in array)
     }
 
-    void testMax() {
+    void testMaxForIterable() {
         assert [-5, -3, -1, 0, 2, 4].max {it * it} == -5
+        assert ['be', 'happy', null].max{ it == 'be' ? null : "" + it } == null
+        assert ['be', 'happy', null].max{ it == 'happy' ? null : "" + it } == null
+        assert ['happy', null, 'birthday'].max{ ("" + it).size() } == 'birthday'
+        assert ['be', null].max{ ("" + it).size() } == null
+        assert [null, 'result'].max{ "" + it } == 'result'
+        def nums = [42, 35, 17, 100]
+        assert [].max{ it } == null
+        assert nums.max{ it } == 100
+        assert nums.max{ null } == 42
+        assert nums.max{ it.toString().toList()*.toInteger().sum() } == 35
     }
 
-    void testMin() {
+    void testMinForIterable() {
         assert [-5, -3, -1, 0, 2, 4].min {it * it} == 0
+        assert ['be', 'happy', null].min{ it == 'happy' ? null : "" + it } == 'happy'
+        assert ['happy', null, 'birthday'].min{ ("" + it).size() } == null
+        assert [null, 'result'].min{ "" + it } == null
+        def nums = [42, 35, 17, 100]
+        assert [].min{ it } == null
+        assert nums.min{ it } == 17
+        assert nums.min{ null } == 42
+        assert nums.min{ it.toString().toList()*.toInteger().sum() } == 100
     }
 
     void testSort() {
@@ -549,11 +567,11 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testMaxForIterator() {
-        assert [-5, -3, -1, 0, 2, 4].collect{ it * it }.iterator().max() == 25
+        assert [-5, -3, -1, 0, 2, 4].collect { it * it }.iterator().max() == 25
     }
 
     void testMinForIterator() {
-        assert [-5, -3, -1, 0, 2, 4].collect{ it * it }.iterator().min() == 0
+        assert [-5, -3, -1, 0, 2, 4].collect { it * it }.iterator().min() == 0
     }
 
     void testMinForObjectArray() {
