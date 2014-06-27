@@ -19,6 +19,11 @@ package typing
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 
+/**
+ * This unit test contains both assertScript and new GroovyShell().evaluate
+ * calls. It is important *not* to replace the evaluate calls with assertScript, or the semantics
+ * of the tests would be very different!
+ */
 class TypeCheckingTest extends StaticTypeCheckingTestCase {
 
     void testIntroduction() {
@@ -628,6 +633,80 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             }
             // end::instanceof_java_equiv[]
             */
+        '''
+    }
+
+    void testFlowTyping() {
+        new GroovyShell().evaluate '''
+            // tag::flowtyping_basics[]
+            @groovy.transform.TypeChecked
+            void flowTyping() {
+                def o = 'foo'                       // <1>
+                o = o.toUpperCase()                 // <2>
+                o = 9d                              // <3>
+                o = Math.sqrt(o)                    // <4>
+            }
+            // end::flowtyping_basics[]
+            flowTyping()
+        '''
+        shouldFailWithMessages '''
+            // tag::flowtyping_basics_fail[]
+            o = 9d
+            o = o.toUpperCase()
+            // end::flowtyping_basics_fail[]
+
+        ''', 'toUpperCase'
+    }
+
+    void testFlowTypingTypeConstraints() {
+        shouldFailWithMessages '''
+            // tag::flowtyping_typeconstraints[]
+            @groovy.transform.TypeChecked
+            void flowTypingWithExplicitType() {
+                List list = ['a','b','c']           // <1>
+                list = list*.toUpperCase()          // <2>
+                list = 'foo'                        // <3>
+            }
+            // end::flowtyping_typeconstraints[]
+            flowTypingWithExplicitType()
+        ''', 'Cannot assign value of type java.lang.String to variable of type java.util.List'
+    }
+
+    void testFlowTypingTypeConstraintsFailure() {
+        shouldFailWithMessages '''
+            // tag::flowtyping_typeconstraints_failure[]
+            @groovy.transform.TypeChecked
+            void flowTypingWithExplicitType() {
+                List list = ['a','b','c']           // <1>
+                list.add(1)                         // <2>
+            }
+            // end::flowtyping_typeconstraints_failure[]
+            flowTypingWithExplicitType()
+        ''', 'Cannot call java.util.List <java.lang.String>#add(java.lang.String) with arguments [int]'
+
+        assertScript '''
+            // tag::flowtyping_typeconstraints_fixed[]
+            @groovy.transform.TypeChecked
+            void flowTypingWithExplicitType() {
+                List<? extends Serializable> list = []                      // <1>
+                list.addAll(['a','b','c'])                                  // <2>
+                list.add(1)                                                 // <3>
+            }
+            // end::flowtyping_typeconstraints_fixed[]
+            flowTypingWithExplicitType()
+        '''
+    }
+
+    void testFlowTypingMethodSelectionGroovy() {
+        new GroovyShell().evaluate '''
+            // tag::groovy_method_selection[]
+            int compute(String string) { string.length() }
+            String compute(Object o) { "Nope" }
+            Object o = 'string'
+            def result = compute(o)
+            println result
+            // end::groovy_method_selection[]
+            assert result == 6
         '''
     }
 }

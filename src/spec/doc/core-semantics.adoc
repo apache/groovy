@@ -1185,6 +1185,101 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=instance
 However, in Groovy, even if you add `@TypeChecked` (and thus activate type checking) on the `doSomething` method, the
 cast is *not* necessary. The compiler embeds _instanceof_ inference that makes the cast optional.
 
+===== Flow typing
+
+Flow typing is an important concept of Groovy in type checked mode and an extension of type inference. The idea is that
+the compiler is capable of infering the type of variables in the flow of the code, not just at initialization:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flowtyping_basics,indent=0]
+----
+<1> first, `o` is declared using `def` and assigned a `String`
+<2> the compiler inferred that `o` is a `String`, so calling `toUpperCase` is allowed
+<3> `o` is reassigned with a `double`
+<4> calling `Math.sqrt` passes compilation because the compiler knows that at this point, `o` is a `double`
+
+So the type checker is _aware_ of the fact that the concrete type of a variable is different over time. In particular,
+if you replace the last assignment with:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flowtyping_basics_fail,indent=0]
+----
+
+The type checker will now fail at compile time, because it knows that `o` is a `double` when `toUpperCase` is called,
+so it's a type error.
+
+It is important to understand that it is not the fact of declaring a variable with `def` that triggers type inference.
+Flow typing works for *any* variable of any type. Declaring a variable with an explicit type only constraints what you
+can assign to a variable:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints,indent=0]
+----
+<1> `list` is declared as an unchecked `List` and assigned a list literal of `String`s
+<2> this line passes compilation because of flow typing: the type checker knows that `list` is at this point a `List<String>`
+<3> but you can't assign a `String` to a `List` so this is a type checking error
+
+You can also note that even if the variable is declared *without* generics information, the type checker knows what is
+the component type. Therefore, such code would fail compilation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints_failure,indent=0]
+----
+<1> `list` is inferred as `List<String>`
+<2> so adding an `int` to a `List<String>` is a compile-time error
+
+Fixing this requires adding an explicit generic type to the declaration:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints_fixed,indent=0]
+----
+<1> `list` declared as `List<? extends Serializable>` and initialized with an empty list
+<2> elements added to the list conform to the declaration type of the list
+<3> so adding an `int` to a `List<? extends Serializable>` is allowed
+
+Flow typing has been introduced to reduce the difference in semantics between classic and static Groovy. In particular,
+consider the behavior of this code in Java:
+
+[source,java]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingJavaTest.java[tags=java_method_selection_head,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingJavaTest.java[tags=java_method_selection_body,indent=0]
+----
+<1> `o` is declared as an `Object` and assigned a `String`
+<2> we call the `compute` method with `o`
+<3> and print the result
+
+In Java, this code will output `0`, because method selection is done at compile time and based on the *declared* types.
+So even if `o` is a `String` at runtime, it is still the `Object` version which is called, because `o` has been declared
+as an `Object`. To be short, in Java, declared types are most important, be it variable types, parameter types or return
+types.
+
+In Groovy, we could write:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=groovy_method_selection,indent=0]
+----
+
+But this time, it will return `6`, because the method which is chosen is chosen *at runtime*, based on the _actual_
+argument types. So at runtime, `o` is a `String` so the `String` variant is used. Note that this behavior has nothing
+to do with type checking, it's the way Groovy works in general: dynamic dispatch.
+
+In type checked Groovy, we want to make sure the type checker selects the same method *at compile time*, that the runtime
+would choose. It is not possible in general, due to the semantics of the language, but we can make things better with flow
+typing. With flow typing, `o` is _inferred_ as a `String` when the `compute` method is called, so the version which takes
+a `String` and returns an `int` is chosen. This means that we can infer the return type of the method to be an `int`, and
+not a `String`. This is important for subsequent calls and type safety.
+
+So in type checked Groovy, flow typing is a very important concept, which also implies that if `@TypeChecked` is applied,
+methods are selected based on the _inferred types_ of the arguments, not on the declared types. This doesn't ensure 100%
+type safety, because the type checker _may_ select a wrong method, but it ensures the closest semantics to dynamic Groovy.
+
 
 === Static compilation (TBD)
 
