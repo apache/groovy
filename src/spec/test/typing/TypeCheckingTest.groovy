@@ -650,6 +650,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             flowTyping()
         '''
         shouldFailWithMessages '''
+            def o
             // tag::flowtyping_basics_fail[]
             o = 9d
             o = o.toUpperCase()
