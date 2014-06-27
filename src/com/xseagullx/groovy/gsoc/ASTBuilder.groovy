@@ -22,7 +22,7 @@ import org.codehaus.groovy.syntax.Types
 
 import java.lang.reflect.Modifier
 
-class ASTBuilder extends GroovyBaseListener {
+class ASTBuilder extends GroovyParserBaseListener {
     ModuleNode moduleNode
 
     private SourceUnit sourceUnit

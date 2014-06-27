@@ -41,13 +41,18 @@ sourceSets.test.groovy.srcDirs = ['test']
 
 // Setup antlr task
 def antlrOutputDir = file('gen/com/xseagullx/groovy/gsoc')
-def antlrInputFile = file('src/com/xseagullx/groovy/gsoc/Groovy.g4')
+def antlrInputFiles = [
+    file('src/com/xseagullx/groovy/gsoc/GroovyLexer.g4'),
+    file('src/com/xseagullx/groovy/gsoc/GroovyParser.g4')
+]
 
 task antlr << {
-    new Tool([antlrInputFile.absolutePath, '-o', antlrOutputDir.absolutePath, '-package', 'com.xseagullx.groovy.gsoc'] as String[]).processGrammarsOnCommandLine()
+    antlrInputFiles.each {
+        new Tool([it.absolutePath, '-o', antlrOutputDir.absolutePath, '-package', 'com.xseagullx.groovy.gsoc'] as String[]).processGrammarsOnCommandLine()
+    }
 }
 antlr.outputs.dir antlrOutputDir
-antlr.inputs.file antlrInputFile
+antlr.inputs.files antlrInputFiles
 
 // Setup antlr dependencies
 clean.dependsOn tasks.getByPath('cleanAntlr')
