@@ -807,5 +807,83 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             // end::method_return_type_matters[]
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
+
+    void testClosureParameterTypeInference() {
+        shouldFailWithMessages '''
+        // tag::cl_pt_failure[]
+        class Person {
+            String name
+            int age
+        }
+
+        void inviteIf(Person p, Closure<Boolean> predicate) {           // <1>
+            if (predicate.call(p)) {
+                // send invite
+                // ...
+            }
+        }
+
+        @groovy.transform.TypeChecked
+        void failCompilation() {
+            Person p = new Person(name: 'Gerard', age: 55)
+            inviteIf(p) {                                               // <2>
+                it.age >= 18 // No such property: age                   // <3>
+            }
+        }
+        // end::cl_pt_failure[]
+        ''', 'No such property: age for class: java.lang.Object', 'Cannot find matching method'
+
+        assertScript '''
+        class Person {
+            String name
+            int age
+        }
+
+        void inviteIf(Person p, Closure<Boolean> predicate) {
+            if (predicate.call(p)) {
+                // send invite
+                // ...
+            }
+        }
+
+        @groovy.transform.TypeChecked
+        void failCompilation() {
+            Person p = new Person(name: 'Gerard', age: 55)
+
+            // tag::cl_pt_workaround[]
+            inviteIf(p) { Person it ->                                  // <1>
+                it.age >= 18
+            }
+            // end::cl_pt_workaround[]
+        }
+        '''
+
+        assertScript '''
+        class Person {
+            String name
+            int age
+        }
+
+        // tag::cl_pt_workaround_sam[]
+        interface Predicate<On> { boolean apply(On e) }                 // <1>
+
+        void inviteIf(Person p, Predicate<Person> predicate) {          // <2>
+            if (predicate.apply(p)) {
+                // send invite
+                // ...
+            }
+        }
+
+        @groovy.transform.TypeChecked
+        void failCompilation() {
+            Person p = new Person(name: 'Gerard', age: 55)
+
+            inviteIf(p) {                                               // <3>
+                it.age >= 18                                            // <4>
+            }
+        }
+        // end::cl_pt_workaround_sam[]
+        '''
+    }
 }
 
