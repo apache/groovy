@@ -1387,6 +1387,65 @@ type of methods instead of the inferred return type.
 For consistency, this behavior is the same for *every* method, even if they are static or final.
 ****
 
+===== Parameter type inference
+
+In addition to the return type, it is possible for a closure to infer its parameter types from the context. There are
+two ways for the compiler to infer the parameter types:
+
+* through _implicit SAM type coercion_
+* through API metadata
+
+To illustrate this, lets start with an example that will fail compilation due to the inability for the type checker
+to infer the parameter types:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_failure,indent=0]
+----
+<1> the `inviteIf` method accepts a `Person` and a `Closure`
+<2> we call it with a `Person` and a `Closure`
+<3> yet `it` is not statically known as being a `Person` and compilation fails
+
+In this example, the closure body contains `it.age`. With dynamic, not type checked code, this would work, because the
+type of `it` would be a `Person` at runtime. Unfortunately, at compile-time, there's no way to know what is the type
+of `it`, just by reading the signature of `inviteIf`.
+
+To be short, the type checker doesn't have enough contextual information on the `inviteIf` method to determine statically
+the type of `it`. This means that the method call needs to be rewritten like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround,indent=0]
+----
+<1> the type of `it` needs to be declared explicitly
+
+By explicitly declaring the type of the `it` variable, you can workaround the problem and make this code statically
+checked.
+
+For an API or framework designer, there are two ways to make this more elegant for users, so that they don't have to
+declare an explicit type for the closure parameters. The first one, and easiest, is to replace the closure with a
+SAM type:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_sam,indent=0]
+----
+<1> declare a `SAM` interface with an `apply` method
+<2> `inviteIf` now uses a `Predicate<Person>` instead of a `Closure<Boolean>`
+<3> there's no need to declare the type of the `it` variable anymore
+<4> `it.age` compiles properly, the type of `it` is inferred from the `Predicate#apply` method signature
+
+TIP: By using this technique, we leverage the _automatic coercion of closures to SAM types_ feature of Groovy. The
+question whether you should use a _SAM type_ or a _Closure_ really depends on what you need to do. In a lot of cases,
+using a SAM interface is enough, especially if you consider functional interfaces as they are found in Java 8. However,
+closures provide features that are not accessible to functional interfaces. In particular, closures can have a delegate,
+and owner and can be manipulated as objects (for example, cloned, serialized, curried, ...) before being called. They can
+also support multiple signatures (polymorphism). So if you need that kind of manipulation, it is preferable to switch to
+the most advanced type inference annotations which are described below.
+
+The original issue that needs to be solved when it comes to closure parameter type inference, that is to say, statically
+determining the types of the arguments of a closure _without_ having to have them explicitly declared, is that the Groovy
+type system inherits the Java type system, which is insufficient to describe the types of the arguments.
 
 
 === Static compilation (TBD)
