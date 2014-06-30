@@ -1410,6 +1410,8 @@ In this example, the closure body contains `it.age`. With dynamic, not type chec
 type of `it` would be a `Person` at runtime. Unfortunately, at compile-time, there's no way to know what is the type
 of `it`, just by reading the signature of `inviteIf`.
 
+====== Explicit closure parameters
+
 To be short, the type checker doesn't have enough contextual information on the `inviteIf` method to determine statically
 the type of `it`. This means that the method call needs to be rewritten like this:
 
@@ -1421,6 +1423,8 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_wo
 
 By explicitly declaring the type of the `it` variable, you can workaround the problem and make this code statically
 checked.
+
+====== Parameters inferred from single-abstract method types
 
 For an API or framework designer, there are two ways to make this more elegant for users, so that they don't have to
 declare an explicit type for the closure parameters. The first one, and easiest, is to replace the closure with a
@@ -1447,6 +1451,145 @@ The original issue that needs to be solved when it comes to closure parameter ty
 determining the types of the arguments of a closure _without_ having to have them explicitly declared, is that the Groovy
 type system inherits the Java type system, which is insufficient to describe the types of the arguments.
 
+====== The `@ClosureParams` annotation
+
+Groovy provides an annotation, `@ClosureParams` which is aimed at completing type information. This annotation is primarily
+aimed at framework and API developers who want to extend the capabilities of the type checker by providing type inference
+metadata. This is important if your library makes use of closures and that you want the maximum level of tooling support
+too.
+
+Let's illustrate this by fixing the original example, introducing the `@ClosureParams` annotation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_imports,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_method,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_call,indent=0]
+----
+<1> the closure parameter is annotated with `@ClosureParams`
+<2> it's not necessary to use an explicit type for `it`, which is inferred
+
+The `@ClosureParams` annotation minimally accepts one argument, which is named a _type hint_. A type hint is a class which
+is reponsible for completing type information at compile time for the closure. In this example, the type hint being used
+is `groovy.transform.stc.FirstParam` which indicated to the type checker that the closure will accept one parameter
+whose type is the type of the first parameter of the method. In this case, the first parameter of the method is `Person`,
+so it indicates to the type checker that the first parameter of the closure is in fact a `Person`.
+
+The second argument is optional and named _options_. It's semantics depends on the _type hint_ class. Groovy comes with
+various bundled type hints, illustrated in the table below:
+
+[cols="1a,1,4a"]
+.Predefined type hints
+|===
+|Type hint |Polymorphic? |Description and examples
+
+|`FirstParam` +
+`SecondParam` +
+`ThirdParam`
+|No
+|The first (resp. second, third) parameter type of the method +
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_firstparam,indent=0]
+----
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_secondparam,indent=0]
+----
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_thirdparam,indent=0]
+----
+
+|`FirstParam.FirstGenericType` +
+`SecondParam.FirstGenericType` +
+`ThirdParam.FirstGenericType`
+|No
+|The first generic type of the first (resp. second, third) parameter of the method +
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_firstgt,indent=0]
+----
+
+Variants for `SecondGenericType` and `ThirdGenericType` exist for all `FirstParam`, `SecondParam` and `ThirdParam`
+type hints.
+
+|`SimpleType`
+|No
+|A type hint for which the type of closure parameters comes from the options string. +
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_simpletype,indent=0]
+----
+
+This type hint supports a *single* signature and each of the parameter is specified as a value of the _options_ array
+using a fully-qualified type name or a primitive type.
+
+|`MapEntryOrKeyValue`
+|Yes
+|A dedicated type hint for closures that either work on a `Map.Entry` single parameter, or two parameters corresponding
+to the key and the value. +
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_mapentry,indent=0]
+----
+
+This type hint *requires* that the first argument is a `Map` type, and infers the closure parameter types from the map
+actual key/value types.
+
+|`FromAbstractTypeMethods`
+|Yes
+|Infers closure parameter types from the abstract method of some type. A signature is inferred for *each* abstract method. +
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_abstract_type,indent=0]
+----
+
+If there are multiple signatures like in the example above, the type checker will *only* be able to infer the types of
+the arguments if the arity of each method is different. In the example above, `firstSignature` takes 2 arguments and
+`secondSignature` takes 1 argument, so the type checker can infer the argument types based on the number of arguments.
+
+|`FromString`
+|Yes
+|Infers the closure parameter typs from the `options` argument. The `options` argument consists of an array of comma-separated
+non-primitive types. Each element of the array corresponds to a single signature, and each comma in an element separate
+parameters of the signature. In short, this is the most generic type hint, and each string of the `options` map is *parsed*
+as if it was a signature literal. While being very powerful, this type hint must be avoided if you can because it increases
+the compilation times due to the necessity of parsing the type signatures.
+
+A single signature for a closure accepting a `String`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_1,indent=0]
+----
+
+A polymorphic closure, accepting either a `String` or a `String, Integer`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_2,indent=0]
+----
+
+A polymorphic closure, accepting either a `T` or a pair `T,T`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_3,indent=0]
+----
+
+|===
+
+TIP: Even though you use `FirstParam`, `SecondParam` or `ThirdParam` as a type hint, it doesn't stricly mean that the
+argument which will be passed to the closure *will* be the first (resp. second, third) argument of the method call. It
+only means that the *type* of the parameter of the closure will be the *same* as the type of the first (resp.  second,
+ third) argument of the method call.
+
+In short, the lack of the `@ClosureParams` annotation on a method accepting a `Closure` will *not* fail compilation. If
+ present (and it can be present in Java sources as well as Groovy sources), then the type checker has *more* information
+ and can perform additional type inference. This makes this feature particularily interesting for framework developers.
 
 === Static compilation (TBD)
 

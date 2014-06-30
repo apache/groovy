@@ -847,7 +847,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         }
 
         @groovy.transform.TypeChecked
-        void failCompilation() {
+        void passesCompilation() {
             Person p = new Person(name: 'Gerard', age: 55)
 
             // tag::cl_pt_workaround[]
@@ -875,7 +875,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         }
 
         @groovy.transform.TypeChecked
-        void failCompilation() {
+        void passesCompilation() {
             Person p = new Person(name: 'Gerard', age: 55)
 
             inviteIf(p) {                                               // <3>
@@ -883,6 +883,38 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             }
         }
         // end::cl_pt_workaround_sam[]
+        '''
+
+        assertScript '''
+// tag::cl_pt_workaround_closureparams_imports[]
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.FirstParam
+// end::cl_pt_workaround_closureparams_imports[]
+
+        class Person {
+            String name
+            int age
+        }
+
+        // tag::cl_pt_workaround_closureparams_method[]
+        void inviteIf(Person p, @ClosureParams(FirstParam) Closure<Boolean> predicate) {        // <1>
+            if (predicate.call(p)) {
+                // send invite
+                // ...
+            }
+        }
+        // end::cl_pt_workaround_closureparams_method[]
+
+        @groovy.transform.TypeChecked
+        void passesCompilation() {
+            Person p = new Person(name: 'Gerard', age: 55)
+
+            // tag::cl_pt_workaround_closureparams_call[]
+            inviteIf(p) {                                                                       // <2>
+                it.age >= 18
+            }
+            // end::cl_pt_workaround_closureparams_call[]
+        }
         '''
     }
 }
