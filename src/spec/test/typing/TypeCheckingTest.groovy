@@ -917,5 +917,47 @@ import groovy.transform.stc.FirstParam
         }
         '''
     }
+
+    void testSkip() {
+        def shell = new GroovyShell()
+        shell.evaluate '''
+            class SentenceBuilder {
+                StringBuilder sb = new StringBuilder()
+                def methodMissing(String name, args) {
+                    if (sb) sb.append(' ')
+                    sb.append(name)
+                    this
+                }
+
+                def propertyMissing(String name) {
+                    if (sb) sb.append(' ')
+                    sb.append(name)
+                    this
+                }
+                String toString() { sb }
+            }
+
+            // tag::stc_skip[]
+            import groovy.transform.TypeChecked
+            import groovy.transform.TypeCheckingMode
+
+            @TypeChecked                                        // <1>
+            class GreetingService {
+                String greeting() {                             // <2>
+                    doGreet()
+                }
+
+                @TypeChecked(TypeCheckingMode.SKIP)             // <3>
+                private String doGreet() {
+                    def b = new SentenceBuilder()
+                    b.Hello.my.name.is.John                     // <4>
+                    b
+                }
+            }
+            def s = new GreetingService()
+            assert s.greeting() == 'Hello my name is John'
+            // end::stc_skip[]
+            '''
+    }
 }
 

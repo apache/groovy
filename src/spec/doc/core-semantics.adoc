@@ -598,6 +598,8 @@ In this section, we will describe the behavior of the type checker in various si
 
 ==== The `@TypeChecked` annotation
 
+===== Activating type checking at compile time
+
 The `groovy.lang.TypeChecked` annotation enabled type checking. It can be placed on a class:
 
 [source,groovy]
@@ -614,6 +616,27 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=typechec
 
 In the first case, all methods, properties, fields, inner classes, ... of the annotated class will be type checked, whereas
 in the second case, only the method and potential closures or anonymous inner classes that it contains will be type checked.
+
+===== Skipping sections
+
+The scope of type checking can be restricted. For example, if a class is type checked, you can instruct the type checker
+to skip a method by annotating it with `@TypeChecked(TypeCheckingMode.SKIP)`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_skip,indent=0]
+----
+<1> the `GreetingService` class is marked as type checked
+<2> so the `greeting` method is automatically type checked
+<3> but `doGreet` is marked with `SKIP`
+<4> the type checker doesn't complain about missing properties here
+
+In the previous example, `SentenceBuilder` relies on dynamic code. There's no real `Hello` method or property, so the
+type checker would normally complain and compilation would fail. Since the method that uses the builder is marked with
+`TypeCheckingMode.SKIP`, type checking is _skipped_ for this method, so the code will compile, even if the rest of the
+class is type checked.
+
+The following sections describe the semantics of type checking in Groovy.
 
 ==== Type checking assignments
 
