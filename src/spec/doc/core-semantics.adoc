@@ -1614,5 +1614,11 @@ In short, the lack of the `@ClosureParams` annotation on a method accepting a `C
  present (and it can be present in Java sources as well as Groovy sources), then the type checker has *more* information
  and can perform additional type inference. This makes this feature particularily interesting for framework developers.
 
+===== `@DelegatesTo`
+
+The `@DelegatesTo` annotation is used by the type checker to infer the type of the delegate. It allows the API designer
+to instruct the compiler what is the type of the delegate and the delegation strategy. The `@DelegatesTo` annotation is
+discussed in a link:core-domain-specific-languages.html#section-delegatesto[specific section].
+
 === Static compilation (TBD)
 
