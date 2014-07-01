@@ -57,4 +57,24 @@ new Test().callFooFromInstanceMethod()
             assert foo(B) == 2
         '''
     }
+
+    //GROOVY-6883
+    void testStaticMethodCallFromOpenBlock() {
+        assertScript '''
+            class SuperClass {
+                    protected static f(String x) { x + " is super " }
+            }
+
+            class ChildClass extends SuperClass {
+                    public def doit() {
+                            works()+fails()
+                    }
+
+                    private static def works() { f("Groovy") }
+                    private static def fails() { return {f("Groovy")}() }
+            }
+
+            assert new ChildClass().doit() == "Groovy is super Groovy is super "
+        '''
+    }
 }
