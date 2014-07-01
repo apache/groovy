@@ -19,6 +19,11 @@ package typing
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 
+/**
+ * This unit test contains both assertScript and new GroovyShell().evaluate
+ * calls. It is important *not* to replace the evaluate calls with assertScript, or the semantics
+ * of the tests would be very different!
+ */
 class TypeCheckingTest extends StaticTypeCheckingTestCase {
 
     void testIntroduction() {
@@ -629,6 +634,330 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             // end::instanceof_java_equiv[]
             */
         '''
+    }
+
+    void testFlowTyping() {
+        new GroovyShell().evaluate '''
+            // tag::flowtyping_basics[]
+            @groovy.transform.TypeChecked
+            void flowTyping() {
+                def o = 'foo'                       // <1>
+                o = o.toUpperCase()                 // <2>
+                o = 9d                              // <3>
+                o = Math.sqrt(o)                    // <4>
+            }
+            // end::flowtyping_basics[]
+            flowTyping()
+        '''
+        shouldFailWithMessages '''
+            def o
+            // tag::flowtyping_basics_fail[]
+            o = 9d
+            o = o.toUpperCase()
+            // end::flowtyping_basics_fail[]
+
+        ''', 'toUpperCase'
+    }
+
+    void testFlowTypingTypeConstraints() {
+        shouldFailWithMessages '''
+            // tag::flowtyping_typeconstraints[]
+            @groovy.transform.TypeChecked
+            void flowTypingWithExplicitType() {
+                List list = ['a','b','c']           // <1>
+                list = list*.toUpperCase()          // <2>
+                list = 'foo'                        // <3>
+            }
+            // end::flowtyping_typeconstraints[]
+            flowTypingWithExplicitType()
+        ''', 'Cannot assign value of type java.lang.String to variable of type java.util.List'
+    }
+
+    void testFlowTypingTypeConstraintsFailure() {
+        shouldFailWithMessages '''
+            // tag::flowtyping_typeconstraints_failure[]
+            @groovy.transform.TypeChecked
+            void flowTypingWithExplicitType() {
+                List list = ['a','b','c']           // <1>
+                list.add(1)                         // <2>
+            }
+            // end::flowtyping_typeconstraints_failure[]
+            flowTypingWithExplicitType()
+        ''', 'Cannot call java.util.List <java.lang.String>#add(java.lang.String) with arguments [int]'
+
+        assertScript '''
+            // tag::flowtyping_typeconstraints_fixed[]
+            @groovy.transform.TypeChecked
+            void flowTypingWithExplicitType() {
+                List<? extends Serializable> list = []                      // <1>
+                list.addAll(['a','b','c'])                                  // <2>
+                list.add(1)                                                 // <3>
+            }
+            // end::flowtyping_typeconstraints_fixed[]
+            flowTypingWithExplicitType()
+        '''
+    }
+
+    void testFlowTypingMethodSelectionGroovy() {
+        new GroovyShell().evaluate '''
+            // tag::groovy_method_selection[]
+            int compute(String string) { string.length() }
+            String compute(Object o) { "Nope" }
+            Object o = 'string'
+            def result = compute(o)
+            println result
+            // end::groovy_method_selection[]
+            assert result == 6
+        '''
+    }
+
+    void testIfElse() {
+        shouldFailWithMessages '''
+            // tag::flow_lub_ifelse_header[]
+            class Top {
+               void methodFromTop() {}
+            }
+            class Bottom extends Top {
+               void methodFromBottom() {}
+            }
+            // end::flow_lub_ifelse_header[]
+            [true, false].each { someCondition ->
+                // tag::flow_lub_ifelse_test[]
+                def o
+                if (someCondition) {
+                    o = new Top()                               // <1>
+                } else {
+                    o = new Bottom()                            // <2>
+                }
+                o.methodFromTop()                               // <3>
+                o.methodFromBottom()  // compilation error      // <4>
+                // end::flow_lub_ifelse_test[]
+            }
+        ''','Cannot find matching method Top#methodFromBottom()'
+    }
+
+    void testClosureSharedVariable(){
+        assertScript '''
+            // tag::closure_shared_variable_definition[]
+            def text = 'Hello, world!'                          // <1>
+            def closure = {
+                println text                                    // <2>
+            }
+            // end::closure_shared_variable_definition[]
+        '''
+
+        assertScript '''
+            void doSomething(Closure cl) { cl('hello') }
+            // tag::closure_shared_variable_ex1[]
+            String result
+            doSomething { String it ->
+                result = "Result: $it"
+            }
+            result = result?.toUpperCase()
+            // end::closure_shared_variable_ex1[]
+        '''
+
+        shouldFailWithMessages '''
+            // tag::closure_shared_variable_ex2[]
+            class Top {
+               void methodFromTop() {}
+            }
+            class Bottom extends Top {
+               void methodFromBottom() {}
+            }
+            def o = new Top()                               // <1>
+            Thread.start {
+                o = new Bottom()                            // <2>
+            }
+            o.methodFromTop()                               // <3>
+            o.methodFromBottom()  // compilation error      // <4>
+            // end::closure_shared_variable_ex2[]
+            ''','Cannot find matching method Top#methodFromBottom()'
+    }
+
+    void testClosureReturnTypeInference() {
+        assertScript '''
+            // tag::closure_return_type_inf[]
+            @groovy.transform.TypeChecked
+            int testClosureReturnTypeInference(String arg) {
+                def cl = { "Arg: $arg" }                                // <1>
+                def val = cl()                                          // <2>
+
+                val.length()                                            // <3>
+            }
+            // end::closure_return_type_inf[]
+            assert testClosureReturnTypeInference('foo') == 8
+        '''
+    }
+
+    void testShouldNotRelyOnMethodReturnTypeInference() {
+        shouldFailWithMessages '''import groovy.transform.TypeChecked
+            // tag::method_return_type_matters[]
+            @TypeChecked
+            class A {
+                def compute() { 'some string' }             // <1>
+                def computeFully() {
+                    compute().toUpperCase()                 // <2>
+                }
+            }
+            @TypeChecked
+            class B extends A {
+                def compute() { 123 }                       // <3>
+            }
+            // end::method_return_type_matters[]
+        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
+    void testClosureParameterTypeInference() {
+        shouldFailWithMessages '''
+        // tag::cl_pt_failure[]
+        class Person {
+            String name
+            int age
+        }
+
+        void inviteIf(Person p, Closure<Boolean> predicate) {           // <1>
+            if (predicate.call(p)) {
+                // send invite
+                // ...
+            }
+        }
+
+        @groovy.transform.TypeChecked
+        void failCompilation() {
+            Person p = new Person(name: 'Gerard', age: 55)
+            inviteIf(p) {                                               // <2>
+                it.age >= 18 // No such property: age                   // <3>
+            }
+        }
+        // end::cl_pt_failure[]
+        ''', 'No such property: age for class: java.lang.Object', 'Cannot find matching method'
+
+        assertScript '''
+        class Person {
+            String name
+            int age
+        }
+
+        void inviteIf(Person p, Closure<Boolean> predicate) {
+            if (predicate.call(p)) {
+                // send invite
+                // ...
+            }
+        }
+
+        @groovy.transform.TypeChecked
+        void passesCompilation() {
+            Person p = new Person(name: 'Gerard', age: 55)
+
+            // tag::cl_pt_workaround[]
+            inviteIf(p) { Person it ->                                  // <1>
+                it.age >= 18
+            }
+            // end::cl_pt_workaround[]
+        }
+        '''
+
+        assertScript '''
+        class Person {
+            String name
+            int age
+        }
+
+        // tag::cl_pt_workaround_sam[]
+        interface Predicate<On> { boolean apply(On e) }                 // <1>
+
+        void inviteIf(Person p, Predicate<Person> predicate) {          // <2>
+            if (predicate.apply(p)) {
+                // send invite
+                // ...
+            }
+        }
+
+        @groovy.transform.TypeChecked
+        void passesCompilation() {
+            Person p = new Person(name: 'Gerard', age: 55)
+
+            inviteIf(p) {                                               // <3>
+                it.age >= 18                                            // <4>
+            }
+        }
+        // end::cl_pt_workaround_sam[]
+        '''
+
+        assertScript '''
+// tag::cl_pt_workaround_closureparams_imports[]
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.FirstParam
+// end::cl_pt_workaround_closureparams_imports[]
+
+        class Person {
+            String name
+            int age
+        }
+
+        // tag::cl_pt_workaround_closureparams_method[]
+        void inviteIf(Person p, @ClosureParams(FirstParam) Closure<Boolean> predicate) {        // <1>
+            if (predicate.call(p)) {
+                // send invite
+                // ...
+            }
+        }
+        // end::cl_pt_workaround_closureparams_method[]
+
+        @groovy.transform.TypeChecked
+        void passesCompilation() {
+            Person p = new Person(name: 'Gerard', age: 55)
+
+            // tag::cl_pt_workaround_closureparams_call[]
+            inviteIf(p) {                                                                       // <2>
+                it.age >= 18
+            }
+            // end::cl_pt_workaround_closureparams_call[]
+        }
+        '''
+    }
+
+    void testSkip() {
+        def shell = new GroovyShell()
+        shell.evaluate '''
+            class SentenceBuilder {
+                StringBuilder sb = new StringBuilder()
+                def methodMissing(String name, args) {
+                    if (sb) sb.append(' ')
+                    sb.append(name)
+                    this
+                }
+
+                def propertyMissing(String name) {
+                    if (sb) sb.append(' ')
+                    sb.append(name)
+                    this
+                }
+                String toString() { sb }
+            }
+
+            // tag::stc_skip[]
+            import groovy.transform.TypeChecked
+            import groovy.transform.TypeCheckingMode
+
+            @TypeChecked                                        // <1>
+            class GreetingService {
+                String greeting() {                             // <2>
+                    doGreet()
+                }
+
+                @TypeChecked(TypeCheckingMode.SKIP)             // <3>
+                private String doGreet() {
+                    def b = new SentenceBuilder()
+                    b.Hello.my.name.is.John                     // <4>
+                    b
+                }
+            }
+            def s = new GreetingService()
+            assert s.greeting() == 'Hello my name is John'
+            // end::stc_skip[]
+            '''
     }
 }
 

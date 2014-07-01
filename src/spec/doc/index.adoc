@@ -1,6 +1,4 @@
 = Groovy Language Documentation
-:toclevels: 10
-:numbered:
 
 include::{projectdir}/src/spec/doc/core-introduction.adoc[]
 

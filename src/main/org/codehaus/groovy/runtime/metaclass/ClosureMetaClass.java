@@ -199,12 +199,18 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     private MetaMethod getDelegateMethod(Closure closure, Object delegate, String methodName, Class[] argClasses) {
         if (delegate == closure || delegate == null) return null;
-        MetaClass delegateMetaClass;
         if (delegate instanceof Class) {
-            delegateMetaClass = registry.getMetaClass((Class) delegate);
-            return delegateMetaClass.getStaticMetaMethod(methodName, argClasses);
+            for (Class superClass = (Class) delegate;
+                 superClass != Object.class && superClass != null;
+                 superClass = superClass.getSuperclass())
+            {
+                MetaClass mc = registry.getMetaClass(superClass);
+                MetaMethod method = mc.getStaticMetaMethod(methodName, argClasses);
+                if (method != null) return method;
+            }
+            return null;
         } else {
-            delegateMetaClass = lookupObjectMetaClass(delegate);
+            MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
             MetaMethod method = delegateMetaClass.pickMethod(methodName, argClasses);
             if (method != null) {
                 return method;

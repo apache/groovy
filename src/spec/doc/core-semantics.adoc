@@ -598,6 +598,8 @@ In this section, we will describe the behavior of the type checker in various si
 
 ==== The `@TypeChecked` annotation
 
+===== Activating type checking at compile time
+
 The `groovy.lang.TypeChecked` annotation enabled type checking. It can be placed on a class:
 
 [source,groovy]
@@ -614,6 +616,27 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=typechec
 
 In the first case, all methods, properties, fields, inner classes, ... of the annotated class will be type checked, whereas
 in the second case, only the method and potential closures or anonymous inner classes that it contains will be type checked.
+
+===== Skipping sections
+
+The scope of type checking can be restricted. For example, if a class is type checked, you can instruct the type checker
+to skip a method by annotating it with `@TypeChecked(TypeCheckingMode.SKIP)`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_skip,indent=0]
+----
+<1> the `GreetingService` class is marked as type checked
+<2> so the `greeting` method is automatically type checked
+<3> but `doGreet` is marked with `SKIP`
+<4> the type checker doesn't complain about missing properties here
+
+In the previous example, `SentenceBuilder` relies on dynamic code. There's no real `Hello` method or property, so the
+type checker would normally complain and compilation would fail. Since the method that uses the builder is marked with
+`TypeCheckingMode.SKIP`, type checking is _skipped_ for this method, so the code will compile, even if the rest of the
+class is type checked.
+
+The following sections describe the semantics of type checking in Groovy.
 
 ==== Type checking assignments
 
@@ -1185,6 +1208,454 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=instance
 However, in Groovy, even if you add `@TypeChecked` (and thus activate type checking) on the `doSomething` method, the
 cast is *not* necessary. The compiler embeds _instanceof_ inference that makes the cast optional.
 
+[[section-flow-typing]]
+===== Flow typing
 
-=== Static compilation (TBD)
+Flow typing is an important concept of Groovy in type checked mode and an extension of type inference. The idea is that
+the compiler is capable of infering the type of variables in the flow of the code, not just at initialization:
 
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flowtyping_basics,indent=0]
+----
+<1> first, `o` is declared using `def` and assigned a `String`
+<2> the compiler inferred that `o` is a `String`, so calling `toUpperCase` is allowed
+<3> `o` is reassigned with a `double`
+<4> calling `Math.sqrt` passes compilation because the compiler knows that at this point, `o` is a `double`
+
+So the type checker is _aware_ of the fact that the concrete type of a variable is different over time. In particular,
+if you replace the last assignment with:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flowtyping_basics_fail,indent=0]
+----
+
+The type checker will now fail at compile time, because it knows that `o` is a `double` when `toUpperCase` is called,
+so it's a type error.
+
+It is important to understand that it is not the fact of declaring a variable with `def` that triggers type inference.
+Flow typing works for *any* variable of any type. Declaring a variable with an explicit type only constraints what you
+can assign to a variable:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints,indent=0]
+----
+<1> `list` is declared as an unchecked `List` and assigned a list literal of `String`s
+<2> this line passes compilation because of flow typing: the type checker knows that `list` is at this point a `List<String>`
+<3> but you can't assign a `String` to a `List` so this is a type checking error
+
+You can also note that even if the variable is declared *without* generics information, the type checker knows what is
+the component type. Therefore, such code would fail compilation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints_failure,indent=0]
+----
+<1> `list` is inferred as `List<String>`
+<2> so adding an `int` to a `List<String>` is a compile-time error
+
+Fixing this requires adding an explicit generic type to the declaration:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints_fixed,indent=0]
+----
+<1> `list` declared as `List<? extends Serializable>` and initialized with an empty list
+<2> elements added to the list conform to the declaration type of the list
+<3> so adding an `int` to a `List<? extends Serializable>` is allowed
+
+Flow typing has been introduced to reduce the difference in semantics between classic and static Groovy. In particular,
+consider the behavior of this code in Java:
+
+[source,java]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingJavaTest.java[tags=java_method_selection_head,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingJavaTest.java[tags=java_method_selection_body,indent=0]
+----
+<1> `o` is declared as an `Object` and assigned a `String`
+<2> we call the `compute` method with `o`
+<3> and print the result
+
+In Java, this code will output `0`, because method selection is done at compile time and based on the *declared* types.
+So even if `o` is a `String` at runtime, it is still the `Object` version which is called, because `o` has been declared
+as an `Object`. To be short, in Java, declared types are most important, be it variable types, parameter types or return
+types.
+
+In Groovy, we could write:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=groovy_method_selection,indent=0]
+----
+
+But this time, it will return `6`, because the method which is chosen is chosen *at runtime*, based on the _actual_
+argument types. So at runtime, `o` is a `String` so the `String` variant is used. Note that this behavior has nothing
+to do with type checking, it's the way Groovy works in general: dynamic dispatch.
+
+In type checked Groovy, we want to make sure the type checker selects the same method *at compile time*, that the runtime
+would choose. It is not possible in general, due to the semantics of the language, but we can make things better with flow
+typing. With flow typing, `o` is _inferred_ as a `String` when the `compute` method is called, so the version which takes
+a `String` and returns an `int` is chosen. This means that we can infer the return type of the method to be an `int`, and
+not a `String`. This is important for subsequent calls and type safety.
+
+So in type checked Groovy, flow typing is a very important concept, which also implies that if `@TypeChecked` is applied,
+methods are selected based on the _inferred types_ of the arguments, not on the declared types. This doesn't ensure 100%
+type safety, because the type checker _may_ select a wrong method, but it ensures the closest semantics to dynamic Groovy.
+
+
+===== Advanced type inference
+
+A combination of <<section-flow-typing,flow typing>> and <<section-lub,least upper bound inference>> is used to perform
+advanced type inference and ensure type safety in multiple situations. In particular, program control structures are
+likely to alter the inferred type of a variable:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flow_lub_ifelse_header,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=flow_lub_ifelse_test,indent=0]
+----
+<1> if `someCondition` is true, `o` is assigned a `Top`
+<2> if `someCondition` is false, `o` is assigned a `Bottom`
+<3> calling `methodFromTop` is safe
+<4> but calling `methodFromBottom` is not, so it's a compile time error
+
+When the type checker visits an `if/else` control structure, it checks all variables which are assigned in `if/else` branches
+and computes the <<section-lub,least upper bound>> of all assignments. This type is the type of the inferred variable
+after the `if/else` block, so in this example, `o` is assigned a `Top` in the `if` branch and a `Bottom` in the `else`
+branch. The <<section-lub,LUB>> of those is a `Top`, so after the conditional branches, the compiler infers `o` as being
+a `Top`. Calling `methodFromTop` will therefore be allowed, but not `methodFromBottom`.
+
+The same reasoning exists with closures and in particular closure shared variables. A closure shared variable is a variable
+which is defined outside of a closure, but used inside a closure, as in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_definition,indent=0]
+----
+<1> a variable named `text` is declared
+<2> `text` is used from inside a closure. It is a _closure shared variable_.
+
+Groovy allows developers to use those variables without requiring them to be final. This means that a closure shared
+variable can be reassigned inside a closure:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_ex1,indent=0]
+----
+
+The problem is that a closure is an independent block of code that can be executed (or not) at *any* time. In particular,
+`doSomething` may be asynchronous, for example. This means that the body of a closure doesn't belong to the main control
+flow. For that reason, the type checker also computes, for each closure shared variable, the <<section-lub,LUB>> of all
+assignments of the variable, and will use that `LUB` as the inferred type outside of the scope of the closure, like in
+this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_ex2,indent=0]
+----
+<1> a closure-shared variable is first assigned a `Top`
+<2> inside the closure, it is assigned a `Bottom`
+<3> `methodFromTop` is allowed
+<4> `methodFromBottom` is a compilation error
+
+Here, it is clear that when `methodFromBottom` is called, there's no guarantee, at compile-time or runtime that the
+type of `o` will _effectively_ be a `Bottom`. There are chances that it will be, but we can't make sure, because it's
+asynchronous. So the type checker will only allow calls on the <<section-lub,least upper bound>>, which is here a `Top`.
+
+==== Closures and type inference
+
+The type checker performs special inference on closures, resulting on additional checks on one side and improved fluency
+on the other side.
+
+===== Return type inference
+
+The first thing that the type checker is capable of doing is infering the _return type_ of a closure. This is simply
+ illustrated in the following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=closure_return_type_inf,indent=0]
+----
+<1> a closure is defined, and it returns a string (more precisely a `GString`)
+<2> we call the closure and assign the result to a variable
+<3> the type checker inferred that the closure would return a string, so calling `length()` is allowed
+
+As you can see, unlike a method which declares its return type explicitly, there's no need to declare the return type
+of a closure: its type is inferred from the body of the closure.
+
+.Closures vs methods
+****
+It's worth noting that return type inference is only applicable to closures. While the type checker could do the
+same on a method, it is in practice not desirable: _in general_, methods can be overriden and it is not statically
+possible to make sure that the method which is called is not an overriden version. So flow typing would actually
+think that a method returns something, while in reality, it could return something else, like illustrated in the
+following example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=method_return_type_matters,indent=0]
+----
+<1> class `A` defines a method `compute` which effectively returns a `String`
+<2> this will fail compilation because the return type of `compute` is `def`(aka `Object`)
+<3> class `B` extends `A` and redefines `compute`, this type returning an `int`
+
+As you can see, if the type checker relied on the inferred return type of a method, with <<section-flow-typing,flow typing>>,
+the type checker could determine that it is ok to call `toUpperCase`. It is in fact an *error*, because a subclass can
+override `compute` and return a different object. Here, `B#compute` returns an `int`, so someone calling `computeFully`
+on an instance of `B` would see a runtime error. The compiler prevents this from happening by using the declared return
+type of methods instead of the inferred return type.
+
+For consistency, this behavior is the same for *every* method, even if they are static or final.
+****
+
+===== Parameter type inference
+
+In addition to the return type, it is possible for a closure to infer its parameter types from the context. There are
+two ways for the compiler to infer the parameter types:
+
+* through _implicit SAM type coercion_
+* through API metadata
+
+To illustrate this, lets start with an example that will fail compilation due to the inability for the type checker
+to infer the parameter types:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_failure,indent=0]
+----
+<1> the `inviteIf` method accepts a `Person` and a `Closure`
+<2> we call it with a `Person` and a `Closure`
+<3> yet `it` is not statically known as being a `Person` and compilation fails
+
+In this example, the closure body contains `it.age`. With dynamic, not type checked code, this would work, because the
+type of `it` would be a `Person` at runtime. Unfortunately, at compile-time, there's no way to know what is the type
+of `it`, just by reading the signature of `inviteIf`.
+
+====== Explicit closure parameters
+
+To be short, the type checker doesn't have enough contextual information on the `inviteIf` method to determine statically
+the type of `it`. This means that the method call needs to be rewritten like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround,indent=0]
+----
+<1> the type of `it` needs to be declared explicitly
+
+By explicitly declaring the type of the `it` variable, you can workaround the problem and make this code statically
+checked.
+
+====== Parameters inferred from single-abstract method types
+
+For an API or framework designer, there are two ways to make this more elegant for users, so that they don't have to
+declare an explicit type for the closure parameters. The first one, and easiest, is to replace the closure with a
+SAM type:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_sam,indent=0]
+----
+<1> declare a `SAM` interface with an `apply` method
+<2> `inviteIf` now uses a `Predicate<Person>` instead of a `Closure<Boolean>`
+<3> there's no need to declare the type of the `it` variable anymore
+<4> `it.age` compiles properly, the type of `it` is inferred from the `Predicate#apply` method signature
+
+TIP: By using this technique, we leverage the _automatic coercion of closures to SAM types_ feature of Groovy. The
+question whether you should use a _SAM type_ or a _Closure_ really depends on what you need to do. In a lot of cases,
+using a SAM interface is enough, especially if you consider functional interfaces as they are found in Java 8. However,
+closures provide features that are not accessible to functional interfaces. In particular, closures can have a delegate,
+and owner and can be manipulated as objects (for example, cloned, serialized, curried, ...) before being called. They can
+also support multiple signatures (polymorphism). So if you need that kind of manipulation, it is preferable to switch to
+the most advanced type inference annotations which are described below.
+
+The original issue that needs to be solved when it comes to closure parameter type inference, that is to say, statically
+determining the types of the arguments of a closure _without_ having to have them explicitly declared, is that the Groovy
+type system inherits the Java type system, which is insufficient to describe the types of the arguments.
+
+====== The `@ClosureParams` annotation
+
+Groovy provides an annotation, `@ClosureParams` which is aimed at completing type information. This annotation is primarily
+aimed at framework and API developers who want to extend the capabilities of the type checker by providing type inference
+metadata. This is important if your library makes use of closures and that you want the maximum level of tooling support
+too.
+
+Let's illustrate this by fixing the original example, introducing the `@ClosureParams` annotation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_imports,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_method,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_call,indent=0]
+----
+<1> the closure parameter is annotated with `@ClosureParams`
+<2> it's not necessary to use an explicit type for `it`, which is inferred
+
+The `@ClosureParams` annotation minimally accepts one argument, which is named a _type hint_. A type hint is a class which
+is reponsible for completing type information at compile time for the closure. In this example, the type hint being used
+is `groovy.transform.stc.FirstParam` which indicated to the type checker that the closure will accept one parameter
+whose type is the type of the first parameter of the method. In this case, the first parameter of the method is `Person`,
+so it indicates to the type checker that the first parameter of the closure is in fact a `Person`.
+
+The second argument is optional and named _options_. It's semantics depends on the _type hint_ class. Groovy comes with
+various bundled type hints, illustrated in the table below:
+
+[cols="1a,1,4a"]
+.Predefined type hints
+|===
+|Type hint |Polymorphic? |Description and examples
+
+|`FirstParam` +
+`SecondParam` +
+`ThirdParam`
+|No
+|The first (resp. second, third) parameter type of the method +
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_firstparam,indent=0]
+----
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_secondparam,indent=0]
+----
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_thirdparam,indent=0]
+----
+
+|`FirstParam.FirstGenericType` +
+`SecondParam.FirstGenericType` +
+`ThirdParam.FirstGenericType`
+|No
+|The first generic type of the first (resp. second, third) parameter of the method +
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_firstgt,indent=0]
+----
+
+Variants for `SecondGenericType` and `ThirdGenericType` exist for all `FirstParam`, `SecondParam` and `ThirdParam`
+type hints.
+
+|`SimpleType`
+|No
+|A type hint for which the type of closure parameters comes from the options string. +
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_simpletype,indent=0]
+----
+
+This type hint supports a *single* signature and each of the parameter is specified as a value of the _options_ array
+using a fully-qualified type name or a primitive type.
+
+|`MapEntryOrKeyValue`
+|Yes
+|A dedicated type hint for closures that either work on a `Map.Entry` single parameter, or two parameters corresponding
+to the key and the value. +
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_mapentry,indent=0]
+----
+
+This type hint *requires* that the first argument is a `Map` type, and infers the closure parameter types from the map
+actual key/value types.
+
+|`FromAbstractTypeMethods`
+|Yes
+|Infers closure parameter types from the abstract method of some type. A signature is inferred for *each* abstract method. +
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_abstract_type,indent=0]
+----
+
+If there are multiple signatures like in the example above, the type checker will *only* be able to infer the types of
+the arguments if the arity of each method is different. In the example above, `firstSignature` takes 2 arguments and
+`secondSignature` takes 1 argument, so the type checker can infer the argument types based on the number of arguments.
+
+|`FromString`
+|Yes
+|Infers the closure parameter typs from the `options` argument. The `options` argument consists of an array of comma-separated
+non-primitive types. Each element of the array corresponds to a single signature, and each comma in an element separate
+parameters of the signature. In short, this is the most generic type hint, and each string of the `options` map is *parsed*
+as if it was a signature literal. While being very powerful, this type hint must be avoided if you can because it increases
+the compilation times due to the necessity of parsing the type signatures.
+
+A single signature for a closure accepting a `String`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_1,indent=0]
+----
+
+A polymorphic closure, accepting either a `String` or a `String, Integer`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_2,indent=0]
+----
+
+A polymorphic closure, accepting either a `T` or a pair `T,T`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_3,indent=0]
+----
+
+|===
+
+TIP: Even though you use `FirstParam`, `SecondParam` or `ThirdParam` as a type hint, it doesn't stricly mean that the
+argument which will be passed to the closure *will* be the first (resp. second, third) argument of the method call. It
+only means that the *type* of the parameter of the closure will be the *same* as the type of the first (resp.  second,
+ third) argument of the method call.
+
+In short, the lack of the `@ClosureParams` annotation on a method accepting a `Closure` will *not* fail compilation. If
+ present (and it can be present in Java sources as well as Groovy sources), then the type checker has *more* information
+ and can perform additional type inference. This makes this feature particularily interesting for framework developers.
+
+===== `@DelegatesTo`
+
+The `@DelegatesTo` annotation is used by the type checker to infer the type of the delegate. It allows the API designer
+to instruct the compiler what is the type of the delegate and the delegation strategy. The `@DelegatesTo` annotation is
+discussed in a link:core-domain-specific-languages.html#section-delegatesto[specific section].
+
+=== Static compilation (WIP)
+
+==== Dynamic vs static
+
+In the <<typechecking,type checking section>>, we have seen that Groovy provides optional type checking thanks to the
+`@TypeChecked` annotation. The type checker runs at compile time and performs a static analysis of dynamic code. The
+program will behave exactly the same whether type checking has been enabled or not. This means that the `@TypeChecked`
+annotation is neutral with regards to the semantics of a program. Even though it may be necessary to add type information
+in the sources so that the program is considered type safe, in the end, the semantics of the program are the same.
+
+While this may sound fine, there is actually one issue with this: type checking of dynamic code, done at compile time, is
+by definition only correct if no runtime specific behavior occurs. For example, the following program passes type checking:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe,indent=0]
+----
+
+There are two `compute` methods. One accepts a `String` and returns an `int`, the other accepts an `int` and returns
+a `String`. If you compile this, it is considered type safe: the inner `compute('foobar')` call will return an `int`,
+and calling `compute` on this `int` will in turn return a `String`.
+
+Now, before calling `test()`, consider adding the following line:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe_magic,indent=0]
+----
+
+Using runtime metaprogramming, we're actually modifying the behavior of the `compute(String)` method, so that instead of
+returning the length of the provided argument, it will return a `Date`. If you execute the program, it will fail at
+runtime. Since this line can be added from anywhere, in any thread, there's absolutely no way for the type checker to
+statically make sure that no such thing happens. In short, the type checker is vulnerable to monkey patching. This is
+just one example, but this illustrates the concept that doing static analysis of a dynamic program is inherently wrong.
+
+The Groovy language provides an alternative annotation to `@TypeChecked` which will actually make sure that the methods
+which are inferred as being called *will* effectively be called at runtime. This annotation turns the Groovy compiler
+into a *static compiler*, where all method calls are resolved at compile time *and* the generated bytecode makes sure
+that this happens: the annotation is `@groovy.transform.CompileStatic`.
