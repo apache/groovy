@@ -37,7 +37,9 @@ asciidoctor {
                     specfolder: 'src/spec/doc',
                     linkcss: '',
                     stylesheet: "assets/css/style.css",
-                    encoding: 'utf-8'
+                    encoding: 'utf-8',
+                    toclevels: 10,
+                    numbered: ''
             ]
     ]
 }
