@@ -1,0 +1,66 @@
+/*
+ * Copyright 2003-2014 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package typing
+
+class StaticCompilationIntroTest extends GroovyTestCase {
+
+    private static String TYPESAFE_PROGRAM = '''
+        // tag::intro_typesafe[]
+        class Computer {
+            int compute(String str) {
+                str.length()
+            }
+            String compute(int x) {
+                String.valueOf(x)
+            }
+        }
+
+        @groovy.transform.TypeChecked
+        void test() {
+            def computer = new Computer()
+            computer.with {
+                assert compute(compute('foobar')) =='6'
+            }
+        }
+        // end::intro_typesafe[]
+    '''
+
+    private final static String RUN = '''
+        test()
+'''
+
+    private final static String RUNTIME_MAGIC = '''
+        // tag::intro_typesafe_magic[]
+        Computer.metaClass.compute = { String str -> new Date() }
+        // end::intro_typesafe_magic[]
+    '''
+
+    void testTypeSafeProgram() {
+        def shell = new GroovyShell()
+        shell.evaluate(TYPESAFE_PROGRAM+RUN)
+    }
+
+    void testTypeSafeProgramBroken() {
+        def shell = new GroovyShell()
+        try {
+            shell.evaluate(TYPESAFE_PROGRAM+RUNTIME_MAGIC+RUN)
+            assert false
+        } catch (MissingMethodException e) {
+            assert e.message.contains('No signature of method: Computer.compute() is applicable for argument types: (java.util.Date)')
+        }
+    }
+}
