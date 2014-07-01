@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -230,15 +230,15 @@ public class DefaultTypeTransformation {
     private static Object continueCastOnCollection(Object object, Class type) {
         int modifiers = type.getModifiers();
         Collection answer;
-        if (object instanceof Collection && type.isAssignableFrom(HashSet.class) &&
-                (type == HashSet.class || Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
-            return new HashSet((Collection)object);
+        if (object instanceof Collection && type.isAssignableFrom(LinkedHashSet.class) &&
+                (type == LinkedHashSet.class || Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
+            return new LinkedHashSet((Collection)object);
         }
         if (object.getClass().isArray()) {
             if (type.isAssignableFrom(ArrayList.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
                 answer = new ArrayList();
-            } else if (type.isAssignableFrom(HashSet.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
-                answer = new HashSet();
+            } else if (type.isAssignableFrom(LinkedHashSet.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
+                answer = new LinkedHashSet();
             } else {
                 // let's call the collections constructor
                 // passing in the list wrapper
