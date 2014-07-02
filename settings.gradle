@@ -31,7 +31,8 @@ def subprojects = ['groovy-ant',
         'groovy-templates',
         'groovy-test',
         'groovy-testng',
-        'groovy-xml'
+        'groovy-xml',
+        'groovy-macro'
 ]
 
 if(JavaVersion.current().isJava7Compatible()) {

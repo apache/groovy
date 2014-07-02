@@ -1,0 +1,2 @@
+#global transformation for macro support
+org.codehaus.groovy.macro.transform.MacroTransformation
