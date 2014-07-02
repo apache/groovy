@@ -175,7 +175,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport implements GroovyC
                 ClassNode next = cNode;
                 outer:
                 while (next != null) {
-                    Map genericsSpec = createGenericsSpec(next, new HashMap());
+                    Map genericsSpec = createGenericsSpec(next);
                     MethodNode mn = correctToGenericsSpec(genericsSpec, origMethod);
                     if (next != cNode) {
                         ClassNode correctedNext = correctToGenericsSpecRecurse(genericsSpec, next);

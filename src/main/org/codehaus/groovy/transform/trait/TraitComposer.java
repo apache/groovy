@@ -135,7 +135,7 @@ public abstract class TraitComposer {
     private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers) {
         ClassNode helperClassNode = helpers.getHelper();
         ClassNode fieldHelperClassNode = helpers.getFieldHelper();
-        Map genericsSpec = GenericsUtils.createGenericsSpec(cNode, new HashMap());
+        Map genericsSpec = GenericsUtils.createGenericsSpec(cNode);
         genericsSpec = GenericsUtils.createGenericsSpec(trait, genericsSpec);
 
         for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {

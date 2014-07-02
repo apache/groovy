@@ -137,7 +137,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
             final Set<ClassNode> allInterfaces = getInterfacesAndSuperInterfaces(type);
             final Set<ClassNode> ownerIfaces = owner.getAllInterfaces();
-            Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap<String,ClassNode>());
+            Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass());
             genericsSpec = createGenericsSpec(fieldNode.getType(), genericsSpec);
             for (ClassNode iface : allInterfaces) {
                 if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface)) {
@@ -191,7 +191,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
         if (shouldSkip(candidate.getName(), excludes, includes)) return;
 
-        Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass(), new HashMap<String,ClassNode>());
+        Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass());
         extractSuperClassGenerics(fieldNode.getType(), candidate.getDeclaringClass(), genericsSpec);
 
         if (!excludeTypes.isEmpty() || !includeTypes.isEmpty()) {
