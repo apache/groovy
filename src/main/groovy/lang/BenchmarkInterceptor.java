@@ -57,19 +57,37 @@ public class BenchmarkInterceptor implements Interceptor {
     public void reset() {
         calls = new HashMap();
     }
-
+    /**
+     * This code is executed before the method is called.
+     * @param object        receiver object for the method call
+     * @param methodName    name of the method to call
+     * @param arguments     arguments to the method call
+     * @return null
+     * relays this result.
+     */
     public Object beforeInvoke(Object object, String methodName, Object[] arguments) {
         if (!calls.containsKey(methodName)) calls.put(methodName, new LinkedList());
         ((List) calls.get(methodName)).add(new Long(System.currentTimeMillis()));
 
         return null;
     }
-
+    /**
+     * This code is executed after the method is called.
+     * @param object        receiver object for the called method
+     * @param methodName    name of the called method
+     * @param arguments     arguments to the called method
+     * @param result        result of the executed method call or result of beforeInvoke if method was not called
+     * @return result
+     */
     public Object afterInvoke(Object object, String methodName, Object[] arguments, Object result) {
         ((List) calls.get(methodName)).add(new Long(System.currentTimeMillis()));
         return result;
     }
 
+    /**
+     *The call should be invoked seperately
+     *@return true
+     */
     public boolean doInvoke() {
         return true;
     }
