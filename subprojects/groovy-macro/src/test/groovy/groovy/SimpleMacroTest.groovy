@@ -21,7 +21,6 @@ import org.codehaus.groovy.ast.VariableScope
 import org.codehaus.groovy.ast.builder.AstAssert
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
-import org.codehaus.groovy.control.CompilePhase
 
 import static org.codehaus.groovy.ast.expr.VariableExpression.*;
 
@@ -30,10 +29,7 @@ import static org.codehaus.groovy.ast.expr.VariableExpression.*;
  * @author Sergei Egorov <bsideup@gmail.com>
  */
 @CompileStatic
-class SimpleMacroTest extends GroovyTestCase {
-    
-    static final String TO_LOWER_CASE_METHOD_NAME = macro { "".toLowerCase() }.getMethodAsString()
-    
+class SimpleMacroTest extends GroovyShellTestCase {
     public void testMethod() {
 
         def someVariable = new VariableExpression("someVariable");
@@ -46,7 +42,7 @@ class SimpleMacroTest extends GroovyTestCase {
 
         assertSyntaxTree(expected, result);
     }
-
+    
     public void testAsIs() {
         def expected = new BlockStatement([
                 new ExpressionStatement(new MethodCallExpression(THIS_EXPRESSION, "println", new ArgumentListExpression(new ConstantExpression("foo"))))
@@ -69,12 +65,6 @@ class SimpleMacroTest extends GroovyTestCase {
 
         assertSyntaxTree(expected, result);
     }
-    
-    public void testMethodName() {
-        // Very useful when you don't want to hardcode method or variable names
-        assertEquals("toLowerCase", TO_LOWER_CASE_METHOD_NAME)
-        assertEquals("valueOf", macro { String.valueOf() }.getMethodAsString())
-    }
 
     public void testBlock() {
 
@@ -90,37 +80,6 @@ class SimpleMacroTest extends GroovyTestCase {
                 ] as List<Statement>,
                 new VariableScope()
         )
-
-        assertSyntaxTree(expected, result);
-    }
-
-    public void testCompilePhase() {
-
-        def result = macro(CompilePhase.FINALIZATION) {
-            println "foo"
-            println "bar"
-        }
-
-        def expected = new BlockStatement(
-                [
-                        new ExpressionStatement(new MethodCallExpression(THIS_EXPRESSION, "println", new ArgumentListExpression(new ConstantExpression("foo")))),
-                        // In FINALIZATION phase last println will be return statement
-                        new ReturnStatement(new MethodCallExpression(THIS_EXPRESSION, "println", new ArgumentListExpression(new ConstantExpression("bar")))),
-                ] as List<Statement>,
-                new VariableScope()
-        )
-
-        assertSyntaxTree(expected, result);
-    }
-
-    public void testAsIsWithCompilePhase() {
-        def expected = new BlockStatement([
-                new ReturnStatement(new MethodCallExpression(THIS_EXPRESSION, "println", new ArgumentListExpression(new ConstantExpression("foo"))))
-        ] as List<Statement>, new VariableScope());
-
-        def result = macro(CompilePhase.FINALIZATION, true) {
-            println "foo"
-        }
 
         assertSyntaxTree(expected, result);
     }

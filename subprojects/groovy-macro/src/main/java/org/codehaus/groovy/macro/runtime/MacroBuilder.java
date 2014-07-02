@@ -39,26 +39,14 @@ import java.util.Map;
 public enum MacroBuilder {
     INSTANCE;
 
-    public <T> T macro(String source, final Map<MacroSubstitutionKey, Closure<Expression>> context, Class<T> resultClass) {
-        return macro(false, source, context, resultClass);
-    }
-
-    public <T> T macro(boolean asIs, String source, final Map<MacroSubstitutionKey, Closure<Expression>> context, Class<T> resultClass) {
-        return macro(CompilePhase.CONVERSION, asIs, source, context, resultClass);
-    }
-
-    public <T> T macro(CompilePhase compilePhase, String source, final Map<MacroSubstitutionKey, Closure<Expression>> context, Class<T> resultClass) {
-        return macro(compilePhase, false, source, context, resultClass);
-    }
-
     @SuppressWarnings("unchecked")
-    public <T> T macro(CompilePhase compilePhase, boolean asIs, String source, final Map<MacroSubstitutionKey, Closure<Expression>> context, Class<T> resultClass) {
+    public <T> T macro(boolean asIs, String source, final Map<MacroSubstitutionKey, Closure<Expression>> context, Class<T> resultClass) {
         final String label = "__synthesized__label__" + System.currentTimeMillis() + "__:";
         final String labelledSource = label + source;
         final int linesOffset = 1;
         final int columnsOffset = label.length() + 1; // +1 because of {
         
-        List<ASTNode> nodes = (new AstBuilder()).buildFromString(compilePhase, true, labelledSource);
+        List<ASTNode> nodes = (new AstBuilder()).buildFromString(CompilePhase.CONVERSION, true, labelledSource);
 
         for(ASTNode node : nodes) {
             if (node instanceof BlockStatement) {
