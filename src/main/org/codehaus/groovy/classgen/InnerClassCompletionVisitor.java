@@ -38,11 +38,17 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.List;
 
+import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+
 public class InnerClassCompletionVisitor extends InnerClassVisitorHelper implements Opcodes {
 
     private final SourceUnit sourceUnit;
     private ClassNode classNode;
     private FieldNode thisField = null;
+
+    private static final String
+            CLOSURE_INTERNAL_NAME   = BytecodeHelper.getClassInternalName(CLOSURE_TYPE),
+            CLOSURE_DESCRIPTOR      = BytecodeHelper.getTypeDescription(CLOSURE_TYPE);
 
     public InnerClassCompletionVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
@@ -146,6 +152,17 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         setPropertyGetterDispatcher(block, VariableExpression.THIS_EXPRESSION, parameters);
         method.setCode(block);
     }
+
+    private void getThis(MethodVisitor mv, String classInternalName, String outerClassDescriptor, String innerClassInternalName) {
+        mv.visitVarInsn(ALOAD, 0);
+        if (CLOSURE_TYPE.equals(thisField.getType())) {
+            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", CLOSURE_DESCRIPTOR);
+            mv.visitMethodInsn(INVOKEVIRTUAL, CLOSURE_INTERNAL_NAME, "getThisObject", "()Ljava/lang/Object;", false);
+            mv.visitTypeInsn(CHECKCAST, innerClassInternalName);
+        } else {
+            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
+        }
+    }
     
     private void addDefaultMethods(InnerClassNode node) {
         final boolean isStatic = isStatic(node);
@@ -182,8 +199,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             block.addStatement(
                     new BytecodeSequence(new BytecodeInstruction() {
                         public void visit(MethodVisitor mv) {
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
+                            getThis(mv,classInternalName,outerClassDescriptor,outerClassInternalName);
                             mv.visitVarInsn(ALOAD, 1);
                             mv.visitVarInsn(ALOAD, 2);
                             mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$invoke$" + objectDistance, "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", false);
@@ -220,8 +236,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             block.addStatement(
                     new BytecodeSequence(new BytecodeInstruction() {
                         public void visit(MethodVisitor mv) {
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
+                            getThis(mv,classInternalName,outerClassDescriptor,outerClassInternalName);
                             mv.visitVarInsn(ALOAD, 1);
                             mv.visitVarInsn(ALOAD, 2);
                             mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$set$" + objectDistance, "(Ljava/lang/String;Ljava/lang/Object;)V", false);
@@ -257,8 +272,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             block.addStatement(
                     new BytecodeSequence(new BytecodeInstruction() {
                         public void visit(MethodVisitor mv) {
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
+                            getThis(mv,classInternalName,outerClassDescriptor,outerClassInternalName);
                             mv.visitVarInsn(ALOAD, 1);
                             mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$get$" + objectDistance, "(Ljava/lang/String;)Ljava/lang/Object;", false);
                             mv.visitInsn(ARETURN);

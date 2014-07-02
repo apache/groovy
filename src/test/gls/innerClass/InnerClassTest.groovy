@@ -202,6 +202,27 @@ class InnerClassTest extends CompilableTestSupport {
             Foo.x(2)
             assert Foo.foo() == 2
         """
+
+        assertScript """
+            interface X {
+                def m()
+            }
+
+            class A {
+                def pm = "pm"
+
+                def bar(x) {x().m()}
+                def foo() {
+                    bar { ->
+                        return new X() {
+                            def m() { pm }
+                        }
+                    }
+                }
+            }
+            def a = new A()
+            assert "pm" == a.foo()
+        """
     }
 
     void testUsageOfOuterFieldOverriden_FAILS() {
@@ -352,6 +373,26 @@ class InnerClassTest extends CompilableTestSupport {
             c.foo()
             assert a.x == 1
             assert b.y == 4
+        """
+
+        assertScript """
+            interface X {
+                def m()
+            }
+
+            class A {
+                def foo() {
+                    def c = {
+                        return new X(){def m(){
+                            A.this
+                         } }
+                    }
+                    return c().m()
+                }
+            }
+            class B extends A {}
+            def b = new B()
+            assert b.foo() instanceof B
         """
     }
     
