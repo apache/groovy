@@ -28,12 +28,17 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
 
 /**
  * Handles generation of code for the {@code @}InheritConstructors annotation.
@@ -83,12 +88,13 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         if (consNode.isPrivate()) return;
         Parameter[] params = new Parameter[origParams.length];
         List<Expression> theArgs = new ArrayList<Expression>();
+        Map<String, ClassNode> genericsSpec = createGenericsSpec(classNode);
+        extractSuperClassGenerics(classNode, classNode.getSuperClass(), genericsSpec);
         for (int i = 0; i < origParams.length; i++) {
             Parameter p = origParams[i];
-            params[i] = p.hasInitialExpression() ?
-                    new Parameter(p.getType(), p.getName(), p.getInitialExpression()) :
-                    new Parameter(p.getType(), p.getName());
-            theArgs.add(varX(p.getName(), p.getType()));
+            ClassNode newType = correctToGenericsSpecRecurse(genericsSpec, p.getType());
+            params[i] = p.hasInitialExpression() ? param(newType, p.getName(), p.getInitialExpression()) : param(newType, p.getName());
+            theArgs.add(varX(p.getName(), newType));
         }
         if (isExisting(classNode, params)) return;
         classNode.addConstructor(consNode.getModifiers(), params, consNode.getExceptions(), block(ctorSuperS(args(theArgs))));
