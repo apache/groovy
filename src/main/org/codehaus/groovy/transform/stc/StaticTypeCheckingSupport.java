@@ -1576,7 +1576,7 @@ public abstract class StaticTypeCheckingSupport {
             }
         } else {
             // have first to find matching super class or interface
-            Map <String,ClassNode> genSpec = GenericsUtils.createGenericsSpec(type,Collections.EMPTY_MAP);
+            Map <String,ClassNode> genSpec = GenericsUtils.createGenericsSpec(type);
             ClassNode superClass = getNextSuperClass(type,target);
             if (superClass!=null){
                 ClassNode corrected;
