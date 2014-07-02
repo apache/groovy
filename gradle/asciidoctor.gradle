@@ -72,7 +72,7 @@ asciidoctor.doLast {
                 cPath = cPath.substring(0, anchorIdx)
             }
 
-            "<a href='http://groovy.codehaus.org/gapi/index.html?${cPath}.html${anchor}' target='_blank'><code>$cName</code></a>"
+            "<a href='http://docs.groovy-lang.org/${version}/html/gapi/index.html?${cPath}.html${anchor}' target='_blank'><code>$cName</code></a>"
         }
 
         text = text.replaceAll('</head>', "$scripts</head>")
