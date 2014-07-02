@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.runtime.AbstractComparator;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -61,6 +62,8 @@ public class SortableASTTransformation extends AbstractASTTransformation {
 
     private static final String VALUE = "value";
     private static final String OTHER = "other";
+    private static final String THIS_HASH = "thisHash";
+    private static final String OTHER_HASH = "otherHash";
     private static final String ARG0 = "arg0";
     private static final String ARG1 = "arg1";
 
@@ -95,6 +98,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         for (PropertyNode property : properties) {
             createComparatorFor(classNode, property);
         }
+        new VariableScopeVisitor(sourceUnit, true).visitClass(classNode);
     }
 
     private void implementComparable(ClassNode classNode) {
@@ -108,20 +112,23 @@ public class SortableASTTransformation extends AbstractASTTransformation {
 
         // if (this.is(other)) return 0;
         statements.add(ifS(callThisX("is", args(OTHER)), returnS(constX(0))));
-        // int value = 0;
-        statements.add(declS(varX(VALUE, ClassHelper.int_TYPE), constX(0)));
-        for (PropertyNode property : properties) {
-            String propName = property.getName();
-            // value = this.prop <=> other.prop;
-            statements.add(assignS(varX(VALUE), cmpX(propX(varX("this"), propName), callX(varX(OTHER), propName))));
-            // if (value != 0) return value;
-            statements.add(ifS(neX(varX(VALUE), constX(0)), returnS(varX(VALUE))));
-        }
 
         if (properties.isEmpty()) {
-            // let this object be less than other (TODO: review - why not let these be equal?)
-            statements.add(returnS(constX(-1)));
+            // perhaps overkill but let compareTo be based on hashes for commutativity
+            // return this.hashCode() <=> other.hashCode()
+            statements.add(declS(varX(THIS_HASH, ClassHelper.Integer_TYPE), callX(varX("this"), "hashCode")));
+            statements.add(declS(varX(OTHER_HASH, ClassHelper.Integer_TYPE), callX(varX(OTHER), "hashCode")));
+            statements.add(returnS(cmpX(varX(THIS_HASH), varX(OTHER_HASH))));
         } else {
+            // int value = 0;
+            statements.add(declS(varX(VALUE, ClassHelper.int_TYPE), constX(0)));
+            for (PropertyNode property : properties) {
+                String propName = property.getName();
+                // value = this.prop <=> other.prop;
+                statements.add(assignS(varX(VALUE), cmpX(propX(varX("this"), propName), propX(varX(OTHER), propName))));
+                // if (value != 0) return value;
+                statements.add(ifS(neX(varX(VALUE), constX(0)), returnS(varX(VALUE))));
+            }
             // objects are equal
             statements.add(returnS(constX(0)));
         }
