@@ -38,11 +38,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafeWithGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 
 /**
@@ -58,10 +58,9 @@ public class SortableASTTransformation extends AbstractASTTransformation {
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode COMPARABLE_TYPE = makeClassSafe(Comparable.class);
     private static final ClassNode COMPARATOR_TYPE = makeClassSafe(Comparator.class);
-    private static final ClassNode ABSTRACT_COMPARATOR_TYPE = makeClassSafe(AbstractComparator.class);
 
     private static final String VALUE = "value";
-    private static final String OBJ = "obj";
+    private static final String OTHER = "other";
     private static final String ARG0 = "arg0";
     private static final String ARG1 = "arg1";
 
@@ -88,9 +87,9 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 "compareTo",
                 ACC_PUBLIC,
                 ClassHelper.int_TYPE,
-                params(param(OBJECT_TYPE, OBJ)),
+                params(param(newClass(classNode), OTHER)),
                 ClassNode.EMPTY_ARRAY,
-                createCompareToMethodBody(classNode, properties)
+                createCompareToMethodBody(properties)
         ));
 
         for (PropertyNode property : properties) {
@@ -100,29 +99,27 @@ public class SortableASTTransformation extends AbstractASTTransformation {
 
     private void implementComparable(ClassNode classNode) {
         if (!classNode.implementsInterface(COMPARABLE_TYPE)) {
-            classNode.addInterface(COMPARABLE_TYPE);
+            classNode.addInterface(makeClassSafeWithGenerics(Comparable.class, classNode));
         }
     }
 
-    private static Statement createCompareToMethodBody(ClassNode classNode, List<PropertyNode> properties) {
+    private static Statement createCompareToMethodBody(List<PropertyNode> properties) {
         List<Statement> statements = new ArrayList<Statement>();
 
-        // if(this.is(obj)) return 0;
-        statements.add(ifS(callThisX("is", args(OBJ)), returnS(constX(0))));
-        // if(!(obj instanceof <type>)) return -1;
-        statements.add(ifS(notX(isInstanceOfX(varX(OBJ), newClass(classNode))), returnS(constX(-1))));
+        // if (this.is(other)) return 0;
+        statements.add(ifS(callThisX("is", args(OTHER)), returnS(constX(0))));
         // int value = 0;
         statements.add(declS(varX(VALUE, ClassHelper.int_TYPE), constX(0)));
         for (PropertyNode property : properties) {
-            String name = property.getName();
-            // value = this.prop <=> obj.prop;
-            statements.add(assignS(varX(VALUE), cmpX(propX(varX("this"), name), propX(varX(OBJ), name))));
-            // if(value != 0) return value;
+            String propName = property.getName();
+            // value = this.prop <=> other.prop;
+            statements.add(assignS(varX(VALUE), cmpX(propX(varX("this"), propName), callX(varX(OTHER), propName))));
+            // if (value != 0) return value;
             statements.add(ifS(neX(varX(VALUE), constX(0)), returnS(varX(VALUE))));
         }
 
         if (properties.isEmpty()) {
-            // let this object be less than obj
+            // let this object be less than other (TODO: review - why not let these be equal?)
             statements.add(returnS(constX(-1)));
         } else {
             // objects are equal
@@ -134,36 +131,37 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         return body;
     }
 
-    private static Statement createCompareToMethodBody(PropertyNode property) {
-        String propertyName = property.getName();
+    private static Statement createCompareMethodBody(PropertyNode property) {
+        String propName = property.getName();
         return block(
-                // if(arg0 == arg1) return 0;
+                // if (arg0 == arg1) return 0;
                 ifS(eqX(varX(ARG0), varX(ARG1)), returnS(constX(0))),
-                // if(arg0 != null && arg1 == null) return -1;
+                // if (arg0 != null && arg1 == null) return -1;
                 ifS(andX(notNullX(varX(ARG0)), equalsNullX(varX(ARG1))), returnS(constX(-1))),
-                // if(arg0 == null && arg1 != null) return 1;
+                // if (arg0 == null && arg1 != null) return 1;
                 ifS(andX(equalsNullX(varX(ARG0)), notNullX(varX(ARG1))), returnS(constX(1))),
                 // return arg0.prop <=> arg1.prop;
-                returnS(cmpX(propX(varX(ARG0), propertyName), propX(varX(ARG1), propertyName)))
+                returnS(cmpX(propX(varX(ARG0), propName), propX(varX(ARG1), propName)))
         );
     }
 
     private static void createComparatorFor(ClassNode classNode, PropertyNode property) {
-        String propertyName = property.getName();
-        String className = classNode.getName() + "$" + StringGroovyMethods.capitalize(propertyName) + "Comparator";
-        InnerClassNode cmpClass = new InnerClassNode(classNode, className, ACC_PRIVATE | ACC_STATIC, ABSTRACT_COMPARATOR_TYPE);
+        String propName = property.getName();
+        String className = classNode.getName() + "$" + StringGroovyMethods.capitalize(propName) + "Comparator";
+        ClassNode superClass = makeClassSafeWithGenerics(AbstractComparator.class, classNode);
+        InnerClassNode cmpClass = new InnerClassNode(classNode, className, ACC_PRIVATE | ACC_STATIC, superClass);
         classNode.getModule().addClass(cmpClass);
 
         cmpClass.addMethod(new MethodNode(
                 "compare",
                 ACC_PUBLIC,
                 ClassHelper.int_TYPE,
-                params(param(OBJECT_TYPE, ARG0), param(OBJECT_TYPE, ARG1)),
+                params(param(newClass(classNode), ARG0), param(newClass(classNode), ARG1)),
                 ClassNode.EMPTY_ARRAY,
-                createCompareToMethodBody(property)
+                createCompareMethodBody(property)
         ));
 
-        String fieldName = "this$" + StringGroovyMethods.capitalize(propertyName) + "Comparator";
+        String fieldName = "this$" + StringGroovyMethods.capitalize(propName) + "Comparator";
         // private final Comparator this$<property>Comparator = new <type>$<property>Comparator();
         FieldNode cmpField = classNode.addField(
                 fieldName,
@@ -172,7 +170,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 ctorX(cmpClass));
 
         classNode.addMethod(new MethodNode(
-                "comparatorBy" + StringGroovyMethods.capitalize(propertyName),
+                "comparatorBy" + StringGroovyMethods.capitalize(propName),
                 ACC_PUBLIC | ACC_STATIC,
                 COMPARATOR_TYPE,
                 Parameter.EMPTY_ARRAY,

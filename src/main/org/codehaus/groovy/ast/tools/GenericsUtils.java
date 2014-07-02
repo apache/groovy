@@ -257,6 +257,12 @@ public class GenericsUtils {
         return makeClassSafeWithGenerics(ClassHelper.make(klass));
     }
 
+    public static ClassNode makeClassSafeWithGenerics(Class klass, ClassNode genericsType) {
+        GenericsType[] genericsTypes = new GenericsType[1];
+        genericsTypes[0] = new GenericsType(genericsType);
+        return makeClassSafeWithGenerics(ClassHelper.make(klass), genericsTypes);
+    }
+
     public static ClassNode makeClassSafe0(ClassNode type, GenericsType... genericTypes) {
         ClassNode plainNodeReference = newClass(type);
         if (genericTypes != null && genericTypes.length > 0) plainNodeReference.setGenericsTypes(genericTypes);
