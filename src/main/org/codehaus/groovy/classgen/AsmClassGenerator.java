@@ -884,9 +884,16 @@ public class AsmClassGenerator extends ClassGenerator {
             while (!iterType.equals(type)) {
                 String ownerName = BytecodeHelper.getClassInternalName(iterType);
                 if (iterType.getOuterClass()==null) break;
+                ClassNode thisFieldType = iterType.getField("this$0").getType();
                 iterType = iterType.getOuterClass();
-                String typeName = BytecodeHelper.getTypeDescription(iterType);
-                mv.visitFieldInsn(GETFIELD, ownerName, "this$0", typeName);
+                if (ClassHelper.CLOSURE_TYPE.equals(thisFieldType)) {
+                    mv.visitFieldInsn(GETFIELD, ownerName, "this$0", BytecodeHelper.getTypeDescription(ClassHelper.CLOSURE_TYPE));
+                    mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(ClassHelper.CLOSURE_TYPE), "getThisObject", "()Ljava/lang/Object;", false);
+                    mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(iterType));
+                } else {
+                    String typeName = BytecodeHelper.getTypeDescription(iterType);
+                    mv.visitFieldInsn(GETFIELD, ownerName, "this$0", typeName);
+                }
             }
             controller.getOperandStack().push(type);
             return;
