@@ -39,6 +39,17 @@ class SingletonTransformTest extends GroovyShellTestCase {
         assert "Hello, World!" == res
     }
 
+    void testSingletonCompileStatic() {
+        def res = evaluate("""
+            @Singleton @groovy.transform.CompileStatic
+            class X {
+                def getHello () { "Hello, World!" }
+            }
+            X.instance.hello
+        """)
+        assert "Hello, World!" == res
+    }
+
     void testLazySingleton() {
         def res = evaluate("""
             @Singleton(lazy=true)
