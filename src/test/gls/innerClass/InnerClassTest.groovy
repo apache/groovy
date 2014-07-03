@@ -223,6 +223,34 @@ class InnerClassTest extends CompilableTestSupport {
             def a = new A()
             assert "pm" == a.foo()
         """
+
+        //GROOVY-6141
+        assertScript '''
+            class A {
+                def x = 1
+                def b = new B()
+                class B {
+                    def y = 2
+                    def c = new C()
+                    def f () {
+                        assert y==2
+                        assert x==1
+                    }
+                    class C {
+                        def z = 3
+                        def f() {
+                            assert z==3
+                            assert y==2
+                            assert x==1
+                        }
+                    }
+                }
+            }
+
+            def a = new A()
+            a.b.f()
+            a.b.c.f()
+        '''
     }
 
     void testUsageOfOuterFieldOverriden_FAILS() {
@@ -500,8 +528,8 @@ import org.codehaus.groovy.classgen.Verifier
         '''
     }
 
-    // GROOVY-6810
     void testThisReferenceForAICInOpenBlock() {
+        // GROOVY-6810
         assertScript '''
             import java.security.AccessController
             import java.security.PrivilegedAction
@@ -529,8 +557,90 @@ import org.codehaus.groovy.classgen.Verifier
             }
 
             class Test {def p}
-            def t = new Test() 
+            def t = new Test()
             injectVariables(t, ['p': 'q'])
+        '''
+
+        //GROOVY-4896
+        assertScript '''
+            def doSomethingUsingLocal(){
+                logExceptions {
+                    String s1 = "Ok"
+                    Runnable ifA = new Runnable(){
+                        void run(){
+                            s1.toString()
+                        }
+                    }
+                    ifA.run()
+                }
+            }
+
+            def doSomethingUsingParamWorkaround(final String s2){
+                logExceptions {
+                    String s1=s2
+                    Runnable ifA = new Runnable(){
+                        void run(){
+                            s1.toString()
+                        }
+                    }
+                    ifA.run()
+                }
+            }
+
+            def doSomethingUsingParam(final String s1){ // This always fails
+                logExceptions {
+                    Runnable ifA = new Runnable(){
+                        void run(){
+                            s1.toString()
+                        }
+                    }
+                    ifA.run()
+                }
+            }
+
+            def doSomethingEmptyRunnable(final String s1){
+                logExceptions {
+                    Runnable ifA = new Runnable(){
+                        void run(){
+                        }
+                    }
+                    ifA.run()
+                }
+            }
+
+
+            def logExceptions(Closure c){
+                try{
+                    c.call()
+                } catch (Throwable e){
+                    return false
+                }
+                return true
+            }
+
+            assert doSomethingUsingLocal()
+            assert doSomethingEmptyRunnable("")
+            assert doSomethingUsingParamWorkaround("Workaround")
+            assert doSomethingUsingParam("anyString")
+        '''
+    }
+
+    void testAICextendingAbstractInnerClass() {
+        //GROOVY-5582
+        assertScript '''
+            class Outer {
+                int outer() { 1 }
+                abstract class Inner {
+                    abstract int inner()
+                }
+                int test() {
+                    Inner inner = new Inner() {
+                        int inner() { outer() }
+                    }
+                    inner.inner()
+                }
+            }
+            assert new Outer().test() == 1
         '''
     }
 }
