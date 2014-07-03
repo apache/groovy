@@ -30,6 +30,9 @@ import static org.codehaus.groovy.ast.expr.VariableExpression.*;
  */
 @CompileStatic
 class SimpleMacroTest extends GroovyShellTestCase {
+    
+    static final String TO_LOWER_CASE_METHOD_NAME = macro { "".toLowerCase() }.getMethodAsString()
+    
     public void testMethod() {
 
         def someVariable = new VariableExpression("someVariable");
@@ -64,6 +67,12 @@ class SimpleMacroTest extends GroovyShellTestCase {
         def expected = new ConstructorCallExpression(ClassHelper.make("NonExistingClass"), new ArgumentListExpression(new VariableExpression("someVariable")));
 
         assertSyntaxTree(expected, result);
+    }
+    
+    public void testMethodName() {
+        // Very useful when you don't want to hardcode method or variable names
+        assertEquals("toLowerCase", TO_LOWER_CASE_METHOD_NAME)
+        assertEquals("valueOf", macro { String.valueOf() }.getMethodAsString())
     }
 
     public void testBlock() {
