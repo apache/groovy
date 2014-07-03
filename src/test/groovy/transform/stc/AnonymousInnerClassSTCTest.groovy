@@ -145,4 +145,27 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
             assert A.foo() == "ii i"
         '''
     }
+
+    // GROOVY-6904
+    void testAICInClosure() {
+        assertScript '''
+            interface X {
+                def m()
+            }
+
+            class A {
+                Object pm = "pm"
+                def bar(Closure<? extends X> x) {x().m()}
+                def foo() {
+                    bar { ->
+                        return new X() {
+                            def m() { pm }
+                        }
+                    }
+                }
+            }
+            def a = new A()
+            assert a.foo() == "pm"
+        '''
+    }
 }
