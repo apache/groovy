@@ -93,7 +93,8 @@ class GrapeIvy implements GrapeEngine {
         try {
             settings.load(grapeConfig) // exploit multi-methods for convenience
         } catch (java.text.ParseException ex) {
-            System.err.println "Local Ivy config file '$grapeConfig.canonicalPath' appears corrupt - ignoring it and using default config instead\nError was: " + ex.message
+            def configLocation = grapeConfig instanceof File ? grapeConfig.canonicalPath : grapeConfig.toString()
+            System.err.println "Local Ivy config file '$configLocation' appears corrupt - ignoring it and using default config instead\nError was: " + ex.message
             grapeConfig = GrapeIvy.getResource("defaultGrapeConfig.xml")
             settings.load(grapeConfig)
         }
