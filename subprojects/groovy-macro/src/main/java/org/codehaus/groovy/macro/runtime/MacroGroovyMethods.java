@@ -17,6 +17,7 @@ package org.codehaus.groovy.macro.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
+import org.codehaus.groovy.control.CompilePhase;
 
 /**
  *
@@ -36,6 +37,14 @@ public class MacroGroovyMethods {
     }
 
     public static <T> T macro(Object self, boolean asIs, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
+        return null;
+    }
+
+    public static <T> T macro(Object self, CompilePhase compilePhase, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
+        return null;
+    }
+
+    public static <T> T macro(Object self, CompilePhase compilePhase, boolean asIs, @DelegatesTo(MacroValuePlaceholder.class) Closure cl) {
         return null;
     }
 }

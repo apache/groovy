@@ -88,31 +88,26 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
 
         List<Expression> macroArgumentsExpressions = macroArguments.getExpressions();
 
-        if(macroArgumentsExpressions.size() > 1) {
-            Expression firstArgument = macroArgumentsExpressions.get(0);
+        if(macroArgumentsExpressions.size() == 2 || macroArgumentsExpressions.size() == 3) {
+            Expression asIsArgumentExpression = macroArgumentsExpressions.get(macroArgumentsExpressions.size() - 2);
+            if((asIsArgumentExpression instanceof ConstantExpression)) {
+                ConstantExpression asIsConstantExpression = (ConstantExpression) asIsArgumentExpression;
 
-            if(!(firstArgument instanceof ConstantExpression)) {
-                addError("AsIs argument value should be constant(true or false)", firstArgument);
-                return true;
+                if(!(asIsConstantExpression.getValue() instanceof Boolean)) {
+                    addError("AsIs argument value should be boolean", asIsConstantExpression);
+                    return true;
+                }
+
+                asIs = (Boolean) asIsConstantExpression.getValue();
             }
-
-            ConstantExpression asIsConstantExpression = (ConstantExpression) firstArgument;
-
-            if(!(asIsConstantExpression.getValue() instanceof Boolean)) {
-                addError("AsIs argument value should be boolean", asIsConstantExpression);
-                return true;
-            }
-
-            asIs = (Boolean) asIsConstantExpression.getValue();
         }
 
-        List<Expression> otherArgs = new ArrayList<Expression>();
-        otherArgs.add(new ConstantExpression(asIs));
-        otherArgs.add(new ConstantExpression(source));
-        otherArgs.add(mapExpression);
-        otherArgs.add(new ClassExpression(ClassHelper.makeWithoutCaching(MacroBuilder.getMacroValue(closureBlock, asIs).getClass(), false)));
+        macroArgumentsExpressions.remove(macroArgumentsExpressions.size() - 1);
 
-        macroCall.setArguments(new ArgumentListExpression(otherArgs));
+        macroArgumentsExpressions.add(new ConstantExpression(source));
+        macroArgumentsExpressions.add(mapExpression);
+        macroArgumentsExpressions.add(new ClassExpression(ClassHelper.makeWithoutCaching(MacroBuilder.getMacroValue(closureBlock, asIs).getClass(), false)));
+
         macroCall.setObjectExpression(new PropertyExpression(new ClassExpression(ClassHelper.makeWithoutCaching(MacroBuilder.class, false)), "INSTANCE"));
         macroCall.setSpreadSafe(false);
         macroCall.setSafe(false);
