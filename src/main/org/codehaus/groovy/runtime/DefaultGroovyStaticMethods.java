@@ -38,6 +38,7 @@ import org.codehaus.groovy.reflection.ReflectionUtils;
  * @author Dierk Koenig
  * @author Joachim Baumann
  * @author Paul King
+ * @author Kent Inge Fagerland Simonsen
  * @version $Revision$
  */
 public class DefaultGroovyStaticMethods {
@@ -177,7 +178,7 @@ public class DefaultGroovyStaticMethods {
      * @return a new Date instance representing the parsed input string
      * @throws ParseException if there is a parse error
      * @see java.text.SimpleDateFormat#parse(java.lang.String)
-     * @since 1.5.7
+     * @since 0.5.7
      */
     public static Date parse(Date self, String format, String input) throws ParseException {
         return new SimpleDateFormat(format).parse(input);
@@ -273,5 +274,15 @@ public class DefaultGroovyStaticMethods {
         }
         return tempFile;
     }
+
+  /**
+   * Get the current time in seconds
+   *
+   * @param self   placeholder variable used by Groovy categories; ignored for default static methods
+   * @return the current time in seconds
+   */
+  public static long currentTimeSeconds(System self){
+    return System.currentTimeMillis() / 1000;
+  }
 
 }
