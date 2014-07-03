@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,89 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
             o.test()
             new Outer2().test()
         """
+    }
+
+    void testParametersWithGenericsAndCompileStatic_GROOVY6874() {
+        assertScript """
+            import groovy.transform.*
+            import java.math.RoundingMode
+
+            @CompileStatic
+            abstract class BasePublisher<T, U> {
+               final Deque<T> items
+               private U mode
+               BasePublisher(Deque<T> items) { this.items = items }
+               BasePublisher(U mode) {
+                  this.mode = mode
+                  this.items = []
+               }
+               BasePublisher(Set<U> modes) { this(modes[0]) }
+               void publish(T item) { items.addFirst(item) }
+               void init(U mode) { this.mode = mode }
+               String toString() { items.join('|') + "|" + mode.toString() }
+            }
+
+            @CompileStatic @InheritConstructors
+            class OrderPublisher<V> extends BasePublisher<Integer, V> {
+              static OrderPublisher make() {
+                new OrderPublisher<RoundingMode>(new LinkedList<Integer>())
+              }
+              void foo() { publish(3) }
+              void bar(V mode) { init(mode) }
+              void baz() {
+                new OrderPublisher<RoundingMode>(RoundingMode.UP)
+                new OrderPublisher<RoundingMode>(new HashSet<RoundingMode>())
+              }
+            }
+
+            def op = OrderPublisher.make()
+            op.foo()
+            op.bar(RoundingMode.DOWN)
+            assert op.toString() == '3|DOWN'
+        """
+    }
+
+    void testParametersWithGenericsAndCompileStatic_errors_GROOVY6874() {
+        def message = shouldFail """
+            import groovy.transform.*
+            import java.math.RoundingMode
+
+            @CompileStatic
+            abstract class BasePublisher<T, U> {
+               final Deque<T> items
+               private U mode
+               BasePublisher(Deque<T> items) { this.items = items }
+               BasePublisher(U mode) {
+                  this.mode = mode
+                  this.items = []
+               }
+               BasePublisher(Set<U> modes) { this(modes[0]) }
+               void publish(T item) { items.addFirst(item) }
+               void init(U mode) { this.mode = mode }
+               String toString() { items.join('|') + "|" + mode.toString() }
+            }
+
+            @CompileStatic @InheritConstructors
+            class OrderPublisher<V> extends BasePublisher<Integer, V> {
+              static OrderPublisher make() {
+                new OrderPublisher<RoundingMode>(new LinkedList<String>())
+              }
+              void foo() { publish(3) }
+              void bar(V mode) { init(mode) }
+              void baz() {
+                new OrderPublisher<RoundingMode>(new Date())
+                new OrderPublisher<RoundingMode>(new HashSet<Date>())
+              }
+            }
+
+            def op = OrderPublisher.make()
+            op.foo()
+            op.bar(RoundingMode.DOWN)
+            assert op.toString() == '3|DOWN'
+        """
+        assert message.contains('Cannot call OrderPublisher <RoundingMode>#<init>(java.util.Deque <java.lang.Integer>) with arguments [java.util.LinkedList <String>]')
+        assert message.contains('Cannot call OrderPublisher <RoundingMode>#<init>(java.math.RoundingMode) with arguments [java.util.Date]')
+        assert message.contains('Cannot call OrderPublisher <RoundingMode>#<init>(java.util.Set <RoundingMode>) with arguments [java.util.HashSet <Date>]')
     }
 
 }
