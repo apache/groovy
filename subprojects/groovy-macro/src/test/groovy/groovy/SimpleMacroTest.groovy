@@ -29,7 +29,7 @@ import static org.codehaus.groovy.ast.expr.VariableExpression.*;
  * @author Sergei Egorov <bsideup@gmail.com>
  */
 @CompileStatic
-class SimpleMacroTest extends GroovyShellTestCase {
+class SimpleMacroTest extends GroovyTestCase {
     
     static final String TO_LOWER_CASE_METHOD_NAME = macro { "".toLowerCase() }.getMethodAsString()
     
