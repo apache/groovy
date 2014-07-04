@@ -3535,7 +3535,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                     if (property != null) {
                         ClassNode type = property.getOriginType();
-                        if (implementsInterfaceOrIsSubclassOf(args[0], type)) {
+                        if (implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(args[0]), wrapTypeIfNecessary(type))) {
                             MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, VOID_TYPE, new Parameter[]{
                                     new Parameter(type, "arg")
                             }, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);

@@ -39,6 +39,27 @@ class StaticCompilationIntroTest extends GroovyTestCase {
         // end::intro_typesafe[]
     '''
 
+    private static String TYPESAFE_COMPILESTATIC_PROGRAM = '''
+        // tag::intro_typesafe_compilestatic[]
+        class Computer {
+            int compute(String str) {
+                str.length()
+            }
+            String compute(int x) {
+                String.valueOf(x)
+            }
+        }
+
+        @groovy.transform.CompileStatic
+        void test() {
+            def computer = new Computer()
+            computer.with {
+                assert compute(compute('foobar')) =='6'
+            }
+        }
+        // end::intro_typesafe_compilestatic[]
+    '''
+
     private final static String RUN = '''
         test()
 '''
@@ -62,5 +83,10 @@ class StaticCompilationIntroTest extends GroovyTestCase {
         } catch (MissingMethodException e) {
             assert e.message.contains('No signature of method: Computer.compute() is applicable for argument types: (java.util.Date)')
         }
+    }
+
+    void testTypeSafeProgramFixedWithCompileStatic() {
+        def shell = new GroovyShell()
+        shell.evaluate(TYPESAFE_COMPILESTATIC_PROGRAM+RUNTIME_MAGIC+RUN)
     }
 }

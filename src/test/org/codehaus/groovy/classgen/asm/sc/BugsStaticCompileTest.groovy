@@ -1295,5 +1295,46 @@ println someInt
     assert o.test() == 'ok'
     '''
     }
+
+    // GROOVY-6876
+    void testSetterOfPrimitiveType() {
+        assertScript '''
+            class Foo {
+                long bar
+                def method() {
+                    setBar(-1L)
+                    bar
+                }
+            }
+            assert new Foo().method() == -1L
+            '''
+
+        assertScript '''
+            class Foo {
+                long bar
+                def method(Long v) {
+                    setBar(v)
+                    bar
+                }
+            }
+            assert new Foo().method(-1L) == -1L
+        '''
+
+        assertScript '''
+            class Foo {
+                long rankOrderingOrId
+                void setRankOrderingOrId(long rankOrderingOrId) {
+                    this.rankOrderingOrId = rankOrderingOrId < 0 ? -1 : rankOrderingOrId
+                }
+            }
+            def f = new Foo()
+            f.setRankOrderingOrId(1L)
+            assert f.getRankOrderingOrId() == 1L
+            assert f.rankOrderingOrId == 1L
+            f.rankOrderingOrId = 2L
+            assert f.getRankOrderingOrId() == 2L
+            assert f.rankOrderingOrId == 2L
+        '''
+    }
 }
 
