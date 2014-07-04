@@ -81,6 +81,24 @@ class LazyTransformTest extends GroovyShellTestCase {
         assertEquals([1,2,3], res.list)
     }
 
+    void testInitCompileStatic() {
+        def res = shell.evaluate("""
+              @groovy.transform.CompileStatic
+              class X {
+                @Lazy private ArrayList list = [2,3,4]
+
+                void op () {
+                  list
+                }
+              }
+
+              new X ()
+        """)
+        assertNull res.@'$list'
+        res.op ()
+        assertEquals([2,3,4], res.list)
+    }
+
     void testInitWithClosure() {
         def res = evaluate("""
               class X {
