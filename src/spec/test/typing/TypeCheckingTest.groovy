@@ -104,9 +104,9 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         '''
 
         shouldFailWithMessages '''
-            // tag::stc_assign_array[]
+            // tag::stc_assign_array_fail[]
             int[] i = new String[4]     // fails
-            // end::stc_assign_array[]
+            // end::stc_assign_array_fail[]
         ''', 'Cannot assign value of type java.lang.String[] to variable of type int[]'
 
         shouldFailWithMessages '''
