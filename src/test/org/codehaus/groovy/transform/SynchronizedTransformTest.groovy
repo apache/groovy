@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,11 @@
  */
 package org.codehaus.groovy.transform
 
-import java.util.concurrent.TimeUnit
+import groovy.transform.CompileStatic
+import groovy.transform.Synchronized
+
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * @author Paul King
@@ -26,10 +29,12 @@ class SynchronizedTransformTest extends GroovyTestCase {
 
     def countReadyLatch = new CountDownLatch(1);
     def testReadyLatch = new CountDownLatch(1);
+    CountDownLatch countReadyLatchCS = new CountDownLatch(1);
+    CountDownLatch testReadyLatchCS = new CountDownLatch(1);
 
     void testSynchronized() {
         def c = new Count()
-        Thread.start{
+        Thread.start {
             c.incDec()
         }
         testReadyLatch.countDown()
@@ -37,14 +42,38 @@ class SynchronizedTransformTest extends GroovyTestCase {
         c.incDec()
     }
 
+    void testSynchronizedCS() {
+        def c = new CountCS()
+        Thread.start {
+            c.incDec()
+        }
+        testReadyLatchCS.countDown()
+        countReadyLatchCS.await(5, TimeUnit.SECONDS)
+        c.incDec()
+    }
+
     class Count {
-      private val = 0
-      @groovy.transform.Synchronized
-      void incDec() {
-        assert val == 0; val++; assert val == 1
-        countReadyLatch.countDown()
-        testReadyLatch.await(5, TimeUnit.SECONDS)
-        assert val == 1; val--; assert val == 0
-      }
+        private val = 0
+
+        @Synchronized
+        void incDec() {
+            assert val == 0; val++; assert val == 1
+            countReadyLatch.countDown()
+            testReadyLatch.await(5, TimeUnit.SECONDS)
+            assert val == 1; val--; assert val == 0
+        }
+    }
+
+    @CompileStatic
+    class CountCS {
+        private int val = 0
+
+        @Synchronized
+        void incDec() {
+            assert val == 0; val++; assert val == 1
+            countReadyLatchCS.countDown()
+            testReadyLatchCS.await(5, TimeUnit.SECONDS)
+            assert val == 1; val--; assert val == 0
+        }
     }
 }
