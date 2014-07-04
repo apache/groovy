@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -238,6 +239,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 expressionTransformer.visitMethod(method);
             }
         }
+        new VariableScopeVisitor(source, true).visitClass(parent);
     }
 
     private boolean ensureNoInstanceFieldOrProperty(final SourceUnit source, final ClassNode parent) {
