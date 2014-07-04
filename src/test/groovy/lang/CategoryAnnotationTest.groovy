@@ -269,5 +269,27 @@ class CategoryAnnotationTest extends GroovyTestCase {
             assert new Bar().foo() == 5
         '''
     }
+
+    void testCategoryShouldBeCompatibleWithCompileStatic_GROOVY6917() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            @Category(Integer)
+            class IntegerCategory {
+                Integer twice() { this * 2 }
+                List<Integer> multiplesUpTo(Integer num) {
+                    (2..num).collect{ j -> this * j }
+                }
+                List<Integer> multiplyAll(List<Integer> nums) {
+                    nums.collect{ it * this }
+                }
+            }
+
+            use(IntegerCategory) {
+                assert 7.twice() == 14
+                assert 7.multiplesUpTo(4) == [14, 21, 28]
+                assert 7.multiplyAll([1, 3, 5]) == [7, 21, 35]
+            }
+        '''
+    }
 }
 
