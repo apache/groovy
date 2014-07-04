@@ -800,6 +800,45 @@ layout 'includes/body.tpl', bodyContents: contents {
         assert rendered.toString() == "<html><head><title>This is the title</title></head><body><div><p>This is the body</p></div></body></html>"
     }
 
+    // GROOVY-6915
+    void testLayoutWithModelInheritance() {
+        def config = new TemplateConfiguration()
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(config)
+        def template = engine.createTemplate '''
+        layout 'includes/body.tpl', bodyContents: contents {
+            div {
+                p('This is the body')
+            }
+        }
+        '''
+
+        StringWriter rendered = new StringWriter()
+        template.make([title:'This is the title']).writeTo(rendered)
+        assert rendered.toString() == "<html><head><title/></head><body><div><p>This is the body</p></div></body></html>"
+
+        template = engine.createTemplate '''
+        layout 'includes/body.tpl', true, bodyContents: contents {
+            div {
+                p('This is the body')
+            }
+        }
+        '''
+        rendered = new StringWriter()
+        template.make([title:'This is the title']).writeTo(rendered)
+        assert rendered.toString() == "<html><head><title>This is the title</title></head><body><div><p>This is the body</p></div></body></html>"
+
+        template = engine.createTemplate '''
+        layout 'includes/body.tpl', true, bodyContents: contents {
+            div {
+                p('This is the body')
+            }
+        }, title: 'This is another title'
+        '''
+        rendered = new StringWriter()
+        template.make([title:'This is the title']).writeTo(rendered)
+        assert rendered.toString() == "<html><head><title>This is another title</title></head><body><div><p>This is the body</p></div></body></html>"
+    }
+
     void testSimplePIRenderedProperly() {
         def config = new TemplateConfiguration()
         config.newLineString=''
