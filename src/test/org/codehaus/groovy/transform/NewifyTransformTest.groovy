@@ -34,6 +34,20 @@ class NewifyTransformTest extends GroovyShellTestCase {
         assertEquals main.field2, 43
     }
 
+    void testNewifyCompileStatic() {
+        def main = evaluate("""
+            @groovy.transform.CompileStatic
+            @Newify() class Main {
+                def field1 = Integer.new(42)
+                @Newify(Integer)
+                def field2 = Integer(43)
+            }
+            new Main()
+        """)
+        assertEquals main.field1, 42
+        assertEquals main.field2, 43
+    }
+
     void testClassLevelNewification() {
         evaluate """
             @Newify class Rubyesque {
