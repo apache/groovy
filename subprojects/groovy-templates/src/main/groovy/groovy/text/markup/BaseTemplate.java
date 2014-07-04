@@ -27,6 +27,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -368,7 +369,8 @@ public abstract class BaseTemplate implements Writable {
     /**
      * Imports a template and renders it using the specified model, allowing fine grained composition
      * of templates and layouting. This works similarily to a template include but allows a distinct
-     * model to be used.
+     * model to be used. This version doesn't inherit the model from the parent. If you need model
+     * inheritance, see {@link #layout(java.util.Map, String, boolean)}.
      * @param model model to be passed to the template
      * @param templateName the name of the template to be used as a layout
      * @return this template instance
@@ -376,9 +378,35 @@ public abstract class BaseTemplate implements Writable {
      * @throws ClassNotFoundException
      */
     public Object layout(Map model, String templateName) throws IOException, ClassNotFoundException {
+        return layout(model, templateName, false);
+    }
+
+    /**
+     * Imports a template and renders it using the specified model, allowing fine grained composition of templates and
+     * layouting. This works similarily to a template include but allows a distinct model to be used. If the layout
+     * inherits from the parent model, a new model is created, with the values from the parent model, eventually
+     * overriden with those provided specifically for this layout.
+     *
+     * @param model        model to be passed to the template
+     * @param templateName the name of the template to be used as a layout
+     * @param inheritModel a boolean indicating if we should inherit the parent model
+     * @return this template instance
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public Object layout(Map model, String templateName, boolean inheritModel) throws IOException, ClassNotFoundException {
+        Map submodel = inheritModel ? forkModel(model) : model;
         URL resource = engine.resolveTemplate(templateName);
-        engine.createTypeCheckedModelTemplate(resource, modelTypes).make(model).writeTo(out);
+        engine.createTypeCheckedModelTemplate(resource, modelTypes).make(submodel).writeTo(out);
         return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map forkModel(Map m) {
+        Map result = new HashMap();
+        result.putAll(model);
+        result.putAll(m);
+        return result;
     }
 
     /**
