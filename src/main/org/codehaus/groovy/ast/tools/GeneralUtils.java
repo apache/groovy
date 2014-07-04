@@ -260,15 +260,22 @@ public class GeneralUtils {
 
     public static Statement createConstructorStatementDefault(FieldNode fNode) {
         final String name = fNode.getName();
+        final ClassNode fType = fNode.getType();
         final Expression fieldExpr = propX(varX("this"), name);
         Expression initExpr = fNode.getInitialValueExpression();
-        if (initExpr == null) initExpr = constX(null);
+        Statement assignInit;
+        if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression)initExpr).isNullExpression())) {
+            if (ClassHelper.isPrimitiveType(fType)) {
+                assignInit = EmptyStatement.INSTANCE;
+            } else {
+                assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+            }
+        } else {
+            assignInit = assignS(fieldExpr, initExpr);
+        }
         fNode.setInitialValueExpression(null);
         Expression value = findArg(name);
-        return ifElseS(
-                equalsNullX(value),
-                ifS(notNullX(initExpr), assignS(fieldExpr, initExpr)),
-                assignS(fieldExpr, value));
+        return ifElseS(equalsNullX(value), assignInit, assignS(fieldExpr, castX(fType, value)));
     }
 
     public static ConstructorCallExpression ctorX(ClassNode type, Expression args) {

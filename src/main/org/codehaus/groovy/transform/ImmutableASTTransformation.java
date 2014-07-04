@@ -31,7 +31,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
-import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -274,9 +273,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             argMap.addMapEntryExpression(constX(pNode.getName()), varX(pNode.getName()));
         }
         final BlockStatement orderedBody = new BlockStatement();
-        orderedBody.addStatement(stmt(
-                ctorX(ClassNode.THIS, args(new CastExpression(HASHMAP_TYPE, argMap)))
-        ));
+        orderedBody.addStatement(stmt(ctorX(ClassNode.THIS, args(castX(HASHMAP_TYPE, argMap)))));
         doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
     }
 
@@ -285,8 +282,8 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return stmt(fieldExpr);
     }
 
-    private Expression cloneCollectionExpr(Expression fieldExpr) {
-        Expression expression = createIfInstanceOfAsImmutableS(fieldExpr, SORTEDSET_CLASSNODE,
+    private Expression cloneCollectionExpr(Expression fieldExpr, ClassNode type) {
+        return castX(type, createIfInstanceOfAsImmutableS(fieldExpr, SORTEDSET_CLASSNODE,
                 createIfInstanceOfAsImmutableS(fieldExpr, SORTEDMAP_CLASSNODE,
                         createIfInstanceOfAsImmutableS(fieldExpr, SET_CLASSNODE,
                                 createIfInstanceOfAsImmutableS(fieldExpr, MAP_CLASSNODE,
@@ -295,8 +292,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                                 )
                         )
                 )
-        );
-        return expression;
+        ));
     }
 
     private Expression createIfInstanceOfAsImmutableS(Expression expr, ClassNode type, Expression elseStatement) {
@@ -304,7 +300,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Expression createAsImmutableX(final Expression expr, final ClassNode type) {
-        return callX(DGM_TYPE, "asImmutable", new CastExpression(type, expr));
+        return callX(DGM_TYPE, "asImmutable", castX(type, expr));
     }
 
     private Expression cloneArrayOrCloneableExpr(Expression fieldExpr, ClassNode type) {
@@ -317,7 +313,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                         new ArrayExpression(ClassHelper.OBJECT_TYPE.makeArray(), Collections.<Expression>emptyList())
                 )
         );
-        return new CastExpression(type, smce);
+        return castX(type, smce);
     }
 
     private void createConstructorMapSpecial(ClassNode cNode, List<PropertyNode> list) {
@@ -371,25 +367,29 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
 
     private Statement createConstructorStatementMapSpecial(FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
-        Expression initExpr = fNode.getInitialValueExpression();
-        if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
+        final ClassNode fieldType = fieldExpr.getType();
+        final Expression initExpr = fNode.getInitialValueExpression();
+        final Statement assignInit;
+        if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression)initExpr).isNullExpression())) {
+            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+        } else {
+            assignInit = assignS(fieldExpr, cloneCollectionExpr(initExpr, fieldType));
+        }
         Expression namedArgs = findArg(fNode.getName());
         Expression baseArgs = varX("args");
         return ifElseS(
                 equalsNullX(baseArgs),
-                ifS(
-                        notX(equalsNullX(initExpr)),
-                        assignS(fieldExpr, cloneCollectionExpr(initExpr))),
+                assignInit,
                 ifElseS(
                         equalsNullX(namedArgs),
                         ifElseS(
                                 isTrueX(callX(baseArgs, "containsKey", constX(fNode.getName()))),
                                 assignS(fieldExpr, namedArgs),
-                                assignS(fieldExpr, cloneCollectionExpr(baseArgs))),
+                                assignS(fieldExpr, cloneCollectionExpr(baseArgs, fieldType))),
                         ifElseS(
                                 isOneX(callX(baseArgs, "size")),
-                                assignS(fieldExpr, cloneCollectionExpr(namedArgs)),
-                                assignS(fieldExpr, cloneCollectionExpr(baseArgs)))
+                                assignS(fieldExpr, cloneCollectionExpr(namedArgs, fieldType)),
+                                assignS(fieldExpr, cloneCollectionExpr(baseArgs, fieldType)))
                 )
         );
     }
@@ -450,15 +450,14 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private Statement createConstructorStatementGuarded(ClassNode cNode, FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
-        if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
+        final Statement assignInit;
+        if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression)initExpr).isNullExpression())) {
+            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+        } else {
+            assignInit = assignS(fieldExpr, checkUnresolved(fNode, initExpr));
+        }
         Expression unknown = findArg(fNode.getName());
-        return ifElseS(
-                equalsNullX(unknown),
-                ifS(
-                        notX(equalsNullX(initExpr)),
-                        assignS(fieldExpr, checkUnresolved(fNode, initExpr))),
-                assignS(fieldExpr, checkUnresolved(fNode, unknown))
-        );
+        return ifElseS(equalsNullX(unknown), assignInit, assignS(fieldExpr, checkUnresolved(fNode, unknown)));
     }
 
     private Expression checkUnresolved(FieldNode fNode, Expression value) {
@@ -468,19 +467,22 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
 
     private Statement createConstructorStatementCollection(FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
-        Expression initExpr = fNode.getInitialValueExpression();
-        if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
-        Expression collection = findArg(fNode.getName());
         ClassNode fieldType = fieldExpr.getType();
+        Expression initExpr = fNode.getInitialValueExpression();
+        final Statement assignInit;
+        if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression)initExpr).isNullExpression())) {
+            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+        } else {
+            assignInit = assignS(fieldExpr, cloneCollectionExpr(initExpr, fieldType));
+        }
+        Expression collection = findArg(fNode.getName());
         return ifElseS(
                 equalsNullX(collection),
-                ifS(
-                        notX(equalsNullX(initExpr)),
-                        assignS(fieldExpr, cloneCollectionExpr(initExpr))),
+                assignInit,
                 ifElseS(
                         isInstanceOfX(collection, CLONEABLE_TYPE),
-                        assignS(fieldExpr, cloneCollectionExpr(cloneArrayOrCloneableExpr(collection, fieldType))),
-                        assignS(fieldExpr, cloneCollectionExpr(collection)))
+                        assignS(fieldExpr, cloneCollectionExpr(cloneArrayOrCloneableExpr(collection, fieldType), fieldType)),
+                        assignS(fieldExpr, cloneCollectionExpr(collection, fieldType)))
         );
     }
 
@@ -506,31 +508,27 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         final Expression fieldExpr = varX(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         ClassNode fieldType = fNode.getType();
-        if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
         final Expression array = findArg(fNode.getName());
-        return ifElseS(
-                equalsNullX(array),
-                ifElseS(
-                        equalsNullX(initExpr),
-                        assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION),
-                        assignS(fieldExpr, cloneArrayOrCloneableExpr(initExpr, fieldType))),
-                assignS(fieldExpr, cloneArrayOrCloneableExpr(array, fieldType))
-        );
+        final Statement assignInit;
+        if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression)initExpr).isNullExpression())) {
+            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+        } else {
+            assignInit = assignS(fieldExpr, cloneArrayOrCloneableExpr(initExpr, fieldType));
+        }
+        return ifElseS(equalsNullX(array), assignInit, assignS(fieldExpr, cloneArrayOrCloneableExpr(array, fieldType)));
     }
 
     private Statement createConstructorStatementDate(FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
-        if (initExpr == null) initExpr = ConstantExpression.EMPTY_EXPRESSION;
+        final Statement assignInit;
+        if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression)initExpr).isNullExpression())) {
+            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+        } else {
+            assignInit = assignS(fieldExpr, cloneDateExpr(initExpr));
+        }
         final Expression date = findArg(fNode.getName());
-        return ifElseS(
-                equalsNullX(date),
-                ifElseS(
-                        equalsNullX(initExpr),
-                        assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION),
-                        assignS(fieldExpr, cloneDateExpr(initExpr))),
-                assignS(fieldExpr, cloneDateExpr(date))
-        );
+        return ifElseS(equalsNullX(date), assignInit, assignS(fieldExpr, cloneDateExpr(date)));
     }
 
     private Expression cloneDateExpr(Expression origDate) {
