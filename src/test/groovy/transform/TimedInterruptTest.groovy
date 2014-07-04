@@ -28,7 +28,6 @@ class TimedInterruptTest extends GroovyTestCase {
   void testClassMethodIsVisited() {
     def c = new GroovyClassLoader().parseClass('''
       import groovy.transform.TimedInterrupt
-      import java.util.concurrent.TimeUnit
 
       @TimedInterrupt(value = 1L)
       class MyClass {
@@ -41,7 +40,6 @@ class TimedInterruptTest extends GroovyTestCase {
   void testClassMethodIsVisitedAndCustomExceptionThrown() {
     def c = new GroovyClassLoader(this.class.classLoader).parseClass('''
       import groovy.transform.TimedInterrupt
-      import java.util.concurrent.TimeUnit
 
       @TimedInterrupt(thrown=groovy.transform.CustomException,value = 1L)
       class MyClass {
@@ -54,7 +52,6 @@ class TimedInterruptTest extends GroovyTestCase {
   void testScriptMethodIsVisited() {
     def c = new GroovyClassLoader().parseClass('''
       import groovy.transform.TimedInterrupt
-      import java.util.concurrent.TimeUnit
 
       @TimedInterrupt(value = 1L)
       def myMethod() { }
@@ -65,7 +62,6 @@ class TimedInterruptTest extends GroovyTestCase {
   void testStaticMethodIsNotVisited() {
     def c = new GroovyClassLoader().parseClass('''
       import groovy.transform.TimedInterrupt
-      import java.util.concurrent.TimeUnit
 
       @TimedInterrupt(value = 1L)
       class MyClass {
@@ -78,7 +74,6 @@ class TimedInterruptTest extends GroovyTestCase {
   void testClosureFieldIsVisited() {
     def c = new GroovyClassLoader().parseClass('''
       import groovy.transform.TimedInterrupt
-      import java.util.concurrent.TimeUnit
 
       @TimedInterrupt(value = 1L)
       class MyClass {
@@ -91,7 +86,6 @@ class TimedInterruptTest extends GroovyTestCase {
   void testClosureInScriptIsVisited_CheckOnMethodStartIsFalse() {
     def c = new GroovyClassLoader().parseClass('''
       import groovy.transform.TimedInterrupt
-      import java.util.concurrent.TimeUnit
 
       @TimedInterrupt(checkOnMethodStart = false, value = 1L)
       def myMethod = { }
@@ -116,7 +110,6 @@ class TimedInterruptTest extends GroovyTestCase {
     def c = new GroovyClassLoader().parseClass('''
       @TimedInterrupt(checkOnMethodStart = false, value = 1L)
       import groovy.transform.TimedInterrupt
-      import java.util.concurrent.TimeUnit
 
       def x = [1]
       for (def o : x) { o++ }
@@ -127,7 +120,6 @@ class TimedInterruptTest extends GroovyTestCase {
   void testStaticClosureFieldNotVisited() {
     def c = new GroovyClassLoader().parseClass('''
       import groovy.transform.TimedInterrupt
-      import java.util.concurrent.TimeUnit
 
       @TimedInterrupt(value = 1L)
       class MyClass {
