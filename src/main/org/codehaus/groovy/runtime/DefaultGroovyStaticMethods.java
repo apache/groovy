@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import org.codehaus.groovy.reflection.ReflectionUtils;
  * @author Joachim Baumann
  * @author Paul King
  * @author Kent Inge Fagerland Simonsen
- * @version $Revision$
  */
 public class DefaultGroovyStaticMethods {
 
@@ -279,7 +278,9 @@ public class DefaultGroovyStaticMethods {
    * Get the current time in seconds
    *
    * @param self   placeholder variable used by Groovy categories; ignored for default static methods
-   * @return the current time in seconds
+   * @return  the difference, measured in seconds, between
+   *          the current time and midnight, January 1, 1970 UTC.
+   * @see     System#currentTimeMillis()
    */
   public static long currentTimeSeconds(System self){
     return System.currentTimeMillis() / 1000;
