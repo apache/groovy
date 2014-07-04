@@ -127,7 +127,14 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
             return;
         }
         ClassNode buildee = (ClassNode) annotatedNode;
-        List<String> excludes = new ArrayList<String>();
+        if(annotatedNode instanceof ClassNode) {
+            createBuilderForAnnotatedClass(transform, (ClassNode) annotatedNode, anno);
+        } else if(annotatedNode instanceof ConstructorNode) {
+            createBuilderForAnnotatedConstructor(transform, (ConstructorNode) annotatedNode, anno);
+        }
+    }
+
+    private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {        List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         String prefix = transform.getMemberStringValue(anno, "prefix", "");
@@ -137,7 +144,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         List<FieldNode> fields = getInstancePropertyFields(buildee);
         List<FieldNode> filteredFields = selectFieldsFromExistingClass(fields, includes, excludes);
         int numFields = filteredFields.size();
-        ClassNode builder = createInnerHelperClass(buildee, builderClassName, filteredFields);
+        ClassNode builder = createInnerHelperClass(buildee, builderClassName, filteredFields.size());
         createBuilderConstructors(builder, buildee, filteredFields);
         createBuildeeConstructors(transform, buildee, builder, filteredFields);
         buildee.getModule().addClass(builder);
@@ -149,11 +156,11 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         builder.addMethod(createBuildMethod(builder, buildMethodName, filteredFields));
     }
 
-    private ClassNode createInnerHelperClass(ClassNode buildee, String builderClassName, List<FieldNode> fields) {
+    private ClassNode createInnerHelperClass(ClassNode buildee, String builderClassName, int fieldSize) {
         final String fullName = buildee.getName() + "$" + builderClassName;
         final int visibility = ACC_PUBLIC | ACC_STATIC;
         ClassNode builder = new InnerClassNode(buildee, fullName, visibility, ClassHelper.OBJECT_TYPE);
-        GenericsType[] gtypes = new GenericsType[fields.size()];
+        GenericsType[] gtypes = new GenericsType[fieldSize];
         for (int i = 0; i < gtypes.length; i++) {
             gtypes[i] = makePlaceholder(i);
         }
@@ -194,7 +201,39 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         builder.addConstructor(ACC_PRIVATE, getParams(fields, buildee), NO_EXCEPTIONS, body);
     }
 
-    private static void createBuildeeConstructors(BuilderASTTransformation transform, ClassNode buildee, ClassNode builder, List<FieldNode> fields) {
+    private void createBuilderForAnnotatedConstructor(BuilderASTTransformation transform, ConstructorNode annotatedConstructor, AnnotationNode anno) {
+        ClassNode buildee = annotatedConstructor.getDeclaringClass();
+        String prefix = transform.getMemberStringValue(anno, "prefix", "");
+        if (unsupportedAttribute(transform, anno, "forClass")) return;
+        String builderClassName = transform.getMemberStringValue(anno, "builderClassName", buildee.getName() + "Initializer");
+        String buildMethodName = transform.getMemberStringValue(anno, "buildMethodName", "create");
+        Parameter[] parameters = getParamsFromConstructor(annotatedConstructor);
+        int numFields = parameters.length;
+        ClassNode builder = createInnerHelperClass(buildee, builderClassName, numFields);
+        List<FieldNode> convertedFields = convertParamsToFields(builder, parameters);
+        createBuilderConstructors(builder, buildee, convertedFields);
+        createBuildeeConstructor(transform, buildee, builder, convertedFields);
+        buildee.getModule().addClass(builder);
+        buildee.addMethod(createBuilderMethod(transform, anno, buildMethodName, builder, numFields));
+        for (int i = 0; i < numFields; i++) {
+            builder.addMethod(createBuilderMethodForField(builder, convertedFields, prefix, i));
+        }
+        builder.addMethod(createBuildMethod(builder, buildMethodName, convertedFields));
+    }
+
+    private List<FieldNode> convertParamsToFields(ClassNode buildee, Parameter[] parameters) {
+        List<FieldNode> fieldNodes = new ArrayList<FieldNode>();
+        for(Parameter parameter: parameters) {
+            FieldNode fieldNode = new FieldNode(parameter.getName(), parameter.getModifiers(), ClassHelper.make(parameter.getType().getName()), buildee, DEFAULT_INITIAL_VALUE);
+            fieldNodes.add(fieldNode);
+            buildee.addField(fieldNode);
+        }
+        return fieldNodes;
+    }
+
+    private Parameter[] getParamsFromConstructor(ConstructorNode buildee) {
+        return buildee.getParameters();
+    }    private static void createBuildeeConstructor(BuilderASTTransformation transform, ClassNode buildee, ClassNode builder, List<FieldNode> fields) {
         ClassNode paramType = makeClassSafeWithGenerics(builder, setGenTypes(fields.size()));
         List<Expression> argsList = new ArrayList<Expression>();
         Parameter initParam = param(paramType, "initializer");
@@ -202,6 +241,9 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
             argsList.add(propX(varX(initParam), fieldNode.getName()));
         }
         ConstructorNode initializer = buildee.addConstructor(ACC_PUBLIC, params(initParam), NO_EXCEPTIONS, block(ctorThisS(args(argsList))));
+    }
+    private static void createBuildeeConstructors(BuilderASTTransformation transform, ClassNode buildee, ClassNode builder, List<FieldNode> fields) {
+        ConstructorNode initializer = createInitializerConstructor(buildee, builder, fields);
         if (transform.hasAnnotation(buildee, ImmutableASTTransformation.MY_TYPE)) {
             initializer.putNodeMetaData(ImmutableASTTransformation.IMMUTABLE_SAFE_FLAG, Boolean.TRUE);
         } else {
@@ -210,6 +252,15 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
             initializeFields(fields, body);
             buildee.addConstructor(ACC_PRIVATE | ACC_SYNTHETIC, getParams(fields, buildee), NO_EXCEPTIONS, body);
         }
+    }
+
+    private static ConstructorNode createInitializerConstructor(ClassNode buildee, ClassNode builder, List<FieldNode> fields) {
+        ClassNode paramType = makeClassSafeWithGenerics(builder, setGenTypes(fields.size()));
+        List<Expression> argsList = new ArrayList<Expression>();
+        for (FieldNode fieldNode : fields) {
+            argsList.add(propX(varX("initializer"), fieldNode.getName()));
+        }
+        return buildee.addConstructor(ACC_PUBLIC, params(param(paramType, "initializer")), NO_EXCEPTIONS, block(ctorThisS(args(argsList))));
     }
 
     private static Parameter[] getParams(List<FieldNode> fields, ClassNode cNode) {

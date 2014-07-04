@@ -457,4 +457,31 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
+    void testInitializerStrategyOnConstructor() {
+        assertScript '''
+            import groovy.transform.builder.*
+            import groovy.transform.*
+
+            @ToString
+            class Person {
+                String firstName
+                String lastName
+                int age
+
+                @Builder(builderStrategy=InitializerStrategy)
+                Person(String fullName) {
+                    String[] splitFullName = fullName.split(' ')
+                    firstName = splitFullName?.first()
+                    lastName = splitFullName?.last()
+                    age = 10
+                }
+            }
+
+            @CompileStatic
+            def firstLastAge() {
+                assert new Person(Person.createInitializer().fullName('John Smith')).toString() == 'Person(John, Smith, 10)\'
+            }
+            firstLastAge()
+        '''
+    }
 }
