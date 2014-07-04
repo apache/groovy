@@ -824,6 +824,40 @@ layout 'includes/body.tpl', bodyContents: contents {
 
     }
 
+    // GROOVY-6914
+    void testCachingOfTemplateResolver() {
+        int hit = 0
+        int miss = 0
+        def cache = new HashMap<String, URL>() {
+            @Override
+            URL get(final Object key) {
+                URL url = super.get(key)
+                if (url) {
+                    hit++
+                } else {
+                    miss++
+                }
+                url
+            }
+        }
+        def resolver = new MarkupTemplateEngine.CachingTemplateResolver(cache)
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, new TemplateConfiguration(), resolver)
+        def template = engine.createTemplate '''
+            html {
+                body {
+                    include template:'includes/hello.tpl'
+                    include template:'includes/hello.tpl'
+                    include template:'includes/hello.tpl'
+                }
+            }
+        '''
+        StringWriter rendered = new StringWriter()
+        template.make().writeTo(rendered)
+        assert rendered.toString() == '<html><body>Hello from include!Hello from include!Hello from include!</body></html>'
+        assert miss==1
+        assert hit==2
+    }
+
     class SimpleTagLib {
         def emoticon = { attrs, body ->
             out << body() << (attrs.happy == 'true' ? " :-)" : " :-(")

@@ -44,6 +44,7 @@ import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -303,6 +304,56 @@ public class MarkupTemplateEngine extends TemplateEngine {
                 throw new IOException("Unable to load template:" + templatePath);
             }
             return resource;
+        }
+    }
+
+    /**
+     * A template resolver which avoids calling {@link ClassLoader#getResource(String)} if a template path already has
+     * been queried before. This improves performance if caching is enabled in the configuration.
+     */
+    public static class CachingTemplateResolver extends DefaultTemplateResolver {
+        // Those member should stay protected so that subclasses may use different
+        // cache keys as the ones used by this implementation
+        protected final Map<String, URL> cache;
+        protected boolean useCache = false;
+
+        /**
+         * Creates a new caching template resolver. The cache implementation being used depends on
+         * the use of the template engine. If multiple templates can be rendered in parallel, it <b>must</b>
+         * be using a thread-safe cache.
+         * @param cache the backing cache
+         */
+        public CachingTemplateResolver(final Map<String, URL> cache) {
+            this.cache = cache;
+        }
+
+        /**
+         * Creates a new caching template resolver using a concurrent hash map as the backing cache.
+         */
+        public CachingTemplateResolver() {
+            this(new ConcurrentHashMap<String, URL>());
+        }
+
+
+        @Override
+        public void configure(final ClassLoader templateClassLoader, final TemplateConfiguration configuration) {
+            super.configure(templateClassLoader, configuration);
+            useCache = configuration.isCacheTemplates();
+        }
+
+        @Override
+        public URL resolveTemplate(final String templatePath) throws IOException {
+            if (useCache) {
+                URL cachedURL = cache.get(templatePath);
+                if (cachedURL!=null) {
+                    return cachedURL;
+                }
+            }
+            URL url = super.resolveTemplate(templatePath);
+            if (useCache) {
+                cache.put(templatePath, url);
+            }
+            return url;
         }
     }
 
