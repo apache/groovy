@@ -59,20 +59,19 @@ asciidoctor.doLast {
 <script src='assets/js/jquery-2.1.1.min.js'></script>
 <script src='assets/js/view-example.js'></script>'''
 
+    def baseUrls = [
+            jdk: "http://docs.oracle.com/javase/8/docs/api/index.html",
+            gjdk: "http://docs.groovy-lang.org/${version}/html/groovy-jdk/index.html",
+            gapi: "http://docs.groovy-lang.org/${version}/html/gapi/index.html",
+    ]
+
     // gapi macro expansion
     outputDir.eachFileMatch(~'.*html') { File file ->
         def text = file.getText('UTF-8')
-        text = text.replaceAll(/gapi::([a-zA-Z0-9$.#]+)/) { m ->
-            def cName = m[1]
-            def cPath = m[1].replace('.', '/')
-            def anchor = ''
-            int anchorIdx = cPath.indexOf('#')
-            if (anchorIdx > 0) {
-                anchor = cPath.substring(anchorIdx)
-                cPath = cPath.substring(0, anchorIdx)
-            }
-
-            "<a href='http://docs.groovy-lang.org/${version}/html/gapi/index.html?${cPath}.html${anchor}' target='_blank'><code>$cName</code></a>"
+        text = text.replaceAll(/(gapi|gjdk|jdk)::([a-zA-Z0-9$.#]+)(?:\[([^\]]*)\])?/) { m ->
+            def (className, anchor) = m[2].split('#') as List
+            def label = m[3] ?: '<code>' + className + '</code>'
+            "<a href='${calculateDocUrl(baseUrls[m[1]], className, anchor)}' target='_blank'>$label</a>"
         }
 
         text = text.replaceAll('</head>', "$scripts</head>")
@@ -80,4 +79,10 @@ asciidoctor.doLast {
         file.write(text, 'UTF-8')
     }
 
+}
+
+String calculateDocUrl(String baseUrl, String className, String anchor) {
+    if (className == "index") return baseUrl
+
+    return baseUrl + "?" + className.replace('.', '/') + '.html' + (anchor ? '#' + anchor : '')
 }
