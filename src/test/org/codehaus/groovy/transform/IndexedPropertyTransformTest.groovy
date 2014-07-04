@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,31 @@ class IndexedPropertyTransformTest extends GroovyShellTestCase {
     void testStandardCase() {
         assertScript """
             import groovy.transform.IndexedProperty
+            class Demo {
+                @IndexedProperty List<Integer> foo
+                @IndexedProperty String[] bar
+                @IndexedProperty List baz
+            }
+
+            def d = new Demo()
+            d.foo = [11, 22, 33]
+            d.setFoo(0, 100)
+            d.setFoo(1, 200)
+            assert d.foo == [100, 200, 33]
+            assert d.getFoo(1) == 200
+            d.bar = ['cat']
+            d.setBar(0, 'dog')
+            assert d.getBar(0) == 'dog'
+            d.baz = ['cat']
+            d.setBaz(0, 'dog')
+            assert d.getBaz(0) == 'dog'
+        """
+    }
+
+    void testWithCompileStatic() {
+        assertScript """
+            import groovy.transform.IndexedProperty
+            @groovy.transform.CompileStatic
             class Demo {
                 @IndexedProperty List<Integer> foo
                 @IndexedProperty String[] bar

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         BlockStatement body = new BlockStatement();
         Parameter[] params = new Parameter[1];
         params[0] = new Parameter(ClassHelper.int_TYPE, "index");
-        body.addStatement(stmt(indexX(varX(fNode.getName()), varX(params[0]))));
+        body.addStatement(stmt(indexX(varX(fNode), varX(params[0]))));
         cNode.addMethod(makeName(fNode, "get"), getModifiers(fNode), componentType, params, null, body);
     }
 
@@ -110,7 +110,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         Parameter[] theParams = params(
                 new Parameter(ClassHelper.int_TYPE, "index"),
                 new Parameter(componentType, "value"));
-        body.addStatement(assignS(indexX(varX(fNode.getName()), varX(theParams[0])), varX(theParams[1])));
+        body.addStatement(assignS(indexX(varX(fNode), varX(theParams[0])), varX(theParams[1])));
         cNode.addMethod(makeName(fNode, "set"), getModifiers(fNode), ClassHelper.VOID_TYPE, theParams, null, body);
     }
 
