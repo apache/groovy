@@ -83,12 +83,12 @@ class DelegateTransformTest extends CompilableTestSupport {
 
           def ms = new MapSet()
           assert ms.size() == 1
-          assert ms.toString() == '[a:1] [2, 3, 4]'
+          assert ms.toString() == '{a=1} [2, 3, 4]'
           ms.remove(3)
           assert ms.size() == 1
-          assert ms.toString() == '[a:1] [2, 4]'
+          assert ms.toString() == '{a=1} [2, 4]'
           ms.clear()
-          assert ms.toString() == '[a:1] []'
+          assert ms.toString() == '{a=1} []'
         """
     }
 
