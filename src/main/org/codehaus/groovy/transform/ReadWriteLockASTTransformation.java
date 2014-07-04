@@ -84,9 +84,9 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
             // get lock type
             final Expression lockType;
             if (isWriteLock) {
-                lockType = callX(varX(lockExpr), "writeLock");
+                lockType = callX(varX(lockExpr, LOCK_TYPE), "writeLock");
             } else {
-                lockType = callX(varX(lockExpr), "readLock");
+                lockType = callX(varX(lockExpr, LOCK_TYPE), "readLock");
             }
 
             Expression acquireLock = callX(lockType, "lock");
