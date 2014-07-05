@@ -33,8 +33,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
-import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 
 import java.lang.annotation.Annotation;
@@ -52,7 +50,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.Arrays;
 import java.util.List;
 
 /**

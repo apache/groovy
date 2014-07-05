@@ -15,16 +15,10 @@
  */
 package groovy.xml;
 
-//import groovy.lang.GroovyObject;
-//import groovy.lang.GroovyShell;
-//import groovy.lang.Script;
 import groovy.util.GroovyTestCase;
-
-import java.io.File;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class XmlTest extends GroovyTestCase {
 

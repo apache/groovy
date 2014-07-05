@@ -15,7 +15,6 @@
  */
 package groovy.sql;
 
-import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
