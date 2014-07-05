@@ -7056,6 +7056,70 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns the items from the Iterable excluding the last item.
+     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * assert list.init() == [3, 4]
+     * assert list == [3, 4, 2]</pre>
+     *
+     * @param self an Iterable
+     * @return a list without its last element
+     * @throws NoSuchElementException if the iterable is empty and you try to access the init() item.
+     * @since 2.4.0
+     */
+    public static <T> List<T> init(Iterable<T> self) {
+        List<T> result = toList(self);
+        if (result.isEmpty()) {
+            throw new NoSuchElementException("Cannot access init() for an empty Iterable");
+        }
+        result.remove(result.size() - 1);
+        return result;
+    }
+
+    /**
+     * Returns the items from the List excluding the last item.
+     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * assert list.init() == [3, 4]
+     * assert list == [3, 4, 2]</pre>
+     *
+     * @param self a List
+     * @return a list without its last element
+     * @throws NoSuchElementException if the list is empty and you try to access the init() item.
+     * @since 2.4.0
+     */
+    public static <T> List<T> init(List<T> self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException("Cannot access init() for an empty List");
+        }
+        List<T> result = new ArrayList<T>(self);
+        result.remove(result.size() - 1);
+        return result;
+    }
+
+    /**
+     * Returns the items from the Object array excluding the last item.
+     * <pre class="groovyTestCase">
+     *     String[] strings = ["a", "b", "c"]
+     *     def result = strings.init()
+     *     assert result.length == 2
+     *     assert strings.class.componentType == String
+     * </pre>
+     *
+     * @param self an Object array
+     * @return an Object array without its last element
+     * @throws NoSuchElementException if the array is empty and you try to access the init() item.
+     * @since 2.4.0
+     */
+    public static <T> T[] init(T[] self) {
+        if (self.length == 0) {
+            throw new NoSuchElementException("Cannot access init() for an empty Object array");
+        }
+        Class<T> componentType = (Class<T>) self.getClass().getComponentType();
+        T[] result = (T[]) Array.newInstance(componentType, self.length - 1);
+        System.arraycopy(self, 0, result, 0, self.length - 1);
+        return result;
+    }
+
+    /**
      * Returns the first <code>num</code> elements from the head of this list.
      * <pre class="groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ]
@@ -7225,6 +7289,91 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns the last <code>num</code> elements from the tail of this list.
+     * <pre class="groovyTestCase">
+     * def strings = [ 'a', 'b', 'c' ]
+     * assert strings.takeRight( 0 ) == []
+     * assert strings.takeRight( 2 ) == [ 'b', 'c' ]
+     * assert strings.takeRight( 5 ) == [ 'a', 'b', 'c' ]
+     * </pre>
+     * Similar to {@link #takeRight(Iterable, int)}
+     * except that it attempts to preserve the type of the original list.
+     *
+     * @param self the original list
+     * @param num  the number of elements to take from this list
+     * @return a list consisting of the last <code>num</code> elements of this list,
+     *         or else the whole list if it has less then <code>num</code> elements.
+     * @since 2.4.0
+     */
+    public static <T> List<T> takeRight(List<T> self, int num) {
+        if (self.isEmpty() || num <= 0) {
+            return createSimilarList(self, 0);
+        }
+        if (self.size() <= num) {
+            List<T> ret = createSimilarList(self, self.size());
+            ret.addAll(self);
+            return ret;
+        }
+        List<T> ret = createSimilarList(self, num);
+        ret.addAll(self.subList(self.size() - num, self.size()));
+        return ret;
+    }
+
+    /**
+     * Returns the last <code>num</code> elements from the tail of this array.
+     * <pre class="groovyTestCase">
+     * String[] strings = [ 'a', 'b', 'c' ]
+     * assert strings.takeRight( 0 ) == [] as String[]
+     * assert strings.takeRight( 2 ) == [ 'b', 'c' ] as String[]
+     * assert strings.takeRight( 5 ) == [ 'a', 'b', 'c' ] as String[]
+     * </pre>
+     *
+     * @param self the original array
+     * @param num  the number of elements to take from this array
+     * @return an array consisting of the last <code>num</code> elements of this array,
+     *         or else the whole array if it has less then <code>num</code> elements.
+     * @since 2.4.0
+     */
+    public static <T> T[] takeRight(T[] self, int num) {
+        if (self.length == 0 || num <= 0) {
+            return createSimilarArray(self, 0);
+        }
+
+        if (self.length <= num) {
+            T[] ret = createSimilarArray(self, self.length);
+            System.arraycopy(self, 0, ret, 0, self.length);
+            return ret;
+        }
+
+        T[] ret = createSimilarArray(self, num);
+        System.arraycopy(self, self.length - num, ret, 0, num);
+        return ret;
+    }
+
+    /**
+     * Returns the last <code>num</code> elements from the tail of this Iterable.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * def abc = new AbcIterable()
+     * assert abc.takeRight(0) == []
+     * assert abc.takeRight(1) == ['c']
+     * assert abc.takeRight(3) == ['a', 'b', 'c']
+     * assert abc.takeRight(5) == ['a', 'b', 'c']
+     * </pre>
+     *
+     * @param self the original Iterable
+     * @param num  the number of elements to take from this Iterable
+     * @return a List consisting of the last <code>num</code> elements from this Iterable,
+     *         or else all the elements from the Iterable if it has less then <code>num</code> elements.
+     * @since 2.4.0
+     */
+    public static <T> List<T> takeRight(Iterable<T> self, int num) {
+        return takeRight(asList(self), num);
+    }
+
+    /**
      * Drops the given number of elements from the head of this list
      * if they are available.
      * <pre class="groovyTestCase">
@@ -7371,6 +7520,94 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             self.next();
         }
         return self;
+    }
+
+    /**
+     * Drops the given number of elements from the tail of this list
+     * if they are available.
+     * <pre class="groovyTestCase">
+     * def strings = [ 'a', 'b', 'c' ]
+     * assert strings.dropRight( 0 ) == [ 'a', 'b', 'c' ]
+     * assert strings.dropRight( 2 ) == [ 'a' ]
+     * assert strings.dropRight( 5 ) == []
+     * </pre>
+     * Similar to {@link #dropRight(Iterable, int)}
+     * except that it attempts to preserve the type of the original list.
+     *
+     * @param self the original list
+     * @param num  the number of elements to drop from this list
+     * @return a list consisting of all elements of this list except the last
+     *         <code>num</code> ones, or else the empty list, if this list has
+     *         less than <code>num</code> elements.
+     * @since 2.4.0
+     */
+    public static <T> List<T> dropRight(List<T> self, int num) {
+        if (self.size() <= num) {
+            return createSimilarList(self, 0);
+        }
+        if (num <= 0) {
+            List<T> ret = createSimilarList(self, self.size());
+            ret.addAll(self);
+            return ret;
+        }
+        List<T> ret = createSimilarList(self, self.size() - num);
+        ret.addAll(self.subList(0, self.size() - num));
+        return ret;
+    }
+
+    /**
+     * Drops the given number of elements from the tail of this Iterable.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * def abc = new AbcIterable()
+     * assert abc.dropRight(0) == ['a', 'b', 'c']
+     * assert abc.dropRight(1) == ['a', 'b']
+     * assert abc.dropRight(3) == []
+     * assert abc.dropRight(5) == []
+     * </pre>
+     *
+     * @param self the original Iterable
+     * @param num  the number of elements to drop from this Iterable
+     * @return a List consisting of all the elements of this Iterable minus the last <code>num</code> elements,
+     *         or an empty list if it has less then <code>num</code> elements.
+     * @since 2.4.0
+     */
+    public static <T> List<T> dropRight(Iterable<T> self, int num) {
+        return dropRight(asList(self), num);
+    }
+
+    /**
+     * Drops the given number of elements from the tail of this array
+     * if they are available.
+     * <pre class="groovyTestCase">
+     * String[] strings = [ 'a', 'b', 'c' ]
+     * assert strings.dropRight( 0 ) == [ 'a', 'b', 'c' ] as String[]
+     * assert strings.dropRight( 2 ) == [ 'a' ] as String[]
+     * assert strings.dropRight( 5 ) == [] as String[]
+     * </pre>
+     *
+     * @param self the original array
+     * @param num  the number of elements to drop from this array
+     * @return an array consisting of all elements of this array except the
+     *         last <code>num</code> ones, or else the empty array, if this
+     *         array has less than <code>num</code> elements.
+     * @since 2.4.0
+     */
+    public static <T> T[] dropRight(T[] self, int num) {
+        if (self.length <= num) {
+            return createSimilarArray(self, 0);
+        }
+        if (num <= 0) {
+            T[] ret = createSimilarArray(self, self.length);
+            System.arraycopy(self, 0, ret, 0, self.length);
+            return ret;
+        }
+
+        T[] ret = createSimilarArray(self, self.length - num);
+        System.arraycopy(self, 0, ret, 0, self.length - num);
+        return ret;
     }
 
     /**
