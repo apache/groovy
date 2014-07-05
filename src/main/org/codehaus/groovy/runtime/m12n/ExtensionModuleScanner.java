@@ -16,7 +16,6 @@
 package org.codehaus.groovy.runtime.m12n;
 
 import groovy.lang.GroovyRuntimeException;
-import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 
 import java.io.IOException;
 import java.io.InputStream;

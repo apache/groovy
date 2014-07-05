@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 
 /**
  * Handles generation of code for the {@link Builder} annotation.

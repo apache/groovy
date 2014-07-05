@@ -20,7 +20,6 @@ package groovy.json.internal;
 import groovy.json.JsonException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**

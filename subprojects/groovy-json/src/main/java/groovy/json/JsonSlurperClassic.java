@@ -30,9 +30,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static groovy.json.JsonTokenType.*;
+import static groovy.json.JsonTokenType.CLOSE_BRACKET;
 import static groovy.json.JsonTokenType.CLOSE_CURLY;
+import static groovy.json.JsonTokenType.COLON;
 import static groovy.json.JsonTokenType.COMMA;
+import static groovy.json.JsonTokenType.NULL;
+import static groovy.json.JsonTokenType.OPEN_BRACKET;
+import static groovy.json.JsonTokenType.OPEN_CURLY;
+import static groovy.json.JsonTokenType.STRING;
 
 /**
  * This is the original slurper included in case someone relies on its exact behavior.

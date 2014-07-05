@@ -15,9 +15,6 @@
  */
 package org.codehaus.groovy.classgen.asm.indy;
 
-import java.lang.invoke.*;
-import java.lang.invoke.MethodHandles.Lookup;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -27,7 +24,6 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -40,10 +36,21 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.v7.IndyInterface;
 import org.objectweb.asm.Handle;
 
-import static org.objectweb.asm.Opcodes.*;
-import static org.codehaus.groovy.classgen.asm.BytecodeHelper.*;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.*;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
+
+import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getTypeDescription;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.CAST;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.GET;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.INIT;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.METHOD;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.GROOVY_OBJECT;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.IMPLICIT_THIS;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.SAFE_NAVIGATION;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.SPREAD_CALL;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.THIS_CALL;
+import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 
 /**
  * This Writer is used to generate the call invocation byte codes

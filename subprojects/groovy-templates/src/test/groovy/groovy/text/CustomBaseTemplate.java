@@ -15,7 +15,6 @@
  */
 package groovy.text;
 
-import groovy.lang.GroovySystem;
 import groovy.text.markup.BaseTemplate;
 import groovy.text.markup.MarkupTemplateEngine;
 import groovy.text.markup.TemplateConfiguration;

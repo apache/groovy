@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -41,7 +40,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Iterator;
 
 /**
  * This class provides an AST Transformation to add a log field to a class.

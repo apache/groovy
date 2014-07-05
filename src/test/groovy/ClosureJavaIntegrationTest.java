@@ -18,7 +18,6 @@ package groovy;
 import groovy.lang.Closure;
 import groovy.lang.Reference;
 import junit.framework.TestCase;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.math.BigDecimal;
@@ -31,7 +30,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.*;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.any;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.collect;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.each;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.every;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.findAll;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.inject;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.join;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.max;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.sort;
 
 /**
  * Groovy's Closure class isn't specifically designed with Java integration in

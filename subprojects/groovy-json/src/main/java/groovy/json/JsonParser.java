@@ -20,7 +20,6 @@ package groovy.json;
 import java.io.File;
 import java.io.InputStream;
 import java.io.Reader;
-import java.util.Map;
 
 /**
  * This is the parser interface that backs the new JsonSlurper.
