@@ -897,6 +897,52 @@ layout 'includes/body.tpl', bodyContents: contents {
         assert hit==2
     }
 
+    void testMarkupInGString() {
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+
+        def template = engine.createTemplate '''
+        html {
+            body {
+                def test = { p('hg') }
+                def x = "directly ${$test()}"
+                p("This is a p with ${true?$a(href:'link.html','link'):x}")
+                p("This is a p with ${false?$a(href:'link.html','link'):x}")
+            }
+        }
+        '''
+
+        String rendered = template.make()
+        assert rendered == '<html><body><p>This is a p with <a href=\'link.html\'>link</a></p><p>This is a p with directly <p>hg</p></p></body></html>'
+    }
+
+    void testMarkupInGStringUsingStringOf() {
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+
+        def template = engine.createTemplate '''
+        html {
+            body {
+                def test = { p('hg') }
+                def x = "directly ${stringOf { test()} }"
+                p("This is a p with ${stringOf { true?a(href:'link.html','link'):x} }")
+                p("This is a p with ${stringOf { false?a(href:'link.html','link'):x} }")
+            }
+        }
+        '''
+
+        String rendered = template.make()
+        assert rendered == '<html><body><p>This is a p with <a href=\'link.html\'>link</a></p><p>This is a p with directly <p>hg</p></p></body></html>'
+    }
+
+    void testShouldNotThrowStackOverflow() {
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+
+        def template = engine.createTemplate '''
+            p("This is an ${strong('error')}")
+        '''
+        String rendered = template.make().writeTo(new StringWriter())
+        assert rendered == '<strong>error</strong><p>This is an </p>'
+
+    }
     class SimpleTagLib {
         def emoticon = { attrs, body ->
             out << body() << (attrs.happy == 'true' ? " :-)" : " :-(")

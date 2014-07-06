@@ -582,6 +582,67 @@ mention that a model variable should not be escaped by prefixing it with `unesca
 include::{rootdir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_template_unescaped,indent=0]
 ----
 
+[[markuptemplate-gotchas]]
+=== Common gotchas
+==== Strings containing markup
+
+Say that you want to generate a `<p>` tag which contains a string containing markup:
+
+[source,groovy]
+----
+include::{rootdir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_longversion,indent=0]
+----
+
+and generates:
+
+[source,html]
+----
+include::{rootdir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_longversion_expected,indent=0]
+----
+
+Can't this be written shorter? A naive alternative would be:
+
+[source,groovy]
+----
+include::{rootdir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_naive_fail,indent=0]
+----
+
+but the result will not look as expected:
+
+[source,groovy]
+----
+include::{rootdir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_naive_fail_expected,indent=0]
+----
+
+The reason is that the markup template engine is a _streaming_ engine. In the original version, the first `yield` call
+generates a string which is streamed to the output, then the `a` link is generated and streamed, and then the last `yield`
+call is streamed, leading in an execution *in order*. But with the string version above, the order of execution is different:
+
+* the `yield` call requires an argument, a _string_
+* that arguments needs to be evaluated _before_ the _yield_ call is generated
+
+so evaluating the string leads to an execution of the `a(href:...)` call *before* `yield` is itself called. This is not
+what you want to do. Instead, you want to generate a _string_ which contains markup, which is then passed to the `yield`
+call. This can be done this way:
+
+[source,groovy]
+----
+include::{rootdir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_stringof,indent=0]
+----
+
+Note the `stringOf` call, which basically tells the markup template engine that the underlying markup needs to be rendered
+separately and exported as a string. Note that for simple expressions, `stringOf` can be replaced by an alternate tag
+notation that starts with a _dollar_ sign:
+
+[source,groovy]
+----
+include::{rootdir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_stringof_dollar,indent=0]
+----
+
+TIP: It is worth noting that using `stringOf` or the special `$tag` notation triggers the creation of a distinct string writer
+which is then used to render the markup. It is slower than using the version with calls to `yield` which perform direct
+streaming of the markup instead.
+
 [[markuptemplate-i18n]]
 === Internationalization
 

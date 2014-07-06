@@ -725,6 +725,63 @@ layout 'layout-main.tpl', true,                             // <1>
         assertRendered()
     }
 
+    void testStringMarkupGotcha() {
+        templateContents = '''
+// tag::gotcha_strings_longversion[]
+p {
+    yield "This is a "
+    a(href:'target.html', "link")
+    yield " to another page"
+}
+// end::gotcha_strings_longversion[]
+'''
+        expectedRendered = stripAsciidocMarkup '''
+// tag::gotcha_strings_longversion_expected[]
+<p>This is a <a href='target.html'>link</a> to another page</p>
+// end::gotcha_strings_longversion_expected[]
+'''
+        assertRendered()
+
+        templateContents = '''
+// tag::gotcha_strings_naive_fail[]
+p {
+    yield "This is a ${a(href:'target.html', "link")} to another page"
+}
+// end::gotcha_strings_naive_fail[]
+'''
+        expectedRendered = stripAsciidocMarkup '''
+// tag::gotcha_strings_naive_fail_expected[]
+<p><a href='target.html'>link</a>This is a  to another page</p>
+// end::gotcha_strings_naive_fail_expected[]
+'''
+        assertRendered()
+
+        templateContents = '''
+// tag::gotcha_strings_stringof[]
+p("This is a ${stringOf {a(href:'target.html', "link")}} to another page")
+// end::gotcha_strings_stringof[]
+'''
+        expectedRendered = stripAsciidocMarkup '''
+// tag::gotcha_strings_stringof_expected[]
+<p>This is a <a href='target.html'>link</a> to another page</p>
+// end::gotcha_strings_stringof_expected[]
+'''
+        assertRendered()
+
+        templateContents = '''
+// tag::gotcha_strings_stringof_dollar[]
+p("This is a ${$a(href:'target.html', "link")} to another page")
+// end::gotcha_strings_stringof_dollar[]
+'''
+        expectedRendered = stripAsciidocMarkup '''
+// tag::gotcha_strings_stringof_dollar_expected[]
+<p>This is a <a href='target.html'>link</a> to another page</p>
+// end::gotcha_strings_stringof_dollar_expected[]
+'''
+        assertRendered()
+
+    }
+
     // tag::page_class[]
     public class Page {
 

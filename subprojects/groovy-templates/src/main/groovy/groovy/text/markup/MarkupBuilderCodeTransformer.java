@@ -19,6 +19,8 @@ import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -27,6 +29,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -38,23 +41,22 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * <p>This AST transformer is responsible for modifying a source template into something
- * which can be compiled as a {@link groovy.text.markup.BaseTemplate} subclass.</p>
- *
+ * <p>This AST transformer is responsible for modifying a source template into something which can be compiled as a
+ * {@link groovy.text.markup.BaseTemplate} subclass.</p>
+ * <p/>
  * <p>It performs the following operations:</p>
- *
- * <ul>
- *     <li>replace dynamic variables with <i>getModel().get(dynamicVariable)</i> calls</li>
- *     <li>optionally wrap <i>getModel().get(...)</i> calls into <i>tryEscape</i> calls for automatic escaping</li>
- *     <li>replace <i>include XXX:'...'</i> calls with the appropriate <i>includeXXXX</i> method calls</li>
- *     <li>replace <i>':tagName'()</i> calls into <i>methodMissing('tagName', ...)</i> calls</li>
- * </ul>
+ * <p/>
+ * <ul> <li>replace dynamic variables with <i>getModel().get(dynamicVariable)</i> calls</li> <li>optionally wrap
+ * <i>getModel().get(...)</i> calls into <i>tryEscape</i> calls for automatic escaping</li> <li>replace <i>include
+ * XXX:'...'</i> calls with the appropriate <i>includeXXXX</i> method calls</li> <li>replace <i>':tagName'()</i> calls
+ * into <i>methodMissing('tagName', ...)</i> calls</li> </ul>
  *
  * @author Cedric Champeau
  */
@@ -80,7 +82,7 @@ class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
     @Override
     public Expression transform(final Expression exp) {
         if (exp instanceof BinaryExpression) {
-            return transformBinaryExpression((BinaryExpression)exp);
+            return transformBinaryExpression((BinaryExpression) exp);
         }
         if (exp instanceof MethodCallExpression) {
             return transformMethodCall((MethodCallExpression) exp);
@@ -88,6 +90,7 @@ class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
         if (exp instanceof ClosureExpression) {
             ClosureExpression cl = (ClosureExpression) exp;
             cl.getCode().visit(this);
+            return cl;
         }
         if (exp instanceof VariableExpression) {
             VariableExpression var = (VariableExpression) exp;
@@ -189,6 +192,25 @@ class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
             call.setSpreadSafe(exp.isSpreadSafe());
             call.setSourcePosition(exp);
             return call;
+        } else if (name!=null && name.startsWith("$")) {
+            MethodCallExpression reformatted = new MethodCallExpression(
+                    exp.getObjectExpression(),
+                    name.substring(1),
+                    exp.getArguments()
+            );
+            reformatted.setImplicitThis(exp.isImplicitThis());
+            reformatted.setSafe(exp.isSafe());
+            reformatted.setSpreadSafe(exp.isSpreadSafe());
+            reformatted.setSourcePosition(exp);
+            // wrap in a stringOf { ... } closure call
+            ClosureExpression clos = new ClosureExpression(Parameter.EMPTY_ARRAY, new ExpressionStatement(reformatted));
+            clos.setVariableScope(new VariableScope());
+            MethodCallExpression stringOf = new MethodCallExpression(new VariableExpression("this"),
+                    "stringOf",
+                    clos);
+            stringOf.setImplicitThis(true);
+            stringOf.setSourcePosition(reformatted);
+            return stringOf;
         }
         return super.transform(exp);
     }

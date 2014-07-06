@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -65,6 +66,8 @@ class TemplateASTTransformer extends CompilationCustomizer {
             classNode.setSuperClass(ClassHelper.make(config.getBaseTemplateClass()));
             createConstructor(classNode);
             transformRunMethod(classNode, source);
+            VariableScopeVisitor visitor = new VariableScopeVisitor(source);
+            visitor.visitClass(classNode);
         }
     }
 
