@@ -18,6 +18,7 @@ package groovy.text.markup;
 import groovy.lang.Closure;
 import groovy.lang.Writable;
 import groovy.text.Template;
+import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.runtime.ExceptionUtils;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
@@ -100,6 +101,19 @@ public abstract class BaseTemplate implements Writable {
         out.write(escapeXml(obj.toString()));
         return this;
     }
+
+    public String stringOf(Closure cl) throws IOException {
+        Writer old = out;
+        StringWriter stringWriter = new StringWriter(32);
+        out = stringWriter;
+        Object result = cl.call();
+        if (result!=null && result!=this) {
+            stringWriter.append(result.toString());
+        }
+        out = old;
+        return stringWriter.toString();
+    }
+
 
     /**
      * Renders the supplied object using its {@link Object#toString} method inside a
@@ -445,6 +459,10 @@ public abstract class BaseTemplate implements Writable {
      * @throws IOException
      */
     public Writer writeTo(final Writer out) throws IOException {
+        if (this.out!=null) {
+            // StackOverflow prevention
+            return NullWriter.DEFAULT;
+        }
         try {
             this.out = createWriter(out);
             run();
