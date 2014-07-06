@@ -3,7 +3,7 @@ parser grammar GroovyParser;
 
 options { tokenVocab = GroovyLexer; }
 
-@parser::members {
+@members {
     String currentClassName = null; // Used for correct constructor recognition.
 }
 
@@ -91,6 +91,7 @@ cmdExpressionRule: pathExpression ( argumentList IDENTIFIER)* argumentList IDENT
 pathExpression: (IDENTIFIER DOT)* IDENTIFIER ;
 
 closureExpressionRule: LCURVE argumentDeclarationList CLOSURE_ARG_SEPARATOR blockStatement? RCURVE ;
+gstring: GSTRING_START LCURVE expression? RCURVE (GSTRING_PART LCURVE expression? RCURVE)* GSTRING_END ;
 
 expression:
     closureExpressionRule #closureExpression
@@ -119,6 +120,7 @@ expression:
     | expression OR expression #binaryExpression
     | expression (ASSIGN | PLUS_ASSIGN | MINUS_ASSIGN | MULT_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | BAND_ASSIGN | XOR_ASSIGN | BOR_ASSIGN | LSHIFT_ASSIGN | RSHIFT_ASSIGN | RUSHIFT_ASSIGN) expression #assignmentExpression
     | STRING #constantExpression
+    | gstring #gstringExpression
     | DECIMAL #constantDecimalExpression
     | INTEGER #constantIntegerExpression
     | KW_NULL #nullExpression

@@ -1,7 +1,7 @@
 
 lexer grammar GroovyLexer;
 
-@lexer::members {
+@members {
     enum Brace {
        ROUND,
        SQUARE,
@@ -9,12 +9,92 @@ lexer grammar GroovyLexer;
     };
     java.util.Deque<Brace> braceStack = new java.util.ArrayDeque<Brace>();
     Brace topBrace = null;
+    int lastTokenType = 0;
+    long tokenIndex = 0;
+    long tlePos = 0;
+
+    public void emit(Token token) {
+        super.emit(token);
+        tokenIndex++;
+        lastTokenType = token.getType();
+        //System.out.println("EM: " + tokenNames[lastTokenType != -1 ? lastTokenType : 0] + ": " + lastTokenType + " TLE = " + (tlePos == tokenIndex) + " " + tlePos + "/" + tokenIndex + " " + token.getText());
+    }
+
+    public void pushBrace(Brace b) {
+        braceStack.push(b);
+        topBrace = braceStack.peekFirst();
+        //System.out.println("> " + topBrace);
+    }
+
+    public void popBrace() {
+        braceStack.pop();
+        topBrace = braceStack.peekFirst();
+        //System.out.println("> " + topBrace);
+    }
+
+    public boolean isSlashyStringAlowed() {
+        java.util.List<Integer> ints = java.util.Arrays.asList(PLUS, NOT, BNOT, MULT); // FIXME add more operators.
+        //System.out.println("SP: " + " TLECheck = " + (tlePos == tokenIndex) + " " + tlePos + "/" + tokenIndex);
+        boolean isLastTokenOp = ints.contains(Integer.valueOf(lastTokenType));
+        boolean res = isLastTokenOp || tlePos == tokenIndex;
+        //System.out.println("SP: " + tokenNames[lastTokenType] + ": " + lastTokenType + " res " + res + (res ? ( isLastTokenOp ? " op" : " tle") : ""));
+        return res;
+    }
 }
 
 LINE_COMMENT: '//' .*? '\n' -> type(NL) ;
 BLOCK_COMMENT: '/*' .*? '*/' -> type(NL) ;
 
-WS: [ \t]+ -> skip;
+WS: [ \t]+ -> skip ;
+
+LPAREN : '(' { pushBrace(Brace.ROUND); tlePos = tokenIndex + 1; } -> pushMode(DEFAULT_MODE) ;
+RPAREN : ')' { popBrace(); } -> popMode ;
+LBRACK : '[' { pushBrace(Brace.SQUARE); tlePos = tokenIndex + 1; } -> pushMode(DEFAULT_MODE) ;
+RBRACK : ']' { popBrace(); } -> popMode ;
+LCURVE : '{' { pushBrace(Brace.CURVE); tlePos = tokenIndex + 1; } -> pushMode(DEFAULT_MODE) ;
+RCURVE : '}' { popBrace(); } -> popMode ;
+
+MULTILINE_STRING:
+    ('\'\'\'' STRING_ELEMENT*? '\'\'\''
+    | '"""' STRING_ELEMENT*? '"""'
+    | '\'' STRING_ELEMENT*? (NL | '\'')
+    | '"' STRING_ELEMENT*? (NL | '"')) -> type(STRING)
+;
+
+SLASHY_STRING: '/' { isSlashyStringAlowed() }? .*? '/' -> type(STRING);
+STRING: '"' DQ_STRING_ELEMENT*? '"'  | '\'' QUOTED_STRING_ELEMENT*? '\'';
+GSTRING_START: '"' DQ_STRING_ELEMENT*? '$' -> pushMode(GSTRING_MODE) ;
+
+fragment STRING_ELEMENT: ESC_SEQUENCE | ~('$') ;
+fragment QUOTED_STRING_ELEMENT: ESC_SEQUENCE | ~('\'') ;
+fragment DQ_STRING_ELEMENT: ESC_SEQUENCE | ~('"' | '$') ;
+
+mode GSTRING_MODE ;
+    GSTRING_BRACE_L: '{' { pushBrace(Brace.CURVE); tlePos = tokenIndex + 1; } -> type(LCURVE), pushMode(DEFAULT_MODE) ;
+    GSTRING_END: '"' -> popMode ;
+    GSTRING_PART: '$' ;
+    GSTRING_ELEMENT: (ESC_SEQUENCE | ~('$' | '"')) -> more ;
+
+mode DEFAULT_MODE ;
+
+fragment ESC_SEQUENCE: '\\' [btnfr"'\\] | OCTAL_ESC_SEQ | UNICODE_ESC_SEQ ;
+fragment OCTAL_ESC_SEQ: '\\' [0-3]? [0-7]? [0-7] ;
+fragment UNICODE_ESC_SEQ: '\\u' [0-9abcdefABCDEF] [0-9abcdefABCDEF] [0-9abcdefABCDEF] [0-9abcdefABCDEF] ;
+
+// Numbers
+DECIMAL: SIGN? DIGITS ('.' DIGITS EXP_PART? | EXP_PART) DECIMAL_TYPE_MODIFIER? ;
+INTEGER: SIGN? (('0x' | '0X') HEX_DIGITS | '0' OCT_DIGITS | DEC_DIGITS) INTEGER_TYPE_MODIFIER? ;
+
+fragment DIGITS: [0-9] | [0-9][0-9_]*[0-9] ;
+fragment DEC_DIGITS: [0-9] | [1-9][0-9_]*[0-9] ;
+fragment OCT_DIGITS: [0-7] | [0-7][0-7_]*[0-7] ;
+fragment HEX_DIGITS: [0-9abcdefABCDEF] | [0-9abcdefABCDEF][0-9abcdefABCDEF_]*[0-9abcdefABCDEF] ;  // Simplify by extracting one digit element?
+
+fragment SIGN: ('-'|'+') ;
+fragment EXP_PART: ([eE] SIGN? [0-9]+) ;
+
+fragment INTEGER_TYPE_MODIFIER: ('G' | 'L' | 'I' | 'g' | 'l' | 'i') ;
+fragment DECIMAL_TYPE_MODIFIER: ('G' | 'D' | 'F' | 'g' | 'd' | 'f') ;
 
 KW_CLASS: 'class' ;
 KW_PACKAGE: 'package' ;
@@ -98,33 +178,6 @@ XOR: '^' ;
 KW_AS: 'as' ;
 KW_INSTANCEOF: 'instanceof' ;
 
-STRING:
-    '\'\'\'' STRING_ELEMENT*? '\'\'\''
-    | '"""' STRING_ELEMENT*? '"""'
-    | '\'' STRING_ELEMENT*? (NL | '\'')
-    | '"' STRING_ELEMENT*? (NL | '"')
-;
-
-fragment STRING_ELEMENT: ESC_SEQUENCE | . ;
-fragment ESC_SEQUENCE: '\\' [btnfr"'\\] | OCTAL_ESC_SEQ | UNICODE_ESC_SEQ ;
-fragment OCTAL_ESC_SEQ: '\\' [0-3]? [0-7]? [0-7] ;
-fragment UNICODE_ESC_SEQ: '\\u' [0-9abcdefABCDEF] [0-9abcdefABCDEF] [0-9abcdefABCDEF] [0-9abcdefABCDEF] ;
-
-// Numbers
-DECIMAL: SIGN? DIGITS ('.' DIGITS EXP_PART? | EXP_PART) DECIMAL_TYPE_MODIFIER? ;
-INTEGER: SIGN? (('0x' | '0X') HEX_DIGITS | '0' OCT_DIGITS | DEC_DIGITS) INTEGER_TYPE_MODIFIER? ;
-
-fragment DIGITS: [0-9] | [0-9][0-9_]*[0-9] ;
-fragment DEC_DIGITS: [0-9] | [1-9][0-9_]*[0-9] ;
-fragment OCT_DIGITS: [0-7] | [0-7][0-7_]*[0-7] ;
-fragment HEX_DIGITS: [0-9abcdefABCDEF] | [0-9abcdefABCDEF][0-9abcdefABCDEF_]*[0-9abcdefABCDEF] ;  // Simplify by extracting one digit element?
-
-fragment SIGN: ('-'|'+') ;
-fragment EXP_PART: ([eE] SIGN? [0-9]+) ;
-
-fragment INTEGER_TYPE_MODIFIER: ('G' | 'L' | 'I' | 'g' | 'l' | 'i') ;
-fragment DECIMAL_TYPE_MODIFIER: ('G' | 'D' | 'F' | 'g' | 'd' | 'f') ;
-
 // Modifiers
 VISIBILITY_MODIFIER: (KW_PUBLIC | KW_PROTECTED | KW_PRIVATE) ;
 fragment KW_PUBLIC: 'public' ;
@@ -140,17 +193,10 @@ KW_VOLATILE: 'volatile' ; // Fields only
 KW_SYNCHRONIZED: 'synchronized' ; // Methods and fields.
 KW_STRICTFP: 'strictfp';
 
-LPAREN : '(' { braceStack.push(Brace.ROUND); topBrace = braceStack.peekFirst(); } ;
-RPAREN : ')' { braceStack.pop(); topBrace = braceStack.peekFirst(); } ;
-LBRACK : '[' { braceStack.push(Brace.SQUARE); topBrace = braceStack.peekFirst(); } ;
-RBRACK : ']' { braceStack.pop(); topBrace = braceStack.peekFirst(); } ;
-LCURVE : '{' { braceStack.push(Brace.CURVE); topBrace = braceStack.peekFirst(); } ;
-RCURVE : '}' { braceStack.pop(); topBrace = braceStack.peekFirst(); } ;
-
 /** Nested newline within a (..) or [..] are ignored. */
 IGNORE_NEWLINE : '\r'? '\n' { topBrace == Brace.ROUND || topBrace == Brace.SQUARE }? -> skip ;
 
 // Match both UNIX and Windows newlines
 NL: '\r'? '\n';
 
-IDENTIFIER: [A-Za-z][A-Za-z0-9_]*;
+IDENTIFIER: [A-Za-z_$][A-Za-z0-9_$]*;
