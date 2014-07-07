@@ -926,7 +926,9 @@ public class AsmClassGenerator extends ClassGenerator {
             while (!iterType.equals(type)) {
                 String ownerName = BytecodeHelper.getClassInternalName(iterType);
                 if (iterType.getOuterClass()==null) break;
-                ClassNode thisFieldType = iterType.getField("this$0").getType();
+                FieldNode thisField = iterType.getField("this$0");
+                if (thisField==null) break;
+                ClassNode thisFieldType = thisField.getType();
                 iterType = iterType.getOuterClass();
                 if (ClassHelper.CLOSURE_TYPE.equals(thisFieldType)) {
                     mv.visitFieldInsn(GETFIELD, ownerName, "this$0", BytecodeHelper.getTypeDescription(ClassHelper.CLOSURE_TYPE));
