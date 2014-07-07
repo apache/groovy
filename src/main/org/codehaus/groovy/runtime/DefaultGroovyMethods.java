@@ -3367,6 +3367,39 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns <tt>true</tt> if this iterable contains the item.
+     *
+     * @param  self an Iterable to be checked for containment
+     * @param  item an Objecct to be checked for containment in this iterable
+     * @return <tt>true</tt> if this iterable contains the item
+     * @see    Collection#contains(Object)
+     * @since 2.4.0
+     */
+    public static boolean contains(Iterable self, Object item) {
+        for (Object e : self) {
+            if (item == null ? e == null : item.equals(e)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns <tt>true</tt> if this iterable contains all of the elements
+     * in the specified array.
+     *
+     * @param  self  an Iterable to be checked for containment
+     * @param  items array to be checked for containment in this iterable
+     * @return <tt>true</tt> if this collection contains all of the elements
+     *           in the specified array
+     * @see    Collection#containsAll(Collection)
+     * @since 2.4.0
+     */
+    public static boolean containsAll(Iterable self, Object[] items) {
+        return asCollection(self).containsAll(Arrays.asList(items));
+    }
+
+    /**
      * Returns <tt>true</tt> if this collection contains all of the elements
      * in the specified array.
      *
@@ -3680,6 +3713,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return collect(permutations(self),function);
     }
 
+    /**
+     * @deprecated Use the Iterable version of eachPermutation instead
+     * @see #eachPermutation(Iterable, Closure)
+     * @since 1.7.0
+     */
+    @Deprecated
+    public static <T> Iterator<List<T>> eachPermutation(Collection<T> self, Closure closure) {
+        return eachPermutation((Iterable<T>) self, closure);
+    }
 
     /**
      * Iterates over all permutations of a collection, running a closure for each iteration.
@@ -3694,7 +3736,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the permutations from the list
      * @since 1.7.0
      */
-    public static <T> Iterator<List<T>> eachPermutation(Collection<T> self, Closure closure) {
+    public static <T> Iterator<List<T>> eachPermutation(Iterable<T> self, Closure closure) {
         Iterator<List<T>> generator = new PermutationGenerator<T>(self);
         while (generator.hasNext()) {
             closure.call(generator.next());
@@ -6984,6 +7026,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns the first item from the Iterable.
+     * <pre class="groovyTestCase">
+     * def set = [3, 4, 2] as LinkedHashSet
+     * assert set.head() == 3
+     * // check original is unaltered
+     * assert set == [3, 4, 2] as Set
+     * </pre>
+     * The first element returned by the Iterable's iterator is returned.
+     * If the Iterable doesn't guarantee a defined order it may appear like
+     * a random element is returned.
+     *
+     * @param self an Iterable
+     * @return the first item from the Iterable
+     * @throws NoSuchElementException if the Iterable is empty and you try to access the head() item.
+     * @since 2.4.0
+     */
+    public static <T> T head(Iterable<T> self) {
+        return first(self);
+    }
+
+    /**
      * Returns the first item from the List.
      * <pre class="groovyTestCase">def list = [3, 4, 2]
      * assert list.head() == 3
@@ -7010,6 +7073,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T head(T[] self) {
         return first(self);
+    }
+
+    /**
+     * Returns the items from the Iterable excluding the first item.
+     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * assert list.tail() == [4, 2]
+     * assert list == [3, 4, 2]</pre>
+     *
+     * @param self an Iterable
+     * @return a list without its first element
+     * @throws NoSuchElementException if the iterable is empty and you try to access the tail() item.
+     * @since 2.4.0
+     */
+    public static <T> List<T> tail(Iterable<T> self) {
+        List<T> result = toList(self);
+        if (result.isEmpty()) {
+            throw new NoSuchElementException("Cannot access tail() for an empty Iterable");
+        }
+        result.remove(0);
+        return result;
     }
 
     /**
@@ -7984,6 +8067,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Converts this Iterable to a Collection. Returns the original Iterable
+     * if it is already a Collection.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert new HashSet().asCollection() instanceof Collection
+     * </pre>
+     *
+     * @param self an Iterable to be converted into a Collection
+     * @return a newly created List if this Iterable is not already a Collection
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> asCollection(Iterable<T> self) {
+        if (self instanceof Collection) {
+            return (Collection<T>) self;
+        } else {
+            return toList(self);
+        }
+    }
+
+    /**
      * @deprecated Use the Iterable version of asList instead
      * @see #asList(Iterable)
      * @since 1.0
@@ -8585,6 +8689,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Create a Collection as a union of two iterables. If the left iterable
+     * is a Set, then the returned collection will be a Set otherwise a List.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3,4] == [1,2] + [3,4]</pre>
+     *
+     * @param left  the left Iterable
+     * @param right the right Iterable
+     * @return the merged Collection
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> plus(Iterable<T> left, Iterable<T> right) {
+        return plus(asCollection(left), asCollection(right));
+    }
+
+    /**
      * Create a Collection as a union of a Collection and an Iterable. If the left collection
      * is a Set, then the returned collection will be a Set otherwise a List.
      * This operation will always create a new object for the result,
@@ -8597,7 +8717,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #plus(Collection, Collection)
      */
     public static <T> Collection<T> plus(Collection<T> left, Iterable<T> right) {
-        return plus(left, toList(right));
+        return plus(left, asCollection(right));
     }
 
     /**
@@ -8697,7 +8817,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a List composed of the elements of this list, repeated
+     * Create a collection as a union of an Iterable and an Object. If the iterable
+     * is a Set, then the returned collection will be a Set otherwise a List.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
+     *
+     * @param left  an Iterable
+     * @param right an object to add/append
+     * @return the resulting Collection
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> plus(Iterable<T> left, T right) {
+        return plus(asCollection(left), right);
+    }
+
+    /**
+     * Create a List composed of the elements of this Collection, repeated
      * a certain number of times.  Note that for non-primitive
      * elements, multiple references to the same instance will be added.
      * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
@@ -8714,6 +8850,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.addAll(self);
         }
         return answer;
+    }
+
+    /**
+     * Create a List composed of the elements of this Iterable, repeated
+     * a certain number of times.  Note that for non-primitive
+     * elements, multiple references to the same instance will be added.
+     * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
+     *
+     * @param self   an Iterable
+     * @param factor the number of times to append
+     * @return the multiplied list
+     * @since 2.4.0
+     */
+    public static <T> List<T> multiply(Iterable<T> self, Number factor) {
+        return multiply(asCollection(self), factor);
     }
 
     /**
@@ -8749,6 +8900,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 result.add(t);
         }
         return result;
+    }
+
+    /**
+     * Create a Collection composed of the intersection of both iterables.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
+     *
+     * @param left  an Iterable
+     * @param right an Iterable
+     * @return a Collection as an intersection of both iterables
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right) {
+        return intersect(asCollection(left), asCollection(right));
     }
 
     /**
@@ -10449,6 +10614,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Set<T> answer = new HashSet<T>(self.size());
         answer.addAll(self);
         return answer;
+    }
+
+    /**
+     * Convert an Iterable to a Set. Always returns a new Set
+     * even if the Iterable is already a Set.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * def result = [1, 2, 2, 2, 3].toSet()
+     * assert result instanceof Set
+     * assert result == [1, 2, 3] as Set
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a Set
+     * @since 2.4.0
+     */
+    public static <T> Set<T> toSet(Iterable<T> self) {
+        return toSet(self.iterator());
     }
 
     /**

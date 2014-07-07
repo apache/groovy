@@ -134,6 +134,14 @@ public class DefaultGroovyMethodsSupport {
         return new ArrayList();
     }
 
+    protected static <T> Collection<T> createSimilarCollection(Iterable<T> iterable) {
+        if (iterable instanceof Collection) {
+            return createSimilarCollection((Collection<T>) iterable);
+        } else {
+            return new ArrayList<T>();
+        }
+    }
+
     protected static <T> Collection<T> createSimilarCollection(Collection<T> collection) {
         return createSimilarCollection(collection, collection.size());
     }
