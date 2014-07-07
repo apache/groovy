@@ -33,15 +33,15 @@ class XmlSlurperTest extends GroovyTestCase {
                          xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
                          xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
                          xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
-                         xmlns="http://schemas.xmlsoap.org/wsdl/">                                              
-                <message name="SomeRequest">                                                          
-                    <part name="parameters" element="ns1:SomeReq" />                                  
-                </message>                                                                            
-                <message name="SomeResponse">                                                         
-                    <part name="result" element="ns1:SomeRsp" />                                      
-                </message>                                                                            
-            </definitions>                                                                            
-            '''
+                         xmlns="http://schemas.xmlsoap.org/wsdl/">
+                <message name="SomeRequest">
+                    <part name="parameters" element="ns1:SomeReq" />
+                </message>
+                <message name="SomeResponse">
+                    <part name="result" element="ns1:SomeRsp" />
+                </message>
+            </definitions>
+        '''
         def xml = new XmlSlurper().parseText(wsdl)
         assert xml.message.part.@element*.text().findAll {it =~ /.Req$/}.size() == 1
         assert xml.message.part.findAll { true }.size() == 2
