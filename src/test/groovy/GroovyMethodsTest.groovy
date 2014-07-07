@@ -1018,8 +1018,12 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testPermutationsForIterables() {
-        int a = 0
-        Iterable items = { [ hasNext:{ a <= 3 }, next:{ "frog"[a++] } ] as Iterator } as Iterable
+        int a = 1
+        Iterable items = { [ hasNext:{ a <= 3 }, next:{ a++ } ] as Iterator } as Iterable
+        assert items.permutations() == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]] as Set
+
+        a = 0
+        items = { [ hasNext:{ a <= 3 }, next:{ "frog"[a++] } ] as Iterator } as Iterable
         def ans = [] as Set
         items.eachPermutation {
             ans << it

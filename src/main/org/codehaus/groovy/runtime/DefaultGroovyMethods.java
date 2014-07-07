@@ -2161,6 +2161,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Collates this iterable into sub-lists of length <code>size</code>.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
+     * def coll = list.collate( 3 )
+     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7 ] ]</pre>
+     *
+     * @param self          an Iterable
+     * @param size          the length of each sub-list in the returned list
+     * @return a List containing the data collated into sub-lists
+     * @since 2.4.0
+     */
+    public static <T> List<List<T>> collate(Iterable<T> self, int size) {
+        return collate(asList(self), size);
+    }
+
+    /**
      * Collates this list into sub-lists of length <code>size</code>.
      * Example:
      * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
@@ -2174,6 +2190,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<List<T>> collate( List<T> self, int size ) {
         return collate( self, size, size, true ) ;
+    }
+
+    /**
+     * Collates this iterable into sub-lists of length <code>size</code> stepping through the code <code>step</code>
+     * elements for each subList.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
+     * def coll = list.collate( 3, 1 )
+     * assert coll == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]</pre>
+     *
+     * @param self          an Iterable
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @return a List containing the data collated into sub-lists
+     * @since 2.4.0
+     */
+    public static <T> List<List<T>> collate(Iterable<T> self, int size, int step) {
+        return collate(asList(self), size, step);
     }
 
     /**
@@ -2195,6 +2229,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Collates this iterable into sub-lists of length <code>size</code>. Any remaining elements in
+     * the iterable after the subdivision will be dropped if <code>keepRemainder</code> is false.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
+     * def coll = list.collate( 3, false )
+     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ] ]</pre>
+     *
+     * @param self          an Iterable
+     * @param size          the length of each sub-list in the returned list
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the data collated into sub-lists
+     * @since 2.4.0
+     */
+    public static <T> List<List<T>> collate(Iterable<T> self, int size, boolean keepRemainder) {
+        return collate(asList(self), size, keepRemainder);
+    }
+
+    /**
      * Collates this list into sub-lists of length <code>size</code>. Any remaining elements in
      * the list after the subdivision will be dropped if <code>keepRemainder</code> is false.
      * Example:
@@ -2204,12 +2256,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self          a List
      * @param size          the length of each sub-list in the returned list
-     * @param keepRemainder if true, any rmeaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
      * @return a List containing the data collated into sub-lists
      * @since 1.8.6
      */
     public static <T> List<List<T>> collate( List<T> self, int size, boolean keepRemainder ) {
         return collate( self, size, size, keepRemainder ) ;
+    }
+
+    /**
+     * Collates this iterable into sub-lists of length <code>size</code> stepping through the code <code>step</code>
+     * elements for each sub-list.  Any remaining elements in the iterable after the subdivision will be dropped if
+     * <code>keepRemainder</code> is false.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
+     * assert list.collate( 3, 1, true  ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]
+     * assert list.collate( 3, 1, false ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ] ]</pre>
+     *
+     * @param self          an Iterable
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the data collated into sub-lists
+     * @since 2.4.0
+     */
+    public static <T> List<List<T>> collate(Iterable<T> self, int size, int step, boolean keepRemainder) {
+        return collate(asList(self), size, step, keepRemainder);
     }
 
     /**
@@ -2224,7 +2296,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self          a List
      * @param size          the length of each sub-list in the returned list
      * @param step          the number of elements to step through for each sub-list
-     * @param keepRemainder if true, any rmeaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
      * @return a List containing the data collated into sub-lists
      * @since 1.8.6
      */
@@ -3677,17 +3749,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds all permutations of a collection.
+     * Finds all permutations of an iterable.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">def result = [1, 2, 3].permutations()
      * assert result == [[3, 2, 1], [3, 1, 2], [1, 3, 2], [2, 3, 1], [2, 1, 3], [1, 2, 3]] as Set</pre>
      *
-     * @param self the Collection of items
+     * @param self the Iterable of items
      * @return the permutations from the list
      * @since 1.7.0
      */
-    public static <T> Set<List<T>> permutations(List<T> self) {
+    public static <T> Set<List<T>> permutations(Iterable<T> self) {
         Set<List<T>> ans = new HashSet<List<T>>();
         PermutationGenerator<T> generator = new PermutationGenerator<T>(self);
         while (generator.hasNext()) {
@@ -3697,20 +3769,40 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds all permutations of a collection, applies a function to each permutation and collects the result
+     * @deprecated Use the Iterable version of permutations instead
+     * @see #permutations(Iterable)
+     * @since 1.7.0
+     */
+    @Deprecated
+    public static <T> Set<List<T>> permutations(List<T> self) {
+        return permutations((Iterable<T>) self);
+    }
+
+    /**
+     * Finds all permutations of an iterable, applies a function to each permutation and collects the result
      * into a list.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">Set result = [1, 2, 3].permutations { it.collect { v -> 2*v }}
      * assert result == [[6, 4, 2], [6, 2, 4], [2, 6, 4], [4, 6, 2], [4, 2, 6], [2, 4, 6]] as Set</pre>
      *
-     * @param self the Collection of items
+     * @param self the Iterable of items
      * @param function the function to apply on each permutation
      * @return the list of results of the application of the function on each permutation
      * @since 2.2.0
      */
-    public static <T,V> List<V> permutations(List<T> self, Closure<V> function) {
+    public static <T,V> List<V> permutations(Iterable<T> self, Closure<V> function) {
         return collect(permutations(self),function);
+    }
+
+    /**
+     * @deprecated Use the Iterable version of permutations instead
+     * @see #permutations(Iterable, Closure)
+     * @since 2.2.0
+     */
+    @Deprecated
+    public static <T, V> List<V> permutations(List<T> self, Closure<V> function) {
+        return permutations((Iterable<T>) self, function);
     }
 
     /**
