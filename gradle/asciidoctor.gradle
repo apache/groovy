@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-apply plugin: 'asciidoctor'
+apply plugin: 'org.asciidoctor.gradle.asciidoctor'
 
 asciidoctor {
     def (full, major, minor, patch, flavor) = (groovyVersion =~ /(\d+)\.(\d++)\.(\d+)(?:-(.+))?/)[0]
