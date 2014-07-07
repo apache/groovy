@@ -15,6 +15,8 @@
  */
 package groovy.util;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,6 +54,10 @@ public class PermutationGenerator<E> implements Iterator<List<E>> {
         a = new int[n];
         total = getFactorial(n);
         reset();
+    }
+
+    public PermutationGenerator(Iterable<E> items) {
+        this(DefaultGroovyMethods.asCollection(items));
     }
 
     public void reset() {
