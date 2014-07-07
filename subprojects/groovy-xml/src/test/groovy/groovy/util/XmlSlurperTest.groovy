@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ class XmlSlurperTest extends GroovyTestCase {
             </definitions>                                                                            
             '''
         def xml = new XmlSlurper().parseText(wsdl)
-        assert xml.message.part.@element.findAll {it =~ /.Req$/}.size() == 1
+        assert xml.message.part.@element*.text().findAll {it =~ /.Req$/}.size() == 1
         assert xml.message.part.findAll { true }.size() == 2
         assert xml.message.part.find { it.name() == 'part' }.name() == 'part'
         assert xml.message.findAll { true }.size() == 2
