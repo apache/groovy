@@ -69,35 +69,37 @@ letters.each { letter ->
     def upperLower = "$letter${letter.toLowerCase()}"
     for (classDoc in rootDoc.classes()) {
         def classLower = classDoc.name().toLowerCase()
-        if (isVisible(classDoc) && upperLower.contains(classDoc.name()[0])) {
-            def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
-            def packageName = classDoc.qualifiedTypeName() - ('.' + classDoc.name())
-            def desc = classDoc.typeDescription + ' in '
-            entries.put(classLower, """
+        if (isVisible(classDoc)) {
+            if (upperLower.contains(classDoc.name()[0])) {
+                def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
+                def packageName = classDoc.qualifiedTypeName() - ('.' + classDoc.name())
+                def desc = classDoc.typeDescription + ' in '
+                entries.put(classLower, """
 <dt><span class="strong"><a href="${classDoc.fullPathName}.html" title="${desc + packageOrInnerName}">${classDoc.name()}</a></span> - ${desc}<a href="./${packageName.replace('.', '/')}/package-summary.html">${packageName}</a>
 </dt><dd><div class="block">${classDoc.firstSentenceCommentText()}</div></dd>""")
-        }
-        elementTypes.each { k, v ->
-            def elements = v(classDoc)
-            elements.each { e ->
-                if (isVisible(e) && upperLower.contains(e.name()[0])) {
-                    def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
-                    def packageName = classDoc.qualifiedTypeName() - ('.' + classDoc.name())
-                    def desc = k + ' in '
-                    switch (k) {
-                    case 'Method':
-                    case 'Constructor':
-                        entries[e.name().toLowerCase()+'_'+classLower] = """
+            }
+            elementTypes.each { k, v ->
+                def elements = v(classDoc)
+                elements.each { e ->
+                    if (isVisible(e) && upperLower.contains(e.name()[0])) {
+                        def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
+                        def packageName = classDoc.qualifiedTypeName() - ('.' + classDoc.name())
+                        def desc = k + ' in '
+                        switch (k) {
+                        case 'Method':
+                        case 'Constructor':
+                            entries[e.name().toLowerCase()+'_'+classLower] = """
 <dt><span class="strong"><a href="${classDoc.fullPathName}.html#${nameFromParams(e)}" title="${desc + classDoc.name()}">${e.name()}(${paramsOf(e, classDoc, true)})</a></span> - ${desc}<a href="${classDoc.fullPathName}.html">${classDoc.name()}</a>
 </dt><dd> <div class="block">${e.firstSentenceCommentText()}</div></dd>"""
-                        break
-                    case 'Field':
-                    case 'Property':
-                    case 'Enum Constant':
-                        entries[e.name().toLowerCase()+'_'+classLower] = """
+                            break
+                        case 'Field':
+                        case 'Property':
+                        case 'Enum Constant':
+                            entries[e.name().toLowerCase()+'_'+classLower] = """
 <dt><span class="strong"><a href="${classDoc.fullPathName}.html#${e.name()}" title="${desc + classDoc.name()}">${e.name()}</a></span> - ${desc}<a href="${classDoc.fullPathName}.html">${classDoc.name()}</a>
 </dt><dd> <div class="block">${e.firstSentenceCommentText()}</div></dd>"""
-                        break
+                            break
+                        }
                     }
                 }
             }
