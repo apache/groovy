@@ -15,7 +15,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.7.0'
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.7.2'
         classpath 'net.saliman:gradle-cobertura-plugin:1.1.2'
         classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:2.2.3'
     }
