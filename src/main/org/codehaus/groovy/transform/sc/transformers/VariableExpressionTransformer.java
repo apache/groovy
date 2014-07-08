@@ -15,9 +15,13 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 /**
@@ -34,9 +38,15 @@ public class VariableExpressionTransformer {
         // handle it
         Object val = expr.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         if (val==null) return expr;
-        PropertyExpression pexp = new PropertyExpression(new VariableExpression("this"), expr.getName());
+        VariableExpression implicitThis = new VariableExpression("this");
+        PropertyExpression pexp = new PropertyExpression(implicitThis, expr.getName());
         pexp.copyNodeMetaData(expr);
         pexp.setImplicitThis(true);
+        ClassNode owner = expr.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+        if (owner!=null) {
+            implicitThis.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, owner);
+            implicitThis.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, val);
+        }
         return pexp;
     }
 }

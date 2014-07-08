@@ -391,6 +391,9 @@ public class StaticInvocationWriter extends InvocationWriter {
             return;
         }
         Object implicitReceiver = origin.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+        if (implicitThis && implicitReceiver==null && origin instanceof MethodCallExpression) {
+            implicitReceiver = ((MethodCallExpression) origin).getObjectExpression().getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+        }
         if (implicitReceiver !=null && implicitThis) {
             String[] propertyPath = ((String) implicitReceiver).split("\\.");
             // GROOVY-6021
