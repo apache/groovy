@@ -1336,5 +1336,14 @@ println someInt
             assert f.rankOrderingOrId == 2L
         '''
     }
+
+    // GROOVY-6921
+    void testSubscriptOnClosureSharedVariable() {
+        assertScript '''
+            def versionRanges = [['1.7', 3]]
+            def versions = versionRanges.collect { versionRange -> (0..versionRange[1]).collect { "${versionRange[0]}.${it}" } }.flatten()
+            assert versions == ['1.7.0','1.7.1','1.7.2','1.7.3']
+        '''
+    }
 }
 
