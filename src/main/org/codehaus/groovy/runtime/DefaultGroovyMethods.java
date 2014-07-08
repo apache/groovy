@@ -6339,6 +6339,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates a spreadable map from this iterable.
+     * <p>
+     * @param self an iterable
+     * @return a newly created SpreadMap
+     * @see groovy.lang.SpreadMap#SpreadMap(java.util.List)
+     * @see #toSpreadMap(java.util.Map)
+     * @since 2.4.0
+     */
+    public static SpreadMap toSpreadMap(Iterable self) {
+        if (self == null)
+            throw new GroovyRuntimeException("Fail to convert Iterable to SpreadMap, because it is null.");
+        else
+            return toSpreadMap(asList(self));
+    }
+
+    /**
      * Wraps a map using the decorator pattern with a wrapper that intercepts all calls
      * to <code>get(key)</code>. If an unknown key is found, a default value will be
      * stored into the Map before being returned. The default value stored will be the
@@ -9034,6 +9050,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns <code>true</code> if the intersection of two iterables is empty.
+     * <pre class="groovyTestCase">assert [1,2,3].disjoint([3,4,5]) == false</pre>
+     * <pre class="groovyTestCase">assert [1,2].disjoint([3,4]) == true</pre>
+     *
+     * @param left  an Iterable
+     * @param right an Iterable
+     * @return boolean   <code>true</code> if the intersection of two iterables
+     *         is empty, <code>false</code> otherwise.
+     * @since 2.4.0
+     */
+    public static boolean disjoint(Iterable left, Iterable right) {
+        return disjoint(asCollection(left), asCollection(right));
+    }
+
+    /**
      * Returns <code>true</code> if the intersection of two collections is empty.
      * <pre class="groovyTestCase">assert [1,2,3].disjoint([3,4,5]) == false</pre>
      * <pre class="groovyTestCase">assert [1,2].disjoint([3,4]) == true</pre>
@@ -9318,7 +9349,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <T> Set<T> minus(Set<T> self, Iterable<?> removeMe) {
-        return minus(self, toList(removeMe));
+        return minus(self, asCollection(removeMe));
     }
 
     /**
@@ -9378,9 +9409,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> List<T> minus(List<T> self, Collection<?> removeMe) {
+        return (List<T>) minus((Collection<T>) self, removeMe);
+    }
 
+    /**
+     * Create a new Collection composed of the elements of the first Collection minus
+     * every occurrence of elements of the given Collection.
+     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
+     *
+     * @param self     a Collection
+     * @param removeMe a Collection of elements to remove
+     * @return a Collection with the given elements removed
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> minus(Collection<T> self, Collection<?> removeMe) {
+        Collection<T> ansCollection = createSimilarCollection(self);
         if (self.size() == 0)
-            return new ArrayList<T>();
+            return ansCollection;
+        T head = self.iterator().next();
 
         boolean nlgnSort = sameType(new Collection[]{self, removeMe});
 
@@ -9390,10 +9436,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         Comparator<T> numberComparator = new NumberAwareComparator<T>();
 
-        if (nlgnSort && (self.get(0) instanceof Comparable)) {
+        if (nlgnSort && (head instanceof Comparable)) {
             //n*LOG(n) version
             Set<T> answer;
-            if (Number.class.isInstance(self.get(0))) {
+            if (Number.class.isInstance(head)) {
                 answer = new TreeSet<T>(numberComparator);
                 answer.addAll(self);
                 for (T t : self) {
@@ -9415,12 +9461,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 answer.removeAll(removeMe);
             }
 
-            List<T> ansList = new ArrayList<T>();
             for (T o : self) {
                 if (answer.contains(o))
-                    ansList.add(o);
+                    ansCollection.add(o);
             }
-            return ansList;
         } else {
             //n*n version
             List<T> tmpAnswer = new LinkedList<T>(self);
@@ -9438,8 +9482,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
             //remove duplicates
             //can't use treeset since the base classes are different
-            return new ArrayList<T>(tmpAnswer);
+            ansCollection.addAll(tmpAnswer);
         }
+        return ansCollection;
     }
 
     /**
@@ -9458,7 +9503,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <T> List<T> minus(List<T> self, Iterable<?> removeMe) {
-        return minus(self, toList(removeMe));
+        return (List<T>) minus((Collection<T>) self, asCollection(removeMe));
+    }
+
+    /**
+     * Create a new Collection composed of the elements of the first Iterable minus
+     * every occurrence of elements of the given Iterable.
+     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
+     *
+     * @param self     an Iterable
+     * @param removeMe an Iterable of elements to remove
+     * @return a Collection with the given elements removed
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe) {
+        return minus(asCollection(self), asCollection(removeMe));
     }
 
     /**
@@ -9472,7 +9531,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> List<T> minus(List<T> self, Object removeMe) {
-        List<T> ansList = new ArrayList<T>();
+        return (List<T>) minus((Iterable<T>) self, removeMe);
+    }
+
+    /**
+     * Create a new Collection composed of the elements of the first Iterable minus every occurrence of the
+     * given element to remove.
+     * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
+     *
+     * @param self     an Iterable object
+     * @param removeMe an element to remove from the Iterable
+     * @return the resulting Collection with the given element removed
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> minus(Iterable<T> self, Object removeMe) {
+        Collection<T> ansList = createSimilarCollection(self);
         for (T t : self) {
             if (!coercedEquals(t, removeMe)) ansList.add(t);
         }
