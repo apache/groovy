@@ -20,11 +20,19 @@ class CollateTest extends GroovyTestCase {
   void testSimple() {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
     assert list.collate( 3 ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ], [ 10 ] ]
+
+    int a = 1
+    Iterable iterable = { [ hasNext:{ a <= 10 }, next:{ a++ } ] as Iterator } as Iterable
+    assert iterable.collate( 3 ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ], [ 10 ] ]
   }
 
   void testRemain() {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
     assert list.collate( 3, false ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ] ]
+
+    int a = 1
+    Iterable iterable = { [ hasNext:{ a <= 10 }, next:{ a++ } ] as Iterator } as Iterable
+    assert iterable.collate( 3, false ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ] ]
   }
 
   void testStepSimple() {
@@ -33,6 +41,10 @@ class CollateTest extends GroovyTestCase {
                      [ 4, 5, 6 ], [ 5, 6, 7 ], [ 6, 7, 8 ],
                      [ 7, 8, 9 ], [ 8, 9, 10 ], [ 9, 10 ], [ 10 ] ]
     assert list.collate( 3, 1 ) == expected
+
+    int a = 1
+    Iterable iterable = { [ hasNext:{ a <= 10 }, next:{ a++ } ] as Iterator } as Iterable
+    assert iterable.collate( 3, 1 ) == expected
   }
 
   void testStepSimpleRemain() {
@@ -41,6 +53,10 @@ class CollateTest extends GroovyTestCase {
                      [ 4, 5, 6 ], [ 5, 6, 7 ], [ 6, 7, 8 ],
                      [ 7, 8, 9 ], [ 8, 9, 10 ] ]
     assert list.collate( 3, 1, false ) == expected
+
+    int a = 1
+    Iterable iterable = { [ hasNext:{ a <= 10 }, next:{ a++ } ] as Iterator } as Iterable
+    assert iterable.collate( 3, 1, false ) == expected
   }
 
   void testTwoDimensions() {

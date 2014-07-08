@@ -2167,6 +2167,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Collates this iterable into sub-lists of length <code>size</code>.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
+     * def coll = list.collate( 3 )
+     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7 ] ]</pre>
+     *
+     * @param self          an Iterable
+     * @param size          the length of each sub-list in the returned list
+     * @return a List containing the data collated into sub-lists
+     * @since 2.4.0
+     */
+    public static <T> List<List<T>> collate(Iterable<T> self, int size) {
+        return collate(asList(self), size);
+    }
+
+    /**
      * Collates this list into sub-lists of length <code>size</code>.
      * Example:
      * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
@@ -2180,6 +2196,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<List<T>> collate( List<T> self, int size ) {
         return collate( self, size, size, true ) ;
+    }
+
+    /**
+     * Collates this iterable into sub-lists of length <code>size</code> stepping through the code <code>step</code>
+     * elements for each subList.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
+     * def coll = list.collate( 3, 1 )
+     * assert coll == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]</pre>
+     *
+     * @param self          an Iterable
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @return a List containing the data collated into sub-lists
+     * @since 2.4.0
+     */
+    public static <T> List<List<T>> collate(Iterable<T> self, int size, int step) {
+        return collate(asList(self), size, step);
     }
 
     /**
@@ -2201,6 +2235,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Collates this iterable into sub-lists of length <code>size</code>. Any remaining elements in
+     * the iterable after the subdivision will be dropped if <code>keepRemainder</code> is false.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
+     * def coll = list.collate( 3, false )
+     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ] ]</pre>
+     *
+     * @param self          an Iterable
+     * @param size          the length of each sub-list in the returned list
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the data collated into sub-lists
+     * @since 2.4.0
+     */
+    public static <T> List<List<T>> collate(Iterable<T> self, int size, boolean keepRemainder) {
+        return collate(asList(self), size, keepRemainder);
+    }
+
+    /**
      * Collates this list into sub-lists of length <code>size</code>. Any remaining elements in
      * the list after the subdivision will be dropped if <code>keepRemainder</code> is false.
      * Example:
@@ -2210,12 +2262,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self          a List
      * @param size          the length of each sub-list in the returned list
-     * @param keepRemainder if true, any rmeaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
      * @return a List containing the data collated into sub-lists
      * @since 1.8.6
      */
     public static <T> List<List<T>> collate( List<T> self, int size, boolean keepRemainder ) {
         return collate( self, size, size, keepRemainder ) ;
+    }
+
+    /**
+     * Collates this iterable into sub-lists of length <code>size</code> stepping through the code <code>step</code>
+     * elements for each sub-list.  Any remaining elements in the iterable after the subdivision will be dropped if
+     * <code>keepRemainder</code> is false.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
+     * assert list.collate( 3, 1, true  ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]
+     * assert list.collate( 3, 1, false ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ] ]</pre>
+     *
+     * @param self          an Iterable
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the data collated into sub-lists
+     * @since 2.4.0
+     */
+    public static <T> List<List<T>> collate(Iterable<T> self, int size, int step, boolean keepRemainder) {
+        return collate(asList(self), size, step, keepRemainder);
     }
 
     /**
@@ -2230,7 +2302,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self          a List
      * @param size          the length of each sub-list in the returned list
      * @param step          the number of elements to step through for each sub-list
-     * @param keepRemainder if true, any rmeaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
      * @return a List containing the data collated into sub-lists
      * @since 1.8.6
      */
@@ -3683,17 +3755,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds all permutations of a collection.
+     * Finds all permutations of an iterable.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">def result = [1, 2, 3].permutations()
      * assert result == [[3, 2, 1], [3, 1, 2], [1, 3, 2], [2, 3, 1], [2, 1, 3], [1, 2, 3]] as Set</pre>
      *
-     * @param self the Collection of items
+     * @param self the Iterable of items
      * @return the permutations from the list
      * @since 1.7.0
      */
-    public static <T> Set<List<T>> permutations(List<T> self) {
+    public static <T> Set<List<T>> permutations(Iterable<T> self) {
         Set<List<T>> ans = new HashSet<List<T>>();
         PermutationGenerator<T> generator = new PermutationGenerator<T>(self);
         while (generator.hasNext()) {
@@ -3703,20 +3775,40 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds all permutations of a collection, applies a function to each permutation and collects the result
+     * @deprecated Use the Iterable version of permutations instead
+     * @see #permutations(Iterable)
+     * @since 1.7.0
+     */
+    @Deprecated
+    public static <T> Set<List<T>> permutations(List<T> self) {
+        return permutations((Iterable<T>) self);
+    }
+
+    /**
+     * Finds all permutations of an iterable, applies a function to each permutation and collects the result
      * into a list.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">Set result = [1, 2, 3].permutations { it.collect { v -> 2*v }}
      * assert result == [[6, 4, 2], [6, 2, 4], [2, 6, 4], [4, 6, 2], [4, 2, 6], [2, 4, 6]] as Set</pre>
      *
-     * @param self the Collection of items
+     * @param self the Iterable of items
      * @param function the function to apply on each permutation
      * @return the list of results of the application of the function on each permutation
      * @since 2.2.0
      */
-    public static <T,V> List<V> permutations(List<T> self, Closure<V> function) {
+    public static <T,V> List<V> permutations(Iterable<T> self, Closure<V> function) {
         return collect(permutations(self),function);
+    }
+
+    /**
+     * @deprecated Use the Iterable version of permutations instead
+     * @see #permutations(Iterable, Closure)
+     * @since 2.2.0
+     */
+    @Deprecated
+    public static <T, V> List<V> permutations(List<T> self, Closure<V> function) {
+        return permutations((Iterable<T>) self, function);
     }
 
     /**
@@ -6250,6 +6342,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             throw new GroovyRuntimeException("Fail to convert List to SpreadMap, because it's size is not even.");
         else
             return new SpreadMap(self);
+    }
+
+    /**
+     * Creates a spreadable map from this iterable.
+     * <p>
+     * @param self an iterable
+     * @return a newly created SpreadMap
+     * @see groovy.lang.SpreadMap#SpreadMap(java.util.List)
+     * @see #toSpreadMap(java.util.Map)
+     * @since 2.4.0
+     */
+    public static SpreadMap toSpreadMap(Iterable self) {
+        if (self == null)
+            throw new GroovyRuntimeException("Fail to convert Iterable to SpreadMap, because it is null.");
+        else
+            return toSpreadMap(asList(self));
     }
 
     /**
@@ -8948,6 +9056,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns <code>true</code> if the intersection of two iterables is empty.
+     * <pre class="groovyTestCase">assert [1,2,3].disjoint([3,4,5]) == false</pre>
+     * <pre class="groovyTestCase">assert [1,2].disjoint([3,4]) == true</pre>
+     *
+     * @param left  an Iterable
+     * @param right an Iterable
+     * @return boolean   <code>true</code> if the intersection of two iterables
+     *         is empty, <code>false</code> otherwise.
+     * @since 2.4.0
+     */
+    public static boolean disjoint(Iterable left, Iterable right) {
+        return disjoint(asCollection(left), asCollection(right));
+    }
+
+    /**
      * Returns <code>true</code> if the intersection of two collections is empty.
      * <pre class="groovyTestCase">assert [1,2,3].disjoint([3,4,5]) == false</pre>
      * <pre class="groovyTestCase">assert [1,2].disjoint([3,4]) == true</pre>
@@ -9232,7 +9355,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <T> Set<T> minus(Set<T> self, Iterable<?> removeMe) {
-        return minus(self, toList(removeMe));
+        return minus(self, asCollection(removeMe));
     }
 
     /**
@@ -9292,9 +9415,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> List<T> minus(List<T> self, Collection<?> removeMe) {
+        return (List<T>) minus((Collection<T>) self, removeMe);
+    }
 
+    /**
+     * Create a new Collection composed of the elements of the first Collection minus
+     * every occurrence of elements of the given Collection.
+     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
+     *
+     * @param self     a Collection
+     * @param removeMe a Collection of elements to remove
+     * @return a Collection with the given elements removed
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> minus(Collection<T> self, Collection<?> removeMe) {
+        Collection<T> ansCollection = createSimilarCollection(self);
         if (self.size() == 0)
-            return new ArrayList<T>();
+            return ansCollection;
+        T head = self.iterator().next();
 
         boolean nlgnSort = sameType(new Collection[]{self, removeMe});
 
@@ -9304,10 +9442,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         Comparator<T> numberComparator = new NumberAwareComparator<T>();
 
-        if (nlgnSort && (self.get(0) instanceof Comparable)) {
+        if (nlgnSort && (head instanceof Comparable)) {
             //n*LOG(n) version
             Set<T> answer;
-            if (Number.class.isInstance(self.get(0))) {
+            if (Number.class.isInstance(head)) {
                 answer = new TreeSet<T>(numberComparator);
                 answer.addAll(self);
                 for (T t : self) {
@@ -9329,12 +9467,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 answer.removeAll(removeMe);
             }
 
-            List<T> ansList = new ArrayList<T>();
             for (T o : self) {
                 if (answer.contains(o))
-                    ansList.add(o);
+                    ansCollection.add(o);
             }
-            return ansList;
         } else {
             //n*n version
             List<T> tmpAnswer = new LinkedList<T>(self);
@@ -9352,8 +9488,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
             //remove duplicates
             //can't use treeset since the base classes are different
-            return new ArrayList<T>(tmpAnswer);
+            ansCollection.addAll(tmpAnswer);
         }
+        return ansCollection;
     }
 
     /**
@@ -9372,7 +9509,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <T> List<T> minus(List<T> self, Iterable<?> removeMe) {
-        return minus(self, toList(removeMe));
+        return (List<T>) minus((Collection<T>) self, asCollection(removeMe));
+    }
+
+    /**
+     * Create a new Collection composed of the elements of the first Iterable minus
+     * every occurrence of elements of the given Iterable.
+     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
+     *
+     * @param self     an Iterable
+     * @param removeMe an Iterable of elements to remove
+     * @return a Collection with the given elements removed
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe) {
+        return minus(asCollection(self), asCollection(removeMe));
     }
 
     /**
@@ -9386,7 +9537,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> List<T> minus(List<T> self, Object removeMe) {
-        List<T> ansList = new ArrayList<T>();
+        return (List<T>) minus((Iterable<T>) self, removeMe);
+    }
+
+    /**
+     * Create a new Collection composed of the elements of the first Iterable minus every occurrence of the
+     * given element to remove.
+     * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
+     *
+     * @param self     an Iterable object
+     * @param removeMe an element to remove from the Iterable
+     * @return the resulting Collection with the given element removed
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> minus(Iterable<T> self, Object removeMe) {
+        Collection<T> ansList = createSimilarCollection(self);
         for (T t : self) {
             if (!coercedEquals(t, removeMe)) ansList.add(t);
         }

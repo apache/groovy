@@ -1018,8 +1018,12 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testPermutationsForIterables() {
-        int a = 0
-        Iterable items = { [ hasNext:{ a <= 3 }, next:{ "frog"[a++] } ] as Iterator } as Iterable
+        int a = 1
+        Iterable items = { [ hasNext:{ a <= 3 }, next:{ a++ } ] as Iterator } as Iterable
+        assert items.permutations() == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]] as Set
+
+        a = 0
+        items = { [ hasNext:{ a <= 3 }, next:{ "frog"[a++] } ] as Iterator } as Iterable
         def ans = [] as Set
         items.eachPermutation {
             ans << it
@@ -1511,6 +1515,30 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [4, 5] == iterableA.intersect(iterableB)
     }
 
+    void testDisjointForLists() {
+        assert [].disjoint([])
+        assert [].disjoint([4, 5, 6, 7, 8])
+        assert [1, 2, 3, 4, 5].disjoint([])
+        assert ![1, 2, 3, 4, 5].disjoint([4, 5, 6, 7, 8])
+        assert [1, 2, 3].disjoint([4, 5, 6, 7, 8])
+    }
+
+    void testDisjointForIterables() {
+        int a = 1, b = 4
+        Iterable iterableA = { [ hasNext:{ a <= 5 }, next:{ a++ } ] as Iterator } as Iterable
+        Iterable iterableB = { [ hasNext:{ b <= 8 }, next:{ b++ } ] as Iterator } as Iterable
+        Iterable iterableEmpty = { [ hasNext:{ false }, next:{0 } ] as Iterator } as Iterable
+
+        assert iterableEmpty.disjoint(iterableB)
+        assert iterableA.disjoint(iterableEmpty)
+        a = 1
+        b = 4
+        assert !iterableA.disjoint(iterableB)
+        a = 1
+        b = 6
+        assert iterableA.disjoint(iterableB)
+    }
+
     void testAsCollectionForIterables() {
         int a = 1
         Iterable iterable = { [ hasNext:{ a <= 3 }, next:{ a++ } ] as Iterator } as Iterable
@@ -1521,6 +1549,57 @@ class GroovyMethodsTest extends GroovyTestCase {
         int a = 1
         Iterable iterable = { [ hasNext:{ a <= 3 }, next:{ a++ } ] as Iterator } as Iterable
         assert ([1, 2, 3] as Set) == iterable.toSet()
+    }
+
+    void testToSpreadMapForArrays() {
+        def spreadMap = ([1, 2, 3, 4] as Integer[]).toSpreadMap()
+        assert 2 == spreadMap.size()
+        assert 2 == spreadMap[1]
+        assert 4 == spreadMap[3]
+        assert !spreadMap.containsKey(5)
+    }
+
+    void testToSpreadMapForLists() {
+        def spreadMap = [1, 2, 3, 4].toSpreadMap()
+        assert 2 == spreadMap.size()
+        assert 2 == spreadMap[1]
+        assert 4 == spreadMap[3]
+        assert !spreadMap.containsKey(5)
+    }
+
+    void testToSpreadMapForIterables() {
+        int a = 1
+        Iterable iterable = { [ hasNext:{ a <= 4 }, next:{ a++ } ] as Iterator } as Iterable
+        def spreadMap = iterable.toSpreadMap()
+        assert 2 == spreadMap.size()
+        assert 2 == spreadMap[1]
+        assert 4 == spreadMap[3]
+        assert !spreadMap.containsKey(5)
+    }
+
+    void testPlusMinusClassSymmetryForCollections() {
+        int a
+        def data = [
+                // Lists
+                (java.util.ArrayList)     : new ArrayList( [ 1, 2, 3 ] ),
+                (java.util.LinkedList)    : new LinkedList( [ 1, 2, 3 ] ),
+                (java.util.Stack)         : new Stack() {{ addAll( [ 1, 2, 3 ] ) }},
+                (java.util.Vector)        : new Vector( [ 1, 2, 3 ] ),
+                // Sets
+                (java.util.HashSet)       : new HashSet( [ 1, 2, 3 ] ),
+                // Iterables
+                (java.util.Collection)    : { [ hasNext:{ a <= 3 }, next:{ a++ } ] as Iterator } as Iterable,
+        ]
+        data.each { Class clazz, object ->
+            a = 1
+            assert clazz.isInstance( object + 1 )
+            a = 1
+            assert clazz.isInstance( object - 1 )
+            a = 1
+            assert clazz.isInstance( object + [1, 2] )
+            a = 1
+            assert clazz.isInstance( object - [1, 2] )
+        }
     }
 
     void testPlusForLists() {
@@ -1556,6 +1635,33 @@ class GroovyMethodsTest extends GroovyTestCase {
         // Iterable.plus(List)
         a = 1
         assert [1, 2, 3, 4] == iterableA + [3, 4]
+    }
+
+    void testMinusForIterables() {
+        int a, b
+        Iterable iterableA = { [ hasNext:{ a <= 2 }, next:{ a++ } ] as Iterator } as Iterable
+        Iterable iterableB = { [ hasNext:{ b <= 4 }, next:{ b++ } ] as Iterator } as Iterable
+        Iterable iterableEmpty = { [ hasNext:{ false }, next:{ 0 } ] as Iterator } as Iterable
+
+        assert [] == iterableEmpty - 1
+        a =1
+        assert [] == iterableEmpty - iterableA
+        a =1
+        assert [1, 2] ==iterableA - iterableEmpty
+        assert [] == iterableEmpty - [1, 2]
+
+        // Iterable.minus(Object)
+        a = 1
+        assert [2] == iterableA - 1
+
+        // Iterable.minus(Iterable)
+        a = 1
+        b = 3
+        assert [3, 4] == iterableB - iterableA
+
+        // Iterable.minus(List)
+        b = 3
+        assert [3, 4] == iterableB - [1, 2]
     }
 
     void testMultiplyForLists() {
