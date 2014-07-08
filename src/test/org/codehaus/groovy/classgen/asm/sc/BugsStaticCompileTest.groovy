@@ -1350,17 +1350,21 @@ println someInt
     void testShouldNotThrowIncompatibleClassChangeError() {
         try {
             assertScript '''import org.codehaus.groovy.classgen.asm.sc.Groovy6924Support
-
-Groovy6924Support bean = new Groovy6924Support()
-bean.with {
-    foo = 'foo'
-    bar = 'bar'
-}
-String val = "$bean.foo and $bean.bar"
-assert val == 'foo and bar'
+            class Test {
+                static void foo() {
+                    Groovy6924Support bean = new Groovy6924Support()
+                    bean.with {
+                        foo = 'foo'
+                        bar = 'bar'
+                    }
+                    String val = "$bean.foo and $bean.bar"
+                    assert val == 'foo and bar'
+                }
+            }
+            Test.foo()
         '''
         } finally {
-            assert astTrees['TestScripttestShouldNotThrowIncompatibleClassChangeError0$_run_closure1'][1].contains('INVOKEVIRTUAL org/codehaus/groovy/classgen/asm/sc/Groovy6924Support.setFoo (Ljava/lang/String;)V')
+            assert astTrees['Test$_foo_closure1'][1].contains('INVOKEVIRTUAL org/codehaus/groovy/classgen/asm/sc/Groovy6924Support.setFoo (Ljava/lang/String;)V')
         }
     }
 }
