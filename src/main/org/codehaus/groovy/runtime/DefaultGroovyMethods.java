@@ -221,7 +221,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return result of calling the closure
      * @since 1.5.0
      */
-    public static <T> T with(Object self, Closure<T> closure) {
+    public static <T,U> T with(
+            @DelegatesTo.Target("self") U self,
+            @DelegatesTo(value=DelegatesTo.Target.class,
+                    target="self",
+                    strategy=Closure.DELEGATE_FIRST)
+            @ClosureParams(FirstParam.class)
+            Closure<T> closure) {
         @SuppressWarnings("unchecked")
         final Closure<T> clonedClosure = (Closure<T>) closure.clone();
         clonedClosure.setResolveStrategy(Closure.DELEGATE_FIRST);

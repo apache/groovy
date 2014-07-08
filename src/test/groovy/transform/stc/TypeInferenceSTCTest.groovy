@@ -340,7 +340,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             a.with { String it ->
                 it.x = 2 // should be recognized as a.x at compile time
             }
-        ''', 'Expected parameter type: A but was: java.lang.String'
+        ''', 'Expected parameter of type A but got java.lang.String'
     }
 
     void testShouldNotFailWithInheritanceAndWith() {

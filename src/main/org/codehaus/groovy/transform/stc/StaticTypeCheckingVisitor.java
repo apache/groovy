@@ -388,13 +388,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (storeTypeForThis(vexp)) return;
         if (storeTypeForSuper(vexp)) return;
 
-        if (typeCheckingContext.getEnclosingClosure() != null) {
+        TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
+        if (enclosingClosure != null) {
             String name = vexp.getName();
             if (name.equals("owner") || name.equals("thisObject")) {
                 storeType(vexp, typeCheckingContext.getEnclosingClassNode());
                 return;
             } else if ("delegate".equals(name)) {
-                DelegationMetadata md = getDelegationMetadata(typeCheckingContext.getEnclosingClosure().getClosureExpression());
+                DelegationMetadata md = getDelegationMetadata(enclosingClosure.getClosureExpression());
                 ClassNode type = typeCheckingContext.getEnclosingClassNode();
                 if (md!=null) type = md.getType();
                 storeType(vexp, type);
@@ -409,11 +410,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         DynamicVariable dyn = (DynamicVariable) vexp.getAccessedVariable();
         // first, we must check the 'with' context
         String dynName = dyn.getName();
-        PropertyExpression pe = new PropertyExpression(new VariableExpression("this"), dynName);
+        VariableExpression implicitThis = new VariableExpression("this");
+        PropertyExpression pe = new PropertyExpression(implicitThis, dynName);
         pe.setImplicitThis(true);
         if (visitPropertyExpressionSilent(pe, vexp)) {
+            ClassNode previousIt = vexp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            vexp.copyNodeMetaData(implicitThis);
+            vexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, previousIt);
             storeType(vexp, getType(pe));
-            Object val = pe.getNodeMetaData(StaticTypesMarker.READONLY_PROPERTY); 
+            Object val = pe.getNodeMetaData(StaticTypesMarker.READONLY_PROPERTY);
             if (val!=null) vexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY,val);
             val = pe.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
             if (val!=null) vexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER,val);
@@ -1987,26 +1992,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         checkForbiddenSpreadArgument(argumentList);
 
-        boolean isWithCall = isWithCall(name, callArguments);
-
         final ClassNode receiver = call.getOwnerType();
         visitMethodCallArguments(receiver, argumentList, false, null);
 
         ClassNode[] args = getArgumentTypes(argumentList);
 
-        if (isWithCall) {
-            typeCheckingContext.lastImplicitItType = receiver;
-            // if the provided closure uses an explicit parameter definition, we can
-            // also check that the provided type is correct
-            checkClosureParameters(callArguments, receiver);
-        }
-
         try {
-            if (isWithCall) {
-                // in case of a with call, arguments (the closure) should be visited now that we checked
-                // the arguments
-                callArguments.visit(this);
-            }
 
             // method call receivers are :
             //   - possible "with" receivers
@@ -2053,13 +2044,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         } finally {
-            if (isWithCall) {
-                typeCheckingContext.lastImplicitItType = rememberLastItType;
-            }
             extension.afterMethodCall(call);
         }
     }
 
+    /**
+     * @deprecated this method is unused, replaced with {@link DelegatesTo} inference.
+     * @param callArguments
+     * @param receiver
+     */
     protected void checkClosureParameters(final Expression callArguments, final ClassNode receiver) {
         if (callArguments instanceof ArgumentListExpression) {
             ArgumentListExpression argList = (ArgumentListExpression) callArguments;
@@ -2093,15 +2086,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected void visitMethodCallArguments(final ClassNode receiver, ArgumentListExpression arguments, boolean visitClosures, final MethodNode selectedMethod) {
         Parameter[] params = selectedMethod!=null?selectedMethod.getParameters():Parameter.EMPTY_ARRAY;
-        final List<Expression> expressions = arguments.getExpressions();
+        List<Expression> expressions = new LinkedList<Expression>(arguments.getExpressions());
+        if (selectedMethod instanceof ExtensionMethodNode) {
+            params = ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode().getParameters();
+            expressions.add(0, new VariableExpression("$self", receiver));
+        }
+        ArgumentListExpression newArgs = new ArgumentListExpression(expressions);
+
         for (int i = 0, expressionsSize = expressions.size(); i < expressionsSize; i++) {
             final Expression expression = expressions.get(i);
             if (visitClosures && expression instanceof ClosureExpression
                     || !visitClosures && !(expression instanceof ClosureExpression)) {
                 if (i<params.length && visitClosures) {
                     Parameter param = params[i];
-                    checkClosureWithDelegatesTo(arguments, params, expression, param);
-                    inferClosureParameterTypes(receiver, arguments, (ClosureExpression)expression, param, selectedMethod);
+                    checkClosureWithDelegatesTo(newArgs,params , expression, param);
+                    if (selectedMethod instanceof ExtensionMethodNode) {
+                        if (i>0) {
+                            inferClosureParameterTypes(receiver, arguments, (ClosureExpression)expression, param, selectedMethod);
+                        }
+                    } else {
+                        inferClosureParameterTypes(receiver, newArgs, (ClosureExpression) expression, param, selectedMethod);
+                    }
                 }
                 expression.visit(this);
                 if (expression.getNodeMetaData(StaticTypesMarker.DELEGATION_METADATA)!=null) {
@@ -2559,20 +2564,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // for arguments, we need to visit closures *after* the method has been chosen
 
-        boolean isWithCall = isWithCall(name, callArguments);
 
         final ClassNode receiver = getType(objectExpression);
         visitMethodCallArguments(receiver, argumentList, false, null);
 
         ClassNode[] args = getArgumentTypes(argumentList);
         final boolean isCallOnClosure = isClosureCall(name, objectExpression, callArguments);
-
-        if (isWithCall) {
-            typeCheckingContext.lastImplicitItType = receiver;
-            // if the provided closure uses an explicit parameter definition, we can
-            // also check that the provided type is correct
-            checkClosureParameters(callArguments, receiver);
-        }
 
         try {
             boolean callArgsVisited = false;
@@ -2708,10 +2705,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                         ClassNode returnType = null;
 
-                        if (isWithCall)  {
-                            returnType = getInferredReturnTypeFromWithClosureArgument(callArguments);
-                        }
-
                         if (returnType == null) {
                             returnType = getType(directMethodCallCandidate);
                         }
@@ -2778,9 +2771,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         } finally {
-            if (isWithCall) {
-                typeCheckingContext.lastImplicitItType = rememberLastItType;
-            }
             typeCheckingContext.popEnclosingMethodCall();
             extension.afterMethodCall(call);
         }

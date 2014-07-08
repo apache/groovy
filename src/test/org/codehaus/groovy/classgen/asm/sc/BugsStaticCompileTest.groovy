@@ -1345,5 +1345,23 @@ println someInt
             assert versions == ['1.7.0','1.7.1','1.7.2','1.7.3']
         '''
     }
+
+    // GROOVY-6924
+    void testShouldNotThrowIncompatibleClassChangeError() {
+        try {
+            assertScript '''import org.codehaus.groovy.classgen.asm.sc.Groovy6924Support
+
+Groovy6924Support bean = new Groovy6924Support()
+bean.with {
+    foo = 'foo'
+    bar = 'bar'
+}
+String val = "$bean.foo and $bean.bar"
+assert val == 'foo and bar'
+        '''
+        } finally {
+            assert astTrees['TestScripttestShouldNotThrowIncompatibleClassChangeError0$_run_closure1'][1].contains('INVOKEVIRTUAL org/codehaus/groovy/classgen/asm/sc/Groovy6924Support.setFoo (Ljava/lang/String;)V')
+        }
+    }
 }
 
