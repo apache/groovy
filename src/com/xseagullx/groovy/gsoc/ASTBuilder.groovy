@@ -2,12 +2,15 @@ package com.xseagullx.groovy.gsoc
 
 import com.xseagullx.groovy.gsoc.GroovyParser.ArgumentListContext
 import com.xseagullx.groovy.gsoc.util.StringUtil
+import groovy.util.logging.Log
 import groovyjarjarasm.asm.Opcodes
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.misc.NotNull
+import org.antlr.v4.runtime.tree.ErrorNode
 import org.antlr.v4.runtime.tree.ParseTree
+import org.antlr.v4.runtime.tree.ParseTreeListener
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.codehaus.groovy.ast.*
@@ -21,7 +24,9 @@ import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 
 import java.lang.reflect.Modifier
+import java.util.logging.Level
 
+@Log
 class ASTBuilder extends GroovyParserBaseListener {
     ModuleNode moduleNode
 
@@ -33,10 +38,44 @@ class ASTBuilder extends GroovyParserBaseListener {
         this.sourceUnit = sourceUnit
         moduleNode = new ModuleNode(sourceUnit)
 
-        def lexer = new GroovyLexer(new ANTLRInputStream(StringUtil.replaceHexEscapes(sourceUnit.source.reader.text)))
+
+        def text = StringUtil.replaceHexEscapes(sourceUnit.source.reader.text)
+
+        if (log.isLoggable(Level.FINE)) {
+            def lexer = new GroovyLexer(new ANTLRInputStream(text))
+            log.fine("${ "=" * 60 }\n$text\n${ "=" * 60 }")
+            log.fine("\nLexer TOKENS:\n\t${ lexer.allTokens.collect { "$it.line, $it.startIndex:$it.stopIndex ${ GroovyLexer.tokenNames[it.type] } $it.text" }.join('\n\t') }${ "=" * 60 }")
+        }
+
+        def lexer = new GroovyLexer(new ANTLRInputStream(text))
         CommonTokenStream tokens = new CommonTokenStream(lexer)
+
         def parser = new GroovyParser(tokens)
         ParseTree tree = parser.compilationUnit()
+        if (log.isLoggable(Level.FINE)) {
+            def s = "" << ""
+            new ParseTreeWalker().walk(new ParseTreeListener() {
+                int indent
+                @Override void visitTerminal(@NotNull TerminalNode node) {
+                    s << ('.\t' * indent + "$node") << '\n'
+                }
+
+                @Override void visitErrorNode(@NotNull ErrorNode node) {
+                }
+
+                @Override void enterEveryRule(@NotNull ParserRuleContext ctx) {
+                    s << ('.\t' * indent + "${GroovyParser.ruleNames[ctx.ruleIndex]}: {") << '\n'
+                    indent++
+                }
+
+                @Override void exitEveryRule(@NotNull ParserRuleContext ctx) {
+                    indent--
+                    s << ('.\t' * indent + "}") << '\n'
+                }
+            }, tree)
+
+            log.fine(("=" * 60) + "\n$s\n" + ("=" * 60))
+        }
 
         try {
             new ParseTreeWalker().walk(this, tree);
@@ -181,7 +220,6 @@ class ASTBuilder extends GroovyParserBaseListener {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Statements.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
     static Statement parseStatement(GroovyParser.StatementContext ctx) {
         throw new RuntimeException("Unsupported statement type! $ctx.text")
@@ -551,17 +589,32 @@ class ASTBuilder extends GroovyParserBaseListener {
     @SuppressWarnings("GroovyUnusedDeclaration")
     static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
         def text = ctx.text
+        def isSlashy = text.startsWith('/')
 
         //Remove start and end quotes.
         if (text.startsWith(/'''/) || text.startsWith(/"""/))
             text = text.length() == 6 ? '' : text[3..-4]
-        else if (text.startsWith(/'/) || text.startsWith(/"/))
+        else if (text.startsWith(/'/) || text.startsWith('/') || text.startsWith(/"/))
             text = text.length() == 2 ? '' : text[1..-2]
 
         //Find escapes.
-        text = StringUtil.replaceStandardEscapes(StringUtil.replaceOctalEscapes(text))
+        if (!isSlashy)
+            text = StringUtil.replaceStandardEscapes(StringUtil.replaceOctalEscapes(text))
+        else
+            text = text.replace($/\//$, '/')
 
         setupNodeLocation(new ConstantExpression(text, true), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.GstringExpressionContext ctx) {
+        def clearStart = { String it -> it.length() == 2 ? "" : it[1..-2] }
+        def clearPart = { String it -> it.length() == 1 ? "" : it[0..-2] }
+        def clearEnd = { String it -> it.length() == 1 ? "" : it[0..-2] }
+        def strings = [clearStart(ctx.gstring().GSTRING_START().text)] + ctx.gstring().GSTRING_PART().collect { clearPart(it.text) } + [clearEnd(ctx.gstring().GSTRING_END().text)]
+        def expressions = ctx.gstring().expression().collect this.&parseExpression
+        def gstringNode = new GStringExpression(ctx.text, strings.collect { new ConstantExpression(it) }, expressions)
+        setupNodeLocation(gstringNode, ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
