@@ -907,7 +907,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpr);
             } else {
                 AtomicReference<ClassNode> lookup = new AtomicReference<ClassNode>();
-                boolean hasProperty = existsProperty(new PropertyExpression(new VariableExpression("_", receiverType), keyExpr.getText()), false, new PropertyLookupVisitor(lookup));
+                PropertyExpression pexp = new PropertyExpression(new VariableExpression("_", receiverType), keyExpr.getText());
+                boolean hasProperty = existsProperty(pexp, false, new PropertyLookupVisitor(lookup));
                 if (!hasProperty) {
                     addStaticTypeError("No such property: " + keyExpr.getText() +
                             " for class: " + receiverType.getName(), receiver);
@@ -1124,9 +1125,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                     } else {
                         if (setter != null) {
-                            // TODO: remove this visit
-                            // need to visit even if we only look for a setter for compatibility
-                            if (visitor != null && field!=null) visitor.visitField(field);
+                            if (visitor != null) {
+                                if (field!=null) {
+                                    visitor.visitField(field);
+                                } else {
+                                    ClassNode setterType = setter.getParameters()[0].getOriginType();
+                                    FieldNode virtual = new FieldNode(propertyName, 0, setterType, current, EmptyExpression.INSTANCE);
+                                    visitor.visitField(virtual);
+                                }
+                            }
 
                             //TODO: apply generics on parameter[0]? 
                             storeType(pexp, setter.getParameters()[0].getType());

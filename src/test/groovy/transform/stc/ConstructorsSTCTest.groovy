@@ -335,5 +335,20 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             new Clz().run()
         '''
     }
+
+    // GROOVY-6929
+    void testShouldNotThrowNPEDuringConstructorCallCheck() {
+        assertScript '''
+            class MyBean {
+                private String var
+                void setFoo(String foo) {
+                    var = foo
+                }
+                String toString() { var }
+            }
+            def b = new MyBean(foo: 'Test')
+            assert b.toString() == 'Test'
+        '''
+    }
 }
 
