@@ -589,6 +589,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     @SuppressWarnings("GroovyUnusedDeclaration")
     static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
         def text = ctx.text
+        def isSlashy = text.startsWith('/')
 
         //Remove start and end quotes.
         if (text.startsWith(/'''/) || text.startsWith(/"""/))
@@ -597,21 +598,24 @@ class ASTBuilder extends GroovyParserBaseListener {
             text = text.length() == 2 ? '' : text[1..-2]
 
         //Find escapes.
-        text = StringUtil.replaceStandardEscapes(StringUtil.replaceOctalEscapes(text))
+        if (!isSlashy)
+            text = StringUtil.replaceStandardEscapes(StringUtil.replaceOctalEscapes(text))
+        else
+            text = text.replace($/\//$, '/')
 
         setupNodeLocation(new ConstantExpression(text, true), ctx)
     }
 
-	@SuppressWarnings("GroovyUnusedDeclaration")
-	static Expression parseExpression(GroovyParser.GstringExpressionContext ctx) {
-		def clearStart = { String it -> it.length() == 2 ? "" : it[1..-2] }
-		def clearPart = { String it -> it.length() == 1 ? "" : it[0..-2] }
-		def clearEnd = { String it -> it.length() == 1 ? "" : it[0..-2] }
-		def strings = [clearStart(ctx.gstring().GSTRING_START().text)] + ctx.gstring().GSTRING_PART().collect { clearPart(it.text) } + [clearEnd(ctx.gstring().GSTRING_END().text)]
-		def expressions = ctx.gstring().expression().collect this.&parseExpression
-		def gstringNode = new GStringExpression(ctx.text, strings.collect { new ConstantExpression(it) }, expressions)
-		setupNodeLocation(gstringNode, ctx)
-	}
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(GroovyParser.GstringExpressionContext ctx) {
+        def clearStart = { String it -> it.length() == 2 ? "" : it[1..-2] }
+        def clearPart = { String it -> it.length() == 1 ? "" : it[0..-2] }
+        def clearEnd = { String it -> it.length() == 1 ? "" : it[0..-2] }
+        def strings = [clearStart(ctx.gstring().GSTRING_START().text)] + ctx.gstring().GSTRING_PART().collect { clearPart(it.text) } + [clearEnd(ctx.gstring().GSTRING_END().text)]
+        def expressions = ctx.gstring().expression().collect this.&parseExpression
+        def gstringNode = new GStringExpression(ctx.text, strings.collect { new ConstantExpression(it) }, expressions)
+        setupNodeLocation(gstringNode, ctx)
+    }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GroovyParser.NullExpressionContext ctx) {

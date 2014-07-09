@@ -61,25 +61,34 @@ MULTILINE_STRING:
     | '"' STRING_ELEMENT*? (NL | '"')) -> type(STRING)
 ;
 
-SLASHY_STRING: '/' { isSlashyStringAlowed() }? .*? '/' -> type(STRING);
-STRING: '"' DQ_STRING_ELEMENT*? '"'  | '\'' QUOTED_STRING_ELEMENT*? '\'';
-GSTRING_START: '"' DQ_STRING_ELEMENT*? '$' -> pushMode(GSTRING_MODE) ;
+SLASHY_STRING: '/' { isSlashyStringAlowed() }? SLASHY_STRING_ELEMENT*? '/' -> type(STRING) ;
+STRING: '"' DQ_STRING_ELEMENT*? '"'  | '\'' QUOTED_STRING_ELEMENT*? '\'' ;
 
+GSTRING_START: '"' DQ_STRING_ELEMENT*? '$' -> pushMode(DOUBLE_QUOTED_GSTRING_MODE) ;
+SLASHY_GSTRING_START: '/' SLASHY_STRING_ELEMENT*? '$' -> type(GSTRING_START), pushMode(SLASHY_GSTRING_MODE) ;
+
+fragment SLASHY_STRING_ELEMENT: SLASHY_ESCAPE | ~('$' | '/') ;
 fragment STRING_ELEMENT: ESC_SEQUENCE | ~('$') ;
 fragment QUOTED_STRING_ELEMENT: ESC_SEQUENCE | ~('\'') ;
 fragment DQ_STRING_ELEMENT: ESC_SEQUENCE | ~('"' | '$') ;
 
-mode GSTRING_MODE ;
+mode DOUBLE_QUOTED_GSTRING_MODE ;
     GSTRING_BRACE_L: '{' { pushBrace(Brace.CURVE); tlePos = tokenIndex + 1; } -> type(LCURVE), pushMode(DEFAULT_MODE) ;
     GSTRING_END: '"' -> popMode ;
     GSTRING_PART: '$' ;
     GSTRING_ELEMENT: (ESC_SEQUENCE | ~('$' | '"')) -> more ;
 
+mode SLASHY_GSTRING_MODE ;
+    SLASHY_GSTRING_BRACE_L: '{' { pushBrace(Brace.CURVE); tlePos = tokenIndex + 1; } -> type(LCURVE), pushMode(DEFAULT_MODE) ;
+    SLASHY_GSTRING_END: '/' -> type(GSTRING_END), popMode ;
+    SLASHY_GSTRING_PART: '$' -> type(GSTRING_PART) ;
+    SLASHY_GSTRING_ELEMENT: (SLASHY_ESCAPE | ~('$' | '/')) -> more ;
+
 mode DEFAULT_MODE ;
 
-fragment ESC_SEQUENCE: '\\' [btnfr"'\\] | OCTAL_ESC_SEQ | UNICODE_ESC_SEQ ;
+fragment SLASHY_ESCAPE: '\\' '/' ;
+fragment ESC_SEQUENCE: '\\' [btnfr"'\\] | OCTAL_ESC_SEQ ;
 fragment OCTAL_ESC_SEQ: '\\' [0-3]? [0-7]? [0-7] ;
-fragment UNICODE_ESC_SEQ: '\\u' [0-9abcdefABCDEF] [0-9abcdefABCDEF] [0-9abcdefABCDEF] [0-9abcdefABCDEF] ;
 
 // Numbers
 DECIMAL: SIGN? DIGITS ('.' DIGITS EXP_PART? | EXP_PART) DECIMAL_TYPE_MODIFIER? ;
