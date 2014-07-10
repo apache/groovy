@@ -1,6 +1,62 @@
 package com.xseagullx.groovy.gsoc
 
+import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationClauseContext
+import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationElementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ArgumentDeclarationListContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ArgumentListContext
+import com.xseagullx.groovy.gsoc.GroovyParser.AssignmentExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.BinaryExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.BlockStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.BoolExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.CallExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ClassDeclarationContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ClassInitializerContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ClassMemberContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ClassModifierContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ClassNameExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ClassicForStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ClosureExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ClosureExpressionRuleContext
+import com.xseagullx.groovy.gsoc.GroovyParser.CommandExpressionStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ConstantDecimalExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ConstantExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ConstantIntegerExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ConstructorDeclarationContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ControlStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.DeclarationExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ExpressionStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.FieldAccessExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.FieldDeclarationContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ForInStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GenericClassNameExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GenericDeclarationListContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GstringExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.IfStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ImportStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ListConstructorContext
+import com.xseagullx.groovy.gsoc.GroovyParser.MapConstructorContext
+import com.xseagullx.groovy.gsoc.GroovyParser.MapEntryContext
+import com.xseagullx.groovy.gsoc.GroovyParser.MemberModifierContext
+import com.xseagullx.groovy.gsoc.GroovyParser.MethodCallExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.MethodDeclarationContext
+import com.xseagullx.groovy.gsoc.GroovyParser.NullExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ObjectInitializerContext
+import com.xseagullx.groovy.gsoc.GroovyParser.PackageDefinitionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ParenthesisExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.PathExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.PostfixExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.PrefixExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ReturnStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.StatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.SwitchStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ThrowStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ThrowsClauseContext
+import com.xseagullx.groovy.gsoc.GroovyParser.TryCatchFinallyStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.TypeDeclarationContext
+import com.xseagullx.groovy.gsoc.GroovyParser.UnaryExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.VariableExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.WhileStatementContext
 import com.xseagullx.groovy.gsoc.util.StringUtil
 import groovy.util.logging.Log
 import groovyjarjarasm.asm.Opcodes
@@ -85,7 +141,7 @@ class ASTBuilder extends GroovyParserBaseListener {
         }
     }
 
-    @Override void exitImportStatement(@NotNull GroovyParser.ImportStatementContext ctx) {
+    @Override void exitImportStatement(@NotNull ImportStatementContext ctx) {
         ImportNode node
         if (ctx.getChild(ctx.childCount - 1).text == '*') {
             moduleNode.addStarImport(ctx.IDENTIFIER().join('.') + '.')
@@ -99,13 +155,13 @@ class ASTBuilder extends GroovyParserBaseListener {
         setupNodeLocation(node, ctx)
     }
 
-    @Override void enterPackageDefinition(@NotNull GroovyParser.PackageDefinitionContext ctx) {
+    @Override void enterPackageDefinition(@NotNull PackageDefinitionContext ctx) {
         moduleNode.packageName = ctx.IDENTIFIER().join('.') + '.'
         attachAnnotations(moduleNode.package, ctx.annotationClause())
         setupNodeLocation(moduleNode.package, ctx)
     }
 
-    @Override void exitClassDeclaration(@NotNull GroovyParser.ClassDeclarationContext ctx) {
+    @Override void exitClassDeclaration(@NotNull ClassDeclarationContext ctx) {
         def classNode = new ClassNode("${moduleNode.packageName ?: ""}${ctx.IDENTIFIER()}", Modifier.PUBLIC, ClassHelper.OBJECT_TYPE)
         setupNodeLocation(classNode, ctx)
         attachAnnotations(classNode, ctx.annotationClause())
@@ -124,14 +180,14 @@ class ASTBuilder extends GroovyParserBaseListener {
         parseMembers(classNode, ctx.classMember())
     }
 
-    def parseMembers(ClassNode classNode, List<GroovyParser.ClassMemberContext> ctx) {
+    def parseMembers(ClassNode classNode, List<ClassMemberContext> ctx) {
         for (member in ctx) {
             def memberContext = member.children[-1]
-            assert memberContext instanceof GroovyParser.ConstructorDeclarationContext ||
-                    memberContext instanceof GroovyParser.MethodDeclarationContext ||
-                    memberContext instanceof GroovyParser.FieldDeclarationContext ||
-                    memberContext instanceof GroovyParser.ObjectInitializerContext ||
-                    memberContext instanceof GroovyParser.ClassInitializerContext
+            assert memberContext instanceof ConstructorDeclarationContext ||
+                    memberContext instanceof MethodDeclarationContext ||
+                    memberContext instanceof FieldDeclarationContext ||
+                    memberContext instanceof ObjectInitializerContext ||
+                    memberContext instanceof ClassInitializerContext
 
             // This inspection is suppressed cause I use Runtime multimethods dispatching mechanics of Groovy.
             //noinspection GroovyAssignabilityCheck
@@ -142,7 +198,7 @@ class ASTBuilder extends GroovyParserBaseListener {
             {
                 assert memberNode instanceof AnnotatedNode
                 for (annotationCtx in member.children[0..-2]) {
-                    assert annotationCtx instanceof GroovyParser.AnnotationClauseContext
+                    assert annotationCtx instanceof AnnotationClauseContext
                     memberNode.addAnnotation(parseAnnotation(annotationCtx))
                 }
             }
@@ -150,10 +206,10 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    AnnotatedNode parseMember(ClassNode classNode, GroovyParser.MethodDeclarationContext ctx) {
+    AnnotatedNode parseMember(ClassNode classNode, MethodDeclarationContext ctx) {
         //noinspection GroovyAssignabilityCheck
         def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier(), Opcodes.ACC_PUBLIC)
-        def statement = parseStatement(ctx.blockStatement() as GroovyParser.BlockStatementContext)
+        def statement = parseStatement(ctx.blockStatement() as BlockStatementContext)
 
         def params = parseParameters(ctx.argumentDeclarationList())
 
@@ -171,7 +227,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    AnnotatedNode parseMember(ClassNode classNode, GroovyParser.FieldDeclarationContext ctx) {
+    AnnotatedNode parseMember(ClassNode classNode, FieldDeclarationContext ctx) {
         //noinspection GroovyAssignabilityCheck
         def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier())
 
@@ -195,23 +251,23 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static void parseMember(ClassNode classNode, GroovyParser.ClassInitializerContext ctx) {
+    static void parseMember(ClassNode classNode, ClassInitializerContext ctx) {
         (getOrCreateClinitMethod(classNode).code as BlockStatement).addStatement(parseStatement(ctx.blockStatement()))
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static void parseMember(ClassNode classNode, GroovyParser.ObjectInitializerContext ctx) {
+    static void parseMember(ClassNode classNode, ObjectInitializerContext ctx) {
         def statement = new BlockStatement()
         statement.addStatement(parseStatement(ctx.blockStatement()))
         classNode.addObjectInitializerStatements(statement)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static AnnotatedNode parseMember(ClassNode classNode, GroovyParser.ConstructorDeclarationContext ctx) {
+    static AnnotatedNode parseMember(ClassNode classNode, ConstructorDeclarationContext ctx) {
         int modifiers = ctx.VISIBILITY_MODIFIER() ? parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER()) : Opcodes.ACC_PUBLIC
 
         def exceptions = parseThrowsClause(ctx.throwsClause())
-        def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), exceptions, parseStatement(ctx.blockStatement() as GroovyParser.BlockStatementContext))
+        def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), exceptions, parseStatement(ctx.blockStatement() as BlockStatementContext))
         setupNodeLocation(constructorNode, ctx)
         constructorNode.syntheticPublic = ctx.VISIBILITY_MODIFIER() == null
         constructorNode
@@ -221,11 +277,11 @@ class ASTBuilder extends GroovyParserBaseListener {
     // Statements.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    static Statement parseStatement(GroovyParser.StatementContext ctx) {
+    static Statement parseStatement(StatementContext ctx) {
         throw new RuntimeException("Unsupported statement type! $ctx.text")
     }
 
-    static Statement parseStatement(GroovyParser.BlockStatementContext ctx) {
+    static Statement parseStatement(BlockStatementContext ctx) {
         def statement = new BlockStatement()
         if (!ctx)
             return statement
@@ -237,17 +293,17 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Statement parseStatement(GroovyParser.ExpressionStatementContext ctx) {
+    static Statement parseStatement(ExpressionStatementContext ctx) {
         setupNodeLocation(new ExpressionStatement(parseExpression(ctx.expression())), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Statement parseStatement(GroovyParser.IfStatementContext ctx) {
+    static Statement parseStatement(IfStatementContext ctx) {
         def trueBranch = new BlockStatement()
         def falseBranch = null
         def s = trueBranch
         for (c in ctx.children) {
-            if (c instanceof GroovyParser.StatementContext) {
+            if (c instanceof StatementContext) {
                 s.addStatement(parseStatement(c))
             }
             else if (c instanceof TerminalNode) {
@@ -267,7 +323,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Statement parseStatement(GroovyParser.WhileStatementContext ctx) {
+    static Statement parseStatement(WhileStatementContext ctx) {
         def statement = new BlockStatement() // TODO refactor block statement creation. label #BSC
         for (stmt in ctx.statement())
             statement.addStatement parseStatement(stmt)
@@ -276,7 +332,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Statement parseStatement(GroovyParser.ClassicForStatementContext ctx) {
+    static Statement parseStatement(ClassicForStatementContext ctx) {
         def statement = new BlockStatement() // #BSC
         for (stmt in ctx.statement())
             statement.addStatement parseStatement(stmt)
@@ -289,7 +345,7 @@ class ASTBuilder extends GroovyParserBaseListener {
             def isSemicolon = c instanceof TerminalNode && (c.symbol.text == ';' || c.symbol.text == '(' || c.symbol.text == ')')
             if (captureNext && isSemicolon)
                 expression.addExpression(EmptyExpression.INSTANCE)
-            else if (captureNext && c instanceof GroovyParser.ExpressionContext)
+            else if (captureNext && c instanceof ExpressionContext)
                 expression.addExpression(parseExpression(c))
             captureNext = isSemicolon
         }
@@ -299,7 +355,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Statement parseStatement(GroovyParser.ForInStatementContext ctx) {
+    static Statement parseStatement(ForInStatementContext ctx) {
         def parameter = new Parameter(parseTypeDeclaration(ctx.typeDeclaration()), ctx.IDENTIFIER().text)
         parameter = setupNodeLocation(parameter, ctx.IDENTIFIER().symbol)
 
@@ -311,11 +367,11 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Statement parseStatement(GroovyParser.SwitchStatementContext ctx) {
+    static Statement parseStatement(SwitchStatementContext ctx) {
         List<CaseStatement> caseStatements = []
         for (caseStmt in ctx.caseStatement()) {
             def stmt = new BlockStatement() // #BSC
-            for (GroovyParser.StatementContext st in caseStmt.statement())
+            for (StatementContext st in caseStmt.statement())
                 stmt.addStatement(parseStatement(st))
 
             caseStatements << setupNodeLocation(new CaseStatement(parseExpression(caseStmt.expression()), stmt),
@@ -325,7 +381,7 @@ class ASTBuilder extends GroovyParserBaseListener {
         Statement defaultStatement
         if (ctx.KW_DEFAULT()) {
             defaultStatement = new BlockStatement() // #BSC
-            for (GroovyParser.StatementContext stmt in ctx.statement())
+            for (StatementContext stmt in ctx.statement())
                 defaultStatement.addStatement(parseStatement(stmt))
         }
         else
@@ -335,7 +391,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Statement parseStatement(GroovyParser.ControlStatementContext ctx) {
+    static Statement parseStatement(ControlStatementContext ctx) {
         // TODO check validity. Labeling support.
         // Fake inspection result should be suppressed.
         //noinspection GroovyConditionalWithIdenticalBranches
@@ -343,21 +399,21 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Statement parseStatement(GroovyParser.ReturnStatementContext ctx) {
+    static Statement parseStatement(ReturnStatementContext ctx) {
         def expression = ctx.expression()
         setupNodeLocation(new ReturnStatement(expression ? parseExpression(expression) : EmptyExpression.INSTANCE), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Statement parseStatement(GroovyParser.ThrowStatementContext ctx) {
+    static Statement parseStatement(ThrowStatementContext ctx) {
         setupNodeLocation(new ThrowStatement(parseExpression(ctx.expression())), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Statement parseStatement(GroovyParser.TryCatchFinallyStatementContext ctx) {
+    static Statement parseStatement(TryCatchFinallyStatementContext ctx) {
         def finallyStatement
 
-        GroovyParser.BlockStatementContext finallyBlockStatement = ctx.finallyBlock()?.blockStatement()
+        BlockStatementContext finallyBlockStatement = ctx.finallyBlock()?.blockStatement()
         if (finallyBlockStatement) {
             def fbs = new BlockStatement()
             fbs.addStatement(parseStatement(finallyBlockStatement))
@@ -367,9 +423,9 @@ class ASTBuilder extends GroovyParserBaseListener {
         else
             finallyStatement = EmptyStatement.INSTANCE
 
-        def statement = new TryCatchStatement(parseStatement(ctx.tryBlock().blockStatement() as GroovyParser.BlockStatementContext), finallyStatement)
+        def statement = new TryCatchStatement(parseStatement(ctx.tryBlock().blockStatement() as BlockStatementContext), finallyStatement)
         ctx.catchBlock().each {
-            def catchBlock = parseStatement(it.blockStatement() as GroovyParser.BlockStatementContext)
+            def catchBlock = parseStatement(it.blockStatement() as BlockStatementContext)
             def var = it.IDENTIFIER().text
 
             def classNameExpression = it.classNameExpression()
@@ -377,7 +433,7 @@ class ASTBuilder extends GroovyParserBaseListener {
                 statement.addCatch(setupNodeLocation(new CatchStatement(new Parameter(ClassHelper.OBJECT_TYPE, var), catchBlock), it))
             else {
                 classNameExpression.each {
-                    statement.addCatch(setupNodeLocation(new CatchStatement(new Parameter(parseExpression(it as GroovyParser.ClassNameExpressionContext), var), catchBlock), it))
+                    statement.addCatch(setupNodeLocation(new CatchStatement(new Parameter(parseExpression(it as ClassNameExpressionContext), var), catchBlock), it))
                 }
             }
         }
@@ -385,7 +441,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Statement parseStatement(GroovyParser.CommandExpressionStatementContext ctx) {
+    static Statement parseStatement(CommandExpressionStatementContext ctx) {
         Expression expression = null
         def list = ctx.cmdExpressionRule().children.collate(2)
         for (c in list) {
@@ -398,7 +454,7 @@ class ASTBuilder extends GroovyParserBaseListener {
                     expression = new MethodCallExpression(expression, c1.text, createArgumentList(c0))
                     expression.implicitThis = false
                 }
-                else if (c1 instanceof GroovyParser.PathExpressionContext) {
+                else if (c1 instanceof PathExpressionContext) {
                     String methodName
                     boolean implicitThis
                     //noinspection GroovyAssignabilityCheck
@@ -418,7 +474,7 @@ class ASTBuilder extends GroovyParserBaseListener {
      * @param ctx
      * @return tuple of 3 values: Expression, String methodName and boolean implicitThis flag.
      */
-    static def parsePathExpression(GroovyParser.PathExpressionContext ctx) {
+    static def parsePathExpression(PathExpressionContext ctx) {
         Expression expression
         def identifiers = ctx.IDENTIFIER() as List<TerminalNode>
         switch (identifiers.size()) {
@@ -435,28 +491,28 @@ class ASTBuilder extends GroovyParserBaseListener {
     // Expressions.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    static Expression parseExpression(GroovyParser.ExpressionContext ctx) {
+    static Expression parseExpression(ExpressionContext ctx) {
         throw new RuntimeException("Unsupported expression type! $ctx")
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.ParenthesisExpressionContext ctx) {
+    static Expression parseExpression(ParenthesisExpressionContext ctx) {
         parseExpression(ctx.expression())
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.ListConstructorContext ctx) {
+    static Expression parseExpression(ListConstructorContext ctx) {
         def expression = new ListExpression(ctx.expression().collect(ASTBuilder.&parseExpression))
         setupNodeLocation(expression, ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.MapConstructorContext ctx) {
+    static Expression parseExpression(MapConstructorContext ctx) {
         setupNodeLocation(new MapExpression(ctx.mapEntry()?.collect(ASTBuilder.&parseExpression) ?: []), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.MapEntryContext ctx) {
+    static Expression parseExpression(MapEntryContext ctx) {
         Expression keyExpr, valueExpr
         def expressions = ctx.expression()
         if (expressions.size() == 1) {
@@ -472,20 +528,20 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.ClosureExpressionContext ctx) {
+    static Expression parseExpression(ClosureExpressionContext ctx) {
         parseExpression(ctx.closureExpressionRule())
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.ClosureExpressionRuleContext ctx) {
+    static Expression parseExpression(ClosureExpressionRuleContext ctx) {
         def parameters = parseParameters(ctx.argumentDeclarationList())
 
-        def statement = parseStatement(ctx.blockStatement() as GroovyParser.BlockStatementContext)
+        def statement = parseStatement(ctx.blockStatement() as BlockStatementContext)
         setupNodeLocation(new ClosureExpression(parameters ?: null, statement), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.BinaryExpressionContext ctx) {
+    static Expression parseExpression(BinaryExpressionContext ctx) {
         def op = createToken(ctx.getChild(1) as TerminalNode)
         def expression
         def left = parseExpression(ctx.expression(0))
@@ -519,7 +575,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.UnaryExpressionContext ctx) {
+    static Expression parseExpression(UnaryExpressionContext ctx) {
         def node = null
         def op = ctx.getChild(0) as TerminalNode
         switch (op.text) {
@@ -538,12 +594,12 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.VariableExpressionContext ctx) {
+    static Expression parseExpression(VariableExpressionContext ctx) {
         setupNodeLocation(new VariableExpression(ctx.IDENTIFIER().text), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.FieldAccessExpressionContext ctx) {
+    static Expression parseExpression(FieldAccessExpressionContext ctx) {
         def op = ctx.getChild(1) as TerminalNode
         def text = ctx.IDENTIFIER().text
         def left = parseExpression(ctx.expression())
@@ -560,34 +616,34 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static PrefixExpression parseExpression(GroovyParser.PrefixExpressionContext ctx) {
+    static PrefixExpression parseExpression(PrefixExpressionContext ctx) {
         setupNodeLocation(new PrefixExpression(createToken(ctx.getChild(0) as TerminalNode), parseExpression(ctx.expression())), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static PostfixExpression parseExpression(GroovyParser.PostfixExpressionContext ctx) {
+    static PostfixExpression parseExpression(PostfixExpressionContext ctx) {
         setupNodeLocation(new PostfixExpression(parseExpression(ctx.expression()), createToken(ctx.getChild(1) as TerminalNode)), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static ConstantExpression parseExpression(GroovyParser.ConstantDecimalExpressionContext ctx) {
+    static ConstantExpression parseExpression(ConstantDecimalExpressionContext ctx) {
         def text = ctx.DECIMAL().text
         setupNodeLocation(new ConstantExpression(Numbers.parseDecimal(text), !text.startsWith('-')), ctx) // Why 10 is int but -10 is Integer?
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static ConstantExpression parseExpression(GroovyParser.ConstantIntegerExpressionContext ctx) {
+    static ConstantExpression parseExpression(ConstantIntegerExpressionContext ctx) {
         def text = ctx.INTEGER().text
         setupNodeLocation(new ConstantExpression(Numbers.parseInteger(text), !text.startsWith('-')), ctx) //Why 10 is int but -10 is Integer?
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static ConstantExpression parseExpression(GroovyParser.BoolExpressionContext ctx) {
+    static ConstantExpression parseExpression(BoolExpressionContext ctx) {
         setupNodeLocation(new ConstantExpression(ctx.KW_FALSE() ? false : true, true), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static ConstantExpression parseExpression(GroovyParser.ConstantExpressionContext ctx) {
+    static ConstantExpression parseExpression(ConstantExpressionContext ctx) {
         def text = ctx.text
         def isSlashy = text.startsWith('/')
 
@@ -607,7 +663,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.GstringExpressionContext ctx) {
+    static Expression parseExpression(GstringExpressionContext ctx) {
         def clearStart = { String it -> it.length() == 2 ? "" : it[1..-2] }
         def clearPart = { String it -> it.length() == 1 ? "" : it[0..-2] }
         def clearEnd = { String it -> it.length() == 1 ? "" : it[0..-2] }
@@ -618,19 +674,19 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.NullExpressionContext ctx) {
+    static Expression parseExpression(NullExpressionContext ctx) {
         setupNodeLocation(new ConstantExpression(null), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.AssignmentExpressionContext ctx) {
+    static Expression parseExpression(AssignmentExpressionContext ctx) {
         def left = parseExpression(ctx.expression(0)) // TODO reference to AntlrParserPlugin line 2304 for error handling.
         def right = parseExpression(ctx.expression(1))
         setupNodeLocation(new BinaryExpression(left, createToken(ctx.getChild(1) as TerminalNode), right), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.DeclarationExpressionContext ctx) {
+    static Expression parseExpression(DeclarationExpressionContext ctx) {
         def left = new VariableExpression(ctx.IDENTIFIER().text)
         def col = ctx.start.charPositionInLine + 1 // FIXME Why assignment token location is it's first occurrence.
         def token = new Token(Types.ASSIGN, '=', ctx.start.line, col)
@@ -642,7 +698,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(GroovyParser.CallExpressionContext ctx) {
+    static Expression parseExpression(CallExpressionContext ctx) {
 
         def methodNode
         if (ctx.pathExpression()) {
@@ -657,7 +713,7 @@ class ASTBuilder extends GroovyParserBaseListener {
         }
         else {
             def argumentListExpression = createArgumentList(ctx.argumentList())
-            if (ctx.expression() instanceof GroovyParser.VariableExpressionContext) {
+            if (ctx.expression() instanceof VariableExpressionContext) {
                 methodNode = new MethodCallExpression(new VariableExpression("this"), new ConstantExpression(ctx.expression().text), argumentListExpression)
                 methodNode.implicitThis = true
             }
@@ -670,7 +726,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static MethodCallExpression parseExpression(GroovyParser.MethodCallExpressionContext ctx) {
+    static MethodCallExpression parseExpression(MethodCallExpressionContext ctx) {
         def method = new ConstantExpression(ctx.IDENTIFIER().text)
         ArgumentListExpression argumentListExpression = createArgumentList(ctx.argumentList())
         def expression = new MethodCallExpression(parseExpression(ctx.expression()), method, argumentListExpression)
@@ -681,18 +737,18 @@ class ASTBuilder extends GroovyParserBaseListener {
         expression
     }
 
-    static ClassNode parseExpression(GroovyParser.ClassNameExpressionContext ctx) {
+    static ClassNode parseExpression(ClassNameExpressionContext ctx) {
         setupNodeLocation(ClassHelper.make(ctx.IDENTIFIER().join('.')), ctx)
     }
 
-    static ClassNode parseExpression(GroovyParser.GenericClassNameExpressionContext ctx) {
+    static ClassNode parseExpression(GenericClassNameExpressionContext ctx) {
         def classNode = parseExpression(ctx.classNameExpression())
 
         classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
         setupNodeLocation(classNode, ctx)
     }
 
-    static GenericsType[] parseGenericDeclaration(GroovyParser.GenericDeclarationListContext ctx) {
+    static GenericsType[] parseGenericDeclaration(GenericDeclarationListContext ctx) {
         ctx ? ctx.genericClassNameExpression().collect { setupNodeLocation(new GenericsType(parseExpression(it)), it) } : null
     }
 
@@ -712,18 +768,18 @@ class ASTBuilder extends GroovyParserBaseListener {
         argumentListExpression
     }
 
-    static def attachAnnotations(AnnotatedNode node, List<GroovyParser.AnnotationClauseContext> ctxs) {
+    static def attachAnnotations(AnnotatedNode node, List<AnnotationClauseContext> ctxs) {
         for (ctx in ctxs) {
             def annotation = parseAnnotation(ctx)
             node.addAnnotation(annotation)
         }
     }
 
-    static List<AnnotationNode> parseAnnotations(List<GroovyParser.AnnotationClauseContext> ctxs) {
+    static List<AnnotationNode> parseAnnotations(List<AnnotationClauseContext> ctxs) {
         ctxs.collect { parseAnnotation(it) }
     }
 
-    static AnnotationNode parseAnnotation(GroovyParser.AnnotationClauseContext ctx) {
+    static AnnotationNode parseAnnotation(AnnotationClauseContext ctx) {
         def node = new AnnotationNode(parseExpression(ctx.genericClassNameExpression()))
         if (ctx.annotationElement())
             node.addMember("value", parseAnnotationElement(ctx.annotationElement()))
@@ -736,7 +792,7 @@ class ASTBuilder extends GroovyParserBaseListener {
         setupNodeLocation(node, ctx)
     }
 
-    static Expression parseAnnotationElement(GroovyParser.AnnotationElementContext ctx) {
+    static Expression parseAnnotationElement(AnnotationElementContext ctx) {
         def annotationClause = ctx.annotationClause()
         if (annotationClause)
             setupNodeLocation(new AnnotationConstantExpression(parseAnnotation(annotationClause)), annotationClause)
@@ -745,7 +801,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
 
-    static ClassNode[] parseThrowsClause(GroovyParser.ThrowsClauseContext ctx) {
+    static ClassNode[] parseThrowsClause(ThrowsClauseContext ctx) {
         ctx ? ctx.classNameExpression().collect { parseExpression(it) } : []
     }
 
@@ -759,11 +815,11 @@ class ASTBuilder extends GroovyParserBaseListener {
             text, node.symbol.line, node.symbol.charPositionInLine + 1)
     }
 
-    static ClassNode parseTypeDeclaration(GroovyParser.TypeDeclarationContext ctx) {
+    static ClassNode parseTypeDeclaration(TypeDeclarationContext ctx) {
         !ctx || ctx.KW_DEF() ? ClassHelper.OBJECT_TYPE : setupNodeLocation(parseExpression(ctx.genericClassNameExpression()), ctx)
     }
 
-    static Parameter[] parseParameters(GroovyParser.ArgumentDeclarationListContext ctx) {
+    static Parameter[] parseParameters(ArgumentDeclarationListContext ctx) {
         ctx.argumentDeclaration().collect {
             def parameter = new Parameter(parseTypeDeclaration(it.typeDeclaration()), it.IDENTIFIER().text)
             attachAnnotations(parameter, it.annotationClause())
@@ -804,7 +860,7 @@ class ASTBuilder extends GroovyParserBaseListener {
         astNode
     }
 
-    int parseClassModifiers(@NotNull List<GroovyParser.ClassModifierContext> ctxs) {
+    int parseClassModifiers(@NotNull List<ClassModifierContext> ctxs) {
 
         List<TerminalNode> visibilityModifiers = []
         int modifiers = 0
@@ -849,7 +905,7 @@ class ASTBuilder extends GroovyParserBaseListener {
      * @return tuple of int modifier and boolean flag, signalising visibility modifiers presence(true if there is visibility modifier in list, false otherwise).
      * @see #checkModifierDuplication(int, int, org.antlr.v4.runtime.tree.TerminalNode)
      */
-    def parseModifiers(List<GroovyParser.MemberModifierContext> ctxList, Integer defaultVisibilityModifier = null) {
+    def parseModifiers(List<MemberModifierContext> ctxList, Integer defaultVisibilityModifier = null) {
         int modifiers = 0;
         boolean hasVisibilityModifier = false;
         ctxList.each {

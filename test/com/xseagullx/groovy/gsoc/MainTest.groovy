@@ -1,4 +1,6 @@
+
 package com.xseagullx.groovy.gsoc
+
 import com.xseagullx.groovy.gsoc.util.ASTComparatorCategory
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.control.ErrorCollector
