@@ -30,6 +30,7 @@ import org.codehaus.groovy.util.StringUtil
  * @author Mike Dillon
  * @author Tim Yates
  * @author Dinko Srkoc
+ * @author Yu Kobayashi
  */
 class GroovyMethodsTest extends GroovyTestCase {
     void testCollect() {
@@ -1676,6 +1677,31 @@ class GroovyMethodsTest extends GroovyTestCase {
         int a = 1
         Iterable iterable = { [ hasNext:{ a <= 2 }, next:{ a++ } ] as Iterator } as Iterable
         assert [1, 2, 1, 2, 1, 2] == iterable * 3
+    }
+
+    void testSwap() {
+        assert [1, 2, 3, 4] == [1, 2, 3, 4].swap(0, 0).swap(1, 1)
+
+        assert [1, 3, 4, 2] == [1, 2, 3, 4].swap(1, 2).swap(2, 3)
+        assert (["a", "c", "d", "b"] as String[]) == (["a", "b", "c", "d"] as String[]).swap(1, 2).swap(2, 3)
+        assert ([false, true, true, false] as boolean[]) == ([false, false, true, true] as boolean[]).swap(1, 2).swap(2, 3)
+        assert ([1, 3, 4, 2] as byte[]) == ([1, 2, 3, 4] as byte[]).swap(1, 2).swap(2, 3)
+        assert ([1, 3, 4, 2] as char[]) == ([1, 2, 3, 4] as char[]).swap(1, 2).swap(2, 3)
+        assert ([1, 3, 4, 2] as double[]) == ([1, 2, 3, 4] as double[]).swap(1, 2).swap(2, 3)
+        assert ([1, 3, 4, 2] as float[]) == ([1, 2, 3, 4] as float[]).swap(1, 2).swap(2, 3)
+        assert ([1, 3, 4, 2] as int[]) == ([1, 2, 3, 4] as int[]).swap(1, 2).swap(2, 3)
+        assert ([1, 3, 4, 2] as long[]) == ([1, 2, 3, 4] as long[]).swap(1, 2).swap(2, 3)
+        assert ([1, 3, 4, 2] as short[]) == ([1, 2, 3, 4] as short[]).swap(1, 2).swap(2, 3)
+
+        shouldFail(IndexOutOfBoundsException) {
+            [].swap(1, 2)
+        }
+        shouldFail(ArrayIndexOutOfBoundsException) {
+            ([] as String[]).swap(1, 2)
+        }
+        shouldFail(ArrayIndexOutOfBoundsException) {
+            ([] as int[]).swap(1, 2)
+        }
     }
 }
 
