@@ -49,6 +49,10 @@ To build everything and launch unit tests, use
 
     ./gradlew test
 
+If you want to launch one unit test, use this. <TestClassName> is like `groovy.GroovyMethodsTest`.
+
+    ./gradlew :test --tests <TestClassName>
+
 To build from IntelliJ IDEA
 
     ./gradlew jarAll idea
