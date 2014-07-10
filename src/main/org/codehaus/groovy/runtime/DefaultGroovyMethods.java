@@ -3448,7 +3448,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns <tt>true</tt> if this iterable contains the item.
      *
      * @param  self an Iterable to be checked for containment
-     * @param  item an Objecct to be checked for containment in this iterable
+     * @param  item an Object to be checked for containment in this iterable
      * @return <tt>true</tt> if this iterable contains the item
      * @see    Collection#contains(Object)
      * @since 2.4.0
