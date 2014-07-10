@@ -433,6 +433,7 @@ apply from: 'gradle/upload.gradle'
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 apply from: 'gradle/codehaus.gradle'
+apply from: 'gradle/quality.gradle'
 // If a local configuration file for tweaking the build is present, apply it
 if (file('user.gradle').exists()) {
     apply from: 'user.gradle'

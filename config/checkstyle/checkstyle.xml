@@ -105,16 +105,20 @@
         <module name="DefaultComesLast"/>
         <!-- very liberal values for metrics, perhaps tighten some later -->
         <module name="JavaNCSS">
+            <property name="severity" value="warning"/>
             <property name="methodMaximum" value="80"/>
             <property name="classMaximum" value="300"/>
         </module>
         <module name="ClassFanOutComplexity">
+            <property name="severity" value="warning"/>
             <property name="max" value="22"/>
         </module>
         <module name="ClassDataAbstractionCoupling">
+            <property name="severity" value="warning"/>
             <property name="max" value="14"/>
         </module>
         <module name="CyclomaticComplexity">
+            <property name="severity" value="warning"/>
             <property name="max" value="14"/>
         </module>
         <!-- TODO: turn this back on? -->
@@ -153,6 +157,7 @@
         <property name="headerFile" value="${rootProject.projectDir}/config/checkstyle/codeHeader.txt"/>
     </module>
     <module name="JavadocPackage">
+        <property name="severity" value="info"/>
         <property name="allowLegacy" value="true"/>
     </module>
 <!--
