@@ -348,7 +348,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         super.visitPropertyExpression(pexp);
         Object dynamic = pexp.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
         if (dynamic !=null) {
-            pexp.getObjectExpression().putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, dynamic);
+            pexp.getObjectExpression().putNodeMetaData(StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY, dynamic);
         }
     }
 }
