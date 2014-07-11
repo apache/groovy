@@ -128,18 +128,41 @@ class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
     }
 
     private Expression transformBinaryExpression(final BinaryExpression bin) {
-        Expression leftExpression = bin.getLeftExpression();
-        Expression rightExpression = bin.getRightExpression();
+        Expression left = bin.getLeftExpression();
+        Expression right = bin.getRightExpression();
         boolean assignment = bin.getOperation().getType() == Types.ASSIGN;
-        if (assignment && leftExpression instanceof VariableExpression && rightExpression instanceof ClosureExpression) {
-            VariableExpression var = (VariableExpression) leftExpression;
+        if (assignment && left instanceof VariableExpression) {
+            VariableExpression var = (VariableExpression) left;
+            if (var.getAccessedVariable() instanceof DynamicVariable) {
+                String varName = var.getName();
+                if (!"modelTypes".equals(varName)) {
+                    MethodCallExpression callGetModel = new MethodCallExpression(
+                            new VariableExpression("this"),
+                            "getModel",
+                            ArgumentListExpression.EMPTY_ARGUMENTS
+                    );
+                    callGetModel.setImplicitThis(true);
+                    callGetModel.setSourcePosition(left);
+                    MethodCallExpression mce = new MethodCallExpression(
+                            callGetModel,
+                            "put",
+                            new ArgumentListExpression(new ConstantExpression(varName), right)
+                    );
+                    mce.setSourcePosition(left);
+                    mce.setImplicitThis(false);
+                    return transform(mce);
+                }
+            }
+        }
+        if (assignment && left instanceof VariableExpression && right instanceof ClosureExpression) {
+            VariableExpression var = (VariableExpression) left;
             if ("modelTypes".equals(var.getName())) {
                 // template declaring its expected types from model directly
                 // modelTypes = {
                 //  List<String> items
                 //  ...
                 // }
-                Map<String,ClassNode> modelTypes = extractModelTypesFromClosureExpression((ClosureExpression)rightExpression);
+                Map<String,ClassNode> modelTypes = extractModelTypesFromClosureExpression((ClosureExpression)right);
                 Expression result = new EmptyExpression();
                 result.setSourcePosition(bin);
                 classNode.putNodeMetaData(MarkupTemplateEngine.MODELTYPES_ASTKEY, modelTypes);
