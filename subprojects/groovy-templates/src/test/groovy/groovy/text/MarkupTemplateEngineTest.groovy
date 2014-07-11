@@ -977,6 +977,20 @@ layout 'includes/body.tpl', bodyContents: contents {
         assert rendered == '<li>a</li><li>b</li>'
     }
 
+    // GROOVY-6940
+    @NotYetImplemented
+    void testSubscriptOperatorOnModel() {
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+
+        def template = engine.createTemplate '''
+            yield list[0]
+        '''
+        def model = [list:['Item 1']]
+        String rendered = template.make(model)
+        assert rendered == 'Item 1'
+
+    }
+
     class SimpleTagLib {
         def emoticon = { attrs, body ->
             out << body() << (attrs.happy == 'true' ? " :-)" : " :-(")
