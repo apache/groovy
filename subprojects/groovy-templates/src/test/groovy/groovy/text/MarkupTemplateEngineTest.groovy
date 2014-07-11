@@ -992,15 +992,14 @@ layout 'includes/body.tpl', bodyContents: contents {
     }
 
     // GROOVY-6941
-    @NotYetImplemented
     void testDynamicPropertyInsideBlock() {
         MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
         div {
-            yield xml.file
+            yield xml.file.name
         }
         '''
-        def model = [xml: [file:'test']]
+        def model = [xml: [file:[name:'test']]]
         String rendered = template.make(model)
         assert rendered == '<div>test</div>'
 
