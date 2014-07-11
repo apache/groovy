@@ -943,6 +943,26 @@ layout 'includes/body.tpl', bodyContents: contents {
         assert rendered == '<strong>error</strong><p>This is an </p>'
 
     }
+
+    // GROOVY-6935
+    void testShouldNotThrowVerifyErrorBecauseOfEqualsInsteadOfSemiColumn() {
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+
+        def template = engine.createTemplate '''
+            a(href='foo.html', 'link')
+        '''
+        try {
+            template.make().writeTo(new StringWriter())
+            assert false
+        } catch (UnsupportedOperationException e) {
+            assert true
+        }
+        def model = [:]
+        String rendered = template.make(model).writeTo(new StringWriter())
+        assert model.href == 'foo.html'
+        assert rendered == '<a>link</a>'
+    }
+
     class SimpleTagLib {
         def emoticon = { attrs, body ->
             out << body() << (attrs.happy == 'true' ? " :-)" : " :-(")
