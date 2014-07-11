@@ -20,6 +20,7 @@ import groovy.text.markup.BaseTemplate
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TagLibAdapter
 import groovy.text.markup.TemplateConfiguration
+import groovy.transform.NotYetImplemented
 
 class MarkupTemplateEngineTest extends GroovyTestCase {
     private Locale locale
@@ -961,6 +962,19 @@ layout 'includes/body.tpl', bodyContents: contents {
         String rendered = template.make(model).writeTo(new StringWriter())
         assert model.href == 'foo.html'
         assert rendered == '<a>link</a>'
+    }
+
+    // GROOVY-6939
+    @NotYetImplemented
+    void testShouldNotFailWithDoCallMethod() {
+        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+
+        def template = engine.createTemplate '''
+            groups.each { k, v -> li(k) }
+        '''
+        def model = [groups:[a:'Group a',b:'Group b']]
+        String rendered = template.make(model)
+        assert rendered == '<li>a</li><li>b</li>'
     }
 
     class SimpleTagLib {
