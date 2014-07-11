@@ -24,7 +24,6 @@ import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.control.BytecodeProcessor;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -32,16 +31,11 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -66,8 +60,6 @@ public class MarkupTemplateEngine extends TemplateEngine {
     final static String MODELTYPES_ASTKEY = "MTE.modelTypes";
 
     private final static Pattern LOCALIZED_RESOURCE_PATTERN = Pattern.compile("(.+?)(?:_([a-z]{2}(?:_[A-Z]{2,3})))?\\.(\\p{Alnum}+)");
-
-    private final static boolean DEBUG_BYTECODE = Boolean.valueOf(System.getProperty("markuptemplateengine.compiler.debug","false"));
 
     private final static AtomicLong counter = new AtomicLong();
 
@@ -106,19 +98,6 @@ public class MarkupTemplateEngine extends TemplateEngine {
                 return new TemplateGroovyClassLoader(parentLoader, compilerConfiguration);
             }
         });
-        if (DEBUG_BYTECODE) {
-            compilerConfiguration.setBytecodePostprocessor(new BytecodeProcessor() {
-                @Override
-                public byte[] processBytecode(final String name, final byte[] original) {
-                    Writer writer = new StringWriter();
-                    TraceClassVisitor visitor = new TraceClassVisitor(new PrintWriter(writer));
-                    ClassReader reader = new ClassReader(original);
-                    reader.accept(visitor, 0);
-                    System.err.println(writer);
-                    return original;
-                }
-            });
-        }
         templateResolver = resolver == null ? new DefaultTemplateResolver() : resolver;
         templateResolver.configure(groovyClassLoader, templateConfiguration);
     }
