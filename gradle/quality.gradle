@@ -19,14 +19,7 @@ import groovy.text.markup.TemplateConfiguration
 
 allprojects {
     apply plugin: 'checkstyle'
-//    apply plugin: 'cobertura'
     apply plugin: 'codenarc'
-/*
-    cobertura {
-        coverageFormats = ['xml', 'html']
-        coverageReportDir = file("$buildDir/reports/cobertura")
-    }
-*/
 
     // don't fail build on CodeNarc tasks
     tasks.withType(CodeNarc) {
@@ -92,3 +85,5 @@ allprojects {
     }
 
 }
+
+apply from: 'gradle/jacoco/jacoco.gradle'

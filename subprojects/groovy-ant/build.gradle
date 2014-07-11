@@ -10,3 +10,5 @@ dependencies {
     compile project(':groovy-groovydoc')
     testCompile project(':groovy-test')
 }
+
+apply from: "${rootProject.projectDir}/gradle/jacoco/jacocofix.gradle"

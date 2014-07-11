@@ -3,3 +3,5 @@ dependencies {
     compile 'junit:junit:4.11'
     testRuntime project(':groovy-ant')
 }
+
+apply from: "${rootProject.projectDir}/gradle/jacoco/jacocofix.gradle"
