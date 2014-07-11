@@ -11,10 +11,7 @@ allprojects {
         if (headless == 'true') {
             systemProperties 'java.awt.headless': 'true'
         }
-        if (rootProject.useIndy()) {
-            logger.debug 'Adding indy target'
-            systemProperties 'groovy.target.indy': true
-        }
+
         forkEvery = 50
         maxParallelForks = isRunningOnCI() ? 1 : Runtime.runtime.availableProcessors()
         scanForTestClasses = true

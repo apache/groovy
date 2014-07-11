@@ -28,8 +28,6 @@ rootProject.ext.indyCapable = {
     capable && !rootProject.hasProperty('skipIndy')
 }
 
-def INDY_SYSTEM_PROP = 'groovy.target.indy'
-
 rootProject.ext.useIndy = {
     boolean indy = false
 
@@ -40,14 +38,14 @@ rootProject.ext.useIndy = {
     // which is the case if the build is started with -Pindy=true or during install/dist tasks
     indy |= rootProject.hasProperty('indy') && (Boolean.valueOf(rootProject.indy))
 
-    // set the groovy runtime system property to ensure forked junit test will get the indy flag properly
-    if (indy) {
-        System.setProperty(INDY_SYSTEM_PROP, 'true')
-    } else {
-        if (System.properties[INDY_SYSTEM_PROP]) {
-            System.properties.remove(INDY_SYSTEM_PROP)
+    indy && rootProject.indyCapable()
+}
+
+if (useIndy()) {
+    gradle.taskGraph.whenReady { graph ->
+        graph.allTasks.findAll { it instanceof org.gradle.process.JavaForkOptions }.unique().each { task ->
+            logger.debug "Adding indy target to project ${task.project.name} task ${task.name}"
+            task.systemProperties 'groovy.target.indy': true
         }
     }
-
-    indy && rootProject.indyCapable()
 }
