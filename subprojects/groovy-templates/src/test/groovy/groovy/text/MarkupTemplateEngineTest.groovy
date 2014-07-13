@@ -978,7 +978,6 @@ layout 'includes/body.tpl', bodyContents: contents {
     }
 
     // GROOVY-6940
-    @NotYetImplemented
     void testSubscriptOperatorOnModel() {
         MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
 
@@ -988,6 +987,25 @@ layout 'includes/body.tpl', bodyContents: contents {
         def model = [list:['Item 1']]
         String rendered = template.make(model)
         assert rendered == 'Item 1'
+
+        template = engine.createTemplate '''
+            list[0] = 'Item 2'
+            yield list[0]
+        '''
+        model = [list:['Item 1']]
+        rendered = template.make(model)
+        assert model.list[0] == 'Item 2'
+        assert rendered == 'Item 2'
+
+        template = engine.createTemplate '''
+            def indirect = list
+            indirect[0] = 'Item 4'
+            yield list[0]
+        '''
+        model = [list:['Item 3']]
+        rendered = template.make(model)
+        assert model.list[0] == 'Item 4'
+        assert rendered == 'Item 4'
 
     }
 
