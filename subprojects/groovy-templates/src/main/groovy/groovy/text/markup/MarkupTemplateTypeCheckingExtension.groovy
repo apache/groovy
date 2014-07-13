@@ -29,12 +29,14 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 import org.codehaus.groovy.syntax.ParserException
 import org.codehaus.groovy.syntax.Reduction
 import org.codehaus.groovy.syntax.SyntaxException
+import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 import org.codehaus.groovy.transform.stc.TypeCheckingContext
 
 import java.util.concurrent.atomic.AtomicReference
 
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignment
 
 /**
  * <p>A static compilation type checking extension, responsible for transforming unresolved method
@@ -75,9 +77,38 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
         beforeVisitMethod {
             newScope {
                 builderCalls = []
+                binaryExpressions = [:]
             }
         }
         methodNotFound { receiver, name, argList, argTypes, call ->
+            if ("getAt"==name && OBJECT_TYPE==receiver) {
+                // GROOVY-6940
+                def enclosingBinaryExpression = context.enclosingBinaryExpression
+                if (enclosingBinaryExpression.leftExpression.is(call.objectExpression)) {
+                    def stack = context.enclosingBinaryExpressionStack
+                    if (stack.size()>1) {
+                        def superEnclosing = stack.get(1)
+                        def opType = superEnclosing.operation.type
+                        if (superEnclosing.leftExpression.is(enclosingBinaryExpression) && isAssignment(opType)) {
+                            if (opType== Types.ASSIGN) {
+                                // type checker looks for getAt() but we need to replace the super binary expression with a putAt
+                                // foo[x] = y --> foo.putAt(x,y)
+                                def mce = new MethodCallExpression(
+                                        enclosingBinaryExpression.leftExpression,
+                                        "putAt",
+                                        new ArgumentListExpression(enclosingBinaryExpression.rightExpression, superEnclosing.rightExpression))
+                                makeDynamic(mce)
+                                currentScope.binaryExpressions.put(superEnclosing, mce)
+                                return null
+                            } else {
+                                throw new UnsupportedOperationException("Operation not supported in templates: ${superEnclosing.text}. Please declare an explicit type for the variable.")
+                            }
+                        }
+                    }
+                    currentScope.binaryExpressions.put(enclosingBinaryExpression, call)
+                    return makeDynamic(call)
+                }
+            }
             if (call.lineNumber > 0) {
                 if (call.implicitThis) {
                     currentScope.builderCalls << call
@@ -126,7 +157,7 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
 
         afterVisitMethod { mn ->
             scopeExit {
-                new BuilderMethodReplacer(context.source, builderCalls).visitMethod(mn)
+                new BuilderMethodReplacer(context.source, builderCalls, binaryExpressions).visitMethod(mn)
             }
         }
     }
@@ -176,12 +207,14 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
 
         private static final MethodNode METHOD_MISSING = ClassHelper.make(BaseTemplate).getMethods('methodMissing')[0]
 
-        private final SourceUnit unit;
-        private final Set<MethodCallExpression> callsToBeReplaced;
+        private final SourceUnit unit
+        private final Set<MethodCallExpression> callsToBeReplaced
+        private final Map<BinaryExpression, MethodCallExpression> binaryExpressionsToBeReplaced
 
-        BuilderMethodReplacer(SourceUnit unit, Collection<MethodCallExpression> calls) {
+        BuilderMethodReplacer(SourceUnit unit, Collection<MethodCallExpression> calls, Map<BinaryExpression, MethodCallExpression> binExpressionsWithReplacements) {
             this.unit = unit
-            this.callsToBeReplaced = calls as Set;
+            this.callsToBeReplaced = calls as Set
+            this.binaryExpressionsToBeReplaced = binExpressionsWithReplacements
         }
 
         @Override
@@ -196,6 +229,9 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
 
         @Override
         public Expression transform(final Expression exp) {
+            if (exp instanceof BinaryExpression && binaryExpressionsToBeReplaced.containsKey(exp)) {
+                return binaryExpressionsToBeReplaced.get(exp)
+            }
             if (callsToBeReplaced.contains(exp)) {
                 def args = exp.arguments instanceof TupleExpression ? exp.arguments.expressions : [exp.arguments]
                 args*.visit(this)
