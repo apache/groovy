@@ -4,7 +4,6 @@ This chapter covers the program structure of the Groovy programming language.
 
 == Package name (TBD)
 
-<<<<<<< HEAD
 == Imports (TBD)
 
 === Default imports (TBD)
@@ -161,7 +160,6 @@ assert 4 = new MultiplyTwo().multiplay(2)
 With Type aliasing we can able to solve the name collision problem ( which can occur with ++*++ imports) elegantly.
 
 == Scripts versus classes
->>>>>>> 5c89147... Added the documentation for Program structure. Added the test cases for the code snippet as well
 
 == Initializers (TBD)
 
