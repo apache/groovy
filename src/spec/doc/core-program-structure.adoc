@@ -1,9 +1,10 @@
-= Program structure
+= Program structure (Anto Aravinth)
 
 This chapter covers the program structure of the Groovy programming language.
 
 == Package name (TBD)
 
+<<<<<<< HEAD
 == Imports (TBD)
 
 === Default imports (TBD)
@@ -14,6 +15,153 @@ This chapter covers the program structure of the Groovy programming language.
 === Import aliasing (TBD)
 
 == Scripts versus classes (TBD)
+=======
+Package name plays exactly the same role as they used to play in Java. They allows us to separate the code base without any conflicts. Groovy classes must specify their package before the class definition, else the default package is assumed. 
+
+Defining a package is very similar to java, as you can see 
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=package_statement,indent=0]
+----
+
+To refer the class ++Foo++ in the ++com.yoursite.com++ package then you need to use ++com.yoursite.com.Foo++ in your code else you can use ++import++ statement as we can see now. 
+
+== Imports
+
+In order to refer any class you need a reference for it. Groovy follows Java's notion of allowing ++import++ statement to resolve the class references. Groovy provides several builder classes, 
+one such class is ++MarkupBuilder++. ++MarkupBuilder++ is inside the package ++groovy.xml++, in order to use this class, you need to ++import++ it as shown:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=import_statement,indent=0]
+----
+
+=== Default imports
+
+Default imports are the imports that Groovy language provides by default. For example look at the following code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=default_import,indent=0]
+----
+
+The same code in Java needs an import statement to ++Date++ class like this: ++import java.util.Date++. Groovy by default imports these classes for you. There are six packages that groovy imports for you, they are:
+
+-------------------------------------------------------------------
+								   import java.lang.*
+	                               import java.util.*
+	                               import java.io.*
+	                               import java.net.*
+	                               import groovy.lang.*
+	                               import groovy.util.*
+	                               import java.math.BigInteger
+	                               import java.math.BigDecimal
+-------------------------------------------------------------------
+	
+	
+
+=== Simple import
+
+Simple import is an import, where you fully define the class name along with the package. For example the import statement ++import groovy.xml.MarkupBuilder++ in the code below is the simple import, which directly refer the class inside the package.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=import_statement,indent=0]
+----
+
+=== Star import
+
+Groovy (like Java) provides a special way to import all classes from a package using ++*++, they are called as Star import. ++MarkupBuilder++ is class which is in package ++groovy.xml++, another class called ++StreamingMarkupBuilder++ is in the same package. Consider the case, where you need to use two classes, then you can do:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=multiple_import,indent=0]
+----
+
+Thats a perfectly valid code. But with ++*++ import, we can do the same like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=star_import,indent=0]
+----
+
+where, ++*++ does imports all the class under package ++groovy.xml++. Using ++*++ import can clutters your local namespace. But with groovy type aliasing, this can be solved easily. 
+
+=== Static import
+
+Groovy's static import capability allows you to reference imported classes as if they were static methods in your own class. This is similar to Java's static import capability but works with Java 1.4 and above and is a little more dynamic than Java in that it allows you to define methods with the same name as an imported method as long as you have different types. If you have the same types, the imported class takes precedence. Here is a sample of its usage:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=static_imports,indent=0]
+----
+
+As you can see, now we can able to refer the static variable ++FALSE++ in our code base cleanly. 
+
+Static imports along with ++as++ keyword can make elegant solution. Consider you want to get the ++Calendar++ instance, using ++getInstance()++ method. Its a static method, so we can do a static import. But instead of calling ++getInstance()++ everytime, we can do this which can increase code readability:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=static_importswithas,indent=0]
+----
+
+Thats clean and sweet!
+
+=== Static star import
+
+Its very similar to the star import that we have seen earlier. It will import all the static methods from the given class. For example, lets say we need to calculate sin and cos for our application. 
+The class ++java.lang.Math++ has static methods named ++sin++,++cos++ which fits our need. With help of static star import, we can do:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=static_importswithstar,indent=0]
+----
+
+As you can see, we were able to access the methods ++sin++,++cos++ directly, instead like ++Math.sin++.
+
+=== Import aliasing
+
+With type aliasing, we can refer to a fully qualified class name with the name of your choice. This can be done with ++as++ keyword in Groovy. 
+
+Consider the class with the following library code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=type_aliasing,indent=0]
+----
+
+and we have some existing code using this library:
+
+----
+
+++assert 4 = new MultiplyTwo().multiplay(2)++
+
+----
+
+With the type aliasing in place, we can fix the bug using the below code:
+
+----
+++
+import thirdparty.MathLib as OrigMultiplyTwo
+class MultiplyTwo extends OrigMultiplyTwo {
+	def multiplay(def value)
+	{
+		return value * 3 //corrected here
+	}
+}
+// nothing changes below here
+def multiplylib = new MultiplyTwo()
+
+//assert passes as well
+assert 4 = new MultiplyTwo().multiplay(2)
+++
+----
+
+With Type aliasing we can able to solve the name collision problem ( which can occur with ++*++ imports) elegantly.
+
+== Scripts versus classes
+>>>>>>> 5c89147... Added the documentation for Program structure. Added the test cases for the code snippet as well
 
 == Initializers (TBD)
 
