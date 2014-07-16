@@ -127,35 +127,26 @@ Consider the class with the following library code:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/PackageTest.groovy[tags=type_aliasing,indent=0]
+include::{projectdir}/src/spec/test/thirdpartylib/MultiplyTwo.groovy[tags=third_party_lib,indent=0]
 ----
 
 and we have some existing code using this library:
 
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=using_thrid_party_lib,indent=0]
 ----
 
-++assert 4 = new MultiplyTwo().multiplay(2)++
-
-----
+Obviously, the ++result++ variable contains the wrong result. And assume you have used this library through out your code-base. Groovy has an elegant way to fix this issue.
 
 With the type aliasing in place, we can fix the bug using the below code:
 
+[source,groovy]
 ----
-++
-import thirdparty.MathLib as OrigMultiplyTwo
-class MultiplyTwo extends OrigMultiplyTwo {
-	def multiplay(def value)
-	{
-		return value * 3 //corrected here
-	}
-}
-// nothing changes below here
-def multiplylib = new MultiplyTwo()
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=fixing_thrid_party_lib,indent=0]
+----
 
-//assert passes as well
-assert 4 = new MultiplyTwo().multiplay(2)
-++
-----
+Thats it! Notice how Groovy allowed us to use ++as++ keyword to solve the typical problem. 
 
 With Type aliasing we can able to solve the name collision problem ( which can occur with ++*++ imports) elegantly.
 
