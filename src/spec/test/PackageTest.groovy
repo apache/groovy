@@ -74,6 +74,7 @@ class PackageTest extends GroovyTestCase
 		'''
 	}
 	
+	/*
 	void testMakeItTwice()
 	{
 		assertScript '''
@@ -93,7 +94,7 @@ class PackageTest extends GroovyTestCase
 			
 			//end:type_aliasing[]
 		'''
-	}
+	}*/
 	
 	void testStaticImports()
 	{
@@ -136,6 +137,41 @@ class PackageTest extends GroovyTestCase
 			assert cos(0) == 1.0
 			
 			//end:static_importswithstar[]
+		'''
+	}
+	
+	void testThirdLib()
+	{
+		assertScript '''
+			import thirdpartylib.MultiplyTwo
+			
+			//tag:using_thrid_party_lib[]
+			def result = new MultiplyTwo().multiplay(2)
+			//end:using_thrid_party_lib[]
+		
+			assert 4 != new MultiplyTwo().multiplay(2)
+		'''
+	}
+	
+	void testFixThirdLib()
+	{
+		assertScript '''
+			
+			//tag:fixing_thrid_party_lib[]
+			
+			import thirdpartylib.MultiplyTwo as OrigMultiplyTwo
+			class MultiplyTwo extends OrigMultiplyTwo {
+				def multiplay(def value)
+				{
+					return value * 2 //corrected here
+				}
+			}
+			// nothing changes below here
+			def multiplylib = new MultiplyTwo()
+
+			//assert passes as well
+			assert 4 == new MultiplyTwo().multiplay(2)
+			//end:fixing_thrid_party_lib[]
 		'''
 	}
 	
