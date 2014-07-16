@@ -701,27 +701,29 @@ class ASTBuilder extends GroovyParserBaseListener {
     static Expression parseExpression(CallExpressionContext ctx) {
 
         def methodNode
-        if (ctx.pathExpression()) {
-            // Collect closure's in argumentList expression.
-            def argumentListExpression = new ArgumentListExpression()
-            ctx.closureExpressionRule().each { argumentListExpression.addExpression(parseExpression(it)) }
+        //FIXME in log a, b; a is treated as path expression and became a method call instead of variable
+        if (!ctx.LPAREN() && ctx.closureExpressionRule().size() == 0)
+        {
+            def identifiers = ctx.pathExpression().IDENTIFIER()
+            switch (identifiers.size())
+            {
+                case 1: return new VariableExpression(identifiers[0].text); break;
+                default:
+                    def inject = identifiers[1..-1].inject(new VariableExpression(identifiers[0].text)) { val, prop ->
+                        new PropertyExpression(val as Expression, new ConstantExpression(prop.text))
+                    }
+                    return inject
+            }
+        }
 
-            //noinspection GroovyAssignabilityCheck
-            def (Expression expression, String methodName, boolean implicitThis) = parsePathExpression(ctx.pathExpression())
-            methodNode = new MethodCallExpression(expression, methodName, argumentListExpression)
-            methodNode.implicitThis = implicitThis
-        }
-        else {
-            def argumentListExpression = createArgumentList(ctx.argumentList())
-            if (ctx.expression() instanceof VariableExpressionContext) {
-                methodNode = new MethodCallExpression(new VariableExpression("this"), new ConstantExpression(ctx.expression().text), argumentListExpression)
-                methodNode.implicitThis = true
-            }
-            else {
-                methodNode = new MethodCallExpression(parseExpression(ctx.expression()), new ConstantExpression("call"), argumentListExpression)
-                methodNode.implicitThis = false
-            }
-        }
+        // Collect closure's in argumentList expression.
+        def argumentListExpression = createArgumentList(ctx.argumentList())
+        ctx.closureExpressionRule().each { argumentListExpression.addExpression(parseExpression(it)) }
+
+        //noinspection GroovyAssignabilityCheck
+        def (Expression expression, String methodName, boolean implicitThis) = parsePathExpression(ctx.pathExpression())
+        methodNode = new MethodCallExpression(expression, methodName, argumentListExpression)
+        methodNode.implicitThis = implicitThis
         methodNode
     }
 

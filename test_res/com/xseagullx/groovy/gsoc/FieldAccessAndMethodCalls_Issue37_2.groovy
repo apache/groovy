@@ -45,6 +45,13 @@ class A {
         foo a1() a2 a3() a4 a5()
         foo a1 a2 a3 a4 a5 {->c}
     }
+
+    private closureArguments() {
+        foo {-> }
+        foo() {-> }
+        foo(arg1, arg2) {->}
+        foo(arg1, arg2) {->} {->}
+    }
 }
 
 
