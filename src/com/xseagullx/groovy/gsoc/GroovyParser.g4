@@ -99,8 +99,7 @@ expression:
     | LBRACK (COLON | (mapEntry (COMMA mapEntry)*) )RBRACK #mapConstructor
     | expression (DOT | SAFE_DOT | STAR_DOT) IDENTIFIER LPAREN argumentList? RPAREN #methodCallExpression
     | expression (DOT | SAFE_DOT | STAR_DOT | ATTR_DOT) IDENTIFIER #fieldAccessExpression
-    | expression LPAREN argumentList? RPAREN #callExpression
-    | pathExpression closureExpressionRule+ #callExpression
+    | pathExpression (LPAREN argumentList? RPAREN)? closureExpressionRule* #callExpression
     | LPAREN expression RPAREN #parenthesisExpression
     | expression (DECREMENT | INCREMENT)  #postfixExpression
     | (NOT | BNOT) expression #unaryExpression
