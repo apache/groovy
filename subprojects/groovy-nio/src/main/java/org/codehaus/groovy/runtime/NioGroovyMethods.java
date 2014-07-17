@@ -771,9 +771,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
 
         // TODO GroovyDoc doesn't parse this file as our java.g doesn't handle this JDK7 syntax
         try ( DirectoryStream<Path> stream = Files.newDirectoryStream(self) ) {
-            Iterator<Path> itr = stream.iterator();
-            while( itr.hasNext() ) {
-                Path path = itr.next();
+            for (Path path : stream) {
                 if (fileType == FileType.ANY ||
                         (fileType != FileType.FILES && Files.isDirectory(path)) ||
                         (fileType != FileType.DIRECTORIES && Files.isRegularFile(path))) {
@@ -830,9 +828,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
             // throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         try ( DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
-            Iterator<Path> itr = stream.iterator();
-            while ( itr.hasNext() ) {
-                Path path = itr.next();
+            for (Path path : stream) {
                 if (Files.isDirectory(path)) {
                     if (fileType != FileType.FILES) closure.call(path);
                     eachFileRecurse(path, fileType, closure);
@@ -1202,16 +1198,12 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         // delete contained files
         try ( DirectoryStream<Path> stream = Files.newDirectoryStream(self) ) {
 
-            Iterator<Path> itr = stream.iterator();
-
-            while (itr.hasNext()) {
-                Path path = itr.next();
+            for (Path path : stream) {
                 if (Files.isDirectory(path)) {
                     if (!deleteDir(path)) {
                         return false;
                     }
-                }
-                else {
+                } else {
                     Files.delete(path);
                 }
             }
@@ -1470,9 +1462,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         if( append ) {
             return Files.newBufferedWriter(self, Charset.defaultCharset(), CREATE, APPEND);
         }
-        else {
-            return Files.newBufferedWriter(self, Charset.defaultCharset());
-        }
+        return Files.newBufferedWriter(self, Charset.defaultCharset());
     }
 
     /**
@@ -1491,9 +1481,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         if (append) {
             return Files.newBufferedWriter(self, Charset.forName(charset), CREATE, APPEND);
         }
-        else {
-            return Files.newBufferedWriter(self, Charset.forName(charset) );
-        }
+        return Files.newBufferedWriter(self, Charset.forName(charset) );
     }
 
     /**
