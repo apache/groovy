@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -997,7 +997,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns an iterator equivalent to this iterator all duplicated items removed
+     * Returns an iterator equivalent to this iterator with all duplicated items removed
      * by using the default comparator. The original iterator will become
      * exhausted of elements after determining the unique values. A new iterator
      * for the unique values will be returned.
@@ -1007,7 +1007,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> Iterator<T> unique(Iterator<T> self) {
-        return toList(unique(toList(self))).listIterator();
+        return toList((Iterable<T>) unique(toList(self))).listIterator();
     }
 
     /**
@@ -1095,7 +1095,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> Iterator<T> unique(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        return toList(unique(toList(self), closure)).listIterator();
+        return toList((Iterable<T>) unique(toList(self), closure)).listIterator();
     }
 
     /**
@@ -1126,13 +1126,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * A convenience method for making a collection unique using a Closure to determine duplicate (equal) items.
      * If mutate is true, it works on the receiver object and returns it. If mutate is false, a new collection is returned.
      * <p>
-     * If the closure takes a single parameter, the
-     * argument passed will be each element, and the closure
-     * should return a value used for comparison (either using
-     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
-     * If the closure takes two parameters, two items from the collection
-     * will be passed as arguments, and the closure should return an
-     * int value (with 0 indicating the items are not unique).
+     * If the closure takes a single parameter, each element from the Collection will be passed to the closure. The closure
+     * should return a value used for comparison (either using {@link java.lang.Comparable#compareTo(java.lang.Object)} or
+     * {@link java.lang.Object#equals(java.lang.Object)}). If the closure takes two parameters, two items from the collection
+     * will be passed as arguments, and the closure should return an int value (with 0 indicating the items are not unique).
      * <pre class="groovyTestCase">
      * def orig = [1, 3, 4, 5]
      * def uniq = orig.unique(false) { it % 2 }
@@ -1156,9 +1153,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         // use a comparator of one item or two
         int params = closure.getMaximumNumberOfParameters();
         if (params == 1) {
-            OrderBy<T> by = new OrderBy<T>(closure);
-            by.setEqualityCheck(true);
-            self = unique(self, mutate, by);
+            self = unique(self, mutate, new OrderBy<T>(closure, true));
         } else {
             self = unique(self, mutate, new ClosureComparator<T>(closure));
         }
@@ -1175,7 +1170,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> Iterator<T> unique(Iterator<T> self, Comparator<T> comparator) {
-        return toList(unique(toList(self), comparator)).listIterator();
+        return toList((Iterable<T>) unique(toList(self), comparator)).listIterator();
     }
 
     /**
@@ -1294,6 +1289,283 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             self.addAll(answer);
         }
         return mutate ? self : answer;
+    }
+
+    /**
+     * Returns an iterator equivalent to this iterator but with all duplicated items
+     * removed where duplicate (equal) items are deduced by calling the supplied Closure condition.
+     * <p>
+     * If the supplied Closure takes a single parameter, the argument passed will be each element,
+     * and the closure should return a value used for comparison (either using
+     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
+     * If the closure takes two parameters, two items from the Iterator
+     * will be passed as arguments, and the closure should return an
+     * int value (with 0 indicating the items are not unique).
+     * <pre class="groovyTestCase">
+     * def items = "Hello".toList() + [null, null] + "there".toList()
+     * def toLower = { it == null ? null : it.toLowerCase() }
+     * def noDups = items.iterator().toUnique(toLower).toList()
+     * assert noDups == ['H', 'e', 'l', 'o', null, 't', 'r']
+     * </pre>
+     * <pre class="groovyTestCase">assert [1,4] == [1,3,4,5].toUnique { it % 2 }</pre>
+     * <pre class="groovyTestCase">assert [2,3,4] == [2,3,3,4].toUnique { a, b -> a <=> b }</pre>
+     *
+     * @param self an Iterator
+     * @param condition a Closure used to determine unique items
+     * @return an Iterator with no duplicate items
+     * @since 2.4.0
+     */
+    public static <T> Iterator<T> toUnique(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
+        return new UniqueIterator<T>(self, condition.getMaximumNumberOfParameters() == 1
+                ? new OrderBy<T>(condition, true)
+                : new ClosureComparator<T>(condition));
+    }
+
+    private static final class UniqueIterator<E> implements Iterator<E> {
+        private final Iterator<E> delegate;
+        private final Set<E> seen;
+        private boolean exhausted;
+        private E next;
+
+        private UniqueIterator(Iterator<E> delegate, Comparator<E> comparator) {
+            this.delegate = delegate;
+            seen = new TreeSet<E>(comparator);
+            advance();
+        }
+
+        public boolean hasNext() {
+            return !exhausted;
+        }
+
+        public E next() {
+            if (exhausted) throw new NoSuchElementException();
+            E result = next;
+            advance();
+            return result;
+        }
+
+        public void remove() {
+            if (exhausted) throw new NoSuchElementException();
+            delegate.remove();
+        }
+
+        private void advance() {
+            boolean foundNext = false;
+            while (!foundNext && !exhausted) {
+                exhausted = !delegate.hasNext();
+                if (!exhausted) {
+                    next = delegate.next();
+                    foundNext = seen.add(next);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns an iterator equivalent to this iterator with all duplicated
+     * items removed by using the supplied comparator.
+     *
+     * @param self an Iterator
+     * @param comparator a Comparator used to determine unique (equal) items
+     *        If {@code null}, the Comparable natural ordering of the elements will be used.
+     * @return an Iterator with no duplicate items
+     * @since 2.4.0
+     */
+    public static <T> Iterator<T> toUnique(Iterator<T> self, Comparator<T> comparator) {
+        return new UniqueIterator<T>(self, comparator);
+    }
+
+    /**
+     * Returns an iterator equivalent to this iterator with all duplicated
+     * items removed by using the natural ordering of the items.
+     *
+     * @param self an Iterator
+     * @return an Iterator with no duplicate items
+     * @since 2.4.0
+     */
+    public static <T> Iterator<T> toUnique(Iterator<T> self) {
+        return new UniqueIterator<T>(self, null);
+    }
+
+    /**
+     * Returns a Collection containing the items from the Iterable but with duplicates removed.
+     * The items in the Iterable are compared by the given Comparator.
+     * For each duplicate, the first member which is returned from the
+     * Iterable is retained, but all other ones are removed.
+     * <p>
+     * <pre class="groovyTestCase">
+     * class Person {
+     *     def fname, lname
+     *     String toString() {
+     *         return fname + " " + lname
+     *     }
+     * }
+     *
+     * class PersonComparator implements Comparator {
+     *     int compare(Object o1, Object o2) {
+     *         Person p1 = (Person) o1
+     *         Person p2 = (Person) o2
+     *         if (p1.lname != p2.lname)
+     *             return p1.lname.compareTo(p2.lname)
+     *         else
+     *             return p1.fname.compareTo(p2.fname)
+     *     }
+     *
+     *     boolean equals(Object obj) {
+     *         return this.equals(obj)
+     *     }
+     * }
+     *
+     * Person a = new Person(fname:"John", lname:"Taylor")
+     * Person b = new Person(fname:"Clark", lname:"Taylor")
+     * Person c = new Person(fname:"Tom", lname:"Cruz")
+     * Person d = new Person(fname:"Clark", lname:"Taylor")
+     *
+     * def list = [a, b, c, d]
+     * List list2 = list.toUnique(new PersonComparator())
+     * assert( list2 == list && list == [a, b, c] )
+     * </pre>
+     *
+     * @param self       an Iterable
+     * @param comparator a Comparator used to determine unique (equal) items
+     *        If {@code null}, the Comparable natural ordering of the elements will be used.
+     * @return the Collection of non-duplicate items
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> toUnique(Iterable<T> self, Comparator<T> comparator) {
+        Collection<T> result = createSimilarCollection((Collection<T>) self);
+        addAll(result, toUnique(self.iterator(), comparator));
+        return result;
+    }
+
+    /**
+     * Returns a Collection containing the items from the Iterable but with duplicates removed
+     * using the natural ordering of the items to determine uniqueness.
+     * <p>
+     * <pre class="groovyTestCase">
+     * String[] letters = ['c', 'a', 't', 's', 'a', 't', 'h', 'a', 't']
+     * String[] expected = ['c', 'a', 't', 's', 'h']
+     * assert letters.toUnique() == expected
+     * </pre>
+     *
+     * @param self       an Iterable
+     * @return the Collection of non-duplicate items
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> toUnique(Iterable<T> self) {
+        return toUnique(self, (Comparator<T>) null);
+    }
+
+    /**
+     * Returns a Collection containing the items from the Iterable but with duplicates removed.
+     * The items in the Iterable are compared by the given Closure condition.
+     * For each duplicate, the first member which is returned from the
+     * Iterable is retained, but all other ones are removed.
+     * <p>
+     * If the closure takes a single parameter, each element from the Iterable will be passed to the closure. The closure
+     * should return a value used for comparison (either using {@link java.lang.Comparable#compareTo(java.lang.Object)} or
+     * {@link java.lang.Object#equals(java.lang.Object)}). If the closure takes two parameters, two items from the Iterable
+     * will be passed as arguments, and the closure should return an int value (with 0 indicating the items are not unique).
+     * <p>
+     * <pre class="groovyTestCase">
+     * class Person {
+     *     def fname, lname
+     *     String toString() {
+     *         return fname + " " + lname
+     *     }
+     * }
+     *
+     * Person a = new Person(fname:"John", lname:"Taylor")
+     * Person b = new Person(fname:"Clark", lname:"Taylor")
+     * Person c = new Person(fname:"Tom", lname:"Cruz")
+     * Person d = new Person(fname:"Clark", lname:"Taylor")
+     *
+     * def list = [a, b, c, d]
+     * def list2 = list.toUnique{ p1, p2 -> p1.lname != p2.lname ? p1.lname &lt;=&gt; p2.lname : p1.fname &lt;=&gt; p2.fname }
+     * assert( list2 == [a, b, c] && list == [a, b, c, d] )
+     * def list3 = list.toUnique{ it.toString() }
+     * assert( list3 == [a, b, c] && list == [a, b, c, d] )
+     * </pre>
+     *
+     * @param self      a Collection
+     * @param condition a Closure used to determine unique items
+     * @return self     an Iterable
+     * @see #toUnique(Iterable, Comparator)
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> toUnique(Iterable<T> self, @ClosureParams(value = FromString.class, options = {"T", "T,T"}) Closure condition) {
+        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
+                ? new OrderBy<T>(condition, true)
+                : new ClosureComparator<T>(condition);
+        return toUnique(self, comparator);
+    }
+
+    /**
+     * Returns a new Array containing the items from the original Array but with duplicates removed with the supplied
+     * comparator determining which items are unique.
+     * <p>
+     * <pre class="groovyTestCase">
+     * String[] letters = ['c', 'a', 't', 's', 'A', 't', 'h', 'a', 'T']
+     * String[] lower = ['c', 'a', 't', 's', 'h']
+     * class LowerComparator implements Comparator {
+     *     int compare(let1, let2) { let1.toLowerCase() <=> let2.toLowerCase() }
+     * }
+     * assert letters.toUnique(new LowerComparator()) == lower
+     * </pre>
+     *
+     * @param self an array
+     * @param comparator a Comparator used to determine unique (equal) items
+     *        If {@code null}, the Comparable natural ordering of the elements will be used.
+     * @return the unique items from the array
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] toUnique(T[] self, Comparator<T> comparator) {
+        Collection<T> items = toUnique(toList(self), comparator);
+        T[] result = createSimilarArray(self, items.size());
+        return items.toArray(result);
+    }
+
+    /**
+     * Returns a new Array containing the items from the original Array but with duplicates removed using the
+     * natural ordering of the items in the array.
+     * <p>
+     * <pre class="groovyTestCase">
+     * String[] letters = ['c', 'a', 't', 's', 'a', 't', 'h', 'a', 't']
+     * String[] expected = ['c', 'a', 't', 's', 'h']
+     * def result = letters.toUnique()
+     * assert result == expected
+     * assert result.class.componentType == String
+     * </pre>
+     *
+     * @param self an array
+     * @return the unique items from the array
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] toUnique(T[] self) {
+        return (T[]) toUnique(self, (Comparator) null);
+    }
+
+    /**
+     * Returns a new Array containing the items from the original Array but with duplicates removed with the supplied
+     * comparator determining which items are unique.
+     * <p>
+     * <pre class="groovyTestCase">
+     * String[] letters = ['c', 'a', 't', 's', 'A', 't', 'h', 'a', 'T']
+     * String[] expected = ['c', 'a', 't', 's', 'h']
+     * assert letters.toUnique{ p1, p2 -> p1.toLowerCase() <=> p2.toLowerCase() } == expected
+     * assert letters.toUnique{ it.toLowerCase() } == expected
+     * </pre>
+     *
+     * @param self an array
+     * @param condition a Closure used to determine unique items
+     * @return the unique items from the array
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] toUnique(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
+        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
+                ? new OrderBy<T>(condition, true)
+                : new ClosureComparator<T>(condition);
+        return toUnique(self, comparator);
     }
 
     /**
@@ -1760,11 +2032,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
      * <pre class="groovyTestCase">
-     * def list = ['a', 'b', 'aa', 'bc', 3, 4.5] as Object[]
-     * assert list.grep( ~/a+/ )  == ['a', 'aa']
-     * assert list.grep( ~/../ )  == ['aa', 'bc']
-     * assert list.grep( Number ) == [ 3, 4.5 ]
-     * assert list.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
+     * def items = ['a', 'b', 'aa', 'bc', 3, 4.5] as Object[]
+     * assert items.grep( ~/a+/ )  == ['a', 'aa']
+     * assert items.grep( ~/../ )  == ['aa', 'bc']
+     * assert items.grep( Number ) == [ 3, 4.5 ]
+     * assert items.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
      * </pre>
      *
      * @param self   an array
@@ -2180,23 +2452,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> List<List<T>> collate(Iterable<T> self, int size) {
-        return collate(asList(self), size);
+        return collate(self, size, true);
     }
 
     /**
-     * Collates this list into sub-lists of length <code>size</code>.
-     * Example:
-     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
-     * def coll = list.collate( 3 )
-     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7 ] ]</pre>
-     *
-     * @param self          a List
-     * @param size          the length of each sub-list in the returned list
-     * @return a List containing the data collated into sub-lists
+     * @deprecated use the Iterable variant instead
+     * @see #collate(Iterable, int)
      * @since 1.8.6
      */
+    @Deprecated
     public static <T> List<List<T>> collate( List<T> self, int size ) {
-        return collate( self, size, size, true ) ;
+        return collate((Iterable<T>) self, size) ;
     }
 
     /**
@@ -2214,25 +2480,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> List<List<T>> collate(Iterable<T> self, int size, int step) {
-        return collate(asList(self), size, step);
+        return collate(self, size, step, true);
     }
 
     /**
-     * Collates this list into sub-lists of length <code>size</code> stepping through the code <code>step</code>
-     * elements for each subList.
-     * Example:
-     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
-     * def coll = list.collate( 3, 1 )
-     * assert coll == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]</pre>
-     *
-     * @param self          a List
-     * @param size          the length of each sub-list in the returned list
-     * @param step          the number of elements to step through for each sub-list
-     * @return a List containing the data collated into sub-lists
+     * @deprecated use the Iterable variant instead
+     * @see #collate(Iterable, int, int)
      * @since 1.8.6
      */
+    @Deprecated
     public static <T> List<List<T>> collate( List<T> self, int size, int step ) {
-        return collate( self, size, step, true ) ;
+        return collate((Iterable<T>) self, size, step) ;
     }
 
     /**
@@ -2250,25 +2508,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> List<List<T>> collate(Iterable<T> self, int size, boolean keepRemainder) {
-        return collate(asList(self), size, keepRemainder);
+        return collate(self, size, size, keepRemainder);
     }
 
     /**
-     * Collates this list into sub-lists of length <code>size</code>. Any remaining elements in
-     * the list after the subdivision will be dropped if <code>keepRemainder</code> is false.
-     * Example:
-     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
-     * def coll = list.collate( 3, false )
-     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ] ]</pre>
-     *
-     * @param self          a List
-     * @param size          the length of each sub-list in the returned list
-     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
-     * @return a List containing the data collated into sub-lists
+     * @deprecated use the Iterable variant instead
+     * @see #collate(Iterable, int, boolean)
      * @since 1.8.6
      */
+    @Deprecated
     public static <T> List<List<T>> collate( List<T> self, int size, boolean keepRemainder ) {
-        return collate( self, size, size, keepRemainder ) ;
+        return collate((Iterable<T>) self, size, keepRemainder) ;
     }
 
     /**
@@ -2276,9 +2526,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * elements for each sub-list.  Any remaining elements in the iterable after the subdivision will be dropped if
      * <code>keepRemainder</code> is false.
      * Example:
-     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
+     * <pre class="groovyTestCase">
+     * def list = [ 1, 2, 3, 4 ]
+     * assert list.collate( 2, 2, true  ) == [ [ 1, 2 ], [ 3, 4 ] ]
      * assert list.collate( 3, 1, true  ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]
-     * assert list.collate( 3, 1, false ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ] ]</pre>
+     * assert list.collate( 3, 1, false ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ] ]
+     * </pre>
      *
      * @param self          an Iterable
      * @param size          the length of each sub-list in the returned list
@@ -2288,43 +2541,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> List<List<T>> collate(Iterable<T> self, int size, int step, boolean keepRemainder) {
-        return collate(asList(self), size, step, keepRemainder);
-    }
-
-    /**
-     * Collates this list into sub-lists of length <code>size</code> stepping through the code <code>step</code>
-     * elements for each sub-list.  Any remaining elements in the list after the subdivision will be dropped if
-     * <code>keepRemainder</code> is false.
-     * Example:
-     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
-     * assert list.collate( 3, 1, true  ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]
-     * assert list.collate( 3, 1, false ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ] ]</pre>
-     *
-     * @param self          a List
-     * @param size          the length of each sub-list in the returned list
-     * @param step          the number of elements to step through for each sub-list
-     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
-     * @return a List containing the data collated into sub-lists
-     * @since 1.8.6
-     */
-    public static <T> List<List<T>> collate( List<T> self, int size, int step, boolean keepRemainder ) {
+        List<T> selfList = asList(self);
         List<List<T>> answer = new ArrayList<List<T>>();
-        if( size <= 0 || self.size() == 0 ) {
-            answer.add( self ) ;
-        }
-        else {
-            for( int pos = 0 ; pos < self.size() && pos > -1 ; pos += step ) {
-                if( !keepRemainder && pos > self.size() - size ) {
+        if (size <= 0 || selfList.size() == 0) {
+            answer.add(selfList);
+        } else {
+            for (int pos = 0; pos < selfList.size() && pos > -1; pos += step) {
+                if (!keepRemainder && pos > selfList.size() - size) {
                     break ;
                 }
                 List<T> element = new ArrayList<T>() ;
-                for( int offs = pos ; offs < pos + size && offs < self.size() ; offs++ ) {
-                    element.add( self.get( offs ) ) ;
+                for (int offs = pos; offs < pos + size && offs < selfList.size(); offs++) {
+                    element.add(selfList.get(offs));
                 }
                 answer.add( element ) ;
             }
         }
         return answer ;
+    }
+
+    /**
+     * @deprecated use the Iterable variant instead
+     * @see #collate(Iterable, int, int, boolean)
+     * @since 1.8.6
+     */
+    @Deprecated
+    public static <T> List<List<T>> collate( List<T> self, int size, int step, boolean keepRemainder ) {
+        return collate((Iterable<T>) self, size, step, keepRemainder);
     }
 
     /**
@@ -2430,6 +2673,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @deprecated Use collectNested instead
      * @see #collectNested(Collection, Closure)
      */
+    @Deprecated
     public static List collectAll(Collection self, Closure transform) {
         return collectNested(self, transform);
     }
@@ -2448,7 +2692,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static List collectNested(Collection self, Closure transform) {
-        return (List) collectNested(self, new ArrayList(self.size()), transform);
+        return (List) collectNested((Iterable) self, new ArrayList(self.size()), transform);
     }
 
     /**
@@ -2474,6 +2718,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @deprecated Use collectNested instead
      * @see #collectNested(Iterable, Collection, Closure)
      */
+    @Deprecated
     public static Collection collectAll(Collection self, Collection collector, Closure transform) {
         return collectNested((Iterable)self, collector, transform);
     }
@@ -3479,16 +3724,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns <tt>true</tt> if this collection contains all of the elements
-     * in the specified array.
-     *
-     * @param  self  a Collection to be checked for containment
-     * @param  items array to be checked for containment in this collection
-     * @return <tt>true</tt> if this collection contains all of the elements
-     *           in the specified array
-     * @see    Collection#containsAll(Collection)
+     * @deprecated use the Iterable variant instead
+     * @see #containsAll(Iterable, Object[])
      * @since 1.7.2
      */
+    @Deprecated
     public static boolean containsAll(Collection self, Object[] items) {
         return self.containsAll(Arrays.asList(items));
     }
@@ -4398,11 +4638,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if( self.isEmpty() ) {
             throw new NoSuchElementException( "Cannot call inject() on an empty collection without passing an initial value." ) ;
         }
-        List<T> list = asList( self ) ;
-        if( list.size() == 1 ) {
-            return list.get( 0 ) ;
+        Iterator<T> iter = self.iterator();
+        T head = iter.next();
+        Collection<T> tail = tail(self);
+        if (!tail.iterator().hasNext()) {
+            return head;
         }
-        return (T) inject( drop( list, 1 ), head( list ), closure );
+        // cast with explicit weaker generics for now to keep jdk6 happy, TODO: find better fix
+        return (T) inject((Collection) tail, head, closure);
     }
 
     /**
@@ -4446,7 +4689,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <E, T, U extends T, V extends T> T inject(Collection<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
-        return (T) inject(self.iterator(), initialValue, closure);
+        // cast with explicit weaker generics for now to keep jdk6 happy, TODO: find better fix
+        return (T) inject((Iterator) self.iterator(), initialValue, closure);
     }
 
     /**
@@ -5075,12 +5319,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return min(self, new ClosureComparator<T>(closure));
         }
         T answer = null;
-        Object answer_value = null;
+        Object answerValue = null;
         for (T item : self) {
             Object value = closure.call(item);
-            if (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answer_value)) {
+            if (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answerValue)) {
                 answer = item;
-                answer_value = value;
+                answerValue = value;
             }
         }
         return answer;
@@ -6000,8 +6244,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
-    // helper method for putAt(Splice)
     // todo: remove after putAt(Splice) gets deleted
+    @Deprecated
     protected static List getSubList(List self, List splice) {
         int left /* = 0 */;
         int right = 0;
@@ -6494,7 +6738,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @Deprecated
     public static <T> List<T> sort(Collection<T> self) {
-        return sort((Iterable<T>)self, true);
+        return sort((Iterable<T>) self, true);
     }
 
     /**
@@ -6521,7 +6765,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @Deprecated
     public static <T> List<T> sort(Collection<T> self, boolean mutate) {
-        return sort((Iterable<T>)self, mutate);
+        return sort((Iterable<T>) self, mutate);
     }
 
     /**
@@ -6538,9 +6782,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert sorted == [1, 2, 3]
      * </pre>
      *
-     * @param self   the collection to be sorted
+     * @param self   the iterable to be sorted
      * @param mutate false will always cause a new list to be created, true will mutate lists in place
-     * @return the sorted collection as a List
+     * @return the sorted iterable as a List
      * @since 2.2.0
      */
     public static <T> List<T> sort(Iterable<T> self, boolean mutate) {
@@ -6563,8 +6807,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V> Map<K, V> sort(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>","Map.Entry<K,V>,Map.Entry<K,V>"}) Closure closure) {
         Map<K, V> result = new LinkedHashMap<K, V>();
-        List<Map.Entry<K, V>> entries = asList(self.entrySet());
-        sort(entries, closure);
+        List<Map.Entry<K, V>> entries = asList((Iterable<Map.Entry<K, V>>) self.entrySet());
+        sort((Iterable<Map.Entry<K, V>>) entries, closure);
         for (Map.Entry<K, V> entry : entries) {
             result.put(entry.getKey(), entry.getValue());
         }
@@ -6654,7 +6898,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> Iterator<T> sort(Iterator<T> self) {
-        return sort(toList(self)).listIterator();
+        return sort((Iterable<T>) toList(self)).listIterator();
     }
 
     /**
@@ -6668,7 +6912,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> Iterator<T> sort(Iterator<T> self, Comparator<T> comparator) {
-        return sort(toList(self), comparator).listIterator();
+        return sort((Iterable<T>) toList(self), true, comparator).listIterator();
     }
 
     /**
@@ -6678,7 +6922,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @Deprecated
     public static <T> List<T> sort(Collection<T> self, Comparator<T> comparator) {
-        return sort((Iterable<T>)self, true, comparator);
+        return sort((Iterable<T>) self, true, comparator);
     }
 
     /**
@@ -6688,7 +6932,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @Deprecated
     public static <T> List<T> sort(Collection<T> self, boolean mutate, Comparator<T> comparator) {
-        return sort((Iterable<T>)self, mutate, comparator);
+        return sort((Iterable<T>) self, mutate, comparator);
     }
 
     /**
@@ -6771,7 +7015,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> Iterator<T> sort(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        return sort(toList(self), closure).listIterator();
+        return sort((Iterable<T>) toList(self), closure).listIterator();
     }
 
     /**
@@ -6821,11 +7065,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] sort(T[] self, boolean mutate, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        T[] answer = (T[]) sort(toList(self), closure).toArray();
+        T[] answer = (T[]) sort((Iterable<T>) toList(self), closure).toArray();
         if (mutate) {
             System.arraycopy(answer, 0, self, 0, answer.length);
         }
         return mutate ? self : answer;
+    }
+
+    /**
+     * @deprecated Use the Iterable version of sort instead
+     * @see #sort(Iterable, boolean, Closure)
+     * @since 1.8.1
+     */
+    @Deprecated
+    public static <T> List<T> sort(Collection<T> self, boolean mutate, Closure closure) {
+        return sort((Iterable<T>)self, mutate, closure);
     }
 
     /**
@@ -6862,16 +7116,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> sort(Iterable<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         return sort(self, true, closure);
-    }
-
-    /**
-     * @deprecated Use the Iterable version of sort instead
-     * @see #sort(Iterable, boolean, Closure)
-     * @since 1.8.1
-     */
-    @Deprecated
-    public static <T> List<T> sort(Collection<T> self, boolean mutate, Closure closure) {
-        return sort((Iterable<T>)self, mutate, closure);
     }
 
     /**
@@ -6934,6 +7178,280 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V> SortedMap<K, V> sort(SortedMap<K, V> self) {
         return self;
+    }
+
+    /**
+     * Sorts the Iterable. Assumes that the Iterable elements are
+     * comparable and uses a {@link NumberAwareComparator} to determine the resulting order.
+     * {@code NumberAwareComparator} has special treatment for numbers but otherwise uses the
+     * natural ordering of the Iterable elements. The elements are first placed into a new list which
+     * is then sorted and returned - leaving the original Iterable unchanged.
+     * <pre class="groovyTestCase">
+     * def orig = [1, 3, 2]
+     * def sorted = orig.toSorted()
+     * assert orig == [1, 3, 2]
+     * assert sorted == [1, 2, 3]
+     * </pre>
+     *
+     * @param self   the Iterable to be sorted
+     * @return the sorted iterable as a List
+     * @see #toSorted(Iterable, Comparator)
+     * @since 2.4.0
+     */
+    public static <T> List<T> toSorted(Iterable<T> self) {
+        return toSorted(self, new NumberAwareComparator<T>());
+    }
+
+    /**
+     * Sorts the Iterable using the given Comparator. The elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Iterable unchanged.
+     * <pre class="groovyTestCase">
+     * def orig = ["hello","hi","Hey"]
+     * def sorted = orig.toSorted(String.CASE_INSENSITIVE_ORDER)
+     * assert orig == ["hello","hi","Hey"]
+     * assert sorted == ["hello","Hey","hi"]
+     * </pre>
+     *
+     * @param self       the Iterable to be sorted
+     * @param comparator a Comparator used for the comparison
+     * @return a sorted List
+     * @since 2.4.0
+     */
+    public static <T> List<T> toSorted(Iterable<T> self, Comparator<T> comparator) {
+        List<T> list = toList(self);
+        Collections.sort(list, comparator);
+        return list;
+    }
+
+    /**
+     * Sorts this Iterable using the given Closure to determine the correct ordering. The elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Iterable unchanged.
+     * <p>
+     * If the Closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }</pre>
+     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a, b -> a.length() <=> b.length() }</pre>
+     *
+     * @param self    the Iterable to be sorted
+     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
+     * @return a newly created sorted List
+     * @see #toSorted(Iterable, Comparator)
+     * @since 2.4.0
+     */
+    public static <T> List<T> toSorted(Iterable<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        Comparator<T> comparator = (closure.getMaximumNumberOfParameters() == 1) ? new OrderBy<T>(closure) : new ClosureComparator<T>(closure);
+        return toSorted(self, comparator);
+    }
+
+    /**
+     * Sorts the Iterator. Assumes that the Iterator elements are
+     * comparable and uses a {@link NumberAwareComparator} to determine the resulting order.
+     * {@code NumberAwareComparator} has special treatment for numbers but otherwise uses the
+     * natural ordering of the Iterator elements.
+     * A new iterator is produced that traverses the items in sorted order.
+     *
+     * @param self       the Iterator to be sorted
+     * @return the sorted items as an Iterator
+     * @see #toSorted(Iterator, Comparator)
+     * @since 2.4.0
+     */
+    public static <T> Iterator<T> toSorted(Iterator<T> self) {
+        return toSorted(self, new NumberAwareComparator<T>());
+    }
+
+    /**
+     * Sorts the given iterator items using the comparator. The
+     * original iterator will become exhausted of elements after completing this method call.
+     * A new iterator is produced that traverses the items in sorted order.
+     *
+     * @param self       the Iterator to be sorted
+     * @param comparator a Comparator used for comparing items
+     * @return the sorted items as an Iterator
+     * @since 2.4.0
+     */
+    public static <T> Iterator<T> toSorted(Iterator<T> self, Comparator<T> comparator) {
+        return toSorted(toList(self), comparator).listIterator();
+    }
+
+    /**
+     * Sorts the given iterator items into a sorted iterator using the Closure to determine the correct ordering.
+     * The original iterator will be fully processed after the method call.
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator.
+     * I.e.&#160;it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than, equal to,
+     * or greater than the second respectively. Otherwise, the Closure is assumed
+     * to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     *
+     * @param self    the Iterator to be sorted
+     * @param closure a Closure used to determine the correct ordering
+     * @return the sorted items as an Iterator
+     * @see #toSorted(Iterator, Comparator)
+     * @since 2.4.0
+     */
+    public static <T> Iterator<T> toSorted(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        Comparator<T> comparator = (closure.getMaximumNumberOfParameters() == 1) ? new OrderBy<T>(closure) : new ClosureComparator<T>(closure);
+        return toSorted(self, comparator);
+    }
+
+    /**
+     * Returns a sorted version of the given array using the supplied comparator.
+     *
+     * @param self the array to be sorted
+     * @return the sorted array
+     * @see #toSorted(T[], Comparator)
+     * @since 2.4.0
+     */
+    public static <T> T[] toSorted(T[] self) {
+        return toSorted(self, new NumberAwareComparator<T>());
+    }
+
+    /**
+     * Returns a sorted version of the given array using the supplied comparator to determine the resulting order.
+     * <pre class="groovyTestCase">
+     * def sumDigitsComparator = [compare: { num1, num2 -> num1.toString().toList()*.toInteger().sum() <=> num2.toString().toList()*.toInteger().sum() }] as Comparator
+     * Integer[] nums = [9, 44, 222, 7000]
+     * def result = nums.toSorted(sumDigitsComparator)
+     * assert result instanceof Integer[]
+     * assert result == [222, 7000, 44, 9]
+     * </pre>
+     *
+     * @param self the array to be sorted
+     * @param comparator a Comparator used for the comparison
+     * @return the sorted array
+     * @since 2.4.0
+     */
+    public static <T> T[] toSorted(T[] self, Comparator<T> comparator) {
+        T[] answer = self.clone();
+        Arrays.sort(answer, comparator);
+        return answer;
+    }
+
+    /**
+     * Sorts the elements from this array into a newly created array using
+     * the Closure to determine the correct ordering.
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer, zero, or a positive integer when the
+     * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     *
+     * @param self the array containing the elements to be sorted
+     * @param condition a Closure used to determine the correct ordering
+     * @return a sorted array
+     * @see #toSorted(T[], Comparator)
+     * @since 2.4.0
+     */
+    public static <T> T[] toSorted(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
+        Comparator<T> comparator = (condition.getMaximumNumberOfParameters() == 1) ? new OrderBy<T>(condition) : new ClosureComparator<T>(condition);
+        return toSorted(self, comparator);
+    }
+
+    /**
+     * Sorts the elements from the given map into a new ordered map using
+     * a {@link NumberAwareComparator} on map entry values to determine the resulting order.
+     * {@code NumberAwareComparator} has special treatment for numbers but otherwise uses the
+     * natural ordering of the Iterator elements. The original map is unchanged.
+     * <pre class="groovyTestCase">
+     * def map = [a:5L, b:3, c:6, d:4.0].toSorted()
+     * assert map.toString() == '[b:3, d:4.0, a:5, c:6]'
+     * </pre>
+     *
+     * @param self the original unsorted map
+     * @return the sorted map
+     * @since 2.4.0
+     */
+    public static <K, V> Map<K, V> toSorted(Map<K, V> self) {
+        return toSorted(self, new NumberAwareValueComparator<K, V>());
+    }
+
+    private static class NumberAwareValueComparator<K, V> implements Comparator<Map.Entry<K, V>> {
+        private Comparator<V> delegate = new NumberAwareComparator<V>();
+
+        @Override
+        public int compare(Map.Entry<K, V> e1, Map.Entry<K, V> e2) {
+            return delegate.compare(e1.getValue(), e2.getValue());
+        }
+    }
+
+    /**
+     * Sorts the elements from the given map into a new ordered map using
+     * the supplied comparator to determine the ordering. The original map is unchanged.
+     * <pre class="groovyTestCase">
+     * def keyComparator = [compare: { e1, e2 -> e1.key <=> e2.key }] as Comparator
+     * def valueComparator = [compare: { e1, e2 -> e1.value <=> e2.value }] as Comparator
+     * def map1 = [a:5, b:3, d:4, c:6].toSorted(keyComparator)
+     * assert map1.toString() == '[a:5, b:3, c:6, d:4]'
+     * def map2 = [a:5, b:3, d:4, c:6].toSorted(valueComparator)
+     * assert map2.toString() == '[b:3, d:4, a:5, c:6]'
+     * </pre>
+     *
+     * @param self the original unsorted map
+     * @param comparator a Comparator used for the comparison
+     * @return the sorted map
+     * @since 2.4.0
+     */
+    public static <K, V> Map<K, V> toSorted(Map<K, V> self, Comparator<Map.Entry<K, V>> comparator) {
+        List<Map.Entry<K, V>> sortedEntries = toSorted(self.entrySet(), comparator);
+        Map<K, V> result = new LinkedHashMap<K, V>();
+        for (Map.Entry<K, V> entry : sortedEntries) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
+
+    /**
+     * Sorts the elements from the given map into a new ordered map using
+     * the supplied Closure condition as a comparator to determine the ordering. The original map is unchanged.
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator. I.e. it should compare
+     * its two entry parameters for order, returning a negative integer, zero, or a positive integer when the
+     * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single entry parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     * <pre class="groovyTestCase">
+     * def map = [a:5, b:3, c:6, d:4].toSorted { a, b -> a.value <=> b.value }
+     * assert map.toString() == '[b:3, d:4, a:5, c:6]'
+     * </pre>
+     *
+     * @param self the original unsorted map
+     * @param condition a Closure used as a comparator
+     * @return the sorted map
+     * @since 2.4.0
+     */
+    public static <K, V> Map<K, V> toSorted(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>","Map.Entry<K,V>,Map.Entry<K,V>"}) Closure condition) {
+        Comparator<Map.Entry<K,V>> comparator = (condition.getMaximumNumberOfParameters() == 1) ? new OrderBy<Map.Entry<K,V>>(condition) : new ClosureComparator<Map.Entry<K,V>>(condition);
+        return toSorted(self, comparator);
+    }
+
+    /**
+     * Avoids doing unnecessary work when sorting an already sorted set
+     *
+     * @param self an already sorted set
+     * @return an ordered copy of the sorted set
+     * @since 2.4.0
+     */
+    public static <T> Set<T> toSorted(SortedSet<T> self) {
+        return new LinkedHashSet<T>(self);
+    }
+
+    /**
+     * Avoids doing unnecessary work when sorting an already sorted map
+     *
+     * @param self an already sorted map
+     * @return an ordered copy of the map
+     * @since 2.4.0
+     */
+    public static <K, V> Map<K, V> toSorted(SortedMap<K, V> self) {
+        return new LinkedHashMap<K, V>(self);
     }
 
     /**
@@ -7191,106 +7709,155 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns the items from the Iterable excluding the first item.
-     * <pre class="groovyTestCase">def list = [3, 4, 2]
-     * assert list.tail() == [4, 2]
-     * assert list == [3, 4, 2]</pre>
-     *
-     * @param self an Iterable
-     * @return a list without its first element
-     * @throws NoSuchElementException if the iterable is empty and you try to access the tail() item.
-     * @since 2.4.0
-     */
-    public static <T> List<T> tail(Iterable<T> self) {
-        List<T> result = toList(self);
-        if (result.isEmpty()) {
-            throw new NoSuchElementException("Cannot access tail() for an empty Iterable");
-        }
-        result.remove(0);
-        return result;
-    }
-
-    /**
-     * Returns the items from the List excluding the first item.
-     * <pre class="groovyTestCase">def list = [3, 4, 2]
-     * assert list.tail() == [4, 2]
-     * assert list == [3, 4, 2]</pre>
-     *
-     * @param self a List
-     * @return a list without its first element
-     * @throws NoSuchElementException if the list is empty and you try to access the tail() item.
+     * @deprecated use the Iterable variant instead
      * @since 1.5.6
      */
+    @Deprecated
     public static <T> List<T> tail(List<T> self) {
-        if (self.isEmpty()) {
-            throw new NoSuchElementException("Cannot access tail() for an empty List");
+        return (List<T>) tail((Iterable<T>)self);
+    }
+
+    /**
+     * Returns the items from the Iterable excluding the first item.
+     * <pre class="groovyTestCase">
+     * def list = [3, 4, 2]
+     * assert list.tail() == [4, 2]
+     * assert list == [3, 4, 2]
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a collection without its first element
+     * @throws NoSuchElementException if the iterable is empty and you try to access the tail()
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> tail(Iterable<T> self) {
+        if (!self.iterator().hasNext()) {
+            throw new NoSuchElementException("Cannot access tail() for an empty iterable");
         }
-        List<T> result = new ArrayList<T>(self);
-        result.remove(0);
+        Collection<T> result = createSimilarCollection(self);
+        addAll(result, tail(self.iterator()));
         return result;
     }
 
     /**
-     * Returns the items from the Object array excluding the first item.
+     * Returns the items from the array excluding the first item.
      * <pre class="groovyTestCase">
-     *     String[] strings = ["a", "b", "c"]
-     *     def result = strings.tail()
-     *     assert strings.class.componentType == String
+     * String[] strings = ["a", "b", "c"]
+     * def result = strings.tail()
+     * assert result.class.componentType == String
+     * String[] expected = ["b", "c"]
+     * assert result == expected
      * </pre>
      *
-     * @param self an Object array
-     * @return an Object array without its first element
-     * @throws NoSuchElementException if the list is empty and you try to access the tail() item.
+     * @param self an array
+     * @return an array without its first element
+     * @throws NoSuchElementException if the array is empty and you try to access the tail()
      * @since 1.7.3
      */
+    @SuppressWarnings("unchecked")
     public static <T> T[] tail(T[] self) {
         if (self.length == 0) {
-            throw new NoSuchElementException("Cannot access tail() for an empty Object array");
+            throw new NoSuchElementException("Cannot access tail() for an empty array");
         }
-        Class<T> componentType = (Class<T>) self.getClass().getComponentType();
-        T[] result = (T[]) Array.newInstance(componentType, self.length - 1);
+        T[] result = createSimilarArray(self, self.length - 1);
         System.arraycopy(self, 1, result, 0, self.length - 1);
         return result;
     }
 
     /**
-     * Returns the items from the Iterable excluding the last item.
-     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * Returns the original iterator after throwing away the first element.
+     *
+     * @param self the original iterator
+     * @return the iterator without its first element
+     * @throws NoSuchElementException if the array is empty and you try to access the tail()
+     * @since 1.8.1
+     */
+    public static <T> Iterator<T> tail(Iterator<T> self) {
+        if (!self.hasNext()) {
+            throw new NoSuchElementException("Cannot access tail() for an empty Iterator");
+        }
+        self.next();
+        return self;
+    }
+
+    /**
+     * Returns the items from the Iterable excluding the last item. Leaves the original Iterable unchanged.
+     * <pre class="groovyTestCase">
+     * def list = [3, 4, 2]
      * assert list.init() == [3, 4]
-     * assert list == [3, 4, 2]</pre>
+     * assert list == [3, 4, 2]
+     * </pre>
      *
      * @param self an Iterable
-     * @return a list without its last element
-     * @throws NoSuchElementException if the iterable is empty and you try to access the init() item.
+     * @return a Collection without its last element
+     * @throws NoSuchElementException if the iterable is empty and you try to access init()
      * @since 2.4.0
      */
-    public static <T> List<T> init(Iterable<T> self) {
-        List<T> result = toList(self);
-        if (result.isEmpty()) {
+    public static <T> Collection<T> init(Iterable<T> self) {
+        if (!self.iterator().hasNext()) {
             throw new NoSuchElementException("Cannot access init() for an empty Iterable");
         }
-        result.remove(result.size() - 1);
+        Collection<T> result;
+        if (self instanceof Collection) {
+            Collection<T> selfCol = (Collection<T>) self;
+            result = createSimilarCollection(selfCol, selfCol.size() - 1);
+        } else {
+            result = new ArrayList<T>();
+        }
+        addAll(result, init(self.iterator()));
         return result;
     }
 
     /**
-     * Returns the items from the List excluding the last item.
-     * <pre class="groovyTestCase">def list = [3, 4, 2]
-     * assert list.init() == [3, 4]
-     * assert list == [3, 4, 2]</pre>
+     * Returns an Iterator containing all of the items from this iterator except the last one.
+     * <pre class="groovyTestCase">
+     * def iter = [3, 4, 2].listIterator()
+     * def result = iter.init()
+     * assert result.toList() == [3, 4]
+     * </pre>
      *
-     * @param self a List
-     * @return a list without its last element
-     * @throws NoSuchElementException if the list is empty and you try to access the init() item.
+     * @param self an Iterator
+     * @return an Iterator without the last element from the original Iterator
+     * @throws NoSuchElementException if the iterator is empty and you try to access init()
      * @since 2.4.0
      */
-    public static <T> List<T> init(List<T> self) {
-        if (self.isEmpty()) {
-            throw new NoSuchElementException("Cannot access init() for an empty List");
+    public static <T> Iterator<T> init(Iterator<T> self) {
+        if (!self.hasNext()) {
+            throw new NoSuchElementException("Cannot access init() for an empty Iterator");
         }
-        List<T> result = new ArrayList<T>(self);
-        result.remove(result.size() - 1);
-        return result;
+        return new InitIterator<T>(self);
+    }
+
+    private static final class InitIterator<E> implements Iterator<E> {
+        private final Iterator<E> delegate;
+        private boolean exhausted;
+        private E next;
+
+        private InitIterator(Iterator<E> delegate) {
+            this.delegate = delegate;
+            advance();
+        }
+
+        public boolean hasNext() {
+            return !exhausted;
+        }
+
+        public E next() {
+            if (exhausted) throw new NoSuchElementException();
+            E result = next;
+            advance();
+            return result;
+        }
+
+        public void remove() {
+            if (exhausted) throw new NoSuchElementException();
+            advance();
+        }
+
+        private void advance() {
+            next = delegate.next();
+            exhausted = !delegate.hasNext();
+        }
     }
 
     /**
@@ -7311,41 +7878,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self.length == 0) {
             throw new NoSuchElementException("Cannot access init() for an empty Object array");
         }
-        Class<T> componentType = (Class<T>) self.getClass().getComponentType();
-        T[] result = (T[]) Array.newInstance(componentType, self.length - 1);
+        T[] result = createSimilarArray(self, self.length - 1);
         System.arraycopy(self, 0, result, 0, self.length - 1);
         return result;
     }
 
     /**
-     * Returns the first <code>num</code> elements from the head of this list.
-     * <pre class="groovyTestCase">
-     * def strings = [ 'a', 'b', 'c' ]
-     * assert strings.take( 0 ) == []
-     * assert strings.take( 2 ) == [ 'a', 'b' ]
-     * assert strings.take( 5 ) == [ 'a', 'b', 'c' ]
-     * </pre>
-     * Similar to {@link #take(Iterable, int)}
-     * except that it attempts to preserve the type of the original list.
-     *
-     * @param self the original list
-     * @param num  the number of elements to take from this list
-     * @return a list consisting of the first <code>num</code> elements of this list,
-     *         or else the whole list if it has less then <code>num</code> elements.
+     * @deprecated use the Iterable variant of this method instead
+     * @see #take(Iterable, int)
      * @since 1.8.1
      */
+    @Deprecated
     public static <T> List<T> take(List<T> self, int num) {
-        if (self.isEmpty() || num <= 0) {
-            return createSimilarList(self, 0);
-        }
-        if (self.size() <= num) {
-            List<T> ret = createSimilarList(self, self.size());
-            ret.addAll(self);
-            return ret;
-        }
-        List<T> ret = createSimilarList(self, num);
-        ret.addAll(self.subList(0, num));
-        return ret;
+        return (List<T>) take((Iterable<T>)self, num);
     }
 
     /**
@@ -7382,6 +7927,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first <code>num</code> elements from the head of this Iterable.
      * <pre class="groovyTestCase">
+     * def strings = [ 'a', 'b', 'c' ]
+     * assert strings.take( 0 ) == []
+     * assert strings.take( 2 ) == [ 'a', 'b' ]
+     * assert strings.take( 5 ) == [ 'a', 'b', 'c' ]
+     *
      * class AbcIterable implements Iterable<String> {
      *     Iterator<String> iterator() { "abc".iterator() }
      * }
@@ -7394,12 +7944,45 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the original Iterable
      * @param num  the number of elements to take from this Iterable
-     * @return a List consisting of the first <code>num</code> elements from this Iterable,
+     * @return a Collection consisting of the first <code>num</code> elements from this Iterable,
      *         or else all the elements from the Iterable if it has less then <code>num</code> elements.
      * @since 1.8.7
      */
-    public static <T> List<T> take(Iterable<T> self, int num) {
-        return toList(take(self.iterator(), num));
+    public static <T> Collection<T> take(Iterable<T> self, int num) {
+        Collection<T> result = self instanceof Collection ? createSimilarCollection((Collection<T>) self, num < 0 ? 0 : num) : new ArrayList<T>();
+        addAll(result, take(self.iterator(), num));
+        return result;
+    }
+
+    /**
+     * Adds all items from the iterator to the Collection.
+     *
+     * @param self the collection
+     * @param items the items to add
+     * @return true if the collection changed
+     */
+    public static <T> boolean addAll(Collection<T> self, Iterator<T> items) {
+        boolean changed = false;
+        while (items.hasNext()) {
+            T next =  items.next();
+            if (self.add(next)) changed = true;
+        }
+        return changed;
+    }
+
+    /**
+     * Adds all items from the iterable to the Collection.
+     *
+     * @param self the collection
+     * @param items the items to add
+     * @return true if the collection changed
+     */
+    public static <T> boolean addAll(Collection<T> self, Iterable<T> items) {
+        boolean changed = false;
+        for (T next : items) {
+            if (self.add(next)) changed = true;
+        }
+        return changed;
     }
 
     /**
@@ -7452,12 +8035,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an iterator consisting of up to the first <code>num</code> elements of this iterator.
      * @since 1.8.1
      */
-    @SuppressWarnings("unchecked")
     public static <T> Iterator<T> take(Iterator<T> self, int num) {
-        return new TakeIterator(self, num);
+        return new TakeIterator<T>(self, num);
     }
 
-    private static class TakeIterator<E> implements Iterator<E> {
+    private static final class TakeIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
         private Integer num;
 
@@ -7471,7 +8053,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         public E next() {
-            if (num == 0) throw new NoSuchElementException();
+            if (num <= 0) throw new NoSuchElementException();
             num--;
             return delegate.next();
         }
@@ -7484,37 +8066,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @Deprecated
     public static CharSequence take(CharSequence self, int num) {
         return StringGroovyMethods.take(self, num);
-    }
-
-    /**
-     * Returns the last <code>num</code> elements from the tail of this list.
-     * <pre class="groovyTestCase">
-     * def strings = [ 'a', 'b', 'c' ]
-     * assert strings.takeRight( 0 ) == []
-     * assert strings.takeRight( 2 ) == [ 'b', 'c' ]
-     * assert strings.takeRight( 5 ) == [ 'a', 'b', 'c' ]
-     * </pre>
-     * Similar to {@link #takeRight(Iterable, int)}
-     * except that it attempts to preserve the type of the original list.
-     *
-     * @param self the original list
-     * @param num  the number of elements to take from this list
-     * @return a list consisting of the last <code>num</code> elements of this list,
-     *         or else the whole list if it has less then <code>num</code> elements.
-     * @since 2.4.0
-     */
-    public static <T> List<T> takeRight(List<T> self, int num) {
-        if (self.isEmpty() || num <= 0) {
-            return createSimilarList(self, 0);
-        }
-        if (self.size() <= num) {
-            List<T> ret = createSimilarList(self, self.size());
-            ret.addAll(self);
-            return ret;
-        }
-        List<T> ret = createSimilarList(self, num);
-        ret.addAll(self.subList(self.size() - num, self.size()));
-        return ret;
     }
 
     /**
@@ -7551,6 +8102,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the last <code>num</code> elements from the tail of this Iterable.
      * <pre class="groovyTestCase">
+     * def strings = [ 'a', 'b', 'c' ]
+     * assert strings.takeRight( 0 ) == []
+     * assert strings.takeRight( 2 ) == [ 'b', 'c' ]
+     * assert strings.takeRight( 5 ) == [ 'a', 'b', 'c' ]
+     *
      * class AbcIterable implements Iterable<String> {
      *     Iterator<String> iterator() { "abc".iterator() }
      * }
@@ -7563,50 +8119,43 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the original Iterable
      * @param num  the number of elements to take from this Iterable
-     * @return a List consisting of the last <code>num</code> elements from this Iterable,
+     * @return a Collection consisting of the last <code>num</code> elements from this Iterable,
      *         or else all the elements from the Iterable if it has less then <code>num</code> elements.
      * @since 2.4.0
      */
-    public static <T> List<T> takeRight(Iterable<T> self, int num) {
-        return takeRight(asList(self), num);
+    public static <T> Collection<T> takeRight(Iterable<T> self, int num) {
+        if (!self.iterator().hasNext() || num <= 0) {
+            return self instanceof Collection ? createSimilarCollection((Collection<T>) self, 0) : new ArrayList<T>();
+        }
+        Collection<T> selfCol = self instanceof Collection ? (Collection<T>) self : toList(self);
+        if (selfCol.size() <= num) {
+            Collection<T> ret = createSimilarCollection(selfCol, selfCol.size());
+            ret.addAll(selfCol);
+            return ret;
+        }
+        Collection<T> ret = createSimilarCollection(selfCol, num);
+        ret.addAll(asList((Iterable<T>) selfCol).subList(selfCol.size() - num, selfCol.size()));
+        return ret;
     }
 
     /**
-     * Drops the given number of elements from the head of this list
-     * if they are available.
-     * <pre class="groovyTestCase">
-     * def strings = [ 'a', 'b', 'c' ]
-     * assert strings.drop( 0 ) == [ 'a', 'b', 'c' ]
-     * assert strings.drop( 2 ) == [ 'c' ]
-     * assert strings.drop( 5 ) == []
-     * </pre>
-     * Similar to {@link #drop(Iterable, int)}
-     * except that it attempts to preserve the type of the original list.
-     *
-     * @param self the original list
-     * @param num  the number of elements to drop from this list
-     * @return a list consisting of all elements of this list except the first
-     *         <code>num</code> ones, or else the empty list, if this list has
-     *         less than <code>num</code> elements.
+     * @deprecated use the Iterable version instead
+     * @see #drop(Iterable, int)
      * @since 1.8.1
      */
+    @Deprecated
     public static <T> List<T> drop(List<T> self, int num) {
-        if (self.size() <= num) {
-            return createSimilarList(self, 0);
-        }
-        if (num <= 0) {
-            List<T> ret = createSimilarList(self, self.size());
-            ret.addAll(self);
-            return ret;
-        }
-        List<T> ret = createSimilarList(self, self.size() - num);
-        ret.addAll(self.subList(num, self.size()));
-        return ret;
+        return (List<T>) drop((Iterable<T>) self, num);
     }
 
     /**
      * Drops the given number of elements from the head of this Iterable.
      * <pre class="groovyTestCase">
+     * def strings = [ 'a', 'b', 'c' ]
+     * assert strings.drop( 0 ) == [ 'a', 'b', 'c' ]
+     * assert strings.drop( 2 ) == [ 'c' ]
+     * assert strings.drop( 5 ) == []
+     *
      * class AbcIterable implements Iterable<String> {
      *     Iterator<String> iterator() { "abc".iterator() }
      * }
@@ -7619,12 +8168,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the original Iterable
      * @param num  the number of elements to drop from this Iterable
-     * @return a List consisting of all the elements of this Iterable minus the first <code>num</code> elements,
+     * @return a Collection consisting of all the elements of this Iterable minus the first <code>num</code> elements,
      *         or an empty list if it has less then <code>num</code> elements.
      * @since 1.8.7
      */
-    public static <T> List<T> drop(Iterable<T> self, int num) {
-        return toList(drop(self.iterator(), num));
+    public static <T> Collection<T> drop(Iterable<T> self, int num) {
+        Collection<T> result = createSimilarCollection(self);
+        addAll(result, drop(self.iterator(), num));
+        return result;
     }
 
     /**
@@ -7721,41 +8272,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Drops the given number of elements from the tail of this list
-     * if they are available.
+     * Drops the given number of elements from the tail of this Iterable.
      * <pre class="groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ]
      * assert strings.dropRight( 0 ) == [ 'a', 'b', 'c' ]
      * assert strings.dropRight( 2 ) == [ 'a' ]
      * assert strings.dropRight( 5 ) == []
-     * </pre>
-     * Similar to {@link #dropRight(Iterable, int)}
-     * except that it attempts to preserve the type of the original list.
      *
-     * @param self the original list
-     * @param num  the number of elements to drop from this list
-     * @return a list consisting of all elements of this list except the last
-     *         <code>num</code> ones, or else the empty list, if this list has
-     *         less than <code>num</code> elements.
-     * @since 2.4.0
-     */
-    public static <T> List<T> dropRight(List<T> self, int num) {
-        if (self.size() <= num) {
-            return createSimilarList(self, 0);
-        }
-        if (num <= 0) {
-            List<T> ret = createSimilarList(self, self.size());
-            ret.addAll(self);
-            return ret;
-        }
-        List<T> ret = createSimilarList(self, self.size() - num);
-        ret.addAll(self.subList(0, self.size() - num));
-        return ret;
-    }
-
-    /**
-     * Drops the given number of elements from the tail of this Iterable.
-     * <pre class="groovyTestCase">
      * class AbcIterable implements Iterable<String> {
      *     Iterator<String> iterator() { "abc".iterator() }
      * }
@@ -7768,12 +8291,47 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the original Iterable
      * @param num  the number of elements to drop from this Iterable
-     * @return a List consisting of all the elements of this Iterable minus the last <code>num</code> elements,
+     * @return a Collection consisting of all the elements of this Iterable minus the last <code>num</code> elements,
      *         or an empty list if it has less then <code>num</code> elements.
      * @since 2.4.0
      */
-    public static <T> List<T> dropRight(Iterable<T> self, int num) {
-        return dropRight(asList(self), num);
+    public static <T> Collection<T> dropRight(Iterable<T> self, int num) {
+        Collection<T> selfCol = self instanceof Collection ? (Collection<T>) self : toList(self);
+        if (selfCol.size() <= num) {
+            return createSimilarCollection(selfCol, 0);
+        }
+        if (num <= 0) {
+            Collection<T> ret = createSimilarCollection(selfCol, selfCol.size());
+            ret.addAll(selfCol);
+            return ret;
+        }
+        Collection<T> ret = createSimilarCollection(selfCol, selfCol.size() - num);
+        ret.addAll(asList((Iterable<T>)selfCol).subList(0, selfCol.size() - num));
+        return ret;
+    }
+
+    /**
+     * Drops the given number of elements from the tail of this Iterator.
+     * <pre class="groovyTestCase">
+     * def obliterator = "obliter8".iterator()
+     * assert abc.dropRight(-1) == ['o', 'b', 'l', 'i', 't', 'e', 'r', '8']
+     * assert abc.dropRight(0) == ['o', 'b', 'l', 'i', 't', 'e', 'r', '8']
+     * assert abc.dropRight(1) == ['o', 'b', 'l', 'i', 't', 'e', 'r']
+     * assert abc.dropRight(4) == ['o', 'b', 'l', 'i']
+     * assert abc.dropRight(7) == ['o']
+     * assert abc.dropRight(8) == []
+     * assert abc.dropRight(9) == []
+     * </pre>
+     *
+     * @param self the original Iterator
+     * @param num  the number of elements to drop
+     * @return an Iterator consisting of all the elements of this Iterator minus the last <code>num</code> elements,
+     *         or an empty Iterator if it has less then <code>num</code> elements.
+     * @since 2.4.0
+     */
+    public static <T> Iterator<T> dropRight(Iterator<T> self, int num) {
+        List<T> result = (List<T>) dropRight(toList(self), num);
+        return result.listIterator();
     }
 
     /**
@@ -7841,7 +8399,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns a List containing the longest prefix of the elements from this Iterable
+     * Returns a Collection containing the longest prefix of the elements from this Iterable
      * where each element passed to the given closure evaluates to true.
      * <pre class="groovyTestCase">
      * class AbcIterable implements Iterable<String> {
@@ -7855,12 +8413,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      an Iterable
      * @param condition the closure that must evaluate to true to
      *                  continue taking elements
-     * @return a List containing a prefix of the elements from the given Iterable where
+     * @return a Collection containing a prefix of the elements from the given Iterable where
      *         each element passed to the given closure evaluates to true
      * @since 1.8.7
      */
-    public static <T> List<T> takeWhile(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return toList(takeWhile(self.iterator(), condition));
+    public static <T> Collection<T> takeWhile(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        Collection<T> result = createSimilarCollection(self);
+        addAll(result, takeWhile(self.iterator(), condition));
+        return result;
     }
 
     /**
@@ -7950,7 +8510,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new TakeWhileIterator<T>(self, condition);
     }
 
-    private static class TakeWhileIterator<E> implements Iterator<E> {
+    private static final class TakeWhileIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
         private final BooleanClosureWrapper condition;
         private boolean exhausted;
@@ -8026,22 +8586,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns a suffix of this Iterable where elements are dropped from the front
      * while the given closure evaluates to true.
      * <pre class="groovyTestCase">
-     * class AbcIterable implements Iterable<String> {
-     *     Iterator<String> iterator() { "abc".iterator() }
+     * class HorseIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "horse".iterator() }
      * }
-     * def abc = new AbcIterable()
-     * assert abc.dropWhile{ it < 'b' } == ['b', 'c']
-     * assert abc.dropWhile{ it <= 'b' } == ['c']
+     * def horse = new HorseIterable()
+     * assert horse.dropWhile{ it < 'r' } == ['r', 's', 'e']
+     * assert horse.dropWhile{ it <= 'r' } == ['s', 'e']
      * </pre>
      *
      * @param self      an Iterable
      * @param condition the closure that must evaluate to true to continue dropping elements
-     * @return the shortest suffix of the given Iterable such that the given closure condition
+     * @return a Collection containing the shortest suffix of the given Iterable such that the given closure condition
      *         evaluates to true for each element dropped from the front of the Iterable
      * @since 1.8.7
      */
-    public static <T> List<T> dropWhile(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> condition) {
-        return toList(dropWhile(self.iterator(), condition));
+    public static <T> Collection<T> dropWhile(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> condition) {
+        Collection<T> selfCol = self instanceof Collection ? (Collection<T>) self : toList(self);
+        Collection<T> result = createSimilarCollection(selfCol);
+        addAll(result, dropWhile(self.iterator(), condition));
+        return result;
     }
 
     /**
@@ -8132,7 +8695,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new DropWhileIterator<T>(self, condition);
     }
 
-    private static class DropWhileIterator<E> implements Iterator<E> {
+    private static final class DropWhileIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
         private final Closure condition;
         private boolean buffering = false;
@@ -8474,7 +9037,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return (T) col;
         }
         if (clazz == List.class) {
-            return (T) asList(col);
+            return (T) asList((Iterable) col);
         }
         if (clazz == Set.class) {
             if (col instanceof Set) return (T) col;
@@ -8948,23 +9511,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a List composed of the elements of this Collection, repeated
-     * a certain number of times.  Note that for non-primitive
-     * elements, multiple references to the same instance will be added.
-     * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
-     *
-     * @param self   a Collection
-     * @param factor the number of times to append
-     * @return the multiplied list
+     * @deprecated use the Iterable variant instead
+     * @see #multiply(Iterable, Number)
      * @since 1.0
      */
+    @Deprecated
     public static <T> List<T> multiply(Collection<T> self, Number factor) {
-        int size = factor.intValue();
-        List<T> answer = new ArrayList<T>(self.size() * size);
-        for (int i = 0; i < size; i++) {
-            answer.addAll(self);
-        }
-        return answer;
+        return (List<T>) multiply((Iterable<T>) self, factor);
     }
 
     /**
@@ -8973,13 +9526,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * elements, multiple references to the same instance will be added.
      * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
      *
+     * Note: if the Iterable happens to not support duplicates, e.g. a Set, then the
+     * method will effectively return a Collection with a single copy of the Iterable's items.
+     *
      * @param self   an Iterable
      * @param factor the number of times to append
      * @return the multiplied list
      * @since 2.4.0
      */
-    public static <T> List<T> multiply(Iterable<T> self, Number factor) {
-        return multiply(asCollection(self), factor);
+    public static <T> Collection<T> multiply(Iterable<T> self, Number factor) {
+        Collection<T> selfCol = asCollection(self);
+        int size = factor.intValue();
+        Collection<T> answer = createSimilarCollection(selfCol, selfCol.size() * size);
+        for (int i = 0; i < size; i++) {
+            answer.addAll(selfCol);
+    }
+        return answer;
     }
 
     /**
@@ -9068,33 +9630,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static boolean disjoint(Iterable left, Iterable right) {
-        return disjoint(asCollection(left), asCollection(right));
-    }
+        Collection leftCol = asCollection(left);
+        Collection rightCol = asCollection(right);
 
-    /**
-     * Returns <code>true</code> if the intersection of two collections is empty.
-     * <pre class="groovyTestCase">assert [1,2,3].disjoint([3,4,5]) == false</pre>
-     * <pre class="groovyTestCase">assert [1,2].disjoint([3,4]) == true</pre>
-     *
-     * @param left  a Collection
-     * @param right a Collection
-     * @return boolean   <code>true</code> if the intersection of two collections
-     *         is empty, <code>false</code> otherwise.
-     * @since 1.0
-     */
-    public static boolean disjoint(Collection left, Collection right) {
-
-        if (left.isEmpty() || right.isEmpty())
+        if (leftCol.isEmpty() || rightCol.isEmpty())
             return true;
 
         Collection pickFrom = new TreeSet(new NumberAwareComparator());
-        pickFrom.addAll(right);
+        pickFrom.addAll(rightCol);
 
-        for (final Object o : left) {
+        for (final Object o : leftCol) {
             if (pickFrom.contains(o))
                 return false;
         }
         return true;
+    }
+
+    /**
+     * @deprecated use the Iterable variant instead
+     * @see #disjoint(Iterable, Iterable)
+     * @since 1.0
+     */
+    @Deprecated
+    public static boolean disjoint(Collection left, Collection right) {
+        return disjoint((Iterable) left, (Iterable) right);
     }
 
     /**
@@ -9495,28 +10054,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a List composed of the elements of the first list minus
-     * every occurrence of elements of the given Iterable.
-     * <pre class="groovyTestCase">
-     * class AbcIterable implements Iterable<String> {
-     *     Iterator<String> iterator() { "abc".iterator() }
-     * }
-     * assert "backtrack".toList() - new AbcIterable() == ["k", "t", "r", "k"]
-     * </pre>
-     *
-     * @param self     a List
-     * @param removeMe an Iterable of elements to remove
-     * @return a List with the supplied elements removed
+     * @deprecated use the Iterable variant instead
+     * @see #minus(Iterable, Iterable)
      * @since 1.8.7
      */
+    @Deprecated
     public static <T> List<T> minus(List<T> self, Iterable<?> removeMe) {
-        return (List<T>) minus((Collection<T>) self, asCollection(removeMe));
+        return (List<T>) minus((Iterable<T>) self, removeMe);
     }
 
     /**
      * Create a new Collection composed of the elements of the first Iterable minus
      * every occurrence of elements of the given Iterable.
-     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
+     * <pre class="groovyTestCase">
+     * assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]
+     * </pre>
      *
      * @param self     an Iterable
      * @param removeMe an Iterable of elements to remove
@@ -9528,15 +10080,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new List composed of the elements of the first list minus every occurrence of the
-     * given element to remove.
-     * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
-     *
-     * @param self     a List object
-     * @param removeMe an element to remove from the list
-     * @return the resulting List with the given element removed
+     * @deprecated use the Iterable variant instead
+     * @see #minus(Iterable, Object)
      * @since 1.0
      */
+    @Deprecated
     public static <T> List<T> minus(List<T> self, Object removeMe) {
         return (List<T>) minus((Iterable<T>) self, removeMe);
     }
@@ -9570,7 +10118,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] minus(T[] self, Object removeMe) {
-        return (T[]) minus(toList(self), removeMe).toArray();
+        return (T[]) minus((Iterable<T>) toList(self), removeMe).toArray();
     }
 
     /**
@@ -9778,7 +10326,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 T flattened = flattenUsing.call(new Object[]{element});
                 boolean returnedSelf = flattened == element;
                 if (!returnedSelf && flattened instanceof Collection) {
-                    List<?> list = toList((Collection<?>) flattened);
+                    List<?> list = toList((Iterable<?>) flattened);
                     if (list.size() == 1 && list.get(0) == element) {
                         returnedSelf = true;
                     }

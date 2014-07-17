@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,11 +63,11 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert animals.elements()*.size() == [3, 3]
     }
 
-    void testCollectAll() {
+    void testCollectNested() {
         def animalLists= [["ant", "mouse", "elephant"], ["deer", "monkey"]]
         assert animalLists*.size() == [3, 2]
         assert animalLists.collect{ it.size() } == [3, 2]
-        assert animalLists.collectAll{ it.size() } == [[3, 5, 8], [4, 6]]
+        assert animalLists.collectNested{ it.size() } == [[3, 5, 8], [4, 6]]
     }
 
     void testAsCoercion() {
@@ -1149,6 +1149,12 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert items.take(  0 ).collect { it } == []
         assert items.take(  2 ).collect { it } == [ 1, 2 ]
         assert items.take(  4 ).collect { it } == [ 3, 4, 5, 6 ]
+    }
+
+    void testWellBehavedIteratorsForInfiniteStreams() {
+        int a = 1
+        def infiniterator = [ hasNext:{ true }, next:{ a++ } ] as Iterator
+        assert infiniterator.drop(3).dropWhile{ it < 9 }.toUnique{ it % 100 }.init().tail().take(3).toList() == [10, 11, 12]
     }
 
     void testIterableTake() {
