@@ -1181,7 +1181,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (propertyType==null) continue;
             if (visitor!=null) {
                 // todo : type inference on maps and lists, if possible
-                PropertyNode node = new PropertyNode(propertyName, Opcodes.ACC_PUBLIC, propertyType, objectExpressionType, null, null, null);
+                PropertyNode node = new PropertyNode(propertyName, Opcodes.ACC_PUBLIC, propertyType, receiver.getType(), null, null, null);
+                node.setDeclaringClass(receiver.getType());
                 visitor.visitProperty(node);
             }
             storeType(pexp, propertyType);

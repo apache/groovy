@@ -392,6 +392,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             return;
         }
         Object implicitReceiver = origin.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+        ClassNode propertyOwnerType = origin.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
         if (implicitThis && implicitReceiver==null && origin instanceof MethodCallExpression) {
             implicitReceiver = ((MethodCallExpression) origin).getObjectExpression().getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         }
@@ -405,7 +406,21 @@ public class StaticInvocationWriter extends InvocationWriter {
                 pexp = new PropertyExpression(pexp, propertyPath[i]);
             }
             pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, implicitReceiver);
+            if (propertyOwnerType!=null) {
+                pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, propertyOwnerType);
+            }
             origin.removeNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+            if (origin instanceof PropertyExpression) {
+                PropertyExpression rewritten = new PropertyExpression(
+                        pexp,
+                        ((PropertyExpression) origin).getProperty(),
+                        ((PropertyExpression) origin).isSafe()
+                );
+                rewritten.setSpreadSafe(((PropertyExpression) origin).isSpreadSafe());
+                rewritten.setImplicitThis(false);
+                rewritten.visit(controller.getAcg());
+                return;
+            }
             makeCall(origin, pexp, message, arguments, adapter, safe, spreadSafe, false);
             return;
         }

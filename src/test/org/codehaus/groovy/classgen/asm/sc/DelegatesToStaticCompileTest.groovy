@@ -25,4 +25,28 @@ import groovy.transform.stc.DelegatesToSTCTest
  * @author Cedric Champeau
  */
 class DelegatesToStaticCompileTest extends DelegatesToSTCTest implements StaticCompilationTestSupport {
+
+    // GROOVY-6953
+    void testRatpackRegression1() {
+        assertScript '''
+            class MyHandlers  {
+              Map execute() {
+                againstList {
+                  foo = "bar"
+                }
+              }
+
+              Map againstList(@DelegatesTo(Map) Closure<?> c) {
+                def l = [:]
+                c.delegate = l
+                c.call()
+                l
+              }
+            }
+
+
+            def map = new MyHandlers().execute()
+            assert map.foo == 'bar'
+        '''
+    }
 }
