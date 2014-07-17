@@ -17696,4 +17696,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         self[j] = tmp;
         return self;
     }
+
+    /**
+     * Removes the element at the specified position in this list.
+     * Avoid using {@link List#remove(int)} for List&lt;Integer&gt;.
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = [1, 2, 3]
+     * list.removeAt(1)
+     * assert [1, 3] == list
+     * </pre>
+     *
+     * @param self a List
+     * @param index the index of the element to be removed
+     * @return the element previously at the specified position
+     * @since 2.4.0
+     */
+    public static <E> E removeAt(List<E> self, int index) {
+        return self.remove(index);
+    }
+
+    /**
+     * Removes a single instance of the specified element from this collection, if it is present.
+     * Avoid using {@link Collection#remove(Object)} for List&lt;Integer&gt;.
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = [1, 2, 3]
+     * list.removeElement(2)
+     * assert [1, 3] == list
+     * </pre>
+     *
+     * @param self a Collection
+     * @param o element to be removed from this collection, if present
+     * @return true if an element was removed as a result of this call
+     * @since 2.4.0
+     */
+    public static <E> boolean removeElement(Collection<E> self, Object o) {
+        return self.remove(o);
+    }
 }

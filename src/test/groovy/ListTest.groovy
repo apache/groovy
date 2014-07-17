@@ -803,4 +803,21 @@ class ListTest extends GroovyTestCase {
         def list = new LinkedList([0,1,2,3])
         assert list[0..<0] instanceof LinkedList
     }
+
+    void testRemoveAt() {
+        shouldFail(IndexOutOfBoundsException) {
+            [].removeAt(0)
+        }
+        def list = [1, 2, 3]
+        assert 2 == list.removeAt(1)
+        assert [1, 3] == list
+    }
+
+    void testRemoveElement() {
+        def list = [1, 2, 3, 2]
+        assert list.removeElement(2)
+        assert [1, 3, 2] == list
+        assert !list.removeElement(4)
+        assert [1, 3, 2] == list
+    }
 }
