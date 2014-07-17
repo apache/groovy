@@ -49,4 +49,33 @@ class DelegatesToStaticCompileTest extends DelegatesToSTCTest implements StaticC
             assert map.foo == 'bar'
         '''
     }
+
+    // GROOVY-6955
+    void testRatpackRegressionIfDelegateToJavaClass() {
+        try {
+            assertScript '''import org.codehaus.groovy.classgen.asm.sc.Groovy6955Support as GroovyContext
+                class MyHandlers {
+                  def handler(@DelegatesTo(GroovyContext) Closure<?> c) {
+                    def l = new GroovyContext()
+                    c.delegate = l
+                    c.call()
+                  }
+                  def execute() {
+                    handler {
+                      request.headers.someKey
+                    }
+                  }
+
+                }
+
+
+                def result = new MyHandlers().execute()
+                assert result == 'someValue'
+            '''
+        } finally {
+            def bytecode = astTrees['MyHandlers$_execute_closure1'][1]
+            assert bytecode.contains('INVOKEVIRTUAL org/codehaus/groovy/classgen/asm/sc/Groovy6955Support.getRequest')
+            assert bytecode.contains('INVOKEVIRTUAL org/codehaus/groovy/classgen/asm/sc/Groovy6955Support$Request.getHeaders')
+        }
+    }
 }

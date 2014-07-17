@@ -335,7 +335,9 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         };
         boolean exists = super.existsProperty(pexp, checkForReadOnly, receiverMemoizer);
         if (exists) {
-            objectExpression.putNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER, rType.get());
+            if (objectExpression.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER)==null) {
+                objectExpression.putNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER, rType.get());
+            }
             if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(objectExpressionType, ClassHelper.LIST_TYPE)) {
                 objectExpression.putNodeMetaData(COMPONENT_TYPE, inferComponentType(objectExpressionType, ClassHelper.int_TYPE));
             }
