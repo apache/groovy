@@ -2,7 +2,7 @@ package groovy.script
 
 class StreamClassloaderInScriptTest extends GroovyShellTestCase {
 
-    final static BLAH = """
+    static final BLAH = """
 class Blah implements Serializable {
 def x, y
 boolean equals(def other) { x == other.x && y == other.y }

@@ -121,7 +121,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
  */
 public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
-    private final static boolean DEBUG_GENERATED_CODE = Boolean.valueOf(System.getProperty("groovy.stc.debug", "false"));
+    private static final boolean DEBUG_GENERATED_CODE = Boolean.valueOf(System.getProperty("groovy.stc.debug", "false"));
 
     protected static final Object ERROR_COLLECTOR = ErrorCollector.class;
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);

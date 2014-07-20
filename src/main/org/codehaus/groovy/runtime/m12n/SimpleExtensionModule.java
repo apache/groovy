@@ -83,7 +83,7 @@ import java.util.logging.Logger;
  */
 public abstract class SimpleExtensionModule extends ExtensionModule {
 
-    private final static Logger LOG = Logger.getLogger(SimpleExtensionModule.class.getName());
+    private static final Logger LOG = Logger.getLogger(SimpleExtensionModule.class.getName());
 
     public SimpleExtensionModule(final String moduleName, final String moduleVersion) {
         super(moduleName, moduleVersion);

@@ -62,7 +62,7 @@ import java.util.Map;
  */
 class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
 
-    final static String TARGET_VARIABLE = "target.variable";
+    static final String TARGET_VARIABLE = "target.variable";
 
     private final SourceUnit unit;
     private final boolean autoEscape;

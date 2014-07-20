@@ -62,7 +62,7 @@ class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         assertScript '''
             @groovy.transform.CompileStatic
             class A {
-              final static int VAL = 333
+              static final int VAL = 333
               void m() {
                  def cl = { println 'Hello' }
                  cl()

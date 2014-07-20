@@ -833,7 +833,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
     }
 
-    private static class NodeReference {
+    private static final class NodeReference {
         private final Object parent;
         private final String parentName;
         private final String childName;

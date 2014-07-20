@@ -67,7 +67,7 @@ class fasta {
     }
 
     // naive
-    public final static byte selectRandom(frequency[] a) {
+    public static final byte selectRandom(frequency[] a) {
         int len = a.length;
         double r = random(1.0);
         for (int i = 0; i < len; i++)

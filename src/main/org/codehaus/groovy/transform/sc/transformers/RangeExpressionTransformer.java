@@ -36,8 +36,8 @@ import java.util.List;
  * @author Cedric Champeau
  */
 public class RangeExpressionTransformer {
-    private final static ClassNode INTRANGE_TYPE = ClassHelper.make(IntRange.class);
-    private final static MethodNode INTRANGE_CTOR;
+    private static final ClassNode INTRANGE_TYPE = ClassHelper.make(IntRange.class);
+    private static final MethodNode INTRANGE_CTOR;
 
     static {
         final List<ConstructorNode> declaredConstructors = INTRANGE_TYPE.getDeclaredConstructors();

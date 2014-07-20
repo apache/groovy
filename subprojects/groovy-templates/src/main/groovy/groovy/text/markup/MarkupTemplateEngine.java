@@ -62,14 +62,14 @@ import java.util.regex.Pattern;
  */
 public class MarkupTemplateEngine extends TemplateEngine {
 
-    final static ClassNode MARKUPTEMPLATEENGINE_CLASSNODE = ClassHelper.make(MarkupTemplateEngine.class);
-    final static String MODELTYPES_ASTKEY = "MTE.modelTypes";
+    static final ClassNode MARKUPTEMPLATEENGINE_CLASSNODE = ClassHelper.make(MarkupTemplateEngine.class);
+    static final String MODELTYPES_ASTKEY = "MTE.modelTypes";
 
-    private final static Pattern LOCALIZED_RESOURCE_PATTERN = Pattern.compile("(.+?)(?:_([a-z]{2}(?:_[A-Z]{2,3})))?\\.(\\p{Alnum}+)");
+    private static final Pattern LOCALIZED_RESOURCE_PATTERN = Pattern.compile("(.+?)(?:_([a-z]{2}(?:_[A-Z]{2,3})))?\\.(\\p{Alnum}+)");
 
-    private final static boolean DEBUG_BYTECODE = Boolean.valueOf(System.getProperty("markuptemplateengine.compiler.debug","false"));
+    private static final boolean DEBUG_BYTECODE = Boolean.valueOf(System.getProperty("markuptemplateengine.compiler.debug","false"));
 
-    private final static AtomicLong counter = new AtomicLong();
+    private static final AtomicLong counter = new AtomicLong();
 
     private final TemplateGroovyClassLoader groovyClassLoader;
     private final CompilerConfiguration compilerConfiguration;
@@ -248,7 +248,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
      * thread local.
      */
     static class TemplateGroovyClassLoader extends GroovyClassLoader {
-        final static ThreadLocal<Map<String, String>> modelTypes = new ThreadLocal<Map<String, String>>();
+        static final ThreadLocal<Map<String, String>> modelTypes = new ThreadLocal<Map<String, String>>();
 
         public TemplateGroovyClassLoader(final ClassLoader parentLoader, final CompilerConfiguration compilerConfiguration) {
             super(parentLoader, compilerConfiguration);

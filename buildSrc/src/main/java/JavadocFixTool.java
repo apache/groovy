@@ -91,7 +91,7 @@ import java.io.*;
  */
 public class JavadocFixTool {
     // Usual suspects
-    private final static String[] fileNames = {"index.html",
+    private static final String[] fileNames = {"index.html",
                                          "index.htm",
                                          "toc.html",
                                          "toc.htm"};
@@ -100,7 +100,7 @@ public class JavadocFixTool {
     private final String patchString = "function loadFrames() {";
     // Main fix - should be inserted before the loadFrames() function alongside
     // the code that calls this function
-    private final static String[] patchData =
+    private static final String[] patchData =
             {"    if (targetPage != \"\" && !validURL(targetPage))",
              "        targetPage = \"undefined\";",
              "    function validURL(url) {",

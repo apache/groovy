@@ -26,7 +26,7 @@ import java.util.Properties;
  * factory is instantiated and used instead of this factory.
  */
 public class StandardPropertiesModuleFactory extends PropertiesModuleFactory {
-    public final static String MODULE_FACTORY_KEY = "moduleFactory";
+    public static final String MODULE_FACTORY_KEY = "moduleFactory";
 
     @Override
     @SuppressWarnings("unchecked")

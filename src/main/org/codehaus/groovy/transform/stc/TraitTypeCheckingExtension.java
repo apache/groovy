@@ -35,7 +35,7 @@ import java.util.List;
  * @since 2.3.0
  */
 public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
-    private final static List<MethodNode> NOTFOUND = Collections.emptyList();
+    private static final List<MethodNode> NOTFOUND = Collections.emptyList();
 
     /**
      * Builds a type checking extension relying on a Groovy script (type checking DSL).

@@ -50,7 +50,7 @@ import static groovy.xml.XmlUtil.escapeXml;
  * @author Cedric Champeau
  */
 public abstract class BaseTemplate implements Writable {
-    private final static Map EMPTY_MODEL = Collections.emptyMap();
+    private static final Map EMPTY_MODEL = Collections.emptyMap();
 
     private final Map model;
     private final Map<String,String> modelTypes;

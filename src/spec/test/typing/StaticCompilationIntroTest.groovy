@@ -60,11 +60,11 @@ class StaticCompilationIntroTest extends GroovyTestCase {
         // end::intro_typesafe_compilestatic[]
     '''
 
-    private final static String RUN = '''
+    private static final String RUN = '''
         test()
 '''
 
-    private final static String RUNTIME_MAGIC = '''
+    private static final String RUNTIME_MAGIC = '''
         // tag::intro_typesafe_magic[]
         Computer.metaClass.compute = { String str -> new Date() }
         // end::intro_typesafe_magic[]

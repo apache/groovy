@@ -31,7 +31,7 @@ import java.util.ArrayList;
  */
 public class ReturnAdder {
 
-    private final static ReturnStatementListener DEFAULT_LISTENER = new ReturnStatementListener() {
+    private static final ReturnStatementListener DEFAULT_LISTENER = new ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
         }
     };
@@ -243,7 +243,7 @@ public class ReturnAdder {
     /**
      * Implement this method in order to be notified whenever a return statement is generated.
      */
-    public static interface ReturnStatementListener {
+    public interface ReturnStatementListener {
         void returnStatementAdded(ReturnStatement returnStatement);
     }
 }

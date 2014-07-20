@@ -605,12 +605,12 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
-    private final static void sysstemarraycopy(final char[] src, final int srcPos, final char[] dest, final int destPos, final int length) {
+    private static final void sysstemarraycopy(final char[] src, final int srcPos, final char[] dest, final int destPos, final int length) {
         System.arraycopy(src, srcPos, dest, destPos, length);
 
     }
 
-    private final static void arraycopy(final char[] src, final int srcPos, final char[] dest, final int destPos, final int length) {
+    private static final void arraycopy(final char[] src, final int srcPos, final char[] dest, final int destPos, final int length) {
 
         sysstemarraycopy(src, srcPos, dest, destPos, length);
 
@@ -724,7 +724,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     }
 
-    final static char[] nullChars = "null".toCharArray();
+    static final char[] nullChars = "null".toCharArray();
 
     public final void addNull() {
         this.add(nullChars);

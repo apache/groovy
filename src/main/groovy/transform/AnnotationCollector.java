@@ -20,9 +20,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.codehaus.groovy.transform.AnnotationCollectorTransform;
-
-
 /**
  * The AnnotationCollector can be used to define aliases for groups of 
  * annotations. The Alias needs to be a class or annotation annotated with 
@@ -75,7 +72,7 @@ import org.codehaus.groovy.transform.AnnotationCollectorTransform;
  * NOTE: The aliasing does not support aliasing of aliased annotations. 
  * 
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
- * @see AnnotationCollectorTransform
+ * @see org.codehaus.groovy.transform.AnnotationCollectorTransform
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)

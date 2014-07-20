@@ -79,9 +79,9 @@ public class Dates {
         return internalDate(tz, year, month, day, hour, minute, second, miliseconds);
     }
 
-    final static int SHORT_ISO_8601_TIME_LENGTH = "1994-11-05T08:15:30Z".length();
-    final static int LONG_ISO_8601_TIME_LENGTH = "1994-11-05T08:15:30-05:00".length();
-    public final static int JSON_TIME_LENGTH = "2013-12-14T01:55:33.412Z".length();
+    static final int SHORT_ISO_8601_TIME_LENGTH = "1994-11-05T08:15:30Z".length();
+    static final int LONG_ISO_8601_TIME_LENGTH = "1994-11-05T08:15:30-05:00".length();
+    public static final int JSON_TIME_LENGTH = "2013-12-14T01:55:33.412Z".length();
 
     public static Date fromISO8601(char[] charArray, int from, int to) {
 

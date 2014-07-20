@@ -55,7 +55,7 @@ import java.util.logging.Logger;
  * @since 2.3.0
  */
 public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
-    private final static Logger LOG = Logger.getLogger(GroovyTypeCheckingExtensionSupport.class.getName());
+    private static final Logger LOG = Logger.getLogger(GroovyTypeCheckingExtensionSupport.class.getName());
     protected final TypeCheckingContext context;
     private final Set<MethodNode> generatedMethods = new LinkedHashSet<MethodNode>();
     private final LinkedList<TypeCheckingScope> scopeData = new LinkedList<TypeCheckingScope>();

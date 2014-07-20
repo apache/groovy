@@ -27,9 +27,9 @@ public interface LoopingStatement {
      /**
      * Gets the loop block. 
      */
-     public Statement getLoopBlock(); 
+     Statement getLoopBlock();
      /**
      * Sets the loop block. 
      */
-     public void setLoopBlock(Statement loopBlock); 
+     void setLoopBlock(Statement loopBlock);
 }

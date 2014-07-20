@@ -62,7 +62,7 @@ import java.util.Map;
 public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExtension {
 
     // method name to DSL name
-    private final static Map<String, String> METHOD_ALIASES = Collections.unmodifiableMap(
+    private static final Map<String, String> METHOD_ALIASES = Collections.unmodifiableMap(
             new HashMap<String, String>() {{
                 put("onMethodSelection", "onMethodSelection");
                 put("afterMethodCall", "afterMethodCall");

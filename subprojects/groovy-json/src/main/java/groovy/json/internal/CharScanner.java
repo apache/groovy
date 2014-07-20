@@ -46,10 +46,10 @@ public class CharScanner {
     protected static final int PLUS = '+';
     protected static final int DOUBLE_QUOTE = '"';
     protected static final int ESCAPE = '\\';
-    final static String MIN_LONG_STR_NO_SIGN = String.valueOf(Long.MIN_VALUE);
-    final static String MAX_LONG_STR = String.valueOf(Long.MAX_VALUE);
-    final static String MIN_INT_STR_NO_SIGN = String.valueOf(Integer.MIN_VALUE);
-    final static String MAX_INT_STR = String.valueOf(Integer.MAX_VALUE);
+    static final String MIN_LONG_STR_NO_SIGN = String.valueOf(Long.MIN_VALUE);
+    static final String MAX_LONG_STR = String.valueOf(Long.MAX_VALUE);
+    static final String MIN_INT_STR_NO_SIGN = String.valueOf(Integer.MIN_VALUE);
+    static final String MAX_INT_STR = String.valueOf(Integer.MAX_VALUE);
     private static double powersOf10[] = {
             1.0,
             10.0,

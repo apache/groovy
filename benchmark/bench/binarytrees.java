@@ -6,7 +6,7 @@
 
 public class binarytrees {
 
-    private final static int minDepth = 4;
+    private static final int minDepth = 4;
 
     public static void main(String[] args){
         int n = 0;

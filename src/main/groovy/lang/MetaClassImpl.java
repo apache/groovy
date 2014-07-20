@@ -168,7 +168,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         metaMethodIndex = new MetaMethodIndex(theCachedClass);
         final MetaMethod[] metaMethods = theCachedClass.getNewMetaMethods();
         if (add != null && !(add.length == 0)) {
-            ArrayList<MetaMethod> arr = new ArrayList<MetaMethod>();
+            List<MetaMethod> arr = new ArrayList<MetaMethod>();
             arr.addAll(Arrays.asList(metaMethods));
             arr.addAll(Arrays.asList(add));
             myNewMetaMethods = arr.toArray(new MetaMethod[arr.size()]);
@@ -1523,7 +1523,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * indy. This class is for internal use only.
      * @since Groovy 2.1.0
      */
-    public final static class MetaConstructor extends MetaMethod {
+    public static final class MetaConstructor extends MetaMethod {
         private final CachedConstructor cc;
         private final boolean beanConstructor;
         private MetaConstructor(CachedConstructor cc, boolean bean) {
@@ -2277,18 +2277,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static final HashMap<String, String> propNames = new HashMap<String, String>(1024);
+    private static final Map<String, String> PROP_NAMES = new HashMap<String, String>(1024);
 
     private String getPropName(String methodName) {
-        String name = propNames.get(methodName);
+        String name = PROP_NAMES.get(methodName);
         if (name != null)
             return name;
 
-        synchronized (propNames) {
+        synchronized (PROP_NAMES) {
             // assume "is" or "[gs]et"
             String stripped = methodName.startsWith("is") ? methodName.substring(2) : methodName.substring(3);
             String propName = java.beans.Introspector.decapitalize(stripped);
-            propNames.put(methodName, propName);
+            PROP_NAMES.put(methodName, propName);
             return propName;
         }
     }
@@ -2969,7 +2969,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (matchingMethods instanceof ArrayList)
                           ((ArrayList)matchingMethods).add(method);
                         else {
-                            ArrayList arr = new ArrayList(4);
+                            List arr = new ArrayList(4);
                             arr.add(matchingMethods);
                             arr.add(method);
                             matchingMethods = arr;

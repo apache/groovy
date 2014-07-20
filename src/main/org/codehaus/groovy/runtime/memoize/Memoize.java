@@ -34,7 +34,7 @@ public abstract class Memoize {
     /**
      * A place-holder for null values in cache
      */
-    final static private MemoizeNullValue MEMOIZE_NULL = new MemoizeNullValue();
+    private static final MemoizeNullValue MEMOIZE_NULL = new MemoizeNullValue();
 
     /**
      * Creates a new closure delegating to the supplied one and memoizing all return values by the arguments.

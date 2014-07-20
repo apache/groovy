@@ -111,7 +111,7 @@ public class GenericsUtils {
     }
 
     public static Map<String, GenericsType> extractPlaceholders(ClassNode cn) {
-        HashMap<String, GenericsType> ret = new HashMap<String, GenericsType>();
+        Map<String, GenericsType> ret = new HashMap<String, GenericsType>();
         extractPlaceholders(cn, ret);
         return ret;
     }

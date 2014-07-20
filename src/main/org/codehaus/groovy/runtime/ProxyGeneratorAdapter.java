@@ -90,7 +90,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     private static List<Method> OBJECT_METHODS = getInheritedMethods(Object.class, new ArrayList<Method>());
     private static List<Method> GROOVYOBJECT_METHODS = getInheritedMethods(GroovyObject.class, new ArrayList<Method>());
 
-    private final static AtomicLong pxyCounter = new AtomicLong();
+    private static final AtomicLong pxyCounter = new AtomicLong();
     private static final Set<String> GROOVYOBJECT_METHOD_NAMESS;
     private static final Object[] EMPTY_ARGS = new Object[0];
 

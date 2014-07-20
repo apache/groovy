@@ -42,7 +42,7 @@ class GroovySyntaxCompletor implements Completer {
     private final InfixKeywordSyntaxCompletor infixCompletor
     private final Completer filenameCompletor
     protected String[] classes
-    protected final static Logger log = Logger.create(GroovySyntaxCompletor)
+    protected static final Logger log = Logger.create(GroovySyntaxCompletor)
 
     static final enum CompletionCase {
         SECOND_IDENT,

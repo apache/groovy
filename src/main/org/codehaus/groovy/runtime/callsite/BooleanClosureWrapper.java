@@ -18,8 +18,6 @@ package org.codehaus.groovy.runtime.callsite;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-
 import groovy.lang.Closure;
 
 /**
@@ -28,7 +26,7 @@ import groovy.lang.Closure;
  * as well as the "asBoolean" in CallSiteArray fashion. "asBoolean" will not be 
  * called if the result is null or a Boolean. In case of null we return false and
  * in case of a Boolean we simply unbox. This logic is designed after the one present 
- * in {@link DefaultTypeTransformation#castToBoolean(Object)}. The purpose of 
+ * in {@link org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#castToBoolean(Object)}. The purpose of
  * this class is to avoid the slow "asBoolean" call in that method.
  * {@link BooleanReturningMethodInvoker} is used for caching.
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>

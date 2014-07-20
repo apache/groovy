@@ -41,7 +41,7 @@ public class UnicodeEscapingReader extends Reader {
     private int numUnicodeEscapesFoundOnCurrentLine = 0;
 
     private static class DummyLexer extends CharScanner {
-        final private Token t = new Token();
+        private final Token t = new Token();
         public Token nextToken() throws TokenStreamException {
             return t;
         }
