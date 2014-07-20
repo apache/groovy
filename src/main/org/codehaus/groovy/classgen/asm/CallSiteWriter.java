@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -43,11 +44,11 @@ import static org.objectweb.asm.Opcodes.*;
  */
 public class CallSiteWriter {
     
-    private static final HashSet<String> names = new HashSet<String>();
-    private static final HashSet<String> basic = new HashSet<String>();
+    private static final Set<String> NAMES = new HashSet<String>();
+    private static final Set<String> BASIC = new HashSet<String>();
     static {
-        Collections.addAll(names, "plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned");
-        Collections.addAll(basic, "plus", "minus", "multiply", "div");
+        Collections.addAll(NAMES, "plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned");
+        Collections.addAll(BASIC, "plus", "minus", "multiply", "div");
     }
     private static String [] sig = new String [255];
     private static String getCreateArraySignature(int numberOfArguments) {
@@ -61,11 +62,11 @@ public class CallSiteWriter {
         }
         return sig[numberOfArguments];
     }
-    private final static int 
+    private static final int
         MOD_PRIVSS = ACC_PRIVATE+ACC_STATIC+ACC_SYNTHETIC,
         MOD_PUBSS  = ACC_PUBLIC+ACC_STATIC+ACC_SYNTHETIC;
-    private final static ClassNode CALLSITE_ARRAY_NODE = ClassHelper.make(CallSite[].class);
-    private final static String 
+    private static final ClassNode CALLSITE_ARRAY_NODE = ClassHelper.make(CallSite[].class);
+    private static final String
         GET_CALLSITE_METHOD     = "$getCallSiteArray",
         CALLSITE_CLASS          = "org/codehaus/groovy/runtime/callsite/CallSite",
         CALLSITE_DESC           = "[Lorg/codehaus/groovy/runtime/callsite/CallSite;",

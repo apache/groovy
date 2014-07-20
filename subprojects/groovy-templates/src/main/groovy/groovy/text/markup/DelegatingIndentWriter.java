@@ -25,8 +25,8 @@ import java.io.Writer;
  * @author Cedric Champeau
  */
 public class DelegatingIndentWriter extends Writer {
-    public final static String SPACES = "    ";
-    public final static String TAB = "\t";
+    public static final String SPACES = "    ";
+    public static final String TAB = "\t";
 
     private final Writer delegate;
     private final String indentString;

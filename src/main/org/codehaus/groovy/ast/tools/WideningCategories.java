@@ -450,7 +450,7 @@ public class WideningCategories {
      */
     private static List<ClassNode> keepLowestCommonInterfaces(List<ClassNode> fromA, List<ClassNode> fromB) {
         if (fromA==null||fromB==null) return EMPTY_CLASSNODE_LIST;
-        HashSet<ClassNode> common = new HashSet<ClassNode>(fromA);
+        Set<ClassNode> common = new HashSet<ClassNode>(fromA);
         common.retainAll(fromB);
         List<ClassNode> result = new ArrayList<ClassNode>(common.size());
         for (ClassNode classNode : common) {

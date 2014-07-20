@@ -16,7 +16,6 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import org.codehaus.groovy.runtime.ExceptionUtils;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Helper class for internal use only. This allows to call a given method and
@@ -24,7 +23,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  * as well as the "asBoolean" in {@link CallSiteArray} fashion. "asBoolean" will not be 
  * called if the result is null or a Boolean. In case of null we return false and
  * in case of a Boolean we simply unbox. This logic is designed after the one present 
- * in {@link DefaultTypeTransformation#castToBoolean(Object)}. The purpose of 
+ * in {@link org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#castToBoolean(Object)}. The purpose of
  * this class is to avoid the slow "asBoolean" call in that method. 
  * 
  * The nature of this class allows a per instance caching instead of a per class

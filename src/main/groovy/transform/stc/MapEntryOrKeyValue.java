@@ -50,7 +50,7 @@ import java.util.Map;
  * <code>void doSomething(String str, Map&lt;K,&gt;V map, @ClosureParams(value=MapEntryOrKeyValue.class,options="1") Closure c) { ... }</code>
  */
 public class MapEntryOrKeyValue extends ClosureSignatureHint {
-    private final static ClassNode MAPENTRY_TYPE = ClassHelper.make(Map.Entry.class);
+    private static final ClassNode MAPENTRY_TYPE = ClassHelper.make(Map.Entry.class);
 
     public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options, final ASTNode usage) {
         Options opt;
@@ -83,7 +83,7 @@ public class MapEntryOrKeyValue extends ClosureSignatureHint {
         return Arrays.asList(firstSig, secondSig);
     }
     
-    private static class Options {
+    private static final class Options {
         final int parameterIndex;
         final boolean generateIndex;
 

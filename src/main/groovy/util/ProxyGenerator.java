@@ -234,7 +234,7 @@ public class ProxyGenerator {
         GroovySystem.getMetaClassRegistry().setMetaClass(ProxyGenerator.class, newMetaClass);
     }
     
-    private static class CacheKey {
+    private static final class CacheKey {
         private static final Comparator<Class> CLASSNAME_COMPARATOR = new Comparator<Class>() {
             public int compare(final Class o1, final Class o2) {
                 return o1.getName().compareTo(o2.getName());

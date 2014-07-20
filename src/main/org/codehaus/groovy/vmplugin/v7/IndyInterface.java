@@ -65,9 +65,9 @@ public class IndyInterface {
         }
 
         /** Logger */
-        protected final static Logger LOG;
+        protected static final Logger LOG;
         /** boolean to indicate if logging for indy is enabled */
-        protected final static boolean LOG_ENABLED;
+        protected static final boolean LOG_ENABLED;
         static {
             LOG = Logger.getLogger(IndyInterface.class.getName());
             if (System.getProperty("groovy.indy.logging")!=null) {

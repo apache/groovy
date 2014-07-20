@@ -73,7 +73,7 @@ class Groovy5260Bug extends GroovyTestCase implements Opcodes {
     /**
      * Helper class, which generates code in a string instead of an output file.
      */
-    private final static class StringJavaStubGenerator extends JavaStubGenerator {
+    private static final class StringJavaStubGenerator extends JavaStubGenerator {
         PrintWriter out
         StringJavaStubGenerator(File outFile, PrintWriter out) {
             super(outFile)

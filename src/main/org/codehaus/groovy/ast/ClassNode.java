@@ -106,7 +106,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             if (map.containsKey(key)) {
                 get(key).add(value);
             } else {
-                ArrayList<MethodNode> list = new ArrayList<MethodNode>(2);
+                List<MethodNode> list = new ArrayList<MethodNode>(2);
                 list.add(value);
                 map.put(key, list);
             }

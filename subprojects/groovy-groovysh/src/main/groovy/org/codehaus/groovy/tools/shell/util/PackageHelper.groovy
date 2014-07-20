@@ -14,9 +14,9 @@ import java.util.zip.ZipException
  */
 class PackageHelper implements PreferenceChangeListener {
 
-    public final static String IMPORT_COMPLETION_PREFERENCE_KEY = "disable-import-completion"
+    public static final String IMPORT_COMPLETION_PREFERENCE_KEY = "disable-import-completion"
     // Pattern for regular Classnames
-    public final static Pattern NAME_PATTERN = java.util.regex.Pattern.compile("^[A-Z][^.\$_]+\$")
+    public static final Pattern NAME_PATTERN = java.util.regex.Pattern.compile("^[A-Z][^.\$_]+\$")
 
     private static final String CLASS_SUFFIX = ".class"
 

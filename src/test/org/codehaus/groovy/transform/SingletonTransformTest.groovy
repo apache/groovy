@@ -130,7 +130,7 @@ class SingletonTransformTest extends GroovyShellTestCase {
             class $className { }
         """)
 
-        int modifiers = clazz.getDeclaredField(propertyName).modifiers //should be public final static for non-lazy singleton
+        int modifiers = clazz.getDeclaredField(propertyName).modifiers //should be public static final for non-lazy singleton
         int flags = Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL
         assert (modifiers & flags) == flags
 

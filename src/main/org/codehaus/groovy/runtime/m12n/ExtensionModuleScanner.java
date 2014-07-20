@@ -35,7 +35,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuiet
  * @since 2.1.2
  */
 public class ExtensionModuleScanner {
-    public final static String MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
+    public static final String MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
 
     private final ExtensionModuleListener listener;
     private final ClassLoader classLoader;
@@ -78,7 +78,7 @@ public class ExtensionModuleScanner {
     }
 
 
-    public static interface ExtensionModuleListener {
+    public interface ExtensionModuleListener {
         void onModule(ExtensionModule module);
     }
 }

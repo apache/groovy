@@ -36,7 +36,7 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 class Greeter {
-    private final static Logger log = Logger.getLogger(Greeter.name)
+    private static final Logger log = Logger.getLogger(Greeter.name)
     void greet() {
         if (log.isLoggable(Level.INFO)) {
             log.info 'Called greeter'
@@ -71,7 +71,7 @@ import org.apache.commons.logging.LogFactory
 import org.apache.commons.logging.Log
 
 class Greeter {
-    private final static Log log = LogFactory.getLog(Greeter)
+    private static final Log log = LogFactory.getLog(Greeter)
     void greet() {
         if (log.isDebugEnabled()) {
             log.debug 'Called greeter'
@@ -104,7 +104,7 @@ g.greet()
 import org.apache.log4j.Logger
 
 class Greeter {
-    private final static Logger log = Logger.getLogger(Greeter)
+    private static final Logger log = Logger.getLogger(Greeter)
     void greet() {
         if (log.isDebugEnabled()) {
             log.debug 'Called greeter'
@@ -139,7 +139,7 @@ g.greet()
     import org.apache.logging.log4j.Logger
 
     class Greeter {
-        private final static Logger log = LogManager.getLogger(Greeter)
+        private static final Logger log = LogManager.getLogger(Greeter)
         void greet() {
             if (log.isDebugEnabled()) {
                 log.debug 'Called greeter'
@@ -174,7 +174,7 @@ import org.slf4j.LoggerFactory
 import org.slf4j.Logger
 
 class Greeter {
-    private final static Logger log = LoggerFactory.getLogger(Greeter)
+    private static final Logger log = LoggerFactory.getLogger(Greeter)
     void greet() {
         if (log.isDebugEnabled()) {
             log.debug 'Called greeter'

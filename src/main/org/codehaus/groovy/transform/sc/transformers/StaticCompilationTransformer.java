@@ -35,7 +35,7 @@ import java.util.*;
 public class StaticCompilationTransformer extends ClassCodeExpressionTransformer {
 
     protected static final ClassNode BYTECODE_ADAPTER_CLASS = ClassHelper.make(ScriptBytecodeAdapter.class);
-    protected final static Map<Integer, MethodNode> BYTECODE_BINARY_ADAPTERS = Collections.unmodifiableMap(new HashMap<Integer, MethodNode>() {{
+    protected static final Map<Integer, MethodNode> BYTECODE_BINARY_ADAPTERS = Collections.unmodifiableMap(new HashMap<Integer, MethodNode>() {{
         put(Types.COMPARE_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareEqual").get(0));
         put(Types.COMPARE_GREATER_THAN, BYTECODE_ADAPTER_CLASS.getMethods("compareGreaterThan").get(0));
         put(Types.COMPARE_GREATER_THAN_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareGreaterThanEqual").get(0));

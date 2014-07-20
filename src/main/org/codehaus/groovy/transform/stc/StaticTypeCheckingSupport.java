@@ -48,13 +48,13 @@ import static org.codehaus.groovy.syntax.Types.*;
  * Static support methods for {@link StaticTypeCheckingVisitor}.
  */
 public abstract class StaticTypeCheckingSupport {
-    protected final static ClassNode
+    protected static final ClassNode
             Collection_TYPE = makeWithoutCaching(Collection.class);
-    protected final static ClassNode Deprecated_TYPE = makeWithoutCaching(Deprecated.class);
-    protected final static ClassNode Matcher_TYPE = makeWithoutCaching(Matcher.class);
-    protected final static ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
-    protected final static ExtensionMethodCache EXTENSION_METHOD_CACHE = new ExtensionMethodCache();
-    protected final static Map<ClassNode, Integer> NUMBER_TYPES = Collections.unmodifiableMap(
+    protected static final ClassNode Deprecated_TYPE = makeWithoutCaching(Deprecated.class);
+    protected static final ClassNode Matcher_TYPE = makeWithoutCaching(Matcher.class);
+    protected static final ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
+    protected static final ExtensionMethodCache EXTENSION_METHOD_CACHE = new ExtensionMethodCache();
+    protected static final Map<ClassNode, Integer> NUMBER_TYPES = Collections.unmodifiableMap(
             new HashMap<ClassNode, Integer>() {{
                 put(ClassHelper.byte_TYPE, 0);
                 put(ClassHelper.Byte_TYPE, 0);
@@ -70,7 +70,7 @@ public abstract class StaticTypeCheckingSupport {
                 put(ClassHelper.Double_TYPE, 5);
             }});
 
-    protected final static ClassNode GSTRING_STRING_CLASSNODE = WideningCategories.lowestUpperBound(
+    protected static final ClassNode GSTRING_STRING_CLASSNODE = WideningCategories.lowestUpperBound(
             ClassHelper.STRING_TYPE,
             ClassHelper.GSTRING_TYPE
     );
@@ -79,7 +79,7 @@ public abstract class StaticTypeCheckingSupport {
      * This is for internal use only. When an argument method is null, we cannot determine its type, so
      * we use this one as a wildcard.
      */
-    protected final static ClassNode UNKNOWN_PARAMETER_TYPE = ClassHelper.make("<unknown parameter type>");
+    protected static final ClassNode UNKNOWN_PARAMETER_TYPE = ClassHelper.make("<unknown parameter type>");
 
     /**
      * This comparator is used when we return the list of methods from DGM which name correspond to a given

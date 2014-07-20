@@ -101,7 +101,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         typeMap.put(byte_TYPE,      5); typeMap.put(short_TYPE,         6);
         typeMap.put(float_TYPE,     7); typeMap.put(boolean_TYPE,       8);
     }
-    public final static String[] typeMapKeyNames = {"dummy", "int", "long", "double", "char", "byte", "short", "float", "boolean"};
+    public static final String[] typeMapKeyNames = {"dummy", "int", "long", "double", "char", "byte", "short", "float", "boolean"};
 
     public BinaryExpressionMultiTypeDispatcher(WriterController wc) {
         super(wc);

@@ -31,10 +31,10 @@ import java.util.logging.Logger;
  * @author Cedric Champeau
  */
 public class MetaInfExtensionModule extends SimpleExtensionModule {
-    private final static Logger LOG = Logger.getLogger(MetaInfExtensionModule.class.getName());
+    private static final Logger LOG = Logger.getLogger(MetaInfExtensionModule.class.getName());
 
-    public final static String MODULE_INSTANCE_CLASSES_KEY = "extensionClasses";
-    public final static String MODULE_STATIC_CLASSES_KEY = "staticExtensionClasses";
+    public static final String MODULE_INSTANCE_CLASSES_KEY = "extensionClasses";
+    public static final String MODULE_STATIC_CLASSES_KEY = "staticExtensionClasses";
 
     private final List<Class> instanceExtensionClasses;
     private final List<Class> staticExtensionClasses;

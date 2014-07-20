@@ -276,7 +276,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private final Lock readLock = rwl.readLock();
     private final Lock writeLock = rwl.writeLock();
     
-    final private boolean allowChangesAfterInit;
+    private final boolean allowChangesAfterInit;
     public boolean inRegistry;
     
     private final Set<MetaMethod> inheritedMetaMethods = new HashSet<MetaMethod>();

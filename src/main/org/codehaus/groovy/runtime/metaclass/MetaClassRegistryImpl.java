@@ -50,7 +50,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     /**
      * @deprecated Use {@link ExtensionModuleScanner#MODULE_META_INF_FILE instead}
      */
-    public final static String MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
+    public static final String MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
 
     private boolean useAccessible;
 

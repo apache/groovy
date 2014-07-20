@@ -1101,7 +1101,7 @@ class DesignPatternsTest extends CompilableTestSupport {
 
             // tag::singleton_meta_programming_meta_class[]
             class CalculatorMetaClass extends MetaClassImpl {
-                private final static INSTANCE = new Calculator()
+                private static final INSTANCE = new Calculator()
                 CalculatorMetaClass() { super(Calculator) }
                 def invokeConstructor(Object[] arguments) { return INSTANCE }
             }

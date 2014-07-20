@@ -499,7 +499,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         private OptimizeFlagsCollector opt = new OptimizeFlagsCollector();
         private boolean optimizeMethodCall = true;
         private VariableScope scope;
-        private final static VariableScope nonStaticScope = new VariableScope(); 
+        private static final VariableScope nonStaticScope = new VariableScope();
         
         @Override
         public void visitClass(ClassNode node) {

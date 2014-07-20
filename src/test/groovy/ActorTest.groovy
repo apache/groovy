@@ -73,10 +73,10 @@ class WorkerThread {
 
     def list = new LinkedList ()
 
-    private final static ReentrantLock globalLock = new ReentrantLock()
-    private final static LinkedBlockingQueue globalQueue = new LinkedBlockingQueue ()
-    private final static ArrayList allWorkers = new ArrayList ()
-    private final static Random r = new Random();
+    private static final ReentrantLock globalLock = new ReentrantLock()
+    private static final LinkedBlockingQueue globalQueue = new LinkedBlockingQueue ()
+    private static final ArrayList allWorkers = new ArrayList ()
+    private static final Random r = new Random();
 
     WorkerThread () {
     }

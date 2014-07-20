@@ -106,13 +106,13 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     /**
      * Internal phantom type used by the {@code InitializerStrategy} to indicate that a property has been set. It is used in conjunction with the generated parameterized type helper class.
      */
-    public static abstract class SET {
+    public abstract static class SET {
     }
 
     /**
      * Internal phantom type used by the {@code InitializerStrategy} to indicate that a property remains unset. It is used in conjunction with the generated parameterized type helper class.
      */
-    public static abstract class UNSET {
+    public abstract static class UNSET {
     }
 
     private static final Expression DEFAULT_INITIAL_VALUE = null;

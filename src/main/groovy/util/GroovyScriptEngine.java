@@ -250,7 +250,7 @@ public class GroovyScriptEngine implements ResourceConnector {
             Set<String> origDep = null;
             if (origEntry != null) origDep = origEntry.dependencies;
             if (origDep != null) {
-                HashSet<String> newDep = new HashSet<String>(origDep.size());
+                Set<String> newDep = new HashSet<String>(origDep.size());
                 for (String depName : origDep) {
                     ScriptCacheEntry dep = scriptCache.get(depName);
                     try{

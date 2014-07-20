@@ -26,10 +26,10 @@ import java.util.regex.Pattern;
 
 class Sys {
 
-    private final static boolean is1_7OorLater;
-    private final static BigDecimal version;
-    private final static boolean is1_7;
-    private final static boolean is1_8;
+    private static final boolean is1_7OorLater;
+    private static final BigDecimal version;
+    private static final boolean is1_7;
+    private static final boolean is1_8;
 
 
     static {

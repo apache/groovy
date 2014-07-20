@@ -16,7 +16,7 @@ import org.codehaus.groovy.ast.builder.AstBuilder
 @GroovyASTTransformation(phase=CompilePhase.CONVERSION)
 public class CompiledAtASTTransformation implements ASTTransformation {
 
-    private final static compileTime = new Date().toString()
+    private static final compileTime = new Date().toString()
 
     public void visit(ASTNode[] astNodes, SourceUnit sourceUnit) {
 

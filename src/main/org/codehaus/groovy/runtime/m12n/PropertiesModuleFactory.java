@@ -26,8 +26,8 @@ import java.util.Properties;
  * @author Cedric Champeau
  */
 public abstract class PropertiesModuleFactory {
-    public final static String MODULE_NAME_KEY = "moduleName";
-    public final static String MODULE_VERSION_KEY = "moduleVersion";
+    public static final String MODULE_NAME_KEY = "moduleName";
+    public static final String MODULE_VERSION_KEY = "moduleVersion";
 
     public abstract ExtensionModule newModule(Properties properties, final ClassLoader classLoader);
 }

@@ -43,8 +43,8 @@ import org.codehaus.groovy.ast.stmt.WhileStatement
 @CompileStatic
 class InWhileLoopWrapper {
 	
-	final static String LOOP_LABEL = '_RECUR_HERE_'
-    final static GotoRecurHereException  LOOP_EXCEPTION = new GotoRecurHereException()
+	static final String LOOP_LABEL = '_RECUR_HERE_'
+    static final GotoRecurHereException  LOOP_EXCEPTION = new GotoRecurHereException()
 
 	void wrap(MethodNode method) {
 		BlockStatement oldBody = method.code as BlockStatement
