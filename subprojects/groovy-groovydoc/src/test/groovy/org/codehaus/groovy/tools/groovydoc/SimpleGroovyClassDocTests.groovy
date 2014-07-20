@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,14 @@ class SimpleGroovyClassDocTests extends GroovyTestCase {
         def encodedText = SimpleGroovyClassDoc.encodeAngleBrackets(text)
 
         assert encodedText == 'text with &lt;tag1&gt; and &lt;tag2&gt;'
+    }
+
+    void testExpandDocRootTag() {
+        def text = "<img src='{@docRoot}/logo.jpg'><img src='{@docRoot}logo.jpg'>"
+        def doc = classDoc
+        doc.fullPathName = 'DUMMY/PATH/NAME'
+        def result = doc.replaceTags(text)
+        assert result == "<img src='../../logo.jpg\'><img src='../../logo.jpg'>"
     }
 
     private getClassDoc() {
