@@ -47,7 +47,7 @@ annotationClause: //FIXME handle assignment expression.
     AT genericClassNameExpression ( LPAREN ((annotationElementPair (COMMA annotationElementPair)*) | annotationElement)? RPAREN )?
 ;
 annotationElementPair: IDENTIFIER ASSIGN annotationElement ;
-annotationElement: expression | annotationClause ;
+annotationElement: annotationParameter | annotationClause ;
 
 genericDeclarationList:
     LT genericClassNameExpression (COMMA genericClassNameExpression)* GT
@@ -92,6 +92,30 @@ pathExpression: (IDENTIFIER DOT)* IDENTIFIER ;
 
 closureExpressionRule: LCURVE argumentDeclarationList CLOSURE_ARG_SEPARATOR blockStatement? RCURVE ;
 gstring: GSTRING_START LCURVE expression? RCURVE (GSTRING_PART LCURVE expression? RCURVE)* GSTRING_END ;
+
+// Special cases.
+// 1. Command expression(parenthesis-less expressions)
+// 2. Annotation paramenthers.. (inline constant)
+// 3. Constant expressions.
+// 4. class ones, for instanceof and as (type specifier)
+
+// primitive
+// String
+// Class
+// an Enum
+// another Annotation
+// an array of any of the above
+
+annotationParameter:
+    LBRACK (annotationParameter (COMMA annotationParameter)*)? RBRACK #annotationParamArrayExpression
+    | pathExpression #annotationParamPathExpression //class, enum or constant field
+    | genericClassNameExpression #annotationParamClassExpression //class
+    | STRING #annotationParamStringExpression //primitive
+    | DECIMAL #annotationParamDecimalExpression //primitive
+    | INTEGER #annotationParamIntegerExpression //primitive
+    | KW_NULL #annotationParamNullExpression //primitive
+    | (KW_TRUE | KW_FALSE) #annotationParamBoolExpression //primitive
+;
 
 expression:
     closureExpressionRule #closureExpression

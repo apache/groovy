@@ -19,7 +19,8 @@ import java.lang.annotation.RetentionPolicy
 
 @groovy.transform.ToString class ClassMarkerAnnotationFull {}
 
-@Category(a + 2) class ClassSingleValueAnnotation {}
+@Category(a) class ClassSingleValueAnnotation { }
+@Category(a.b.c.d) class PathValueAnnotation { }
 
 @Ann(
     @Retention(value = RetentionPolicy.CLASS)

@@ -1,7 +1,15 @@
 package com.xseagullx.groovy.gsoc
-
 import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationClauseContext
 import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationElementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationParamArrayExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationParamBoolExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationParamClassExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationParamDecimalExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationParamIntegerExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationParamNullExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationParamPathExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationParamStringExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.AnnotationParameterContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ArgumentDeclarationListContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ArgumentListContext
 import com.xseagullx.groovy.gsoc.GroovyParser.AssignmentExpressionContext
@@ -69,9 +77,58 @@ import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.ParseTreeListener
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
-import org.codehaus.groovy.ast.*
-import org.codehaus.groovy.ast.expr.*
-import org.codehaus.groovy.ast.stmt.*
+import org.codehaus.groovy.ast.ASTNode
+import org.codehaus.groovy.ast.AnnotatedNode
+import org.codehaus.groovy.ast.AnnotationNode
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.GenericsType
+import org.codehaus.groovy.ast.ImportNode
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.AttributeExpression
+import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.BitwiseNegationExpression
+import org.codehaus.groovy.ast.expr.BooleanExpression
+import org.codehaus.groovy.ast.expr.CastExpression
+import org.codehaus.groovy.ast.expr.ClassExpression
+import org.codehaus.groovy.ast.expr.ClosureExpression
+import org.codehaus.groovy.ast.expr.ClosureListExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.DeclarationExpression
+import org.codehaus.groovy.ast.expr.EmptyExpression
+import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.ast.expr.GStringExpression
+import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.ast.expr.MapEntryExpression
+import org.codehaus.groovy.ast.expr.MapExpression
+import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.NotExpression
+import org.codehaus.groovy.ast.expr.PostfixExpression
+import org.codehaus.groovy.ast.expr.PrefixExpression
+import org.codehaus.groovy.ast.expr.PropertyExpression
+import org.codehaus.groovy.ast.expr.RangeExpression
+import org.codehaus.groovy.ast.expr.UnaryMinusExpression
+import org.codehaus.groovy.ast.expr.UnaryPlusExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.BreakStatement
+import org.codehaus.groovy.ast.stmt.CaseStatement
+import org.codehaus.groovy.ast.stmt.CatchStatement
+import org.codehaus.groovy.ast.stmt.ContinueStatement
+import org.codehaus.groovy.ast.stmt.EmptyStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.ForStatement
+import org.codehaus.groovy.ast.stmt.IfStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
+import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.ast.stmt.SwitchStatement
+import org.codehaus.groovy.ast.stmt.ThrowStatement
+import org.codehaus.groovy.ast.stmt.TryCatchStatement
+import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.Numbers
@@ -594,6 +651,30 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(AnnotationParameterContext ctx) {
+        switch (ctx) {
+            case AnnotationParamArrayExpressionContext:
+                def c = ctx as AnnotationParamArrayExpressionContext
+                return setupNodeLocation(new ListExpression(c.annotationParameter().collect { parseExpression(it) }), c)
+            case AnnotationParamBoolExpressionContext:
+                return parseExpression(ctx);
+            case AnnotationParamClassExpressionContext:
+                return setupNodeLocation(new ClassExpression(parseExpression((ctx as AnnotationParamClassExpressionContext).genericClassNameExpression())), ctx);
+            case AnnotationParamDecimalExpressionContext:
+                return parseExpression(ctx);
+            case AnnotationParamIntegerExpressionContext:
+                return parseExpression(ctx);
+            case AnnotationParamNullExpressionContext:
+                return parseExpression(ctx);
+            case AnnotationParamPathExpressionContext:
+                def c = ctx as AnnotationParamPathExpressionContext
+                return collectPathExpression(c.pathExpression())
+            case AnnotationParamStringExpressionContext:
+                return parseExpression(ctx);
+        }
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(VariableExpressionContext ctx) {
         setupNodeLocation(new VariableExpression(ctx.IDENTIFIER().text), ctx)
     }
@@ -625,16 +706,32 @@ class ASTBuilder extends GroovyParserBaseListener {
         setupNodeLocation(new PostfixExpression(parseExpression(ctx.expression()), createToken(ctx.getChild(1) as TerminalNode)), ctx)
     }
 
-    @SuppressWarnings("GroovyUnusedDeclaration")
-    static ConstantExpression parseExpression(ConstantDecimalExpressionContext ctx) {
-        def text = ctx.DECIMAL().text
+    static ConstantExpression parseDecimal(String text, ParserRuleContext ctx) {
         setupNodeLocation(new ConstantExpression(Numbers.parseDecimal(text), !text.startsWith('-')), ctx) // Why 10 is int but -10 is Integer?
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static ConstantExpression parseExpression(ConstantIntegerExpressionContext ctx) {
-        def text = ctx.INTEGER().text
+    static ConstantExpression parseExpression(AnnotationParamDecimalExpressionContext ctx) {
+        parseDecimal(ctx.DECIMAL().text, ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(ConstantDecimalExpressionContext ctx) {
+        parseDecimal(ctx.DECIMAL().text, ctx)
+    }
+
+    static ConstantExpression parseInteger(String text, ParserRuleContext ctx) {
         setupNodeLocation(new ConstantExpression(Numbers.parseInteger(text), !text.startsWith('-')), ctx) //Why 10 is int but -10 is Integer?
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(ConstantIntegerExpressionContext ctx) {
+        parseInteger(ctx.INTEGER().text, ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(AnnotationParamIntegerExpressionContext ctx) {
+        parseInteger(ctx.INTEGER().text, ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -643,7 +740,12 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static ConstantExpression parseExpression(ConstantExpressionContext ctx) {
+    static ConstantExpression parseExpression(AnnotationParamBoolExpressionContext ctx) {
+        setupNodeLocation(new ConstantExpression(ctx.KW_FALSE() ? false : true, true), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static parseConstantString(ParserRuleContext ctx) {
         def text = ctx.text
         def isSlashy = text.startsWith('/')
 
@@ -663,6 +765,16 @@ class ASTBuilder extends GroovyParserBaseListener {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(ConstantExpressionContext ctx) {
+        parseConstantString(ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static ConstantExpression parseExpression(AnnotationParamStringExpressionContext ctx) {
+        parseConstantString(ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GstringExpressionContext ctx) {
         def clearStart = { String it -> it.length() == 2 ? "" : it[1..-2] }
         def clearPart = { String it -> it.length() == 1 ? "" : it[0..-2] }
@@ -675,6 +787,11 @@ class ASTBuilder extends GroovyParserBaseListener {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(NullExpressionContext ctx) {
+        setupNodeLocation(new ConstantExpression(null), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(AnnotationParamNullExpressionContext ctx) {
         setupNodeLocation(new ConstantExpression(null), ctx)
     }
 
@@ -703,18 +820,7 @@ class ASTBuilder extends GroovyParserBaseListener {
         def methodNode
         //FIXME in log a, b; a is treated as path expression and became a method call instead of variable
         if (!ctx.LPAREN() && ctx.closureExpressionRule().size() == 0)
-        {
-            def identifiers = ctx.pathExpression().IDENTIFIER()
-            switch (identifiers.size())
-            {
-                case 1: return new VariableExpression(identifiers[0].text); break;
-                default:
-                    def inject = identifiers[1..-1].inject(new VariableExpression(identifiers[0].text)) { val, prop ->
-                        new PropertyExpression(val as Expression, new ConstantExpression(prop.text))
-                    }
-                    return inject
-            }
-        }
+            return collectPathExpression(ctx.pathExpression())
 
         // Collect closure's in argumentList expression.
         def argumentListExpression = createArgumentList(ctx.argumentList())
@@ -725,6 +831,20 @@ class ASTBuilder extends GroovyParserBaseListener {
         methodNode = new MethodCallExpression(expression, methodName, argumentListExpression)
         methodNode.implicitThis = implicitThis
         methodNode
+    }
+
+    static Expression collectPathExpression(PathExpressionContext ctx) {
+        def identifiers = ctx.IDENTIFIER()
+        switch (identifiers.size()) {
+        case 1:
+            return new VariableExpression(identifiers[0].text);
+            break;
+        default:
+            def inject = identifiers[1..-1].inject(new VariableExpression(identifiers[0].text)) { val, prop ->
+                new PropertyExpression(val as Expression, new ConstantExpression(prop.text))
+            }
+            return inject
+        }
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -799,7 +919,7 @@ class ASTBuilder extends GroovyParserBaseListener {
         if (annotationClause)
             setupNodeLocation(new AnnotationConstantExpression(parseAnnotation(annotationClause)), annotationClause)
         else
-            parseExpression(ctx.expression())
+            parseExpression(ctx.annotationParameter())
     }
 
 
