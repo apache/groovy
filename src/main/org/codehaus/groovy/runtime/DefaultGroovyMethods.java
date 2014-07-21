@@ -7306,7 +7306,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the array to be sorted
      * @return the sorted array
-     * @see #toSorted(T[], Comparator)
+     * @see #toSorted(Object[], Comparator)
      * @since 2.4.0
      */
     public static <T> T[] toSorted(T[] self) {
@@ -7347,7 +7347,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self the array containing the elements to be sorted
      * @param condition a Closure used to determine the correct ordering
      * @return a sorted array
-     * @see #toSorted(T[], Comparator)
+     * @see #toSorted(Object[], Comparator)
      * @since 2.4.0
      */
     public static <T> T[] toSorted(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
