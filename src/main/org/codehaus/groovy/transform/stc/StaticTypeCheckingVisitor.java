@@ -3184,14 +3184,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode rightRedirect = right.redirect();
 
         Expression leftExpression = expr.getLeftExpression();
+        Expression rightExpression = expr.getRightExpression();
         if (op == ASSIGN || op == ASSIGNMENT_OPERATOR) {
             if (leftRedirect.isArray() && implementsInterfaceOrIsSubclassOf(rightRedirect, Collection_TYPE)) return leftRedirect;
             if (leftRedirect.implementsInterface(Collection_TYPE) && rightRedirect.implementsInterface(Collection_TYPE)) {
                 // because of type inferrence, we must perform an additional check if the right expression
                 // is an empty list expression ([]). In that case and only in that case, the inferred type
                 // will be wrong, so we will prefer the left type
-                if (expr.getRightExpression() instanceof ListExpression) {
-                    List<Expression> list = ((ListExpression) expr.getRightExpression()).getExpressions();
+                if (rightExpression instanceof ListExpression) {
+                    List<Expression> list = ((ListExpression) rightExpression).getExpressions();
                     if (list.isEmpty()) return left;
                 }
                 return right;
@@ -3200,8 +3201,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // ex : def foos = ['a','b','c']
                 return right;
             }
-            if (rightRedirect.isDerivedFrom(CLOSURE_TYPE) && isSAMType(leftRedirect)) {
-                return inferSAMTypeGenericsInAssignment(left, findSAM(left),right,(ClosureExpression)expr.getRightExpression());
+            if (rightRedirect.isDerivedFrom(CLOSURE_TYPE) && isSAMType(leftRedirect) && rightExpression instanceof ClosureExpression) {
+                return inferSAMTypeGenericsInAssignment(left, findSAM(left),right,(ClosureExpression) rightExpression);
             }
             
             if (leftExpression instanceof VariableExpression) {
@@ -3231,12 +3232,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             BinaryExpression newExpr = new BinaryExpression(
                     expr.getLeftExpression(),
                     expr.getOperation(),
-                    expr.getRightExpression()
+                    rightExpression
             );
             newExpr.setSourcePosition(expr);
             MethodNode method = findMethodOrFail(newExpr, left.getPlainNodeReference(), "getAt", right.getPlainNodeReference());
             if (method!=null && implementsInterfaceOrIsSubclassOf(right, RANGE_TYPE)) {
-                return inferReturnTypeGenerics(left, method, expr.getRightExpression());
+                return inferReturnTypeGenerics(left, method, rightExpression);
             }
             return method!=null?inferComponentType(left, right):null;
         } else if (op == FIND_REGEX) {
@@ -3303,7 +3304,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (isAssignment(op)) return left;
             if (isCompareToBoolean(op)) return boolean_TYPE;
             if (op == COMPARE_TO) return int_TYPE;
-            return inferReturnTypeGenerics(left, method, new ArgumentListExpression(expr.getRightExpression()));
+            return inferReturnTypeGenerics(left, method, new ArgumentListExpression(rightExpression));
         }
         //TODO: other cases
         return null;

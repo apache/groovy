@@ -526,4 +526,32 @@ assert o.bar() == 2*o.x
 '''
     }
 
+    // GROOVY-6965
+    void testShouldNotFailWithClassCastExceptionDuringCompilation() {
+        assertScript '''
+interface Job {
+  Runnable getRunnable()
+}
+
+
+class Printer implements Job{
+
+  protected void execute() {
+    println "Printing"
+  }
+
+  public void acceptsRunnable(Runnable r){
+    r.run()
+  }
+
+  public Runnable getRunnable(){
+     acceptsRunnable(this.&execute) // OK
+     return this.&execute           // compile error
+  }
+}
+
+Printer
+'''
+    }
+
 }
