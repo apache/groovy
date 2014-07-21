@@ -607,6 +607,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                 controller.getOperandStack().replace(type);
             }
         }
+
+        @Override
+        public ClassNode getType() {
+            return controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+        }
     }
 
     public MethodCallExpression getCurrentCall() {
