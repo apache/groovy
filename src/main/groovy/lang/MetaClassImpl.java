@@ -1955,6 +1955,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public List<MetaProperty> getProperties() {
         checkInitalised();
         SingleKeyHashMap propertyMap = classPropertyIndex.getNullable(theCachedClass);
+        if (propertyMap==null) {
+            // GROOVY-6903: May happen in some special environment, like under Android, due
+            // to classloading issues
+            propertyMap = new SingleKeyHashMap();
+        }
         // simply return the values of the metaproperty map as a List
         List ret = new ArrayList(propertyMap.size());
         for (ComplexKeyHashMap.EntryIterator iter = propertyMap.getEntrySetIterator(); iter.hasNext();) {
