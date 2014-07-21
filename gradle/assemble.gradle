@@ -194,11 +194,7 @@ allprojects {
         doLast {
             // for some obscure reason, this produces a Gradle warning
             target.delete()
-<<<<<<< HEAD
-            rootProject.isJarJar = false
-=======
             ant.delete(file: targetTmp, quiet: true, deleteonexit: true)
->>>>>>> 13ce631... GROOVY-6964: Build on Windows.
         }
     }
 }
