@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -105,14 +106,16 @@ public class InvocationWriter {
         String methodName = target.getName();
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
-        
+        ClassNode declaringClass = target.getDeclaringClass();
+        ClassNode classNode = controller.getClassNode();
+
         MethodVisitor mv = controller.getMethodVisitor();
         int opcode = INVOKEVIRTUAL;
         if (target.isStatic()) {
             opcode = INVOKESTATIC;
         } else if (target.isPrivate() || ((receiver instanceof VariableExpression && ((VariableExpression) receiver).isSuperExpression()))) {
             opcode = INVOKESPECIAL;
-        } else if (target.getDeclaringClass().isInterface()) {
+        } else if (declaringClass.isInterface()) {
             opcode = INVOKEINTERFACE;
         }
 
@@ -122,8 +125,6 @@ public class InvocationWriter {
             if (receiver!=null) {
                 // load receiver if not static invocation
                 // todo: fix inner class case
-                ClassNode declaringClass = target.getDeclaringClass();
-                ClassNode classNode = controller.getClassNode();
                 if (implicitThis
                         && !classNode.isDerivedFrom(declaringClass)
                         && !classNode.implementsInterface(declaringClass)
@@ -152,7 +153,18 @@ public class InvocationWriter {
         loadArguments(args.getExpressions(), target.getParameters());
 
 
-        String owner = BytecodeHelper.getClassInternalName(target.getDeclaringClass());
+        String owner = BytecodeHelper.getClassInternalName(declaringClass);
+        ClassNode receiverType = receiver!=null?controller.getTypeChooser().resolveType(receiver, classNode):target.getDeclaringClass();
+        if (opcode==INVOKEVIRTUAL
+                && target.isPublic()
+                && (!Modifier.isPublic(declaringClass.getModifiers())
+                && !receiverType.equals(declaringClass))
+                && receiverType.isDerivedFrom(declaringClass)
+                && !receiverType.getPackageName().equals(classNode.getPackageName())) {
+            // package private class, public method
+            // see GROOVY-6962
+            owner = BytecodeHelper.getClassInternalName(receiverType);
+        }
         String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
         mv.visitMethodInsn(opcode, owner, methodName, desc, opcode == INVOKEINTERFACE);
         ClassNode ret = target.getReturnType().redirect();
