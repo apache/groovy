@@ -1832,9 +1832,9 @@ public abstract class StaticTypeCheckingSupport {
                     scanner.scanClasspathModules();
                     cachedMethods = getDGMMethods(modules);
                     origin = new WeakReference<ClassLoader>(loader);
+                    lock.readLock().lock();
                 } finally {
                     lock.writeLock().unlock();
-                    lock.readLock().lock();
                 }
             }
             try {
