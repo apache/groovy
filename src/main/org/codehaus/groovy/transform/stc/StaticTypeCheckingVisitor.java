@@ -4082,6 +4082,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return resolvedPlaceholders;
     }
 
+    private static boolean isGenericsPlaceHolderOrArrayOf(ClassNode cn) {
+        if (cn.isArray()) return isGenericsPlaceHolderOrArrayOf(cn.getComponentType());
+        return cn.isGenericsPlaceHolder();
+    }
+
+
     private static Map<String, GenericsType> extractPlaceHolders(MethodNode method, ClassNode receiver, ClassNode declaringClass) {
         if (declaringClass.equals(OBJECT_TYPE)) {
             Map<String, GenericsType> resolvedPlaceholders = new HashMap<String, GenericsType>();
@@ -4095,12 +4101,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         ClassNode current = receiver;
         while (true) {
+            boolean continueLoop = true;
             //extract the place holders
             Map<String, GenericsType> currentPlaceHolders = new HashMap<String, GenericsType>();
-            GenericsUtils.extractPlaceholders(current, currentPlaceHolders);
-
-            if (method!=null && declaringClass.equals(current)) {
-                addMethodLevelDeclaredGenerics(method, currentPlaceHolders);
+            if (isGenericsPlaceHolderOrArrayOf(declaringClass) || declaringClass.equals(current)) {
+                extractGenericsConnections(currentPlaceHolders, current, declaringClass);
+                if (method!=null) addMethodLevelDeclaredGenerics(method, currentPlaceHolders);
+                continueLoop = false;
+            } else {
+                GenericsUtils.extractPlaceholders(current, currentPlaceHolders);
             }
 
             if (resolvedPlaceholders!=null) {
@@ -4117,7 +4126,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             resolvedPlaceholders = currentPlaceHolders;
 
             // we are done if we are now in the declaring class
-            if (current.equals(declaringClass)) break;
+            if (!continueLoop) break;
 
             current = getNextSuperClass(current, declaringClass);
             if (current==null && CLASS_Type.equals(declaringClass)) {
