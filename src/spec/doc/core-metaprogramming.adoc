@@ -2083,7 +2083,7 @@ Imagine, for example, that you want to test the declared type of a for loop vari
 include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=asttest_forloop,indent=0]
 ----
 
-Since Groovy 2.4.0, `@ASTTest` exposes more variables inside the test closure:
+`@ASTTest` also exposes those variables inside the test closure:
 
 * `node` corresponds to the annotated node, as usual
 * `compilationUnit` gives access to the current `org.codehaus.groovy.control.CompilationUnit`
