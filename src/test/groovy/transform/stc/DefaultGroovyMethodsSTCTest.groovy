@@ -103,5 +103,24 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             def x = [a:1, b:3].each { k, v -> "$k$v" }
         '''
     }
+
+    // GROOVY-6961
+    void testCollectMany() {
+        assertScript '''
+            class ListCompilerAndReverser {
+                static List<Integer> revlist(List<List<String>> list) {
+                    list.collectMany { strings ->
+                        strings.collect {
+                            it.toInteger()
+                        }
+                    } sort { int it ->
+                        -it
+                    }
+                }
+            }
+
+            assert ListCompilerAndReverser.revlist([["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"]]) == [9, 8, 7, 6, 5, 4, 3, 2, 1]
+        '''
+    }
 }
 
