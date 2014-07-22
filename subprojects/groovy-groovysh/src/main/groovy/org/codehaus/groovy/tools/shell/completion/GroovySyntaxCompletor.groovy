@@ -79,7 +79,8 @@ class GroovySyntaxCompletor implements Completer {
             }
         } catch (InStringException ise) {
             int completionStart = ise.column + 1
-            int fileResult = + filenameCompletor.complete(bufferLine.substring(completionStart), cursor - completionStart, candidates)
+            int fileResult = + filenameCompletor.complete(bufferLine.substring(completionStart),
+                    cursor - completionStart, candidates)
             if (fileResult >= 0) {
                 return completionStart + fileResult
             }

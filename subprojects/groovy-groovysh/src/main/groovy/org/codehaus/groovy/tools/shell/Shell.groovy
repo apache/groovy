@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.shell
 
 import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.tools.shell.util.CommandArgumentParser
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.fusesource.jansi.Ansi
 
@@ -38,23 +39,23 @@ class Shell
 
     Shell(final IO io) {
         assert(io != null)
-        
+
         this.io = io
     }
-    
+
     Shell() {
         this(new IO())
     }
-    
-    protected List parseLine(final String line) {
-        assert line != null
-        
-        return line.trim().tokenize()
-    }
-    
-    Command findCommand(final String line) {
+
+
+
+    /**
+     * @param line the line to parse
+     * @param parsedArgs accumulate the rest of the line after the command
+     */
+    Command findCommand(final String line, List<String> parsedArgs = null) {
         assert line
-        
+
         //
         // TODO: Introduce something like 'boolean Command.accepts(String)' to ask
         //       commands if they can take the line?
@@ -67,37 +68,34 @@ class Shell
         //       Or maybe allow commands to register specific syntax hacks into the registry?
         //       then ask the registry for the command for a given line?
         //
-        
-        List<String> args = parseLine(line)
-        
+
+        List<String> args = CommandArgumentParser.parseLine(line, parsedArgs == null ? 1 : -1)
+
         assert args.size() > 0
 
         Command command = registry.find(args[0])
-        
+
+        if (command != null && args.size() > 1 && parsedArgs != null) {
+            parsedArgs.addAll(args[1..-1])
+        }
+
         return command
     }
-    
+
     boolean isExecutable(final String line) {
         return findCommand(line) != null
     }
-    
+
     Object execute(final String line) {
         assert line
-        
-        def command = findCommand(line)
-        
+
+        List<String> args = []
+        Command command = findCommand(line, args)
+
         def result = null
-        
+
         if (command) {
-            List<String> args = parseLine(line)
-            
-            if (args.size() == 1) {
-                args = []
-            }
-            else {
-                args = args[1..-1]
-            }
-            
+
             log.debug("Executing command($command.name): $command; w/args: $args")
             try {
                 result = command.execute(args)
@@ -106,10 +104,10 @@ class Shell
             }
             log.debug("Result: ${InvokerHelper.toString(result)}")
         }
-        
+
         return result
     }
-    
+
     Command register(final Command command) {
         return registry.register(command)
     }

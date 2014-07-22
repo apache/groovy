@@ -209,6 +209,13 @@ class GroovyshTest extends GroovyTestCase {
         groovysh.register(command2)
         assert command2 == groovysh.findCommand(" foo bar ")
         assert groovysh.isExecutable(" foo import ")
+        List accumulateArgs = []
+        assert command2 == groovysh.findCommand(" foo bar ", accumulateArgs)
+        assert accumulateArgs == ['bar']
+        accumulateArgs = []
+        assert command2 == groovysh.findCommand(" foo bar baz", accumulateArgs)
+        assert accumulateArgs == ['bar', 'baz']
+        assert groovysh.isExecutable(" foo import ")
         assert command2 == groovysh.findCommand(" /foo bar ")
         assertNull(groovysh.findCommand(" bar foo "))
     }
