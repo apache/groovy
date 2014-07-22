@@ -121,4 +121,63 @@ class Something {
 def p = new Something()
 '''
     }
+
+    void testDumpASTTransforms() {
+        assertScript '''
+// tag::dump_ast_xforms[]
+import groovy.transform.ASTTest
+import groovy.transform.CompileStatic
+import groovy.transform.Immutable
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.control.CompilePhase
+
+@ASTTest(value={
+    System.err.println "Compile phase: $compilePhase"
+    ClassNode cn = node
+    System.err.println "Global AST xforms: ${compilationUnit?.ASTTransformationsContext?.globalTransformNames}"
+    CompilePhase.values().each {
+        def transforms = cn.getTransforms(it)
+        if (transforms) {
+            System.err.println "Ast xforms for phase $it:"
+            transforms.each { map ->
+                System.err.println(map)
+            }
+        }
+    }
+})
+@CompileStatic
+@Immutable
+class Foo {
+}
+// end::dump_ast_xforms[]
+Foo
+'''
+    }
+
+    void testVariableMemorize() {
+        assertScript '''
+// tag::memorize_in_binding[]
+import groovy.transform.ASTTest
+import groovy.transform.ToString
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.control.CompilePhase
+
+@ASTTest(value={
+    if (compilePhase==CompilePhase.INSTRUCTION_SELECTION) {             // <1>
+        println "toString() was added at phase: ${added}"
+        assert added == CompilePhase.CANONICALIZATION                   // <2>
+    } else {
+        if (node.getDeclaredMethods('toString') && added==null) {       // <3>
+            added = compilePhase                                        // <4>
+        }
+    }
+})
+@ToString
+class Foo {
+    String name
+}
+// end::memorize_in_binding[]
+Foo
+'''
+    }
 }

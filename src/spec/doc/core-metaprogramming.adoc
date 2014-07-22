@@ -2083,6 +2083,33 @@ Imagine, for example, that you want to test the declared type of a for loop vari
 include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=asttest_forloop,indent=0]
 ----
 
+Since Groovy 2.4.0, `@ASTTest` exposes more variables inside the test closure:
+
+* `node` corresponds to the annotated node, as usual
+* `compilationUnit` gives access to the current `org.codehaus.groovy.control.CompilationUnit`
+* `compilePhase` returns the current compile phase (`org.codehaus.groovy.control.CompilePhase`)
+
+The latter is interesting if you don't specify the `phase` attribute. In that case, the closure will be executed after
+each compile phase after (and including) `SEMANTIC_ANALYSIS`. The context of the transformation is kept after each phase,
+giving you a chance to check what changed between two phases.
+
+As an example, here is how you could dump the list of AST transformations registered on a class node:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=dump_ast_xforms,indent=0]
+----
+
+And here is how you can memorize variables for testing between two phases:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=memorize_in_binding,indent=0]
+----
+<1> if the current compile phase is instruction selection
+<2> then we want to make sure `toString` was added at `CANONICALIZATION`
+<3> otherwise, if `toString` exists and that the variable from the context, `added` is null
+<4> then it means that this compile phase is the one where `toString` was added
 
 ==== Grape handling
 [[xform-Grab]]

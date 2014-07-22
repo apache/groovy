@@ -34,7 +34,7 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
     void visit(final ASTNode[] nodes, final SourceUnit source) {
         AnnotationNode annotationNode = nodes[0]
         def member = annotationNode.getMember('phase')
-        def phase = CompilePhase.SEMANTIC_ANALYSIS
+        def phase = null
         if (member) {
             if (member instanceof VariableExpression) {
                 phase = CompilePhase.valueOf(member.text)
@@ -56,9 +56,11 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
 
         def pcallback = compilationUnit.progressCallback
         def callback = new CompilationUnit.ProgressCallback() {
+            Binding binding = new Binding([:].withDefault {null})
+
             @Override
             void call(final ProcessingUnit context, final int phaseRef) {
-                if (phaseRef == phase.phaseNumber) {
+                if (phase==null ||  phaseRef == phase.phaseNumber) {
                     ClosureExpression testClosure = nodes[0].getNodeMetaData(ASTTestTransformation)
                     StringBuilder sb = new StringBuilder()
                     for (int i = testClosure.lineNumber; i <= testClosure.lastLineNumber; i++) {
@@ -69,9 +71,10 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
                     CompilerConfiguration config = new CompilerConfiguration()
                     def customizer = new ImportCustomizer()
                     config.addCompilationCustomizers(customizer)
-                    def binding = new Binding()
                     binding['node'] = nodes[1]
                     binding['lookup'] = new MethodClosure(LabelFinder, "lookup").curry(nodes[1])
+                    binding['compilationUnit'] = compilationUnit
+                    binding['compilePhase'] = CompilePhase.fromPhaseNumber(phaseRef)
 
                     GroovyShell shell = new GroovyShell(binding, config)
 
