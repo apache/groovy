@@ -1487,9 +1487,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert( list3 == [a, b, c] && list == [a, b, c, d] )
      * </pre>
      *
-     * @param self      a Collection
+     * @param self      an Iterable
      * @param condition a Closure used to determine unique items
-     * @return self     an Iterable
+     * @return a new Collection
      * @see #toUnique(Iterable, Comparator)
      * @since 2.4.0
      */
@@ -1734,7 +1734,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterate over each element of the list in the reverse order.
      * <pre class="groovyTestCase">def result = []
-     * [1,2,3].reverseEach { result << it }
+     * [1,2,3].reverseEach { result &lt;&lt; it }
      * assert result == [3,2,1]</pre>
      *
      * @param self    a List
@@ -2089,7 +2089,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Closure#IDENTITY
      * @since 2.0
      */
-    @SuppressWarnings("unchecked")
     public static <T> Collection<T> grep(Collection<T> self) {
         return grep(self, Closure.IDENTITY);
     }
@@ -3625,7 +3624,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      * @see Closure#IDENTITY
      */
-    public static <T> Collection<T>  findAll(Collection<T> self) {
+    public static <T> Collection<T> findAll(Collection<T> self) {
         return findAll(self, Closure.IDENTITY);
     }
 
@@ -4067,7 +4066,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">def permutations = []
-     * [1, 2, 3].eachPermutation{ permutations << it }
+     * [1, 2, 3].eachPermutation{ permutations &lt;&lt; it }
      * assert permutations == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]]</pre>
      *
      * @param self the Collection of items
@@ -5894,7 +5893,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * there is no entry for the given key in which case add the default value
      * to the map and return that.
      * <pre class="groovyTestCase">def map=[:]
-     * map.get("a", []) << 5
+     * map.get("a", []) &lt;&lt; 5
      * assert map == [a:[5]]</pre>
      *
      * @param map          a Map
@@ -6426,9 +6425,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * A convenience method for creating an immutable Collection.
      * <pre class="groovyTestCase">def mutable = [1,2,3]
      * def immutable = mutable.asImmutable()
-     * mutable << 4
+     * mutable &lt;&lt; 4
      * try {
-     *   immutable << 4
+     *   immutable &lt;&lt; 4
      *   assert false
      * } catch (UnsupportedOperationException) {
      *   assert true
@@ -9516,12 +9515,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     @Deprecated
-    public static <T> List<T> multiply(Collection<T> self, Number factor) {
-        return (List<T>) multiply((Iterable<T>) self, factor);
+    public static <T> Collection<T> multiply(Collection<T> self, Number factor) {
+        return (Collection<T>) multiply((Iterable<T>) self, factor);
     }
 
     /**
-     * Create a List composed of the elements of this Iterable, repeated
+     * Create a Collection composed of the elements of this Iterable, repeated
      * a certain number of times.  Note that for non-primitive
      * elements, multiple references to the same instance will be added.
      * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
@@ -9531,7 +9530,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self   an Iterable
      * @param factor the number of times to append
-     * @return the multiplied list
+     * @return the multiplied Collection
      * @since 2.4.0
      */
     public static <T> Collection<T> multiply(Iterable<T> self, Number factor) {
@@ -9540,7 +9539,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Collection<T> answer = createSimilarCollection(selfCol, selfCol.size() * size);
         for (int i = 0; i < size; i++) {
             answer.addAll(selfCol);
-    }
+        }
         return answer;
     }
 
@@ -10072,7 +10071,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self     an Iterable
      * @param removeMe an Iterable of elements to remove
-     * @return a Collection with the given elements removed
+     * @return a new Collection with the given elements removed
      * @since 2.4.0
      */
     public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe) {
@@ -10345,7 +10344,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Overloads the left shift operator to provide an easy way to append
      * objects to a Collection.
      * <pre class="groovyTestCase">def list = [1,2]
-     * list << 3
+     * list &lt;&lt; 3
      * assert list == [1,2,3]</pre>
      *
      * @param self  a Collection
@@ -10363,7 +10362,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * objects to a BlockingQueue.
      * In case of bounded queue the method will block till space in the queue become available
      * <pre class="groovyTestCase">def list = new java.util.concurrent.LinkedBlockingQueue ()
-     * list << 3 << 2 << 1
+     * list &lt;&lt; 3 &lt;&lt; 2 &lt;&lt; 1
      * assert list.iterator().collect{it} == [3,2,1]</pre>
      *
      * @param self  a Collection
@@ -10393,11 +10392,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Overloads the left shift operator to provide an easy way to put
      * one maps entries into another map. This allows the compact syntax
-     * <code>map1 << map2</code>; otherwise it's just a synonym for
+     * <code>map1 &lt;&lt; map2</code>; otherwise it's just a synonym for
      * <code>putAll</code> though it returns the original map rather than
      * being a <code>void</code> method. Example usage:
      * <pre class="groovyTestCase">def map = [a:1, b:2]
-     * map << [c:3, d:4]
+     * map &lt;&lt; [c:3, d:4]
      * assert map == [a:1, b:2, c:3, d:4]</pre>
      *
      * @param self  a Map
