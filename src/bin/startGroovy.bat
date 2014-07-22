@@ -183,11 +183,12 @@ if "x3" == "x%_SKIP%" goto skip_3
 if "x2" == "x%_SKIP%" goto skip_2
 if "x1" == "x%_SKIP%" goto skip_1
 
-rem now unescape -q, -s, -d
+rem now unescape -s, -q, -n, -d
+rem -d must be the last to be unescaped
 set _ARG=%_ARG:-s=*%
 set _ARG=%_ARG:-q="%
-set _ARG=%_ARG:-d=-%
 set _ARG=%_ARG:-n=?%
+set _ARG=%_ARG:-d=-%
 
 set CMD_LINE_ARGS=%CMD_LINE_ARGS% %_ARG%
 set _ARG=
