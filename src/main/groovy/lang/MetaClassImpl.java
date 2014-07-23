@@ -813,7 +813,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Invoke a missing method on the given object with the given arguments.
      *
-     * @param object The object the method should be invoked on.
+     * @param instance The object the method should be invoked on.
      * @param methodName The name of the method to invoke.
      * @param arguments The arguments to the invoked method.
      *
@@ -824,12 +824,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
     
     /**
-     * Invoke a missing method on the given object with the given arguments.
+     * Invoke a missing property on the given object with the given arguments.
      *
-     * @param object The object the method should be invoked on.
-     * @param methodName The name of the method to invoke.
-     * @param arguments The arguments to the invoked method.
-     * @param optionalValue
+     * @param instance The object the method should be invoked on.
+     * @param propertyName The name of the property to invoke.
+     * @param optionalValue The (optional) new value for the property
      * @param isGetter Wether the method is a getter
      *
      * @return The result of the method invocation.
@@ -1026,9 +1025,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * to the super class if necessary
      *
      * @param sender The java.lang.Class instance that invoked the method
-     * @param receiver The object which the method was invoked on
+     * @param object The object which the method was invoked on
      * @param methodName The name of the method
-     * @param arguments The arguments to the method
+     * @param originalArguments The arguments to the method
      * @param isCallToSuper Whether the method is a call to a super class method
      * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class
      *
@@ -2747,8 +2746,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Retrieves the value of an attribute (field). This method is to support the Groovy runtime and not for general client API usage.
      *
      * @param sender The class of the object that requested the attribute
-     * @param receiver The instance
-     * @param messageName The name of the attribute
+     * @param object The instance the attribute is to retrived from
+     * @param attribute The name of the attribute
      * @param useSuper Whether to look-up on the super class or not
      * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class.
      *
@@ -3718,7 +3717,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Sets the value of an attribute (field). This method is to support the Groovy runtime and not for general client API usage.
      *
-     * @param objects The object to get the attribute from
+     * @param object The object to get the attribute from
      * @param attribute The name of the attribute
      * @param newValue The new value of the attribute
      */

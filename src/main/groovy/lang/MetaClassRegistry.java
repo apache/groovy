@@ -45,7 +45,6 @@ public interface MetaClassRegistry {
     /**
      *Adds a metaclass to the registery for the given class
      *
-     * @todo Do we really want these two?
      * @param theClass The class
      * @param theMetaClass The MetaClass for theClass
      */
