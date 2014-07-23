@@ -34,13 +34,15 @@ class SetTest extends GroovyTestCase {
 
     void testSetFlatten() {
         Set orig = [[[4, 5, 6, [46, 7, "erer"] as Set] as Set, 4, [3, 6, 78] as Set] as Set, 4]
-        Set flat = orig.flatten()
+        def flat = orig.flatten()
+        assert flat instanceof Set
         assert flat == [3, 4, 5, 6, 7, 46, 78, "erer"] as Set
     }
 
     void testFlattenSetOfMapsWithClosure() {
         Set orig = [[a:1, b:2], [c:3, d:4]] as Set
-        Set flat = orig.flatten{ it instanceof Map ? it.values() : it }
+        def flat = orig.flatten{ it instanceof Map ? it.values() : it }
+        assert flat instanceof Set
         assert flat == [1, 2, 3 ,4] as Set
         flat = orig.flatten{ it instanceof Map ? it.keySet() : it }
         assert flat == ["a", "b", "c", "d"] as Set
