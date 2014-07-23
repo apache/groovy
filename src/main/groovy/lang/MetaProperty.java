@@ -31,6 +31,9 @@ public abstract class MetaProperty {
     protected Class type;
     public static final String PROPERTY_SET_PREFIX = "set";
 
+    /**
+     * Constructor that sets the property name and type (class)
+     */
     public MetaProperty(String name, Class type) {
         this.name = name;
         this.type = type;
@@ -51,6 +54,11 @@ public abstract class MetaProperty {
      */
     public abstract void setProperty(Object object, Object newValue);
 
+    /**
+     * Return the name of the property
+     *
+     * @return the name of the property
+     */
     public String getName() {
         return name;
     }
@@ -62,15 +70,30 @@ public abstract class MetaProperty {
         return type;
     }
     
+    /**
+     * Returns the access modifier.
+     * @return Modifier.PUBLIC
+     */
     public int getModifiers() {
         return Modifier.PUBLIC;
     }
 
+    /**
+     * Gets the name for the getter for this property
+     *
+     * @return The name of the property. The name is "get"+ the capitalized propertyName
+     *         or, in the case of boolean values, "is" + the capitalized propertyName
+     */
     public static String getGetterName(String propertyName, Class type) {
         String prefix = type == boolean.class || type == Boolean.class ? "is" : "get";
         return prefix + MetaClassHelper.capitalize(propertyName);
     }
 
+    /**
+     * Gets the setter for the getter for this property.
+     *
+     * @return The name of the property. The name is "set"+ the capitalized propertyName.
+     */
     public static String getSetterName(String propertyName) {
         return PROPERTY_SET_PREFIX + MetaClassHelper.capitalize(propertyName);
     }

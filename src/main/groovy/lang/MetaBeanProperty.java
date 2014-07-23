@@ -34,6 +34,9 @@ public class MetaBeanProperty extends MetaProperty {
     private MetaMethod setter;
     private CachedField field;
 
+    /**
+     * Sole constructor setting name, type (class), getter and setter.
+     */
     public MetaBeanProperty(String name, Class type, MetaMethod getter, MetaMethod setter) {
         super(name, type);
         this.getter = getter;
@@ -79,6 +82,8 @@ public class MetaBeanProperty extends MetaProperty {
 
     /**
      * Get the getter method.
+     *
+     * @return the getter method for this property.
      */
     public MetaMethod getGetter() {
         return getter;
@@ -86,6 +91,8 @@ public class MetaBeanProperty extends MetaProperty {
 
     /**
      * Get the setter method.
+     *
+     * @return the setter method for this property.
      */
     public MetaMethod getSetter() {
         return setter;
@@ -93,6 +100,8 @@ public class MetaBeanProperty extends MetaProperty {
 
     /**
      * This is for MetaClass to patch up the object later when looking for get*() methods.
+     *
+     * @param getter The getter for this property
      */
     void setGetter(MetaMethod getter) {
         this.getter = getter;
@@ -100,11 +109,18 @@ public class MetaBeanProperty extends MetaProperty {
 
     /**
      * This is for MetaClass to patch up the object later when looking for set*() methods.
+     *
+     * @param setter The setter for this property 
      */
     void setSetter(MetaMethod setter) {
         this.setter = setter;
     }
 
+    /**
+     * Gets the visibility modifiers for the property as defined by the getter and setter methods.
+     *
+     * @return the visibility modifer of the getter, the setter, or both depending on which exist
+     */
     public int getModifiers() {
         MetaMethod getter = getGetter();
         MetaMethod setter = getSetter();
@@ -121,10 +137,20 @@ public class MetaBeanProperty extends MetaProperty {
         return states;
     }
 
-    public void setField(CachedField f) {
-        this.field = f;
+    /**
+     * Sets the field of this propery
+     *
+     * @param field
+     */
+    public void setField(CachedField field) {
+        this.field = field;
     }
 
+    /**
+     * Gets the field of this property
+     *
+     * @return The field of this property
+     */
     public CachedField getField() {
         return field;
     }
