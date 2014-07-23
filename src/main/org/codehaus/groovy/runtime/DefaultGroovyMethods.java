@@ -10164,7 +10164,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static Collection<?> flatten(Iterable<?> self) {
-        return flatten(self, createSimilarCollection(asList(self)));
+        return flatten(self, createSimilarCollection(self));
     }
 
     /**
@@ -10312,7 +10312,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static <T> Collection<T> flatten(Iterable<T> self, Closure<? extends T> flattenUsing) {
-        return flatten(self, createSimilarCollection(asList(self)), flattenUsing);
+        return flatten(self, createSimilarCollection(self), flattenUsing);
     }
 
     private static <T> Collection<T> flatten(Iterable elements, Collection<T> addTo, Closure<? extends T> flattenUsing) {
