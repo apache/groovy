@@ -25,7 +25,7 @@ import groovy.xml.StreamingMarkupBuilder
 *
 * @author Groovy Documentation Community
 */
-class StreamingMarkupBuilderTest  extends GroovyTestCase {
+class StreamingMarkupBuilderTest2  extends GroovyTestCase {
 
     void testObjectNotDefined() {
 // tag::streamingmarkupbuilder_nullobject1[]

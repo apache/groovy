@@ -35,7 +35,7 @@ import groovy.xml.MarkupBuilder
  * Tests for other implemenattions would reside in their respective directories.
  *
  */
-class MarkupBuilderTest extends GroovyTestCase {
+class MarkupBuilderTest2 extends GroovyTestCase {
     private StringWriter writer
     private MarkupBuilder xml
 
