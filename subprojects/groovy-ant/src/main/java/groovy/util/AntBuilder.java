@@ -424,9 +424,9 @@ public class AntBuilder extends BuilderSupport {
             final Target newTarget = (Target) getProject().getTargets().get(attrs.getValue("name"));
 
             // execute dependencies (if any)
-            final Vector targets = new Vector();
-            for (final Enumeration deps = newTarget.getDependencies(); deps.hasMoreElements();) {
-                final String targetName = (String) deps.nextElement();
+            final Vector<Target> targets = new Vector<Target>();
+            for (final Enumeration<String> deps = newTarget.getDependencies(); deps.hasMoreElements();) {
+                final String targetName = deps.nextElement();
                 targets.add(project.getTargets().get(targetName));
             }
             getProject().executeSortedTargets(targets);
