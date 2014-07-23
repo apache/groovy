@@ -554,4 +554,68 @@ Printer
 '''
     }
 
+    // GROOVY-6970
+    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods() {
+        assertScript '''
+            interface A { void m() }
+            interface B { void m() }
+            interface C extends A, B {}
+
+            class D {
+             D(C c) {
+               c.m()
+             }
+            }
+            class CImpl implements C {
+                void m() { }
+            }
+
+            new D(new CImpl())
+        '''
+    }
+    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethodsVariant() {
+        assertScript '''
+            interface A { void m() }
+            interface B { void m() }
+            class C implements A,B {
+                void m() {}
+            }
+            class D {
+             D(C c) {
+               c.m()
+             }
+            }
+
+            new D(new C())
+        '''
+    }
+
+    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethodsVariant2() {
+        assertScript '''
+            interface A { void m() }
+            interface B { void m() }
+            interface C extends A,B {}
+            class CImpl implements C, A,B {
+                void m() {}
+            }
+            class D {
+             D(C c) {
+               c.m()
+             }
+            }
+
+            new D(new CImpl())
+        '''
+    }
+
+    void testAmbiguousMethodResolutionGroovy6849() {
+        assertScript '''
+            interface ObservableList<E> extends List<E> {
+                public boolean addAll(E... elements)
+            }
+            public <E> ObservableList<E> wrap(List<E> list) { list as ObservableList }
+            ObservableList<String> tags = wrap(['groovy','programming'])
+            tags.addAll('bug')
+        '''
+    }
 }
