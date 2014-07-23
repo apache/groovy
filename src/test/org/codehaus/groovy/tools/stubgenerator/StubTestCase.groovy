@@ -60,6 +60,7 @@ abstract class StubTestCase extends GroovyTestCase {
 
     protected JavaDocBuilder qdox = new JavaDocBuilder()
 
+    protected GroovyClassLoader loader
     protected CompilerConfiguration config = new CompilerConfiguration()
 
     protected boolean debug = false;
@@ -91,6 +92,8 @@ abstract class StubTestCase extends GroovyTestCase {
             targetDir.deleteDir()
             stubDir.deleteDir()
         }
+        loader = null
+        config = null
         super.tearDown()
     }
 
@@ -209,7 +212,7 @@ abstract class StubTestCase extends GroovyTestCase {
      * @param sources the sources to be compiled
      */
     protected void compile(List<File> sources) {
-        def loader = new GroovyClassLoader(this.class.classLoader)
+        loader = new GroovyClassLoader(this.class.classLoader)
         def cu = new JavaAwareCompilationUnit(config, loader)
         cu.addSources(sources as File[])
         try {
