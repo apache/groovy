@@ -18,19 +18,25 @@ package groovy.lang;
 
 
 /**
- * Represents a property on a bean which may have a getter and/or a setter
+ * Represents the length property of an array
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class MetaArrayLengthProperty extends MetaProperty {
 
+    /**
+     * Sole constructor setting name to "length" and type to int
+     */
     public MetaArrayLengthProperty() {
         super("length", int.class);
     }
 
     /**
-     * @return the property of the given object
+     * Get this property from the given object.
+     * @param object an array
+     * @return the length of the array object
+     * @throws IllegalArgumentException if object is not an array
      */
     public Object getProperty(Object object) {
         return java.lang.reflect.Array.getLength(object);

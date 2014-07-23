@@ -34,20 +34,26 @@ import java.util.Iterator;
  *
  */
 public interface MetaClassRegistry {
-    /*
+    
+    /**
      * The main function of the registry
      * If a meta class exists then return it
      * otherwise create one, put it in the registry and return it
      */
     MetaClass getMetaClass(Class theClass);
     
-    /*
-     * Do we really want these two?
+    /**
+     *Adds a metaclass to the registery for the given class
+     *
+     * @todo Do we really want these two?
+     * @param theClass The class
+     * @param theMetaClass The MetaClass for theClass
      */
     void setMetaClass(Class theClass, MetaClass theMetaClass);
 
     /**
      * Removes a cached MetaClass from the registry
+     *
      * @param theClass The Java class of the MetaClass to remove
      */
     void removeMetaClass(Class theClass);
@@ -67,14 +73,14 @@ public interface MetaClassRegistry {
     void setMetaClassCreationHandle(MetaClassCreationHandle handle);
 
     /**
-     * adds a meta class change listener for constant meta classes
+     * Adds a meta class change listener for constant meta classes
      *
      * @param listener - the update listener
      */
     void addMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener);
     
     /**
-     * adds a meta class change listener for constant meta classes. 
+     * Adds a meta class change listener for constant meta classes. 
      * This listener cannot be removed!
      *
      * @param listener - the update listener
@@ -82,7 +88,7 @@ public interface MetaClassRegistry {
     void addNonRemovableMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener);
 
     /**
-     * removes a meta class change listener for constant meta classes
+     * Removes a meta class change listener for constant meta classes
      *
      * @param listener - the update listener
      */
@@ -96,7 +102,7 @@ public interface MetaClassRegistry {
     MetaClassRegistryChangeEventListener[] getMetaClassRegistryChangeEventListeners();
 
     /**
-     * gets a snapshot of the current constant meta classes and returns it as Iterator.
+     * Gets a snapshot of the current constant meta classes and returns it as Iterator.
      * Modifications done using this Iterator will not cause a ConcurrentModificationException.
      * If a MetaClass is removed using this Iterator, then the MetaClass will only
      * be removed if the MetaClass was not replaced by another MetaClass in the meantime.
@@ -123,7 +129,12 @@ public interface MetaClassRegistry {
      */
     class MetaClassCreationHandle {
         private boolean disableCustomMetaClassLookup;
-
+         
+        /**
+         * Creates a metaclass implementation for theClass.
+         * @param theClass The class to create a metaclass for
+         * @param registry The metaclass registry the metaclass we be registered in.
+         */
         public final MetaClass create(Class theClass, MetaClassRegistry registry) {
            if (disableCustomMetaClassLookup)
                return createNormalMetaClass(theClass, registry);
@@ -159,6 +170,9 @@ public interface MetaClassRegistry {
             }
         }
 
+        /**
+         * Returns wether custom metaClasse is disabled.
+         */
         public boolean isDisableCustomMetaClassLookup() {
             return disableCustomMetaClassLookup;
         }

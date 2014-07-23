@@ -28,6 +28,15 @@ public class MetaClassRegistryChangeEvent extends EventObject {
     private final MetaClass metaClass;
     private final MetaClass oldMetaClass;
 
+    /**
+     *Constructs a new MetaClassRegistryChangeEvent Object
+     *
+     * @param source The object the the event originates at.
+     * @param instance Object instance  the MetaClass change is on.
+     * @param clazz  The class that is affected by the registry change
+     * @param oldMetaClass The old MetaClass
+     * @param newMetaClass The new MetaClass
+     */
     public MetaClassRegistryChangeEvent(Object source, Object instance, Class clazz, MetaClass oldMetaClass, MetaClass newMetaClass) {
         super(source);
         this.clazz = clazz;
@@ -36,26 +45,56 @@ public class MetaClassRegistryChangeEvent extends EventObject {
         this.instance = instance;
     }
 
+    /**
+     * Get the class that is updated.
+     *
+     *@return The updated class
+     */
     public Class getClassToUpdate() {
         return clazz;
     }
 
+    /**
+     * Get the new MetaClass
+     *
+     * @return The new MetaClass
+     */
     public MetaClass getNewMetaClass() {
         return metaClass;
     }
 
+    /**
+     * Get the old MetaClass
+     *
+     * @return The old MetaClass
+     */
     public MetaClass getOldMetaClass() {
         return oldMetaClass;
     }
 
+    /**
+     * Determines if this event is for a change for a single instance or all instances of the Class.
+     *
+     * @return whether this event is for a single instance
+     */
     public boolean isPerInstanceMetaClassChange() {
         return instance!=null;
     }
 
+    /**
+     * Returns the instance this event is for.
+     *
+     * @return the instance or null if this event is for a change for all instances of a class
+     */
     public Object getInstance() {
         return instance;
     }
 
+    /**
+     * Get the MetaClassRegistry that originates this change
+     *
+     * @return the source MetaClassRegistry
+     */
     public MetaClassRegistry getRegistry() {
         return (MetaClassRegistry) source;
     }
