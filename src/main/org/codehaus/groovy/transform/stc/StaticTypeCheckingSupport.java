@@ -837,13 +837,16 @@ public abstract class StaticTypeCheckingSupport {
         if (c.equals(interfaceClass)) return 0;
         ClassNode[] interfaces = c.getInterfaces();
         int max = -1;
-        for (ClassNode anInterface : interfaces) {
+        for (int i = 0; i < interfaces.length; i++) {
+            final ClassNode anInterface = interfaces[i];
             int sub = getMaximumInterfaceDistance(anInterface, interfaceClass);
             // we need to keep the -1 to track the mismatch, a +1
             // by any means could let it look like a direct match
             // we want to add one, because there is an interface between
             // the interface we search for and the interface we are in.
-            if (sub != -1) sub++;
+            if (sub != -1) {
+                sub+=(i+1); // GROOVY-6970: Make sure we can choose between equivalent methods
+            }
             // we are interested in the longest path only
             max = Math.max(max, sub);
         }
@@ -1031,6 +1034,18 @@ public abstract class StaticTypeCheckingSupport {
                         }
                     }
                 }
+            }
+        }
+        if (bestChoices.size()>1) {
+            // GROOVY-6849: prefer extension methods in case of ambiguity
+            List<MethodNode> onlyExtensionMethods = new LinkedList<MethodNode>();
+            for (MethodNode choice : bestChoices) {
+                if (choice instanceof ExtensionMethodNode) {
+                    onlyExtensionMethods.add(choice);
+                }
+            }
+            if (onlyExtensionMethods.size()==1) {
+                return onlyExtensionMethods;
             }
         }
         return bestChoices;
