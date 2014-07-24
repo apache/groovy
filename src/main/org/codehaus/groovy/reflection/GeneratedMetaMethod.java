@@ -74,9 +74,11 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             return proxy().invoke(object, arguments);
         }
 
-        public final synchronized MetaMethod proxy() {
+        public final MetaMethod proxy() {
             if (proxy == null) {
-                createProxy();
+                synchronized(this) {
+                    if (proxy != null) createProxy();
+                }
             }
             return proxy;
         }
