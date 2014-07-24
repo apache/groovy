@@ -618,4 +618,18 @@ Printer
             tags.addAll('bug')
         '''
     }
+
+    // GROOVY-6911
+    void testShouldNotThrowArrayIndexOfOutBoundsException() {
+        assertScript '''
+            class MyMap<T> extends LinkedHashMap<String, Object> { }
+
+            class C {
+                MyMap bar() { new MyMap() }
+            }
+
+            Map<String, Object> m = new C().bar()
+            List tmp = (List) m.get("some_key_here")     // <---  actually groovy crashes here!!
+        '''
+    }
 }
