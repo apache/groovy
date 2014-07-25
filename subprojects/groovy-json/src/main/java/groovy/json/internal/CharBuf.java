@@ -410,7 +410,7 @@ public class CharBuf extends Writer implements CharSequence {
 
         final byte[] _charTo = charTo;
         /* We are making a bet that not all chars will be unicode. */
-        int ensureThisMuch = charArray.length * 2 + 2;
+        int ensureThisMuch = charArray.length * 6 + 2;
 
         int sizeNeeded = (ensureThisMuch) + _location;
         if (sizeNeeded > capacity) {
