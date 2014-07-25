@@ -7,16 +7,24 @@ options { tokenVocab = GroovyLexer; }
     String currentClassName = null; // Used for correct constructor recognition.
 }
 
-compilationUnit: (NL*) packageDefinition? (NL | SEMICOLON)* (importStatement | NL)* (NL | SEMICOLON)* (classDeclaration | NL)* EOF;
+compilationUnit: (NL*) packageDefinition? (NL | SEMICOLON)* (importStatement | NL)* (NL | SEMICOLON)* (classDeclaration | enumDeclaration | NL)* EOF;
 
 packageDefinition:
     (annotationClause (NL | annotationClause)*)? KW_PACKAGE (IDENTIFIER (DOT IDENTIFIER)*);
 importStatement:
     (annotationClause (NL | annotationClause)*)? KW_IMPORT (IDENTIFIER (DOT IDENTIFIER)* (DOT MULT)?);
 classDeclaration:
-    ((annotationClause | classModifier) (NL | annotationClause | classModifier)*)? KW_CLASS IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? (KW_EXTENDS genericClassNameExpression)? (KW_IMPLEMENTS genericClassNameExpression (COMMA genericClassNameExpression)*)? (NL)* LCURVE (classMember | NL | SEMICOLON)* RCURVE ;
+    ((annotationClause | classModifier) (NL | annotationClause | classModifier)*)? (AT KW_INTERFACE | KW_CLASS | KW_INTERFACE) IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? extendsClause? implementsClause? (NL)* LCURVE (classMember | NL | SEMICOLON)* RCURVE ;
+enumDeclaration:
+    ((annotationClause | classModifier) (NL | annotationClause | classModifier)*)? KW_ENUM IDENTIFIER { currentClassName = $IDENTIFIER.text; } implementsClause? (NL)* LCURVE (enumMember | NL | SEMICOLON)* RCURVE ;
 classMember:
-    constructorDeclaration | methodDeclaration | fieldDeclaration | objectInitializer | classInitializer;
+    constructorDeclaration | methodDeclaration | fieldDeclaration | objectInitializer | classInitializer ;
+enumMember:
+    IDENTIFIER (COMMA | NL)
+    | classMember
+;
+implementsClause:  KW_IMPLEMENTS genericClassNameExpression (COMMA genericClassNameExpression)* ;
+extendsClause:  KW_EXTENDS genericClassNameExpression ;
 
 // Members // FIXME Make more strict check for def keyword. It can't repeat.
 methodDeclaration:
@@ -27,7 +35,11 @@ methodDeclaration:
     |
         genericClassNameExpression
     )
-    IDENTIFIER LPAREN argumentDeclarationList RPAREN throwsClause? LCURVE blockStatement? RCURVE
+    IDENTIFIER LPAREN argumentDeclarationList RPAREN throwsClause? methodBody?
+;
+
+methodBody:
+    LCURVE blockStatement? RCURVE
 ;
 
 fieldDeclaration:
@@ -98,13 +110,6 @@ gstring: GSTRING_START LCURVE expression? RCURVE (GSTRING_PART LCURVE expression
 // 2. Annotation paramenthers.. (inline constant)
 // 3. Constant expressions.
 // 4. class ones, for instanceof and as (type specifier)
-
-// primitive
-// String
-// Class
-// an Enum
-// another Annotation
-// an array of any of the above
 
 annotationParameter:
     LBRACK (annotationParameter (COMMA annotationParameter)*)? RBRACK #annotationParamArrayExpression
