@@ -32,6 +32,8 @@ import com.xseagullx.groovy.gsoc.GroovyParser.ConstantIntegerExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ConstructorDeclarationContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ControlStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.DeclarationExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.EnumDeclarationContext
+import com.xseagullx.groovy.gsoc.GroovyParser.EnumMemberContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ExpressionStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.FieldAccessExpressionContext
@@ -77,6 +79,7 @@ import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.ParseTreeListener
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
+import org.codehaus.groovy.antlr.EnumHelper
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotatedNode
 import org.codehaus.groovy.ast.AnnotationNode
@@ -140,7 +143,7 @@ import java.lang.reflect.Modifier
 import java.util.logging.Level
 
 @Log
-class ASTBuilder extends GroovyParserBaseListener {
+class ASTBuilder {
     ModuleNode moduleNode
 
     private SourceUnit sourceUnit
@@ -191,14 +194,22 @@ class ASTBuilder extends GroovyParserBaseListener {
         }
 
         try {
-            new ParseTreeWalker().walk(this, tree);
+            tree.importStatement().each this.&parseImportStatement
+            tree.children.each {
+                if (it instanceof EnumDeclarationContext)
+                    parseEnumDeclaration(it)
+                else if (it instanceof ClassDeclarationContext)
+                    parseClassDeclaration(it)
+                else if (it instanceof PackageDefinitionContext)
+                    parsePackageDefinition(it)
+            }
         }
         catch (CompilationFailedException ignored) {
             // Compilation failed.
         }
     }
 
-    @Override void exitImportStatement(@NotNull ImportStatementContext ctx) {
+    void parseImportStatement(@NotNull ImportStatementContext ctx) {
         ImportNode node
         if (ctx.getChild(ctx.childCount - 1).text == '*') {
             moduleNode.addStarImport(ctx.IDENTIFIER().join('.') + '.')
@@ -212,29 +223,56 @@ class ASTBuilder extends GroovyParserBaseListener {
         setupNodeLocation(node, ctx)
     }
 
-    @Override void enterPackageDefinition(@NotNull PackageDefinitionContext ctx) {
+    void parsePackageDefinition(@NotNull PackageDefinitionContext ctx) {
         moduleNode.packageName = ctx.IDENTIFIER().join('.') + '.'
         attachAnnotations(moduleNode.package, ctx.annotationClause())
         setupNodeLocation(moduleNode.package, ctx)
     }
 
-    @Override void exitClassDeclaration(@NotNull ClassDeclarationContext ctx) {
+    void parseEnumDeclaration(@NotNull EnumDeclarationContext ctx) {
+        ClassNode[] interfaces = ctx.implementsClause() ? ctx.implementsClause().genericClassNameExpression().collect { parseExpression(it) } : []
+        def classNode = EnumHelper.makeEnumNode(ctx.IDENTIFIER().text, Modifier.PUBLIC, interfaces, null) // FIXME merge with class declaration.
+        setupNodeLocation(classNode, ctx)
+        attachAnnotations(classNode, ctx.annotationClause())
+        moduleNode.addClass(classNode)
+
+        classNode.modifiers = parseClassModifiers(ctx.classModifier()) | Opcodes.ACC_ENUM | Opcodes.ACC_FINAL
+        classNode.syntheticPublic = (classNode.modifiers & Opcodes.ACC_SYNTHETIC) != 0
+        classNode.modifiers &= ~Opcodes.ACC_SYNTHETIC // FIXME Magic with synthetic modifier.
+
+        def enumConstants = ctx.enumMember().grep { EnumMemberContext e -> e.IDENTIFIER() }.collect { it.IDENTIFIER() }
+        def classMembers = ctx.enumMember().grep { EnumMemberContext e -> e.classMember() }.collect { it.classMember() }
+        enumConstants.each {
+            setupNodeLocation(EnumHelper.addEnumConstant(classNode, it.text, null), it.symbol)
+        }
+        parseMembers(classNode,  classMembers)
+    }
+
+    void parseClassDeclaration(@NotNull ClassDeclarationContext ctx) {
         def classNode = new ClassNode("${moduleNode.packageName ?: ""}${ctx.IDENTIFIER()}", Modifier.PUBLIC, ClassHelper.OBJECT_TYPE)
         setupNodeLocation(classNode, ctx)
         attachAnnotations(classNode, ctx.annotationClause())
         moduleNode.addClass(classNode)
-        if (ctx.KW_EXTENDS())
-            classNode.setSuperClass(parseExpression(ctx.genericClassNameExpression()[0]))
-        if (ctx.KW_IMPLEMENTS())
-            classNode.setInterfaces(ctx.genericClassNameExpression()[(ctx.KW_EXTENDS() ? 1 : 0)..-1].collect { parseExpression(it) } as ClassNode[])
+        if (ctx.extendsClause())
+            classNode.setSuperClass(parseExpression(ctx.extendsClause().genericClassNameExpression()))
+        if (ctx.implementsClause())
+            classNode.setInterfaces(ctx.implementsClause().genericClassNameExpression().collect { parseExpression(it) } as ClassNode[])
 
         classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
         classNode.usingGenerics = classNode.genericsTypes || classNode.superClass.usingGenerics || classNode.interfaces.any { it.usingGenerics }
-        classNode.modifiers = parseClassModifiers(ctx.classModifier())
+        classNode.modifiers = parseClassModifiers(ctx.classModifier()) | (ctx.KW_INTERFACE() ? Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT : 0)
         classNode.syntheticPublic = (classNode.modifiers & Opcodes.ACC_SYNTHETIC) != 0
         classNode.modifiers &= ~Opcodes.ACC_SYNTHETIC // FIXME Magic with synthetic modifier.
 
+        if (ctx.AT()) {
+            classNode.addInterface(ClassHelper.Annotation_TYPE)
+            classNode.modifiers |= Opcodes.ACC_ANNOTATION
+        }
+
         parseMembers(classNode, ctx.classMember())
+
+        if (classNode.interface)
+            classNode.mixins =  null // FIXME why interface has null mixin
     }
 
     def parseMembers(ClassNode classNode, List<ClassMemberContext> ctx) {
@@ -251,8 +289,7 @@ class ASTBuilder extends GroovyParserBaseListener {
             def memberNode = parseMember(classNode, memberContext)
             if (memberNode)
                 setupNodeLocation(memberNode, member)
-            if (member.childCount > 1)
-            {
+            if (member.childCount > 1) {
                 assert memberNode instanceof AnnotatedNode
                 for (annotationCtx in member.children[0..-2]) {
                     assert annotationCtx instanceof AnnotationClauseContext
@@ -266,7 +303,7 @@ class ASTBuilder extends GroovyParserBaseListener {
     AnnotatedNode parseMember(ClassNode classNode, MethodDeclarationContext ctx) {
         //noinspection GroovyAssignabilityCheck
         def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier(), Opcodes.ACC_PUBLIC)
-        def statement = parseStatement(ctx.blockStatement() as BlockStatementContext)
+        def statement = ctx.methodBody() ? parseStatement(ctx.methodBody().blockStatement() as BlockStatementContext) : null
 
         def params = parseParameters(ctx.argumentDeclarationList())
 
@@ -274,6 +311,7 @@ class ASTBuilder extends GroovyParserBaseListener {
             ctx.genericClassNameExpression() ? parseExpression(ctx.genericClassNameExpression()) : ClassHelper.OBJECT_TYPE
 
         def exceptions = parseThrowsClause(ctx.throwsClause())
+        modifiers |= classNode.interface ? Opcodes.ACC_ABSTRACT : 0
         def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, returnType, params, exceptions, statement)
         methodNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
 
@@ -287,19 +325,23 @@ class ASTBuilder extends GroovyParserBaseListener {
     AnnotatedNode parseMember(ClassNode classNode, FieldDeclarationContext ctx) {
         //noinspection GroovyAssignabilityCheck
         def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier())
+        modifiers |= classNode.interface ? Opcodes.ACC_STATIC | Opcodes.ACC_FINAL : 0
 
         def typeDeclaration = ctx.genericClassNameExpression() ? parseExpression(ctx.genericClassNameExpression()) : ClassHelper.OBJECT_TYPE
         AnnotatedNode node
-        if (hasVisibilityModifier) {
-            def field = classNode.addField(ctx.IDENTIFIER().text, modifiers, typeDeclaration, null)
+        def initialValue = classNode.interface && typeDeclaration != ClassHelper.OBJECT_TYPE ? new ConstantExpression(initialExpressionForType(typeDeclaration)) : null
+        if (classNode.interface || hasVisibilityModifier) {
+            modifiers |= classNode.interface ? Opcodes.ACC_PUBLIC : 0
+
+            def field = classNode.addField(ctx.IDENTIFIER().text, modifiers, typeDeclaration, initialValue)
             attachAnnotations(field, ctx.annotationClause())
             node = setupNodeLocation(field, ctx)
         }
         else { // no visibility specified. Generate property node.
             def propertyModifier = modifiers | Opcodes.ACC_PUBLIC
-            def propertyNode = classNode.addProperty(ctx.IDENTIFIER().text, propertyModifier, typeDeclaration, null, null, null)
+            def propertyNode = classNode.addProperty(ctx.IDENTIFIER().text, propertyModifier, typeDeclaration, initialValue, null, null)
             propertyNode.field.modifiers = modifiers | Opcodes.ACC_PRIVATE
-            propertyNode.field.synthetic = true
+            propertyNode.field.synthetic = !classNode.interface
             node = setupNodeLocation(propertyNode.field, ctx)
             attachAnnotations(propertyNode.field, ctx.annotationClause())
             setupNodeLocation(propertyNode, ctx)
@@ -1090,5 +1132,18 @@ class ASTBuilder extends GroovyParserBaseListener {
     static String parseString(TerminalNode node) {
         def t = node.text
         t ? t[1..-2] : t
+    }
+
+    static def initialExpressionForType(ClassNode type) {
+        switch (type) {
+            case ClassHelper.int_TYPE: return 0
+            case ClassHelper.long_TYPE: return 0L
+            case ClassHelper.double_TYPE: return 0.0
+            case ClassHelper.float_TYPE: return 0f
+            case ClassHelper.boolean_TYPE: return Boolean.FALSE
+            case ClassHelper.short_TYPE: return 0 as short
+            case ClassHelper.byte_TYPE: return 0 as byte
+            case ClassHelper.char_TYPE: return 0 as char
+        }
     }
 }

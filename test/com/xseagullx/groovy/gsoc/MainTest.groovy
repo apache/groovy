@@ -22,7 +22,7 @@ class MainTest extends Specification {
         }
 
         ASTComparatorCategory.apply(config) {
-            assert moduleNodeNew == moduleNodeOld
+            assert moduleNodeNew == moduleNodeOld, "Fail in $path"
         }
 
         where:
@@ -37,6 +37,7 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/ClassModifiers_Issue_2.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ClassProperty_Issue4_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Closure_Issue21_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/Enums_Issue43_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ExceptionHandling_Issue27_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Extendsimplements_Issue25_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/FieldAccessAndMethodCalls_Issue37_1.groovy" | _

@@ -23,7 +23,7 @@ class ASTComparatorCategory {
     static String lastName
 
     static Map<Class, List<String>> DEFAULT_CONFIGURATION = [
-        (ClassNode): (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode", "allDeclaredMethods" ] + LOCATION_IGNORE_LIST) as List<String>,
+        (ClassNode): (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode", "allDeclaredMethods", "unresolvedSuperClass" ] + LOCATION_IGNORE_LIST) as List<String>,
         (ConstructorNode): ['declaringClass'],
         (DynamicVariable): [],
         (EnumConstantClassNode): [],
@@ -118,12 +118,18 @@ class ASTComparatorCategory {
      * @return
      */
     static reflexiveEquals(a, b, ignore = []) {
-        Boolean res = objects[[a, b]]
+        def objects = [a, b]
+        Boolean res = this.objects[objects]
         if (res != null) {
             log.info("Skipping [$a, $b] comparison as they are ${ res ? "" : "un" }equal.")
             return res;
         }
+        else if (this.objects.containsKey(objects)) {
+            log.info("Skipping as they are processed at higher levels.")
+            return true
+        }
 
+        this.objects[objects] = null
         log.info("Equals was called for ${ a.getClass() } ${ a.hashCode() }, $lastName")
         if (a.is(b))
             return true
@@ -142,8 +148,8 @@ class ASTComparatorCategory {
             log.info(" ==== Exit ${ a.getClass() } ${ a.hashCode() } ====== ")
 
         res = difference == null
-        objects[[a, b]] = res
-        objects[[b, a]] = res
+        this.objects[objects] = res
+        this.objects[objects.reverse(false)] = res
         res
     }
 

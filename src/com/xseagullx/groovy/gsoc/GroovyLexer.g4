@@ -106,6 +106,9 @@ fragment INTEGER_TYPE_MODIFIER: ('G' | 'L' | 'I' | 'g' | 'l' | 'i') ;
 fragment DECIMAL_TYPE_MODIFIER: ('G' | 'D' | 'F' | 'g' | 'd' | 'f') ;
 
 KW_CLASS: 'class' ;
+KW_INTERFACE: 'interface' ;
+KW_ENUM: 'enum' ;
+
 KW_PACKAGE: 'package' ;
 KW_IMPORT: 'import' ;
 KW_EXTENDS: 'extends' ;
