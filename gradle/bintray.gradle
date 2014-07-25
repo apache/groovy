@@ -59,7 +59,7 @@ artifactoryPublish {
                         curDate, file("$projectDir/target/poms/pom-binary.xml")), 'artifacts', "org/codehaus/groovy/groovy-binary/${version}/groovy-binary-${version}.pom"),
 
         ]
-        tasks.withType(Jar).matching { name.startsWith('backport') }.all {
+        tasks.withType(Jar).matching { it.name.startsWith('backport') }.all {
             additionalFiles << gradleDeployDetails(
                     new DefaultPublishArtifact(baseName, "jar", "jar", classifier, curDate, archivePath),
                     'artifacts',
@@ -74,3 +74,5 @@ artifactoryPublish {
         additionalFiles.each { deployDetails.add(it) }
     }
 }
+
+artifactoryPublish.dependsOn('backportJars')
