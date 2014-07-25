@@ -41,6 +41,24 @@ backports.each { pkg, classList ->
         include classList
         baseName = "groovy-backports-$pkg"
     }
-    backportJars.dependsOn backportJar
+
+    // the following two jars are empty. No wonder, Maven Central *requires* a javadoc and sources classifier
+    // it's stupid in our case, because we don't have such, but we have no choice
+    def javadocJar = task "backport${pkg}JavadocJar"(type:Jar) {
+        group = 'Backports'
+        dependsOn jarAll
+
+        baseName = "groovy-backports-$pkg"
+        classifier = 'javadoc'
+    }
+    def sourcesJar = task "backport${pkg}SourcesJar"(type:Jar) {
+        group = 'Backports'
+        dependsOn jarAll
+
+        baseName = "groovy-backports-$pkg"
+        classifier = 'sources'
+    }
+    backportJars.dependsOn([backportJar, javadocJar, sourcesJar])
+
 }
 
