@@ -64,6 +64,10 @@ artifactoryPublish {
                     new DefaultPublishArtifact(baseName, "jar", "jar", null, curDate, archivePath),
                     'artifacts',
                     "org/codehaus/groovy/${baseName}/${version}/${archiveName}")
+            additionalFiles << gradleDeployDetails(
+                    new DefaultPublishArtifact(baseName, "pom", "pom", null, curDate, file("$projectDir/target/poms/pom-${baseName-'groovy-'}.xml")),
+                    'artifacts',
+                    "org/codehaus/groovy/${baseName}/${version}/${baseName}-${version}.pom")
         }
         additionalFiles.each { deployDetails.add(it) }
     }
