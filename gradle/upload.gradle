@@ -16,7 +16,11 @@ def removeJarjaredDependencies = { p ->
 allprojects {
     apply plugin: 'maven'
     apply from: "${rootProject.projectDir}/gradle/pomconfigurer.gradle"
+}
 
+apply from: 'gradle/backports.gradle'
+
+allprojects {
 
     configurations {
         deployerJars
@@ -92,6 +96,12 @@ allprojects {
         project.artifacts.add('archives', javadocAllJar)
         project.artifacts.add('archives', groovydocAllJar)
         project.artifacts.add('archives', distBin)
+        tasks.withType(Jar).matching { it.name.startsWith('backport') }.each { t ->
+            project.artifacts.add('archives', t.archivePath) {
+                name = t.baseName
+                type = 'jar'
+            }
+        }
 
         def archive = jarAll.archivePath
         def indyJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1] + '-indy.jar')
@@ -106,13 +116,18 @@ allprojects {
 }
 ext.pomAll = {
     addFilter('groovy') { artifact, file ->
-        !(artifact.name.contains('groovy-all')) && !(artifact.name.contains('groovy-binary'))
+        !(artifact.name.contains('groovy-all')) && !(artifact.name.contains('groovy-binary')) && !(artifact.name.contains('backport'))
     }
     addFilter('all') { artifact, file ->
         artifact.name.contains('groovy-all')
     }
     addFilter('binary') { artifact, file ->
         artifact.name.contains('groovy-binary')
+    }
+    project.backports.each { pkg, classes ->
+        addFilter("backports-$pkg") { artifact, file ->
+            artifact.name == "groovy-backports-$pkg"
+        }
     }
 
     // regular pom
@@ -125,6 +140,16 @@ ext.pomAll = {
     // pom for binary zip
     def binarypom = pom('binary', pomConfigureClosureWithoutTweaks)
     binarypom.artifactId = 'groovy-binary'
+
+    // poms for backports
+    project.backports.each { pkg, classes ->
+        String id = "backports-$pkg"
+        def backportPom = pom(id, pomConfigureClosureWithoutTweaks)
+        backportPom.artifactId = "groovy-$id"
+        backportPom.whenConfigured { p ->
+            p.dependencies.clear()
+        }
+    }
 
     modules().each { sp ->
         sp.install.repositories.mavenInstaller.pom.whenConfigured { subpom ->
@@ -161,3 +186,4 @@ uploadArchives {
         mavenDeployer pomAll
     }
 }
+
