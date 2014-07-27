@@ -30,10 +30,10 @@ class CommandArgumentParser {
      * ["foo", "bar", "123", "456", "abc'def\", ""]
      *
      * @param untrimmedLine
-     * @param numTokensToCollect stop processing after so many args, negative means unlimited
+     * @param numTokensToCollect stop processing after so many tokens, negative means unlimited
      * @return
      */
-    static List<String> parseLine(final String untrimmedLine, final int numTokensToCollect) {
+    static List<String> parseLine(final String untrimmedLine, final int numTokensToCollect = -1) {
         assert untrimmedLine != null
 
         String line = untrimmedLine.trim()

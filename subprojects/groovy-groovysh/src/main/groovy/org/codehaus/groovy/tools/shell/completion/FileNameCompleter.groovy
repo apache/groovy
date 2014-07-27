@@ -48,6 +48,8 @@ implements Completer
 
     private final boolean blankSuffix = true;
 
+    private final handleLeadingHyphen = false;
+
     static {
         String os = Configuration.getOsName();
         OS_IS_WINDOWS = os.contains("windows");
@@ -60,9 +62,16 @@ implements Completer
         this.blankSuffix = blankSuffix;
     }
 
+
+    public FileNameCompleter(boolean blankSuffix, boolean handleLeadingHyphen) {
+        this(blankSuffix)
+        this.handleLeadingHyphen = handleLeadingHyphen
+    }
+
     public int complete(String buffer, final int cursor, final List<CharSequence> candidates) {
         // buffer can be null
         checkNotNull(candidates);
+        String hyphenChar = null;
 
         if (buffer == null) {
             buffer = "";
@@ -73,6 +82,10 @@ implements Completer
         }
 
         String translated = buffer;
+        if (handleLeadingHyphen && (translated.startsWith('\'') || translated.startsWith('"'))) {
+            hyphenChar = translated[0];
+            translated = translated.substring(1);
+        }
 
         File homeDir = getUserHome();
 
@@ -98,9 +111,9 @@ implements Completer
             dir = file.getParentFile();
         }
 
-        File[] entries = dir == null ? new File[0] : dir.listFiles();
+        File[] entries = (dir == null) ? new File[0] : dir.listFiles();
 
-        return matchFiles(buffer, translated, entries, candidates);
+        return matchFiles(buffer, translated, entries, candidates, hyphenChar);
     }
 
     protected String separator() {
@@ -115,7 +128,7 @@ implements Completer
         return new File(".");
     }
 
-    protected int matchFiles(final String buffer, final String translated, final File[] files, final List<CharSequence> candidates) {
+    protected int matchFiles(final String buffer, final String translated, final File[] files, final List<CharSequence> candidates, hyphenChar) {
         if (files == null) {
             return -1;
         }
@@ -135,12 +148,12 @@ implements Completer
                     if (file.isDirectory()) {
                         name += separator();
                     } else {
-                        if (blankSuffix) {
+                        if (blankSuffix && !hyphenChar) {
                             name += ' ';
                         }
                     }
                 }
-                candidates.add(render(file, name).toString());
+                candidates.add(render(name, hyphenChar).toString());
             }
         }
 
@@ -149,7 +162,18 @@ implements Completer
         return index + separator().length();
     }
 
-    protected CharSequence render(final File file, final CharSequence name) {
+    protected CharSequence render(final CharSequence name, final String hyphenChar) {
+        if (hyphenChar != null) {
+            return escapedNameInHyphens(name, hyphenChar);
+        }
+        if (name.contains(' ')) {
+            return escapedNameInHyphens(name, '\'');
+        }
         return name;
+    }
+
+    private String escapedNameInHyphens(String name, String hyphen) {
+        // need to escape every instance of chartoEscape, and every instance of the escape char backslash
+        return hyphen + name.replace('\\', '\\\\').replace(hyphen, '\\' + hyphen) + hyphen
     }
 }

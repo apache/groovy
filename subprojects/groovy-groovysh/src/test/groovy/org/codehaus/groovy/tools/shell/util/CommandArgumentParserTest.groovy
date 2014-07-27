@@ -38,6 +38,10 @@ public class CommandArgumentParserTest extends GroovyTestCase {
         assertEquals(['foo \\ "\' bar'], CommandArgumentParser.parseLine('\'foo \\\\ "\\\' bar\''))
         // no space between hyphentokens
         assertEquals(['bar', 'foo', 'bam', 'baz'], CommandArgumentParser.parseLine('bar"foo"\'bam\'\'baz\''))
+
+        // limited number of tokens
+        assertEquals(['foo'], CommandArgumentParser.parseLine("  foo bar  ", 1))
+        assertEquals(['bar', 'foo'], CommandArgumentParser.parseLine('bar"foo"\'bam\'\'baz\'', 2))
     }
 
 }

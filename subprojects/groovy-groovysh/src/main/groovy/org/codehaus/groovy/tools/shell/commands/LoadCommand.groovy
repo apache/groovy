@@ -16,9 +16,9 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import jline.console.completer.FileNameCompleter
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
+import org.codehaus.groovy.tools.shell.completion.FileNameCompleter
 
 /**
  * The 'load' command.
@@ -38,31 +38,31 @@ class LoadCommand
     }
 
     protected List createCompleters() {
-        return [ new FileNameCompleter() ]
+        return [ new FileNameCompleter(true, true) ]
     }
 
     Object execute(final List<String> args) {
         assert args != null
-        
+
         if (args.size() == 0) {
             fail("Command '$COMMAND_NAME' requires at least one argument") // TODO: i18n
         }
 
         for (source in args) {
             URL url
-            
+
             log.debug("Attempting to load: \"$url\"")
-            
+
             try {
                 url = new URL("$source")
             }
             catch (MalformedURLException e) {
                 def file = new File("$source")
-                
+
                 if (!file.exists()) {
                     fail("File not found: \"$file\"") // TODO: i18n
                 }
-                
+
                 url = file.toURI().toURL()
             }
 
