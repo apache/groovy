@@ -136,7 +136,7 @@ allprojects {
         def targetTmp = new File("${archivePath}.tmp.1.tmp")
 
         doFirst {
-            from zipTree(targetTmp)
+            from zipTree(target)
 
             def keepUntouched = [
                     'org/codehaus/groovy/cli/GroovyPosixParser*.class',
