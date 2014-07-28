@@ -445,7 +445,7 @@ assert p2.toString() == 'Jack Nicholson: Actor'
 '''
 
         assertScript '''
-// tag::tupleconstructor_example_includeSuperProperties[]
+// tag::tupleconstructor_example_callSuper[]
 import groovy.transform.TupleConstructor
 
 class Base {
@@ -473,7 +473,7 @@ assert p1.firstName == p2.firstName
 assert p1.lastName == p2.lastName
 assert p1.toString() == 'Jack Nicholson: null'
 assert p2.toString() == 'Jack Nicholson: actor'
-// end::tupleconstructor_example_includeSuperProperties[]
+// end::tupleconstructor_example_callSuper[]
 '''
     }
 
