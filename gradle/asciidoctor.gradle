@@ -85,9 +85,12 @@ def htmlOutputSanityCheck = { file, text, errors ->
 asciidoctor {
     def errors = new LinkedHashSet<String>()
     doFirst {
-        file('src/spec/test').eachFileRecurse { file ->
-            if (file.isFile()) {
-                adocSanityCheck(file, file.getText('utf-8'), errors)
+        def specTestDir = file('src/spec/test')
+        if (specTestDir.exists()) {
+            specTestDir.eachFileRecurse { file ->
+                if (file.isFile()) {
+                    adocSanityCheck(file, file.getText('utf-8'), errors)
+                }
             }
         }
         if (errors) {
