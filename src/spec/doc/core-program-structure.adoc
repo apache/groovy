@@ -13,8 +13,8 @@ This chapter covers the program structure of the Groovy programming language.
 === Static star import (TBD)
 === Import aliasing (TBD)
 
-== Scripts versus classes (TBD)
-=======
+== Scripts versus classes
+
 Package name plays exactly the same role as they used to play in Java. They allows us to separate the code base without any conflicts. Groovy classes must specify their package before the class definition, else the default package is assumed. 
 
 Defining a package is very similar to java, as you can see 
@@ -47,17 +47,17 @@ include::{projectdir}/src/spec/test/PackageTest.groovy[tags=default_import,inden
 
 The same code in Java needs an import statement to ++Date++ class like this: ++import java.util.Date++. Groovy by default imports these classes for you. There are six packages that groovy imports for you, they are:
 
--------------------------------------------------------------------
-								   import java.lang.*
-	                               import java.util.*
-	                               import java.io.*
-	                               import java.net.*
-	                               import groovy.lang.*
-	                               import groovy.util.*
-	                               import java.math.BigInteger
-	                               import java.math.BigDecimal
--------------------------------------------------------------------
-	
+[source,groovy]
+----
+import java.lang.*
+import java.util.*
+import java.io.*
+import java.net.*
+import groovy.lang.*
+import groovy.util.*
+import java.math.BigInteger
+import java.math.BigDecimal
+----
 	
 
 === Simple import
@@ -134,7 +134,7 @@ and we have some existing code using this library:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/PackageTest.groovy[tags=using_thrid_party_lib,indent=0]
+include::{projectdir}/src/spec/test/PackageTest.groovy[tags=using_third_party_lib,indent=0]
 ----
 
 Obviously, the ++result++ variable contains the wrong result. And assume you have used this library through out your code-base. Groovy has an elegant way to fix this issue.
@@ -149,8 +149,6 @@ include::{projectdir}/src/spec/test/PackageTest.groovy[tags=fixing_thrid_party_l
 Thats it! Notice how Groovy allowed us to use ++as++ keyword to solve the typical problem. 
 
 With Type aliasing we can able to solve the name collision problem ( which can occur with ++*++ imports) elegantly.
-
-== Scripts versus classes
 
 == Initializers (TBD)
 
