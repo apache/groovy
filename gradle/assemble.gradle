@@ -156,7 +156,7 @@ allprojects {
                     // only groovy core will include the dependencies repackaged
                     if (isRoot) {
                         configurations.runtime.files.findAll { file ->
-                            ['antlr', 'asm', 'commons-cli', 'openbeans'].any {
+                            ['antlr', 'asm', 'commons-cli'].any {
                                 file.name.startsWith(it)
                             } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
                         }.each { jarjarFile ->
@@ -208,6 +208,7 @@ allprojects {
             classifier = jar.classifier ? "${jar.classifier}grooid" : 'grooid'
             includeEmptyDirs = false
             def target = new File("${archivePath}.tmp")
+            boolean isRootProject = project==rootProject
 
             doFirst {
                 from zipTree(target)
@@ -215,7 +216,9 @@ allprojects {
                     taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: rootProject.configurations.tools.asPath
                     jarjar(jarfile: target) {
                         zipfileset(src: jarjar.archivePath)
-
+                        if (isRootProject) {
+                            zipfileset(src: rootProject.configurations.runtime.files.find { it.name.startsWith('openbeans') })
+                        }
                         rule pattern: 'com.googlecode.openbeans.**', result: 'groovyjarjaropenbeans.@1'
                         rule pattern: 'org.apache.harmony.beans.**', result: 'groovyjarjarharmonybeans.@1'
                         rule pattern: 'java.beans.**', result: 'groovyjarjaropenbeans.@1'
