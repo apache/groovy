@@ -53,32 +53,78 @@ task asciidoctorAssets(type:Copy) {
 }
 asciidoctor.finalizedBy asciidoctorAssets
 
-asciidoctor.doLast {
+def adocSanityCheck = { file, text, errors ->
+    Set localErrors = []
+    text.eachLine(1) { line,i ->
+        if (line =~ /tag:[a-zA-Z0-9]/) {
+            localErrors << "line $i misses semicolon. Should be tag::\n $line"
+        }
+        if (line =~ /end:[a-zA-Z0-9]/) {
+            localErrors << "line $i misses semicolon. Should be end::\n $line"
+        }
+        if (line =~ /(tag|end)::[^\[\]]$/) {
+            localErrors << "line $i contains incorrect tag definition (misses []):\n $line"
+        }
+    }
+    localErrors.collect(errors) { "    $file, $it" }
+}
 
-    def scripts = '''<link rel="stylesheet" href="assets/css/view-example.css">
+def htmlOutputSanityCheck = { file, text, errors ->
+    Set localErrors = []
+    text.eachLine(1) { line,i ->
+        if (line =~ /^={1,5} /) {
+            localErrors << "line $i starting with asciidoctor raw markup:\n$line"
+        }
+        if (line =~ /<code class=".+?"><\/code>/) {
+            localErrors << "contains empty code block, probably incorrect import of a tag."
+        }
+    }
+    localErrors.collect(errors) { "    $file, $it" }
+}
+
+asciidoctor {
+    def errors = new LinkedHashSet<String>()
+    doFirst {
+        file('src/spec/test').eachFileRecurse { file ->
+            if (file.isFile()) {
+                adocSanityCheck(file, file.getText('utf-8'), errors)
+            }
+        }
+        if (errors) {
+            throw new GradleException("Incorrect Asciidoctor input:\n${errors.join('\n')}")
+        }
+    }
+
+    doLast {
+
+        def scripts = '''<link rel="stylesheet" href="assets/css/view-example.css">
 <script src='assets/js/jquery-2.1.1.min.js'></script>
 <script src='assets/js/view-example.js'></script>'''
 
-    def baseUrls = [
-            jdk: "http://docs.oracle.com/javase/8/docs/api/index.html",
-            gjdk: "http://docs.groovy-lang.org/${version}/html/groovy-jdk/index.html",
-            gapi: "http://docs.groovy-lang.org/${version}/html/gapi/index.html",
-    ]
+        def baseUrls = [
+                jdk: "http://docs.oracle.com/javase/8/docs/api/index.html",
+                gjdk: "http://docs.groovy-lang.org/${version}/html/groovy-jdk/index.html",
+                gapi: "http://docs.groovy-lang.org/${version}/html/gapi/index.html",
+        ]
 
-    // gapi macro expansion
-    outputDir.eachFileMatch(~'.*html') { File file ->
-        def text = file.getText('UTF-8')
-        text = text.replaceAll(/(gapi|gjdk|jdk)::([a-zA-Z0-9$.#]+)(?:\[([^\]]*)\])?/) { m ->
-            def (className, anchor) = m[2].split('#') as List
-            def label = m[3] ?: '<code>' + className + '</code>'
-            "<a href='${calculateDocUrl(baseUrls[m[1]], className, anchor)}' target='_blank'>$label</a>"
+
+        // gapi macro expansion
+        outputDir.eachFileMatch(~'.*html') { File file ->
+            def text = file.getText('UTF-8')
+            text = text.replaceAll(/(gapi|gjdk|jdk)::([a-zA-Z0-9$.#]+)(?:\[([^\]]*)\])?/) { m ->
+                def (className, anchor) = m[2].split('#') as List
+                def label = m[3] ?: '<code>' + className + '</code>'
+                "<a href='${calculateDocUrl(baseUrls[m[1]], className, anchor)}' target='_blank'>$label</a>"
+            }
+
+            text = text.replaceAll('</head>', "$scripts</head>")
+            htmlOutputSanityCheck(file, text, errors)
+            file.write(text, 'UTF-8')
         }
-
-        text = text.replaceAll('</head>', "$scripts</head>")
-
-        file.write(text, 'UTF-8')
+        if (errors) {
+            throw new GradleException("Incorrect Asciidoctor output:\n${errors.join('\n')}")
+        }
     }
-
 }
 
 String calculateDocUrl(String baseUrl, String className, String anchor) {

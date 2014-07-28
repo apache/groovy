@@ -74,7 +74,7 @@ class PackageTest extends GroovyTestCase {
     void testMakeItTwice()
     {
         assertScript '''
-            //tag:type_aliasing[]
+            //tag::type_aliasing[]
 
             package com.lib
 
@@ -88,7 +88,7 @@ class PackageTest extends GroovyTestCase {
 
             assert 4 != new MultiplyTwo().multiply(2)
 
-            //end:type_aliasing[]
+            //end::type_aliasing[]
         '''
     }*/
 
