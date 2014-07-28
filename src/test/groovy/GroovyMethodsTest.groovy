@@ -1429,6 +1429,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert map == [a: 'A', b: 'B', c: 'C']
     }
 
+    void testCollectEntriesListFallbackCases() {
+        assert [[[1,'a'], [2,'b'], [3]].collectEntries(),
+                [[1,'a'], [2,'b'], []].collectEntries(),
+                [[1,'a'], [2,'b'], [3, 'c', 42]].collectEntries()] == [[1:'a', 2:'b', 3:null], [1:'a', 2:'b', (null):null], [1:'a', 2:'b', 3:'c']]
+        shouldFail(NullPointerException) {
+            [[1, 'a'], [3]].collectEntries(new Hashtable())
+        }
+    }
+
     void testListTakeWhile() {
         def data = [
             new ArrayList( [ 1, 3, 2 ] ),
