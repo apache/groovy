@@ -2647,6 +2647,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert [a:1, b:2].collectEntries( [30:'C'] ) { key, value ->
      *     [(value*10): key.toUpperCase()] } == [10:'A', 20:'B', 30:'C']
      * </pre>
+     * Note: When using the list-style of result, the behavior is '<code>def (key, value) = listResultFromClosure</code>'.
+     * While we strongly discourage using a list of size other than 2, Groovy's normal semantics apply in this case;
+     * throwing away elements after the second one and using null for the key or value for the case of a shortened list.
+     * If your collector Map doesn't support null keys or values, you might get a runtime error, e.g. NullPointerException or IllegalArgumentException.
      *
      * @param self      a Map
      * @param collector the Map into which the transformed entries are put
@@ -2671,6 +2675,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert [a:1, b:2].collectEntries { key, value ->
      *     [(value*10): key.toUpperCase()] } == [10:'A', 20:'B']
      * </pre>
+     * Note: When using the list-style of result, the behavior is '<code>def (key, value) = listResultFromClosure</code>'.
+     * While we strongly discourage using a list of size other than 2, Groovy's normal semantics apply in this case;
+     * throwing away elements after the second one and using null for the key or value for the case of a shortened list.
+     * If your Map doesn't support null keys or values, you might get a runtime error, e.g. NullPointerException or IllegalArgumentException.
      *
      * @param self      a Map
      * @param transform the closure used for transforming, which can take one (Map.Entry) or two (key, value) parameters and
@@ -2717,6 +2725,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * // collect letters with index using map style
      * assert (0..2).collectEntries { index -> [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
      * </pre>
+     * Note: When using the list-style of result, the behavior is '<code>def (key, value) = listResultFromClosure</code>'.
+     * While we strongly discourage using a list of size other than 2, Groovy's normal semantics apply in this case;
+     * throwing away elements after the second one and using null for the key or value for the case of a shortened list.
      *
      * @param self      an Iterable
      * @param transform the closure used for transforming, which has an item from self as the parameter and
@@ -2809,6 +2820,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert (0..2).collectEntries( [4:'d'] ) { index ->
      *     [(index+1): letters[index]] } == [1:'a', 2:'b', 3:'c', 4:'d']
      * </pre>
+     * Note: When using the list-style of result, the behavior is '<code>def (key, value) = listResultFromClosure</code>'.
+     * While we strongly discourage using a list of size other than 2, Groovy's normal semantics apply in this case;
+     * throwing away elements after the second one and using null for the key or value for the case of a shortened list.
+     * If your collector Map doesn't support null keys or values, you might get a runtime error, e.g. NullPointerException or IllegalArgumentException.
      *
      * @param self      an Iterable
      * @param collector the Map into which the transformed entries are put
@@ -2871,6 +2886,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert nums.collectEntries( [4:'d'] ) { index ->
      *     [(index+1): letters[index]] } == [1:'a', 2:'b', 3:'c', 4:'d']
      * </pre>
+     * Note: When using the list-style of result, the behavior is '<code>def (key, value) = listResultFromClosure</code>'.
+     * While we strongly discourage using a list of size other than 2, Groovy's normal semantics apply in this case;
+     * throwing away elements after the second one and using null for the key or value for the case of a shortened list.
+     * If your collector Map doesn't support null keys or values, you might get a runtime error, e.g. NullPointerException or IllegalArgumentException.
      *
      * @param self      an Object array
      * @param collector the Map into which the transformed entries are put
@@ -2909,6 +2928,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * // collect letters with index using map style
      * assert nums.collectEntries { index -> [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
      * </pre>
+     * Note: When using the list-style of result, the behavior is '<code>def (key, value) = listResultFromClosure</code>'.
+     * While we strongly discourage using a list of size other than 2, Groovy's normal semantics apply in this case;
+     * throwing away elements after the second one and using null for the key or value for the case of a shortened list.
      *
      * @param self      a Collection
      * @param transform the closure used for transforming, which has an item from self as the parameter and
@@ -2936,9 +2958,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     private static <K, V> void addEntry(Map<K, V> result, Object newEntry) {
         if (newEntry instanceof Map) {
             leftShift(result, (Map)newEntry);
-        } else if (newEntry instanceof List && ((List)newEntry).size() == 2) {
+        } else if (newEntry instanceof List) {
             List list = (List) newEntry;
-            leftShift(result, new MapEntry(list.get(0), list.get(1)));
+            // def (key, value) == list
+            Object key = list.size() == 0 ? null : list.get(0);
+            Object value = list.size() <= 1 ? null : list.get(1);
+            leftShift(result, new MapEntry(key, value));
         } else {
             // TODO: enforce stricter behavior?
             // given Map.Entry is an interface, we get a proxy which gives us lots
