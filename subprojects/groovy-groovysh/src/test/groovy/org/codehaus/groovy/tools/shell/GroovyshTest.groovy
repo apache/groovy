@@ -209,6 +209,13 @@ class GroovyshTest extends GroovyTestCase {
         groovysh.register(command2)
         assert command2 == groovysh.findCommand(" foo bar ")
         assert groovysh.isExecutable(" foo import ")
+        List accumulateArgs = []
+        assert command2 == groovysh.findCommand(" foo bar ", accumulateArgs)
+        assert accumulateArgs == ['bar']
+        accumulateArgs = []
+        assert command2 == groovysh.findCommand(" foo bar baz", accumulateArgs)
+        assert accumulateArgs == ['bar', 'baz']
+        assert groovysh.isExecutable(" foo import ")
         assert command2 == groovysh.findCommand(" /foo bar ")
         assertNull(groovysh.findCommand(" bar foo "))
     }
@@ -256,7 +263,7 @@ class GroovyshTest extends GroovyTestCase {
         } catch (ArithmeticException e) {}
     }
 
-    File createTemporaryGroovyScriptFile(content) {
+    static File createTemporaryGroovyScriptFile(content) {
         String testName = "GroovyshTest" + System.currentTimeMillis()
         File groovyCode = new File(System.getProperty("java.io.tmpdir"), testName)
         groovyCode.write(content)
@@ -337,11 +344,22 @@ class GroovyshCompletorTest extends GroovyTestCase {
 -*/
         IO testio = new IO()
         Groovysh groovysh = new Groovysh(testio)
-        List result = groovysh.interp.evaluate(["import " + ReflectionCompletor.getCanonicalName(), """class Foo extends HashSet implements Comparable {
-int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""", "ReflectionCompletor.getPublicFieldsAndMethods(Foo, \"\")"])
-        assert result
-        assert result.size() > 0
-        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
+        List<ReflectionCompletionCandidate> candResult = (List<ReflectionCompletionCandidate>) groovysh.interp.evaluate([
+                """\
+import ${ReflectionCompletor.getCanonicalName()}
+class Foo extends HashSet implements Comparable {
+int compareTo(Object) {0};
+int priv;
+static int priv2;
+public int foo;
+public static int bar;
+int foom(){1};
+static int barm(){2}}
+ReflectionCompletor.getPublicFieldsAndMethods(Foo, '')
+"""])
+        assert candResult
+        assert candResult.size() > 0
+        List<String> result = candResult.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert [] == result.findAll({it.startsWith("_")})
         assert [] == result.findAll({it.startsWith("super\$")})
         assert [] == result.findAll({it.startsWith("this\$")})
@@ -363,12 +381,23 @@ int compareTo(Object) {0}; int priv; static int priv2; public int foo; public st
 -*/
         IO testio = new IO()
         Groovysh groovysh = new Groovysh(testio)
-        List result = groovysh.interp.evaluate(["import " + ReflectionCompletor.getCanonicalName(), """class Foo extends HashSet implements Comparable {
-int compareTo(Object) {0}; int priv; static int priv2; public int foo; public static int bar; int foom(){1}; static int barm(){2}}""",
-                "ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), \"\")"])
-        assertNotNull(result)
-        assert result.size() > 0
-        result = result.collect({ReflectionCompletionCandidate cc -> cc.value})
+        List<ReflectionCompletionCandidate> candResult = (List<ReflectionCompletionCandidate>) groovysh.interp.evaluate([
+                """\
+import ${ReflectionCompletor.getCanonicalName()}
+class Foo extends HashSet implements Comparable {
+  int compareTo(Object) {0};
+  int priv;
+  static int priv2;
+  public int foo;
+  public static int bar;
+  int foom(){1};
+  static int barm(){2}
+}
+ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
+"""])
+        assertNotNull(candResult)
+        assert candResult.size() > 0
+        List<String> result = candResult.collect({ReflectionCompletionCandidate cc -> cc.value})
         assert [] == result.findAll({it.startsWith("_")})
         assert [] == result.findAll({it.startsWith("super\$")})
         assert [] == result.findAll({it.startsWith("this\$")})

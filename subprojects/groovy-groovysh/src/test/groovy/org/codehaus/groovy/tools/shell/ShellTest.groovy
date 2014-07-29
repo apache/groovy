@@ -35,11 +35,7 @@ class ShellTest extends GroovyTestCase {
                 mockErr)
     }
 
-    void testParseLine() {
-        Shell shell = new Shell(testio)
-        assertEquals(['foo', 'bar'], shell.parseLine("  foo bar  "))
-        assertEquals([], shell.parseLine(""))
-    }
+
 
     void testFindCommandNull() {
         Shell shell = new Shell(testio)
