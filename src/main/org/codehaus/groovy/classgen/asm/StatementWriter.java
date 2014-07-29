@@ -110,7 +110,7 @@ public class StatementWriter {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
 
-        compileStack.pushLoop(loop.getVariableScope(), loop.getStatementLabel());
+        compileStack.pushLoop(loop.getVariableScope(), loop.getStatementLabels());
 
         // Declare the loop counter.
         BytecodeVariable variable = compileStack.defineVariable(loop.getVariable(), false);
@@ -150,7 +150,7 @@ public class StatementWriter {
         writeStatementLabel(loop);
 
         MethodVisitor mv = controller.getMethodVisitor();
-        controller.getCompileStack().pushLoop(loop.getVariableScope(), loop.getStatementLabel());
+        controller.getCompileStack().pushLoop(loop.getVariableScope(), loop.getStatementLabels());
 
         ClosureListExpression clExpr = (ClosureListExpression) loop.getCollectionExpression();
         controller.getCompileStack().pushVariableScope(clExpr.getVariableScope());
@@ -219,7 +219,7 @@ public class StatementWriter {
 
         MethodVisitor mv = controller.getMethodVisitor();
 
-        controller.getCompileStack().pushLoop(loop.getStatementLabel());
+        controller.getCompileStack().pushLoop(loop.getStatementLabels());
         Label continueLabel = controller.getCompileStack().getContinueLabel();
         Label breakLabel = controller.getCompileStack().getBreakLabel();
 
@@ -256,7 +256,7 @@ public class StatementWriter {
 
         MethodVisitor mv = controller.getMethodVisitor();
 
-        controller.getCompileStack().pushLoop(loop.getStatementLabel());
+        controller.getCompileStack().pushLoop(loop.getStatementLabels());
         Label breakLabel = controller.getCompileStack().getBreakLabel();
         Label continueLabel = controller.getCompileStack().getContinueLabel();
         mv.visitLabel(continueLabel);

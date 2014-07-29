@@ -116,37 +116,21 @@ class BreakContinueLabelTest extends CompilableTestSupport {
         }
     }
 
-    // documents a (minor) limitation of the current implementation compared to Java
-    void testBreakToOtherThanLastLabelCausesSyntaxError() {
-        shouldNotCompile """
-one:
-two:
-three:
-for (i in 1..2) {
-  break one
-}
-            """
-    }
-
-    void testContinueToLastLabelSucceeds() {
-        one:
-        two:
-        three:
-        for (i in 1..2) {
-            continue three
-            fail()
-        }
-    }
-
-    // documents a (minor) limitation of the current implementation compared to Java
-    void testContinueToOtherThanLastLabelCausesSyntaxError() {
-        shouldNotCompile """
-one:
-two:
-three:
-for (i in 1..2) {
-  continue two
-}
+    void testMultipleLabelSupport() {
+        assertScript """
+            def visited = []
+            label1:
+            label2:
+            label3:
+            for (int i = 0; i < 9; i++) {
+              visited << i
+              if (i == 1) continue label1
+              visited << 10 + i
+              if (i == 3) continue label2
+              visited << 100 + i
+              if (i == 5) break label3
+            }
+            assert visited == [0, 10, 100, 1, 2, 12, 102, 3, 13, 4, 14, 104, 5, 15, 105]
         """
     }
 

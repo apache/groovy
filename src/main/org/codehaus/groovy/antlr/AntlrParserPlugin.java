@@ -1441,8 +1441,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST node = labelNode.getFirstChild();
         String label = identifier(node);
         Statement statement = statement(node.getNextSibling());
-        if (statement.getStatementLabel() == null) // if statement has multiple labels, retain the last one
-            statement.setStatementLabel(label);
+        statement.addStatementLabel(label);
         return statement;
     }
 
