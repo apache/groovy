@@ -23,7 +23,7 @@
       </filesystem>
       <ibiblio name="localm2" root="file:${user.home}/.m2/repository/" checkmodified="true" changingPattern=".*" changingMatcher="regexp" m2compatible="true"/>
       <!-- todo add 'endorsed groovy extensions' resolver here -->
-      <ibiblio name="jcenter" root="http://jcenter.bintray.com/" m2compatible="true"/>
+      <ibiblio name="jcenter" root="https://jcenter.bintray.com/" m2compatible="true"/>
       <ibiblio name="codehaus" root="http://repository.codehaus.org/" m2compatible="true"/>
       <ibiblio name="ibiblio" m2compatible="true"/>
       <ibiblio name="java.net2" root="http://download.java.net/maven/2/" m2compatible="true"/>
