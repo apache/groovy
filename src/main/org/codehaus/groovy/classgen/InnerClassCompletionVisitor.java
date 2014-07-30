@@ -73,7 +73,8 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             }
         }
         if (node.isEnum() || node.isInterface()) return;
-        addDispatcherMethods(node);
+        // use Iterator.hasNext() to check for available inner classes
+        if (node.getInnerClasses().hasNext()) addDispatcherMethods(node);
         if (innerClass == null) return;
         super.visitClass(node);
         addDefaultMethods(innerClass);

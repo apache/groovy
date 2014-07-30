@@ -23,7 +23,7 @@ package org.codehaus.groovy.tools.shell.util
 class ScriptVariableAnalyzerTest extends GroovyTestCase {
 
     void testEmptyScript() {
-        assert ['name', 'value'] as Set == ScriptVariableAnalyzer.getBoundVars('')
+        assert [] as Set == ScriptVariableAnalyzer.getBoundVars('')
     }
 
     void testBound() {
@@ -31,7 +31,7 @@ class ScriptVariableAnalyzerTest extends GroovyTestCase {
    int a = 6
    String b = "7"
 '''
-        assert ['a', 'b', 'name', 'value'] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText)
+        assert ['a', 'b'] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText)
     }
 
     void testUnBound() {
@@ -39,7 +39,7 @@ class ScriptVariableAnalyzerTest extends GroovyTestCase {
    a = 6
    b = "7"
 '''
-        assert ['name', 'value'] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText)
+        assert [] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText)
     }
 
     void testMixed() {
@@ -56,6 +56,6 @@ class ScriptVariableAnalyzerTest extends GroovyTestCase {
    }
    assert b
 '''
-        assert ['b', 'c', 'name', 'value'] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText)
+        assert ['b', 'c'] as Set == ScriptVariableAnalyzer.getBoundVars(scriptText)
     }
 }
