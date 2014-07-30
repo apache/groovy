@@ -64,6 +64,10 @@ public class GroovyShell extends GroovyObjectSupport {
         this(null, binding);
     }
 
+    public GroovyShell(ClassLoader parent, CompilerConfiguration config) {
+        this(parent, new Binding(), config);
+    }
+
     public GroovyShell(CompilerConfiguration config) {
         this(new Binding(), config);
     }
