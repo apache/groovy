@@ -206,6 +206,7 @@ dependencies {
 
     testCompile project(':groovy-ant')
     testCompile project(':groovy-test')
+    testCompile project(':groovy-json')
 }
 
 ext.generatedDirectory = "${buildDir}/generated-sources"
