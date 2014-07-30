@@ -53,7 +53,7 @@ if (JavaVersion.current().isJava7Compatible()) {
             }
             removedMethod { c, m ->
                 if (!skipMethod(c, m)) {
-                    def level = m.name.startsWith('super$') ? 'info' : 'error'
+                    def level = m.name.startsWith('super$') ? 'warning' : 'error'
                     violations[c.fullyQualifiedName][level] << "Method ${m.name} has been removed"
                 }
             }
