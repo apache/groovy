@@ -82,8 +82,9 @@ class NamespaceNodeTest extends TestXmlSupport {
   </ns1:innerWithNewNamespace>
   <innerWithoutNewNamespace>bar</innerWithoutNewNamespace>
 </outer>
-"""
-        assertEquals expected, XmlUtil.serialize(result).replaceAll("\r\n", "\n")
+""".replaceAll('[\r\n]','')
+        def actual = XmlUtil.serialize(result).replaceAll("[\r\n]", "")
+        assert actual == expected
     }
 
     void testNamespaceBuilderWithoutNamespace() {
@@ -97,7 +98,8 @@ class NamespaceNodeTest extends TestXmlSupport {
   <inner name="foo"/>
   <inner>bar</inner>
 </outer>
-"""
-        assertEquals expected, XmlUtil.serialize(result).replaceAll("\r\n", "\n")
+""".replaceAll('[\r\n]','')
+        def actual = XmlUtil.serialize(result).replaceAll("[\r\n]", "")
+        assert actual == expected
     }
 }
