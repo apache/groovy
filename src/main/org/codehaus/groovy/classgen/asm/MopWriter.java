@@ -16,9 +16,12 @@
 package org.codehaus.groovy.classgen.asm;
 
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -62,8 +65,19 @@ public class MopWriter {
         if (classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
             return;
         }
-        visitMopMethodList(classNode.getMethods(), true);
-        visitMopMethodList(classNode.getSuperClass().getAllDeclaredMethods(), false);
+        Set<MopKey> currentClassSignatures = buildCurrentClassSignatureSet(classNode.getMethods());
+        visitMopMethodList(classNode.getMethods(), true, Collections.EMPTY_SET);
+        visitMopMethodList(classNode.getSuperClass().getAllDeclaredMethods(), false, currentClassSignatures);
+    }
+
+    private Set<MopKey> buildCurrentClassSignatureSet(List<MethodNode> methods) {
+        if (methods.size()==0) return Collections.EMPTY_SET;
+        HashSet<MopKey> result = new HashSet<MopKey>(methods.size());
+        for (MethodNode mn : methods) {
+            MopKey key = new MopKey(mn.getName(), mn.getParameters());
+            result.add(key);
+        }
+        return result;
     }
     
     /**
@@ -77,11 +91,10 @@ public class MopWriter {
      * @param isThis  if true, then we are creating a MOP method on "this", "super" else
      * @see #generateMopCalls(LinkedList, boolean)
      */
-    private void visitMopMethodList(List methods, boolean isThis) {
+    private void visitMopMethodList(List<MethodNode> methods, boolean isThis, Set<MopKey> useOnlyIfDeclaredHereToo) {
         HashMap<MopKey, MethodNode> mops = new HashMap<MopKey, MethodNode>();
         LinkedList<MethodNode> mopCalls = new LinkedList<MethodNode>();
-        for (Object method : methods) {
-            MethodNode mn = (MethodNode) method;
+        for (MethodNode mn : methods) {
             // mop methods are helper for this and super calls and do direct calls
             // to the target methods. Such a method cannot be abstract or a bridge
             if ((mn.getModifiers() & (ACC_ABSTRACT | ACC_BRIDGE)) != 0) continue;
@@ -97,6 +110,7 @@ public class MopWriter {
                 continue;
             }
             if (methodName.startsWith("<")) continue;
+            if (!useOnlyIfDeclaredHereToo.contains(new MopKey(methodName, mn.getParameters()))) continue;
             String name = getMopMethodName(mn, isThis);
             MopKey key = new MopKey(name, mn.getParameters());
             if (mops.containsKey(key)) continue;
