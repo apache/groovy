@@ -39,6 +39,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -48,6 +50,7 @@ import java.util.Map;
 
 public class JavaStubGenerator {
     private boolean java5 = false;
+	private String encoding;
     private boolean requireSuperResolved = false;
     private File outputPath;
     private List<String> toCompile = new ArrayList<String>();
@@ -56,15 +59,16 @@ public class JavaStubGenerator {
     private ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
     private ModuleNode currentModule;
 
-    public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5) {
+    public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5, String encoding) {
         this.outputPath = outputPath;
         this.requireSuperResolved = requireSuperResolved;
         this.java5 = java5;
+		this.encoding = encoding;
         outputPath.mkdirs();
     }
 
     public JavaStubGenerator(final File outputPath) {
-        this(outputPath, false, false);
+        this(outputPath, false, false, Charset.defaultCharset().name());
     }
 
     private void mkdirs(File parent, String relativeFile) {
@@ -93,7 +97,8 @@ public class JavaStubGenerator {
 
         File file = new File(outputPath, fileName + ".java");
         FileOutputStream fos = new FileOutputStream(file);
-        PrintWriter out = new PrintWriter(fos);
+        Charset charset = Charset.forName(encoding);
+        PrintWriter out = new PrintWriter(new OutputStreamWriter(fos, charset));
 
         try {
             String packageName = classNode.getPackageName();

@@ -53,7 +53,8 @@ public class JavaStubCompilationUnit extends CompilationUnit {
             destDir = (File) options.get("stubDir");
         }
         boolean useJava5 = CompilerConfiguration.isPostJDK5(configuration.getTargetBytecode());
-        stubGenerator = new JavaStubGenerator(destDir, false, useJava5);
+		String encoding = configuration.getSourceEncoding();
+        stubGenerator = new JavaStubGenerator(destDir, false, useJava5, encoding);
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
             @Override
