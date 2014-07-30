@@ -35,12 +35,16 @@ class JsonTest extends GroovyTestCase {
     void testParseTextWithNumber() {
         // tag::parse_number[]
         def jsonSlurper = new JsonSlurper()
-        def object = jsonSlurper.parseText('{ "simple": 123, "fraction": 123.66, "exponential": 123e12 }')
+        def object = jsonSlurper.parseText '''
+            { "simple": 123,
+              "fraction": 123.66,
+              "exponential": 123e12
+            }'''
 
         assert object instanceof Map
         assert object.simple.class == Integer
-        assert object.fraction.class == Double
-        assert object.exponential.class == Double
+        assert object.fraction.class == BigDecimal
+        assert object.exponential.class == BigDecimal
         // end::parse_number[]
     }
 
