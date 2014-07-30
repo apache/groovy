@@ -221,6 +221,7 @@ try {
 
 == Expressions (TBD)
 
+[[gpath_expressions]]
 === GPath expressions (TBD)
 
 == Promotion and coercion (TBD)

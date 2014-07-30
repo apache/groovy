@@ -24,8 +24,8 @@ package groovy.json
  * to be able to learn about the various possibilities of usage.
  * <p>
  * Unlike the JsonBuilder class which creates a data structure in memory,
- * which is handy in those situations where you want to alter the structure programmatically before output,
- * the StreamingJsonBuilder streams to a writter directly without any memory data structure.
+ * which is handy in those situations where you want to alter the structure programatically before output,
+ * the StreamingJsonBuilder streams to a writer directly without any memory data structure.
  * So if you don't need to modify the structure, and want a more memory-efficient approach,
  * please use the StreamingJsonBuilder.
  * <p>
