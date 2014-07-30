@@ -175,6 +175,20 @@ class GenericsTest extends GenericsTestBase {
         ]
     }
 
+    void testwildcardWithBound() {
+        createClassInfo """
+            class Something<T extends Number> {
+                List<? super T> dependency
+            }
+        """
+        assert signatures == [
+                "class":    "<T:Ljava/lang/Number;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
+                dependency: "Ljava/util/List<-TT;>;",
+                "setDependency(Ljava/util/List;)V"  : "(Ljava/util/List<-TT;>;)V",
+                "getDependency()Ljava/util/List;"   : "()Ljava/util/List<-TT;>;",
+        ]
+    }
+
     public void testParameterAsParameterForReturnTypeAndFieldClass() {
         createClassInfo """
                public class B<T> {

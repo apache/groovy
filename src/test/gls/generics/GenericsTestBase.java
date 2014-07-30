@@ -29,7 +29,7 @@ import java.util.Map;
 
 public abstract class GenericsTestBase extends GroovyTestCase {
     MyLoader loader;
-    HashMap signatures = new HashMap();
+    HashMap signatures;
     
     private class MyLoader extends GroovyClassLoader{
         public MyLoader(ClassLoader classLoader) {
@@ -75,6 +75,7 @@ public abstract class GenericsTestBase extends GroovyTestCase {
     
     public void setUp(){
         loader = new MyLoader(this.getClass().getClassLoader());
+        signatures = new HashMap();
     }
     
     public void createClassInfo(String script) {
