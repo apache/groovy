@@ -258,6 +258,11 @@ public class CompilationUnit extends ProcessingUnit {
         phaseOperations[phase].add(op);
     }
 
+    public void addFirstPhaseOperation(PrimaryClassNodeOperation op, int phase) {
+        if (phase < 0 || phase > Phases.ALL) throw new IllegalArgumentException("phase " + phase + " is unknown");
+        phaseOperations[phase].add(0, op);
+    }
+
     public void addPhaseOperation(GroovyClassOperation op) {
         phaseOperations[Phases.OUTPUT].addFirst(op);
     }
