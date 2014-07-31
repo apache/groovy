@@ -81,9 +81,9 @@ public class CallSiteWriter {
     public static final String CONSTRUCTOR = "<$constructor$>";
     
     private final List callSites = new ArrayList(32);
-    private int callSiteArrayVarIndex;
+    private int callSiteArrayVarIndex = -1;
     private WriterController controller;
-    
+
     public CallSiteWriter(WriterController wc) {
         this.controller = wc;
         ClassNode node = controller.getClassNode();
@@ -359,5 +359,9 @@ public class CallSiteWriter {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitInsn(ACONST_NULL);
         mv.visitFieldInsn(PUTSTATIC, classInternalName, "$callSiteArray", "Ljava/lang/ref/SoftReference;");
+    }
+
+    public boolean hasCallSiteUse() {
+        return callSiteArrayVarIndex>=0;
     }
 }

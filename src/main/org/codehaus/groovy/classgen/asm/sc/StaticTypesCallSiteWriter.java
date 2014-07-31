@@ -54,7 +54,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     private static final MethodNode COLLECTION_SIZE_METHOD = COLLECTION_TYPE.getMethod("size", Parameter.EMPTY_ARRAY);
     private static final MethodNode MAP_GET_METHOD = MAP_TYPE.getMethod("get", new Parameter[] { new Parameter(OBJECT_TYPE, "key")});
 
-    private WriterController controller;
+    private StaticTypesWriterController controller;
 
     public StaticTypesCallSiteWriter(final StaticTypesWriterController controller) {
         super(controller);
@@ -63,10 +63,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
     @Override
     public void generateCallSiteArray() {
-        if (controller instanceof StaticTypesWriterController) {
-            ((StaticTypesWriterController)controller).getRegularCallSiteWriter().generateCallSiteArray();
-        } else {
-            super.generateCallSiteArray();
+        CallSiteWriter regularCallSiteWriter = controller.getRegularCallSiteWriter();
+        if (regularCallSiteWriter.hasCallSiteUse()) {
+            regularCallSiteWriter.generateCallSiteArray();
         }
     }
 
