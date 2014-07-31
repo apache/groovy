@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.classgen.asm.sc.StaticCompilationMopWriter;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
@@ -99,17 +100,31 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     @Override
     public void visitClass(final ClassNode node) {
         boolean skip = shouldSkipClassNode(node);
+        if (!skip && !anyMethodSkip(node)) {
+            node.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
+        }
         ClassNode oldCN = classNode;
         classNode = node;
         Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
         while (innerClasses.hasNext()) {
             InnerClassNode innerClassNode = innerClasses.next();
-            innerClassNode.putNodeMetaData(STATIC_COMPILE_NODE, !(skip || isSkippedInnerClass(innerClassNode)));
+            boolean innerStaticCompile = !(skip || isSkippedInnerClass(innerClassNode));
+            innerClassNode.putNodeMetaData(STATIC_COMPILE_NODE, innerStaticCompile);
             innerClassNode.putNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
+            if (innerStaticCompile && !anyMethodSkip(innerClassNode)) {
+                innerClassNode.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
+            }
         }
         super.visitClass(node);
         addPrivateFieldAndMethodAccessors(node);
         classNode = oldCN;
+    }
+
+    private boolean anyMethodSkip(final ClassNode node) {
+        for (MethodNode methodNode : node.getMethods()) {
+            if (isSkipMode(methodNode)) return true;
+        }
+        return false;
     }
 
     /**

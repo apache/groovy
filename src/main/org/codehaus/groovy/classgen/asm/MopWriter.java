@@ -32,7 +32,17 @@ import org.objectweb.asm.MethodVisitor;
 import static org.objectweb.asm.Opcodes.*;
 
 public class MopWriter {
-    
+    public static interface Factory {
+        MopWriter create(WriterController controller);
+    }
+
+    public static final Factory FACTORY = new Factory() {
+        @Override
+        public MopWriter create(final WriterController controller) {
+            return new MopWriter(controller);
+        }
+    };
+
     private static class MopKey {
         int hash = 0;
         String name;
