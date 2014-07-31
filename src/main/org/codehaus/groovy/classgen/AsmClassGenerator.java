@@ -1247,6 +1247,9 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void createSyntheticStaticFields() {
+        if (referencedClasses.isEmpty()) {
+            return;
+        }
         MethodVisitor mv;
         for (String staticFieldName : referencedClasses.keySet()) {
             // generate a field node
