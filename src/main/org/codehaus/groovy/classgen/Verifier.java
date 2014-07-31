@@ -1427,11 +1427,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         final int mods = Opcodes.ACC_STATIC|Opcodes.ACC_SYNTHETIC| Opcodes.ACC_PUBLIC;
         String name = SWAP_INIT;
         BlockStatement methodCode = new BlockStatement();
-        node.addSyntheticMethod(
-                name, mods, ClassHelper.VOID_TYPE,
-                Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, methodCode);
 
         methodCode.addStatement(new SwapInitStatement());
+        boolean swapInitRequired = false;
         for (FieldNode fn : node.getFields()) {
             if (!fn.isStatic() || !fn.isSynthetic() || !fn.getName().startsWith("$const$")) continue;
             if (fn.getInitialExpression()==null) continue;
@@ -1447,9 +1445,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             fn.setInitialValueExpression(null);
             init.setConstantName(null);
             methodCode.addStatement(statement);
+            swapInitRequired = true;
         }
 
-        return true;
+        if (swapInitRequired) {
+            node.addSyntheticMethod(
+                    name, mods, ClassHelper.VOID_TYPE,
+                    Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, methodCode);
+        }
+
+        return swapInitRequired;
     }
 
     /**

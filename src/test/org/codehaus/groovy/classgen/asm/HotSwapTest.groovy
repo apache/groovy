@@ -10,7 +10,7 @@ class HotSwapTest extends AbstractBytecodeTestCase {
     void testHotSwapMethodExistsAndCallsGetCallSiteArray() {
         if (config.optimizationOptions.indy) return;
         assert compile(method: '__$swapInit', '''
-            double d = 1d
+            Long d = 123456L
         ''').hasSequence([
                 'ACONST_NULL',
                 'PUTSTATIC script.$callSiteArray : Ljava/lang/ref/SoftReference;'
@@ -19,7 +19,7 @@ class HotSwapTest extends AbstractBytecodeTestCase {
     
     void testClinitCallingHotSwapMethod() {
         assert compile(method: '<clinit>', '''
-            double d = 1d
+             Long d = 123456L
         ''').hasSequence([
                 'INVOKESTATIC script.__$swapInit ()V'
         ])
