@@ -5256,13 +5256,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self       an Iterable
      * @param comparator a Comparator
-     * @return the minimum value
+     * @return the minimum value or null for an empty Iterable
      * @since 2.2.0
      */
     public static <T> T min(Iterable<T> self, Comparator<T> comparator) {
         T answer = null;
+        boolean first = true;
         for (T value : self) {
-            if (answer == null || comparator.compare(value, answer) < 0) {
+            if (first) {
+                first = false;
+                answer = value;
+            } else if (comparator.compare(value, answer) < 0) {
                 answer = value;
             }
         }
@@ -5279,7 +5283,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> T min(Iterator<T> self, Comparator<T> comparator) {
-        return min(toList(self), comparator);
+        return min((Iterable<T>)toList(self), comparator);
     }
 
     /**
@@ -5292,7 +5296,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> T min(T[] self, Comparator<T> comparator) {
-        return min(toList(self), comparator);
+        return min((Iterable<T>)toList(self), comparator);
     }
 
     /**
@@ -5306,10 +5310,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects an item in the collection having the minimum
-     * value as determined by the supplied closure.
-     * If more than one item has the minimum value,
-     * an arbitrary choice is made between the items having the minimum value.
+     * Selects the item in the iterable which when passed as a parameter to the supplied closure returns the
+     * minimum value. A null return value represents the least possible return value. If more than one item
+     * has the minimum value, an arbitrary choice is made between the items having the minimum value.
      * <p>
      * If the closure has two parameters
      * it is used like a traditional Comparator. I.e. it should compare
@@ -5334,7 +5337,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    an Iterable
      * @param closure a 1 or 2 arg Closure used to determine the correct ordering
-     * @return the minimum value
+     * @return an item from the Iterable having the minimum value returned by calling the supplied closure with that item as parameter or null for an empty Iterable
      * @since 1.0
      */
     public static <T> T min(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
@@ -5342,11 +5345,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (params != 1) {
             return min(self, new ClosureComparator<T>(closure));
         }
+        boolean first = true;
         T answer = null;
         Object answerValue = null;
         for (T item : self) {
             Object value = closure.call(item);
-            if (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answerValue)) {
+            if (first) {
+                first = false;
+                answer = item;
+                answerValue = value;
+            } else if (ScriptBytecodeAdapter.compareLessThan(value, answerValue)) {
                 answer = item;
                 answerValue = value;
             }
@@ -5389,7 +5397,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.6
      */
     public static <K, V> Map.Entry<K, V> min(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>", "Map.Entry<K,V>,Map.Entry<K,V>"}) Closure closure) {
-        return min(self.entrySet(), closure);
+        return min((Iterable<Map.Entry<K, V>>)self.entrySet(), closure);
     }
 
     /**
@@ -5539,10 +5547,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects an item in the collection having the maximum
-     * value as determined by the supplied closure.
-     * If more than one item has the maximum value,
-     * an arbitrary choice is made between the items having the maximum value.
+     * Selects the item in the iterable which when passed as a parameter to the supplied closure returns the
+     * maximum value. A null return value represents the least possible return value, so any item for which
+     * the supplied closure returns null, won't be selected (unless all items return null). If more than one item
+     * has the maximum value, an arbitrary choice is made between the items having the maximum value.
      * <p>
      * If the closure has two parameters
      * it is used like a traditional Comparator. I.e. it should compare
@@ -5562,7 +5570,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    an Iterable
      * @param closure a 1 or 2 arg Closure used to determine the correct ordering
-     * @return the maximum value
+     * @return an item from the Iterable having the maximum value returned by calling the supplied closure with that item as parameter or null for an empty Iterable
      * @since 2.2.0
      */
     public static <T> T max(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
@@ -5570,11 +5578,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (params != 1) {
             return max(self, new ClosureComparator<T>(closure));
         }
+        boolean first = true;
         T answer = null;
         Object answerValue = null;
         for (T item : self) {
             Object value = closure.call(item);
-            if (answer == null || ScriptBytecodeAdapter.compareLessThan(answerValue, value)) {
+            if (first) {
+                first = false;
+                answer = item;
+                answerValue = value;
+            } else if (ScriptBytecodeAdapter.compareLessThan(answerValue, value)) {
                 answer = item;
                 answerValue = value;
             }
@@ -5647,13 +5660,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self       an Iterable
      * @param comparator a Comparator
-     * @return the maximum value
+     * @return the maximum value or null for an empty Iterable
      * @since 2.2.0
      */
     public static <T> T max(Iterable<T> self, Comparator<T> comparator) {
         T answer = null;
+        boolean first = true;
         for (T value : self) {
-            if (answer == null || comparator.compare(value, answer) > 0) {
+            if (first) {
+                first = false;
+                answer = value;
+            } else if (comparator.compare(value, answer) > 0) {
                 answer = value;
             }
         }
