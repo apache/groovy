@@ -546,7 +546,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         def nums = [42, 35, 17, 100]
         assert [].max{ it } == null
         assert nums.max{ it } == 100
-        assert nums.max{ null } == 42
+        assert nums.max{ null } in nums
         assert nums.max{ it.toString().toList()*.toInteger().sum() } == 35
     }
 
@@ -558,7 +558,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         def nums = [42, 35, 17, 100]
         assert [].min{ it } == null
         assert nums.min{ it } == 17
-        assert nums.min{ null } == 42
+        assert nums.min{ null } in nums 
         assert nums.min{ it.toString().toList()*.toInteger().sum() } == 100
     }
 
