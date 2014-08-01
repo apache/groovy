@@ -5353,8 +5353,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (first) {
                 first = false;
                 answer = item;
-                answer_value = value;
-            } else if (ScriptBytecodeAdapter.compareLessThan(value, answer_value)) {
+                answerValue = value;
+            } else if (ScriptBytecodeAdapter.compareLessThan(value, answerValue)) {
                 answer = item;
                 answerValue = value;
             }
