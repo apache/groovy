@@ -141,7 +141,7 @@ expression:
     | expression POWER expression #binaryExpression
     | expression (MULT | DIV | MOD) expression #binaryExpression
     | expression (PLUS | MINUS) expression #binaryExpression
-    | expression (LSHIFT | RSHIFT | RUSHIFT | RANGE | ORANGE) expression #binaryExpression
+    | expression (LSHIFT | GT GT | GT GT GT | RANGE | ORANGE) expression #binaryExpression
     | expression (((LT | LTE | GT | GTE | KW_IN) expression) | ((KW_AS | KW_INSTANCEOF) genericClassNameExpression)) #binaryExpression
     | expression (EQUAL | UNEQUAL | SPACESHIP) expression #binaryExpression
     | expression (FIND | MATCH) expression #binaryExpression
@@ -162,7 +162,7 @@ expression:
 
 classNameExpression: { GrammarPredicates.isClassName(_input) }? IDENTIFIER (DOT IDENTIFIER)* ;
 
-genericClassNameExpression: classNameExpression genericDeclarationList? (LBRACK RBRACK)?;
+genericClassNameExpression: classNameExpression (genericDeclarationList | (LBRACK RBRACK))?;
 
 mapEntry:
     STRING COLON expression

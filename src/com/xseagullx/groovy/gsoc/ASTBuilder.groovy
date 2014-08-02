@@ -648,7 +648,11 @@ class ASTBuilder {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(BinaryExpressionContext ctx) {
-        def op = createToken(ctx.getChild(1) as TerminalNode)
+        def c = ctx.getChild(1) as TerminalNode
+        int i = 1
+        for (def next = ctx.getChild(i + 1); next instanceof TerminalNode && next.symbol.type == GroovyParser.GT; next = ctx.getChild(i + 1))
+            i++
+        def op = createToken(c, i)
         def expression
         def left = parseExpression(ctx.expression(0))
         def right = null // Will be initialized later, in switch. We should handle as and instanceof creating
@@ -908,9 +912,9 @@ class ASTBuilder {
     static ClassNode parseExpression(GenericClassNameExpressionContext ctx) {
         def classNode = parseExpression(ctx.classNameExpression())
 
-        classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
         if (ctx.LBRACK())
             classNode = classNode.makeArray()
+        classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
         setupNodeLocation(classNode, ctx)
     }
 
@@ -986,8 +990,14 @@ class ASTBuilder {
     // Utility methods.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    static Token createToken(TerminalNode node) {
-        def text = node.text
+    /**
+     *
+     * @param node
+     * @param cardinality Used for handling GT ">" operator, which can be repeated to give bitwise shifts >> or >>>
+     * @return
+     */
+    static Token createToken(TerminalNode node, int cardinality = 1) {
+        def text = node.text * cardinality
         new Token(node.text == '..<' || node.text == '..' ? Types.RANGE_OPERATOR : Types.lookup(text, Types.ANY),
             text, node.symbol.line, node.symbol.charPositionInLine + 1)
     }

@@ -1,11 +1,10 @@
 class A {
     private run() {
-        String a
-        String[] b
-        A<String[]> c
+//        String a
+//        String[] b
+//        A<String[]> c
 
-//        A<String[], B<int[]>> d
-//        A<String[], B<int[]>>[] e
+        A<String[], B<int[]>> d
     }
 }
 
