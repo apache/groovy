@@ -74,8 +74,11 @@ argumentDeclaration:
 
 blockStatement: (statement | NL)+ ;
 
+declarationRule: annotationClause* typeDeclaration IDENTIFIER (ASSIGN expression)? ;
+
 statement:
-    cmdExpressionRule #commandExpressionStatement
+    declarationRule #declarationStatement
+    | cmdExpressionRule #commandExpressionStatement
     | expression #expressionStatement
     | KW_FOR LPAREN (expression)? SEMICOLON expression? SEMICOLON expression? RPAREN LCURVE (statement | SEMICOLON | NL)* RCURVE #classicForStatement
     | KW_FOR LPAREN typeDeclaration? IDENTIFIER KW_IN expression RPAREN LCURVE (statement | SEMICOLON | NL)* RCURVE #forInStatement
@@ -123,7 +126,8 @@ annotationParameter:
 ;
 
 expression:
-    closureExpressionRule #closureExpression
+    declarationRule #declarationExpression
+    | closureExpressionRule #closureExpression
     | LBRACK (expression (COMMA expression)*)?RBRACK #listConstructor
     | LBRACK (COLON | (mapEntry (COMMA mapEntry)*) )RBRACK #mapConstructor
     | expression (DOT | SAFE_DOT | STAR_DOT) IDENTIFIER LPAREN argumentList? RPAREN #methodCallExpression
@@ -154,12 +158,11 @@ expression:
     | KW_NULL #nullExpression
     | (KW_TRUE | KW_FALSE) #boolExpression
     | IDENTIFIER #variableExpression
-    | annotationClause* typeDeclaration IDENTIFIER (ASSIGN expression)? #declarationExpression
 ;
 
-classNameExpression: IDENTIFIER (DOT IDENTIFIER)* ;
+classNameExpression: { Character.isUpperCase(_input.LT(1).getText().codePointAt(0))}? IDENTIFIER (DOT IDENTIFIER)* ;
 
-genericClassNameExpression: classNameExpression genericDeclarationList? ;
+genericClassNameExpression: classNameExpression genericDeclarationList? (LBRACK RBRACK)?;
 
 mapEntry:
     STRING COLON expression

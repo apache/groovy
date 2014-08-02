@@ -32,6 +32,8 @@ import com.xseagullx.groovy.gsoc.GroovyParser.ConstantIntegerExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ConstructorDeclarationContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ControlStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.DeclarationExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.DeclarationRuleContext
+import com.xseagullx.groovy.gsoc.GroovyParser.DeclarationStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.EnumDeclarationContext
 import com.xseagullx.groovy.gsoc.GroovyParser.EnumMemberContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ExpressionContext
@@ -490,6 +492,11 @@ class ASTBuilder {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(DeclarationStatementContext ctx) {
+        setupNodeLocation(new ExpressionStatement(parseDeclaration(ctx.declarationRule())), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Statement parseStatement(ControlStatementContext ctx) {
         // TODO check validity. Labeling support.
         // Fake inspection result should be suppressed.
@@ -846,14 +853,7 @@ class ASTBuilder {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(DeclarationExpressionContext ctx) {
-        def left = new VariableExpression(ctx.IDENTIFIER().text)
-        def col = ctx.start.charPositionInLine + 1 // FIXME Why assignment token location is it's first occurrence.
-        def token = new Token(Types.ASSIGN, '=', ctx.start.line, col)
-        def right = ctx.childCount == 2 ? new EmptyExpression() : parseExpression(ctx.expression())
-
-        def expression = new DeclarationExpression(left, token, right)
-        attachAnnotations(expression, ctx.annotationClause())
-        setupNodeLocation(expression, ctx)
+        parseDeclaration(ctx.declarationRule())
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -909,6 +909,8 @@ class ASTBuilder {
         def classNode = parseExpression(ctx.classNameExpression())
 
         classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
+        if (ctx.LBRACK())
+            classNode = classNode.makeArray()
         setupNodeLocation(classNode, ctx)
     }
 
@@ -919,6 +921,17 @@ class ASTBuilder {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // End of Expressions.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    static Expression parseDeclaration(DeclarationRuleContext ctx) {
+        def left = new VariableExpression(ctx.IDENTIFIER().text, parseTypeDeclaration(ctx.typeDeclaration()))
+        def col = ctx.start.charPositionInLine + 1 // FIXME Why assignment token location is it's first occurrence.
+        def token = new Token(Types.ASSIGN, '=', ctx.start.line, col)
+        def right = ctx.childCount == 2 ? new EmptyExpression() : parseExpression(ctx.expression())
+
+        def expression = new DeclarationExpression(left, token, right)
+        attachAnnotations(expression, ctx.annotationClause())
+        setupNodeLocation(expression, ctx)
+    }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
     private static ArgumentListExpression createArgumentList(GroovyParser.ArgumentListContext ctx) {
