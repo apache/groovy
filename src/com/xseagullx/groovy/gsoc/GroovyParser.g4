@@ -74,8 +74,11 @@ argumentDeclaration:
 
 blockStatement: (statement | NL)+ ;
 
+declarationRule: annotationClause* typeDeclaration IDENTIFIER (ASSIGN expression)? ;
+
 statement:
-    cmdExpressionRule #commandExpressionStatement
+    declarationRule #declarationStatement
+    | cmdExpressionRule #commandExpressionStatement
     | expression #expressionStatement
     | KW_FOR LPAREN (expression)? SEMICOLON expression? SEMICOLON expression? RPAREN LCURVE (statement | SEMICOLON | NL)* RCURVE #classicForStatement
     | KW_FOR LPAREN typeDeclaration? IDENTIFIER KW_IN expression RPAREN LCURVE (statement | SEMICOLON | NL)* RCURVE #forInStatement
@@ -123,7 +126,8 @@ annotationParameter:
 ;
 
 expression:
-    closureExpressionRule #closureExpression
+    declarationRule #declarationExpression
+    | closureExpressionRule #closureExpression
     | LBRACK (expression (COMMA expression)*)?RBRACK #listConstructor
     | LBRACK (COLON | (mapEntry (COMMA mapEntry)*) )RBRACK #mapConstructor
     | expression (DOT | SAFE_DOT | STAR_DOT) IDENTIFIER LPAREN argumentList? RPAREN #methodCallExpression
@@ -137,7 +141,7 @@ expression:
     | expression POWER expression #binaryExpression
     | expression (MULT | DIV | MOD) expression #binaryExpression
     | expression (PLUS | MINUS) expression #binaryExpression
-    | expression (LSHIFT | RSHIFT | RUSHIFT | RANGE | ORANGE) expression #binaryExpression
+    | expression (LSHIFT | GT GT | GT GT GT | RANGE | ORANGE) expression #binaryExpression
     | expression (((LT | LTE | GT | GTE | KW_IN) expression) | ((KW_AS | KW_INSTANCEOF) genericClassNameExpression)) #binaryExpression
     | expression (EQUAL | UNEQUAL | SPACESHIP) expression #binaryExpression
     | expression (FIND | MATCH) expression #binaryExpression
@@ -154,12 +158,11 @@ expression:
     | KW_NULL #nullExpression
     | (KW_TRUE | KW_FALSE) #boolExpression
     | IDENTIFIER #variableExpression
-    | annotationClause* typeDeclaration IDENTIFIER (ASSIGN expression)? #declarationExpression
 ;
 
-classNameExpression: IDENTIFIER (DOT IDENTIFIER)* ;
+classNameExpression: { GrammarPredicates.isClassName(_input) }? IDENTIFIER (DOT IDENTIFIER)* ;
 
-genericClassNameExpression: classNameExpression genericDeclarationList? ;
+genericClassNameExpression: classNameExpression (genericDeclarationList | (LBRACK RBRACK))?;
 
 mapEntry:
     STRING COLON expression

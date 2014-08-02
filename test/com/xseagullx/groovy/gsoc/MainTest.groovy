@@ -29,6 +29,7 @@ class MainTest extends Specification {
         path | config
         "test_res/com/xseagullx/groovy/gsoc/Annotations_Issue30_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Annotations_Issue30_2.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/ArrayType_Issue44_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/AssignmentOps_Issue23_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ClassConstructorBug_Issue13_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ClassInitializers_Issue_20_1.groovy" | _
@@ -53,7 +54,7 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/Literals_Strings_Issue36_3.groovy" | addIgnore(ExpressionStatement, ASTComparatorCategory.LOCATION_IGNORE_LIST)
         "test_res/com/xseagullx/groovy/gsoc/MemberAccess_Issue14_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/MethodBody_Issue7_1.groovy" | _
-        "test_res/com/xseagullx/groovy/gsoc/MethodCall_Issue15_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/MethodCall_Issue15_1.groovy" | addIgnore(ExpressionStatement, ASTComparatorCategory.LOCATION_IGNORE_LIST)
         "test_res/com/xseagullx/groovy/gsoc/Operators_Issue9_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ParenthesisExpression_Issue24_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Statements_Issue17_1.groovy" | _

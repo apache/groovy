@@ -32,6 +32,8 @@ import com.xseagullx.groovy.gsoc.GroovyParser.ConstantIntegerExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ConstructorDeclarationContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ControlStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.DeclarationExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.DeclarationRuleContext
+import com.xseagullx.groovy.gsoc.GroovyParser.DeclarationStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.EnumDeclarationContext
 import com.xseagullx.groovy.gsoc.GroovyParser.EnumMemberContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ExpressionContext
@@ -490,6 +492,11 @@ class ASTBuilder {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(DeclarationStatementContext ctx) {
+        setupNodeLocation(new ExpressionStatement(parseDeclaration(ctx.declarationRule())), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Statement parseStatement(ControlStatementContext ctx) {
         // TODO check validity. Labeling support.
         // Fake inspection result should be suppressed.
@@ -641,7 +648,11 @@ class ASTBuilder {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(BinaryExpressionContext ctx) {
-        def op = createToken(ctx.getChild(1) as TerminalNode)
+        def c = ctx.getChild(1) as TerminalNode
+        int i = 1
+        for (def next = ctx.getChild(i + 1); next instanceof TerminalNode && next.symbol.type == GroovyParser.GT; next = ctx.getChild(i + 1))
+            i++
+        def op = createToken(c, i)
         def expression
         def left = parseExpression(ctx.expression(0))
         def right = null // Will be initialized later, in switch. We should handle as and instanceof creating
@@ -846,14 +857,7 @@ class ASTBuilder {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(DeclarationExpressionContext ctx) {
-        def left = new VariableExpression(ctx.IDENTIFIER().text)
-        def col = ctx.start.charPositionInLine + 1 // FIXME Why assignment token location is it's first occurrence.
-        def token = new Token(Types.ASSIGN, '=', ctx.start.line, col)
-        def right = ctx.childCount == 2 ? new EmptyExpression() : parseExpression(ctx.expression())
-
-        def expression = new DeclarationExpression(left, token, right)
-        attachAnnotations(expression, ctx.annotationClause())
-        setupNodeLocation(expression, ctx)
+        parseDeclaration(ctx.declarationRule())
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -908,6 +912,8 @@ class ASTBuilder {
     static ClassNode parseExpression(GenericClassNameExpressionContext ctx) {
         def classNode = parseExpression(ctx.classNameExpression())
 
+        if (ctx.LBRACK())
+            classNode = classNode.makeArray()
         classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
         setupNodeLocation(classNode, ctx)
     }
@@ -919,6 +925,17 @@ class ASTBuilder {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // End of Expressions.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    static Expression parseDeclaration(DeclarationRuleContext ctx) {
+        def left = new VariableExpression(ctx.IDENTIFIER().text, parseTypeDeclaration(ctx.typeDeclaration()))
+        def col = ctx.start.charPositionInLine + 1 // FIXME Why assignment token location is it's first occurrence.
+        def token = new Token(Types.ASSIGN, '=', ctx.start.line, col)
+        def right = ctx.childCount == 2 ? new EmptyExpression() : parseExpression(ctx.expression())
+
+        def expression = new DeclarationExpression(left, token, right)
+        attachAnnotations(expression, ctx.annotationClause())
+        setupNodeLocation(expression, ctx)
+    }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
     private static ArgumentListExpression createArgumentList(GroovyParser.ArgumentListContext ctx) {
@@ -973,8 +990,14 @@ class ASTBuilder {
     // Utility methods.
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    static Token createToken(TerminalNode node) {
-        def text = node.text
+    /**
+     *
+     * @param node
+     * @param cardinality Used for handling GT ">" operator, which can be repeated to give bitwise shifts >> or >>>
+     * @return
+     */
+    static Token createToken(TerminalNode node, int cardinality = 1) {
+        def text = node.text * cardinality
         new Token(node.text == '..<' || node.text == '..' ? Types.RANGE_OPERATOR : Types.lookup(text, Types.ANY),
             text, node.symbol.line, node.symbol.charPositionInLine + 1)
     }
@@ -1025,7 +1048,6 @@ class ASTBuilder {
     }
 
     int parseClassModifiers(@NotNull List<ClassModifierContext> ctxs) {
-
         List<TerminalNode> visibilityModifiers = []
         int modifiers = 0
         for (child in ctxs.children) {
