@@ -160,7 +160,7 @@ expression:
     | IDENTIFIER #variableExpression
 ;
 
-classNameExpression: { Character.isUpperCase(_input.LT(1).getText().codePointAt(0))}? IDENTIFIER (DOT IDENTIFIER)* ;
+classNameExpression: { GrammarPredicates.isClassName(_input) }? IDENTIFIER (DOT IDENTIFIER)* ;
 
 genericClassNameExpression: classNameExpression genericDeclarationList? (LBRACK RBRACK)?;
 

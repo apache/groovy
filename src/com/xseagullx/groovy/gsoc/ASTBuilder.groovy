@@ -1038,7 +1038,6 @@ class ASTBuilder {
     }
 
     int parseClassModifiers(@NotNull List<ClassModifierContext> ctxs) {
-
         List<TerminalNode> visibilityModifiers = []
         int modifiers = 0
         for (child in ctxs.children) {
