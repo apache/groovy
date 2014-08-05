@@ -52,6 +52,12 @@ import com.xseagullx.groovy.gsoc.GroovyParser.MapEntryContext
 import com.xseagullx.groovy.gsoc.GroovyParser.MemberModifierContext
 import com.xseagullx.groovy.gsoc.GroovyParser.MethodCallExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.MethodDeclarationContext
+import com.xseagullx.groovy.gsoc.GroovyParser.NewArrayExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.NewArrayRuleContext
+import com.xseagullx.groovy.gsoc.GroovyParser.NewArrayStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.NewInstanceExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.NewInstanceRuleContext
+import com.xseagullx.groovy.gsoc.GroovyParser.NewInstanceStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.NullExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ObjectInitializerContext
 import com.xseagullx.groovy.gsoc.GroovyParser.PackageDefinitionContext
@@ -94,6 +100,7 @@ import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.ArrayExpression
 import org.codehaus.groovy.ast.expr.AttributeExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.BitwiseNegationExpression
@@ -103,6 +110,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ClosureListExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.Expression
@@ -497,6 +505,16 @@ class ASTBuilder {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(NewArrayStatementContext ctx) {
+        setupNodeLocation(new ExpressionStatement(parse(ctx.newArrayRule())), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(NewInstanceStatementContext ctx) {
+        setupNodeLocation(new ExpressionStatement(parse(ctx.newInstanceRule())), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
     static Statement parseStatement(ControlStatementContext ctx) {
         // TODO check validity. Labeling support.
         // Fake inspection result should be suppressed.
@@ -599,6 +617,16 @@ class ASTBuilder {
 
     static Expression parseExpression(ExpressionContext ctx) {
         throw new RuntimeException("Unsupported expression type! $ctx")
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(NewArrayExpressionContext ctx) {
+        parse(ctx.newArrayRule())
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(NewInstanceExpressionContext ctx) {
+        parse(ctx.newInstanceRule())
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -774,6 +802,10 @@ class ASTBuilder {
     }
 
     static ConstantExpression parseInteger(String text, ParserRuleContext ctx) {
+        setupNodeLocation(new ConstantExpression(Numbers.parseInteger(text), !text.startsWith('-')), ctx) //Why 10 is int but -10 is Integer?
+    }
+
+    static ConstantExpression parseInteger(String text, org.antlr.v4.runtime.Token ctx) {
         setupNodeLocation(new ConstantExpression(Numbers.parseInteger(text), !text.startsWith('-')), ctx) //Why 10 is int but -10 is Integer?
     }
 
@@ -1004,6 +1036,16 @@ class ASTBuilder {
 
     static ClassNode parseTypeDeclaration(TypeDeclarationContext ctx) {
         !ctx || ctx.KW_DEF() ? ClassHelper.OBJECT_TYPE : setupNodeLocation(parseExpression(ctx.genericClassNameExpression()), ctx)
+    }
+
+    static def parse(NewArrayRuleContext ctx) {
+        def expression = new ArrayExpression(parseExpression(ctx.classNameExpression()), [], ctx.INTEGER().collect { parseInteger(it.text, it.symbol) })
+        setupNodeLocation(expression, ctx)
+    }
+
+    static def parse(NewInstanceRuleContext ctx) {
+        setupNodeLocation(new ConstructorCallExpression(parseExpression(ctx.genericClassNameExpression()),
+            createArgumentList(ctx.argumentList())), ctx)
     }
 
     static Parameter[] parseParameters(ArgumentDeclarationListContext ctx) {

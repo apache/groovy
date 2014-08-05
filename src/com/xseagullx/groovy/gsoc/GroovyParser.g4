@@ -75,9 +75,13 @@ argumentDeclaration:
 blockStatement: (statement | NL)+ ;
 
 declarationRule: annotationClause* typeDeclaration IDENTIFIER (ASSIGN expression)? ;
+newInstanceRule: KW_NEW genericClassNameExpression (LPAREN argumentList? RPAREN) ;
+newArrayRule: KW_NEW classNameExpression (LBRACK INTEGER RBRACK)* ;
 
 statement:
     declarationRule #declarationStatement
+    | newArrayRule #newArrayStatement
+    | newInstanceRule #newInstanceStatement
     | cmdExpressionRule #commandExpressionStatement
     | expression #expressionStatement
     | KW_FOR LPAREN (expression)? SEMICOLON expression? SEMICOLON expression? RPAREN LCURVE (statement | SEMICOLON | NL)* RCURVE #classicForStatement
@@ -127,6 +131,8 @@ annotationParameter:
 
 expression:
     declarationRule #declarationExpression
+    | newArrayRule #newArrayExpression
+    | newInstanceRule #newInstanceExpression
     | closureExpressionRule #closureExpression
     | LBRACK (expression (COMMA expression)*)?RBRACK #listConstructor
     | LBRACK (COLON | (mapEntry (COMMA mapEntry)*) )RBRACK #mapConstructor

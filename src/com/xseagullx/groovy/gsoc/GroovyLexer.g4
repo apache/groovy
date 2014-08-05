@@ -118,6 +118,7 @@ KW_DEF: 'def' ;
 KW_NULL: 'null' ;
 KW_TRUE: 'true' ;
 KW_FALSE: 'false' ;
+KW_NEW: 'new' ;
 
 KW_IN: 'in' ;
 KW_FOR: 'for' ;
