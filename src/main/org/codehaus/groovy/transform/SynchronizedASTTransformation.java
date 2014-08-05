@@ -50,7 +50,6 @@ public class SynchronizedASTTransformation extends AbstractASTTransformation {
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
-        init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(node.getClassNode())) return;
@@ -60,6 +59,7 @@ public class SynchronizedASTTransformation extends AbstractASTTransformation {
             MethodNode mNode = (MethodNode) parent;
             ClassNode cNode = mNode.getDeclaringClass();
             String lockExpr = determineLock(value, cNode, mNode);
+            if (lockExpr == null) return;
             Statement origCode = mNode.getCode();
             Statement newCode = new SynchronizedStatement(varX(lockExpr), origCode);
             mNode.setCode(newCode);
@@ -71,10 +71,12 @@ public class SynchronizedASTTransformation extends AbstractASTTransformation {
         if (value != null && value.length() > 0 && !value.equalsIgnoreCase("$lock")) {
             if (cNode.getDeclaredField(value) == null) {
                 addError("Error during " + MY_TYPE_NAME + " processing: lock field with name '" + value + "' not found in class " + cNode.getName(), mNode);
+                return null;
             }
             FieldNode field = cNode.getDeclaredField(value);
             if (field.isStatic() != isStatic) {
                 addError("Error during " + MY_TYPE_NAME + " processing: lock field with name '" + value + "' should " + (isStatic ? "" : "not ") + "be static", field);
+                return null;
             }
             return value;
         }
