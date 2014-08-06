@@ -47,6 +47,7 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/GStrings_Issue41_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_2.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/InnerClasses_Issue48_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ListsAndMaps_Issue22_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Literals_Numbers_Issue36_1.groovy" | _
         'test_res/com/xseagullx/groovy/gsoc/Literals_Other_Issue36_4.groovy' | _

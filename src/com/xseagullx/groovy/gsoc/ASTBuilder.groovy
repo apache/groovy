@@ -95,6 +95,7 @@ import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.ImportNode
+import org.codehaus.groovy.ast.InnerClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.Parameter
@@ -143,6 +144,7 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement
 import org.codehaus.groovy.ast.stmt.TryCatchStatement
 import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.Numbers
 import org.codehaus.groovy.syntax.SyntaxException
@@ -159,7 +161,14 @@ class ASTBuilder {
     private SourceUnit sourceUnit
     private ClassLoader classLoader
 
+    // This fields are weird.
+    private static ASTBuilder instance
+    private Stack<ClassNode> classes = [] // FIXME Dirty hack for inner classes. Remove ASAP.
+    private Stack<List<InnerClassNode>> innerClassesDefinedInMethod = [] // --
+    private int anonymousClassesCount = 0 // Used for create name for Counts anonimous classes
+
     ASTBuilder(SourceUnit sourceUnit, ClassLoader classLoader) {
+        instance = this
         this.classLoader = classLoader
         this.sourceUnit = sourceUnit
         moduleNode = new ModuleNode(sourceUnit)
@@ -258,8 +267,14 @@ class ASTBuilder {
         parseMembers(classNode,  classMembers)
     }
 
-    void parseClassDeclaration(@NotNull ClassDeclarationContext ctx) {
-        def classNode = new ClassNode("${moduleNode.packageName ?: ""}${ctx.IDENTIFIER()}", Modifier.PUBLIC, ClassHelper.OBJECT_TYPE)
+    ClassNode parseClassDeclaration(@NotNull ClassDeclarationContext ctx) {
+        def classNode
+        def parentClass = classes ? classes.peek() : null
+        if (parentClass)
+            classNode = new InnerClassNode(parentClass, "${"$parentClass.name\$" ?: ""}${ctx.IDENTIFIER()}", Modifier.PUBLIC, ClassHelper.OBJECT_TYPE)
+        else
+            classNode = new ClassNode("${moduleNode.packageName ?: ""}${ctx.IDENTIFIER()}", Modifier.PUBLIC, ClassHelper.OBJECT_TYPE)
+
         setupNodeLocation(classNode, ctx)
         attachAnnotations(classNode, ctx.annotationClause())
         moduleNode.addClass(classNode)
@@ -279,24 +294,40 @@ class ASTBuilder {
             classNode.modifiers |= Opcodes.ACC_ANNOTATION
         }
 
-        parseMembers(classNode, ctx.classMember())
+        classes << classNode
+        parseMembers(classNode, ctx.classBody().classMember())
+        classes.pop()
 
         if (classNode.interface)
+            //noinspection GroovyAccessibility
             classNode.mixins =  null // FIXME why interface has null mixin
+        classNode
     }
 
     def parseMembers(ClassNode classNode, List<ClassMemberContext> ctx) {
         for (member in ctx) {
             def memberContext = member.children[-1]
-            assert memberContext instanceof ConstructorDeclarationContext ||
-                    memberContext instanceof MethodDeclarationContext ||
-                    memberContext instanceof FieldDeclarationContext ||
-                    memberContext instanceof ObjectInitializerContext ||
-                    memberContext instanceof ClassInitializerContext
 
-            // This inspection is suppressed cause I use Runtime multimethods dispatching mechanics of Groovy.
-            //noinspection GroovyAssignabilityCheck
-            def memberNode = parseMember(classNode, memberContext)
+            ASTNode memberNode = null
+            switch (memberContext) {
+                case ClassDeclarationContext:
+                    memberNode = parseClassDeclaration(memberContext as ClassDeclarationContext)
+                    break;
+                case EnumDeclarationContext:
+                    parseEnumDeclaration(memberContext as EnumDeclarationContext)
+                    break;
+                case ConstructorDeclarationContext:
+                case MethodDeclarationContext:
+                case FieldDeclarationContext:
+                case ObjectInitializerContext:
+                case ClassInitializerContext:
+                    // This inspection is suppressed cause I use Runtime multimethods dispatching mechanics of Groovy.
+                    //noinspection GroovyAssignabilityCheck
+                    memberNode = parseMember(classNode, memberContext)
+                    break;
+                default:
+                    assert false, "Unknown class member type.";
+            }
             if (memberNode)
                 setupNodeLocation(memberNode, member)
             if (member.childCount > 1) {
@@ -313,7 +344,9 @@ class ASTBuilder {
     AnnotatedNode parseMember(ClassNode classNode, MethodDeclarationContext ctx) {
         //noinspection GroovyAssignabilityCheck
         def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier(), Opcodes.ACC_PUBLIC)
+        innerClassesDefinedInMethod << []
         def statement = ctx.methodBody() ? parseStatement(ctx.methodBody().blockStatement() as BlockStatementContext) : null
+        def innerClassesDeclared = innerClassesDefinedInMethod.pop()
 
         def params = parseParameters(ctx.argumentDeclarationList())
 
@@ -324,6 +357,7 @@ class ASTBuilder {
         modifiers |= classNode.interface ? Opcodes.ACC_ABSTRACT : 0
         def methodNode = classNode.addMethod(ctx.IDENTIFIER().text, modifiers, returnType, params, exceptions, statement)
         methodNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
+        innerClassesDeclared.each { it.enclosingMethod = methodNode }
 
         setupNodeLocation(methodNode, ctx)
         attachAnnotations(methodNode, ctx.annotationClause())
@@ -376,7 +410,11 @@ class ASTBuilder {
         int modifiers = ctx.VISIBILITY_MODIFIER() ? parseVisibilityModifiers(ctx.VISIBILITY_MODIFIER()) : Opcodes.ACC_PUBLIC
 
         def exceptions = parseThrowsClause(ctx.throwsClause())
+        instance.innerClassesDefinedInMethod << []
         def constructorNode = classNode.addConstructor(modifiers, parseParameters(ctx.argumentDeclarationList()), exceptions, parseStatement(ctx.blockStatement() as BlockStatementContext))
+        instance.innerClassesDefinedInMethod.pop().each {
+            it.enclosingMethod = constructorNode
+        }
         setupNodeLocation(constructorNode, ctx)
         constructorNode.syntheticPublic = ctx.VISIBILITY_MODIFIER() == null
         constructorNode
@@ -753,6 +791,7 @@ class ASTBuilder {
             case AnnotationParamStringExpressionContext:
                 return parseExpression(ctx);
         }
+        throw new CompilationFailedException(CompilePhase.PARSING.phaseNumber, instance.sourceUnit, new IllegalStateException("$ctx is prohibited inside annotations."))
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -1044,8 +1083,24 @@ class ASTBuilder {
     }
 
     static def parse(NewInstanceRuleContext ctx) {
-        setupNodeLocation(new ConstructorCallExpression(parseExpression(ctx.genericClassNameExpression()),
-            createArgumentList(ctx.argumentList())), ctx)
+        def creatingClass = parseExpression(ctx.genericClassNameExpression())
+        def expression
+        if (!ctx.classBody()) {
+            expression = setupNodeLocation(new ConstructorCallExpression(creatingClass, createArgumentList(ctx.argumentList())), ctx)
+        }
+        else {
+            ClassNode outer = instance.classes.peek()
+            def classNode = new InnerClassNode(outer, "$outer.name\$${++instance.anonymousClassesCount}", Opcodes.ACC_PUBLIC, ClassHelper.make(creatingClass.name))
+            expression = setupNodeLocation(new ConstructorCallExpression(classNode, createArgumentList(ctx.argumentList())), ctx)
+            expression.usingAnonymousInnerClass = true
+            classNode.anonymous = true
+            instance.innerClassesDefinedInMethod[-1] << classNode
+            instance.moduleNode.addClass(classNode)
+            instance.classes << classNode
+            instance.parseMembers(classNode, ctx.classBody().classMember())
+            instance.classes.pop()
+        }
+        expression
     }
 
     static Parameter[] parseParameters(ArgumentDeclarationListContext ctx) {

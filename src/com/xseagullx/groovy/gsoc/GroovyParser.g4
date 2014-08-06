@@ -14,11 +14,11 @@ packageDefinition:
 importStatement:
     (annotationClause (NL | annotationClause)*)? KW_IMPORT (IDENTIFIER (DOT IDENTIFIER)* (DOT MULT)?);
 classDeclaration:
-    ((annotationClause | classModifier) (NL | annotationClause | classModifier)*)? (AT KW_INTERFACE | KW_CLASS | KW_INTERFACE) IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? extendsClause? implementsClause? (NL)* LCURVE (classMember | NL | SEMICOLON)* RCURVE ;
+    ((annotationClause | classModifier) (NL | annotationClause | classModifier)*)? (AT KW_INTERFACE | KW_CLASS | KW_INTERFACE) IDENTIFIER { currentClassName = $IDENTIFIER.text; } genericDeclarationList? extendsClause? implementsClause? (NL)* classBody ;
 enumDeclaration:
     ((annotationClause | classModifier) (NL | annotationClause | classModifier)*)? KW_ENUM IDENTIFIER { currentClassName = $IDENTIFIER.text; } implementsClause? (NL)* LCURVE (enumMember | NL | SEMICOLON)* RCURVE ;
 classMember:
-    constructorDeclaration | methodDeclaration | fieldDeclaration | objectInitializer | classInitializer ;
+    constructorDeclaration | methodDeclaration | fieldDeclaration | objectInitializer | classInitializer | classDeclaration | enumDeclaration ;
 enumMember:
     IDENTIFIER (COMMA | NL)
     | classMember
@@ -75,8 +75,9 @@ argumentDeclaration:
 blockStatement: (statement | NL)+ ;
 
 declarationRule: annotationClause* typeDeclaration IDENTIFIER (ASSIGN expression)? ;
-newInstanceRule: KW_NEW genericClassNameExpression (LPAREN argumentList? RPAREN) ;
+newInstanceRule: KW_NEW genericClassNameExpression (LPAREN argumentList? RPAREN) (classBody)?;
 newArrayRule: KW_NEW classNameExpression (LBRACK INTEGER RBRACK)* ;
+classBody: LCURVE (classMember | NL | SEMICOLON)* RCURVE ;
 
 statement:
     declarationRule #declarationStatement
