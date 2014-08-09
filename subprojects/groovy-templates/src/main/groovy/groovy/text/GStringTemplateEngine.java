@@ -90,6 +90,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 public class GStringTemplateEngine extends TemplateEngine {
     private final ClassLoader parentLoader;
     private static AtomicInteger counter = new AtomicInteger();
+    private static final boolean reuseClassLoader = Boolean.getBoolean("groovy.GStringTemplateEngine.reuseClassLoader");
 
     public GStringTemplateEngine() {
         this(GStringTemplate.class.getClassLoader());
@@ -178,7 +179,8 @@ public class GStringTemplateEngine extends TemplateEngine {
 
             templateExpressions.append("}}");
 
-            final GroovyClassLoader loader = parentLoader instanceof GroovyClassLoader?(GroovyClassLoader)parentLoader:(
+            // Use a new class loader by default for each class so each class can be independently garbage collected
+            final GroovyClassLoader loader = reuseClassLoader && parentLoader instanceof GroovyClassLoader?(GroovyClassLoader)parentLoader:(
                     (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
                         public Object run() {
                             return new GroovyClassLoader(parentLoader);
