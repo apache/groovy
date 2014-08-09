@@ -535,6 +535,17 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
     void testToStringForEnums() {
         assert Color.PURPLE.toString() == 'org.codehaus.groovy.transform.Color(r:255, g:0, b:255)'
     }
+
+    void testCustomCopyConstructor_GROOVY7016() {
+        new GroovyShell().evaluate """
+            import org.codehaus.groovy.transform.Shopper
+            def p1 = new Shopper('John', [['bread', 'milk'], ['bacon', 'eggs']])
+            def p2 = p1.clone()
+            p2.shoppingHistory[0][1] = 'jam'
+            assert p1.shoppingHistory[0] == ['bread', 'milk']
+            assert p2.shoppingHistory[0] == ['bread', 'jam']
+        """
+    }
 }
 
 @TupleConstructor
@@ -721,4 +732,15 @@ enum Color {
     BLACK(0,0,0), WHITE(255,255,255), PURPLE(255,0,255)
     int r, g, b
     Color(int r, g, b) { this.r = r; this.g = g; this.b = b }
+}
+
+@TupleConstructor(force=true) @AutoClone(style=COPY_CONSTRUCTOR)
+class Shopper {
+    final String name
+    final List<List<String>> shoppingHistory
+    Shopper(Shopper other) {
+        name = other.name
+        // requires deep clone
+        shoppingHistory = other.shoppingHistory*.clone()
+    }
 }
