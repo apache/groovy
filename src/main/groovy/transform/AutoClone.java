@@ -135,7 +135,9 @@ import java.lang.annotation.Target;
  * If you use this style on a child class, the parent class must
  * also have a copy constructor (created using this annotation or by hand).
  * This approach can be slightly slower than the traditional cloning approach
- * but the {@code Cloneable} fields of your class can be final.
+ * but the {@code Cloneable} fields of your class can be final. When using the copy constructor style,
+ * you can provide your own custom constructor by hand if you wish. If you do so, it is up to you to
+ * correctly copy, clone or deep clone the properties of your class.
  * <p>
  * As a variation of the last two styles, if you set {@code style=SIMPLE}
  * then the no-arg constructor will be called followed by setting the
