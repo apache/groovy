@@ -712,10 +712,10 @@ class ASTBuilder {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(ClosureExpressionRuleContext ctx) {
-        def parameters = parseParameters(ctx.argumentDeclarationList())
+        def parameters = ctx.argumentDeclarationList() ? (parseParameters(ctx.argumentDeclarationList()) ?: null) : ([] as Parameter[])
 
         def statement = parseStatement(ctx.blockStatement() as BlockStatementContext)
-        setupNodeLocation(new ClosureExpression(parameters ?: null, statement), ctx)
+        setupNodeLocation(new ClosureExpression(parameters, statement), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")

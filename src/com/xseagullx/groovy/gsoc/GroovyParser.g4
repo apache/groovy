@@ -110,7 +110,7 @@ caseStatement: (KW_CASE expression COLON (statement | SEMICOLON | NL)* );
 cmdExpressionRule: pathExpression ( argumentList IDENTIFIER)* argumentList IDENTIFIER? ;
 pathExpression: (IDENTIFIER DOT)* IDENTIFIER ;
 
-closureExpressionRule: LCURVE argumentDeclarationList CLOSURE_ARG_SEPARATOR blockStatement? RCURVE ;
+closureExpressionRule: LCURVE (argumentDeclarationList CLOSURE_ARG_SEPARATOR)? blockStatement? RCURVE ;
 gstring: GSTRING_START LCURVE expression? RCURVE (GSTRING_PART LCURVE expression? RCURVE)* GSTRING_END ;
 
 // Special cases.

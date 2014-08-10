@@ -29,4 +29,13 @@ class A {
             return a + b
         }
     }
+
+    private Closure implicitClosure() {
+        call({
+            1
+        })
+        return {
+            5
+        }
+    }
 }
