@@ -371,9 +371,12 @@ class ASTBuilder {
         def (int modifiers, boolean hasVisibilityModifier) = parseModifiers(ctx.memberModifier())
         modifiers |= classNode.interface ? Opcodes.ACC_STATIC | Opcodes.ACC_FINAL : 0
 
+
+        def initExprContext = ctx.expression()
+        def initialierExpression = initExprContext ? parseExpression(initExprContext) : null
         def typeDeclaration = ctx.genericClassNameExpression() ? parseExpression(ctx.genericClassNameExpression()) : ClassHelper.OBJECT_TYPE
         AnnotatedNode node
-        def initialValue = classNode.interface && typeDeclaration != ClassHelper.OBJECT_TYPE ? new ConstantExpression(initialExpressionForType(typeDeclaration)) : null
+        def initialValue = classNode.interface && typeDeclaration != ClassHelper.OBJECT_TYPE ? new ConstantExpression(initialExpressionForType(typeDeclaration)) : initialierExpression
         if (classNode.interface || hasVisibilityModifier) {
             modifiers |= classNode.interface ? Opcodes.ACC_PUBLIC : 0
 
@@ -1107,6 +1110,8 @@ class ASTBuilder {
         ctx.argumentDeclaration().collect {
             def parameter = new Parameter(parseTypeDeclaration(it.typeDeclaration()), it.IDENTIFIER().text)
             attachAnnotations(parameter, it.annotationClause())
+            if (it.expression())
+                parameter.initialExpression = parseExpression(it.expression())
             setupNodeLocation(parameter, it)
         }
     }

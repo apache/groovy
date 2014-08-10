@@ -43,7 +43,7 @@ methodBody:
 ;
 
 fieldDeclaration:
-    (memberModifier | annotationClause | KW_DEF) (memberModifier | annotationClause | KW_DEF | NL)* genericClassNameExpression? IDENTIFIER
+    (memberModifier | annotationClause | KW_DEF) (memberModifier | annotationClause | KW_DEF | NL)* genericClassNameExpression? IDENTIFIER ('=' expression)?
     | genericClassNameExpression IDENTIFIER
 ;
 constructorDeclaration: { _input.LT(_input.LT(1).getType() == VISIBILITY_MODIFIER ? 2 : 1).getText().equals(currentClassName) }?
@@ -70,7 +70,7 @@ throwsClause: KW_THROWS classNameExpression (COMMA classNameExpression)*;
 argumentDeclarationList:
     argumentDeclaration (COMMA argumentDeclaration)* | /* EMPTY ARGUMENT LIST */ ;
 argumentDeclaration:
-    annotationClause* typeDeclaration? IDENTIFIER ;
+    annotationClause* typeDeclaration? IDENTIFIER ('=' expression)? ;
 
 blockStatement: (statement | NL)+ ;
 
