@@ -60,6 +60,7 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/New_Issue47_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Operators_Issue9_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ParenthesisExpression_Issue24_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/Script_Issue50_1.groovy" | addIgnore(ExpressionStatement, ASTComparatorCategory.LOCATION_IGNORE_LIST)
         "test_res/com/xseagullx/groovy/gsoc/Statements_Issue17_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ThrowDeclarations_Issue_28_1.groovy" | _

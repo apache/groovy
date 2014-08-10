@@ -44,6 +44,7 @@ lexer grammar GroovyLexer;
 
 LINE_COMMENT: '//' .*? '\n' -> type(NL) ;
 BLOCK_COMMENT: '/*' .*? '*/' -> type(NL) ;
+SHEBANG_COMMENT: { tokenIndex == 0 }? '#!' .*? '\n' -> skip ;
 
 WS: [ \t]+ -> skip ;
 

@@ -7,7 +7,7 @@ options { tokenVocab = GroovyLexer; }
     String currentClassName = null; // Used for correct constructor recognition.
 }
 
-compilationUnit: (NL*) packageDefinition? (NL | SEMICOLON)* (importStatement | NL)* (NL | SEMICOLON)* (classDeclaration | enumDeclaration | NL)* EOF;
+compilationUnit: SHEBANG_COMMENT? (NL*) packageDefinition? (NL | SEMICOLON)* (importStatement | NL)* (NL | SEMICOLON)* (classDeclaration | enumDeclaration | NL)* (statement | NL)* EOF;
 
 packageDefinition:
     (annotationClause (NL | annotationClause)*)? KW_PACKAGE (IDENTIFIER (DOT IDENTIFIER)*);

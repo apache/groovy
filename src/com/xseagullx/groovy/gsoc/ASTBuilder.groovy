@@ -222,6 +222,9 @@ class ASTBuilder {
                 else if (it instanceof PackageDefinitionContext)
                     parsePackageDefinition(it)
             }
+            tree.statement().collect {
+                moduleNode.addStatement(parseStatement(it))
+            }
         }
         catch (CompilationFailedException ignored) {
             // Compilation failed.
