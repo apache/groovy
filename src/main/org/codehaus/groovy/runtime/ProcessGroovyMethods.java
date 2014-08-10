@@ -173,6 +173,8 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * to keep the process from blocking due to a full output buffer.
      * The processed stream data is appended to the supplied Appendable.
      * For this, two Threads are started, so this method will return immediately.
+     * The threads will not be join()ed, even if waitFor() is called. To wait
+     * for the output to be fully consumed call waitForProcessOutput().
      *
      * @param self a Process
      * @param output an Appendable to capture the process stdout
@@ -189,6 +191,8 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * to keep the process from blocking due to a full output buffer.
      * The processed stream data is appended to the supplied OutputStream.
      * For this, two Threads are started, so this method will return immediately.
+     * The threads will not be join()ed, even if waitFor() is called. To wait
+     * for the output to be fully consumed call waitForProcessOutput().
      *
      * @param self a Process
      * @param output an OutputStream to capture the process stdout
