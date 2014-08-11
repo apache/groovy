@@ -76,7 +76,7 @@ SLASHY_STRING: '/' { isSlashyStringAlowed() }? SLASHY_STRING_ELEMENT*? '/' -> ty
 STRING: '"' DQ_STRING_ELEMENT*? '"'  | '\'' QUOTED_STRING_ELEMENT*? '\'' ;
 
 GSTRING_START: '"' DQ_STRING_ELEMENT*? '$' -> pushMode(DOUBLE_QUOTED_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE) ;
-SLASHY_GSTRING_START: '/' SLASHY_STRING_ELEMENT*? '$' -> type(GSTRING_START), pushMode(SLASHY_GSTRING_MODE) ;
+SLASHY_GSTRING_START: '/' SLASHY_STRING_ELEMENT*? '$' -> type(GSTRING_START), pushMode(SLASHY_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE) ;
 
 fragment SLASHY_STRING_ELEMENT: SLASHY_ESCAPE | ~('$' | '/') ;
 fragment STRING_ELEMENT: ESC_SEQUENCE | ~('$') ;
@@ -85,8 +85,13 @@ fragment DQ_STRING_ELEMENT: ESC_SEQUENCE | ~('"' | '$') ;
 
 mode DOUBLE_QUOTED_GSTRING_MODE ;
     GSTRING_END: '"' -> popMode ;
-    GSTRING_PART: '$' -> pushMode(GSTRING_TYPE_SELECTOR_MODE);
+    GSTRING_PART: '$' -> pushMode(GSTRING_TYPE_SELECTOR_MODE) ;
     GSTRING_ELEMENT: (ESC_SEQUENCE | ~('$' | '"')) -> more ;
+
+mode SLASHY_GSTRING_MODE ;
+    SLASHY_GSTRING_END: '/' -> type(GSTRING_END), popMode ;
+    SLASHY_GSTRING_PART: '$' -> type(GSTRING_PART), pushMode(GSTRING_TYPE_SELECTOR_MODE) ;
+    SLASHY_GSTRING_ELEMENT: (SLASHY_ESCAPE | ~('$' | '/')) -> more ;
 
 mode GSTRING_TYPE_SELECTOR_MODE ; // We drop here after exiting curved brace?
     GSTRING_BRACE_L: '{' { pushBrace(Brace.CURVE); tlePos = tokenIndex + 1; } -> type(LCURVE), popMode, pushMode(DEFAULT_MODE) ;
@@ -95,12 +100,6 @@ mode GSTRING_TYPE_SELECTOR_MODE ; // We drop here after exiting curved brace?
 mode GSTRING_PATH ;
     GSTRING_PATH_PART: '.' [A-Za-z_][A-Za-z0-9_]* ;
     ROLLBACK_ONE: . -> popMode, channel(HIDDEN) ; // This magic is for exit this state if
-
-mode SLASHY_GSTRING_MODE ;
-    SLASHY_GSTRING_BRACE_L: '{' { pushBrace(Brace.CURVE); tlePos = tokenIndex + 1; } -> type(LCURVE), pushMode(DEFAULT_MODE) ;
-    SLASHY_GSTRING_END: '/' -> type(GSTRING_END), popMode ;
-    SLASHY_GSTRING_PART: '$' -> type(GSTRING_PART) ;
-    SLASHY_GSTRING_ELEMENT: (SLASHY_ESCAPE | ~('$' | '/')) -> more ;
 
 mode DEFAULT_MODE ;
 

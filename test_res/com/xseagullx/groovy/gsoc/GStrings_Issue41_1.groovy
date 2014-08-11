@@ -24,6 +24,7 @@ class A {
 
     private void testDoubleQuotedPath() {
         "$variable"
+        "$v"
         "$variable.var"
         " Text $variable.var text"
         " Text $variable text $variable.var ${ variable + 1 }"
@@ -33,5 +34,11 @@ class A {
         "$variable.var."
         "$variable.var...."
         "$variable.var. ${}$aa$b."
+    }
+
+    private void testSlashyPath() {
+        (/Hello$a$ab.nb/)
+        (/Hello${}$fhjg/ + 1)
+        (/Hello${}$fhjg..$df.d.s./ + 1)
     }
 }
