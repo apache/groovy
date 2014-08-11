@@ -109,9 +109,10 @@ caseStatement: (KW_CASE expression COLON (statement | SEMICOLON | NL)* );
 
 cmdExpressionRule: pathExpression ( argumentList IDENTIFIER)* argumentList IDENTIFIER? ;
 pathExpression: (IDENTIFIER DOT)* IDENTIFIER ;
+gstringPathExpression: IDENTIFIER (GSTRING_PATH_PART)* ;
 
 closureExpressionRule: LCURVE (argumentDeclarationList CLOSURE_ARG_SEPARATOR)? blockStatement? RCURVE ;
-gstring: GSTRING_START LCURVE expression? RCURVE (GSTRING_PART LCURVE expression? RCURVE)* GSTRING_END ;
+gstring: GSTRING_START (gstringPathExpression | LCURVE expression? RCURVE) (GSTRING_PART (gstringPathExpression | LCURVE expression? RCURVE))* GSTRING_END ;
 
 // Special cases.
 // 1. Command expression(parenthesis-less expressions)

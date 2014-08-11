@@ -13,11 +13,21 @@ lexer grammar GroovyLexer;
     long tokenIndex = 0;
     long tlePos = 0;
 
+    @Override public Token nextToken() {
+        if (!(_interp instanceof PositionAdjustingLexerATNSimulator))
+            _interp = new PositionAdjustingLexerATNSimulator(this, _ATN, _decisionToDFA, _sharedContextCache);
+
+        return super.nextToken();
+    }
+
     public void emit(Token token) {
-        super.emit(token);
         tokenIndex++;
         lastTokenType = token.getType();
         //System.out.println("EM: " + tokenNames[lastTokenType != -1 ? lastTokenType : 0] + ": " + lastTokenType + " TLE = " + (tlePos == tokenIndex) + " " + tlePos + "/" + tokenIndex + " " + token.getText());
+        if (token.getType() == ROLLBACK_ONE) {
+           ((PositionAdjustingLexerATNSimulator)getInterpreter()).resetAcceptPosition(getInputStream(), _tokenStartCharIndex - 1, _tokenStartLine, _tokenStartCharPositionInLine - 1);
+        }
+        super.emit(token);
     }
 
     public void pushBrace(Brace b) {
@@ -65,8 +75,8 @@ MULTILINE_STRING:
 SLASHY_STRING: '/' { isSlashyStringAlowed() }? SLASHY_STRING_ELEMENT*? '/' -> type(STRING) ;
 STRING: '"' DQ_STRING_ELEMENT*? '"'  | '\'' QUOTED_STRING_ELEMENT*? '\'' ;
 
-GSTRING_START: '"' DQ_STRING_ELEMENT*? '$' -> pushMode(DOUBLE_QUOTED_GSTRING_MODE) ;
-SLASHY_GSTRING_START: '/' SLASHY_STRING_ELEMENT*? '$' -> type(GSTRING_START), pushMode(SLASHY_GSTRING_MODE) ;
+GSTRING_START: '"' DQ_STRING_ELEMENT*? '$' -> pushMode(DOUBLE_QUOTED_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE) ;
+SLASHY_GSTRING_START: '/' SLASHY_STRING_ELEMENT*? '$' -> type(GSTRING_START), pushMode(SLASHY_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE) ;
 
 fragment SLASHY_STRING_ELEMENT: SLASHY_ESCAPE | ~('$' | '/') ;
 fragment STRING_ELEMENT: ESC_SEQUENCE | ~('$') ;
@@ -74,16 +84,22 @@ fragment QUOTED_STRING_ELEMENT: ESC_SEQUENCE | ~('\'') ;
 fragment DQ_STRING_ELEMENT: ESC_SEQUENCE | ~('"' | '$') ;
 
 mode DOUBLE_QUOTED_GSTRING_MODE ;
-    GSTRING_BRACE_L: '{' { pushBrace(Brace.CURVE); tlePos = tokenIndex + 1; } -> type(LCURVE), pushMode(DEFAULT_MODE) ;
     GSTRING_END: '"' -> popMode ;
-    GSTRING_PART: '$' ;
+    GSTRING_PART: '$' -> pushMode(GSTRING_TYPE_SELECTOR_MODE) ;
     GSTRING_ELEMENT: (ESC_SEQUENCE | ~('$' | '"')) -> more ;
 
 mode SLASHY_GSTRING_MODE ;
-    SLASHY_GSTRING_BRACE_L: '{' { pushBrace(Brace.CURVE); tlePos = tokenIndex + 1; } -> type(LCURVE), pushMode(DEFAULT_MODE) ;
     SLASHY_GSTRING_END: '/' -> type(GSTRING_END), popMode ;
-    SLASHY_GSTRING_PART: '$' -> type(GSTRING_PART) ;
+    SLASHY_GSTRING_PART: '$' -> type(GSTRING_PART), pushMode(GSTRING_TYPE_SELECTOR_MODE) ;
     SLASHY_GSTRING_ELEMENT: (SLASHY_ESCAPE | ~('$' | '/')) -> more ;
+
+mode GSTRING_TYPE_SELECTOR_MODE ; // We drop here after exiting curved brace?
+    GSTRING_BRACE_L: '{' { pushBrace(Brace.CURVE); tlePos = tokenIndex + 1; } -> type(LCURVE), popMode, pushMode(DEFAULT_MODE) ;
+    GSTRING_ID: [A-Za-z_][A-Za-z0-9_]* -> type(IDENTIFIER), popMode, pushMode(GSTRING_PATH) ;
+
+mode GSTRING_PATH ;
+    GSTRING_PATH_PART: '.' [A-Za-z_][A-Za-z0-9_]* ;
+    ROLLBACK_ONE: . -> popMode, channel(HIDDEN) ; // This magic is for exit this state if
 
 mode DEFAULT_MODE ;
 

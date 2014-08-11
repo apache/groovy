@@ -16,9 +16,29 @@ class A {
     }
 
     private void testDoubleQuoted() {
-        println("${ variable }")
-        println(" Text ${ variable } text")
-        println(" Text ${ variable } text ${ variable } ${ variable + 1 } ${ "variable" }")
-        println(" Text ${ "inner${ variable } ${ variable }" } text ${ variable } ${ variable + 1 } ${ "variable" }")
+        "${ variable }"
+        " Text ${ variable } text"
+        " Text ${ variable } text ${ variable } ${ variable + 1 } ${ "variable" }"
+        " Text ${ "inner${ variable } ${ variable }" } text ${ variable } ${ variable + 1 } ${ "variable" }"
+    }
+
+    private void testDoubleQuotedPath() {
+        "$variable"
+        "$v"
+        "$variable.var"
+        " Text $variable.var text"
+        " Text $variable text $variable.var ${ variable + 1 }"
+    }
+
+    private void testDoubleQuotedPathTrailingDot() {
+        "$variable.var."
+        "$variable.var...."
+        "$variable.var. ${}$aa$b."
+    }
+
+    private void testSlashyPath() {
+        (/Hello$a$ab.nb/)
+        (/Hello${}$fhjg/ + 1)
+        (/Hello${}$fhjg..$df.d.s./ + 1)
     }
 }

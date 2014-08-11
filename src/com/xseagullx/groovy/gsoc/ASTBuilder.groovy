@@ -44,6 +44,7 @@ import com.xseagullx.groovy.gsoc.GroovyParser.ForInStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericClassNameExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericDeclarationListContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GstringExpressionContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GstringPathExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.IfStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ImportStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ListConstructorContext
@@ -910,7 +911,23 @@ class ASTBuilder {
         def clearPart = { String it -> it.length() == 1 ? "" : it[0..-2] }
         def clearEnd = { String it -> it.length() == 1 ? "" : it[0..-2] }
         def strings = [clearStart(ctx.gstring().GSTRING_START().text)] + ctx.gstring().GSTRING_PART().collect { clearPart(it.text) } + [clearEnd(ctx.gstring().GSTRING_END().text)]
-        def expressions = ctx.gstring().expression().collect this.&parseExpression
+        def expressions = []
+
+        def children = ctx.gstring().children
+        children.eachWithIndex { it, i ->
+            if (it instanceof ExpressionContext) {
+                // We can guarantee, that it will be at least fallback ExpressionContext multimethod overloading, that can handle such situation.
+                //noinspection GroovyAssignabilityCheck
+                expressions << (parseExpression(it) as Expression)
+            }
+            else if (it instanceof GstringPathExpressionContext)
+                expressions << collectPathExpression(it)
+            else if (it instanceof TerminalNode) {
+                def next = i + 1 < children.size() ? children[i + 1] : null
+                if (next instanceof TerminalNode && (next as TerminalNode).symbol.type == GroovyParser.RCURVE)
+                    expressions << new ConstantExpression(null)
+            }
+        }
         def gstringNode = new GStringExpression(ctx.text, strings.collect { new ConstantExpression(it) }, expressions)
         setupNodeLocation(gstringNode, ctx)
     }
@@ -967,6 +984,17 @@ class ASTBuilder {
                 new PropertyExpression(val as Expression, new ConstantExpression(prop.text))
             }
             return inject
+        }
+    }
+
+    static Expression collectPathExpression(GstringPathExpressionContext ctx) {
+        if (!ctx.GSTRING_PATH_PART())
+            new VariableExpression(ctx.IDENTIFIER().text)
+        else {
+            def inj = ctx.GSTRING_PATH_PART().inject(new VariableExpression(ctx.IDENTIFIER().text)) { val, prop ->
+                new PropertyExpression(val as Expression, new ConstantExpression(prop.text[1..-1]))
+            }
+            inj
         }
     }
 
