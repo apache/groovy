@@ -111,7 +111,7 @@ cmdExpressionRule: pathExpression ( argumentList IDENTIFIER)* argumentList IDENT
 pathExpression: (IDENTIFIER DOT)* IDENTIFIER ;
 
 closureExpressionRule: LCURVE (argumentDeclarationList CLOSURE_ARG_SEPARATOR)? blockStatement? RCURVE ;
-gstring: GSTRING_START LCURVE expression? RCURVE (GSTRING_PART LCURVE expression? RCURVE)* GSTRING_END ;
+gstring: GSTRING_START (pathExpression | LCURVE expression? RCURVE) (GSTRING_PART (pathExpression | LCURVE expression? RCURVE))* GSTRING_END ;
 
 // Special cases.
 // 1. Command expression(parenthesis-less expressions)

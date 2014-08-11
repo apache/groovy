@@ -21,4 +21,10 @@ class A {
         println(" Text ${ variable } text ${ variable } ${ variable + 1 } ${ "variable" }")
         println(" Text ${ "inner${ variable } ${ variable }" } text ${ variable } ${ variable + 1 } ${ "variable" }")
     }
+
+    private void testDoubleQuotedPath() {
+        println("$variable")
+        println(" Text $variable.var text")
+        println(" Text $variable text $variable.var ${ variable + 1 }")
+    }
 }

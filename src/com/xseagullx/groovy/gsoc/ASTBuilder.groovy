@@ -910,7 +910,14 @@ class ASTBuilder {
         def clearPart = { String it -> it.length() == 1 ? "" : it[0..-2] }
         def clearEnd = { String it -> it.length() == 1 ? "" : it[0..-2] }
         def strings = [clearStart(ctx.gstring().GSTRING_START().text)] + ctx.gstring().GSTRING_PART().collect { clearPart(it.text) } + [clearEnd(ctx.gstring().GSTRING_END().text)]
-        def expressions = ctx.gstring().expression().collect this.&parseExpression
+        def expressions = ctx.gstring().children.grep { it instanceof ExpressionContext || it instanceof PathExpressionContext }.collect {
+            if (it instanceof PathExpressionContext)
+                collectPathExpression(it)
+            else
+                // We can guarantee, that it will be at least failback ExpressionContext multimethod overloading, that can handle such situation.
+                //noinspection GroovyAssignabilityCheck
+                parseExpression(it) as Expression
+        }
         def gstringNode = new GStringExpression(ctx.text, strings.collect { new ConstantExpression(it) }, expressions)
         setupNodeLocation(gstringNode, ctx)
     }
