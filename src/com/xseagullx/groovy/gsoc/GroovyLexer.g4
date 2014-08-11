@@ -93,9 +93,8 @@ mode GSTRING_TYPE_SELECTOR_MODE ; // We drop here after exiting curved brace?
     GSTRING_ID: [A-Za-z_][A-Za-z0-9_]* -> type(IDENTIFIER), popMode, pushMode(GSTRING_PATH) ;
 
 mode GSTRING_PATH ;
-    GSTRING_PATH_PART: [A-Za-z_][A-Za-z0-9_]* -> type(IDENTIFIER) ;
-    GSTRING_DOT: '.' -> type(DOT) ;
-    ROLLBACK_ONE: . -> popMode, channel(HIDDEN) ; // Fixme can we do an action without matching some chars?
+    GSTRING_PATH_PART: '.' [A-Za-z_][A-Za-z0-9_]* ;
+    ROLLBACK_ONE: . -> popMode, channel(HIDDEN) ; // This magic is for exit this state if
 
 mode SLASHY_GSTRING_MODE ;
     SLASHY_GSTRING_BRACE_L: '{' { pushBrace(Brace.CURVE); tlePos = tokenIndex + 1; } -> type(LCURVE), pushMode(DEFAULT_MODE) ;
