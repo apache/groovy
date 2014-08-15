@@ -17,6 +17,7 @@ package org.codehaus.groovy.transform
 
 import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
+import org.codehaus.groovy.control.CompilationFailedException
 
 import java.util.concurrent.CountDownLatch
 
@@ -61,6 +62,16 @@ class SynchronizedTransformTest extends GroovyTestCase {
         testReadyLatchCS.countDown()
         countReadyLatchCS.await(5, SECONDS)
         c.incDec()
+    }
+
+    void testSynchronizedAbstractShouldNotCompile() {
+        def msg = shouldFail CompilationFailedException, '''
+            class Foo {
+                @groovy.transform.Synchronized
+                abstract void bar()
+            }
+        '''
+        assert msg.contains("annotation not allowed on abstract method 'bar'")
     }
 
     class Count {
