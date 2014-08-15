@@ -1024,7 +1024,14 @@ class ASTBuilder {
     }
 
     static GenericsType[] parseGenericDeclaration(GenericDeclarationListContext ctx) {
-        ctx ? ctx.genericClassNameExpression().collect { setupNodeLocation(new GenericsType(parseExpression(it)), it) } : null
+        ctx ? ctx.genericsDeclarationElement().collect {
+            def classNode = parseExpression(it.genericClassNameExpression(0))
+            ClassNode[] upperBounds = null
+            if (it.KW_EXTENDS())
+                upperBounds = (it.genericClassNameExpression().toList()[1..-1].collect(ASTBuilder.&parseExpression)) as ClassNode[]
+            def type = new GenericsType(classNode, upperBounds, null)
+            setupNodeLocation(type, it)
+        } : null
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

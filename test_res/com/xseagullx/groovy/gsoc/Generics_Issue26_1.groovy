@@ -17,7 +17,11 @@ abstract class A3 implements List<Integer> {
 }
 
 abstract class A4 extends ArrayList<Integer> {
-    private Iterator<Integer> iterator() {
+    private <T extends Integer & Cloneable> Iterator iterator() {
         return null
     }
 }
+
+class A extends ArrayList<Long> {}
+
+class B<T> extends HashMap<T,List<T>> {}

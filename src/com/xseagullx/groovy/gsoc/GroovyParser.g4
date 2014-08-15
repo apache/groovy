@@ -62,8 +62,10 @@ annotationElementPair: IDENTIFIER ASSIGN annotationElement ;
 annotationElement: annotationParameter | annotationClause ;
 
 genericDeclarationList:
-    LT genericClassNameExpression (COMMA genericClassNameExpression)* GT
+    LT genericsDeclarationElement (COMMA genericsDeclarationElement)* GT
 ;
+
+genericsDeclarationElement: genericClassNameExpression (KW_EXTENDS genericClassNameExpression (BAND genericClassNameExpression)* )? ;
 
 throwsClause: KW_THROWS classNameExpression (COMMA classNameExpression)*;
 
