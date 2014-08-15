@@ -172,7 +172,16 @@ expression:
 
 classNameExpression: { GrammarPredicates.isClassName(_input) }? IDENTIFIER (DOT IDENTIFIER)* ;
 
-genericClassNameExpression: classNameExpression (genericDeclarationList | (LBRACK RBRACK))?;
+genericClassNameExpression: classNameExpression (genericList | (LBRACK RBRACK))?;
+
+genericList:
+    LT genericListElement (COMMA genericListElement)* GT
+;
+
+genericListElement:
+    genericClassNameExpression #genericsConcreteElement
+    | (IDENTIFIER | QUESTION) (KW_EXTENDS genericClassNameExpression | KW_SUPER genericClassNameExpression)? #genericsWildcardElement
+;
 
 mapEntry:
     STRING COLON expression

@@ -43,6 +43,9 @@ import com.xseagullx.groovy.gsoc.GroovyParser.FieldDeclarationContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ForInStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericClassNameExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericDeclarationListContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GenericListContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GenericsConcreteElementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GenericsWildcardElementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GstringExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GstringPathExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.IfStatementContext
@@ -1019,8 +1022,28 @@ class ASTBuilder {
 
         if (ctx.LBRACK())
             classNode = classNode.makeArray()
-        classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
+        classNode.genericsTypes = parseGenericList(ctx.genericList())
         setupNodeLocation(classNode, ctx)
+    }
+
+    static GenericsType[] parseGenericList(GenericListContext ctx) {
+        !ctx ?
+            null
+        : ctx.genericListElement().collect {
+            if (it instanceof GenericsConcreteElementContext)
+                setupNodeLocation(new GenericsType(parseExpression(it.genericClassNameExpression())), it)
+            else {
+                assert it instanceof GenericsWildcardElementContext
+                ClassNode baseType = it.QUESTION() ? ClassHelper.makeWithoutCaching("?") : ClassHelper.makeWithoutCaching(it.IDENTIFIER().text)
+                ClassNode[] upperBounds = null
+                ClassNode lowerBound = null
+                if (it.KW_EXTENDS())
+                    upperBounds = [ parseExpression(it.genericClassNameExpression()) ]
+                else if (it.KW_SUPER())
+                    lowerBound = parseExpression(it.genericClassNameExpression())
+                setupNodeLocation(new GenericsType(baseType, upperBounds, lowerBound), it)
+            }
+        }
     }
 
     static GenericsType[] parseGenericDeclaration(GenericDeclarationListContext ctx) {

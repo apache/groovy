@@ -25,3 +25,10 @@ abstract class A4 extends ArrayList<Integer> {
 class A extends ArrayList<Long> {}
 
 class B<T> extends HashMap<T,List<T>> {}
+
+class C<Y, T extends Map<String,Map<Y, Integer>>> {}
+
+class D {
+    static < T > T foo(T t) {return null}
+    private <T extends List<?> & Cloneable> T<Integer, ? super Double> m(Map<? extends CharSequence, ? super List<? super Integer>> arg) {}
+}
