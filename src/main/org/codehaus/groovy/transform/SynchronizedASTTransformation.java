@@ -57,6 +57,10 @@ public class SynchronizedASTTransformation extends AbstractASTTransformation {
 
         if (parent instanceof MethodNode) {
             MethodNode mNode = (MethodNode) parent;
+            if (mNode.isAbstract()) {
+                addError("Error during " + MY_TYPE_NAME + " processing: annotation not allowed on abstract method '" + mNode.getName() + "'", mNode);
+                return;
+            }
             ClassNode cNode = mNode.getDeclaringClass();
             String lockExpr = determineLock(value, cNode, mNode);
             if (lockExpr == null) return;
