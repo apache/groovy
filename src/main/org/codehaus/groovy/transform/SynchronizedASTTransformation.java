@@ -78,8 +78,8 @@ public class SynchronizedASTTransformation extends AbstractASTTransformation {
                 return null;
             }
             FieldNode field = cNode.getDeclaredField(value);
-            if (field.isStatic() != isStatic) {
-                addError("Error during " + MY_TYPE_NAME + " processing: lock field with name '" + value + "' should " + (isStatic ? "" : "not ") + "be static", field);
+            if (isStatic && !field.isStatic()) {
+                addError("Error during " + MY_TYPE_NAME + " processing: lock field with name '" + value + "' must be static for static method '" + mNode.getName() + "'", field);
                 return null;
             }
             return value;
