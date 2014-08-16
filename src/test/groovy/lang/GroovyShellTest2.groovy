@@ -19,5 +19,76 @@ package groovy.lang
 /**
  * Created by jim on 8/14/14.
  */
-class GroovyShellTest2 {
+class GroovyShellTest2 extends GroovyTestCase {
+    void testBindingsInBaseScriptInitializers() {
+        def shell = new GroovyShell();
+        def scriptText = '''
+        @groovy.transform.BaseScript CustomBaseScript baseScript
+
+        abstract class CustomBaseScript extends Script {
+            CustomBaseScript() { this(new Binding()) }
+            public CustomBaseScript(Binding b) { super(b) }
+
+            def script_args = getProperty('args')
+        }
+
+        assert script_args[0] == 'Hello Groovy'
+        script_args[0]
+'''
+
+        def arg0 = 'Hello Groovy'
+        def result = shell.run scriptText, 'TestBindingsInBaseScriptInitializers.groovy', [arg0]
+        assert result == arg0
+    }
+
+    void testBindingsInScriptFieldInitializers() {
+        def shell = new GroovyShell();
+        def scriptText = '''
+        @groovy.transform.Field def script_args = getProperty('args')
+
+        assert script_args[0] == 'Rehi Groovy'
+        script_args[0]
+'''
+
+        def arg0 = 'Rehi Groovy'
+        def result = shell.run scriptText, 'TestBindingsInScriptFieldInitializers.groovy', [arg0]
+        assert result == arg0
+    }
+
+    void testEvalBindingsInBaseScriptInitializers() {
+        def context = new Binding()
+        def arg0 = 'Hello Groovy Eval'
+        context.setProperty("args", [arg0] as String[])
+        def shell = new GroovyShell(context);
+        def scriptText = '''
+        @groovy.transform.BaseScript CustomBaseScript baseScript
+
+        abstract class CustomBaseScript extends Script {
+            CustomBaseScript() { this(new Binding()) }
+            public CustomBaseScript(Binding b) { super(b) }
+
+            def script_args = getProperty('args')
+        }
+
+        assert script_args[0] == 'Hello Groovy Eval'
+        script_args[0]
+'''
+        def result = shell.evaluate scriptText
+        assert result == arg0
+    }
+
+    void testEvalBindingsInScriptFieldInitializers() {
+        def context = new Binding()
+        def arg0 = 'Rehi Groovy Eval'
+        context.setProperty("args", [arg0] as String[])
+        def shell = new GroovyShell(context);
+        def scriptText = '''
+        @groovy.transform.Field def script_args = getProperty('args')
+        assert script_args[0] == 'Rehi Groovy Eval'
+        script_args[0]
+'''
+
+        def result = shell.evaluate scriptText
+        assert result == arg0
+    }
 }

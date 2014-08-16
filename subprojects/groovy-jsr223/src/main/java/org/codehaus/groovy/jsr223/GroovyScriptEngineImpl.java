@@ -290,8 +290,7 @@ public class GroovyScriptEngineImpl
                 return scriptClass;
             } else {
                 // it's a script
-                Script scriptObject = (Script) scriptClass.newInstance();
-                scriptObject.setBinding(binding);
+                Script scriptObject = InvokerHelper.createScript(scriptClass, binding);
 
                 // save all current closures into global closures map
                 Method[] methods = scriptClass.getMethods();

@@ -2,6 +2,7 @@ package org.codehaus.groovy.benchmarks.vm5.b2394;
 
 import groovy.lang.Binding;
 import groovy.lang.Script;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -34,18 +35,10 @@ public class ScriptLauncher extends Thread
         {
             Builder builder = new Builder();
 
-            try
-            {
-                script = (Script)scriptClass.newInstance();
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-
             Binding binding = new Binding();
             binding.setVariable("builder", builder);
-            script.setBinding(binding);
+
+            script = InvokerHelper.createScript(scriptClass, binding);
 
             script.run();
         }
