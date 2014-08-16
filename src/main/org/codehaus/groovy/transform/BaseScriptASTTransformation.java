@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PackageNode;
@@ -50,6 +51,7 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
     private static final Class<BaseScript> MY_CLASS = BaseScript.class;
     public static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+    private static final Parameter[] CONTEXT_CTOR_PARAMETERS = {new Parameter(ClassHelper.BINDING_TYPE, "context")};
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -143,6 +145,14 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
                 methodNode.copyNodeMetaData(defaultMethod);
                 cNode.addMethod(methodNode);
             }
+        }
+
+        // If the new script base class does not have a contextual constructor (g.l.Binding), then we won't either.
+        // We have to do things this way (and rely on just default constructors) because the logic that generates
+        // the constructors for our script class have already run.
+        if (cNode.getSuperClass().getDeclaredConstructor(CONTEXT_CTOR_PARAMETERS) == null) {
+            ConstructorNode orphanedConstructor = cNode.getDeclaredConstructor(CONTEXT_CTOR_PARAMETERS);
+            cNode.removeConstructor(orphanedConstructor);
         }
     }
 

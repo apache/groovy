@@ -31,6 +31,7 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.util.*;
 
 /**
@@ -483,6 +484,24 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (r.constructors == null)
             r.constructors = new ArrayList<ConstructorNode> ();
         return r.constructors;
+    }
+
+    /**
+     * Finds a constructor matching the given parameters in this class.
+     *
+     * @return the constructor matching the given parameters or null
+     */
+    public ConstructorNode getDeclaredConstructor(Parameter[] parameters) {
+        for (ConstructorNode method : getDeclaredConstructors()) {
+            if (parametersEqual(method.getParameters(), parameters)) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    public void removeConstructor(ConstructorNode node) {
+        redirect().constructors.remove(node);
     }
 
     public ModuleNode getModule() {
