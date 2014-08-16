@@ -77,7 +77,7 @@ argumentDeclaration:
 blockStatement: (statement | NL)+ ;
 
 declarationRule: annotationClause* typeDeclaration IDENTIFIER (ASSIGN expression)? ;
-newInstanceRule: KW_NEW genericClassNameExpression (LPAREN argumentList? RPAREN) (classBody)?;
+newInstanceRule: KW_NEW (classNameExpression (LT GT)? | genericClassNameExpression) (LPAREN argumentList? RPAREN) (classBody)?;
 newArrayRule: KW_NEW classNameExpression (LBRACK INTEGER RBRACK)* ;
 classBody: LCURVE (classMember | NL | SEMICOLON)* RCURVE ;
 
@@ -180,7 +180,7 @@ genericList:
 
 genericListElement:
     genericClassNameExpression #genericsConcreteElement
-    | (IDENTIFIER | QUESTION) (KW_EXTENDS genericClassNameExpression | KW_SUPER genericClassNameExpression)? #genericsWildcardElement
+    | QUESTION (KW_EXTENDS genericClassNameExpression | KW_SUPER genericClassNameExpression)? #genericsWildcardElement
 ;
 
 mapEntry:

@@ -1034,14 +1034,18 @@ class ASTBuilder {
                 setupNodeLocation(new GenericsType(parseExpression(it.genericClassNameExpression())), it)
             else {
                 assert it instanceof GenericsWildcardElementContext
-                ClassNode baseType = it.QUESTION() ? ClassHelper.makeWithoutCaching("?") : ClassHelper.makeWithoutCaching(it.IDENTIFIER().text)
+                ClassNode baseType = ClassHelper.makeWithoutCaching("?")
                 ClassNode[] upperBounds = null
                 ClassNode lowerBound = null
                 if (it.KW_EXTENDS())
                     upperBounds = [ parseExpression(it.genericClassNameExpression()) ]
                 else if (it.KW_SUPER())
                     lowerBound = parseExpression(it.genericClassNameExpression())
-                setupNodeLocation(new GenericsType(baseType, upperBounds, lowerBound), it)
+
+                def type = new GenericsType(baseType, upperBounds, lowerBound)
+                type.wildcard = true
+                type.name = "?"
+                setupNodeLocation(type, it)
             }
         }
     }
@@ -1147,7 +1151,10 @@ class ASTBuilder {
     }
 
     static def parse(NewInstanceRuleContext ctx) {
-        def creatingClass = parseExpression(ctx.genericClassNameExpression())
+        def creatingClass = ctx.genericClassNameExpression() ? parseExpression(ctx.genericClassNameExpression()) : parseExpression(ctx.classNameExpression())
+        if (ctx.LT()) // Diamond case.
+            creatingClass.genericsTypes = []
+
         def expression
         if (!ctx.classBody()) {
             expression = setupNodeLocation(new ConstructorCallExpression(creatingClass, createArgumentList(ctx.argumentList())), ctx)
