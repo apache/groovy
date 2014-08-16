@@ -2,6 +2,7 @@
 package com.xseagullx.groovy.gsoc
 
 import com.xseagullx.groovy.gsoc.util.ASTComparatorCategory
+import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.control.ErrorCollector
 import spock.lang.Specification
@@ -44,7 +45,7 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/FieldAccessAndMethodCalls_Issue37_1.groovy" | _
         'test_res/com/xseagullx/groovy/gsoc/FieldAccessAndMethodCalls_Issue37_2.groovy' | addIgnore(ExpressionStatement, ASTComparatorCategory.LOCATION_IGNORE_LIST)
         "test_res/com/xseagullx/groovy/gsoc/FieldInitializersAndDefaultMethods_Issue49_1.groovy" | _
-        "test_res/com/xseagullx/groovy/gsoc/Generics_Issue26_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/Generics_Issue26_1.groovy" | addIgnore(GenericsType, ASTComparatorCategory.LOCATION_IGNORE_LIST)
         "test_res/com/xseagullx/groovy/gsoc/GStrings_Issue41_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ImportRecognition_Issue6_2.groovy" | _

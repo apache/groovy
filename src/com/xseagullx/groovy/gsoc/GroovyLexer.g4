@@ -136,6 +136,7 @@ KW_NULL: 'null' ;
 KW_TRUE: 'true' ;
 KW_FALSE: 'false' ;
 KW_NEW: 'new' ;
+KW_SUPER: 'super' ;
 
 KW_IN: 'in' ;
 KW_FOR: 'for' ;
@@ -205,6 +206,7 @@ PLUS: '+' ;
 MINUS: '-' ;
 BAND: '&' ;
 XOR: '^' ;
+QUESTION: '?' ;
 KW_AS: 'as' ;
 KW_INSTANCEOF: 'instanceof' ;
 

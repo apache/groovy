@@ -62,8 +62,10 @@ annotationElementPair: IDENTIFIER ASSIGN annotationElement ;
 annotationElement: annotationParameter | annotationClause ;
 
 genericDeclarationList:
-    LT genericClassNameExpression (COMMA genericClassNameExpression)* GT
+    LT genericsDeclarationElement (COMMA genericsDeclarationElement)* GT
 ;
+
+genericsDeclarationElement: genericClassNameExpression (KW_EXTENDS genericClassNameExpression (BAND genericClassNameExpression)* )? ;
 
 throwsClause: KW_THROWS classNameExpression (COMMA classNameExpression)*;
 
@@ -75,7 +77,7 @@ argumentDeclaration:
 blockStatement: (statement | NL)+ ;
 
 declarationRule: annotationClause* typeDeclaration IDENTIFIER (ASSIGN expression)? ;
-newInstanceRule: KW_NEW genericClassNameExpression (LPAREN argumentList? RPAREN) (classBody)?;
+newInstanceRule: KW_NEW (classNameExpression (LT GT)? | genericClassNameExpression) (LPAREN argumentList? RPAREN) (classBody)?;
 newArrayRule: KW_NEW classNameExpression (LBRACK INTEGER RBRACK)* ;
 classBody: LCURVE (classMember | NL | SEMICOLON)* RCURVE ;
 
@@ -170,7 +172,16 @@ expression:
 
 classNameExpression: { GrammarPredicates.isClassName(_input) }? IDENTIFIER (DOT IDENTIFIER)* ;
 
-genericClassNameExpression: classNameExpression (genericDeclarationList | (LBRACK RBRACK))?;
+genericClassNameExpression: classNameExpression (genericList | (LBRACK RBRACK))?;
+
+genericList:
+    LT genericListElement (COMMA genericListElement)* GT
+;
+
+genericListElement:
+    genericClassNameExpression #genericsConcreteElement
+    | QUESTION (KW_EXTENDS genericClassNameExpression | KW_SUPER genericClassNameExpression)? #genericsWildcardElement
+;
 
 mapEntry:
     STRING COLON expression

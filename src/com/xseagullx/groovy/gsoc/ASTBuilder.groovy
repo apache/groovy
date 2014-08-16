@@ -43,6 +43,9 @@ import com.xseagullx.groovy.gsoc.GroovyParser.FieldDeclarationContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ForInStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericClassNameExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericDeclarationListContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GenericListContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GenericsConcreteElementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GenericsWildcardElementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GstringExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GstringPathExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.IfStatementContext
@@ -1019,12 +1022,43 @@ class ASTBuilder {
 
         if (ctx.LBRACK())
             classNode = classNode.makeArray()
-        classNode.genericsTypes = parseGenericDeclaration(ctx.genericDeclarationList())
+        classNode.genericsTypes = parseGenericList(ctx.genericList())
         setupNodeLocation(classNode, ctx)
     }
 
+    static GenericsType[] parseGenericList(GenericListContext ctx) {
+        !ctx ?
+            null
+        : ctx.genericListElement().collect {
+            if (it instanceof GenericsConcreteElementContext)
+                setupNodeLocation(new GenericsType(parseExpression(it.genericClassNameExpression())), it)
+            else {
+                assert it instanceof GenericsWildcardElementContext
+                ClassNode baseType = ClassHelper.makeWithoutCaching("?")
+                ClassNode[] upperBounds = null
+                ClassNode lowerBound = null
+                if (it.KW_EXTENDS())
+                    upperBounds = [ parseExpression(it.genericClassNameExpression()) ]
+                else if (it.KW_SUPER())
+                    lowerBound = parseExpression(it.genericClassNameExpression())
+
+                def type = new GenericsType(baseType, upperBounds, lowerBound)
+                type.wildcard = true
+                type.name = "?"
+                setupNodeLocation(type, it)
+            }
+        }
+    }
+
     static GenericsType[] parseGenericDeclaration(GenericDeclarationListContext ctx) {
-        ctx ? ctx.genericClassNameExpression().collect { setupNodeLocation(new GenericsType(parseExpression(it)), it) } : null
+        ctx ? ctx.genericsDeclarationElement().collect {
+            def classNode = parseExpression(it.genericClassNameExpression(0))
+            ClassNode[] upperBounds = null
+            if (it.KW_EXTENDS())
+                upperBounds = (it.genericClassNameExpression().toList()[1..-1].collect(ASTBuilder.&parseExpression)) as ClassNode[]
+            def type = new GenericsType(classNode, upperBounds, null)
+            setupNodeLocation(type, it)
+        } : null
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1117,7 +1151,10 @@ class ASTBuilder {
     }
 
     static def parse(NewInstanceRuleContext ctx) {
-        def creatingClass = parseExpression(ctx.genericClassNameExpression())
+        def creatingClass = ctx.genericClassNameExpression() ? parseExpression(ctx.genericClassNameExpression()) : parseExpression(ctx.classNameExpression())
+        if (ctx.LT()) // Diamond case.
+            creatingClass.genericsTypes = []
+
         def expression
         if (!ctx.classBody()) {
             expression = setupNodeLocation(new ConstructorCallExpression(creatingClass, createArgumentList(ctx.argumentList())), ctx)
