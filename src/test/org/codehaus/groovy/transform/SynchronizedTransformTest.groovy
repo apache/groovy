@@ -74,6 +74,17 @@ class SynchronizedTransformTest extends GroovyTestCase {
         assert msg.contains("annotation not allowed on abstract method 'bar'")
     }
 
+    void testSynchronizedInstanceLockWithStaticMethodShouldNotCompile() {
+        def msg = shouldFail CompilationFailedException, '''
+            class Foo {
+                private mylock = new Object[0]
+                @groovy.transform.Synchronized('mylock')
+                static void bar() {}
+            }
+        '''
+        assert msg.contains("lock field with name 'mylock' must be static for static method 'bar'")
+    }
+
     class Count {
         private val = 0
 
