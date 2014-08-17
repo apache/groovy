@@ -144,4 +144,14 @@ class NewifyTransformTest extends GroovyShellTestCase {
             assert t.toString() == 'Branch(Leaf(1), Branch(Branch(Leaf(2), Leaf(3)), Leaf(4)))'
         """
     }
+
+    void testNewifyInnerClassNode_Groovy6438() {
+        def test = evaluate '''
+            @Newify String test() {
+              new Object() { def x() { String.new('ABC') } }.x()
+            }
+            test()
+        '''
+        assert test == 'ABC'
+    }
 }
