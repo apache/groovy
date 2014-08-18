@@ -40,6 +40,7 @@ import com.xseagullx.groovy.gsoc.GroovyParser.ExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ExpressionStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.FieldAccessExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.FieldDeclarationContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ForColonStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ForInStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericClassNameExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericDeclarationListContext
@@ -489,6 +490,16 @@ class ASTBuilder {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Statement parseStatement(ForInStatementContext ctx) {
+        def parameter = new Parameter(parseTypeDeclaration(ctx.typeDeclaration()), ctx.IDENTIFIER().text)
+        parameter = setupNodeLocation(parameter, ctx.IDENTIFIER().symbol)
+
+        setupNodeLocation(new ForStatement(parameter, parseExpression(ctx.expression()), parse(ctx.statementBlock())), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Statement parseStatement(ForColonStatementContext ctx) {
+        if (!ctx.typeDeclaration())
+            throw new RuntimeException("Classic for statement require type to be declared.")
         def parameter = new Parameter(parseTypeDeclaration(ctx.typeDeclaration()), ctx.IDENTIFIER().text)
         parameter = setupNodeLocation(parameter, ctx.IDENTIFIER().symbol)
 

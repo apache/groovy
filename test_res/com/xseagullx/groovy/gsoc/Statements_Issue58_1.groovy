@@ -47,4 +47,9 @@ class A {
         while (a)
             println('!')
     }
+
+    private def testJava5For() {
+        for (int i : [])
+            println(i)
+    }
 }

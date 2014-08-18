@@ -96,4 +96,10 @@ class A {
                 result = 'default'
         }
     }
+
+    private def testJava5For() {
+        for (int i : []) {
+            println(i)
+        }
+    }
 }

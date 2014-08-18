@@ -89,6 +89,7 @@ statement:
     | expression #expressionStatement
     | KW_FOR LPAREN (expression)? SEMICOLON expression? SEMICOLON expression? RPAREN NL* statementBlock #classicForStatement
     | KW_FOR LPAREN typeDeclaration? IDENTIFIER KW_IN expression RPAREN NL* statementBlock #forInStatement
+    | KW_FOR LPAREN typeDeclaration IDENTIFIER COLON expression RPAREN NL* statementBlock #forColonStatement
     | KW_IF LPAREN expression RPAREN NL* statementBlock NL* (KW_ELSE NL* statementBlock)? #ifStatement
     | KW_WHILE LPAREN expression RPAREN NL* statementBlock #whileStatement
     | KW_SWITCH LPAREN expression RPAREN NL* LCURVE
