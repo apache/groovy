@@ -70,6 +70,7 @@ import com.xseagullx.groovy.gsoc.GroovyParser.PathExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.PostfixExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.PrefixExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ReturnStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.StatementBlockContext
 import com.xseagullx.groovy.gsoc.GroovyParser.StatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.SwitchStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ThrowStatementContext
@@ -456,44 +457,19 @@ class ASTBuilder {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Statement parseStatement(IfStatementContext ctx) {
-        def trueBranch = new BlockStatement()
-        def falseBranch = null
-        def s = trueBranch
-        for (c in ctx.children) {
-            if (c instanceof StatementContext) {
-                s.addStatement(parseStatement(c))
-            }
-            else if (c instanceof TerminalNode) {
-                if (c.symbol.type == GroovyLexer.KW_ELSE) {
-                    falseBranch = new BlockStatement()
-                    s = falseBranch
-                }
-
-            }
-        }
-
-        if (!falseBranch)
-            falseBranch = EmptyStatement.INSTANCE
-
+        def trueBranch = parse(ctx.statementBlock(0))
+        def falseBranch = ctx.KW_ELSE() ? parse(ctx.statementBlock(1)) : EmptyStatement.INSTANCE
         def expression = new BooleanExpression(parseExpression(ctx.expression()))
         setupNodeLocation(new IfStatement(expression, trueBranch, falseBranch), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Statement parseStatement(WhileStatementContext ctx) {
-        def statement = new BlockStatement() // TODO refactor block statement creation. label #BSC
-        for (stmt in ctx.statement())
-            statement.addStatement parseStatement(stmt)
-
-        setupNodeLocation(new WhileStatement(new BooleanExpression(parseExpression(ctx.expression())), statement), ctx)
+        setupNodeLocation(new WhileStatement(new BooleanExpression(parseExpression(ctx.expression())), parse(ctx.statementBlock())), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Statement parseStatement(ClassicForStatementContext ctx) {
-        def statement = new BlockStatement() // #BSC
-        for (stmt in ctx.statement())
-            statement.addStatement parseStatement(stmt)
-
         def expression = new ClosureListExpression()
 
         def captureNext = false
@@ -508,7 +484,7 @@ class ASTBuilder {
         }
 
         def parameter = ForStatement.FOR_LOOP_DUMMY
-        setupNodeLocation(new ForStatement(parameter, expression, statement), ctx)
+        setupNodeLocation(new ForStatement(parameter, expression, parse(ctx.statementBlock())), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -516,11 +492,14 @@ class ASTBuilder {
         def parameter = new Parameter(parseTypeDeclaration(ctx.typeDeclaration()), ctx.IDENTIFIER().text)
         parameter = setupNodeLocation(parameter, ctx.IDENTIFIER().symbol)
 
-        def statement = new BlockStatement() // #BSC
-        for (stmt in ctx.statement())
-            statement.addStatement parseStatement(stmt)
+        setupNodeLocation(new ForStatement(parameter, parseExpression(ctx.expression()), parse(ctx.statementBlock())), ctx)
+    }
 
-        setupNodeLocation(new ForStatement(parameter, parseExpression(ctx.expression()), statement), ctx)
+    static Statement parse(StatementBlockContext ctx) {
+        if (ctx.statement())
+            setupNodeLocation(parseStatement(ctx.statement()), ctx.statement())
+        else
+            parseStatement(ctx.blockStatement())
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")

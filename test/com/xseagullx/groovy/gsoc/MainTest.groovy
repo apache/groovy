@@ -4,6 +4,7 @@ package com.xseagullx.groovy.gsoc
 import com.xseagullx.groovy.gsoc.util.ASTComparatorCategory
 import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.control.ErrorCollector
 import spock.lang.Specification
 
@@ -62,14 +63,21 @@ class MainTest extends Specification {
         "test_res/com/xseagullx/groovy/gsoc/Operators_Issue9_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ParenthesisExpression_Issue24_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Script_Issue50_1.groovy" | addIgnore(ExpressionStatement, ASTComparatorCategory.LOCATION_IGNORE_LIST)
-        "test_res/com/xseagullx/groovy/gsoc/Statements_Issue17_1.groovy" | _
+        "test_res/com/xseagullx/groovy/gsoc/Statements_Issue17_1.groovy" | addIgnore([IfStatement, ExpressionStatement], ASTComparatorCategory.LOCATION_IGNORE_LIST)
+        "test_res/com/xseagullx/groovy/gsoc/Statements_Issue58_1.groovy" | addIgnore([IfStatement, ExpressionStatement], ASTComparatorCategory.LOCATION_IGNORE_LIST)
         "test_res/com/xseagullx/groovy/gsoc/TestClass1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/ThrowDeclarations_Issue_28_1.groovy" | _
     }
 
-    def addIgnore(Class aClass, ArrayList<String> ignore) {
-        def c = ASTComparatorCategory.DEFAULT_CONFIGURATION.clone() as Map<Class, List<String>>;
+    def addIgnore(Class aClass, ArrayList<String> ignore, Map<Class, List<String>> c = null) {
+        c = c ?: ASTComparatorCategory.DEFAULT_CONFIGURATION.clone() as Map<Class, List<String>>;
         c[aClass].addAll(ignore)
+        c
+    }
+
+    def addIgnore(Collection<Class> aClass, ArrayList<String> ignore, Map<Class, List<String>> c = null) {
+        c = c ?: ASTComparatorCategory.DEFAULT_CONFIGURATION.clone() as Map<Class, List<String>>;
+        aClass.each { c[it].addAll(ignore) }
         c
     }
 

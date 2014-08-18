@@ -74,7 +74,7 @@ argumentDeclarationList:
 argumentDeclaration:
     annotationClause* typeDeclaration? IDENTIFIER ('=' expression)? ;
 
-blockStatement: (statement | NL)+ ;
+blockStatement: (statement | NL | SEMICOLON)+ ;
 
 declarationRule: annotationClause* typeDeclaration IDENTIFIER (ASSIGN expression)? ;
 newInstanceRule: KW_NEW (classNameExpression (LT GT)? | genericClassNameExpression) (LPAREN argumentList? RPAREN) (classBody)?;
@@ -87,11 +87,11 @@ statement:
     | newInstanceRule #newInstanceStatement
     | cmdExpressionRule #commandExpressionStatement
     | expression #expressionStatement
-    | KW_FOR LPAREN (expression)? SEMICOLON expression? SEMICOLON expression? RPAREN LCURVE (statement | SEMICOLON | NL)* RCURVE #classicForStatement
-    | KW_FOR LPAREN typeDeclaration? IDENTIFIER KW_IN expression RPAREN LCURVE (statement | SEMICOLON | NL)* RCURVE #forInStatement
-    | KW_IF LPAREN expression RPAREN LCURVE (statement | SEMICOLON | NL)*  RCURVE (KW_ELSE LCURVE (statement | SEMICOLON | NL)* RCURVE)? #ifStatement
-    | KW_WHILE LPAREN expression RPAREN LCURVE (statement | SEMICOLON | NL)*  RCURVE  #whileStatement
-    | KW_SWITCH LPAREN expression RPAREN LCURVE
+    | KW_FOR LPAREN (expression)? SEMICOLON expression? SEMICOLON expression? RPAREN NL* statementBlock #classicForStatement
+    | KW_FOR LPAREN typeDeclaration? IDENTIFIER KW_IN expression RPAREN NL* statementBlock #forInStatement
+    | KW_IF LPAREN expression RPAREN NL* statementBlock NL* (KW_ELSE NL* statementBlock)? #ifStatement
+    | KW_WHILE LPAREN expression RPAREN NL* statementBlock #whileStatement
+    | KW_SWITCH LPAREN expression RPAREN NL* LCURVE
         (
           (caseStatement | NL)*
           (KW_DEFAULT COLON (statement | SEMICOLON | NL)*)?
@@ -103,9 +103,13 @@ statement:
     | KW_THROW expression #throwStatement
 ;
 
-tryBlock: KW_TRY LCURVE blockStatement? RCURVE NL*;
-catchBlock: KW_CATCH LPAREN ((classNameExpression (BOR classNameExpression)* IDENTIFIER) | IDENTIFIER) RPAREN LCURVE blockStatement? RCURVE NL*;
-finallyBlock: KW_FINALLY LCURVE blockStatement? RCURVE;
+statementBlock:
+    LCURVE blockStatement? RCURVE
+    | statement ;
+
+tryBlock: KW_TRY NL* LCURVE blockStatement? RCURVE NL*;
+catchBlock: KW_CATCH NL* LPAREN ((classNameExpression (BOR classNameExpression)* IDENTIFIER) | IDENTIFIER) RPAREN NL* LCURVE blockStatement? RCURVE NL*;
+finallyBlock: KW_FINALLY NL* LCURVE blockStatement? RCURVE;
 
 caseStatement: (KW_CASE expression COLON (statement | SEMICOLON | NL)* );
 
