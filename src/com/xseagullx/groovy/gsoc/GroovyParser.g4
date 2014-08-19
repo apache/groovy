@@ -143,6 +143,8 @@ expression:
     | newArrayRule #newArrayExpression
     | newInstanceRule #newInstanceExpression
     | closureExpressionRule #closureExpression
+    | expression QUESTION NL* expression NL* COLON NL* expression #ternaryExpression
+    | expression ELVIS NL* expression #elvisExpression
     | LBRACK (expression (COMMA expression)*)?RBRACK #listConstructor
     | LBRACK (COLON | (mapEntry (COMMA mapEntry)*) )RBRACK #mapConstructor
     | expression (DOT | SAFE_DOT | STAR_DOT) IDENTIFIER LPAREN argumentList? RPAREN #methodCallExpression

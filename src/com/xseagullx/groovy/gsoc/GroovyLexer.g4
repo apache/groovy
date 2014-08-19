@@ -160,6 +160,7 @@ RSHIFT_ASSIGN: '>>=' ;
 LSHIFT_ASSIGN: '<<=' ;
 //RUSHIFT: '>>>' ;
 SPACESHIP: '<=>' ;
+ELVIS: '?:' ;
 SAFE_DOT: '?.' ;
 STAR_DOT: '*.' ;
 ATTR_DOT: '.@' ;

@@ -34,6 +34,7 @@ import com.xseagullx.groovy.gsoc.GroovyParser.ControlStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.DeclarationExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.DeclarationRuleContext
 import com.xseagullx.groovy.gsoc.GroovyParser.DeclarationStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.ElvisExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.EnumDeclarationContext
 import com.xseagullx.groovy.gsoc.GroovyParser.EnumMemberContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ExpressionContext
@@ -74,6 +75,7 @@ import com.xseagullx.groovy.gsoc.GroovyParser.ReturnStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.StatementBlockContext
 import com.xseagullx.groovy.gsoc.GroovyParser.StatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.SwitchStatementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.TernaryExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ThrowStatementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.ThrowsClauseContext
 import com.xseagullx.groovy.gsoc.GroovyParser.TryCatchFinallyStatementContext
@@ -119,6 +121,7 @@ import org.codehaus.groovy.ast.expr.ClosureListExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
+import org.codehaus.groovy.ast.expr.ElvisOperatorExpression
 import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.GStringExpression
@@ -131,6 +134,7 @@ import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PrefixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.RangeExpression
+import org.codehaus.groovy.ast.expr.TernaryExpression
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
@@ -748,6 +752,21 @@ class ASTBuilder {
         expression.lineNumber = op.startLine
         expression.lastLineNumber = op.startLine
         expression
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(TernaryExpressionContext ctx) {
+        def boolExpr = new BooleanExpression(parseExpression(ctx.expression(0)))
+        def trueExpr = parseExpression(ctx.expression(1))
+        def falseExpr = parseExpression(ctx.expression(2))
+        setupNodeLocation(new TernaryExpression(boolExpr, trueExpr, falseExpr), ctx)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    static Expression parseExpression(ElvisExpressionContext ctx) {
+        def baseExpr = parseExpression(ctx.expression(0))
+        def falseExpr = parseExpression(ctx.expression(1))
+        setupNodeLocation(new ElvisOperatorExpression(baseExpr, falseExpr), ctx)
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
