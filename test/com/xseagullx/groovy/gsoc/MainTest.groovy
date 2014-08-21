@@ -56,6 +56,7 @@ class MainTest extends Specification {
         'test_res/com/xseagullx/groovy/gsoc/Literals_Other_Issue36_4.groovy' | _
         "test_res/com/xseagullx/groovy/gsoc/Literals_HexOctNumbers_Issue36_2.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/Literals_Strings_Issue36_3.groovy" | addIgnore(ExpressionStatement, ASTComparatorCategory.LOCATION_IGNORE_LIST)
+        "test_res/com/xseagullx/groovy/gsoc/MapParameters_Issue55.groovy" | addIgnore(ExpressionStatement, ASTComparatorCategory.LOCATION_IGNORE_LIST)
         "test_res/com/xseagullx/groovy/gsoc/MemberAccess_Issue14_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/MethodBody_Issue7_1.groovy" | _
         "test_res/com/xseagullx/groovy/gsoc/MethodCall_Issue15_1.groovy" | addIgnore(ExpressionStatement, ASTComparatorCategory.LOCATION_IGNORE_LIST)

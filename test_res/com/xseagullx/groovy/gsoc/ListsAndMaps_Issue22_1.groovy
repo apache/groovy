@@ -21,6 +21,8 @@ class A {
 
     private void mapStringKey() {
         def a = ['stringKey': value]
+        a = ["gStringKey$a": value]
+        a = ["gStringKey${a + a}": value]
         println(12, 123
         ,14, 15)
     }

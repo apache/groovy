@@ -48,6 +48,7 @@ import com.xseagullx.groovy.gsoc.GroovyParser.GenericDeclarationListContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericListContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericsConcreteElementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericsWildcardElementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GstringContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GstringExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GstringPathExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.IfStatementContext
@@ -129,12 +130,14 @@ import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.MapEntryExpression
 import org.codehaus.groovy.ast.expr.MapExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.NamedArgumentListExpression
 import org.codehaus.groovy.ast.expr.NotExpression
 import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PrefixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.RangeExpression
 import org.codehaus.groovy.ast.expr.TernaryExpression
+import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
@@ -688,12 +691,16 @@ class ASTBuilder {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(MapEntryContext ctx) {
+    static MapEntryExpression parseExpression(MapEntryContext ctx) {
         Expression keyExpr, valueExpr
         def expressions = ctx.expression()
         if (expressions.size() == 1) {
-            def key = ctx.IDENTIFIER() ? ctx.IDENTIFIER().text : parseString(ctx.STRING())
-            keyExpr = new ConstantExpression(key)
+            keyExpr = ctx.gstring() ?
+                parseExpression(ctx.gstring()) :
+                new ConstantExpression(ctx.IDENTIFIER() ?
+                    ctx.IDENTIFIER().text :
+                    parseString(ctx.STRING()))
+
             valueExpr = parseExpression(expressions[0])
         }
         else {
@@ -919,13 +926,17 @@ class ASTBuilder {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GstringExpressionContext ctx) {
+        parseExpression(ctx.gstring())
+    }
+
+    static Expression parseExpression(GstringContext ctx) {
         def clearStart = { String it -> it.length() == 2 ? "" : it[1..-2] }
         def clearPart = { String it -> it.length() == 1 ? "" : it[0..-2] }
         def clearEnd = { String it -> it.length() == 1 ? "" : it[0..-2] }
-        def strings = [clearStart(ctx.gstring().GSTRING_START().text)] + ctx.gstring().GSTRING_PART().collect { clearPart(it.text) } + [clearEnd(ctx.gstring().GSTRING_END().text)]
+        def strings = [clearStart(ctx.GSTRING_START().text)] + ctx.GSTRING_PART().collect { clearPart(it.text) } + [clearEnd(ctx.GSTRING_END().text)]
         def expressions = []
 
-        def children = ctx.gstring().children
+        def children = ctx.children
         children.eachWithIndex { it, i ->
             if (it instanceof ExpressionContext) {
                 // We can guarantee, that it will be at least fallback ExpressionContext multimethod overloading, that can handle such situation.
@@ -1013,7 +1024,7 @@ class ASTBuilder {
     @SuppressWarnings("GroovyUnusedDeclaration")
     static MethodCallExpression parseExpression(MethodCallExpressionContext ctx) {
         def method = new ConstantExpression(ctx.IDENTIFIER().text)
-        ArgumentListExpression argumentListExpression = createArgumentList(ctx.argumentList())
+        Expression argumentListExpression = createArgumentList(ctx.argumentList())
         def expression = new MethodCallExpression(parseExpression(ctx.expression()), method, argumentListExpression)
         expression.implicitThis = false
         def op = ctx.getChild(1) as TerminalNode
@@ -1086,15 +1097,30 @@ class ASTBuilder {
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
-    private static ArgumentListExpression createArgumentList(GroovyParser.ArgumentListContext ctx) {
-        def argumentListExpression = new ArgumentListExpression()
+    private static Expression createArgumentList(GroovyParser.ArgumentListContext ctx) {
+        List<MapEntryExpression> mapArgs = []
+        List<Expression> expressions = []
         ctx?.children?.each {
-            if (it instanceof GroovyParser.ExpressionContext)
-                argumentListExpression.addExpression(parseExpression(it))
+            if (it instanceof GroovyParser.ArgumentContext) {
+                if (it.mapEntry())
+                    mapArgs << parseExpression(it.mapEntry())
+                else
+                    expressions << parseExpression(it.expression())
+            }
             else if (it instanceof GroovyParser.ClosureExpressionRuleContext)
-                argumentListExpression.addExpression(parseExpression(it))
+                expressions << parseExpression(it)
         }
-        argumentListExpression
+        if (expressions) {
+            if (mapArgs)
+                expressions.add(0, new MapExpression(mapArgs))
+            new ArgumentListExpression(expressions)
+        }
+        else {
+            if (mapArgs)
+                new TupleExpression(new NamedArgumentListExpression(mapArgs))
+            else
+                new ArgumentListExpression()
+        }
     }
 
     static def attachAnnotations(AnnotatedNode node, List<AnnotationClauseContext> ctxs) {
