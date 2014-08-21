@@ -129,12 +129,14 @@ import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.MapEntryExpression
 import org.codehaus.groovy.ast.expr.MapExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.NamedArgumentListExpression
 import org.codehaus.groovy.ast.expr.NotExpression
 import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PrefixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.RangeExpression
 import org.codehaus.groovy.ast.expr.TernaryExpression
+import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
@@ -688,7 +690,7 @@ class ASTBuilder {
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
-    static Expression parseExpression(MapEntryContext ctx) {
+    static MapEntryExpression parseExpression(MapEntryContext ctx) {
         Expression keyExpr, valueExpr
         def expressions = ctx.expression()
         if (expressions.size() == 1) {
@@ -1013,7 +1015,7 @@ class ASTBuilder {
     @SuppressWarnings("GroovyUnusedDeclaration")
     static MethodCallExpression parseExpression(MethodCallExpressionContext ctx) {
         def method = new ConstantExpression(ctx.IDENTIFIER().text)
-        ArgumentListExpression argumentListExpression = createArgumentList(ctx.argumentList())
+        Expression argumentListExpression = createArgumentList(ctx.argumentList())
         def expression = new MethodCallExpression(parseExpression(ctx.expression()), method, argumentListExpression)
         expression.implicitThis = false
         def op = ctx.getChild(1) as TerminalNode
@@ -1086,15 +1088,30 @@ class ASTBuilder {
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
-    private static ArgumentListExpression createArgumentList(GroovyParser.ArgumentListContext ctx) {
-        def argumentListExpression = new ArgumentListExpression()
+    private static Expression createArgumentList(GroovyParser.ArgumentListContext ctx) {
+        List<MapEntryExpression> mapArgs = []
+        List<Expression> expressions = []
         ctx?.children?.each {
-            if (it instanceof GroovyParser.ExpressionContext)
-                argumentListExpression.addExpression(parseExpression(it))
+            if (it instanceof GroovyParser.ArgumentContext) {
+                if (it.mapEntry())
+                    mapArgs << parseExpression(it.mapEntry())
+                else
+                    expressions << parseExpression(it.expression())
+            }
             else if (it instanceof GroovyParser.ClosureExpressionRuleContext)
-                argumentListExpression.addExpression(parseExpression(it))
+                expressions << parseExpression(it)
         }
-        argumentListExpression
+        if (expressions) {
+            if (mapArgs)
+                expressions.add(0, new MapExpression(mapArgs))
+            new ArgumentListExpression(expressions)
+        }
+        else {
+            if (mapArgs)
+                new TupleExpression(new NamedArgumentListExpression(mapArgs))
+            else
+                new ArgumentListExpression()
+        }
     }
 
     static def attachAnnotations(AnnotatedNode node, List<AnnotationClauseContext> ctxs) {
