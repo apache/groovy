@@ -191,7 +191,8 @@ genericListElement:
 ;
 
 mapEntry:
-    STRING COLON expression //FIXME GStrings too
+    STRING COLON expression
+    | gstring COLON expression
     | IDENTIFIER COLON expression
     | LPAREN expression RPAREN COLON expression
 ;

@@ -48,6 +48,7 @@ import com.xseagullx.groovy.gsoc.GroovyParser.GenericDeclarationListContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericListContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericsConcreteElementContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GenericsWildcardElementContext
+import com.xseagullx.groovy.gsoc.GroovyParser.GstringContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GstringExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.GstringPathExpressionContext
 import com.xseagullx.groovy.gsoc.GroovyParser.IfStatementContext
@@ -694,8 +695,12 @@ class ASTBuilder {
         Expression keyExpr, valueExpr
         def expressions = ctx.expression()
         if (expressions.size() == 1) {
-            def key = ctx.IDENTIFIER() ? ctx.IDENTIFIER().text : parseString(ctx.STRING())
-            keyExpr = new ConstantExpression(key)
+            keyExpr = ctx.gstring() ?
+                parseExpression(ctx.gstring()) :
+                new ConstantExpression(ctx.IDENTIFIER() ?
+                    ctx.IDENTIFIER().text :
+                    parseString(ctx.STRING()))
+
             valueExpr = parseExpression(expressions[0])
         }
         else {
@@ -921,13 +926,17 @@ class ASTBuilder {
 
     @SuppressWarnings("GroovyUnusedDeclaration")
     static Expression parseExpression(GstringExpressionContext ctx) {
+        parseExpression(ctx.gstring())
+    }
+
+    static Expression parseExpression(GstringContext ctx) {
         def clearStart = { String it -> it.length() == 2 ? "" : it[1..-2] }
         def clearPart = { String it -> it.length() == 1 ? "" : it[0..-2] }
         def clearEnd = { String it -> it.length() == 1 ? "" : it[0..-2] }
-        def strings = [clearStart(ctx.gstring().GSTRING_START().text)] + ctx.gstring().GSTRING_PART().collect { clearPart(it.text) } + [clearEnd(ctx.gstring().GSTRING_END().text)]
+        def strings = [clearStart(ctx.GSTRING_START().text)] + ctx.GSTRING_PART().collect { clearPart(it.text) } + [clearEnd(ctx.GSTRING_END().text)]
         def expressions = []
 
-        def children = ctx.gstring().children
+        def children = ctx.children
         children.eachWithIndex { it, i ->
             if (it instanceof ExpressionContext) {
                 // We can guarantee, that it will be at least fallback ExpressionContext multimethod overloading, that can handle such situation.
