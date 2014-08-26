@@ -101,8 +101,8 @@ public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderSt
             return;
         }
         ClassNode builder = (ClassNode) annotatedNode;
-        String prefix = getBuilderMemberStringValue(transform, anno, "prefix", "");
-        ClassNode buildee = getBuilderMemberClassValue(transform, anno, "forClass");
+        String prefix = transform.getMemberStringValue(anno, "prefix", "");
+        ClassNode buildee = transform.getMemberClassValue(anno, "forClass");
         if (buildee == null) {
             transform.addError("Error during " + MY_TYPE_NAME + " processing: 'forClass' must be specified for " + getClass().getName(), anno);
             return;
@@ -128,8 +128,8 @@ public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderSt
         builder.addMethod(createBuildMethod(transform, anno, buildee, props));
     }
 
-    private MethodNode createBuildMethod(BuilderASTTransformation transform, AnnotationNode anno, ClassNode sourceClass, List<PropertyInfo> fields) {
-        String buildMethodName = getBuilderMemberStringValue(transform, anno, "buildMethodName", "build");
+    private static MethodNode createBuildMethod(BuilderASTTransformation transform, AnnotationNode anno, ClassNode sourceClass, List<PropertyInfo> fields) {
+        String buildMethodName = transform.getMemberStringValue(anno, "buildMethodName", "build");
         final BlockStatement body = new BlockStatement();
         Expression sourceClassInstance = initializeInstance(sourceClass, fields, body);
         body.addStatement(returnS(sourceClassInstance));

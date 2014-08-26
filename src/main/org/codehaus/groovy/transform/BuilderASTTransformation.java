@@ -149,16 +149,6 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             return transform.checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
         }
 
-        protected String getBuilderMemberStringValue(BuilderASTTransformation transform, AnnotationNode anno, String name, String defaultValue) {
-            String result = transform.getMemberStringValue(anno, name, defaultValue);
-            return result == null || isUndefined(result) ? defaultValue : result;
-        }
-
-        protected ClassNode getBuilderMemberClassValue(BuilderASTTransformation transform, AnnotationNode anno, String name) {
-            ClassNode forClass = transform.getMemberClassValue(anno, name);
-            return forClass == null || isUndefined(forClass) ? null : forClass;
-        }
-
         protected static class PropertyInfo {
             public PropertyInfo(String name, ClassNode type) {
                 this.name = name;

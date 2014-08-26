@@ -128,10 +128,10 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
-        String prefix = getBuilderMemberStringValue(transform, anno, "prefix", "");
+        String prefix = transform.getMemberStringValue(anno, "prefix", "");
         if (unsupportedAttribute(transform, anno, "forClass")) return;
-        String builderClassName = getBuilderMemberStringValue(transform, anno, "builderClassName", buildee.getName() + "Initializer");
-        String buildMethodName = getBuilderMemberStringValue(transform, anno, "buildMethodName", "create");
+        String builderClassName = transform.getMemberStringValue(anno, "builderClassName", buildee.getName() + "Initializer");
+        String buildMethodName = transform.getMemberStringValue(anno, "buildMethodName", "create");
         List<FieldNode> fields = getInstancePropertyFields(buildee);
         List<FieldNode> filteredFields = selectFieldsFromExistingClass(fields, includes, excludes);
         int numFields = filteredFields.size();
@@ -159,8 +159,8 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         return builder;
     }
 
-    private MethodNode createBuilderMethod(BuilderASTTransformation transform, AnnotationNode anno, String buildMethodName, ClassNode builder, int numFields) {
-        String builderMethodName = getBuilderMemberStringValue(transform, anno, "builderMethodName", "createInitializer");
+    private static MethodNode createBuilderMethod(BuilderASTTransformation transform, AnnotationNode anno, String buildMethodName, ClassNode builder, int numFields) {
+        String builderMethodName = transform.getMemberStringValue(anno, "builderMethodName", "createInitializer");
         final BlockStatement body = new BlockStatement();
         body.addStatement(returnS(callX(builder, buildMethodName)));
         final int visibility = ACC_PUBLIC | ACC_STATIC;

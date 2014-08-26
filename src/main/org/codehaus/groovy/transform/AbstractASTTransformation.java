@@ -43,6 +43,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static groovy.transform.Undefined.isUndefined;
+
 public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation {
     public static final ClassNode RETENTION_CLASSNODE = ClassHelper.makeWithoutCaching(Retention.class);
 
@@ -70,6 +72,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         final Expression member = node.getMember(name);
         if (member != null && member instanceof ConstantExpression) {
             Object result = ((ConstantExpression) member).getValue();
+            if (result != null && result instanceof String && isUndefined((String) result)) result = null;
             if (result != null) return result.toString();
         }
         return defaultValue;
@@ -94,9 +97,9 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     public ClassNode getMemberClassValue(AnnotationNode node, String name, ClassNode defaultValue) {
         final Expression member = node.getMember(name);
         if (member != null) {
-            if (member instanceof ClassExpression)
-                return member.getType();
-            if (member instanceof VariableExpression) {
+            if (member instanceof ClassExpression) {
+                if (!isUndefined(member.getType())) return member.getType();
+            } else if (member instanceof VariableExpression) {
                 addError("Error expecting to find class value for '" + name + "' but found variable: " + member.getText() + ". Missing import?", node);
                 return null;
             } else if (member instanceof ConstantExpression) {
