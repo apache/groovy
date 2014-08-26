@@ -35,6 +35,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import static groovy.transform.Undefined.isUndefined;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 
 /**
@@ -94,10 +95,10 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
 
         protected boolean unsupportedAttribute(BuilderASTTransformation transform, AnnotationNode anno, String memberName, String extraMessage) {
             Object memberValue = transform.getMemberValue(anno, memberName);
-            if (memberValue != null && memberValue.equals("<strategyDefault>")) return false;
+            if (memberValue != null && memberValue instanceof String && isUndefined((String) memberValue)) return false;
             if (memberValue == null) {
                 memberValue = transform.getMemberClassValue(anno, memberName);
-                if (memberValue != null && ((ClassNode)memberValue).getName().equals(Builder.ForClassNotSet.class.getName())) {
+                if (memberValue != null && isUndefined((ClassNode) memberValue)) {
                     memberValue = null;
                 }
             }
@@ -150,12 +151,12 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
 
         protected String getBuilderMemberStringValue(BuilderASTTransformation transform, AnnotationNode anno, String name, String defaultValue) {
             String result = transform.getMemberStringValue(anno, name, defaultValue);
-            return result != null && result.equals("<strategyDefault>") ? defaultValue : result;
+            return result == null || isUndefined(result) ? defaultValue : result;
         }
 
         protected ClassNode getBuilderMemberClassValue(BuilderASTTransformation transform, AnnotationNode anno, String name) {
             ClassNode forClass = transform.getMemberClassValue(anno, name);
-            return forClass == null || forClass.getName().equals(Builder.ForClassNotSet.class.getName()) ? null : forClass;
+            return forClass == null || isUndefined(forClass) ? null : forClass;
         }
 
         protected static class PropertyInfo {
