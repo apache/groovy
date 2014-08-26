@@ -172,11 +172,11 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
                     " processing: includes/excludes only allowed on classes", anno);
         }
-        String prefix = transform.getMemberStringValue(anno, "prefix", "");
+        String prefix = getBuilderMemberStringValue(transform, anno, "prefix", "");
         if (unsupportedAttribute(transform, anno, "forClass")) return;
         final int visibility = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
         ClassNode buildee = mNode.getDeclaringClass();
-        String builderClassName = transform.getMemberStringValue(anno, "builderClassName", buildee.getName() + "Builder");
+        String builderClassName = getBuilderMemberStringValue(transform, anno, "builderClassName", buildee.getName() + "Builder");
         final String fullName = buildee.getName() + "$" + builderClassName;
         ClassNode builder = new InnerClassNode(buildee, fullName, visibility, ClassHelper.OBJECT_TYPE);
         buildee.getModule().addClass(builder);
@@ -192,9 +192,9 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
-        String prefix = transform.getMemberStringValue(anno, "prefix", "");
+        String prefix = getBuilderMemberStringValue(transform, anno, "prefix", "");
         if (unsupportedAttribute(transform, anno, "forClass")) return;
-        final int visibility = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
+        final int visibility = ACC_PUBLIC | ACC_STATIC;
         String builderClassName = transform.getMemberStringValue(anno, "builderClassName", buildee.getName() + "Builder");
         final String fullName = buildee.getName() + "$" + builderClassName;
         ClassNode builder = new InnerClassNode(buildee, fullName, visibility, ClassHelper.OBJECT_TYPE);
@@ -210,7 +210,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     }
 
     private MethodNode createBuildMethodForMethod(BuilderASTTransformation transform, AnnotationNode anno, ClassNode buildee, MethodNode mNode, Parameter[] params) {
-        String buildMethodName = transform.getMemberStringValue(anno, "buildMethodName", "build");
+        String buildMethodName = getBuilderMemberStringValue(transform, anno, "buildMethodName", "build");
         final BlockStatement body = new BlockStatement();
         ClassNode returnType;
         if (mNode instanceof ConstructorNode) {
@@ -223,16 +223,16 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         return new MethodNode(buildMethodName, ACC_PUBLIC, returnType, NO_PARAMS, NO_EXCEPTIONS, body);
     }
 
-    private static MethodNode createBuilderMethod(BuilderASTTransformation transform, AnnotationNode anno, ClassNode builder) {
-        String builderMethodName = transform.getMemberStringValue(anno, "builderMethodName", "builder");
+    private MethodNode createBuilderMethod(BuilderASTTransformation transform, AnnotationNode anno, ClassNode builder) {
+        String builderMethodName = getBuilderMemberStringValue(transform, anno, "builderMethodName", "builder");
         final BlockStatement body = new BlockStatement();
         body.addStatement(returnS(ctorX(builder)));
         final int visibility = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
         return new MethodNode(builderMethodName, visibility, builder, NO_PARAMS, NO_EXCEPTIONS, body);
     }
 
-    private static MethodNode createBuildMethod(BuilderASTTransformation transform, AnnotationNode anno, ClassNode buildee, List<FieldNode> fields) {
-        String buildMethodName = transform.getMemberStringValue(anno, "buildMethodName", "build");
+    private MethodNode createBuildMethod(BuilderASTTransformation transform, AnnotationNode anno, ClassNode buildee, List<FieldNode> fields) {
+        String buildMethodName = getBuilderMemberStringValue(transform, anno, "buildMethodName", "build");
         final BlockStatement body = new BlockStatement();
         body.addStatement(returnS(initializeInstance(buildee, fields, body)));
         return new MethodNode(buildMethodName, ACC_PUBLIC, newClass(buildee), NO_PARAMS, NO_EXCEPTIONS, body);

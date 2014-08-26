@@ -94,8 +94,12 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
 
         protected boolean unsupportedAttribute(BuilderASTTransformation transform, AnnotationNode anno, String memberName, String extraMessage) {
             Object memberValue = transform.getMemberValue(anno, memberName);
+            if (memberValue != null && memberValue.equals("<strategyDefault>")) return false;
             if (memberValue == null) {
                 memberValue = transform.getMemberClassValue(anno, memberName);
+                if (memberValue != null && ((ClassNode)memberValue).getName().equals(Builder.ForClassNotSet.class.getName())) {
+                    memberValue = null;
+                }
             }
             if (memberValue != null) {
                 String message = extraMessage.length() == 0 ? "" : " " + extraMessage;
@@ -142,6 +146,16 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
                 }
             }
             return transform.checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME);
+        }
+
+        protected String getBuilderMemberStringValue(BuilderASTTransformation transform, AnnotationNode anno, String name, String defaultValue) {
+            String result = transform.getMemberStringValue(anno, name, defaultValue);
+            return result != null && result.equals("<strategyDefault>") ? defaultValue : result;
+        }
+
+        protected ClassNode getBuilderMemberClassValue(BuilderASTTransformation transform, AnnotationNode anno, String name) {
+            ClassNode forClass = transform.getMemberClassValue(anno, name);
+            return forClass == null || forClass.getName().equals(Builder.ForClassNotSet.class.getName()) ? null : forClass;
         }
 
         protected static class PropertyInfo {

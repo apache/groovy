@@ -70,9 +70,10 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.BuilderStra
 public @interface Builder {
 
     /**
-     * A class for which builder methods should be created
+     * A class for which builder methods should be created. It will be an error to leave
+     * this attribute with its default value for some strategies.
      */
-    Class forClass();
+    Class forClass() default ForClassNotSet.class;
 
     /**
      * A class capturing the builder strategy
@@ -84,20 +85,20 @@ public @interface Builder {
      * Default is determined by the strategy which might use "" or "set" but you can choose your own, e.g. "with".
      * If non-empty the first letter of the property will be capitalized before being appended to the prefix.
      */
-    String prefix();
+    String prefix() default "<strategyDefault>";
 
     /**
      * For strategies which create a builder helper class, the class name to use for the helper class.
      * Not used if using {@code forClass} since in such cases the builder class is explicitly supplied.
      * Default is determined by the strategy, e.g. <em>TargetClass</em> + "Builder" or <em>TargetClass</em> + "Initializer".
      */
-    String builderClassName();
+    String builderClassName() default "<strategyDefault>";
 
     /**
      * For strategies which create a builder helper class that creates the instance, the method name to call to create the instance.
      * Default is determined by the strategy, e.g. <em>build</em> or <em>create</em>.
      */
-    String buildMethodName();
+    String buildMethodName() default "<strategyDefault>";
 
     /**
      * The method name to use for a builder factory method in the source class for easy access of the
@@ -105,7 +106,7 @@ public @interface Builder {
      * Must not be used if using {@code forClass}.
      * Default is determined by the strategy, e.g. <em>builder</em> or <em>createInitializer</em>.
      */
-    String builderMethodName();
+    String builderMethodName() default "<strategyDefault>";
 
     /**
      * List of field and/or property names to exclude from generated builder methods.
@@ -120,4 +121,7 @@ public @interface Builder {
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
     String[] includes() default {};
+
+    /** Marker class */
+    static class ForClassNotSet {}
 }
