@@ -90,7 +90,7 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
-        String prefix = transform.getMemberStringValue(anno, "prefix", "set");
+        String prefix = getBuilderMemberStringValue(transform, anno, "prefix", "set");
         List<FieldNode> fields = getInstancePropertyFields(buildee);
         for (String name : includes) {
             checkKnownField(transform, anno, name, fields);
