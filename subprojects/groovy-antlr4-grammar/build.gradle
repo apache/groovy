@@ -1,60 +1,48 @@
-
-import org.antlr.v4.Tool
-
-apply plugin: 'groovy'
-apply plugin: 'application'
-apply plugin: 'base'
-
-version = '1.0'
-
-mainClassName = 'com.xseagullx.groovy.gsoc.Main'
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '1.9'
-}
-
 buildscript {
     repositories {
-        mavenCentral()
+        maven {
+            name 'JFrog OSS snapshot repo'
+            url  'https://oss.jfrog.org/oss-snapshot-local/'
+        }
+        jcenter()
     }
     dependencies {
-        classpath 'org.antlr:antlr4:4.2.1' // For antlr task.
+        classpath 'me.champeau.gradle:antlr4-gradle-plugin:0.1-SNAPSHOT'
     }
-}
-
-repositories {
-    mavenCentral()
 }
 
 dependencies {
-    compile 'org.antlr:antlr4-runtime:4.2.1'
-
-    compile 'org.codehaus.groovy:groovy-all:2.2.2'
-
-    compile 'com.thoughtworks.xstream:xstream:1.4.7' // For saveAsXML method in SourceUnit.
-
-    testCompile 'org.spockframework:spock-core:0.7-groovy-2.0'
+    compile rootProject
+    testCompile project(':groovy-test')
 }
 
-sourceSets.main.groovy.srcDirs = ['src', 'gen']
-sourceSets.test.groovy.srcDirs = ['test']
+apply plugin: 'antlr4'
 
-// Setup antlr task
-def antlrOutputDir = file('gen/com/xseagullx/groovy/gsoc')
-def antlrInputFiles = [
-    file('src/com/xseagullx/groovy/gsoc/GroovyLexer.g4'),
-    file('src/com/xseagullx/groovy/gsoc/GroovyParser.g4')
-]
-
-task antlr << {
-    antlrInputFiles.each {
-        new Tool([it.absolutePath, '-o', antlrOutputDir.absolutePath, '-package', 'com.xseagullx.groovy.gsoc'] as String[]).processGrammarsOnCommandLine()
-    }
+// set package for antlr generated classes
+antlr4 {
+    extraArgs = ["-package", "org.codehaus.groovy.parser.antlr4"]
+    output =  file("$buildDir/generated-src/org/codehaus/groovy/parser/antlr4")
 }
-antlr.outputs.dir antlrOutputDir
-antlr.inputs.files antlrInputFiles
 
-// Setup antlr dependencies
-clean.dependsOn tasks.getByPath('cleanAntlr')
-classes.dependsOn antlr
+// make the Java compile task depend on the antlr4 task
+compileJava.dependsOn antlr4
+
+// add the generated source files to the list of java sources
+sourceSets.main.java.srcDirs += antlr4.output
+
+// add antlr4 to classpath
+configurations {
+   compile.extendsFrom antlr4
+}
+// make the Java compile task depend on the antlr4 task
+compileJava.dependsOn antlr4
+
+// add the generated source files to the list of java sources
+sourceSets.main.java.srcDirs += antlr4.output
+
+// add antlr4 to classpath
+configurations {
+   compile.extendsFrom antlr4
+}
+
 
