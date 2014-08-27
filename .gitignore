@@ -3,3 +3,9 @@ build
 .idea/
 .gradle
 gen/
+buildSrc/
+gradle/user.gradle
+*.ipr
+*.iws
+out/
+target/
