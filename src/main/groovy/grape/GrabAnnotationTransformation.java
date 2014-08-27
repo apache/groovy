@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,8 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.codehaus.groovy.transform.AbstractASTTransformation.getMemberStringValue;
 
 /**
  * Transformation for declarative dependency management.
@@ -222,19 +224,12 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 grabResolverAnnotationLoop:
                 for (AnnotationNode node : grabResolverAnnotations) {
                     Map<String, Object> grabResolverMap = new HashMap<String, Object>();
-                    Expression value = node.getMember("value");
-                    ConstantExpression ce = null;
-                    if (value != null && value instanceof ConstantExpression) {
-                        ce = (ConstantExpression) value;
-                    }
-                    String sval = null;
-                    if (ce != null && ce.getValue() instanceof String) {
-                        sval = (String) ce.getValue();
-                    }
+                    String sval = getMemberStringValue(node, "value");
                     if (sval != null && sval.length() > 0) {
                         for (String s : GRABRESOLVER_REQUIRED) {
-                            Expression member = node.getMember(s);
-                            if (member != null) {
+                            String mval = getMemberStringValue(node, s);
+                            if (mval != null && mval.isEmpty()) mval = null;
+                            if (mval != null) {
                                 addError("The attribute \"" + s + "\" conflicts with attribute 'value' in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
                                 continue grabResolverAnnotationLoop;
                             }
@@ -243,15 +238,17 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                         grabResolverMap.put("root", sval);
                     } else {
                         for (String s : GRABRESOLVER_REQUIRED) {
+                            String mval = getMemberStringValue(node, s);
+                            if (mval != null && mval.isEmpty()) mval = null;
                             Expression member = node.getMember(s);
-                            if (member == null) {
+                            if (member == null || mval == null) {
                                 addError("The missing attribute \"" + s + "\" is required in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
                                 continue grabResolverAnnotationLoop;
-                            } else if (member != null && !(member instanceof ConstantExpression)) {
-                                addError("Attribute \"" + s + "\" has value " + member.getText() + " but should be an inline constant in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
+                            } else if (mval == null) {
+                                addError("Attribute \"" + s + "\" has value " + member.getText() + " but should be an inline constant String in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
                                 continue grabResolverAnnotationLoop;
                             }
-                            grabResolverMap.put(s, ((ConstantExpression) member).getValue());
+                            grabResolverMap.put(s, mval);
                         }
                     }
 
@@ -324,6 +321,8 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     checkForConvenienceForm(node, false);
                     for (String s : GRAB_ALL) {
                         Expression member = node.getMember(s);
+                        String mval = getMemberStringValue(node, s);
+                        if (mval != null && mval.isEmpty()) member = null;
                         if (member == null && !GRAB_OPTIONAL.contains(s)) {
                             addError("The missing attribute \"" + s + "\" is required in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
                             continue grabAnnotationLoop;
@@ -336,8 +335,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                         }
                     }
                     grabMaps.add(grabMap);
-                    if ((node.getMember("initClass") == null)
-                            || (node.getMember("initClass") == ConstantExpression.TRUE)) {
+                    if ((node.getMember("initClass") == null) || (node.getMember("initClass") == ConstantExpression.TRUE)) {
                         grabMapsInit.add(grabMap);
                     }
                 }

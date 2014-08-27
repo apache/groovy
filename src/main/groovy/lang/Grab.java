@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,19 +55,19 @@ import java.lang.annotation.ElementType;
         ElementType.TYPE})
 public @interface Grab {
     /**
-     * The organisation or group, e.g.: "org.apache.ant"
+     * The organisation or group, e.g.: "org.apache.ant". A non-empty value is required unless value() is used.
      */
     String group() default "";
 
     /**
-     * The module or artifact, e.g.: "ant-junit"
+     * The module or artifact, e.g.: "ant-junit". A non-empty value is required unless value() is used.
      */
-    String module();
+    String module() default "";
 
     /**
-     * The revision or version, e.g.: "1.7.1"
+     * The revision or version, e.g.: "1.7.1". A non-empty value is required unless value() is used.
      */
-    String version();
+    String version() default "";
 
     /**
      * The classifier if in use, e.g.: "jdk14"
@@ -118,6 +118,7 @@ public @interface Grab {
 
     /**
      * Allows a more compact convenience form in one of two formats with optional appended attributes.
+     * Must not be used if group(), module() or version() are used.
      * <p>
      * You can choose either format but not mix-n-match:<br>
      * {@code group:module:version:classifier@ext} (where only group and module are required)<br>

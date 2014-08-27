@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,9 +51,27 @@ import java.lang.annotation.ElementType;
         ElementType.PARAMETER,
         ElementType.TYPE})
 public @interface GrabResolver {
+    /**
+     * Allows a shorthand form which sets the name and root to this value.
+     * Must not be used if name() or root() is non-empty.
+     */
     String value() default "";
-    String name();
-    String root();
+
+    /**
+     * A meaningful name for a repo containing the grape/artifact.
+     * A non-empty value is required unless value() is used.
+     */
+    String name() default "";
+
+    /**
+     * The URL for a repo containing the grape/artifact.
+     * A non-empty value is required unless value() is used.
+     */
+    String root() default "";
+
+    /**
+     * Defaults to Maven2 compatibility. Set false for Ivy only compatibility.
+     */
     boolean m2Compatible() default true;
 
     /**
