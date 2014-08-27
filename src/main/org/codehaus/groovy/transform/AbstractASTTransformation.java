@@ -68,7 +68,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return null;
     }
 
-    public String getMemberStringValue(AnnotationNode node, String name, String defaultValue) {
+    public static String getMemberStringValue(AnnotationNode node, String name, String defaultValue) {
         final Expression member = node.getMember(name);
         if (member != null && member instanceof ConstantExpression) {
             Object result = ((ConstantExpression) member).getValue();
@@ -78,7 +78,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         return defaultValue;
     }
 
-    public String getMemberStringValue(AnnotationNode node, String name) {
+    public static String getMemberStringValue(AnnotationNode node, String name) {
         return getMemberStringValue(node, name, null);
     }
 

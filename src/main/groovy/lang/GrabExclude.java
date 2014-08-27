@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public @interface GrabExclude {
     String module() default "";
 
     /**
-     * Allows to specify the group (organisation) and the module (artifact) in a two compact convenience formats,
+     * Allows you to specify the group (organisation) and the module (artifact) in one of two compact convenience formats,
      * e.g.: <code>@GrabExclude('org.apache.ant:ant-junit')</code> or <code>@GrabExclude('org.apache.ant#ant-junit')</code>
      */
     String value() default "";
