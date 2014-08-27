@@ -49,7 +49,7 @@ import java.lang.annotation.Target;
  *   ...
  *   public Person clone() throws CloneNotSupportedException {
  *     Person result = (Person) super.clone()
- *     result.favItems = favItems instanceof Cloneable ? (List) favItems.clone()
+ *     result.favItems = favItems instanceof Cloneable ? (List) favItems.clone() : favItems
  *     result.since = (Date) since.clone()
  *     return result
  *   }
