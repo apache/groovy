@@ -1,34 +1,22 @@
-package org.codehaus.groovy.parser.antlr4
+package org.codehaus.groovy.parser.antlr4;
 
-import groovy.util.logging.Log
-import org.antlr.v4.runtime.TokenStream
-import org.codehaus.groovy.ast.ClassHelper
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.TokenStream;
 
-import java.util.logging.Level
+import java.util.Arrays;
 
-@Log
-class GrammarPredicates {
-    static boolean isClassName(TokenStream nameOrPath) {
-        try {
-            def i = 1
-            def token = nameOrPath.LT(i)
-            def s = "" << ""
-            if (log.isLoggable(Level.FINE))
-                s << token.text
-            while(nameOrPath.LT(i + 1).type == GroovyParser.DOT) {
-                i = i + 2
-                token = nameOrPath.LT(i)
-                if (log.isLoggable(Level.FINE))
-                    s << '.' << token.text
-            }
-            log.fine("Checking $s")
-            def res = ClassHelper.isPrimitiveType(ClassHelper.make(token.text)) || Character.isUpperCase(Character.codePointAt(token.text, 0))
-            log.fine("res == $res")
-            res
-        }
-        catch (any) {
-            log.warning("Exception in isClassName predicate. $nameOrPath ${ any.class.name } $any.message")
-            false
-        }
+public class GrammarPredicates {
+    private static final String[] primitiveClassNames = new String[] {
+        "boolean", "byte", "char", "double",
+        "float", "int", "long", "short", "void"
+    };
+
+    public static boolean isClassName(TokenStream nameOrPath) {
+        Token token = nameOrPath.LT(1);
+        if (nameOrPath.LT(2).getType() == GroovyParser.DOT) return true;
+        String tokenText = token.getText();
+        if (Arrays.binarySearch(primitiveClassNames, tokenText)!=-1) return true;
+        return Character.isUpperCase(tokenText.codePointAt(0));
     }
+
 }
