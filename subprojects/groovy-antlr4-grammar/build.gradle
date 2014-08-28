@@ -45,4 +45,10 @@ configurations {
    compile.extendsFrom antlr4
 }
 
-
+sourceSets {
+    main {
+        java {
+            exclude '/com/**'
+        }
+    }
+}
