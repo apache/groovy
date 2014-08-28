@@ -1,4 +1,4 @@
-package com.xseagullx.groovy.gsoc;
+package org.codehaus.groovy.parser.antlr4;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Lexer;
