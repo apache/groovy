@@ -18,6 +18,7 @@ buildscript {
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:0.7.3'
         classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:2.2.3'
         classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.0'
+        classpath 'me.champeau.gradle:antlr4-gradle-plugin:0.1'
     }
 }
 
@@ -285,6 +286,8 @@ sourceSets {
         output.classesDir = "$buildDir/examples-classes" as File
     }
 }
+
+apply from: 'subprojects/groovy-antlr4-grammar/build.gradle'
 
 // make sure examples can be compiled, even if we don't run them
 // todo: reorganize examples so that we can run them too

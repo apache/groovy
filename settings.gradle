@@ -13,8 +13,7 @@ def subprojects = ['groovy-ant',
         'groovy-templates',
         'groovy-test',
         'groovy-testng',
-        'groovy-xml',
-	'groovy-antlr4-grammar']
+        'groovy-xml']
 
 if(JavaVersion.current().isJava7Compatible()) {
     subprojects << 'groovy-nio'

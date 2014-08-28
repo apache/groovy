@@ -1,54 +1,29 @@
-buildscript {
-    repositories {
-        maven {
-            name 'JFrog OSS snapshot repo'
-            url  'https://oss.jfrog.org/oss-snapshot-local/'
-        }
-        jcenter()
-    }
-    dependencies {
-        classpath 'me.champeau.gradle:antlr4-gradle-plugin:0.1-SNAPSHOT'
-    }
-}
+apply plugin: 'me.champeau.gradle.antlr4'
 
-dependencies {
-    compile rootProject
-    testCompile project(':groovy-test')
-}
-
-apply plugin: 'antlr4'
-
+def srcMain = 'subprojects/groovy-antlr4-grammar/src/main/'
 // set package for antlr generated classes
 antlr4 {
+    source = file(srcMain+'antlr4')
     extraArgs = ["-package", "org.codehaus.groovy.parser.antlr4"]
-    output =  file("$buildDir/generated-src/org/codehaus/groovy/parser/antlr4")
+    output =  file("$buildDir/generated-sources/org/codehaus/groovy/parser/antlr4")
 }
 
 // make the Java compile task depend on the antlr4 task
 compileJava.dependsOn antlr4
 
-// add the generated source files to the list of java sources
-sourceSets.main.java.srcDirs += antlr4.output
-
 // add antlr4 to classpath
 configurations {
    compile.extendsFrom antlr4
 }
-// make the Java compile task depend on the antlr4 task
-compileJava.dependsOn antlr4
 
 // add the generated source files to the list of java sources
 sourceSets.main.java.srcDirs += antlr4.output
-
-// add antlr4 to classpath
-configurations {
-   compile.extendsFrom antlr4
-}
+sourceSets.main.java.srcDirs += file(srcMain+'java')
 
 sourceSets {
     main {
         java {
-            exclude '/com/**'
+            exclude '/com/xseagullx/groovy/gsoc/**'
         }
     }
 }
