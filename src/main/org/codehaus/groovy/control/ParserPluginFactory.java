@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,49 +15,64 @@
  */
 package org.codehaus.groovy.control;
 
+import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.antlr.AntlrParserPluginFactory;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 
 /**
  * A factory of parser plugin instances
  *
- * @version $Revision$
  */
 public abstract class ParserPluginFactory {
-    public static ParserPluginFactory newInstance(boolean useNewParser) {
-        if (useNewParser) {
-            Class type = null;
-            String name = "org.codehaus.groovy.antlr.AntlrParserPluginFactory";
-            try {
-                type = Class.forName(name);
-            }
-            catch (ClassNotFoundException e) {
-                try {
-                    type = ParserPluginFactory.class.getClassLoader().loadClass(name);
-                }
-                catch (ClassNotFoundException e1) {
-                    ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-                    if (contextClassLoader != null) {
-                        try {
-                            type = contextClassLoader.loadClass(name);
-                        }
-                        catch (ClassNotFoundException e2) {
-                            // ignore
-                        }
-                    }
-                }
-            }
+    private static Class <?> ANTLR4_CLASS=null;
 
-            if (type != null) {
-                try {
-                    return (ParserPluginFactory) type.newInstance();
-                }
-                catch (Exception e) {
-                    throw new RuntimeException("Could not create AntlrParserPluginFactory: " + e, e);
-                }
+    /**
+     * creates the ANTLR 4 parser
+     * @return the factory for the parser
+     */
+    public static ParserPluginFactory antlr4() {
+        if (ANTLR4_CLASS==null) {
+            String name = "org.codehaus.groovy.parser.antlr4.Antlrv4PluginFactory";
+            try {
+                ANTLR4_CLASS =
+                        Class.forName(name, false, ParserPluginFactory.class.getClassLoader());
+            } catch (Exception e) {
+                throw new GroovyRuntimeException("Could not find or load parser plugin factory for antlr4", e);
             }
-            // can't find Antlr parser, so lets use the Classic one
         }
+        try {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<ParserPluginFactory>() {
+                public ParserPluginFactory run() throws Exception {
+                    return (ParserPluginFactory) ANTLR4_CLASS.newInstance();
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            throw new GroovyRuntimeException("Could not create instance of parser plugin factory for antlr4", e.getCause());
+        }
+    }
+
+    /**
+     * creates the ANTLR 2.7 parser
+     * @return the factory for the parser
+     */
+    public static ParserPluginFactory antlr2() {
         return new AntlrParserPluginFactory();
+    }
+
+    /**
+     * creates the ANTLR 2.7 parser. This method was used to switch between the pre JSR
+     * parser and the new ANTLR 2.7 based parser, but even before Groovy 1.0 this
+     * method was changed to always return the ANTLR 2.7 parser.
+     * @param useNewParser - ignored
+     * @return the ANTLR 2.7 based parser
+     */
+    @Deprecated
+    public static ParserPluginFactory newInstance(boolean useNewParser) {
+        return antlr2();
     }
 
     public abstract ParserPlugin createParserPlugin();

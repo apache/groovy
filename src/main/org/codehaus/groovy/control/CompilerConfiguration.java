@@ -164,6 +164,12 @@ public class CompilerConfiguration {
     private BytecodeProcessor bytecodePostprocessor;
 
     /**
+     * defines if antlr2 parser should be used or the antlr4 one if
+     * no factory is set yet
+     */
+    private boolean antlr2Parser = true;
+
+    /**
      * Sets the Flags to defaults.
      */
     public CompilerConfiguration() {
@@ -248,6 +254,12 @@ public class CompilerConfiguration {
             options.put("indy", Boolean.TRUE);
         }
         setOptimizationOptions(options);
+
+        try {
+            antlr2Parser = System.getProperty("groovy.antlr4")==null;
+        } catch (Exception e) {
+            // IGNORE
+        }
     }
 
     /**
@@ -663,7 +675,11 @@ public class CompilerConfiguration {
 
     public ParserPluginFactory getPluginFactory() {
         if (pluginFactory == null) {
-            pluginFactory = ParserPluginFactory.newInstance(true);
+            if (antlr2Parser) {
+                pluginFactory = ParserPluginFactory.antlr2();
+            } else {
+                pluginFactory = ParserPluginFactory.antlr4();
+            }
         }
         return pluginFactory;
     }

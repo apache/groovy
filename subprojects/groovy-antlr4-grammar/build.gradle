@@ -1,3 +1,5 @@
+if (!rootProject.hasProperty('useAntlr4')) return
+
 apply plugin: 'me.champeau.gradle.antlr4'
 
 def srcMain = 'subprojects/groovy-antlr4-grammar/src/main/'
@@ -25,5 +27,11 @@ sourceSets {
         java {
             exclude '/com/xseagullx/groovy/gsoc/**'
         }
+    }
+}
+
+allprojects {
+   tasks.withType(GroovyCompile) {
+        groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4=true"]
     }
 }
