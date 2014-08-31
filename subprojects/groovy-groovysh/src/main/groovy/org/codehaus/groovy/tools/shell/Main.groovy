@@ -16,6 +16,10 @@
 
 package org.codehaus.groovy.tools.shell
 
+import jline.TerminalFactory
+import jline.UnixTerminal
+import jline.UnsupportedTerminal
+import jline.WindowsTerminal
 import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
@@ -100,7 +104,7 @@ class Main
             }
         }
 
-        String type ='auto'
+        String type = TerminalFactory.AUTO;
         if (options.hasOption('T')) {
             type = options.getOptionValue('T')
         }
@@ -196,27 +200,24 @@ class Main
      */
     static void setTerminalType(String type, boolean suppressColor) {
         assert type != null
-        
+
         type = type.toLowerCase();
         boolean enableAnsi = true;
         switch (type) {
-            case 'auto':
+            case TerminalFactory.AUTO:
                 type = null;
                 break;
-
-            case 'unix':
-                type = 'jline.UnixTerminal'
+            case TerminalFactory.UNIX:
+                type = UnixTerminal.canonicalName
                 break
-
-            case 'win':
-            case 'windows':
-                type = 'jline.WindowsTerminal'
+            case TerminalFactory.WIN:
+            case TerminalFactory.WINDOWS:
+                type = WindowsTerminal.canonicalName
                 break
-
-            case 'false':
-            case 'off':
-            case 'none':
-                type = 'jline.UnsupportedTerminal'
+            case TerminalFactory.FALSE:
+            case TerminalFactory.OFF:
+            case TerminalFactory.NONE:
+                type = UnsupportedTerminal.canonicalName
                 // Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
                 enableAnsi = false;
                 break;
@@ -232,7 +233,7 @@ class Main
         }
 
         if (type != null) {
-            System.setProperty('jline.terminal', type)
+            System.setProperty(TerminalFactory.JLINE_TERMINAL, type)
         }
     }
 
