@@ -125,7 +125,7 @@ class GroovySyntaxCompletor implements Completer {
                 return CompletionCase.NO_DOT_PREFIX
             }
             GroovySourceToken previousToken = tokens[-2]
-            if (previousToken.type == DOT) {
+            if (previousToken.type == DOT || previousToken.type == OPTIONAL_DOT) {
                 // we have a dot, so need to evaluate the statement up to the dot for completion
                 if (tokens.size() < 3) {
                     return CompletionCase.NO_COMPLETION
@@ -167,7 +167,7 @@ class GroovySyntaxCompletor implements Completer {
                 }
             }
 
-        } else if (currentToken.type == DOT) {
+        } else if (currentToken.type == DOT || currentToken.type == OPTIONAL_DOT) {
             // cursor is on dot, so need to evaluate the statement up to the dot for completion
             if (tokens.size() == 1) {
                 return CompletionCase.NO_COMPLETION

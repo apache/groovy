@@ -81,6 +81,21 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         }
     }
 
+    void testMemberOptionalDot() {
+        reflectionCompletorMocker.demand.complete(1) { tokens, candidates ->
+            assert(tokens.collect{it.getText()} == ["Math", "?.", "ma"]); candidates << "max("; 6}
+        IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
+            GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
+            def candidates = []
+            String buffer = "Math?.ma"
+            assert 6 == completor.complete(buffer, buffer.length(), candidates)
+            assert ["max("] == candidates
+        }
+    }
+
     void testMemberAfterMethod() {
         reflectionCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens.collect{it.getText()} == ["Fo", ".", "ba", "(", ")", ".", "xyz"]); candidates << "xyzabc"; 0}

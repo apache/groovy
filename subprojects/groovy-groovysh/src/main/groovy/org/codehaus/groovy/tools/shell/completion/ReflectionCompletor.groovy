@@ -56,11 +56,11 @@ class ReflectionCompletor {
         if (tokens.size() < 2) {
             throw new IllegalArgumentException('must be invoked with at least 2 tokens, one of which is dot' + tokens*.text)
         }
-        if (tokens.last().type == DOT) {
+        if (tokens.last().type == DOT || tokens.last().type == OPTIONAL_DOT) {
             dotToken = tokens.last()
             previousTokens = tokens[0..-2]
         } else {
-            if (tokens[-2].type != DOT) {
+            if (tokens[-2].type != DOT && tokens[-2].type != OPTIONAL_DOT) {
                 throw new IllegalArgumentException('must be invoked with token list with dot at last position or one position before' + tokens*.text)
             }
             currentElementToken = tokens.last()
@@ -131,7 +131,9 @@ class ReflectionCompletor {
      * side-effect free.
      */
     Object getInvokerClassOrInstance(final List<GroovySourceToken> groovySourceTokens) {
-        if (!groovySourceTokens || groovySourceTokens.last().type == DOT) {
+        if (!groovySourceTokens
+                || groovySourceTokens.last().type == DOT
+                || groovySourceTokens.last().type == OPTIONAL_DOT) {
             // we expect the list of tokens before a dot.
             return null
         }
@@ -274,6 +276,7 @@ class ReflectionCompletor {
                 case NUM_BIG_DECIMAL:
                 case MEMBER_POINTER:
                 case DOT:
+                case OPTIONAL_DOT:
                     break
                 default:
                     return null
