@@ -55,14 +55,14 @@ class ReflectionCompletor {
         GroovySourceToken dotToken
         List<GroovySourceToken> previousTokens
         if (tokens.size() < 2) {
-            throw new IllegalArgumentException("must be invoked with at least 2 tokens, one of which is dot")
+            throw new IllegalArgumentException('must be invoked with at least 2 tokens, one of which is dot' + tokens*.text)
         }
         if (tokens.last().getType() == DOT) {
             dotToken = tokens.last()
             previousTokens = tokens[0..-2]
         } else {
-            if (!tokens[-2] == DOT) {
-                throw new IllegalArgumentException("must be invoked with token list with dot at last position or one position before")
+            if (tokens[-2].type != DOT) {
+                throw new IllegalArgumentException('must be invoked with token list with dot at last position or one position before' + tokens*.text)
             }
             currentElementToken = tokens.last()
             dotToken = tokens[-2]
@@ -305,7 +305,7 @@ class ReflectionCompletor {
     static Collection<String> getMetaclassMethods(Object instance, String prefix, boolean includeMetaClassImplMethods) {
         Set<String> rv = new HashSet<String>()
         MetaClass metaclass = InvokerHelper.getMetaClass(instance)
-        if (includeMetaClassImplMethods || ! metaclass instanceof MetaClassImpl) {
+        if (includeMetaClassImplMethods || !(metaclass instanceof MetaClassImpl)) {
             metaclass.metaMethods.each { MetaMethod mmit ->
                 if (acceptName(mmit.name, prefix)) {
                     rv << mmit.getName() + (mmit.parameterTypes.length == 0 ? "()" : "(")
