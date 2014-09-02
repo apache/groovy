@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.tools.Utilities;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
 import java.io.File;
@@ -190,7 +191,7 @@ public class JavaStubGenerator {
             verifier.visitClass(classNode);
             currentModule = classNode.getModule();
 
-            boolean isInterface = classNode.isInterface();
+            boolean isInterface = isInterfaceOrTrait(classNode);
             boolean isEnum = (classNode.getModifiers() & Opcodes.ACC_ENUM) != 0;
             boolean isAnnotationDefinition = classNode.isAnnotationDefinition();
             printAnnotations(out, classNode);
@@ -293,7 +294,7 @@ public class JavaStubGenerator {
     }
 
     private void printFields(PrintWriter out, ClassNode classNode) {
-        boolean isInterface = classNode.isInterface();
+        boolean isInterface = isInterfaceOrTrait(classNode);
         List<FieldNode> fields = classNode.getFields();
         if (fields == null) return;
         List<FieldNode> enumFields = new ArrayList<FieldNode>(fields.size());
@@ -549,7 +550,7 @@ public class JavaStubGenerator {
         if (methodNode.isSynthetic() && methodNode.getName().equals("$getStaticMetaClass")) return;
 
         printAnnotations(out, methodNode);
-        if (!clazz.isInterface()) printModifiers(out, methodNode.getModifiers());
+        if (!isInterfaceOrTrait(clazz)) printModifiers(out, methodNode.getModifiers());
 
         printGenericsBounds(out, methodNode.getGenericsTypes());
         out.print(" ");
@@ -570,7 +571,9 @@ public class JavaStubGenerator {
             printType(out, exception);
         }
 
-        if ((methodNode.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
+        if (Traits.isTrait(clazz)) {
+            out.println(";");
+        } else if ((methodNode.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
             if (clazz.isAnnotationDefinition() && methodNode.hasAnnotationDefault()) {
                 Statement fs = methodNode.getFirstStatement();
                 if (fs instanceof ExpressionStatement) {
@@ -873,5 +876,9 @@ public class JavaStubGenerator {
 
     private static String escapeSpecialChars(String value) {
         return value.replace("\n", "\\n").replace("\r", "\\r").replace("\"", "\\\"");
+    }
+
+    private static boolean isInterfaceOrTrait(ClassNode cn) {
+        return cn.isInterface() || Traits.isTrait(cn);
     }
 }

@@ -250,7 +250,7 @@ public class BinaryExpressionHelper {
         case COMPARE_IDENTICAL:
         case COMPARE_NOT_IDENTICAL:
             Token op = expression.getOperation();
-            Throwable cause = new SyntaxException("Operator " + op + " not supported", op.getStartLine(), op.getStartColumn());
+            Throwable cause = new SyntaxException("Operator " + op + " not supported", op.getStartLine(), op.getStartColumn(), op.getStartLine(), op.getStartColumn()+3);
             throw new GroovyRuntimeException(cause);
 
         default:

@@ -169,6 +169,11 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         } else if (expr instanceof ClosureExpression) {
             ClosureExpression ce = (ClosureExpression) expr;
             ce.getCode().visit(this);
+        } else if (expr instanceof ConstructorCallExpression) {
+            ConstructorCallExpression cce = (ConstructorCallExpression) expr;
+            if (cce.isUsingAnonymousInnerClass()) {
+                cce.getType().visitContents(this);
+            }
         } else if (expr instanceof DeclarationExpression) {
             DeclarationExpression de = (DeclarationExpression) expr;
             if (de == candidate || auto) {
