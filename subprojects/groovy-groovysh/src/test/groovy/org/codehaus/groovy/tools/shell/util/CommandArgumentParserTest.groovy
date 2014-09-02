@@ -42,6 +42,10 @@ public class CommandArgumentParserTest extends GroovyTestCase {
         // limited number of tokens
         assertEquals(['foo'], CommandArgumentParser.parseLine("  foo bar  ", 1))
         assertEquals(['bar', 'foo'], CommandArgumentParser.parseLine('bar"foo"\'bam\'\'baz\'', 2))
+
+        assertEquals(['map.put('], CommandArgumentParser.parseLine("map.put('a': 2)", 1))
+        assertEquals(['map.put('], CommandArgumentParser.parseLine("map.put('a", 1))
+
     }
 
 }
