@@ -24,12 +24,12 @@ import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokenList
 class ImportsSyntaxCompletorTest extends CompletorTestSupport {
 
     void testPackagePattern() {
-        assertTrue('import static java.lang.Math' ==~ ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
-        assertTrue('import static java.lang.Math.max' ==~ ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
-        assertTrue('import static java.lang.Math.max2' ==~ ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
-        assertTrue('import static java.lang.Math.*' ==~ ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
-        assertTrue('import static org.w3c.Math.*' ==~ ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
-        assertFalse('import static java lang' ==~ ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
+        assert 'import static java.lang.Math'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
+        assert 'import static java.lang.Math.max'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
+        assert 'import static java.lang.Math.max2'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
+        assert 'import static java.lang.Math.*'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
+        assert 'import static org.w3c.Math.*'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
+        assert !('import static java lang'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN))
     }
 
     void testPreImported() {

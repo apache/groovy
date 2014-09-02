@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools.shell
 
 import antlr.TokenStreamException
+import groovy.transform.CompileStatic
 import jline.Terminal
 import jline.WindowsTerminal
 import jline.console.history.FileHistory
@@ -25,8 +26,11 @@ import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.commands.LoadCommand
 import org.codehaus.groovy.tools.shell.commands.RecordCommand
 import org.codehaus.groovy.tools.shell.util.*
+import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.ScriptVariableAnalyzer
 import org.fusesource.jansi.AnsiRenderer
+
+import java.util.regex.Pattern
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -38,13 +42,8 @@ class Groovysh extends Shell {
 
     private static final MessageSource messages = new MessageSource(Groovysh)
 
-    final BufferManager buffers = new BufferManager()
-
-    final Parser parser
-
-    final Interpreter interp
-
-    final List<String> imports = []
+    private static final Pattern TYPEDEF_PATTERN = ~'^\\s*((?:public|protected|private|static|abstract|final)\\s+)*(?:class|enum|interface).*'
+    private static final Pattern METHODDEF_PATTERN = ~'^\\s*((?:public|protected|private|static|abstract|final|synchronized)\\s+)*[a-zA-Z_.]+[a-zA-Z_.<>]+\\s+[a-zA-Z_]+\\(.*'
 
     public static final String COLLECTED_BOUND_VARS_MAP_VARNAME = 'groovysh_collected_boundvars'
 
@@ -53,6 +52,16 @@ class Groovysh extends Shell {
     public static final String COLORS_PREFERENCE_KEY = 'colors'
     // after how many prefix characters we start displaying all metaclass methods
     public static final String METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY = 'meta-completion-prefix-length'
+
+
+    final BufferManager buffers = new BufferManager()
+
+    final Parser parser
+
+    final Interpreter interp
+
+    final List<String> imports = []
+
     int indentSize = 2
 
     InteractiveShellRunner runner
@@ -60,7 +69,9 @@ class Groovysh extends Shell {
     FileHistory history
 
     boolean historyFull  // used as a workaround for GROOVY-2177
+
     String evictedLine  // remembers the command which will get evicted if history is full
+
     PackageHelper packageHelper
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar) {
@@ -76,7 +87,7 @@ class Groovysh extends Shell {
 
         registrar.call(this)
 
-        this.packageHelper = new PackageHelper(classLoader)
+        this.packageHelper = new PackageHelperImpl(classLoader)
     }
 
     private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
@@ -159,11 +170,12 @@ class Groovysh extends Shell {
                     displayBuffer(current)
                 }
 
-                if (isTypeorMethodDeclaration(current) || ! Boolean.valueOf(Preferences.get(INTERPRETER_MODE_PREFERENCE_KEY, 'false'))) {
+                if (!Boolean.valueOf(Preferences.get(INTERPRETER_MODE_PREFERENCE_KEY, 'false')) || isTypeOrMethodDeclaration(current)) {
                     // Evaluate the current buffer w/imports and dummy statement
                     List buff = [importsSpec] + [ 'true' ] + current
                     setLastResult(result = interp.evaluate(buff))
                 } else {
+                    // Evaluate Buffer wrapped with code storing bounded vars
                     result = evaluateWithStoredBoundVars(current)
                 }
 
@@ -191,10 +203,10 @@ class Groovysh extends Shell {
      * @param strings
      * @return
      */
-    boolean isTypeorMethodDeclaration(final List<String> buffer) {
-        boolean isTypeDef = buffer.join('') ==~ '^\\s*((?:public|protected|private|static|abstract|final)\\s+)*(?:class|enum|interface).*'
-        boolean isMethodDef = buffer.join('') ==~ '^\\s*((?:public|protected|private|static|abstract|final|synchronized)\\s+)*[a-zA-Z_.]+[a-zA-Z_.<>]+\\s+[a-zA-Z_]+\\(.*'
-        return isTypeDef || isMethodDef
+    @CompileStatic
+    static boolean isTypeOrMethodDeclaration(final List<String> buffer) {
+        final String joined = buffer.join('')
+        return joined.matches(TYPEDEF_PATTERN) || joined.matches(METHODDEF_PATTERN)
     }
 /*
      * to simulate an interpreter mode, this method wraps the statements into a try/finally block that

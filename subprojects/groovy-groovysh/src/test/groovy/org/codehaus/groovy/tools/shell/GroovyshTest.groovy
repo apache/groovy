@@ -359,15 +359,15 @@ ReflectionCompletor.getPublicFieldsAndMethods(Foo, '')
 """])
         assert candResult
         assert candResult.size() > 0
-        List<String> result = candResult.collect({ReflectionCompletionCandidate cc -> cc.value})
-        assert [] == result.findAll({it.startsWith("_")})
-        assert [] == result.findAll({it.startsWith("super\$")})
-        assert [] == result.findAll({it.startsWith("this\$")})
-        assert ! ('foo' in result)
-        assert ! ('priv' in result)
-        assert ! ('priv2' in result)
+        List<String> result = candResult.collect({ ReflectionCompletionCandidate cc -> cc.value })
+        assert [] == result.findAll({ it.startsWith("_") })
+        assert [] == result.findAll({ it.startsWith("super\$") })
+        assert [] == result.findAll({ it.startsWith("this\$") })
+        assert !('foo' in result)
+        assert !('priv' in result)
+        assert !('priv2' in result)
         assert 'barm()' in result
-        assert ! ('foom()' in result)
+        assert !('foom()' in result)
 
     }
 
@@ -397,13 +397,13 @@ ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
 """])
         assertNotNull(candResult)
         assert candResult.size() > 0
-        List<String> result = candResult.collect({ReflectionCompletionCandidate cc -> cc.value})
-        assert [] == result.findAll({it.startsWith("_")})
-        assert [] == result.findAll({it.startsWith("super\$")})
-        assert [] == result.findAll({it.startsWith("this\$")})
-        assert ! ('bar' in result)
-        assert ! ('priv' in result)
-        assert ! ('priv2' in result)
+        List<String> result = candResult.collect({ ReflectionCompletionCandidate cc -> cc.value })
+        assert [] == result.findAll({ it.startsWith("_") })
+        assert [] == result.findAll({ it.startsWith("super\$") })
+        assert [] == result.findAll({ it.startsWith("this\$") })
+        assert !('bar' in result)
+        assert !('priv' in result)
+        assert !('priv2' in result)
         assert 'foom()' in result
         assert !('barm()' in result)
     }
@@ -431,6 +431,32 @@ ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
         def candidates = []
         compl.complete(TokenUtilTest.tokenList("['a':3, 'b':4]."), candidates)
         assert candidates.size() > 1
-        assert candidates.reverse().subList(0, 2).collect({String it -> JAnsiHelper.stripAnsi(it)}) == ['b', 'a']
+        assert candidates.reverse().subList(0, 2).collect({ String it -> JAnsiHelper.stripAnsi(it) }) == ['b', 'a']
+    }
+}
+
+class GroovyshUtilsTest extends GroovyTestCase {
+
+    void testIsTypeOrMethodDeclaration() {
+        List<String> buffer = []
+        assert !Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['']
+        assert !Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['foo']
+        assert !Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['foo()']
+        assert !Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['123']
+        assert !Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['def foo() {}']
+        assert Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['public static void bar() {}']
+        assert Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['public class Foo {}']
+        assert Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['interface Foo {}']
+        assert Groovysh.isTypeOrMethodDeclaration(buffer)
+        buffer = ['enum Foo {VAL1, VAL2}']
+        assert Groovysh.isTypeOrMethodDeclaration(buffer)
     }
 }

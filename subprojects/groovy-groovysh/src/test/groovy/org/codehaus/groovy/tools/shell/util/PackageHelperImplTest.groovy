@@ -17,14 +17,14 @@
 package org.codehaus.groovy.tools.shell.util
 
 /**
- * Unit tests for the {@link PackageHelper} class.
+ * Unit tests for the {@link PackageHelperImpl} class.
  */
-class PackageHelperTest
+class PackageHelperImplTest
     extends GroovyTestCase
 {
 
     void testLoadAndGetPackagesEmpty() {
-        PackageHelper helper = new PackageHelper(null)
+        PackageHelperImpl helper = new PackageHelperImpl(null)
         Set<String> rootPackages = helper.getContents("")
         assertNotNull(rootPackages)
         assert rootPackages.contains("java")
@@ -33,14 +33,14 @@ class PackageHelperTest
     }
 
     void testLoadAndGetPackagesJava() {
-        PackageHelper helper = new PackageHelper(null)
+        PackageHelperImpl helper = new PackageHelperImpl(null)
         Set<String> names = helper.getContents("java")
         assertNotNull(names)
         assert names.contains('io')
     }
 
     void testLoadAndGetPackagesJavaUtil() {
-        PackageHelper helper = new PackageHelper(null)
+        PackageHelperImpl helper = new PackageHelperImpl(null)
         Set<String> names = helper.getContents("java.util")
         assertNotNull(names)
         assert names.contains('zip')
@@ -48,12 +48,12 @@ class PackageHelperTest
     }
 
     void testLoadAndGetPackagesInvalid() {
-        PackageHelper helper = new PackageHelper(null)
+        PackageHelperImpl helper = new PackageHelperImpl(null)
         assert [] as Set<String> == helper.getContents("invalid:name")
     }
 
     void testLoadAndGetPackagesUnknown() {
-        PackageHelper helper = new PackageHelper(null)
+        PackageHelperImpl helper = new PackageHelperImpl(null)
         assert [] as Set<String> == helper.getContents("java.util.regex.tools")
     }
 }

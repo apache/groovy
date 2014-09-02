@@ -1,12 +1,23 @@
 package org.codehaus.groovy.tools.shell.completion
 
-import org.codehaus.groovy.antlr.GroovySourceToken
-import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
 
 /**
  * Defines method tokenList for other Unit tests and tests it
  */
 class NavigablePropertiesCompleterTest extends GroovyTestCase {
+
+    void testPatternNoControlChars() {
+        assert !'java\bCfoo'.matches(NavigablePropertiesCompleter.NO_CONTROL_CHARS_PATTERN)
+        assert !'java\u001BCfoo'.matches(NavigablePropertiesCompleter.NO_CONTROL_CHARS_PATTERN)
+        assert 'ja12_<!$%&_?§'.matches(NavigablePropertiesCompleter.NO_CONTROL_CHARS_PATTERN)
+    }
+
+    void testPatternInvalidIdentifierChar() {
+        assert 'java@foo'.find(NavigablePropertiesCompleter.INVALID_CHAR_FOR_IDENTIFIER_PATTERN)
+        assert 'java&bar'.find(NavigablePropertiesCompleter.INVALID_CHAR_FOR_IDENTIFIER_PATTERN)
+        assert 'java~bar'.find(NavigablePropertiesCompleter.INVALID_CHAR_FOR_IDENTIFIER_PATTERN)
+        assert !'javaBar$foo_b2'.find(NavigablePropertiesCompleter.INVALID_CHAR_FOR_IDENTIFIER_PATTERN)
+    }
 
     void testSet() {
         NavigablePropertiesCompleter completer = new NavigablePropertiesCompleter()
@@ -46,6 +57,7 @@ class NavigablePropertiesCompleterTest extends GroovyTestCase {
                 '_ !@#$%^&*()_+={}[]~`<>,./?:;|' : 'operators',
                 'snowman ☃' : 'Olaf',
                 'Japan ぁ' : '77',
+                'ぁJapanstart' : '77',
                 'a☃$4ä_' : 'no hypehns',
                 '$123' : 'digits',
                 '123$' : 'digits',
@@ -54,7 +66,7 @@ class NavigablePropertiesCompleterTest extends GroovyTestCase {
 
         Set candidates = [] as Set
         Set expected = ['id', 'name', '\'a b\'', '\'a.b\'', '\'a\\\'b\'', '\'a\\\\b\'', '\'G$\\\\"tring\'',
-                        '\'_ !@#$%^&*()_+={}[]~`<>,./?:;|\'', '\'snowman ☃\'', '\'Japan ぁ\'', 'a☃$4ä_', '$123', '\'123$\'' ] as Set
+                        '\'_ !@#$%^&*()_+={}[]~`<>,./?:;|\'', '\'snowman ☃\'', '\'Japan ぁ\'', 'ぁJapanstart', 'a☃$4ä_', '$123', '\'123$\'' ] as Set
         completer.addCompletions(map, '', candidates)
         assert expected == candidates
     }

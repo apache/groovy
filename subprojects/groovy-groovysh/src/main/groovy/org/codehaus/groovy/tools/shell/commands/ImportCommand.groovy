@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import groovy.transform.CompileStatic
 import jline.console.completer.AggregateCompleter
 import jline.console.completer.ArgumentCompleter
 import jline.console.completer.Completer
@@ -31,6 +32,8 @@ import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.PackageHelper
 
+import java.util.regex.Pattern
+
 /**
  * The 'import' command.
  *
@@ -39,6 +42,14 @@ import org.codehaus.groovy.tools.shell.util.PackageHelper
 class ImportCommand
     extends CommandSupport
 {
+
+    /**
+     * pattern used to validate the arguments to the import command,
+     * which proxies the Groovy import statement
+     * chars, digits, underscore, dot, star
+     */
+    private static final Pattern IMPORTED_ITEM_PATTERN = ~'[a-zA-Z0-9_. *]+;?$'
+
     ImportCommand(final Groovysh shell) {
         super(shell, 'import', ':i')
     }
@@ -82,7 +93,7 @@ class ImportCommand
         // "java.awt.TextField" so it is not implemented as such here.  Perhaps this could be made to be more
         // intelligent if someone could figure out why that is happening or could write a nicer batch of regex to
         // solve the problem
-        if (! (importSpec ==~ '[\\da-zA-Z_. *]+;?$')) {
+        if (! (importSpec.matches(IMPORTED_ITEM_PATTERN))) {
             def msg = "Invalid import definition: '${importSpec}'" // TODO: i18n
             log.debug(msg)
             fail(msg)
@@ -134,14 +145,14 @@ class ImportCompleter implements Completer {
      * which we intentionally want to hide in tab completion
      */
     // matches fully qualified Classnames with dot at the end
-    private static final String QUALIFIED_CLASS_DOT_PATTERN = /^[a-z_]{1}[a-z0-9_]*(\.[a-z0-9_]*)*\.[A-Z][^.]*\.$/
+    private static final Pattern QUALIFIED_CLASS_DOT_PATTERN = ~/^[a-z_]{1}[a-z0-9_]*(\.[a-z0-9_]*)*\.[A-Z][^.]*\.$/
     // matches empty, packagenames or fully qualified classNames
-    private static final String PACK_OR_CLASSNAME_PATTERN = /^([a-z_]{1}[a-z0-9_]*(\.[a-z0-9_]*)*(\.[A-Z][^.]*)?)?$/
+    private static final Pattern PACK_OR_CLASSNAME_PATTERN = ~/^([a-z_]{1}[a-z0-9_]*(\.[a-z0-9_]*)*(\.[A-Z][^.]*)?)?$/
     // matches empty, packagenames or fully qualified classNames without special symbols
-    private static final String PACK_OR_SIMPLE_CLASSNAME_PATTERN = '^([a-z_]{1}[a-z0-9_]*(\\.[a-z0-9_]*)*(\\.[A-Z][^.\$_]*)?)?\$'
+    private static final Pattern PACK_OR_SIMPLE_CLASSNAME_PATTERN = ~'^([a-z_]{1}[a-z0-9_]*(\\.[a-z0-9_]*)*(\\.[A-Z][^.\$_]*)?)?\$'
     // matches empty, packagenames or fully qualified classNames or fully qualified method names
-    private static final String PACK_OR_CLASS_OR_METHODNAME_PATTERN = '^([a-z_]{1}[a-z0-9.]*(\\.[a-z0-9_]*)*(\\.[A-Z][^.\$_]*(\\.[a-zA-Z0-9_]*)?)?)?\$'
-
+    private static final Pattern PACK_OR_CLASS_OR_METHODNAME_PATTERN = ~'^([a-z_]{1}[a-z0-9.]*(\\.[a-z0-9_]*)*(\\.[A-Z][^.\$_]*(\\.[a-zA-Z0-9_]*)?)?)?\$'
+    private static final Pattern LOWERCASE_IMPORT_ITEM_PATTERN = ~/^[a-z0-9.]+$/
 
     final boolean staticImport
     final Evaluator interpreter
@@ -155,14 +166,15 @@ class ImportCompleter implements Completer {
     }
 
     @Override
+    @CompileStatic
     int complete(final String buffer, final int cursor, final List<CharSequence> result) {
         String currentImportExpression = buffer ? buffer.substring(0, cursor) : ''
         if (staticImport) {
-            if (! (currentImportExpression ==~ PACK_OR_CLASS_OR_METHODNAME_PATTERN)) {
+            if (! (currentImportExpression.matches(PACK_OR_CLASS_OR_METHODNAME_PATTERN))) {
                 return -1
             }
         } else {
-            if (! (currentImportExpression ==~ PACK_OR_SIMPLE_CLASSNAME_PATTERN)) {
+            if (! (currentImportExpression.matches(PACK_OR_SIMPLE_CLASSNAME_PATTERN))) {
                 return -1
             }
         }
@@ -172,7 +184,7 @@ class ImportCompleter implements Completer {
 
         if (currentImportExpression.endsWith('.')) {
             // no upper case?
-            if (currentImportExpression ==~ /^[a-z0-9.]+$/) {
+            if (currentImportExpression.matches(LOWERCASE_IMPORT_ITEM_PATTERN)) {
                 Set<String> classnames = packageHelper.getContents(currentImportExpression[0..-2])
                 if (classnames) {
                     if (staticImport) {
@@ -185,7 +197,7 @@ class ImportCompleter implements Completer {
                     result.add('* ')
                 }
                 return currentImportExpression.length()
-            } else if (staticImport && currentImportExpression ==~ QUALIFIED_CLASS_DOT_PATTERN) {
+            } else if (staticImport && currentImportExpression.matches(QUALIFIED_CLASS_DOT_PATTERN)) {
                 Class clazz = interpreter.evaluate([currentImportExpression[0..-2]]) as Class
                 if (clazz != null) {
                     Collection<ReflectionCompletionCandidate> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, '')
@@ -207,7 +219,7 @@ class ImportCompleter implements Completer {
         String baseString = currentImportExpression.substring(0, Math.max(lastDot, 0))
 
         // expression could be for Classname, or for static methodname
-        if (currentImportExpression ==~ PACK_OR_CLASSNAME_PATTERN) {
+        if (currentImportExpression.matches(PACK_OR_CLASSNAME_PATTERN)) {
             Set<String> candidates = packageHelper.getContents(baseString)
             if (candidates == null || candidates.size() == 0) {
                 // At least give standard package completion, else static keyword is highly annoying

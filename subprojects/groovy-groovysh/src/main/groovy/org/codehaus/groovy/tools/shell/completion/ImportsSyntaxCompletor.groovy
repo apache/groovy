@@ -85,7 +85,7 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
         return foundMatch
     }
 
-    static final String STATIC_IMPORT_PATTERN = /^import static ([a-z0-9]+\.)+[A-Z][a-zA-Z0-9]*(\.(\*|[^.]+))?$/
+    private static final String STATIC_IMPORT_PATTERN = ~/^import static ([a-z0-9]+\.)+[A-Z][a-zA-Z0-9]*(\.(\*|[^.]+))?$/
 
     /**
      * finds matching imported classes or static methods
@@ -105,7 +105,7 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
         String staticPrefix = 'import static '
         if (importSpec.startsWith(staticPrefix)) {
             // make sure pattern is safe, though shell should have done anyway
-            if (importSpec  ==~ STATIC_IMPORT_PATTERN) {
+            if (importSpec.matches(STATIC_IMPORT_PATTERN)) {
                 String evalImportSpec
                 if (importSpec.endsWith('.*')) {
                     evalImportSpec = importSpec[staticPrefix.length()..-3]
