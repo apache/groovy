@@ -43,6 +43,7 @@ import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -150,7 +151,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     public void visitClass(final ClassNode node) {
         this.classNode = node;
 
-        if ((classNode.getModifiers() & Opcodes.ACC_INTERFACE) > 0) {
+        if (Traits.isTrait(node) // maybe possible to have this true in joint compilation mode
+                || ((classNode.getModifiers() & Opcodes.ACC_INTERFACE) > 0)) {
             //interfaces have no constructors, but this code expects one,
             //so create a dummy and don't add it to the class node
             ConstructorNode dummy = new ConstructorNode(0, null);
