@@ -16,23 +16,25 @@
 
 package org.codehaus.groovy.tools.shell.util
 
+import groovy.transform.CompileStatic
 import org.fusesource.jansi.AnsiOutputStream
 
+@CompileStatic
 class JAnsiHelper {
 
     /**
      * copied from jline2 ConsoleReader
      */
-    public static CharSequence stripAnsi(CharSequence str) {
-        if (str == null) return "";
+    static CharSequence stripAnsi(final CharSequence str) {
+        if (str == null) return ''
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            AnsiOutputStream aos = new AnsiOutputStream(baos);
-            aos.write(str.toString().getBytes());
-            aos.flush();
-            return baos.toString();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream()
+            AnsiOutputStream aos = new AnsiOutputStream(baos)
+            aos.write(str.toString().bytes)
+            aos.flush()
+            return baos.toString()
         } catch (IOException e) {
-            return str;
+            return str
         }
     }
 }

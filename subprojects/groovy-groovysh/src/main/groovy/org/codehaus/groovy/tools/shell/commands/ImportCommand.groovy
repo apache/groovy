@@ -23,6 +23,7 @@ import jline.console.completer.StringsCompleter
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.tools.shell.CommandSupport
+import org.codehaus.groovy.tools.shell.Evaluator
 import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.Interpreter
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletionCandidate
@@ -69,7 +70,7 @@ class ImportCommand
         assert args != null
 
         if (args.isEmpty()) {
-            fail("Command 'import' requires one or more arguments") // TODO: i18n
+            fail('Command \'import\' requires one or more arguments') // TODO: i18n
         }
 
         def importSpec = args.join(' ')
@@ -91,20 +92,20 @@ class ImportCommand
 
         def buff = [ 'import ' + args.join(' ') ]
         buff << 'def dummp = false'
-        
+
         def type
         try {
             type = classLoader.parseClass(buff.join(NEWLINE))
-            
+
             // No need to keep duplicates, but order may be important so remove the previous def, since
             // the last defined import will win anyways
-            
+
             if (imports.remove(importSpec)) {
-                log.debug("Removed duplicate import from list")
+                log.debug('Removed duplicate import from list')
             }
-            
+
             log.debug("Adding import: $importSpec")
-            
+
             imports.add(importSpec)
             return imports.join(', ')
         }
@@ -122,29 +123,31 @@ class ImportCommand
 
 class ImportCompleter implements Completer {
 
+    protected final Logger log = Logger.create(ImportCompleter)
+
     PackageHelper packageHelper
     Groovysh shell
-    protected final Logger log = Logger.create(ImportCompleter)
+
     /*
      * The following rules do not need to work for all thinkable situations,just for all reasonable situations.
      * In particular the underscore and dollar signs in Class or method names usually indicate something internal,
      * which we intentionally want to hide in tab completion
      */
     // matches fully qualified Classnames with dot at the end
-    public static final String QUALIFIED_CLASS_DOT_PATTERN = /^[a-z_]{1}[a-z0-9_]*(\.[a-z0-9_]*)*\.[A-Z][^.]*\.$/
+    private static final String QUALIFIED_CLASS_DOT_PATTERN = /^[a-z_]{1}[a-z0-9_]*(\.[a-z0-9_]*)*\.[A-Z][^.]*\.$/
     // matches empty, packagenames or fully qualified classNames
-    public static final String PACK_OR_CLASSNAME_PATTERN = /^([a-z_]{1}[a-z0-9_]*(\.[a-z0-9_]*)*(\.[A-Z][^.]*)?)?$/
+    private static final String PACK_OR_CLASSNAME_PATTERN = /^([a-z_]{1}[a-z0-9_]*(\.[a-z0-9_]*)*(\.[A-Z][^.]*)?)?$/
     // matches empty, packagenames or fully qualified classNames without special symbols
-    public static final String PACK_OR_SIMPLE_CLASSNAME_PATTERN = '^([a-z_]{1}[a-z0-9_]*(\\.[a-z0-9_]*)*(\\.[A-Z][^.\$_]*)?)?\$'
+    private static final String PACK_OR_SIMPLE_CLASSNAME_PATTERN = '^([a-z_]{1}[a-z0-9_]*(\\.[a-z0-9_]*)*(\\.[A-Z][^.\$_]*)?)?\$'
     // matches empty, packagenames or fully qualified classNames or fully qualified method names
-    public static final String PACK_OR_CLASS_OR_METHODNAME_PATTERN = '^([a-z_]{1}[a-z0-9.]*(\\.[a-z0-9_]*)*(\\.[A-Z][^.\$_]*(\\.[a-zA-Z0-9_]*)?)?)?\$'
+    private static final String PACK_OR_CLASS_OR_METHODNAME_PATTERN = '^([a-z_]{1}[a-z0-9.]*(\\.[a-z0-9_]*)*(\\.[A-Z][^.\$_]*(\\.[a-zA-Z0-9_]*)?)?)?\$'
 
 
-    boolean staticImport
-    def interpreter
+    final boolean staticImport
+    final Evaluator interpreter
 
 
-    public ImportCompleter(PackageHelper packageHelper, interp, boolean staticImport) {
+    ImportCompleter(final PackageHelper packageHelper, final Evaluator interp, final boolean staticImport) {
         this.packageHelper = packageHelper
         this.staticImport = staticImport
         this.interpreter = interp
@@ -152,8 +155,8 @@ class ImportCompleter implements Completer {
     }
 
     @Override
-    int complete(String buffer, int cursor, List result) {
-        String currentImportExpression = buffer ? buffer.substring(0, cursor) : ""
+    int complete(final String buffer, final int cursor, final List<CharSequence> result) {
+        String currentImportExpression = buffer ? buffer.substring(0, cursor) : ''
         if (staticImport) {
             if (! (currentImportExpression ==~ PACK_OR_CLASS_OR_METHODNAME_PATTERN)) {
                 return -1
@@ -163,7 +166,7 @@ class ImportCompleter implements Completer {
                 return -1
             }
         }
-        if (currentImportExpression.contains("..")) {
+        if (currentImportExpression.contains('..')) {
             return -1
         }
 
@@ -173,9 +176,9 @@ class ImportCompleter implements Completer {
                 Set<String> classnames = packageHelper.getContents(currentImportExpression[0..-2])
                 if (classnames) {
                     if (staticImport) {
-                        result.addAll(classnames.collect({ String it -> it + "."}))
+                        result.addAll(classnames.collect({ String it -> it + '.'}))
                     } else {
-                        result.addAll(classnames.collect({ String it -> filterMatches(it) }))
+                        result.addAll(classnames.collect({ String it -> addDotOrBlank(it) }))
                     }
                 }
                 if (! staticImport) {
@@ -185,8 +188,8 @@ class ImportCompleter implements Completer {
             } else if (staticImport && currentImportExpression ==~ QUALIFIED_CLASS_DOT_PATTERN) {
                 Class clazz = interpreter.evaluate([currentImportExpression[0..-2]]) as Class
                 if (clazz != null) {
-                    Collection<ReflectionCompletionCandidate> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, "")
-                    result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + " " }))
+                    Collection<ReflectionCompletionCandidate> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, '')
+                    result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + ' ' }))
                 }
                 result.add('* ')
                 return currentImportExpression.length()
@@ -219,7 +222,7 @@ class ImportCompleter implements Completer {
             log.debug(prefix)
             Collection<String> matches = candidates.findAll({ String it -> it.startsWith(prefix) })
             if (matches) {
-                result.addAll(matches.collect({ String it -> filterMatches(it) }))
+                result.addAll(matches.collect({ String it -> addDotOrBlank(it) }))
                 return lastDot <= 0 ? 0 : lastDot + 1
             }
         } else if (staticImport) {
@@ -227,7 +230,7 @@ class ImportCompleter implements Completer {
             if (clazz != null) {
                 Collection<ReflectionCompletionCandidate> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, prefix)
                 if (members) {
-                    result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + " " }))
+                    result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + ' ' }))
                     return lastDot <= 0 ? 0 : lastDot + 1
                 }
             }
@@ -235,7 +238,7 @@ class ImportCompleter implements Completer {
         return -1
     }
 
-    def filterMatches(String it) {
+    private static String addDotOrBlank(final String it) {
         if (it[0] in 'A' .. 'Z') {
            return it + ' '
         }

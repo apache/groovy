@@ -49,11 +49,11 @@ class PackageHelperTest
 
     void testLoadAndGetPackagesInvalid() {
         PackageHelper helper = new PackageHelper(null)
-        assert null == helper.getContents("invalid:name")
+        assert [] as Set<String> == helper.getContents("invalid:name")
     }
 
     void testLoadAndGetPackagesUnknown() {
         PackageHelper helper = new PackageHelper(null)
-        assert null == helper.getContents("java.util.regex.tools")
+        assert [] as Set<String> == helper.getContents("java.util.regex.tools")
     }
 }

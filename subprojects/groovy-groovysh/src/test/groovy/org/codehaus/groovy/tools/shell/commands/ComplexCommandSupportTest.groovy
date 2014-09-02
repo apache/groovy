@@ -33,7 +33,6 @@ class ComplexCommandSupportTest
         assertEquals("fcom", com.name)
         assertEquals("f", com.shortcut)
         assertEquals(null, com.functions)
-        assertEquals(null, com.getFunctions())
         assertEquals(null, com.defaultFunction)
     }
 
@@ -42,7 +41,6 @@ class ComplexCommandSupportTest
         assertEquals("fcom", com.name)
         assertEquals("f", com.shortcut)
         assertEquals(["foo", "bar"], com.functions)
-        assertEquals(["foo", "bar"], com.getFunctions())
         assertEquals(null, com.defaultFunction)
     }
 
@@ -51,7 +49,6 @@ class ComplexCommandSupportTest
         assertEquals("fcom", com.name)
         assertEquals("f", com.shortcut)
         assertEquals(["foo", "bar"], com.functions)
-        assertEquals(["foo", "bar"], com.getFunctions())
         assertEquals("foo", com.defaultFunction)
     }
 

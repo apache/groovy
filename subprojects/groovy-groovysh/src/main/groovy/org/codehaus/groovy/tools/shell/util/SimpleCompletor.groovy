@@ -25,114 +25,114 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-public class SimpleCompletor implements Completer {
+class SimpleCompletor implements Completer {
 
-    SortedSet candidates;
+    SortedSet<String> candidates
 
     /**
     * A delimiter to use to qualify completions.
     */
-    String delimiter;
+    String delimiter
 
 
-    public SimpleCompletor(final String[] candidates) {
-        setCandidateStrings(candidates);
+    SimpleCompletor(final String[] candidates) {
+        setCandidateStrings(candidates)
     }
-    
-    public SimpleCompletor() {
-        this(new String[0]);
+
+    SimpleCompletor() {
+        this(new String[0])
     }
-    
-    public SimpleCompletor(final Closure loader) {
-        this();
-        
-        assert loader != null;
-        
-        Object obj = loader.call();
-        
-        List list = null;
-        
+
+    SimpleCompletor(final Closure loader) {
+        this()
+
+        assert loader != null
+
+        Object obj = loader.call()
+
+        List list = null
+
         if (obj instanceof List) {
-            list = (List)obj;
+            list = (List) obj
         }
-        
+
         //
         // TODO: Maybe handle arrays too?
         //
-        
+
         if (list == null) {
-            throw new IllegalStateException("The loader closure did not return a list of candidates; found: " + obj);
+            throw new IllegalStateException('The loader closure did not return a list of candidates; found: ' + obj)
         }
 
-        Iterator iter = list.iterator();
+        Iterator iter = list.iterator()
 
         while (iter.hasNext()) {
-            add(InvokerHelper.toString(iter.next()));
+            add(InvokerHelper.toString(iter.next()))
         }
     }
 
-    public void add(final String candidate) {
-        addCandidateString(candidate);
+    void add(final String candidate) {
+        addCandidateString(candidate)
     }
 
-    public Object leftShift(final String s) {
-        add(s);
+    Object leftShift(final String s) {
+        add(s)
 
-        return null;
+        return null
     }
 
     //
     // NOTE: Duplicated (and augmented) from JLine sources to make it call getCandidates() to make the list more dynamic
     //
+    @Override
+    int complete(final String buffer, final int cursor, final List<CharSequence> clist) {
+        String start = (buffer == null) ? '' : buffer
 
-    public int complete(final String buffer, final int cursor, final List clist) {
-        String start = (buffer == null) ? "" : buffer;
-
-        SortedSet matches = getCandidates().tailSet(start);
+        SortedSet<String> matches = getCandidates().tailSet(start)
 
         for (Iterator i = matches.iterator(); i.hasNext();) {
-            String can = (String) i.next();
+            String can = (String) i.next()
 
             if (!(can.startsWith(start))) {
-                break;
+                break
             }
-            
-            String delim = getDelimiter();
-            
+
+            String delim = delimiter
+
             if (delim != null) {
-                int index = can.indexOf(delim, cursor);
+                int index = can.indexOf(delim, cursor)
 
                 if (index != -1) {
-                    can = can.substring(0, index + 1);
+                    can = can.substring(0, index + 1)
                 }
             }
 
-            clist.add(can);
+            clist.add(can)
         }
 
         if (clist.size() == 1) {
-            clist.set(0, ((String) clist.get(0)) + " ");
+            clist.set(0, ((String) clist.get(0)) + ' ')
         }
 
         // the index of the completion is always from the beginning of the buffer.
-        return (clist.size() == 0) ? (-1) : 0;
+        return (clist.size() == 0) ? (-1) : 0
     }
 
-    public void setCandidates(final SortedSet candidates) {
+    void setCandidates(final SortedSet<String> candidates) {
         this.candidates = candidates
     }
 
-    public SortedSet getCandidates() {
+    SortedSet<String> getCandidates() {
         return Collections.unmodifiableSortedSet(this.candidates)
     }
 
-    public void setCandidateStrings(final String[] strings) {
+    void setCandidateStrings(final String[] strings) {
         setCandidates(new TreeSet(Arrays.asList(strings)))
     }
 
-    public void addCandidateString(final String string) {
+    void addCandidateString(final String string) {
         if (string != null) {
-            candidates.add(string);
+            candidates.add(string)
         }
     }
 }

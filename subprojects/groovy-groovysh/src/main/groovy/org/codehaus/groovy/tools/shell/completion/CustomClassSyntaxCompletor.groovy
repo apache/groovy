@@ -22,21 +22,21 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * Completor completingclasses defined in the shell
  */
-public class CustomClassSyntaxCompletor implements IdentifierCompletor {
+class CustomClassSyntaxCompletor implements IdentifierCompletor {
 
-    Groovysh shell
+    private final Groovysh shell
 
-    CustomClassSyntaxCompletor(Groovysh shell) {
+    CustomClassSyntaxCompletor(final Groovysh shell) {
         this.shell = shell
     }
 
     @Override
-    public boolean complete(final List<GroovySourceToken> tokens, List<String> candidates) {
-        String prefix = tokens.last().getText()
+    boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
+        String prefix = tokens.last().text
         boolean foundMatch = false
         Class[] classes = shell.interp.classLoader.loadedClasses
         if (classes.size() > 0) {
-            List<String> classnames = classes.collect {Class it -> it.getName()}
+            List<String> classnames = classes*.name
             for (String varName in classnames) {
                 if (varName.startsWith(prefix)) {
                     candidates << varName

@@ -21,19 +21,19 @@ import org.codehaus.groovy.antlr.GroovySourceToken
 /**
  * Completor completing groovy keywords that appear after identifiers
  */
-public class InfixKeywordSyntaxCompletor implements IdentifierCompletor {
+class InfixKeywordSyntaxCompletor implements IdentifierCompletor {
 
     // INFIX keywords can only occur after identifiers
     private static final String[] INFIX_KEYWORDS = [
-            "in",
-            "instanceof",
-            "extends",
-            "implements",
+            'in',
+            'instanceof',
+            'extends',
+            'implements',
             ]
 
     @Override
-    public boolean complete(final List<GroovySourceToken> tokens, List<String> candidates) {
-        String prefix = tokens.last().getText()
+    boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
+        String prefix = tokens.last().text
         boolean foundMatch = false
         for (String varName in INFIX_KEYWORDS) {
             if (varName.startsWith(prefix)) {

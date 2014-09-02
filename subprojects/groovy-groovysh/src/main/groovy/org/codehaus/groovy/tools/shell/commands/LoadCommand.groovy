@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
+import jline.console.completer.Completer
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.completion.FileNameCompleter
@@ -37,10 +38,12 @@ class LoadCommand
         alias('.', ':.')
     }
 
-    protected List createCompleters() {
+    @Override
+    protected List<Completer> createCompleters() {
         return [ new FileNameCompleter(true, true) ]
     }
 
+    @Override
     Object execute(final List<String> args) {
         assert args != null
 

@@ -23,7 +23,7 @@ import org.codehaus.groovy.antlr.GroovySourceToken
  * (Class, variable, keyword, method, ...)
  * Similar to JLine Completor, but adapted for usage in GroovySyntaxCompletor
  */
-public interface IdentifierCompletor {
+interface IdentifierCompletor {
 
     /**
      *
@@ -31,6 +31,6 @@ public interface IdentifierCompletor {
      * @param candidates
      * @return
      */
-    boolean complete(List<GroovySourceToken> tokens, List<String> candidates);
+    boolean complete(List<GroovySourceToken> tokens, List<CharSequence> candidates)
 
 }

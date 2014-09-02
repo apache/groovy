@@ -100,7 +100,7 @@ class Shell
             try {
                 result = command.execute(args)
             } catch (CommandException e) {
-                io.err.println(ansi().a(Ansi.Attribute.INTENSITY_BOLD).fg(Ansi.Color.RED).a(e.getMessage()).reset());
+                io.err.println(ansi().a(Ansi.Attribute.INTENSITY_BOLD).fg(Ansi.Color.RED).a(e.message).reset())
             }
             log.debug("Result: ${InvokerHelper.toString(result)}")
         }

@@ -33,10 +33,11 @@ class ClearCommand
     ClearCommand(final Groovysh shell) {
         super(shell, COMMAND_NAME, ':c')
     }
-    
+
+    @Override
     Object execute(final List<String> args) {
         assertNoArguments(args)
-        
+
         buffer.clear()
 
         if (io.verbose) {

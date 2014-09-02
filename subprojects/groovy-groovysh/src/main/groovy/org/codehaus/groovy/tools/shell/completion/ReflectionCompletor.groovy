@@ -16,7 +16,6 @@
 
 package org.codehaus.groovy.tools.shell.completion
 
-import org.codehaus.groovy.GroovyException
 import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -38,26 +37,26 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
  */
 class ReflectionCompletor {
 
-    Groovysh shell
-    static NavigablePropertiesCompleter propertiesCompleter = new NavigablePropertiesCompleter()
+    final Groovysh shell
+    private static final NavigablePropertiesCompleter PROPERTIES_COMPLETER = new NavigablePropertiesCompleter()
 
     /**
      *
      * @param shell
      * @param metaclass_completion_prefix_length how long the prefix must be to disaply candidates from metaclass
      */
-    ReflectionCompletor(Groovysh shell) {
+    ReflectionCompletor(final Groovysh shell) {
         this.shell = shell
     }
 
-    public int complete(final List<GroovySourceToken> tokens, List<String> candidates) {
+    int complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
         GroovySourceToken currentElementToken = null
         GroovySourceToken dotToken
         List<GroovySourceToken> previousTokens
         if (tokens.size() < 2) {
             throw new IllegalArgumentException('must be invoked with at least 2 tokens, one of which is dot' + tokens*.text)
         }
-        if (tokens.last().getType() == DOT) {
+        if (tokens.last().type == DOT) {
             dotToken = tokens.last()
             previousTokens = tokens[0..-2]
         } else {
@@ -75,9 +74,9 @@ class ReflectionCompletor {
 
         String identifierPrefix
         if (currentElementToken) {
-            identifierPrefix = currentElementToken.getText()
+            identifierPrefix = currentElementToken.text
         } else {
-            identifierPrefix = ""
+            identifierPrefix = ''
         }
 
         // look for public methods/fields that match the prefix
@@ -109,15 +108,15 @@ class ReflectionCompletor {
                                     it.jAnsiCodes.toArray(new String[it.jAnsiCodes.size()]))
                         }))
             } else {
-                candidates.addAll(myCandidates.collect({ReflectionCompletionCandidate it -> it.value}))
+                candidates.addAll(myCandidates*.value)
             }
 
             int lastDot
             // dot could be on previous line
-            if (currentElementToken && dotToken.getLine() != currentElementToken.getLine()) {
-                lastDot = currentElementToken.getColumn() - 1
+            if (currentElementToken && dotToken.line != currentElementToken.line) {
+                lastDot = currentElementToken.column - 1
             } else {
-                lastDot = dotToken.getColumn()
+                lastDot = dotToken.column
             }
             return lastDot
         }
@@ -131,8 +130,8 @@ class ReflectionCompletor {
      * evaluates it and returns a result. "Simple" means evaluation is known to be
      * side-effect free.
      */
-    Object getInvokerClassOrInstance(List<GroovySourceToken> groovySourceTokens) {
-        if (!groovySourceTokens || groovySourceTokens.last().getType() == DOT) {
+    Object getInvokerClassOrInstance(final List<GroovySourceToken> groovySourceTokens) {
+        if (!groovySourceTokens || groovySourceTokens.last().type == DOT) {
             // we expect the list of tokens before a dot.
             return null
         }
@@ -162,32 +161,32 @@ class ReflectionCompletor {
      * @param groovySourceTokens
      * @return
      */
-    static List<GroovySourceToken> getInvokerTokens(List<GroovySourceToken> groovySourceTokens) {
-       // implementation goes backwards on token list, adding strings
+    static List<GroovySourceToken> getInvokerTokens(final List<GroovySourceToken> groovySourceTokens) {
+        int validIndex = groovySourceTokens.size()
+        if (validIndex == 0) {
+            return []
+        }
+        // implementation goes backwards on token list, adding strings
         // to be evaluated later
         // need to collect using Strings, to support evaluation of string literals
         Stack<Integer> expectedOpeners = new Stack<Integer>()
-        int validIndex = groovySourceTokens.size()
-        if (validIndex == 0) {
-            return null
-        }
         GroovySourceToken lastToken = null
         outerloop:
         for (GroovySourceToken loopToken in groovySourceTokens.reverse()) {
-            switch (loopToken.getType()) {
+            switch (loopToken.type) {
             // a combination of any of these can be evaluated without side effects
             // this just avoids any parentheses,
             // could maybe be extended further if harmless parentheses can be detected .
-            // This allows already a lot of powerful simple completions, like [foo: Baz.bar]["foo"].
+            // This allows already a lot of powerful simple completions, like [foo: Baz.bar]['foo'].
                 case STRING_LITERAL:
                     // must escape String for evaluation, need the original string e.g. for mapping key
-                    break;
+                    break
                 case LPAREN:
                     if (expectedOpeners.empty()) {
                         break outerloop
                     }
                     if (expectedOpeners.pop() != LPAREN) {
-                        return null
+                        return []
                     }
                     break
                 case LBRACK:
@@ -195,7 +194,7 @@ class ReflectionCompletor {
                         break outerloop
                     }
                     if (expectedOpeners.pop() != LBRACK) {
-                        return null
+                        return []
                     }
                     break
                 case RBRACK:
@@ -246,13 +245,13 @@ class ReflectionCompletor {
                 // tokens we accept
                 case IDENT:
                    if (lastToken) {
-                       if (lastToken.getType() == LPAREN) {
+                       if (lastToken.type == LPAREN) {
                            //Method invocation,must be avoided
-                           return null
+                           return []
                        }
-                       if (lastToken.getType() == IDENT) {
-                           // could be attempt to invoke closure like "foo.each bar.baz"
-                           return null
+                       if (lastToken.type == IDENT) {
+                           // could be attempt to invoke closure like 'foo.each bar.baz'
+                           return []
                        }
                    }
                     break
@@ -285,30 +284,30 @@ class ReflectionCompletor {
         return groovySourceTokens[(validIndex)..-1]
     }
 
-    static String tokenListToEvalString(List<GroovySourceToken> groovySourceTokens) {
+    static String tokenListToEvalString(final List<GroovySourceToken> groovySourceTokens) {
         StringBuilder builder = new StringBuilder()
         for (GroovySourceToken token: groovySourceTokens) {
-            if (token.getType() == STRING_LITERAL) {
-                builder.append("\"").append(token.getText()).append("\"")
+            if (token.type == STRING_LITERAL) {
+                builder.append('"').append(token.text).append('"')
             } else {
-                builder.append(token.getText())
+                builder.append(token.text)
             }
         }
         return builder.toString()
     }
 
-    static boolean acceptName(String name, String prefix) {
+    static boolean acceptName(final String name, final String prefix) {
         return (!prefix || name.startsWith(prefix)) &&
-                (!(name.contains('$')) && !name.startsWith("_"));
+                (!(name.contains('$')) && !(name.startsWith('_')))
     }
 
-    static Collection<String> getMetaclassMethods(Object instance, String prefix, boolean includeMetaClassImplMethods) {
+    static Collection<String> getMetaclassMethods(final Object instance, final String prefix, final boolean includeMetaClassImplMethods) {
         Set<String> rv = new HashSet<String>()
         MetaClass metaclass = InvokerHelper.getMetaClass(instance)
         if (includeMetaClassImplMethods || !(metaclass instanceof MetaClassImpl)) {
             metaclass.metaMethods.each { MetaMethod mmit ->
                 if (acceptName(mmit.name, prefix)) {
-                    rv << mmit.getName() + (mmit.parameterTypes.length == 0 ? "()" : "(")
+                    rv << mmit.getName() + (mmit.parameterTypes.length == 0 ? '()' : '(')
                 }
             }
         }
@@ -322,11 +321,11 @@ class ReflectionCompletor {
      * @param prefix the prefix that must be matched
      * @return the list of public methods and fields that begin with the prefix
      */
-    static Collection<ReflectionCompletionCandidate> getPublicFieldsAndMethods(Object instance, String prefix) {
+    static Collection<ReflectionCompletionCandidate> getPublicFieldsAndMethods(final Object instance, final String prefix) {
         Set<ReflectionCompletionCandidate> rv = new HashSet<ReflectionCompletionCandidate>()
         Class clazz = instance.getClass()
         if (clazz == null) {
-            return rv;
+            return rv
         }
 
         boolean isClass = (clazz == Class)
@@ -338,15 +337,15 @@ class ReflectionCompletor {
         // render immediate class members bold when completing an instance
         boolean renderBold = ! isClass
         // hide static members for instances unless user typed a prefix
-        boolean showStatic = isClass || (prefix.length() >= Integer.valueOf(Preferences.get(Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')));
+        boolean showStatic = isClass || (prefix.length() >= Integer.valueOf(Preferences.get(Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
         while (loopclazz != null && loopclazz != Object && loopclazz != GroovyObject) {
             addClassFieldsAndMethods(loopclazz, showStatic, !isClass, prefix, rv, renderBold)
-            renderBold = false;
+            renderBold = false
             loopclazz = loopclazz.superclass
         }
         if (clazz.isArray() && !isClass) {
             // Arrays are special, these public members cannot be found via Reflection
-            for (String member in ['length', 'clone()']) {
+            for (String member : ['length', 'clone()']) {
                 if (member.startsWith(prefix)) {
                     rv.add(new ReflectionCompletionCandidate(member, Ansi.Attribute.INTENSITY_BOLD.name()))
                 }
@@ -356,7 +355,7 @@ class ReflectionCompletor {
         // other completions that are commonly possible with properties
         if (!isClass) {
             Set<String> candidates = new HashSet<String>()
-            propertiesCompleter.addCompletions(instance, prefix, candidates)
+            PROPERTIES_COMPLETER.addCompletions(instance, prefix, candidates)
             rv.addAll(candidates.collect({String it -> new ReflectionCompletionCandidate(it, AnsiRenderer.Code.MAGENTA.name())}))
         }
 
@@ -367,13 +366,13 @@ class ReflectionCompletor {
      * removes candidates that, most of the times, a programmer does not want to see in completion
      * @param candidates
      */
-    static removeStandardMethods(Collection<ReflectionCompletionCandidate> candidates) {
-        for (String defaultMethod in [
+    static removeStandardMethods(final Collection<ReflectionCompletionCandidate> candidates) {
+        for (String defaultMethod : [
                 'clone()', 'finalize()', 'getClass()',
                 'getMetaClass()', 'getProperty(',  'invokeMethod(', 'setMetaClass(', 'setProperty(',
                 'equals(', 'hashCode()', 'toString()',
                 'notify()', 'notifyAll()', 'wait(', 'wait()']) {
-            for (ReflectionCompletionCandidate candidate in candidates) {
+            for (ReflectionCompletionCandidate candidate : candidates) {
                 if (defaultMethod.equals(candidate.value)) {
                     candidates.remove(candidate)
                     break
@@ -388,7 +387,7 @@ class ReflectionCompletor {
      * if the instance is of a suitable type.
      * This does not need to be strictly complete, only the most useful functions may appear.
      */
-    static List<String> getDefaultMethods(Object instance, String prefix) {
+    static List<String> getDefaultMethods(final Object instance, final String prefix) {
         List<String> candidates = []
         if (instance instanceof Iterable) {
             [
@@ -488,8 +487,8 @@ class ReflectionCompletor {
                                                                             final boolean includeStatic,
                                                                             final boolean includeNonStatic,
                                                                             final String prefix,
-                                                                            Collection<ReflectionCompletionCandidate> rv,
-                                                                            boolean renderBold) {
+                                                                            final Collection<ReflectionCompletionCandidate> rv,
+                                                                            final boolean renderBold) {
 
         Field[] fields = (includeStatic && ! includeNonStatic) ? clazz.fields : clazz.getDeclaredFields()
         fields.each { Field fit ->
@@ -497,7 +496,7 @@ class ReflectionCompletor {
                 int modifiers = fit.getModifiers()
                 if (Modifier.isPublic(modifiers) && (Modifier.isStatic(modifiers) ? includeStatic : includeNonStatic)) {
                     if (!clazz.isEnum()
-                            || !(!includeStatic && Modifier.isPublic(modifiers) && Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers) && fit.getType() == clazz)) {
+                            || !(!includeStatic && Modifier.isPublic(modifiers) && Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers) && fit.type == clazz)) {
                         ReflectionCompletionCandidate candidate = new ReflectionCompletionCandidate(fit.name)
                         if (!Modifier.isStatic(modifiers)) {
                             if (renderBold) {
@@ -510,7 +509,7 @@ class ReflectionCompletor {
             }
         }
         Method[] methods = (includeStatic && ! includeNonStatic) ? clazz.methods : clazz.getDeclaredMethods()
-        for (Method methIt in methods) {
+        for (Method methIt : methods) {
             String name = methIt.getName()
             if (name.startsWith("super\$")) {
                 name = name.substring(name.find("^super\\\$.*\\\$").length())
@@ -518,7 +517,7 @@ class ReflectionCompletor {
             if (acceptName(name, prefix)) {
                 int modifiers = methIt.getModifiers()
                 if (Modifier.isPublic(modifiers) && (Modifier.isStatic(modifiers) ? includeStatic : includeNonStatic)) {
-                    ReflectionCompletionCandidate candidate = new ReflectionCompletionCandidate(name + (methIt.parameterTypes.length == 0 ? "()" : "("))
+                    ReflectionCompletionCandidate candidate = new ReflectionCompletionCandidate(name + (methIt.parameterTypes.length == 0 ? '()' : '('))
                     if (!Modifier.isStatic(modifiers)) {
                         if (renderBold) {
                             candidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())
@@ -528,7 +527,7 @@ class ReflectionCompletor {
                 }
             }
         }
-        for (interface_ in clazz.getInterfaces()) {
+        for (Class interface_ : clazz.getInterfaces()) {
             addClassFieldsAndMethods(interface_, includeStatic, includeNonStatic, prefix, rv, false)
         }
     }

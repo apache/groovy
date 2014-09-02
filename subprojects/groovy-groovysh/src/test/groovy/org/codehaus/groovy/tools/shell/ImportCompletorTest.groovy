@@ -257,8 +257,14 @@ extends GroovyTestCase {
     void testCompleteStaticJavaDotUtilDotZipDotTestDot() {
         helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
-            def mockInterp = [evaluate: {expr -> assert(expr == ['java.util.zip.Test']); Math}]
-            ImportCompleter compl = new ImportCompleter(packageHelper2, mockInterp, true);
+            def evaluator = new Evaluator() {
+                @Override
+                def evaluate(Collection<String> buffer) {
+                    assert(buffer == ['java.util.zip.Test']);
+                    return Math
+                }
+            }
+            ImportCompleter compl = new ImportCompleter(packageHelper2, evaluator, true);
             def candidates = ['previousitem']
             String buffer = "java.util.zip.Test."
             assert 19 == compl.complete(buffer, buffer.length(), candidates)
@@ -272,8 +278,14 @@ extends GroovyTestCase {
     void testCompleteStaticJavaDotUtilDotZipDotTestDotMa() {
         helperMocker.use { preferencesMocker.use {
             def packageHelper2 = new PackageHelper()
-            def mockInterp = [evaluate: {expr -> assert(expr == ['java.util.zip.Test']); Math}]
-            ImportCompleter compl = new ImportCompleter(packageHelper2, mockInterp, true);
+            def evaluator = new Evaluator() {
+                @Override
+                def evaluate(Collection<String> buffer) {
+                    assert(buffer == ['java.util.zip.Test']);
+                    return Math
+                }
+            }
+            ImportCompleter compl = new ImportCompleter(packageHelper2, evaluator, true);
             def candidates = []
             String buffer = "java.util.zip.Test.ma"
             assert 19 == compl.complete(buffer, buffer.length(), candidates)

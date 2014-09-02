@@ -14,17 +14,17 @@ import java.util.zip.ZipException
  */
 class PackageHelper implements PreferenceChangeListener {
 
-    public static final String IMPORT_COMPLETION_PREFERENCE_KEY = "disable-import-completion"
+    public static final String IMPORT_COMPLETION_PREFERENCE_KEY = 'disable-import-completion'
     // Pattern for regular Classnames
-    public static final Pattern NAME_PATTERN = java.util.regex.Pattern.compile("^[A-Z][^.\$_]+\$")
+    public static final Pattern NAME_PATTERN = java.util.regex.Pattern.compile('^[A-Z][^.\$_]+\$')
 
-    private static final String CLASS_SUFFIX = ".class"
+    private static final String CLASS_SUFFIX = '.class'
+    protected static final Logger LOG = Logger.create(PackageHelper)
 
     Map<String, CachedPackage> rootPackages = null
-    ClassLoader groovyClassLoader
-    protected static final Logger log = Logger.create(PackageHelper)
+    final ClassLoader groovyClassLoader
 
-    PackageHelper(ClassLoader groovyClassLoader) {
+    PackageHelper(final ClassLoader groovyClassLoader=null) {
         this.groovyClassLoader = groovyClassLoader
         if (! Boolean.valueOf(Preferences.get(IMPORT_COMPLETION_PREFERENCE_KEY))) {
             rootPackages = initializePackages(groovyClassLoader)
@@ -33,8 +33,8 @@ class PackageHelper implements PreferenceChangeListener {
     }
 
     @Override
-    void preferenceChange(PreferenceChangeEvent evt) {
-        if (evt.getKey() == IMPORT_COMPLETION_PREFERENCE_KEY) {
+    void preferenceChange(final PreferenceChangeEvent evt) {
+        if (evt.key == IMPORT_COMPLETION_PREFERENCE_KEY) {
             if (Boolean.valueOf(evt.getNewValue())) {
                 rootPackages = null
             } else if (rootPackages == null) {
@@ -43,14 +43,14 @@ class PackageHelper implements PreferenceChangeListener {
         }
     }
 
-    static Map<String, CachedPackage> initializePackages(ClassLoader groovyClassLoader) throws IOException {
+    static Map<String, CachedPackage> initializePackages(final ClassLoader groovyClassLoader) throws IOException {
         Map<String, CachedPackage> rootPackages = new HashMap()
         Set<URL> urls = new HashSet<URL>()
 
         // classes in CLASSPATH
         for (ClassLoader loader = groovyClassLoader; loader != null; loader = loader.parent) {
             if (!(loader instanceof URLClassLoader)) {
-                log.debug('Ignoring classloader for completion: ' + loader)
+                LOG.debug('Ignoring classloader for completion: ' + loader)
                 continue
             }
 
@@ -61,11 +61,11 @@ class PackageHelper implements PreferenceChangeListener {
         Class[] systemClasses = [String, javax.swing.JFrame, GroovyObject] as Class[]
         systemClasses.each { Class systemClass ->
             // normal slash even in Windows
-            String classfileName = systemClass.name.replace('.', '/') + ".class"
+            String classfileName = systemClass.name.replace('.', '/') + '.class'
             URL classURL = systemClass.getResource(classfileName)
             if (classURL == null) {
                 // this seems to work on Windows better than the earlier approach
-                classURL = Thread.currentThread().getContextClassLoader().getResource(classfileName);
+                classURL = Thread.currentThread().contextClassLoader.getResource(classfileName)
             }
             if (classURL != null) {
                 URLConnection uc = classURL.openConnection()
@@ -79,7 +79,7 @@ class PackageHelper implements PreferenceChangeListener {
             }
         }
 
-        for (url in urls) {
+        for (URL url : urls) {
             Collection<String> packageNames = getPackageNames(url)
             if (packageNames) {
                 mergeNewPackages(packageNames, url, rootPackages)
@@ -88,7 +88,8 @@ class PackageHelper implements PreferenceChangeListener {
         return rootPackages
     }
 
-    static mergeNewPackages(Collection<String> packageNames, URL url, Map<String, CachedPackage> rootPackages) {
+    static mergeNewPackages(final Collection<String> packageNames, final URL url,
+                            final Map<String, CachedPackage> rootPackages) {
         StringTokenizer tokenizer
         packageNames.each { String packname ->
             tokenizer = new StringTokenizer(packname, '.')
@@ -130,30 +131,30 @@ class PackageHelper implements PreferenceChangeListener {
      * @param url
      * @return
      */
-    static Collection<String> getPackageNames(URL url) {
+    static Collection<String> getPackageNames(final URL url) {
         //log.debug(url)
-        String path = URLDecoder.decode(url.getFile(), "UTF-8")
+        String path = URLDecoder.decode(url.getFile(), 'UTF-8')
         File urlfile = new File(path)
         if (urlfile.isDirectory()) {
             Set<String> packnames = new HashSet<String>()
-            collectPackageNamesFromFolderRecursive(urlfile, "", packnames)
+            collectPackageNamesFromFolderRecursive(urlfile, '', packnames)
             return packnames
-        } else {
-            if(urlfile.path.endsWith('.jar')) {
-                try {
-                    JarFile jf = new JarFile(urlfile)
-                    return getPackageNamesFromJar(jf)
-                } catch(ZipException ze) {
-                    if (log.debugEnabled) {
-                        ze.printStackTrace();
-                    }
-                    log.debug("Error opening zipfile : '${url.getFile()}',  ${ze.toString()}");
-                } catch (FileNotFoundException fnfe) {
-                    log.debug("Error opening file : '${url.getFile()}',  ${fnfe.toString()}");
-                }
-            }
-            return null;
         }
+
+        if (urlfile.path.endsWith('.jar')) {
+            try {
+                JarFile jf = new JarFile(urlfile)
+                return getPackageNamesFromJar(jf)
+            } catch(ZipException ze) {
+                if (LOG.debugEnabled) {
+                    ze.printStackTrace()
+                }
+                LOG.debug("Error opening zipfile : '${url.getFile()}',  ${ze.toString()}")
+            } catch (FileNotFoundException fnfe) {
+                LOG.debug("Error opening file : '${url.getFile()}',  ${fnfe.toString()}")
+            }
+        }
+        return []
     }
 
     /**
@@ -163,10 +164,11 @@ class PackageHelper implements PreferenceChangeListener {
      * @param packnames
      * @return
      */
-    static Collection<String> collectPackageNamesFromFolderRecursive(File directory, String prefix, Set<String> packnames) {
+    static Collection<String> collectPackageNamesFromFolderRecursive(final File directory, final String prefix,
+                                                                     final Set<String> packnames) {
         //log.debug(directory)
-        File[] files = directory.listFiles();
-        boolean packageAdded = false;
+        File[] files = directory.listFiles()
+        boolean packageAdded = false
 
         for (int i = 0; (files != null) && (i < files.length); i++) {
             if (files[i].isDirectory()) {
@@ -174,12 +176,12 @@ class PackageHelper implements PreferenceChangeListener {
                     return
                 }
                 String optionalDot = prefix ? '.' : ''
-                collectPackageNamesFromFolderRecursive(files[i], prefix + optionalDot + files[i].getName(), packnames);
+                collectPackageNamesFromFolderRecursive(files[i], prefix + optionalDot + files[i].name, packnames)
             } else if (! packageAdded) {
-                if (files[i].getName().endsWith(CLASS_SUFFIX)) {
+                if (files[i].name.endsWith(CLASS_SUFFIX)) {
                     packageAdded = true
                     if (prefix) {
-                        packnames.add(prefix);
+                        packnames.add(prefix)
                     }
                 }
             }
@@ -187,20 +189,20 @@ class PackageHelper implements PreferenceChangeListener {
     }
 
 
-    static Collection<String> getPackageNamesFromJar(JarFile jf) {
+    static Collection<String> getPackageNamesFromJar(final JarFile jf) {
         Set<String> packnames = new HashSet<String>()
         for (Enumeration e = jf.entries(); e.hasMoreElements();) {
             JarEntry entry = (JarEntry) e.nextElement()
 
             if (entry == null) {
-                continue;
+                continue
             }
 
-            String name = entry.getName()
+            String name = entry.name
 
             if (!name.endsWith(CLASS_SUFFIX)) {
                 // only use class files
-                continue;
+                continue
             }
             // normal slashes also on Windows
             String fullname = name.replace('/', '.').substring(0, name.length() - CLASS_SUFFIX.length())
@@ -227,29 +229,32 @@ class PackageHelper implements PreferenceChangeListener {
      * @param packagename
      * @return
      */
-    Set<String> getContents(String packagename) {
+    Set<String> getContents(final String packagename) {
         if (! rootPackages) {
-            return null
+            return []
         }
         if (! packagename) {
             return rootPackages.collect { String key, CachedPackage v -> key } as Set
         }
-        if (packagename.endsWith(".*")) {
-            packagename = packagename[0..-3]
+        String sanitizedPackageName
+        if (packagename.endsWith('.*')) {
+            sanitizedPackageName = packagename[0..-3]
+        } else {
+            sanitizedPackageName = packagename
         }
 
-        StringTokenizer tokenizer = new StringTokenizer(packagename, '.')
+        StringTokenizer tokenizer = new StringTokenizer(sanitizedPackageName, '.')
         CachedPackage cp = rootPackages.get(tokenizer.nextToken())
         while (cp != null && tokenizer.hasMoreTokens()) {
             String token = tokenizer.nextToken()
             if (cp.childPackages == null) {
                 // no match for taken,no subpackages known
-                return null
+                return []
             }
             cp = cp.childPackages.get(token) as CachedPackage
         }
         if (cp == null) {
-            return null
+            return []
         }
         // TreeSet for ordering
         Set<String> children = new TreeSet()
@@ -260,7 +265,7 @@ class PackageHelper implements PreferenceChangeListener {
             return children
         }
 
-        Set<String> classnames = getClassnames(cp.sources, packagename)
+        Set<String> classnames = getClassnames(cp.sources, sanitizedPackageName)
 
         cp.checked = true
         if (classnames) {
@@ -276,13 +281,13 @@ class PackageHelper implements PreferenceChangeListener {
      * @param packagename
      * @return
      */
-    static Set<String> getClassnames(Set<URL> urls, String packagename) {
+    static Set<String> getClassnames(final Set<URL> urls, final String packagename) {
         List<String> classes = new LinkedList<String>()
         // normal slash even in Windows
         String pathname = packagename.replace('.', '/')
         for (Iterator it = urls.iterator(); it.hasNext();) {
-            URL url = (URL) it.next();
-            File file = new File(URLDecoder.decode(url.getFile(), "UTF-8"));
+            URL url = (URL) it.next()
+            File file = new File(URLDecoder.decode(url.getFile(), 'UTF-8'))
             if (file == null) {
                 continue
             }
@@ -291,37 +296,37 @@ class PackageHelper implements PreferenceChangeListener {
                 if (! packFolder.isDirectory()) {
                     continue
                 }
-                File[] files = packFolder.listFiles();
+                File[] files = packFolder.listFiles()
                 for (int i = 0; (files != null) && (i < files.length); i++) {
                     if (files[i].isFile()) {
-                        String filename = files[i].getName()
+                        String filename = files[i].name
                         if (filename.endsWith(CLASS_SUFFIX)) {
                             String name = filename.substring(0, filename.length() - CLASS_SUFFIX.length())
                             Matcher matcher = NAME_PATTERN.matcher(name)
                             if (!matcher.find()) {
                                 continue
                             }
-                            classes.add(name);
+                            classes.add(name)
                         }
                     }
                 }
                 continue
             }
 
-            if (!file.toString().endsWith (".jar")) {
+            if (!file.toString().endsWith ('.jar')) {
                 continue
             }
 
-            JarFile jf = new JarFile(file);
+            JarFile jf = new JarFile(file)
 
             for (Enumeration e = jf.entries(); e.hasMoreElements();) {
-                JarEntry entry = (JarEntry) e.nextElement();
+                JarEntry entry = (JarEntry) e.nextElement()
 
                 if (entry == null) {
                     continue
                 }
 
-                String name = entry.getName();
+                String name = entry.name
 
                 // only use class files
                 if (!name.endsWith(CLASS_SUFFIX))
@@ -344,10 +349,9 @@ class PackageHelper implements PreferenceChangeListener {
 
         // now filter classes by changing "/" to "." and trimming the
         // trailing ".class"
-        Set classNames = new TreeSet();
+        Set<String> classNames = new TreeSet<String>()
 
-        for (Iterator i = classes.iterator(); i.hasNext();) {
-            String name = (String) i.next()
+        for (String name : classes) {
             classNames.add(name)
         }
 

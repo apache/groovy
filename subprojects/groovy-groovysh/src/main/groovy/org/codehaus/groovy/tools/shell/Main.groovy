@@ -46,12 +46,12 @@ import org.fusesource.jansi.AnsiConsole
  */
 class Main
 {
-    final Groovysh groovysh;
+    final Groovysh groovysh
 
     /**
      * @param io: may just be new IO(), which is the default
      */
-    public Main(IO io) {
+    Main(IO io) {
         Logger.io = io
         groovysh = new Groovysh(io)
     }
@@ -64,21 +64,22 @@ class Main
      * create a Main instance, configures it according to CLI arguments, and starts the shell.
      * @param main must have a Groovysh member that has an IO member.
      */
-    public static void main(final String[] args) {
-        CliBuilder cli = new CliBuilder(usage : 'groovysh [options] [...]', formatter: new HelpFormatter(), stopAtNonOption: false)
-        MessageSource messages = new MessageSource(Main.class)
-        cli.classpath(messages['cli.option.classpath.description'])
-        cli.cp(longOpt: 'classpath', messages['cli.option.cp.description'])
-        cli.h(longOpt: 'help', messages['cli.option.help.description'])
-        cli.V(longOpt: 'version', messages['cli.option.version.description'])
-        cli.v(longOpt: 'verbose', messages['cli.option.verbose.description'])
-        cli.q(longOpt: 'quiet', messages['cli.option.quiet.description'])
-        cli.d(longOpt: 'debug', messages['cli.option.debug.description'])
-        cli.e(longOpt: 'evaluate', args: 1, optionalArg: false, messages['cli.option.evaluate.description'])
-        cli.C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
-        cli.D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.define.description'])
-        cli.T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
-
+    static void main(final String[] args) {
+        CliBuilder cli = new CliBuilder(usage: 'groovysh [options] [...]', formatter: new HelpFormatter(), stopAtNonOption: false)
+        MessageSource messages = new MessageSource(Main)
+        cli.with {
+            classpath(messages['cli.option.classpath.description'])
+            cp(longOpt: 'classpath', messages['cli.option.cp.description'])
+            h(longOpt: 'help', messages['cli.option.help.description'])
+            V(longOpt: 'version', messages['cli.option.version.description'])
+            v(longOpt: 'verbose', messages['cli.option.verbose.description'])
+            q(longOpt: 'quiet', messages['cli.option.quiet.description'])
+            d(longOpt: 'debug', messages['cli.option.debug.description'])
+            e(longOpt: 'evaluate', args: 1, optionalArg: false, messages['cli.option.evaluate.description'])
+            C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
+            D(longOpt: 'define', args: 1, argName: 'NAME=VALUE', messages['cli.option.define.description'])
+            T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
+        }
         OptionAccessor options = cli.parse(args)
 
         if (options == null) {
@@ -100,11 +101,11 @@ class Main
         if (options.hasOption('C')) {
             def value = options.getOptionValue('C')
             if (value != null) {
-                suppressColor = !Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
+                suppressColor = !Boolean.valueOf(value).booleanValue() // For JDK 1.4 compat
             }
         }
 
-        String type = TerminalFactory.AUTO;
+        String type = TerminalFactory.AUTO
         if (options.hasOption('T')) {
             type = options.getOptionValue('T')
         }
@@ -140,13 +141,13 @@ class Main
             io.verbosity = IO.Verbosity.QUIET
         }
 
-        String evalString = null;
+        String evalString = null
         if (options.e) {
             evalString = options.getOptionValue('e')
         }
 
         List<String> filenames = options.arguments()
-        Main main = new Main(io);
+        Main main = new Main(io)
         main.startGroovysh(evalString, filenames)
     }
 
@@ -201,12 +202,12 @@ class Main
     static void setTerminalType(String type, boolean suppressColor) {
         assert type != null
 
-        type = type.toLowerCase();
-        boolean enableAnsi = true;
+        type = type.toLowerCase()
+        boolean enableAnsi = true
         switch (type) {
             case TerminalFactory.AUTO:
-                type = null;
-                break;
+                type = null
+                break
             case TerminalFactory.UNIX:
                 type = UnixTerminal.canonicalName
                 break
@@ -219,8 +220,8 @@ class Main
             case TerminalFactory.NONE:
                 type = UnsupportedTerminal.canonicalName
                 // Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
-                enableAnsi = false;
-                break;
+                enableAnsi = false
+                break
             default:
                 // Should never happen
                 throw new IllegalArgumentException("Invalid Terminal type: $type")

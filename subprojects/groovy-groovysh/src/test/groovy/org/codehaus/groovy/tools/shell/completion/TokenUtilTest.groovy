@@ -29,10 +29,10 @@ class TokenUtilTest extends GroovyTestCase {
     }
 
     static tokensString(List<GroovySourceToken> tokens) {
-        if (tokens == null) {
+        if (tokens == null || tokens.size() == 0) {
             return null
         }
-        return tokens.collect {it.getText()}.join()
+        return tokens*.text.join()
     }
 
 }
