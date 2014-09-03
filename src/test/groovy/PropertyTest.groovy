@@ -203,6 +203,19 @@ class PropertyTest extends GroovyTestCase {
             fail("We shouldn't be able to read bean.superThing, but we can: '$bean.superThing'")
         }
     }
+
+    void testPrivatePropertyThroughSubclass() {
+        assertScript '''
+            class A {
+                private getFoo(){1}
+                def bar(){return foo}
+            }
+            class B extends A {}
+
+            def b = new B()
+            assert b.bar()==1
+        '''
+    }
     
 }
 

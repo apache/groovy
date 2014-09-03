@@ -269,7 +269,7 @@ public abstract class Selector {
                 Method reflectionMethod = null;
                 try {
                     reflectionMethod = aClass.getMethod("getProperty", String.class);
-                    if (!reflectionMethod.isSynthetic()) {
+                    if (!reflectionMethod.isSynthetic() && !(receiver instanceof GeneratedClosure)) {
                         handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
                         return;
                     }
@@ -282,7 +282,7 @@ public abstract class Selector {
             }
 
             if (method!=null || mci==null) return;
-            MetaProperty res = mci.getEffectiveGetMetaProperty(mci.getTheClass(), receiver, name, false);
+            MetaProperty res = mci.getEffectiveGetMetaProperty(this.sender, receiver, name, false);
             if (res instanceof MethodMetaProperty) {
                 MethodMetaProperty mmp = (MethodMetaProperty) res;
                 method = mmp.getMetaMethod();
