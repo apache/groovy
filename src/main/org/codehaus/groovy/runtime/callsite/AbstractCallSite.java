@@ -305,7 +305,7 @@ public class AbstractCallSite implements CallSite {
         if (metaClass.getClass() != MetaClassImpl.class || GroovyCategorySupport.hasCategoryInCurrentThread()) {
             site = new PogoMetaClassGetPropertySite(this, metaClass);
         } else {
-            final MetaProperty effective = ((MetaClassImpl) metaClass).getEffectiveGetMetaProperty(metaClass.getClass(), receiver, name, false);
+            final MetaProperty effective = ((MetaClassImpl) metaClass).getEffectiveGetMetaProperty(this.array.owner, receiver, name, false);
             if (effective != null) {
                 if (effective instanceof CachedField)
                     site = new GetEffectivePogoFieldSite(this, metaClass, (CachedField) effective);
