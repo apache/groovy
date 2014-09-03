@@ -36,21 +36,22 @@ class CommandArgumentParser {
     static List<String> parseLine(final String untrimmedLine, final int numTokensToCollect = -1) {
         assert untrimmedLine != null
 
-        String line = untrimmedLine.trim()
+        final String line = untrimmedLine.trim()
         List<String> tokens = []
         String currentToken = ''
         // state machine being either in neutral state, in singleHyphenOpen state, or in doubleHyphenOpen State.
         boolean singleHyphenOpen = false
         boolean doubleHyphenOpen = false
-        for (int i = 0; i < line.length(); i++) {
+        int index = 0
+        for (; index < line.length(); index++) {
             if (tokens.size() == numTokensToCollect) {
                 break
             }
-            String ch = line.charAt(i)
+            String ch = line.charAt(index)
             // escaped char?
             if (ch == '\\' && (singleHyphenOpen || doubleHyphenOpen)) {
-                ch = (i == line.length() - 1) ? '\\' : line.charAt(i + 1)
-                i++
+                ch = (index == line.length() - 1) ? '\\' : line.charAt(index + 1)
+                index++
                 currentToken += ch
                 continue
             }
@@ -91,12 +92,12 @@ class CommandArgumentParser {
                 continue
             }
             currentToken += ch
+        } // end for char in line
+        if (index == line.length() && doubleHyphenOpen) {
+            throw new IllegalArgumentException('Missing closing " in ' + line + ' -- ' + tokens)
         }
-        if (doubleHyphenOpen) {
-            throw new IllegalArgumentException('Missing closing "')
-        }
-        if (singleHyphenOpen) {
-            throw new IllegalArgumentException('Missing closing \'')
+        if (index == line.length() && singleHyphenOpen) {
+            throw new IllegalArgumentException('Missing closing \' in ' + line  + ' -- ' + tokens)
         }
         if (currentToken.size() > 0) {
             tokens.add(currentToken)
