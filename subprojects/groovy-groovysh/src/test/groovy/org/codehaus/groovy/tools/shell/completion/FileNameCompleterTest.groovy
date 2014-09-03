@@ -16,14 +16,9 @@
 
 package org.codehaus.groovy.tools.shell.completion;
 
-import groovy.util.GroovyTestCase;
-import org.junit.Test;
+class FileNameCompleterTest extends GroovyTestCase {
 
-import static org.junit.Assert.*;
-
-public class FileNameCompleterTest extends GroovyTestCase {
-
-    public void testRender() throws Exception {
+    void testRender() {
         FileNameCompleter completer = new FileNameCompleter()
         assert completer.render('foo', null) == 'foo'
         assert completer.render('foo bar', null) == '\'foo bar\''
@@ -32,11 +27,13 @@ public class FileNameCompleterTest extends GroovyTestCase {
         assert completer.render('foo " \'bar', '"') == '"foo \\" \'bar"'
     }
 
-    public void testMatchFiles() {
-        FileNameCompleter completer = new FileNameCompleter()
-        List<String> candidates = []
-        int resultIndex = completer.matchFiles('foo/bar', '/foo/bar', [new File('/foo/baroo'), new File('/foo/barbee')] as File[], candidates, null)
-        assert resultIndex == 'foo/'.length()
-        assert candidates == ['baroo', 'barbee']
+    void testMatchFiles_Unix() {
+        if(! System.getProperty("os.name").startsWith("Windows")) {
+            FileNameCompleter completer = new FileNameCompleter()
+            List<String> candidates = []
+            int resultIndex = completer.matchFiles('foo/bar', '/foo/bar', [new File('/foo/baroo'), new File('/foo/barbee')] as File[], candidates, null)
+            assert resultIndex == 'foo/'.length()
+            assert candidates == ['baroo', 'barbee']
+        }
     }
 }
