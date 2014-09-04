@@ -308,7 +308,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         mocker.use {
             new GroovyShell().evaluate(script)
         }
-        // 4 is once for run() and three times for times loop
+        // 4 is once for run() plus 3 for times loop
         assert 4 == counter.interruptedCheckCount
     }
 
