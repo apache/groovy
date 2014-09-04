@@ -1599,7 +1599,7 @@ generating code which will for example allow you to interrupt execution automati
 One complicated situation in the JVM world is when a thread can't be stopped. The `Thread#stop` method exists but is
 deprecated (and isn't reliable) so your only chance relies in `Thread#interrupt`. Calling the latter will set the
 `interrupt` flag on the thread, but it will *not* stop the execution of the thread. This is problematic because it's the
-responsability of the code executing in the thread to check the interrupt flag and properly exit. This makes sense when
+responsibility of the code executing in the thread to check the interrupt flag and properly exit. This makes sense when
 you, as a developer, know that the code you are executing is meant to be run in an independent thread, but in general,
 you don't know it. It's even worse with user scripts, who might not even know what a thread is (think of DSLs).
 
@@ -1620,7 +1620,7 @@ This is an obvious infinite loop. If this code executes in its own thread, inter
 the thread, then the calling code would be able to continue, but the thread would still be alive, running in background
 without any ability for you to stop it, slowly causing thread starvation.
 
-One possibility to work around this is to setup your shell this way:
+One possibility to work around this is to set up your shell this way:
 
 [source,groovy]
 ----
