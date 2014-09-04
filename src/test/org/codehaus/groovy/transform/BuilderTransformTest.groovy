@@ -157,6 +157,65 @@ class BuilderTransformTest extends CompilableTestSupport {
         """
     }
 
+    void testDefaultBuilderGenerics() {
+        assertScript """
+            import groovy.transform.builder.Builder
+
+            @Builder
+            class CookBook {
+                List<String> recipes
+            }
+
+            def c = CookBook.builder().recipes(['Eggs Benedict', 'Poached Salmon']).build()
+            assert c.recipes == ['Eggs Benedict', 'Poached Salmon']
+        """
+        def message = shouldNotCompile '''
+            import groovy.transform.builder.Builder
+            import groovy.transform.CompileStatic
+
+            @Builder
+            class CookBook {
+                List<String> recipes
+            }
+
+
+            @CompileStatic
+            def methodBadParams() {
+                CookBook.builder().recipes([35, 42]).build()
+            }
+        '''
+        assert message =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.List\s?<java.lang.Integer>.*/
+    }
+
+    void testInitializerGenerics() {
+        assertScript """
+            import groovy.transform.builder.*
+
+            @Builder(builderStrategy=InitializerStrategy)
+            class CookBook {
+                List<String> recipes
+            }
+
+            def c = new CookBook(CookBook.createInitializer().recipes(['Eggs Benedict', 'Poached Salmon']))
+            assert c.recipes == ['Eggs Benedict', 'Poached Salmon']
+        """
+        def message = shouldNotCompile '''
+            import groovy.transform.builder.*
+
+            @Builder(builderStrategy=InitializerStrategy)
+            class CookBook {
+                List<String> recipes
+            }
+
+
+            @groovy.transform.CompileStatic
+            def methodBadParams() {
+                new CookBook(CookBook.createInitializer().recipes([35, 42]))
+            }
+        '''
+        assert message =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.List\s?<java.lang.Integer>.*/
+    }
+
     void testDefaultBuilderCustomNames() {
         def shell = new GroovyShell()
         shell.parse """

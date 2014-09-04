@@ -32,6 +32,7 @@ import org.codehaus.groovy.transform.BuilderASTTransformation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -47,6 +48,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIONS;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_PARAMS;
@@ -202,8 +206,12 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         List<FieldNode> fields = getInstancePropertyFields(buildee);
         List<FieldNode> filteredFields = selectFieldsFromExistingClass(fields, includes, excludes);
         for (FieldNode fieldNode : filteredFields) {
-            builder.addField(createFieldCopy(buildee, fieldNode));
-            builder.addMethod(createBuilderMethodForProp(builder, new PropertyInfo(fieldNode.getName(), fieldNode.getType()), prefix));
+            Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass());
+            extractSuperClassGenerics(fieldNode.getType(), buildee, genericsSpec);
+            ClassNode correctedType = correctToGenericsSpecRecurse(genericsSpec, fieldNode.getType());
+            String fieldName = fieldNode.getName();
+            builder.addField(createFieldCopy(buildee, fieldName, correctedType));
+            builder.addMethod(createBuilderMethodForProp(builder, new PropertyInfo(fieldName, correctedType), prefix));
         }
         builder.addMethod(createBuildMethod(transform, anno, buildee, filteredFields));
     }
@@ -241,17 +249,20 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         String fieldName = pinfo.getName();
         String setterName = getSetterName(prefix, fieldName);
         return new MethodNode(setterName, ACC_PUBLIC, newClass(builder), params(param(pinfo.getType(), fieldName)), NO_EXCEPTIONS, block(
-                stmt(assignX(propX(varX("this"), constX(fieldName)), varX(fieldName))),
+                stmt(assignX(propX(varX("this"), constX(fieldName)), varX(fieldName, pinfo.getType()))),
                 returnS(varX("this", builder))
         ));
     }
 
     private static FieldNode createFieldCopy(ClassNode buildee, Parameter param) {
-        return new FieldNode(param.getName(), ACC_PRIVATE, ClassHelper.make(param.getType().getName()), buildee, param.getInitialExpression());
+        Map<String,ClassNode> genericsSpec = createGenericsSpec(buildee);
+        extractSuperClassGenerics(param.getType(), buildee, genericsSpec);
+        ClassNode correctedParamType = correctToGenericsSpecRecurse(genericsSpec, param.getType());
+        return new FieldNode(param.getName(), ACC_PRIVATE, correctedParamType, buildee, param.getInitialExpression());
     }
 
-    private static FieldNode createFieldCopy(ClassNode buildee, FieldNode fNode) {
-        return new FieldNode(fNode.getName(), ACC_PRIVATE, ClassHelper.make(fNode.getType().getName()), buildee, DEFAULT_INITIAL_VALUE);
+    private static FieldNode createFieldCopy(ClassNode buildee, String fieldName, ClassNode fieldType) {
+        return new FieldNode(fieldName, ACC_PRIVATE, fieldType, buildee, DEFAULT_INITIAL_VALUE);
     }
 
     private static List<FieldNode> selectFieldsFromExistingClass(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes) {
