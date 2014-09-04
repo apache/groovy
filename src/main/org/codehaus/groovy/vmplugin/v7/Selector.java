@@ -269,7 +269,7 @@ public abstract class Selector {
                 Method reflectionMethod = null;
                 try {
                     reflectionMethod = aClass.getMethod("getProperty", String.class);
-                    if (!reflectionMethod.isSynthetic() && !(receiver instanceof GeneratedClosure)) {
+                    if (!reflectionMethod.isSynthetic()) {
                         handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
                         return;
                     }
