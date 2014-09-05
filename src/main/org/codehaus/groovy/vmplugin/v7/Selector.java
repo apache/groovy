@@ -35,6 +35,7 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
@@ -282,7 +283,11 @@ public abstract class Selector {
             }
 
             if (method!=null || mci==null) return;
-            MetaProperty res = mci.getEffectiveGetMetaProperty(this.sender, receiver, name, false);
+            Class chosenSender = this.sender;
+            if (mci.getTheClass()!= chosenSender && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+                chosenSender = mci.getTheClass();
+            }
+            MetaProperty res = mci.getEffectiveGetMetaProperty(chosenSender, receiver, name, false);
             if (res instanceof MethodMetaProperty) {
                 MethodMetaProperty mmp = (MethodMetaProperty) res;
                 method = mmp.getMetaMethod();
