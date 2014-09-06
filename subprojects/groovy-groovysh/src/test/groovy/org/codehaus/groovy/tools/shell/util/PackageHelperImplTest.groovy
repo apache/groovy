@@ -25,23 +25,23 @@ class PackageHelperImplTest
 
     void testLoadAndGetPackagesEmpty() {
         PackageHelperImpl helper = new PackageHelperImpl(null)
-        Set<String> rootPackages = helper.getContents("")
+        Set<String> rootPackages = helper.getContents('')
         assertNotNull(rootPackages)
-        assert rootPackages.contains("java")
-        assert rootPackages.contains("javax")
-        assert rootPackages.contains("groovy")
+        assert rootPackages.contains('java')
+        assert rootPackages.contains('javax')
+        assert rootPackages.contains('groovy')
     }
 
     void testLoadAndGetPackagesJava() {
         PackageHelperImpl helper = new PackageHelperImpl(null)
-        Set<String> names = helper.getContents("java")
+        Set<String> names = helper.getContents('java')
         assertNotNull(names)
         assert names.contains('io')
     }
 
     void testLoadAndGetPackagesJavaUtil() {
         PackageHelperImpl helper = new PackageHelperImpl(null)
-        Set<String> names = helper.getContents("java.util")
+        Set<String> names = helper.getContents('java.util')
         assertNotNull(names)
         assert names.contains('zip')
         assert names.contains('Set')
@@ -49,11 +49,11 @@ class PackageHelperImplTest
 
     void testLoadAndGetPackagesInvalid() {
         PackageHelperImpl helper = new PackageHelperImpl(null)
-        assert [] as Set<String> == helper.getContents("invalid:name")
+        assert [] as Set<String> == helper.getContents('invalid:name')
     }
 
     void testLoadAndGetPackagesUnknown() {
         PackageHelperImpl helper = new PackageHelperImpl(null)
-        assert [] as Set<String> == helper.getContents("java.util.regex.tools")
+        assert [] as Set<String> == helper.getContents('java.util.regex.tools')
     }
 }

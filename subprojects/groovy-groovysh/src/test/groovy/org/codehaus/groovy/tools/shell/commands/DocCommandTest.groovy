@@ -32,7 +32,7 @@ class DocCommandTest extends CommandTestSupport
             def desktopClass = Class.forName('java.awt.Desktop')
             hasSupport =
                 desktopClass.desktopSupported &&
-                        desktopClass.desktop.isSupported(desktopClass.declaredClasses.find { it.simpleName == "Action" }.BROWSE)
+                        desktopClass.desktop.isSupported(desktopClass.declaredClasses.find { it.simpleName == 'Action' }.BROWSE)
         }
         catch(ClassNotFoundException e) {
             //We are using jdk 1.5 where 'java.awt.Desktop' does not exist
@@ -70,7 +70,7 @@ class DocCommandTest extends CommandTestSupport
 
         assert urls ==
                 [new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html"),
-                 new URL("http://groovy.codehaus.org/groovy-jdk/java/util/List.html")]
+                 new URL('http://groovy.codehaus.org/groovy-jdk/java/util/List.html')]
 
         assert urls == urlsToLookup
     }
@@ -119,7 +119,7 @@ class DocCommandTest extends CommandTestSupport
         DocCommand.hasAWTDesktopPlatformSupport = true
         DocCommand.desktop = [:]
 
-        command.browse([new URL('http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html')])
+        command.browse([new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html")])
 
         assert browseWithAWT
     }
@@ -140,7 +140,7 @@ class DocCommandTest extends CommandTestSupport
             }
         }
 
-        command.browse([new URL('http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html')])
+        command.browse([new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html")])
 
         assert browseWithNativeBrowser
     }
@@ -148,9 +148,9 @@ class DocCommandTest extends CommandTestSupport
     void testNormalizeClassName() {
         def command = new DocCommand(new Groovysh())
 
-        assert 'java.util.List' == command.normalizeClassName('"java.util.List"')
-        assert 'java.util.List' == command.normalizeClassName("'java.util.List'")
-        assert 'java.util.List' == command.normalizeClassName("java.util.List")
+        assert 'java.util.List' == command.normalizeClassName(/java.util.List'/)
+        assert 'java.util.List' == command.normalizeClassName(/'java.util.List'/)
+        assert 'java.util.List' == command.normalizeClassName('java.util.List')
     }
 
     void testGetBrowserEnvironmentVariable() {
@@ -170,6 +170,6 @@ class DocCommandTest extends CommandTestSupport
     }
 
     private static simpleVersion() {
-        System.getProperty("java.version").tokenize('_')[0]
+        System.getProperty('java.version').tokenize('_')[0]
     }
 }

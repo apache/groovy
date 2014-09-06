@@ -18,16 +18,16 @@ package org.codehaus.groovy.tools.shell
 
 class ShellTest extends GroovyTestCase {
 
-    IO testio
-    ByteArrayOutputStream mockOut
-    ByteArrayOutputStream mockErr
+    private IO testio
+    private ByteArrayOutputStream mockOut
+    private ByteArrayOutputStream mockErr
 
+    @Override
     void setUp() {
         super.setUp()
 
-        mockOut = new ByteArrayOutputStream();
-
-        mockErr = new ByteArrayOutputStream();
+        mockOut = new ByteArrayOutputStream()
+        mockErr = new ByteArrayOutputStream()
 
         testio = new IO(
                 new ByteArrayInputStream(),
@@ -39,6 +39,6 @@ class ShellTest extends GroovyTestCase {
 
     void testFindCommandNull() {
         Shell shell = new Shell(testio)
-        assertEquals(null, shell.findCommand(" foo bar "))
+        assert null == shell.findCommand(' foo bar ')
     }
 }

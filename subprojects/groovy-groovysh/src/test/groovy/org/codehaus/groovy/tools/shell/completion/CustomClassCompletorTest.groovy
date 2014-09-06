@@ -14,8 +14,8 @@ class CustomClassCompletorTest extends CompletorTestSupport {
             CustomClassSyntaxCompletor completor = new CustomClassSyntaxCompletor(groovyshMock)
             def candidates = []
             // in the shell, only Classes in the default package occur,but well...
-            assertEquals(true, completor.complete(tokenList("jav"), candidates))
-            assertEquals(["java.lang.String"], candidates)
+            assert completor.complete(tokenList('jav'), candidates)
+            assert ['java.lang.String'] == candidates
         }
     }
 }

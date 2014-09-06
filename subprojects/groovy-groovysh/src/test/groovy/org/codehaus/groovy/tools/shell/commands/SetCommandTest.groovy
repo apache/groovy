@@ -38,14 +38,14 @@ class SetCommandTest
         List<String> candidates = []
         SetCommand command = new SetCommand(shell)
         ArrayList<SimpleCompletor> completors = command.createCompleters()
-        assertEquals(2, completors.size())
-        assertEquals(0, completors[0].complete("", 0, candidates))
-        assertTrue(Groovysh.AUTOINDENT_PREFERENCE_KEY in candidates);
-        assertTrue(PackageHelper.IMPORT_COMPLETION_PREFERENCE_KEY in candidates);
-        assertTrue(Preferences.EDITOR_KEY in candidates);
-        assertTrue(Preferences.PARSER_FLAVOR_KEY in candidates);
-        assertTrue(Preferences.SANITIZE_STACK_TRACE_KEY in candidates);
-        assertTrue(Preferences.SHOW_LAST_RESULT_KEY in candidates);
-        assertTrue(Preferences.VERBOSITY_KEY in candidates);
+        assert 2 == completors.size()
+        assert 0 == completors[0].complete('', 0, candidates)
+        assert Groovysh.AUTOINDENT_PREFERENCE_KEY in candidates
+        assert PackageHelper.IMPORT_COMPLETION_PREFERENCE_KEY in candidates
+        assert Preferences.EDITOR_KEY in candidates
+        assert Preferences.PARSER_FLAVOR_KEY in candidates
+        assert Preferences.SANITIZE_STACK_TRACE_KEY in candidates
+        assert Preferences.SHOW_LAST_RESULT_KEY in candidates
+        assert Preferences.VERBOSITY_KEY in candidates
     }
 }

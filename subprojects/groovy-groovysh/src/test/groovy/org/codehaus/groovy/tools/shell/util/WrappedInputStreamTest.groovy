@@ -26,51 +26,51 @@ class WrappedInputStreamTest
     void testWrapEmpty() {
         ByteArrayInputStream mockStream = new ByteArrayInputStream()
         WrappedInputStream stream = new WrappedInputStream(mockStream)
-        assertEquals(0, stream.available())
-        assertEquals(false, stream.markSupported())
+        assert 0 == stream.available()
+        assert !stream.markSupported()
     }
 
     void testWrapStream() {
-        ByteArrayInputStream mockStream = new ByteArrayInputStream("abc".getBytes())
+        ByteArrayInputStream mockStream = new ByteArrayInputStream('abc'.bytes)
         WrappedInputStream stream = new WrappedInputStream(mockStream)
-        assertEquals(3, stream.available())
-        assertEquals(false, stream.markSupported())
-        assertEquals('a', stream.read())
-        assertEquals(2, stream.available())
+        assert 3 == stream.available()
+        assert !stream.markSupported()
+        assert 'a' == stream.read()
+        assert 2 == stream.available()
         byte[] bytes = [0, 0, 0, 0] as byte[]
-        assertEquals(2, stream.read(bytes))
-        assertEquals(['b', 'c', 0, 0], bytes)
-        assertEquals(0, stream.available())
+        assert 2 == stream.read(bytes)
+        assert ['b', 'c', 0, 0] == bytes
+        assert 0 == stream.available()
     }
 
     void testWrapInserted() {
         ByteArrayInputStream mockStream = new ByteArrayInputStream()
         WrappedInputStream stream = new WrappedInputStream(mockStream)
-        stream.insert("xyz")
-        assertEquals(3, stream.available())
-        assertEquals(false, stream.markSupported())
-        assertEquals('x', stream.read())
-        assertEquals(2, stream.available())
+        stream.insert('xyz')
+        assert 3 == stream.available()
+        assert !stream.markSupported()
+        assert 'x' == stream.read()
+        assert 2 == stream.available()
         byte[] bytes = [0, 0, 0, 0] as byte[]
-        assertEquals(2, stream.read(bytes))
-        assertEquals(['y', 'z', 0, 0], bytes)
-        assertEquals(0, stream.available())
+        assert 2 == stream.read(bytes)
+        assert ['y', 'z', 0, 0] == bytes
+        assert 0 == stream.available()
     }
 
     void testWrapBoth() {
-        ByteArrayInputStream mockStream = new ByteArrayInputStream("abc".getBytes())
+        ByteArrayInputStream mockStream = new ByteArrayInputStream('abc'.bytes)
         WrappedInputStream stream = new WrappedInputStream(mockStream)
-        stream.insert("xyz")
+        stream.insert('xyz')
         // wrapped stream first counts inserted chars, which will be read
-        assertEquals(3, stream.available())
-        assertEquals(false, stream.markSupported())
-        assertEquals('x', stream.read())
+        assert 3 == stream.available()
+        assert !stream.markSupported()
+        assert 'x' == stream.read()
         byte[] bytes = [0, 0, 0] as byte[]
         // wrapped stream reads wrapped stream first
-        assertEquals(2, stream.read(bytes))
-        assertEquals(['y', 'z', 0], bytes)
-        assertEquals(3, stream.read(bytes))
-        assertEquals(['a', 'b', 'c'], bytes)
-        assertEquals(0, stream.available())
+        assert 2 == stream.read(bytes)
+        assert ['y', 'z', 0] == bytes
+        assert 3 == stream.read(bytes)
+        assert ['a', 'b', 'c'] == bytes
+        assert 0 == stream.available()
     }
 }

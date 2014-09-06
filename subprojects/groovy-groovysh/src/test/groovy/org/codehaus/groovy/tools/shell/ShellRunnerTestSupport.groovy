@@ -26,16 +26,16 @@ import jline.console.ConsoleReader
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @author tkruse
  */
-abstract class ShellRunnerTestSupport
-extends GroovyTestCase {
+abstract class ShellRunnerTestSupport extends GroovyTestCase {
 
-    IO testio
-    BufferedOutputStream mockOut
-    BufferedOutputStream mockErr
+    protected IO testio
+    protected BufferedOutputStream mockOut
+    protected BufferedOutputStream mockErr
 
-    MockFor shellMocker
-    StubFor readerStubber
+    protected MockFor shellMocker
+    protected StubFor readerStubber
 
+    @Override
     void setUp() {
         super.setUp()
         mockOut = new BufferedOutputStream(new ByteArrayOutputStream())

@@ -21,7 +21,6 @@ import jline.console.completer.Completer
 import org.codehaus.groovy.tools.shell.commands.ImportCommand
 import org.codehaus.groovy.tools.shell.commands.ImportCompleter
 import org.codehaus.groovy.tools.shell.util.PackageHelper
-import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
@@ -41,96 +40,96 @@ class MockPackageHelper implements PackageHelper {
 
 class ImportCompleterUnitTest extends GroovyTestCase {
 
-    MockFor preferencesMocker
+    private MockFor preferencesMocker
 
 
-
+    @Override
     void setUp() {
         super.setUp()
         preferencesMocker = new MockFor(Preferences)
     }
 
     void testPatternPackOrClassname() {
-        assert "".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
-        assert "j".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
-        assert "java.".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
-        assert "java.util".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
-        assert "java.util.".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
-        assert "java.util.T".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
-        assert "org.w3c.T".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
-        assert "java.util.Test".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
-        assert "java.util.Test123".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert ''.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert 'j'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert 'java.'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert 'java.util'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert 'java.util.'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert 'java.util.T'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert 'org.w3c.T'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert 'java.util.Test'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert 'java.util.Test123'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
         assert 'java.util.Test$foo123'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
         assert 'java.util.Test_foo123'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
         // inverse
-        assert !".".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
-        assert !"Upper".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
-        assert !"java.util.Test123.".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
-        assert !"java.util.Test123.foo".matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert !'.'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert !'Upper'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert !'java.util.Test123.'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
+        assert !'java.util.Test123.foo'.matches(ImportCompleter.PACK_OR_CLASSNAME_PATTERN)
     }
 
     void testPatternPackOrSimpleClassname() {
-        assert "".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assert "j".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assert "java.".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assert "java.util".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assert "java.util.".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assert "java.util.T".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assert "org.w3c.T".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assert "java.util.Test".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assert "java.util.Test123".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert ''.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert 'j'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert 'java.'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert 'java.util'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert 'java.util.'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert 'java.util.T'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert 'org.w3c.T'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert 'java.util.Test'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert 'java.util.Test123'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
         // inverse
-        assert !".".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assert !"Upper".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assert !"java.util.Test123.".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
-        assert !"java.util.Test123.foo".matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert !'.'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert !'Upper'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert !'java.util.Test123.'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
+        assert !'java.util.Test123.foo'.matches(ImportCompleter.PACK_OR_SIMPLE_CLASSNAME_PATTERN)
     }
 
     void testPatternClassOrMethodName() {
-        assert "".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert "j".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert "java.".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert "java.util".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert "java.util.".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert "java.util.T".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert "org.w3c.T".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert "java.util.Test".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert "java.util.Test123".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert "java.util.Test123.".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert "java.util.Test123.foo".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert ''.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert 'j'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert 'java.'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert 'java.util'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert 'java.util.'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert 'java.util.T'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert 'org.w3c.T'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert 'java.util.Test'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert 'java.util.Test123'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert 'java.util.Test123.'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert 'java.util.Test123.foo'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
         //inverse
-        assert !".".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert !"Upper".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert !"java.util.Test123.foo.".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
-        assert !"java.util.Test123.Test.foo".matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert !'.'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert !'Upper'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert !'java.util.Test123.foo.'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
+        assert !'java.util.Test123.Test.foo'.matches(ImportCompleter.PACK_OR_CLASS_OR_METHODNAME_PATTERN)
     }
 
     void testPatternQualifiedClassDot() {
-        assert !"".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"j".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"java.".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"java.util".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"java.util.".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"java.util.T".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"org.w3c.T".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"java.util.Test".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"java.util.Test123".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert "java.util.Test123.".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"java.util.Test123.foo".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !".".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"Upper".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"java.util.Test123.foo.".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
-        assert !"java.util.Test123.Test.foo".matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !''.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'j'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'java.'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'java.util'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'java.util.'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'java.util.T'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'org.w3c.T'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'java.util.Test'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'java.util.Test123'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert 'java.util.Test123.'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'java.util.Test123.foo'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'.'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'Upper'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'java.util.Test123.foo.'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
+        assert !'java.util.Test123.Test.foo'.matches(ImportCompleter.QUALIFIED_CLASS_DOT_PATTERN)
     }
 
     void testLowercaseImportItem() {
-        assert !"".matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
-        assert "j".matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
-        assert "java.".matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
-        assert "java.util".matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
-        assert "java.util.".matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
-        assert !"java.util.*".matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
-        assert !"java.util.T".matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
+        assert !''.matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
+        assert 'j'.matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
+        assert 'java.'.matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
+        assert 'java.util'.matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
+        assert 'java.util.'.matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
+        assert !'java.util.*'.matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
+        assert !'java.util.T'.matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
     }
 
 
@@ -139,7 +138,7 @@ class ImportCompleterUnitTest extends GroovyTestCase {
             final String buffer,
             final boolean staticImport,
             final List<String> expected) {
-        ImportCompleter compl = new ImportCompleter(packageHelper, null, staticImport);
+        ImportCompleter compl = new ImportCompleter(packageHelper, null, staticImport)
         def  candidates = []
 
         assert (buffer.lastIndexOf('.') + 1) == compl.complete(buffer, buffer.length(), candidates)
@@ -148,91 +147,91 @@ class ImportCompleterUnitTest extends GroovyTestCase {
 
     void testCompleteEmpty() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["java", "groovy"]), '', false, ["groovy.", "java."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['java', 'groovy']), '', false, ['groovy.', 'java.'])
         }
     }
 
     void testCompleteStaticEmpty() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["java", "groovy"]), '', true, ["groovy.", "java."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['java', 'groovy']), '', true, ['groovy.', 'java.'])
         }
     }
 
     void testCompleteJ() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["java", "javax"]), 'j', false, ["java.", "javax."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['java', 'javax']), 'j', false, ['java.', 'javax.'])
         }
     }
 
     void testCompleteStaticJ() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["java", "javax"]), 'j', true, ["java.", "javax."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['java', 'javax']), 'j', true, ['java.', 'javax.'])
         }
     }
 
     void testCompleteCo() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["com", "org"]), 'co', false, ["com."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['com', 'org']), 'co', false, ['com.'])
         }
     }
 
     void testCompleteJavaDot() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["util", "math"]), 'java.', false, ["* ", "math.", "util."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['util', 'math']), 'java.', false, ['* ', 'math.', 'util.'])
         }
     }
 
     void testCompleteStaticJavaDot() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["util", "math"]), 'java.', true, ["math.", "util."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['util', 'math']), 'java.', true, ['math.', 'util.'])
         }
     }
 
     void testCompleteJavaDotU() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["util", "math"]), 'java.u', false, ["util."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['util', 'math']), 'java.u', false, ['util.'])
         }
     }
 
     void testCompleteJavaDotUtil() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["util"]), 'java.util', false, ["util."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['util']), 'java.util', false, ['util.'])
         }
     }
 
     void testCompleteJavaDotUtilDot() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["zip", "jar"]), 'java.util.', false, ["* ", "jar.", "zip."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['zip', 'jar']), 'java.util.', false, ['* ', 'jar.', 'zip.'])
         }
     }
 
     void testCompleteJavaDotUtilDotZip() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["zip"]), 'java.util.zip', false, ["zip."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['zip']), 'java.util.zip', false, ['zip.'])
         }
     }
 
     void testCompleteJavaDotUtilDotZipDot() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["Test1", "Test2"]), 'java.util.zip.', false, ["* ", "Test1 ", "Test2 "])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['Test1', 'Test2']), 'java.util.zip.', false, ['* ', 'Test1 ', 'Test2 '])
         }
     }
 
     void testCompleteStaticJavaDotUtilDotZipDot() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["Test1", "Test2"]), 'java.util.zip.', true, ["Test1.", "Test2."])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['Test1', 'Test2']), 'java.util.zip.', true, ['Test1.', 'Test2.'])
         }
     }
 
     void testCompleteJavaDotUtilDotZipDotT() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["Test", "NotThis"]), 'java.util.zip.T', false, ["Test "])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['Test', 'NotThis']), 'java.util.zip.T', false, ['Test '])
         }
     }
 
     void testCompleteStaticJavaDotUtilDotZipDotT() {
         preferencesMocker.use {
-            assertCompletionCandidatesMatch(new MockPackageHelper(["Test", "NotThis"]), 'java.util.zip.T', true, ["Test "])
+            assertCompletionCandidatesMatch(new MockPackageHelper(['Test', 'NotThis']), 'java.util.zip.T', true, ['Test '])
         }
     }
 
@@ -241,11 +240,11 @@ class ImportCompleterUnitTest extends GroovyTestCase {
             def evaluator = new Evaluator() {
                 @Override
                 def evaluate(Collection<String> buffer) {
-                    assert(buffer == ['java.util.zip.Test']);
+                    assert(buffer == ['java.util.zip.Test'])
                     return Math
                 }
             }
-            ImportCompleter compl = new ImportCompleter(new MockPackageHelper([]), evaluator, true);
+            ImportCompleter compl = new ImportCompleter(new MockPackageHelper([]), evaluator, true)
             String buffer = 'java.util.zip.Test.'
             def candidates = ['previousitem']
             assert (buffer.lastIndexOf('.') + 1) == compl.complete(buffer, buffer.length(), candidates)
@@ -260,114 +259,113 @@ class ImportCompleterUnitTest extends GroovyTestCase {
             def evaluator = new Evaluator() {
                 @Override
                 def evaluate(Collection<String> buffer) {
-                    assert(buffer == ['java.util.zip.Test']);
+                    assert(buffer == ['java.util.zip.Test'])
                     return Math
                 }
             }
-            ImportCompleter compl = new ImportCompleter(new MockPackageHelper([]), evaluator, true);
+            ImportCompleter compl = new ImportCompleter(new MockPackageHelper([]), evaluator, true)
             def candidates = []
-            String buffer = "java.util.zip.Test.ma"
+            String buffer = 'java.util.zip.Test.ma'
             assert 19 == compl.complete(buffer, buffer.length(), candidates)
-            assert ["max "] == candidates.sort()
+            assert ['max '] == candidates.sort()
         }
     }
 }
 
-class ImportCompleterTest
-extends CompletorTestSupport {
+class ImportCompleterTest extends CompletorTestSupport {
 
     void testEmpty() {
-        mockPackageHelper = new MockPackageHelper(["java", "test"])
+        mockPackageHelper = new MockPackageHelper(['java', 'test'])
         groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
         groovyshMocker.demand.getInterp(1) {}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.getCompleter()
+            Completer completer = iCom.completer
             def candidates = []
-            assert 0 == completer.complete("", 0, candidates)
+            assert 0 == completer.complete('', 0, candidates)
             // order changed by sort
-            assert [":i", ":i", "import", "import"] == candidates.sort()
+            assert [':i', ':i', 'import', 'import'] == candidates.sort()
         }
     }
 
     void testUnknownVar() {
-        mockPackageHelper = new MockPackageHelper(["java", "test"])
+        mockPackageHelper = new MockPackageHelper(['java', 'test'])
         groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
         groovyshMocker.demand.getInterp(1) {}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.getCompleter()
+            Completer completer = iCom.completer
             def candidates = []
-            assert 7 == completer.complete("import ", "import ".length(), candidates)
+            assert 7 == completer.complete('import ', 'import '.length(), candidates)
             // order changed by sort, needed to make tests run on different JDks
-            assert ["java.", "static ", "test."] == candidates.sort()
+            assert ['java.', 'static ', 'test.'] == candidates.sort()
         }
     }
 
     void testJ() {
-        mockPackageHelper = new MockPackageHelper(["java", "test"])
+        mockPackageHelper = new MockPackageHelper(['java', 'test'])
         groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
         groovyshMocker.demand.getInterp(1) {}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.getCompleter()
+            Completer completer = iCom.completer
             def candidates = []
-            // argument completer completes after "import "
-            assert 7 == completer.complete("import j", "import j".length(), candidates)
-            assert ["java."] == candidates
+            // argument completer completes after 'import '
+            assert 7 == completer.complete('import j', 'import j'.length(), candidates)
+            assert ['java.'] == candidates
         }
     }
 
     void testJavaDot() {
-        mockPackageHelper = new MockPackageHelper(["java", "test"])
+        mockPackageHelper = new MockPackageHelper(['java', 'test'])
         groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
         groovyshMocker.demand.getInterp(1) {}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.getCompleter()
+            Completer completer = iCom.completer
             def candidates = []
-            // argument completer completes after "import "
-            String buffer = "import java."
+            // argument completer completes after 'import '
+            String buffer = 'import java.'
             assert 12 == completer.complete(buffer, buffer.length(), candidates)
             // order changed by sort, needed to run tests on different JDKs
-            assert ["* ", "java.", "test."] == candidates.sort()
+            assert ['* ', 'java.', 'test.'] == candidates.sort()
         }
     }
 
     void testJavaLangDot() {
-        mockPackageHelper = new MockPackageHelper(["java", "test"])
+        mockPackageHelper = new MockPackageHelper(['java', 'test'])
         groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
         groovyshMocker.demand.getInterp(1) {}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.getCompleter()
+            Completer completer = iCom.completer
             def candidates = []
-            // argument completer completes after "import "
-            String buffer = "import java.lang."
+            // argument completer completes after 'import '
+            String buffer = 'import java.lang.'
             assert 17 == completer.complete(buffer, buffer.length(), candidates)
             // order changed by sort, needed to make tests run on different JDks
-            assert ["* ", "java.", "test."] == candidates.sort()
+            assert ['* ', 'java.', 'test.'] == candidates.sort()
         }
     }
 
     void testAs() {
-        mockPackageHelper = new MockPackageHelper(["java", "test"])
+        mockPackageHelper = new MockPackageHelper(['java', 'test'])
         groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
         groovyshMocker.demand.getInterp(1) {}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.getCompleter()
+            Completer completer = iCom.completer
             def candidates = []
             // mock package
-            String buffer = "import java.test "
+            String buffer = 'import java.test '
             assert 17 == completer.complete(buffer, buffer.length(), candidates)
-            assert ["as "] == candidates
+            assert ['as '] == candidates
         }
     }
 }

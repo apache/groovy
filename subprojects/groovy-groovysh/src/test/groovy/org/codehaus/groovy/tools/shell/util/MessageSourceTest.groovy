@@ -24,12 +24,14 @@ package org.codehaus.groovy.tools.shell.util
 class MessageSourceTest
     extends GroovyTestCase
 {
-    MessageSource messages
+    private MessageSource messages
 
+    @Override
     void setUp() {
+        super.setUp()
         messages = new MessageSource(this.class)
     }
-    
+
     void testLoadAndGetMessage() {
         def a = messages['a']
         assert '1' == a
