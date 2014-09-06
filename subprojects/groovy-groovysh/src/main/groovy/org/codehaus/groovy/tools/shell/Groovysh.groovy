@@ -18,7 +18,7 @@ package org.codehaus.groovy.tools.shell
 
 import antlr.TokenStreamException
 import jline.Terminal
-import jline.TerminalFactory
+import jline.WindowsTerminal
 import jline.console.history.FileHistory
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
@@ -496,10 +496,9 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         errorHook.call(cause)
     }
 
-    //
-    // Interactive Shell
-    //
-
+    /**
+    * Run Interactive Shell with optional initial script and files to load
+    */
     int run(final String evalString, final List<String> filenames) {
         List<String> startCommands = []
 
@@ -512,22 +511,10 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         return run(startCommands.join('\n'))
     }
 
+    /**
+     * Run Interactive Shell with initial command
+     */
     int run(final String commandLine) {
-        Terminal term = TerminalFactory.create()
-
-        if (log.debug) {
-            log.debug("Terminal ($term)")
-            log.debug("    Supported:  $term.supported")
-            log.debug("    ECHO:       (enabled: $term.echoEnabled)")
-            log.debug("    H x W:      ${term.getHeight()} x ${term.getWidth()}")
-            log.debug("    ANSI:       ${term.isAnsiSupported()}")
-
-            if (term instanceof jline.WindowsTerminal) {
-                jline.WindowsTerminal winterm = (jline.WindowsTerminal) term
-                log.debug("    Direct:     ${winterm.directConsole}")
-            }
-        }
-
         def code
 
         try {
@@ -553,19 +540,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             // Setup the error handler
             runner.errorHandler = this.&displayError
 
-            // Display the welcome banner
-            if (!io.quiet) {
-                int width = term.getWidth()
-
-                // If we can't tell, or have something bogus then use a reasonable default
-                if (width < 1) {
-                    width = 80
-                }
-
-                io.out.println(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version']))
-                io.out.println(messages['startup_banner.1'])
-                io.out.println('-' * (width - 1))
-            }
+            displayWelcomeBanner(runner)
 
             // And let 'er rip... :-)
             runner.run()
@@ -587,5 +562,44 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         assert code != null // This should never happen
 
         return code
+    }
+
+
+    /**
+     * maybe displays log information and a welcome message
+     * @param term
+     */
+    public void displayWelcomeBanner(InteractiveShellRunner runner) {
+        if (!log.debug && io.quiet) {
+            // nothing to do here
+            return
+        }
+        Terminal term = runner.reader.terminal
+        if (log.debug) {
+            log.debug("Terminal ($term)")
+            log.debug("    Supported:  $term.supported")
+            log.debug("    ECHO:       (enabled: $term.echoEnabled)")
+            log.debug("    H x W:      ${term.getHeight()} x ${term.getWidth()}")
+            log.debug("    ANSI:       ${term.isAnsiSupported()}")
+
+            if (term instanceof WindowsTerminal) {
+                WindowsTerminal winterm = (WindowsTerminal) term
+                log.debug("    Direct:     ${winterm.directConsole}")
+            }
+        }
+
+        // Display the welcome banner
+        if (!io.quiet) {
+            int width = term.getWidth()
+
+            // If we can't tell, or have something bogus then use a reasonable default
+            if (width < 1) {
+                width = 80
+            }
+
+            io.out.println(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version']))
+            io.out.println(messages['startup_banner.1'])
+            io.out.println('-' * (width - 1))
+        }
     }
 }
