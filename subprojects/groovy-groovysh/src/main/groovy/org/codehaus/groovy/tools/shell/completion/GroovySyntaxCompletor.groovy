@@ -45,7 +45,9 @@ class GroovySyntaxCompletor implements Completer {
         SECOND_IDENT,
         NO_COMPLETION,
         DOT_LAST,
+        SPREAD_DOT_LAST,
         PREFIX_AFTER_DOT,
+        PREFIX_AFTER_SPREAD_DOT,
         NO_DOT_PREFIX
     }
 
@@ -104,6 +106,8 @@ class GroovySyntaxCompletor implements Completer {
                 break
             case CompletionCase.DOT_LAST:
             case CompletionCase.PREFIX_AFTER_DOT:
+            case CompletionCase.SPREAD_DOT_LAST:
+            case CompletionCase.PREFIX_AFTER_SPREAD_DOT:
                 result = reflectionCompletor.complete(tokens, candidates)
                 break
             default:
@@ -131,6 +135,12 @@ class GroovySyntaxCompletor implements Completer {
                     return CompletionCase.NO_COMPLETION
                 }
                 return CompletionCase.PREFIX_AFTER_DOT
+            } else if (previousToken.type == SPREAD_DOT) {
+                    // we have a dot, so need to evaluate the statement up to the dot for completion
+                    if (tokens.size() < 3) {
+                        return CompletionCase.NO_COMPLETION
+                    }
+                    return CompletionCase.PREFIX_AFTER_SPREAD_DOT
             } else {
                 // no dot, so we complete a varname, classname, or similar
                 switch (previousToken.type) {
@@ -173,6 +183,14 @@ class GroovySyntaxCompletor implements Completer {
                 return CompletionCase.NO_COMPLETION
             }
             return CompletionCase.DOT_LAST
+        } else if (currentToken.type == SPREAD_DOT) {
+            // cursor is on spread-dot, so need to evaluate the statement up to the dot for completion
+            if (tokens.size() == 1) {
+                return CompletionCase.NO_COMPLETION
+            }
+            return CompletionCase.SPREAD_DOT_LAST
+        } else {
+            println(currentToken.type)
         }
         return CompletionCase.NO_COMPLETION
     }

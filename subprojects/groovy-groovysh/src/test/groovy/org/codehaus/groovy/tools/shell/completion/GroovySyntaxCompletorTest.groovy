@@ -96,6 +96,21 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
         }
     }
 
+    void testMemberSpreadDot() {
+        reflectionCompletorMocker.demand.complete(1) { tokens, candidates ->
+            assert(tokens.collect{it.getText()} == ['[', 'foo', ']', '*.', 'len']); candidates << "length()"; 9}
+        IdentifierCompletor mockIdCompletor = idCompletorMocker.proxyDelegateInstance()
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            ReflectionCompletor mockReflComp = reflectionCompletorMocker.proxyInstance(groovyshMock)
+            GroovySyntaxCompletor completor = new GroovySyntaxCompletor(groovyshMock, mockReflComp, [mockIdCompletor], null)
+            def candidates = []
+            String buffer = "['foo']*.len"
+            assert 9 == completor.complete(buffer, buffer.length(), candidates)
+            assert ["length()"] == candidates
+        }
+    }
+
     void testMemberAfterMethod() {
         reflectionCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens.collect{it.getText()} == ["Fo", ".", "ba", "(", ")", ".", "xyz"]); candidates << "xyzabc"; 0}

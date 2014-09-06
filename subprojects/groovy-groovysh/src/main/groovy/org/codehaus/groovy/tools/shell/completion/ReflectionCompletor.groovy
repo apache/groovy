@@ -56,20 +56,34 @@ class ReflectionCompletor {
         if (tokens.size() < 2) {
             throw new IllegalArgumentException('must be invoked with at least 2 tokens, one of which is dot' + tokens*.text)
         }
-        if (tokens.last().type == DOT || tokens.last().type == OPTIONAL_DOT) {
+        if (tokens.last().type == DOT || tokens.last().type == OPTIONAL_DOT || tokens.last().type == SPREAD_DOT) {
             dotToken = tokens.last()
             previousTokens = tokens[0..-2]
         } else {
-            if (tokens[-2].type != DOT && tokens[-2].type != OPTIONAL_DOT) {
+            if (tokens[-2].type != DOT && tokens[-2].type != OPTIONAL_DOT && tokens[-2].type != SPREAD_DOT) {
                 throw new IllegalArgumentException('must be invoked with token list with dot at last position or one position before' + tokens*.text)
             }
             currentElementToken = tokens.last()
             dotToken = tokens[-2]
             previousTokens = tokens[0..-3]
         }
-        Object instance = getInvokerClassOrInstance(previousTokens)
-        if (instance == null) {
+
+        Object instanceOrClass = getInvokerClassOrInstance(previousTokens)
+        if (instanceOrClass == null) {
             return -1
+        }
+        if (dotToken.type == SPREAD_DOT) {
+            /**
+             * for aggregate types, find an arbitrary collection-member
+             * element within the instance. This may cause invalid completion candidates when the collection is not
+             * homogenous, but still better than no completion at all. Alternatively the union or intersection of
+             * candidate completions could be built. For non-aggregate types, we assume that whatever find()
+             * returns is useful for *. completion as well.
+             */
+            instanceOrClass = instanceOrClass.find()
+            if (instanceOrClass == null) {
+                return -1
+            }
         }
 
         String identifierPrefix
@@ -79,15 +93,23 @@ class ReflectionCompletor {
             identifierPrefix = ''
         }
 
+        return completeInstanceMembers(instanceOrClass, identifierPrefix, candidates, currentElementToken, dotToken)
+    }
+
+    private int completeInstanceMembers(final Object instanceOrClass,
+                                final String identifierPrefix,
+                                final List<CharSequence> candidates,
+                                final GroovySourceToken currentElementToken,
+                                final GroovySourceToken dotToken) {
         // look for public methods/fields that match the prefix
-        Collection<ReflectionCompletionCandidate> myCandidates = getPublicFieldsAndMethods(instance, identifierPrefix)
+        Collection<ReflectionCompletionCandidate> myCandidates = getPublicFieldsAndMethods(instanceOrClass, identifierPrefix)
 
         boolean showAllMethods = (identifierPrefix.length() >= Integer.valueOf(Preferences.get(Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
         // Also add metaclass methods if prefix is long enough (user would usually not care about those)
         myCandidates.addAll(getMetaclassMethods(
-                instance,
+                instanceOrClass,
                 identifierPrefix,
-                showAllMethods).collect({String it -> new ReflectionCompletionCandidate(it)}))
+                showAllMethods).collect({ String it -> new ReflectionCompletionCandidate(it) }))
 
         if (!showAllMethods) {
             // user probably does not care to see default Object / GroovyObject Methods,
@@ -96,8 +118,8 @@ class ReflectionCompletor {
         }
 
         // specific DefaultGroovyMethods only suggested for suitable instances
-        myCandidates.addAll(getDefaultMethods(instance,
-                identifierPrefix).collect({String it -> new ReflectionCompletionCandidate(it, AnsiRenderer.Code.BLUE.name())}))
+        myCandidates.addAll(getDefaultMethods(instanceOrClass,
+                identifierPrefix).collect({ String it -> new ReflectionCompletionCandidate(it, AnsiRenderer.Code.BLUE.name()) }))
 
         if (myCandidates.size() > 0) {
             myCandidates = myCandidates.sort()
@@ -116,7 +138,8 @@ class ReflectionCompletor {
             if (currentElementToken && dotToken.line != currentElementToken.line) {
                 lastDot = currentElementToken.column - 1
             } else {
-                lastDot = dotToken.column
+                // Spread-dot has length 2!
+                lastDot = dotToken.column +(dotToken.getText().length() - 1)
             }
             return lastDot
         }
