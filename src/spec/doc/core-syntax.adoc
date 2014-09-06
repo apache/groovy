@@ -192,11 +192,11 @@ which are also called _interpolated strings_ in other programming languages.
 
 === Single quoted string
 
-Single quoted strings are a series of characters surounded by single quotes:
+Single quoted strings are a series of characters surrounded by single quotes:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_1,indent=0]
 ----
 
 NOTE: Single quoted strings are plain +java.lang.String+ and don't support interpolation.
@@ -212,11 +212,11 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_plus,indent=0]
 
 === Triple single quoted string
 
-Triple single quoted strings are a series of characters surrounded by single quotes:
+Triple single quoted strings are a series of characters surrounded by triplets of single quotes:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_0,indent=0]
 ----
 
 NOTE: Triple single quoted strings are plain +java.lang.String+ and don't support interpolation.
@@ -934,7 +934,7 @@ unless you decide to specify otherwise, as we shall see later on.
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=list_1,indent=0]
 ----
 <1> We define a list numbers delimited by commas and surrounded by square brackets, and we assign that list into a variable
-<2> The list is an instance of Java's +java.util+List+ interface
+<2> The list is an instance of Java's +java.util.List+ interface
 <3> The size of the list can be queried with the +size()+ method, and shows our list contains 3 elements
 
 In the above example, we used a homogeneous list, but you can also create lists containing values of heterogeneous types:
