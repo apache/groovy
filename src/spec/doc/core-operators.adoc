@@ -153,7 +153,7 @@ The logical "not" has a higher priority than the logical "and".
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_precendence_1,indent=0]
 ----
-<1> Here, the assertion is true, because "not" has a higher precedence than "and", otherwise, the assertion would have failed
+<1> Here, the assertion is true (as the expression in parentheses is false), because "not" has a higher precedence than "and", so it only applies to the first "false" term; otherwise, it would have applied to the result of the "and", turned it into true, and the assertion would have failed
 
 The logical "and" has a higher priority than the logical "or".
 
@@ -161,7 +161,7 @@ The logical "and" has a higher priority than the logical "or".
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_precendence_2,indent=0]
 ----
-<1> Here, the assertion is true, because "and" has a higher precedence than "or", otherwise, the assertion would have failed
+<1> Here, the assertion is true, because "and" has a higher precedence than "or", therefore the "or" is executed last and returns true, having one true argument; otherwise, the "and" would have executed last and returned false, having one false argument, and the assertion would have failed
 
 === Short-circuiting for `||`
 
