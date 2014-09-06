@@ -116,11 +116,11 @@ class OperatorsTest extends CompilableTestSupport {
 
     void testLogicalOperatorPrecedence() {
         // tag::logical_precendence_1[]
-        assert !false && true    // <1>
+        assert (!false && false) == false   // <1>
         // end::logical_precendence_1[]
 
         // tag::logical_precendence_2[]
-        assert false || true && true    // <1>
+        assert true || true && false        // <1>
         // end::logical_precendence_2[]
     }
 
