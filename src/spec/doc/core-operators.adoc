@@ -60,7 +60,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=unary_plus_minus,i
 ----
 <1> Note the usage of parentheses to surround an expression to apply the unary minus to that surrounded expression.
 
-In terms of unary arithmetic operators, the ++++ (increment) and +--+ (decrement) operators are available, 
+In terms of unary arithmetics operators, the `++` (increment) and +--+ (decrement) operators are available,
 both in prefix and postfix notation:
 
 [source,groovy]
