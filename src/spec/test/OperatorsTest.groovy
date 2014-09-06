@@ -124,22 +124,29 @@ class OperatorsTest extends CompilableTestSupport {
         // end::logical_precendence_2[]
     }
 
-    void testLogicalOrShortCircuit() {
+    void testLogicalShortCircuit() {
         assertScript '''
-            // tag::logical_or_shortcircuit[]
-            called = false
+	        // tag::logical_shortcircuit[]
+	        boolean checkIfCalled() {   // <1>
+	            called = true
+	        }
 
-            boolean somethingTrueOrFalse(boolean b) {  // <1>
-                called = true
-                return b
-            }
+	        called = false
+	        true || checkIfCalled()
+	        assert !called              // <2>
 
-            assert true || somethingTrueOrFalse(false)
-            assert !called                              // <2>
+	        called = false
+	        false || checkIfCalled()
+	        assert called               // <3>
 
-            assert false || somethingTrueOrFalse(true)
-            assert called                               // <3>
-            // end::logical_or_shortcircuit[]
+	        called = false
+	        false && checkIfCalled()
+	        assert !called              // <4>
+
+	        called = false
+	        true && checkIfCalled()
+	        assert called               // <5>
+	        // end::logical_shortcircuit[]
         '''
     }
 
