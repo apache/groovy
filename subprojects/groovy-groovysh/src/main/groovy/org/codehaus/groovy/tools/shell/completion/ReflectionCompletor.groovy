@@ -317,7 +317,7 @@ class ReflectionCompletor {
         StringBuilder builder = new StringBuilder()
         for (GroovySourceToken token: groovySourceTokens) {
             if (token.type == STRING_LITERAL) {
-                builder.append('"').append(token.text).append('"')
+                builder.append('\'').append(token.text).append('\'')
             } else {
                 builder.append(token.text)
             }

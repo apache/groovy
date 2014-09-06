@@ -232,7 +232,7 @@ class InvokerParsingTest extends GroovyTestCase {
         assert '1' == ReflectionCompletor.tokenListToEvalString(tokenList("1"))
         assert '1.' == ReflectionCompletor.tokenListToEvalString(tokenList("1."))
         assert 'foo' == ReflectionCompletor.tokenListToEvalString(tokenList("foo"))
-        assert '"foo"' == ReflectionCompletor.tokenListToEvalString(tokenList("'foo'"))
+        assert '\'foo\'' == ReflectionCompletor.tokenListToEvalString(tokenList('\'foo\''))
     }
 
     void testGetInvokerTokens() {
