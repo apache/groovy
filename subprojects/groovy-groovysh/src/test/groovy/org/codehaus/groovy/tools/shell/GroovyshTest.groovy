@@ -348,13 +348,17 @@ class GroovyshCompletorTest extends GroovyTestCase {
                 """\
 import ${ReflectionCompletor.getCanonicalName()}
 class Foo extends HashSet implements Comparable {
-int compareTo(Object) {0};
-int priv;
-static int priv2;
-public int foo;
-public static int bar;
-int foom(){1};
-static int barm(){2}}
+  int compareTo(Object) {0};
+  int priv;
+  static int priv2;
+  public int foo;
+  public static int bar;
+  int foom(){1};
+  static int barm(){2};
+  static int getPriv3(){3};
+  private int getPriv4(){4};
+  int getPriv5(){5};
+}
 ReflectionCompletor.getPublicFieldsAndMethods(Foo, '')
 """])
         assert candResult
@@ -365,7 +369,10 @@ ReflectionCompletor.getPublicFieldsAndMethods(Foo, '')
         assert [] == result.findAll({ it.startsWith("this\$") })
         assert !('foo' in result)
         assert !('priv' in result)
-        assert !('priv2' in result)
+        assert ('priv2' in result)
+        assert ('priv3' in result)
+        assert !('priv4' in result)
+        assert !('priv5' in result)
         assert 'barm()' in result
         assert !('foom()' in result)
 
@@ -388,10 +395,13 @@ class Foo extends HashSet implements Comparable {
   int compareTo(Object) {0};
   int priv;
   static int priv2;
-  public int foo;
-  public static int bar;
+  private int foo;
+  static int bar;
   int foom(){1};
   static int barm(){2}
+  static int getPriv3(){3};
+  private int getPriv4(){4};
+  int getPriv5(){5};
 }
 ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
 """])
@@ -402,8 +412,11 @@ ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
         assert [] == result.findAll({ it.startsWith("super\$") })
         assert [] == result.findAll({ it.startsWith("this\$") })
         assert !('bar' in result)
-        assert !('priv' in result)
+        assert ('priv' in result)
         assert !('priv2' in result)
+        assert !('priv3' in result)
+        assert !('priv4' in result)
+        assert ('priv5' in result)
         assert 'foom()' in result
         assert !('barm()' in result)
     }
@@ -431,7 +444,7 @@ ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
         def candidates = []
         compl.complete(TokenUtilTest.tokenList("['a':3, 'b':4]."), candidates)
         assert candidates.size() > 1
-        assert candidates.reverse().subList(0, 2).collect({ String it -> JAnsiHelper.stripAnsi(it) }) == ['b', 'a']
+        assert candidates.reverse().subList(0, 3).collect({ String it -> JAnsiHelper.stripAnsi(it) }) == ['empty', 'b', 'a']
     }
 }
 

@@ -27,6 +27,7 @@ import org.fusesource.jansi.AnsiRenderer
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
+import java.util.regex.Pattern
 
 import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
 
@@ -37,8 +38,10 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
  */
 class ReflectionCompletor {
 
-    final Groovysh shell
     private static final NavigablePropertiesCompleter PROPERTIES_COMPLETER = new NavigablePropertiesCompleter()
+    private static final Pattern BEAN_ACCESSOR_PATTERN = ~'^(get|set|is)[A-Z].*'
+
+    final Groovysh shell
 
     /**
      *
@@ -540,22 +543,62 @@ class ReflectionCompletor {
             if (name.startsWith("super\$")) {
                 name = name.substring(name.find("^super\\\$.*\\\$").length())
             }
-            if (acceptName(name, prefix)) {
-                int modifiers = methIt.getModifiers()
-                if (Modifier.isPublic(modifiers) && (Modifier.isStatic(modifiers) ? includeStatic : includeNonStatic)) {
-                    ReflectionCompletionCandidate candidate = new ReflectionCompletionCandidate(name + (methIt.parameterTypes.length == 0 ? '()' : '('))
-                    if (!Modifier.isStatic(modifiers)) {
-                        if (renderBold) {
-                            candidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())
+            int modifiers = methIt.getModifiers()
+            if (Modifier.isPublic(modifiers) && (Modifier.isStatic(modifiers) ? includeStatic : includeNonStatic)) {
+                boolean fieldnameSuggested = false
+                // bean fieldname can be used instead of accessor, tidies up completion candidates
+                // the same goes for static fields // accessors
+                if (name.matches(BEAN_ACCESSOR_PATTERN)) {
+                    String fieldname = getFieldnameForAccessor(name, methIt.parameterTypes.length)
+                    if (fieldname != null && fieldname != 'metaClass' && fieldname != 'property') {
+                        if (acceptName(fieldname, prefix)) {
+                            fieldnameSuggested = true
+                            ReflectionCompletionCandidate fieldCandidate = new ReflectionCompletionCandidate(fieldname)
+                            if (!rv.contains(fieldCandidate)) {
+                                if (!Modifier.isStatic(modifiers) && renderBold) {
+                                    fieldCandidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())
+                                }
+
+                                rv.add(fieldCandidate)
+                            }
                         }
+                    }
+                }
+                if (! fieldnameSuggested && acceptName(name, prefix)) {
+                    ReflectionCompletionCandidate candidate = new ReflectionCompletionCandidate(name + (methIt.parameterTypes.length == 0 ? '()' : '('))
+                    if (!Modifier.isStatic(modifiers) && renderBold) {
+                        candidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())
                     }
                     rv.add(candidate)
                 }
             }
         }
+
         for (Class interface_ : clazz.getInterfaces()) {
             addClassFieldsAndMethods(interface_, includeStatic, includeNonStatic, prefix, rv, false)
         }
     }
 
+    static CharSequence getFieldnameForAccessor(String accessor, int parameterLength) {
+        String fieldname = null
+        if (accessor.startsWith('get')) {
+            if (parameterLength == 0) {
+                fieldname = accessor.substring(3)
+            }
+        } else if (accessor.startsWith('set')) {
+            if (parameterLength == 1) {
+                fieldname = accessor.substring(3)
+            }
+        } else if (accessor.startsWith('is')) {
+            if (parameterLength == 0) {
+                fieldname = accessor.substring(2)
+            }
+        } else {
+            throw new IllegalStateException('getFieldnameForAccessor called with invalid accessor : ' + accessor)
+        }
+        if (fieldname == null) {
+            return null
+        }
+        return fieldname[0].toLowerCase() + fieldname.substring(1)
+    }
 }

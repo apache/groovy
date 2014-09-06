@@ -24,6 +24,15 @@ import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokensStr
 
 class ReflectionCompletorTest extends GroovyTestCase {
 
+    void testBeanAccessorPattern() {
+        assert 'getX'.matches(ReflectionCompletor.BEAN_ACCESSOR_PATTERN)
+        assert 'setX'.matches(ReflectionCompletor.BEAN_ACCESSOR_PATTERN)
+        assert 'isX'.matches(ReflectionCompletor.BEAN_ACCESSOR_PATTERN)
+        assert !('get'.matches(ReflectionCompletor.BEAN_ACCESSOR_PATTERN))
+        assert !('getx'.matches(ReflectionCompletor.BEAN_ACCESSOR_PATTERN))
+        assert !('foo'.matches(ReflectionCompletor.BEAN_ACCESSOR_PATTERN))
+    }
+
     void testAddDefaultMethods() {
         List<String> result = ReflectionCompletor.getDefaultMethods(3, '')
         assert 'abs()' in result
@@ -262,5 +271,15 @@ class InvokerParsingTest extends GroovyTestCase {
         assert null == tokensString(ReflectionCompletor.getInvokerTokens(tokenList('New Foo().')))
         assert null == tokensString(ReflectionCompletor.getInvokerTokens(tokenList('foo.each bar')))
         assert null == tokensString(ReflectionCompletor.getInvokerTokens(tokenList('foo++')))
+    }
+
+    void testGetFieldnameForAccessor() {
+        assert 'foo' == ReflectionCompletor.getFieldnameForAccessor('getFoo', 0)
+        assert 'foo' == ReflectionCompletor.getFieldnameForAccessor('setFoo', 1)
+        assert 'foo' == ReflectionCompletor.getFieldnameForAccessor('isFoo', 0)
+
+        assert null == ReflectionCompletor.getFieldnameForAccessor('getFoo', 1)
+        assert null == ReflectionCompletor.getFieldnameForAccessor('setFoo', 0)
+        assert null == ReflectionCompletor.getFieldnameForAccessor('isFoo', 1)
     }
 }
