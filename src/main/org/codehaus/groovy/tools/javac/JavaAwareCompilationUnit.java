@@ -77,7 +77,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                         new ASTTransformationCollectorCodeVisitor(source, JavaAwareCompilationUnit.this.getTransformLoader());
                 collector.visitClass(classNode);
             }
-        }, Phases.SEMANTIC_ANALYSIS);
+        }, Phases.CONVERSION);
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
