@@ -34,51 +34,51 @@ class PurgeCommand
     PurgeCommand(final Groovysh shell) {
         super(shell, COMMAND_NAME, ':p', [ 'variables', 'classes', 'imports', 'preferences', 'all' ])
     }
-    
+
     def do_variables = {
         if (variables.isEmpty()) {
             io.out.println('No variables defined') // TODO: i18n
         }
         else {
             variables.clear()
-            
+
             if (io.verbose) {
-                io.out.println("Custom variables purged") // TODO: i18n
+                io.out.println('Custom variables purged') // TODO: i18n
             }
         }
     }
-    
+
     def do_classes = {
         if (classLoader.loadedClasses.size() == 0) {
-            io.out.println("No classes have been loaded") // TODO: i18n
+            io.out.println('No classes have been loaded') // TODO: i18n
         }
         else {
             classLoader.clearCache()
-            
+
             if (io.verbose) {
                 io.out.println('Loaded classes purged') // TODO: i18n
             }
         }
     }
-    
+
     def do_imports = {
         if (imports.isEmpty()) {
-            io.out.println("No custom imports have been defined") // TODO: i18n
+            io.out.println('No custom imports have been defined') // TODO: i18n
         }
         else {
             imports.clear()
-            
+
             if (io.verbose) {
-                io.out.println("Custom imports purged") // TODO: i18n
+                io.out.println('Custom imports purged') // TODO: i18n
             }
         }
     }
 
     def do_preferences = {
         Preferences.clear()
-        
+
         if (io.verbose) {
-            io.out.println("Preferences purged") // TODO: i18n
+            io.out.println('Preferences purged') // TODO: i18n
         }
     }
 }

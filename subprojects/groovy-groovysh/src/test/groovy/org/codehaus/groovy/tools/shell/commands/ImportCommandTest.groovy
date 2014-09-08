@@ -24,6 +24,15 @@ package org.codehaus.groovy.tools.shell.commands
 class ImportCommandTest
     extends CommandTestSupport
 {
+    void testPatternClassOrMethodName() {
+        assert 'java.util.*'.matches(ImportCommand.IMPORTED_ITEM_PATTERN)
+        assert 'java.util.Pattern'.matches(ImportCommand.IMPORTED_ITEM_PATTERN)
+        assert 'static java.util.Pattern.match'.matches(ImportCommand.IMPORTED_ITEM_PATTERN)
+        assert 'java.util.Pattern as Fattern'.matches(ImportCommand.IMPORTED_ITEM_PATTERN)
+        assert 'java.util.Pattern'.matches(ImportCommand.IMPORTED_ITEM_PATTERN)
+        assert 'java.util.P_attern'.matches(ImportCommand.IMPORTED_ITEM_PATTERN)
+    }
+
     void testImport() {
         assert null == shell << 'import'
         assert 'java.awt.TextField' == shell << 'import java.awt.TextField'

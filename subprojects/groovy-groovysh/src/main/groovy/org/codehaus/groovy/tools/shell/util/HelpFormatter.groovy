@@ -36,41 +36,42 @@ class HelpFormatter
     extends org.apache.commons.cli.HelpFormatter
 {
     HelpFormatter() {
-        defaultLeftPad = 2
-        defaultDescPad = 4
+        leftPadding = 2
+        descPadding = 4
     }
 
     // Detect the terminal width late
-    public int getDefaultWidth() {
+    int getDefaultWidth() {
         return Terminal.terminal.terminalWidth - 1
     }
 
+    @Override
     protected StringBuffer renderOptions(final StringBuffer sb, final int width, final Options options, final int leftPad, final int descPad) {
         assert sb != null
         assert options
-        
+
         List<StringBuffer> prefixes = []
         String lpad = ' ' * leftPad
-        
+
         List<Option> opts = options.shortOpts.values().sort {Option a, Option b ->
             return (a.opt == ' ' ? a.longOpt : a.opt) <=> (b.opt == ' ' ? b.longOpt : b.opt)
         }
-        
+
         // Render the prefixes (-X,--xxxx muck)
         opts.each {Option option ->
             StringBuffer buff = new StringBuffer(8)
-            
+
             if (option.opt == ' ') {
-                buff << "${lpad}    ${defaultLongOptPrefix}${option.longOpt}"
+                buff << "${lpad}    ${longOptPrefix}${option.longOpt}"
             }
             else {
-                buff << "${lpad}${defaultOptPrefix}${option.opt}"
-                
+                buff << "${lpad}${optPrefix}${option.opt}"
+
                 if (option.hasLongOpt()) {
-                    buff << ", ${defaultLongOptPrefix}${option.longOpt}"
+                    buff << ", ${longOptPrefix}${option.longOpt}"
                 }
             }
-            
+
             if (option.hasArg()) {
                 if (option.hasArgName()) {
                     if (option.hasOptionalArg()) {
@@ -84,34 +85,34 @@ class HelpFormatter
                     buff << ' '
                 }
             }
-            
+
             prefixes << buff
         }
-        
+
         // Figure out how long the biggest prefix is
         int maxPrefix = prefixes.max {StringBuffer a, StringBuffer b -> a.size() <=> b.size() }.size()
-        
+
         String dpad = ' ' * descPad
-        
+
         // And then render each option's prefix with its description
         opts.eachWithIndex {Option option, int i ->
             def buff = new StringBuffer(prefixes[i].toString())
-            
+
             if (buff.size() < maxPrefix) {
                 buff << ' ' * (maxPrefix - buff.size())
             }
             buff << dpad
-            
+
             int nextLineTabStop = maxPrefix + descPad
             String text = buff << option.description
-            
+
             renderWrappedText(sb, width, nextLineTabStop, text)
-            
+
             if (i < opts.size() - 1) {
-                sb << defaultNewLine
+                sb << newLine
             }
         }
-        
+
         return sb
     }
 }

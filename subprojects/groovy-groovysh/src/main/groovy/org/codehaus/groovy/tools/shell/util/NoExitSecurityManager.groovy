@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell.util;
+package org.codehaus.groovy.tools.shell.util
 
-import java.security.Permission;
+import java.security.Permission
 
 /**
  * Custom security manager to {@link System#exit} (and related) from being used.
@@ -26,35 +26,37 @@ import java.security.Permission;
 public class NoExitSecurityManager
     extends SecurityManager
 {
-    private final SecurityManager parent;
+    private final SecurityManager parent
 
     public NoExitSecurityManager(final SecurityManager parent) {
-        this.parent = parent;
+        this.parent = parent
     }
 
     public NoExitSecurityManager() {
-        this(System.getSecurityManager());
+        this(System.getSecurityManager())
     }
 
+    @Override
     public void checkPermission(final Permission perm) {
         if (parent != null) {
-            parent.checkPermission(perm);
+            parent.checkPermission(perm)
         }
     }
 
     /**
      * Always throws {@link SecurityException}.
      */
+    @Override
     public void checkExit(final int code) {
-        throw new SecurityException("Use of System.exit() is forbidden!");
+        throw new SecurityException('Use of System.exit() is forbidden!')
     }
 
     /*
     public void checkPermission(final Permission perm) {
-        assert perm != null;
+        assert perm != null
 
         if (perm.getName().equals("exitVM")) {
-            System.out.println("exitVM");
+            System.out.println("exitVM")
         }
     }
     */

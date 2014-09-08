@@ -17,43 +17,43 @@
 package org.codehaus.groovy.tools.shell.util
 
 /**
- * Unit tests for the {@link PackageHelper} class.
+ * Unit tests for the {@link PackageHelperImpl} class.
  */
-class PackageHelperTest
+class PackageHelperImplTest
     extends GroovyTestCase
 {
 
     void testLoadAndGetPackagesEmpty() {
-        PackageHelper helper = new PackageHelper(null)
-        Set<String> rootPackages = helper.getContents("")
+        PackageHelperImpl helper = new PackageHelperImpl(null)
+        Set<String> rootPackages = helper.getContents('')
         assertNotNull(rootPackages)
-        assert rootPackages.contains("java")
-        assert rootPackages.contains("javax")
-        assert rootPackages.contains("groovy")
+        assert rootPackages.contains('java')
+        assert rootPackages.contains('javax')
+        assert rootPackages.contains('groovy')
     }
 
     void testLoadAndGetPackagesJava() {
-        PackageHelper helper = new PackageHelper(null)
-        Set<String> names = helper.getContents("java")
+        PackageHelperImpl helper = new PackageHelperImpl(null)
+        Set<String> names = helper.getContents('java')
         assertNotNull(names)
         assert names.contains('io')
     }
 
     void testLoadAndGetPackagesJavaUtil() {
-        PackageHelper helper = new PackageHelper(null)
-        Set<String> names = helper.getContents("java.util")
+        PackageHelperImpl helper = new PackageHelperImpl(null)
+        Set<String> names = helper.getContents('java.util')
         assertNotNull(names)
         assert names.contains('zip')
         assert names.contains('Set')
     }
 
     void testLoadAndGetPackagesInvalid() {
-        PackageHelper helper = new PackageHelper(null)
-        assert null == helper.getContents("invalid:name")
+        PackageHelperImpl helper = new PackageHelperImpl(null)
+        assert [] as Set<String> == helper.getContents('invalid:name')
     }
 
     void testLoadAndGetPackagesUnknown() {
-        PackageHelper helper = new PackageHelper(null)
-        assert null == helper.getContents("java.util.regex.tools")
+        PackageHelperImpl helper = new PackageHelperImpl(null)
+        assert [] as Set<String> == helper.getContents('java.util.regex.tools')
     }
 }

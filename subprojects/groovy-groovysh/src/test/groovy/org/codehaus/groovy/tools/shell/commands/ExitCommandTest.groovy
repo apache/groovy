@@ -29,7 +29,7 @@ class ExitCommandTest
     void testWithNoArgs() {
         try {
             shell.execute(ExitCommand.COMMAND_NAME)
-            fail()
+            fail('expected Exception')
         }
         catch (ExitNotification e) {
             // expected

@@ -29,101 +29,98 @@ class ComplexCommandSupportTest
     extends CommandTestSupport
 {
     void testNew() {
-        ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", null) {}
-        assertEquals("fcom", com.name)
-        assertEquals("f", com.shortcut)
-        assertEquals(null, com.functions)
-        assertEquals(null, com.getFunctions())
-        assertEquals(null, com.defaultFunction)
+        ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', null) {}
+        assert 'fcom' == com.name
+        assert 'f' == com.shortcut
+        assert null == com.functions
+        assert null == com.defaultFunction
     }
 
     void testNewFunctions() {
-        ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar"]) {}
-        assertEquals("fcom", com.name)
-        assertEquals("f", com.shortcut)
-        assertEquals(["foo", "bar"], com.functions)
-        assertEquals(["foo", "bar"], com.getFunctions())
-        assertEquals(null, com.defaultFunction)
+        ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', ['foo', 'bar']) {}
+        assert 'fcom' == com.name
+        assert 'f' == com.shortcut
+        assert ['foo', 'bar'] == com.functions
+        assert null == com.defaultFunction
     }
 
     void testNewFunctionsDefault() {
-        ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar"], "foo") {}
-        assertEquals("fcom", com.name)
-        assertEquals("f", com.shortcut)
-        assertEquals(["foo", "bar"], com.functions)
-        assertEquals(["foo", "bar"], com.getFunctions())
-        assertEquals("foo", com.defaultFunction)
+        ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', ['foo', 'bar'], 'foo') {}
+        assert 'fcom' == com.name
+        assert 'f' == com.shortcut
+        assert ['foo', 'bar'] == com.functions
+        assert 'foo' == com.defaultFunction
     }
 
     void testNewFunctionsBadDefault() {
         try {
-            new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar"], "foo") {}
-            fail()
+            new ComplexCommandSupport(shell, 'fcom', 'f', ['foo', 'bar'], 'foo') {}
+            fail('expected AssertionError')
         } catch (AssertionError e) {
             // pass
         }
     }
 
     void testCreateCompleters() {
-        ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar", "baz"]) {}
+        ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', ['foo', 'bar', 'baz']) {}
         List<Completer> completors = com.createCompleters()
-        assertEquals(2, completors.size())
-        assertEquals(null, completors[-1])
+        assert 2 == completors.size()
+        assert null == completors[-1]
 
     }
 
     void testCompletor() {
-        ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar", "baz"]) {}
+        ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', ['foo', 'bar', 'baz']) {}
         def candidates = []
-        Completer completor = com.getCompleter()
-        assertEquals(5, completor.complete("fcom ba", "fcom ba".length(), candidates))
-        assertEquals(["bar", "baz"], candidates)
-        assertEquals(-1, completor.complete("fcom bar ba", "fcom bar ba".length(), candidates))
+        Completer completor = com.completer
+        assert 5 == completor.complete('fcom ba', 'fcom ba'.length(), candidates)
+        assert ['bar', 'baz'] == candidates
+        assert -1 == completor.complete('fcom bar ba', 'fcom bar ba'.length(), candidates)
     }
 
     void testDoAll() {
-        ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo", "bar", "all"]) {
+        ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', ['foo', 'bar', 'all']) {
             def invoked = []
             def do_foo = {
-                invoked.add("foo");
+                invoked.add('foo')
                 return 1
             }
             def do_bar = {
-                invoked.add("bar");
+                invoked.add('bar')
                 return 2
             }
         }
-        assertEquals([1, 2], com.do_all().sort());
-        assertEquals(["bar", "foo"], com.invoked.sort())
+        assert [1, 2] == com.do_all().sort()
+        assert ['bar', 'foo'] == com.invoked.sort()
     }
 
     void testExecute() {
-        ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo"]) {
+        ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', ['foo']) {
             def invoked = []
             def do_foo = {arg1 -> invoked.addAll(arg1)}
         }
         try {
             com.execute([])
-            fail()
+            fail('expected CommandException ')
         } catch (CommandException e) {
             // pass
         }
 
-        com.execute(["foo"])
-        assertEquals([], com.invoked)
+        com.execute(['foo'])
+        assert [] == com.invoked
 
-        com.execute(["foo"])
-        assertEquals([], com.invoked)
+        com.execute(['foo'])
+        assert [] == com.invoked
 
-        com.execute(["foo", "bar"])
-        assertEquals(["bar"], com.invoked)
+        com.execute(['foo', 'bar'])
+        assert ['bar'] == com.invoked
 
-        com.execute(["foo", "bar", "baz"])
-        assertEquals(["bar", "bar", "baz"], com.invoked)
+        com.execute(['foo', 'bar', 'baz'])
+        assert ['bar', 'bar', 'baz'] == com.invoked
     }
 
     void testExecuteDefault() {
-        ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo"], "foo") {
+        ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', ['foo'], 'foo') {
             def invoked = []
             def do_foo = {arg1 -> invoked.addAll(arg1)}
         }
@@ -132,32 +129,32 @@ class ComplexCommandSupportTest
     }
 
     void testExecuteFunction() {
-        ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo"]) {
+        ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', ['foo']) {
             def invoked = []
             def do_foo = {arg1 -> invoked.addAll(arg1)}
         }
         try {
-            com.executeFunction("bar", ["baz"])
+            com.executeFunction('bar', ['baz'])
         }  catch (CommandException e) {
             // pass
         }
-        assertEquals([], com.invoked)
-        com.executeFunction("foo", ["baz"])
-        assertEquals(["baz"], com.invoked)
-        com.executeFunction("foo", ["bim", "bam"])
-        assertEquals(["baz", "bim", "bam"], com.invoked)
+        assert [] == com.invoked
+        com.executeFunction('foo', ['baz'])
+        assert ['baz'] == com.invoked
+        com.executeFunction('foo', ['bim', 'bam'])
+        assert ['baz', 'bim', 'bam'] == com.invoked
     }
 
     void testLoadFunction() {
         Closure fun = { x -> x+1}
-        ComplexCommandSupport com = new ComplexCommandSupport(shell, "fcom", "f", ["foo"], "foo") {
+        ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', ['foo'], 'foo') {
             def invoked = []
             def do_foo = fun
         }
-        assertEquals(fun, com.loadFunction("foo"))
+        assert fun == com.loadFunction('foo')
         try {
-            com.loadFunction("bar")
-            fail()
+            com.loadFunction('bar')
+            fail('expected CommandException')
         } catch(CommandException e) {
             // pass
         }

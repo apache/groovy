@@ -91,15 +91,15 @@ class RecordCommand
         } else if (args.size() == 1) {
             file = new File(args[0] as String)
         } else {
-            fail("Too many arguments. Usage: record start [filename]")
+            fail('Too many arguments. Usage: record start [filename]')
         }
 
         if (file.parentFile) file.parentFile.mkdirs()
 
         writer = file.newPrintWriter()
-        writer.println("// OPENED: " + new Date())
+        writer.println('// OPENED: ' + new Date())
         writer.flush()
-        
+
         io.out.println("Recording session to: \"$file\"")
 
         return file
@@ -107,10 +107,10 @@ class RecordCommand
 
     def do_stop = {
         if (!isRecording()) {
-            fail("Not recording")
+            fail('Not recording')
         }
 
-        writer.println("// CLOSED: " + new Date())
+        writer.println('// CLOSED: ' + new Date())
         writer.flush()
 
         writer.close()
@@ -126,7 +126,7 @@ class RecordCommand
 
     def do_status = {
         if (!isRecording()) {
-            io.out.println("Not recording")
+            io.out.println('Not recording')
 
             return null
         }

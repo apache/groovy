@@ -27,10 +27,10 @@ import java.lang.reflect.Method
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class Interpreter
+class Interpreter implements Evaluator
 {
     static final String SCRIPT_FILENAME = 'groovysh_evaluate'
-    
+
     private final Logger log = Logger.create(this.class)
 
     private final GroovyShell shell
@@ -43,13 +43,14 @@ class Interpreter
     }
 
     Binding getContext() {
-        return shell.getContext()
+        return shell.context
     }
 
     GroovyClassLoader getClassLoader() {
-        return shell.getClassLoader()
+        return shell.classLoader
     }
 
+    @Override
     def evaluate(final Collection<String> buffer) {
         assert buffer
 
@@ -90,4 +91,8 @@ class Interpreter
 
         return result
     }
+}
+
+interface Evaluator {
+    def evaluate(final Collection<String> buffer)
 }

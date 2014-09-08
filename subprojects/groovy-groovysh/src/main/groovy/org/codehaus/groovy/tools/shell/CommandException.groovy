@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.tools.shell
 
-import groovy.transform.CompileStatic;
+import groovy.transform.CompileStatic
 
 /**
  * Thrown to indicate a problem with command execution.
@@ -25,23 +25,23 @@ import groovy.transform.CompileStatic;
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 @CompileStatic
-public class CommandException
+class CommandException
     extends Exception
 {
 
-    private final Command command;
+    private final Command command
 
-    public CommandException(final Command command, String msg) {
-        super(msg);
-        this.command = command;
+    CommandException(final Command command, final String msg) {
+        super(msg)
+        this.command = command
     }
 
-    public CommandException(final Command command, String msg, Throwable cause) {
-        super(msg, cause);
-        this.command = command;
+    CommandException(final Command command, final String msg, final Throwable cause) {
+        super(msg, cause)
+        this.command = command
     }
 
-    public Command getCommand() {
-        return command;
+    Command getCommand() {
+        return command
     }
 }

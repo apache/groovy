@@ -26,14 +26,14 @@ class EditCommandTest
 {
     void testProcessBuilderInit() {
         def mockEdit = new EditCommand(shell)
-        ProcessBuilder pb = mockEdit.getEditorProcessBuilder("/usr/bin/vim", 
-                "/var/folders/tu/tuATI/-Tmp-/groovysh-buffer1761911.groovy")
+        ProcessBuilder pb = mockEdit.getEditorProcessBuilder('/usr/bin/vim',
+                '/var/folders/tu/tuATI/-Tmp-/groovysh-buffer1761911.groovy')
 
         assert pb.redirectErrorStream()
 
         // GROOVY-6201: Editor should inherit I/O from the current process.
         //    Fixed only for java >= 1.7 using new ProcessBuilder api
-        def javaVer = Double.valueOf(System.getProperty("java.specification.version"));
+        def javaVer = Double.valueOf(System.getProperty('java.specification.version'))
         if (javaVer >= 1.7) {
             assert pb.redirectInput() == ProcessBuilder.Redirect.INHERIT
             assert pb.redirectOutput() == ProcessBuilder.Redirect.INHERIT
@@ -44,12 +44,12 @@ class EditCommandTest
         String partialExpression1 = 'x = {'
         String partialExpression2 = '  println 2+2'
         String partialExpression3 = '}'
-        
+
         def mockEdit = new EditCommand(shell)
-        
+
         // type an incomplete groovy expression
         shell << partialExpression1
-        
+
         // simulate a user launching an editor and completing the expression
         List<String> mockEditorContents = [partialExpression1, partialExpression2, partialExpression3]
         mockEdit.replaceCurrentBuffer(mockEditorContents)
@@ -61,12 +61,12 @@ class EditCommandTest
     void testEditorReplacingPartialGroovyExpression() {
         String partialExpression1 = 'x = {'
         String partialExpression2 = '  println 2+2'
-        
+
         def mockEdit = new EditCommand(shell)
-        
+
         // type an incomplete groovy expression
         shell << partialExpression1
-        
+
         // simulate a user launching an editor and adding to, but not completing, the expression
         List<String> mockEditorContents = [partialExpression1, partialExpression2]
         mockEdit.replaceCurrentBuffer(mockEditorContents)

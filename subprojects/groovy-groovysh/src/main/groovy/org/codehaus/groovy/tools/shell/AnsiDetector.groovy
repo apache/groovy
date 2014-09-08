@@ -16,13 +16,16 @@
 
 package org.codehaus.groovy.tools.shell
 
+import groovy.transform.CompileStatic
 import jline.TerminalFactory
 
 import java.util.concurrent.Callable
 
+@CompileStatic
 class AnsiDetector implements Callable<Boolean>
 {
-    public Boolean call() throws Exception {
+    @Override
+    Boolean call() throws Exception {
         return TerminalFactory.create().isAnsiSupported()
     }
 }

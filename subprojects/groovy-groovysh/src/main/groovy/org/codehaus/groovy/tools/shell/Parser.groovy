@@ -30,7 +30,7 @@ import antlr.TokenStreamException
 
 
 interface Parsing {
-    ParseStatus parse(final Collection<String> buffer);
+    ParseStatus parse(final Collection<String> buffer)
 }
 
 /**
@@ -50,7 +50,7 @@ class Parser
         String flavor = Preferences.getParserFlavor()
 
         log.debug("Using parser flavor: $flavor")
-        
+
         switch (flavor) {
             case Preferences.PARSER_RELAXED:
                 delegate = new RelaxedParser()
@@ -66,7 +66,7 @@ class Parser
                 break
         }
     }
-    
+
     ParseStatus parse(final Collection<String> buffer) {
         return delegate.parse(buffer)
     }
@@ -83,6 +83,7 @@ final class RelaxedParser implements Parsing
 
     private String[] tokenNames
 
+    @Override
     ParseStatus parse(final Collection<String> buffer) {
         assert buffer
 
@@ -103,12 +104,12 @@ final class RelaxedParser implements Parsing
             switch (e.getClass()) {
                 case TokenStreamException:
                 case RecognitionException:
-                    log.debug("Parse incomplete: $e (${e.getClass().getName()})")
-    
+                    log.debug("Parse incomplete: $e (${e.getClass().name})")
+
                     return new ParseStatus(ParseCode.INCOMPLETE)
 
                 default:
-                    log.debug("Parse error: $e (${e.getClass().getName()})")
+                    log.debug("Parse error: $e (${e.getClass().name})")
 
                     return new ParseStatus(e)
             }
@@ -121,10 +122,10 @@ final class RelaxedParser implements Parsing
 
         def parser = GroovyRecognizer.make(lexer)
         parser.setSourceBuffer(sourceBuffer)
-        tokenNames = parser.getTokenNames()
+        tokenNames = parser.tokenNames
 
         parser.compilationUnit()
-        return parser.getAST()
+        return parser.AST
     }
 }
 
@@ -137,6 +138,7 @@ final class RigidParser implements Parsing
 
     private final Logger log = Logger.create(this.class)
 
+    @Override
     ParseStatus parse(final Collection<String> buffer) {
         assert buffer
 
@@ -164,7 +166,7 @@ final class RigidParser implements Parsing
             //
 
             if (parser.errorCollector.errorCount > 1 || !parser.failedWithUnexpectedEOF()) {
- 
+
                 // HACK: Super insane hack... we detect a syntax error, but might still ignore
                 // it depending on the line ending
                 if (ignoreSyntaxErrorForLineEnding(buffer[-1].trim())) {
@@ -187,7 +189,7 @@ final class RigidParser implements Parsing
         log.debug('Parse incomplete')
         return new ParseStatus(ParseCode.INCOMPLETE)
     }
-    
+
     private boolean ignoreSyntaxErrorForLineEnding(String line) {
         def lineEndings = ['{', '[', '(', ',', '.', '-', '+', '/', '*', '%', '&', '|', '?', '<', '>', '=', ':', "'''", '"""', '\\']
         for(String lineEnding in lineEndings) {
@@ -214,6 +216,7 @@ final class ParseCode
         this.code = code
     }
 
+    @Override
     String toString() {
         return code
     }

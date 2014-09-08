@@ -34,8 +34,6 @@ import java.security.CodeSource
 @TypeChecked
 class ScriptVariableAnalyzer {
 
-    protected final Logger log = Logger.create(ScriptVariableAnalyzer.class)
-
     /**
      * define a visitor that visits all variable expressions
      */
@@ -43,6 +41,7 @@ class ScriptVariableAnalyzer {
         Set<String> bound = new HashSet<String>()
         Set<String> unbound = new HashSet<String>()
 
+        @Override
         void visitVariableExpression(VariableExpression expression) {
             // we're not interested in some special implicit variables
             if (!(expression.variable in ['args', 'context', 'this', 'super'])) {
@@ -59,7 +58,7 @@ class ScriptVariableAnalyzer {
 
         @Override
         protected SourceUnit getSourceUnit() {
-            return null;
+            return null
         }
     }
 
@@ -69,13 +68,15 @@ class ScriptVariableAnalyzer {
      */
     static class VisitorSourceOperation extends CompilationUnit.PrimaryClassNodeOperation {
 
-        GroovyClassVisitor visitor
+        final GroovyClassVisitor visitor
 
-        VisitorSourceOperation(GroovyClassVisitor visitor) {
+        VisitorSourceOperation(final GroovyClassVisitor visitor) {
             this.visitor = visitor
         }
 
-        void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+        @Override
+        void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode)
+                throws CompilationFailedException {
             classNode.visitContents(visitor)
         }
     }
@@ -84,20 +85,21 @@ class ScriptVariableAnalyzer {
      * class loader to add our phase operation
      */
     static class VisitorClassLoader extends GroovyClassLoader {
-        GroovyClassVisitor visitor
+        final GroovyClassVisitor visitor
 
-        public VisitorClassLoader(GroovyClassVisitor visitor) {
+        VisitorClassLoader(final GroovyClassVisitor visitor) {
             this.visitor = visitor
         }
 
-        protected CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource source) {
+        @Override
+        protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
             CompilationUnit cu = super.createCompilationUnit(config, source)
             cu.addPhaseOperation(new VisitorSourceOperation(visitor), Phases.CLASS_GENERATION)
             return cu
         }
     }
 
-    static Set<String> getBoundVars(String scriptText) {
+    static Set<String> getBoundVars(final String scriptText) {
         assert scriptText != null
         GroovyClassVisitor visitor = new VariableVisitor()
         VisitorClassLoader myCL = new VisitorClassLoader(visitor)

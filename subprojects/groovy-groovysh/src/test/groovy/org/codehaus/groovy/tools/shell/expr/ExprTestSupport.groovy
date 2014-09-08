@@ -27,9 +27,10 @@ abstract class ExprTestSupport
     extends GroovyTestCase
 {
     Groovysh shell
-    
+
     Object lastResult
 
+    @Override
     void setUp() {
         super.setUp()
 

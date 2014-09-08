@@ -19,19 +19,16 @@ package org.codehaus.groovy.tools.shell
 import jline.console.ConsoleReader
 
 
-/**
- * @author kruset
- */
-public class ErrorDisplayTest extends ShellRunnerTestSupport {
+class ErrorDisplayTest extends ShellRunnerTestSupport {
 
     void testInput() {
-        readerStubber.demand.readLine { "foo" }
+        readerStubber.demand.readLine { 'foo' }
         shellMocker.use {
             readerStubber.use {
                 Groovysh shellMock = new Groovysh()
                 ConsoleReader readerStub = new ConsoleReader()
 
-                InteractiveShellRunner shellRunner = new InteractiveShellRunner(shellMock, { ">" })
+                InteractiveShellRunner shellRunner = new InteractiveShellRunner(shellMock, { '>' })
                 shellRunner.reader = readerStub
                 // assert no exception
                 shellRunner.run()
@@ -46,7 +43,7 @@ public class ErrorDisplayTest extends ShellRunnerTestSupport {
                 Groovysh shellMock = new Groovysh()
                 ConsoleReader readerStub = new ConsoleReader()
 
-                InteractiveShellRunner shellRunner = new InteractiveShellRunner(shellMock, { ">" })
+                InteractiveShellRunner shellRunner = new InteractiveShellRunner(shellMock, { '>' })
                 shellRunner.reader = readerStub
                 // assert no exception
                 shellRunner.run()
@@ -55,12 +52,12 @@ public class ErrorDisplayTest extends ShellRunnerTestSupport {
     }
 
     void testError2() {
-        readerStubber.demand.readLine { throw new Throwable("MockException") }
+        readerStubber.demand.readLine { throw new Throwable('MockException') }
         shellMocker.use { readerStubber.use {
             Groovysh shellMock = new Groovysh()
             ConsoleReader readerStub = new ConsoleReader()
 
-            InteractiveShellRunner shellRunner = new InteractiveShellRunner(shellMock, {">"})
+            InteractiveShellRunner shellRunner = new InteractiveShellRunner(shellMock, {'>'})
             shellRunner.reader = readerStub
             // assert no exception
             shellRunner.run()

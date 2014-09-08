@@ -26,10 +26,11 @@ import org.codehaus.groovy.tools.shell.Groovysh
 abstract class CommandTestSupport
     extends GroovyTestCase
 {
-    Groovysh shell
+    protected Groovysh shell
 
-    Object lastResult
+    protected Object lastResult
 
+    @Override
     void setUp() {
         super.setUp()
 

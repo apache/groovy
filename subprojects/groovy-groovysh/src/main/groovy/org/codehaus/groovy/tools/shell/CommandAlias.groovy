@@ -29,52 +29,58 @@ class CommandAlias
     extends CommandSupport
 {
     final String targetName
-    
+
     CommandAlias(final Groovysh shell, final String name, final String shortcut, final String target) {
         super(shell, name, shortcut)
-        
+
         assert target
 
         this.targetName = target
     }
-    
+
     Command getTarget() {
         Command command = registry.find(targetName)
-        
+
         assert command != null
-        
+
         return command
     }
-    
+
+    @Override
     protected List<Completer> createCompleters() {
         try {
             // TODO: Use interface with createCompleters()
             if (target instanceof CommandSupport) {
-                CommandSupport support = (CommandSupport) target;
+                CommandSupport support = (CommandSupport) target
                 return support.createCompleters()
             }
 
         } catch (MissingMethodException) {
-            log.warn("Aliased Command without createCompleters Method")
+            log.warn('Aliased Command without createCompleters Method')
         }
     }
-    
+
+    @Override
     String getDescription() {
         return messages.format('info.alias_to', targetName)
     }
 
+    @Override
     String getUsage() {
         return target.usage
     }
-    
+
+    @Override
     String getHelp() {
         return target.help
     }
-    
+
+    @Override
     boolean getHidden() {
         return target.hidden
     }
-    
+
+    @Override
     Object execute(final List<String> args) {
         target.execute(args)
     }

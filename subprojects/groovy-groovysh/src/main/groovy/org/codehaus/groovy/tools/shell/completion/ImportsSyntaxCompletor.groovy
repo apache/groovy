@@ -23,20 +23,20 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * Completor completing imported classnames
  */
-public class ImportsSyntaxCompletor implements IdentifierCompletor {
+class ImportsSyntaxCompletor implements IdentifierCompletor {
 
-    Groovysh shell
+    final Groovysh shell
     // cache for all preimported classes
     List<String> preimportedClassNames
     // cache for all manually imported classes
-    Map<String, Collection<String>> cachedImports = new HashMap<String, Collection<String>>()
+    final Map<String, Collection<String>> cachedImports = new HashMap<String, Collection<String>>()
 
-    ImportsSyntaxCompletor(Groovysh shell) {
+    ImportsSyntaxCompletor(final Groovysh shell) {
         this.shell = shell
     }
 
     @Override
-    public boolean complete(final List<GroovySourceToken> tokens, List<String> candidates) {
+    boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
         String prefix = tokens.last().getText()
         boolean foundMatch = findMatchingPreImportedClasses(prefix, candidates)
         for (String importName in shell.imports) {
@@ -45,12 +45,12 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
         return foundMatch
     }
 
-    boolean findMatchingImportedClassesCached(final String prefix, final String importSpec, List<String> candidates) {
+    boolean findMatchingImportedClassesCached(final String prefix, final String importSpec, final List<String> candidates) {
         Collection<String> cached
         if (! cachedImports.containsKey(importSpec)) {
             cached = new HashSet<String>()
             collectImportedSymbols(importSpec, cached)
-            cachedImports.put(importSpec, cached);
+            cachedImports.put(importSpec, cached)
         } else {
             cached = cachedImports.get(importSpec)
         }
@@ -62,18 +62,18 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
         return false
     }
 
-    boolean findMatchingPreImportedClasses(final String prefix, Collection<String> matches) {
+    boolean findMatchingPreImportedClasses(final String prefix, final Collection<String> matches) {
         boolean foundMatch = false
         if (preimportedClassNames == null) {
             preimportedClassNames = []
             for (packname in ResolveVisitor.DEFAULT_IMPORTS) {
                 Set<String> packnames = shell.packageHelper.getContents(packname[0..-2])
                 if (packnames) {
-                    preimportedClassNames.addAll(packnames.findAll({String it -> it[0] in "A".."Z"}))
+                    preimportedClassNames.addAll(packnames.findAll({String it -> it[0] in 'A'..'Z'}))
                 }
             }
-            preimportedClassNames.add("BigInteger")
-            preimportedClassNames.add("BigDecimal")
+            preimportedClassNames.add('BigInteger')
+            preimportedClassNames.add('BigDecimal')
         }
         // preimported names
         for (String preImpClassname in preimportedClassNames) {
@@ -85,7 +85,7 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
         return foundMatch
     }
 
-    static final String STATIC_IMPORT_PATTERN = /^import static ([a-z0-9]+\.)+[A-Z][a-zA-Z0-9]*(\.(\*|[^.]+))?$/
+    private static final String STATIC_IMPORT_PATTERN = ~/^import static ([a-z0-9]+\.)+[A-Z][a-zA-Z0-9]*(\.(\*|[^.]+))?$/
 
     /**
      * finds matching imported classes or static methods
@@ -94,8 +94,8 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
      * @param matches
      * @return
      */
-    void collectImportedSymbols(String importSpec, Collection<String> matches) {
-        String asKeyword = " as "
+    void collectImportedSymbols(final String importSpec, final Collection<String> matches) {
+        String asKeyword = ' as '
         int asIndex = importSpec.indexOf(asKeyword)
         if (asIndex > -1) {
             String alias = importSpec.substring(asIndex + asKeyword.length())
@@ -105,15 +105,16 @@ public class ImportsSyntaxCompletor implements IdentifierCompletor {
         String staticPrefix = 'import static '
         if (importSpec.startsWith(staticPrefix)) {
             // make sure pattern is safe, though shell should have done anyway
-            if (importSpec  ==~ STATIC_IMPORT_PATTERN) {
-                if (importSpec.endsWith(".*")) {
-                    importSpec = importSpec[staticPrefix.length()..-3]
+            if (importSpec.matches(STATIC_IMPORT_PATTERN)) {
+                String evalImportSpec
+                if (importSpec.endsWith('.*')) {
+                    evalImportSpec = importSpec[staticPrefix.length()..-3]
                 } else {
-                    importSpec = importSpec[staticPrefix.length()..(importSpec.lastIndexOf('.') - 1)]
+                    evalImportSpec = importSpec[staticPrefix.length()..(importSpec.lastIndexOf('.') - 1)]
                 }
-                Class clazz = shell.interp.evaluate([importSpec]) as Class
+                Class clazz = shell.interp.evaluate([evalImportSpec]) as Class
                 if (clazz != null) {
-                    Collection<String> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, '').collect({it.value})
+                    Collection<String> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, '')*.value
                     for (member in members) {
                         matches.add(member)
                     }
