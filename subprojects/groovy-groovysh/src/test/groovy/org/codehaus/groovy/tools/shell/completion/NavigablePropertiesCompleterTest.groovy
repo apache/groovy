@@ -1,12 +1,39 @@
+/*
+ * Copyright 2003-2007 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.codehaus.groovy.tools.shell.completion
 
-import org.codehaus.groovy.antlr.GroovySourceToken
-import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
 
 /**
  * Defines method tokenList for other Unit tests and tests it
  */
 class NavigablePropertiesCompleterTest extends GroovyTestCase {
+
+    void testPatternNoControlChars() {
+        assert !'java\bCfoo'.matches(NavigablePropertiesCompleter.NO_CONTROL_CHARS_PATTERN)
+        assert !'java\u001BCfoo'.matches(NavigablePropertiesCompleter.NO_CONTROL_CHARS_PATTERN)
+        assert 'ja12_<!$%&_?§'.matches(NavigablePropertiesCompleter.NO_CONTROL_CHARS_PATTERN)
+    }
+
+    void testPatternInvalidIdentifierChar() {
+        assert 'java@foo'.find(NavigablePropertiesCompleter.INVALID_CHAR_FOR_IDENTIFIER_PATTERN)
+        assert 'java&bar'.find(NavigablePropertiesCompleter.INVALID_CHAR_FOR_IDENTIFIER_PATTERN)
+        assert 'java~bar'.find(NavigablePropertiesCompleter.INVALID_CHAR_FOR_IDENTIFIER_PATTERN)
+        assert !'javaBar$foo_b2'.find(NavigablePropertiesCompleter.INVALID_CHAR_FOR_IDENTIFIER_PATTERN)
+    }
 
     void testSet() {
         NavigablePropertiesCompleter completer = new NavigablePropertiesCompleter()
@@ -46,6 +73,7 @@ class NavigablePropertiesCompleterTest extends GroovyTestCase {
                 '_ !@#$%^&*()_+={}[]~`<>,./?:;|' : 'operators',
                 'snowman ☃' : 'Olaf',
                 'Japan ぁ' : '77',
+                'ぁJapanstart' : '77',
                 'a☃$4ä_' : 'no hypehns',
                 '$123' : 'digits',
                 '123$' : 'digits',
@@ -54,7 +82,7 @@ class NavigablePropertiesCompleterTest extends GroovyTestCase {
 
         Set candidates = [] as Set
         Set expected = ['id', 'name', '\'a b\'', '\'a.b\'', '\'a\\\'b\'', '\'a\\\\b\'', '\'G$\\\\"tring\'',
-                        '\'_ !@#$%^&*()_+={}[]~`<>,./?:;|\'', '\'snowman ☃\'', '\'Japan ぁ\'', 'a☃$4ä_', '$123', '\'123$\'' ] as Set
+                        '\'_ !@#$%^&*()_+={}[]~`<>,./?:;|\'', '\'snowman ☃\'', '\'Japan ぁ\'', 'ぁJapanstart', 'a☃$4ä_', '$123', '\'123$\'' ] as Set
         completer.addCompletions(map, '', candidates)
         assert expected == candidates
     }
@@ -63,7 +91,7 @@ class NavigablePropertiesCompleterTest extends GroovyTestCase {
         NavigablePropertiesCompleter completer = new NavigablePropertiesCompleter()
         completer.addCompletions(null, '', [] as Set)
         NodeBuilder someBuilder = new NodeBuilder()
-        Node node = someBuilder.foo(){[bar(){[bam(7)]}, baz()]}
+        Node node = someBuilder.foo {[bar {[bam(7)]}, baz()]}
 
         Set candidates = [] as Set
         completer.addCompletions(node, 'ba', candidates)

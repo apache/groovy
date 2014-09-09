@@ -17,13 +17,11 @@
 package org.codehaus.groovy.tools.shell
 
 import groovy.mock.interceptor.MockFor
-import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.tools.shell.completion.IdentifierCompletor
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
+import org.codehaus.groovy.tools.shell.util.PackageHelper
+import org.codehaus.groovy.tools.shell.util.PackageHelperImpl
 
-/**
- * @author kruset
- */
 abstract class CompletorTestSupport extends GroovyTestCase {
 
     BufferManager bufferManager = new BufferManager()
@@ -38,11 +36,12 @@ abstract class CompletorTestSupport extends GroovyTestCase {
 
     MockFor idCompletorMocker
 
+    @Override
     void setUp() {
         super.setUp()
-        mockOut = new ByteArrayOutputStream();
+        mockOut = new ByteArrayOutputStream()
 
-        mockErr = new ByteArrayOutputStream();
+        mockErr = new ByteArrayOutputStream()
 
         testio = new IO(
                 new ByteArrayInputStream(),
@@ -55,11 +54,11 @@ abstract class CompletorTestSupport extends GroovyTestCase {
         groovyshMocker = new MockFor(Groovysh)
         groovyshMocker.demand.createDefaultRegistrar { { shell -> null } }
         groovyshMocker.demand.getIo(0..2) { testio }
-        packageHelperMocker = new MockFor(PackageHelper)
+        packageHelperMocker = new MockFor(PackageHelperImpl)
         def registry = new CommandRegistry()
         groovyshMocker.demand.getRegistry(0..1) { registry }
         groovyshMocker.demand.getClass(0..1) { Groovysh }
-        packageHelperMocker.demand.getContents(6) { ["java", "test"] }
+        packageHelperMocker.demand.getContents(6) { ['java', 'test'] }
         groovyshMocker.demand.getIo(0..2) { testio }
         for (i in 1..19) {
             groovyshMocker.demand.getIo(0..1) { testio }

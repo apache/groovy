@@ -24,10 +24,10 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class ReflectionCompletionCandidate implements Comparable<ReflectionCompletionCandidate> {
 
-    private final String value;
-    private final List<String> jAnsiCodes = [];
+    private final String value
+    private final List<String> jAnsiCodes
 
-    ReflectionCompletionCandidate(String value, String... jAnsiCodes) {
+    ReflectionCompletionCandidate(final String value, final String... jAnsiCodes) {
         this.value = value
         this.jAnsiCodes = new ArrayList<>(Arrays.asList(jAnsiCodes))
     }
@@ -47,16 +47,16 @@ class ReflectionCompletionCandidate implements Comparable<ReflectionCompletionCa
         if (hasBracket == otherBracket) {
             this.value.compareTo(o.value)
         } else if (hasBracket && ! otherBracket) {
-            return -1;
+            return -1
         } else {
-            return 1;
+            return 1
         }
 
     }
 
     @Override
     String toString() {
-        return value;
+        return value
     }
 
     @Override
@@ -64,14 +64,13 @@ class ReflectionCompletionCandidate implements Comparable<ReflectionCompletionCa
         return value.hashCode()
     }
 
+    @Override
     boolean equals(o) {
         if (this.is(o)) return true
         if (getClass() != o.class) return false
 
         ReflectionCompletionCandidate that = (ReflectionCompletionCandidate) o
 
-        if (value != that.value) return false
-
-        return true
+        return value == that.value
     }
 }

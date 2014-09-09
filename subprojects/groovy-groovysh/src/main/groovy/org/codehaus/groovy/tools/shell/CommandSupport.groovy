@@ -34,7 +34,7 @@ abstract class CommandSupport
     implements Command
 {
     protected static final String NEWLINE = System.properties['line.separator']
-    
+
     /** Instance logger for the command, initialized late to include the command name. */
     protected final Logger log
 
@@ -46,7 +46,7 @@ abstract class CommandSupport
 
     /** The shortcut switch */
     final String shortcut
-    
+
     /** The owning shell. */
     protected final Groovysh shell
 
@@ -55,51 +55,74 @@ abstract class CommandSupport
 
     /** Provides the command instance with the registry, for aliasing support. */
     protected CommandRegistry registry
-    
+
     /** Standard aliases for the command. */
     final List/*<CommandAlias>*/ aliases = []
-    
+
     /** Flag to indicate if the command should be hidden or not. */
     boolean hidden = false
-    
+
     protected CommandSupport(final Groovysh shell, final String name, final String shortcut) {
         assert shell != null
         assert name
         assert shortcut
-        
+
         this.log = Logger.create(this.class, name)
         this.shell = shell
         this.io = shell.io
         this.name = name
         this.shortcut = shortcut
-        
+
         //
         // NOTE: Registry will be added once registered.
         //
     }
 
+    @Override
     String getDescription() {
         return messages['command.description']
     }
 
+    @Override
     String getUsage() {
         return messages['command.usage']
     }
 
+    @Override
     String getHelp() {
         return messages['command.help']
     }
 
-    /**
+    @Override
+    boolean getHidden() {
+        return hidden
+    }
+
+    @Override
+    List getAliases() {
+        return aliases
+    }
+
+    @Override
+    String getShortcut() {
+        return shortcut
+    }
+
+    @Override
+    String getName() {
+        return name
+    }
+/**
      * Override to provide custom completion semantics for the command.
      */
     protected List<Completer> createCompleters() {
-        return null
+        return []
     }
 
     /**
      * Setup the Completer for the command.
      */
+    @Override
     Completer getCompleter() {
         if (hidden) {
             return null
@@ -109,7 +132,7 @@ abstract class CommandSupport
         list << new StringsCompleter(name, shortcut)
 
         List<Completer> completers = createCompleters()
-        
+
         if (completers) {
             completers.each {Completer it ->
                 if (it) {
@@ -126,7 +149,7 @@ abstract class CommandSupport
 
         return new StricterArgumentCompleter(list)
     }
-    
+
     //
     // Helpers
     //
@@ -138,19 +161,19 @@ abstract class CommandSupport
     protected void fail(final String msg) {
         throw new CommandException(this, msg)
     }
-    
+
     protected void fail(final String msg, final Throwable cause) {
         throw new CommandException(this, msg, cause)
     }
-    
-    protected void assertNoArguments(final List args) {
+
+    protected void assertNoArguments(final List<String> args) {
         assert args != null
-        
+
         if (args.size() > 0) {
             fail(messages.format('error.unexpected_args', args.join(' ')))
         }
     }
-    
+
     //
     // Shell access helpers
     //
@@ -166,19 +189,19 @@ abstract class CommandSupport
     protected List<String> getImports() {
         return shell.imports
     }
-    
+
     protected Binding getBinding() {
         return shell.interp.context
     }
-    
+
     protected Map getVariables() {
         return binding.variables
     }
-    
+
     protected FileHistory getHistory() {
         return shell.history
     }
-    
+
     protected GroovyClassLoader getClassLoader() {
         return shell.interp.classLoader
     }

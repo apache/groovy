@@ -28,30 +28,31 @@ abstract class ShellRunner
     implements Runnable
 {
     protected final Logger log = Logger.create(this.class)
-    
+
     final Shell shell
-    
+
     boolean running = false
-    
+
     boolean breakOnNull = true
-    
+
     Closure errorHandler = { e ->
         log.debug(e)
-        
+
         running = false
     }
-    
+
     protected ShellRunner(final Shell shell) {
         assert(shell != null)
-        
+
         this.shell = shell
     }
-    
+
+    @Override
     void run() {
         log.debug('Running')
-        
+
         running = true
-        
+
         while (running) {
             try {
                 running = work()
@@ -61,41 +62,41 @@ abstract class ShellRunner
             }
             catch (Throwable t) {
                 log.debug("Work failed: $t", t)
-                
+
                 if (errorHandler) {
                     try {
                         errorHandler.call(t)
                     } catch (Throwable t2) {
-                        errorHandler(new IllegalArgumentException("Error when handling error: " + t.message))
+                        errorHandler(new IllegalArgumentException("Error when handling error: $t.message"))
                         errorHandler.call(t2)
                     }
                 }
             }
         }
-        
+
         log.debug('Finished')
     }
-    
+
     protected boolean work() {
         def line = readLine()
-        
+
         if (log.debugEnabled) {
             log.debug("Read line: $line")
         }
-        
+
         // Stop on null (maybe)
         if (line == null && breakOnNull) {
             return false // stop the loop
         }
-        
+
         // Ignore empty lines
         if (line.trim().size() > 0) {
             shell << line
         }
-        
+
         return true
     }
-    
+
     protected abstract String readLine()
 }
 

@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.*;
+import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -69,6 +70,13 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                     AnnotationConstantsVisitor acv = new AnnotationConstantsVisitor();
                     acv.visitClass(node, source);
                 }
+            }
+        }, Phases.CONVERSION);
+        addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
+            public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+                ASTTransformationCollectorCodeVisitor collector =
+                        new ASTTransformationCollectorCodeVisitor(source, JavaAwareCompilationUnit.this.getTransformLoader());
+                collector.visitClass(classNode);
             }
         }, Phases.CONVERSION);
 

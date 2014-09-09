@@ -31,13 +31,14 @@ import org.codehaus.groovy.tools.shell.Command
 class RegisterCommand
     extends CommandSupport
 {
-    public static final String COMMAND_NAME = ':register'
+    static final String COMMAND_NAME = ':register'
 
     RegisterCommand(final Groovysh shell) {
-        super(shell, COMMAND_NAME, ":rc")
+        super(shell, COMMAND_NAME, ':rc')
     }
 
-    public Object execute(List<String> args) {
+    @Override
+    Object execute(final List<String> args) {
         assert args != null
 
         if (args.size() < 1) {
@@ -46,9 +47,9 @@ class RegisterCommand
 
         String classname = args.get(0)
 
-        Class type = getClassLoader().loadClass(classname)
+        Class type = classLoader.loadClass(classname)
 
-        Command command = null;
+        Command command = null
 
         if (args.size() == 1) {                   // use default name
             command = type.newInstance(shell) as Command

@@ -23,8 +23,6 @@ import jline.console.completer.StringsCompleter
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Shell
-import org.codehaus.groovy.tools.shell.commands.ImportCompleter
 
 /**
  * The 'doc' command.
@@ -38,8 +36,8 @@ class DocCommand extends CommandSupport {
 
     public static final String COMMAND_NAME = ':doc'
 
-    private static final String ENV_BROWSER = "BROWSER"
-    private static final String ENV_BROWSER_GROOVYSH = "GROOVYSH_BROWSER"
+    private static final String ENV_BROWSER = 'BROWSER'
+    private static final String ENV_BROWSER_GROOVYSH = 'GROOVYSH_BROWSER'
 
     private static final int TIMEOUT_CONN = 5 * 1000 // ms
     private static final int TIMEOUT_READ = 5 * 1000 // ms
@@ -53,12 +51,12 @@ class DocCommand extends CommandSupport {
      */
     static {
         try {
-            def desktopClass = Class.forName("java.awt.Desktop")
+            def desktopClass = Class.forName('java.awt.Desktop')
             desktop = desktopClass.desktopSupported ? desktopClass.desktop : null
 
             hasAWTDesktopPlatformSupport =
                 desktop != null &&
-                        desktop.isSupported(desktopClass.declaredClasses.find { it.simpleName == "Action" }.BROWSE)
+                        desktop.isSupported(desktopClass.declaredClasses.find { it.simpleName == 'Action' }.BROWSE)
 
         } catch (Exception e) {
             hasAWTDesktopPlatformSupport = false
@@ -78,6 +76,7 @@ class DocCommand extends CommandSupport {
                 new ImportCompleter(shell.packageHelper, shell.interp, false)])])
     }
 
+    @Override
     Object execute(final List<String> args) {
         if (args?.size() == 1) {
             doc(args[0])
@@ -95,7 +94,7 @@ class DocCommand extends CommandSupport {
 
         // Print the URLs.
         // It is useful especially when the browsing fails.
-        urls.each { url -> println url }
+        urls.each { url -> io.out.println url }
 
         browse(urls)
     }
@@ -145,7 +144,7 @@ class DocCommand extends CommandSupport {
     }
 
     protected List urlsFor(String className) {
-        def path = className.replaceAll(/\./, '/') + ".html"
+        def path = className.replaceAll(/\./, '/') + '.html'
 
         def urls = []
         if (className.matches(/^(groovy|org\.codehaus\.groovy|)\..+/)) {
@@ -171,13 +170,13 @@ class DocCommand extends CommandSupport {
     }
 
     private static simpleVersion() {
-        System.getProperty("java.version").tokenize('_')[0]
+        System.getProperty('java.version').tokenize('_')[0]
     }
 
     protected boolean sendHEADRequest(URL url) {
         try {
             HttpURLConnection conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "HEAD"
+            conn.requestMethod = 'HEAD'
             conn.connectTimeout = TIMEOUT_CONN
             conn.readTimeout = TIMEOUT_READ
             conn.instanceFollowRedirects = true

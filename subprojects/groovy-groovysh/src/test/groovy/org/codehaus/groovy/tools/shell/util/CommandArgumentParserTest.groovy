@@ -17,34 +17,34 @@
 package org.codehaus.groovy.tools.shell.util
 
 
-public class CommandArgumentParserTest extends GroovyTestCase {
+class CommandArgumentParserTest extends GroovyTestCase {
 
     void testParseLine() {
         // empty
-        assertEquals([], CommandArgumentParser.parseLine(""))
+        assert [] == CommandArgumentParser.parseLine('')
 
         // blanks
-        assertEquals(['foo', 'bar'], CommandArgumentParser.parseLine("  foo bar  "))
+        assert ['foo', 'bar'] == CommandArgumentParser.parseLine('  foo bar  ')
 
         // empties
-        assertEquals(['', '', '', ''], CommandArgumentParser.parseLine('\'\'\'\' \'\'  \'\''))
-        assertEquals(['', '', '', ''], CommandArgumentParser.parseLine('"""" ""  ""'))
+        assert ['', '', '', ''] == CommandArgumentParser.parseLine('\'\'\'\' \'\'  \'\'')
+        assert ['', '', '', ''] == CommandArgumentParser.parseLine('"""" ""  ""')
 
         // hyphen groups
-        assertEquals(['foo bar', 'baz bam'], CommandArgumentParser.parseLine(' \'foo bar\' \'baz bam\''))
-        assertEquals(['foo bar', 'baz bam'], CommandArgumentParser.parseLine(' "foo bar" "baz bam"'))
+        assert ['foo bar', 'baz bam'] == CommandArgumentParser.parseLine(' \'foo bar\' \'baz bam\'')
+        assert ['foo bar', 'baz bam'] == CommandArgumentParser.parseLine(' "foo bar" "baz bam"')
 
         // escaped hyphens and escape signs
-        assertEquals(['foo \\ "\' bar'], CommandArgumentParser.parseLine('\'foo \\\\ "\\\' bar\''))
+        assert ['foo \\ "\' bar'] == CommandArgumentParser.parseLine('\'foo \\\\ "\\\' bar\'')
         // no space between hyphentokens
-        assertEquals(['bar', 'foo', 'bam', 'baz'], CommandArgumentParser.parseLine('bar"foo"\'bam\'\'baz\''))
+        assert ['bar', 'foo', 'bam', 'baz'] == CommandArgumentParser.parseLine('bar"foo"\'bam\'\'baz\'')
 
         // limited number of tokens
-        assertEquals(['foo'], CommandArgumentParser.parseLine("  foo bar  ", 1))
-        assertEquals(['bar', 'foo'], CommandArgumentParser.parseLine('bar"foo"\'bam\'\'baz\'', 2))
+        assert ['foo'] == CommandArgumentParser.parseLine('  foo bar  ', 1)
+        assert ['bar', 'foo'] == CommandArgumentParser.parseLine('bar"foo"\'bam\'\'baz\'', 2)
 
-        assertEquals(['map.put('], CommandArgumentParser.parseLine("map.put('a': 2)", 1))
-        assertEquals(['map.put('], CommandArgumentParser.parseLine("map.put('a", 1))
+        assert ['map.put('] == CommandArgumentParser.parseLine('map.put(\'a\': 2)', 1)
+        assert ['map.put('] == CommandArgumentParser.parseLine('map.put(\'a\'', 1)
 
     }
 

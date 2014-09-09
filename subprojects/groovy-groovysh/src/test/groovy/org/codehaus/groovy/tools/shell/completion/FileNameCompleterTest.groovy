@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.tools.shell.completion;
+package org.codehaus.groovy.tools.shell.completion
 
 class FileNameCompleterTest extends GroovyTestCase {
 
@@ -28,7 +28,7 @@ class FileNameCompleterTest extends GroovyTestCase {
     }
 
     void testMatchFiles_Unix() {
-        if(! System.getProperty("os.name").startsWith("Windows")) {
+        if(! System.getProperty('os.name').startsWith('Windows')) {
             FileNameCompleter completer = new FileNameCompleter()
             List<String> candidates = []
             int resultIndex = completer.matchFiles('foo/bar', '/foo/bar', [new File('/foo/baroo'), new File('/foo/barbee')] as File[], candidates, null)

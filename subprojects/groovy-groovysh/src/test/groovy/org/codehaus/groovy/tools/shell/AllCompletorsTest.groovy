@@ -33,10 +33,10 @@ import org.codehaus.groovy.tools.shell.commands.ShowCommand
  */
 class AllCompletorsTest extends GroovyTestCase {
 
-    IO testio
-    BufferedOutputStream mockOut
-    BufferedOutputStream mockErr
-    List<Completer> completers
+    private IO testio
+    private BufferedOutputStream mockOut
+    private BufferedOutputStream mockErr
+    private List<Completer> completers
 
     /**
      * code copied from Jline console Handler,
@@ -47,32 +47,33 @@ class AllCompletorsTest extends GroovyTestCase {
      *
      */
     private List complete(String buffer, cursor) throws IOException {
-        // debug ("tab for (" + buf + ")");
+        // debug ("tab for (" + buf + ")")
         if (completers.size() == 0) {
-            return null;
+            return []
         }
-        List candidates = new LinkedList();
-        String bufstr = buffer;
-        int position = -1;
+        List candidates = new LinkedList()
+        String bufstr = buffer
+        int position = -1
         for (Completer comp : completers) {
             if ((position = comp.complete(bufstr, cursor, candidates)) != -1) {
-                break;
+                break
             }
         }
         // no candidates? Fail.
         if (candidates.size() == 0) {
-            return null;
+            return []
         }
         return [candidates, position]
     }
 
+    @Override
     void setUp() {
         super.setUp()
         mockOut = new BufferedOutputStream(
-                new ByteArrayOutputStream());
+                new ByteArrayOutputStream())
 
         mockErr = new BufferedOutputStream(
-                new ByteArrayOutputStream());
+                new ByteArrayOutputStream())
 
         testio = new IO(
                 new ByteArrayInputStream(),
@@ -82,7 +83,7 @@ class AllCompletorsTest extends GroovyTestCase {
 
         Groovysh groovysh = new Groovysh(testio)
 
-        def filemock = new File("aaaa") {
+        def filemock = new File('aaaa') {
             @Override
             boolean delete() {
                 return true
@@ -94,76 +95,76 @@ class AllCompletorsTest extends GroovyTestCase {
             }
         }
         groovysh.history = new FileHistory(filemock)
-        InteractiveShellRunner shellRun = new InteractiveShellRunner(groovysh, { ">"})
+        InteractiveShellRunner shellRun = new InteractiveShellRunner(groovysh, { '>'})
         // setup completers in run()
         shellRun.run()
-        completers = shellRun.reader.getCompleters()
+        completers = shellRun.reader.completers
     }
 
     void testEmpty() {
-        def result = complete("", 0)
-        assertTrue(HelpCommand.COMMAND_NAME in result[0])
-        assertTrue(ExitCommand.COMMAND_NAME in result[0])
-        assertTrue('import' in result[0])
-        assertTrue(ShowCommand.COMMAND_NAME in result[0])
-        assertTrue(SetCommand.COMMAND_NAME in result[0])
-        assertTrue(InspectCommand.COMMAND_NAME in result[0])
-        assertTrue(DocCommand.COMMAND_NAME in result[0])
+        def result = complete('', 0)
+        assert HelpCommand.COMMAND_NAME in result[0]
+        assert ExitCommand.COMMAND_NAME in result[0]
+        assert 'import' in result[0]
+        assert ShowCommand.COMMAND_NAME in result[0]
+        assert SetCommand.COMMAND_NAME in result[0]
+        assert InspectCommand.COMMAND_NAME in result[0]
+        assert DocCommand.COMMAND_NAME in result[0]
         assert 0 == result[1]
     }
 
     void testExitEdit() {
-        assert [["${ExitCommand.COMMAND_NAME} ", ":e", EditCommand.COMMAND_NAME], 0] == complete(":e", 0)
+        assert [["${ExitCommand.COMMAND_NAME} ", ':e', EditCommand.COMMAND_NAME], 0] == complete(':e', 0)
     }
 
     void testShow() {
-        String prompt = ":show "
-        assert [["all", "classes", "imports", "preferences", "variables"], prompt.length()] == complete(prompt, prompt.length())
+        String prompt = ':show '
+        assert [['all', 'classes', 'imports', 'preferences', 'variables'], prompt.length()] == complete(prompt, prompt.length())
     }
 
     void testShowV() {
-        String prompt = ShowCommand.COMMAND_NAME + " v"
-        assert [["variables "], prompt.length() - 1] == complete(prompt, prompt.length())
+        String prompt = ShowCommand.COMMAND_NAME + ' v'
+        assert [['variables '], prompt.length() - 1] == complete(prompt, prompt.length())
     }
 
     void testShowVariables() {
-        String prompt = ShowCommand.COMMAND_NAME + " variables "
-        assertNull(complete(prompt, prompt.length()))
+        String prompt = ShowCommand.COMMAND_NAME + ' variables '
+        assert [] == complete(prompt, prompt.length())
     }
 
     void testImportJava() {
         // tests interaction with ReflectionCompleter
-        String prompt = "import j"
+        String prompt = 'import j'
         def result = complete(prompt, prompt.length())
         assert result
         assert prompt.length() - 1 == result[1]
-        assertTrue(result.toString() ,"java." in result[0])
+        assert 'java.' in result[0]
     }
 
     void testShowVariablesJava() {
         // tests against interaction with ReflectionCompleter
-        String prompt = ShowCommand.COMMAND_NAME + " variables java"
-        assertNull(complete(prompt, prompt.length()))
+        String prompt = ShowCommand.COMMAND_NAME + ' variables java'
+        assert [] == complete(prompt, prompt.length())
     }
 
     void testKeyword() {
         // tests against interaction with ReflectionCompleter
-        String prompt = "pub"
-        assert [["public "], 0] == complete(prompt, prompt.length())
+        String prompt = 'pub'
+        assert [['public '], 0] == complete(prompt, prompt.length())
     }
 
     void testCommandAndKeyword() {
         // tests against interaction with ReflectionCompleter
-        String prompt = ":pu" // purge, public
+        String prompt = ':pu' // purge, public
         assert [["${PurgeCommand.COMMAND_NAME} "], 0] == complete(prompt, prompt.length())
     }
 
     void testDoc() {
-        String prompt = DocCommand.COMMAND_NAME + " j"
+        String prompt = DocCommand.COMMAND_NAME + ' j'
         def result = complete(prompt, prompt.length())
         assert result
         assert prompt.length() - 1 == result[1]
-        assertTrue(result.toString() ,"java." in result[0])
+        assert 'java.' in result[0]
     }
 
 }

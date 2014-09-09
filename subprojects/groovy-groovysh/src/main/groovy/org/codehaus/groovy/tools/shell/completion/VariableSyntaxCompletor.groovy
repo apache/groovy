@@ -23,26 +23,26 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * Completor completing variable and method names from known variables in the shell
  */
-public class VariableSyntaxCompletor implements IdentifierCompletor {
+class VariableSyntaxCompletor implements IdentifierCompletor {
 
-    Groovysh shell
+    final Groovysh shell
 
-    VariableSyntaxCompletor(Groovysh shell) {
+    VariableSyntaxCompletor(final Groovysh shell) {
         this.shell = shell
     }
 
     @Override
-    public boolean complete(final List<GroovySourceToken> tokens, List<String> candidates) {
-        String prefix = tokens.last().getText()
+    boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
+        String prefix = tokens.last().text
         Map vars = shell.interp.context.variables
         boolean foundMatch = false
         for (String varName in vars.keySet()) {
             if (acceptName(varName, prefix)) {
                 if (vars.get(varName) instanceof MethodClosure) {
-                    if (((MethodClosure)vars.get(varName)).getMaximumNumberOfParameters() > 0) {
-                        varName += "("
+                    if (((MethodClosure) vars.get(varName)).getMaximumNumberOfParameters() > 0) {
+                        varName += '('
                     } else {
-                        varName += "()"
+                        varName += '()'
                     }
                 }
                 foundMatch = true
@@ -55,6 +55,6 @@ public class VariableSyntaxCompletor implements IdentifierCompletor {
 
     private static boolean acceptName(String name, String prefix) {
         return (!prefix || name.startsWith(prefix)) &&
-               (!(name.contains('$')) && !name.startsWith("_"));
+               (!(name.contains('$')) && !(name.startsWith('_')))
     }
 }

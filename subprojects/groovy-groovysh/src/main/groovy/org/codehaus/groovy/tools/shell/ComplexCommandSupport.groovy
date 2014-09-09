@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.tools.shell
 
+import jline.console.completer.Completer
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
@@ -26,76 +27,74 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 abstract class ComplexCommandSupport
     extends CommandSupport
 {
-    protected List<String> functions
-    
-    protected String defaultFunction
-    
-    ComplexCommandSupport(final Groovysh shell, final String name, final String shortcut, List<String> comFunctions) {
+
+    protected final List<String> functions
+
+    protected final String defaultFunction
+
+    protected ComplexCommandSupport(final Groovysh shell, final String name, final String shortcut, final List<String> comFunctions) {
         this(shell, name, shortcut, comFunctions, null)
     }
 
-    ComplexCommandSupport(final Groovysh shell, final String name, final String shortcut, List<String> comFunctions,
-                          String defaultFunction) {
+    protected ComplexCommandSupport(final Groovysh shell, final String name, final String shortcut,
+                                    final List<String> comFunctions, final String defaultFunction) {
         super(shell, name, shortcut)
         this.functions = comFunctions
         this.defaultFunction = defaultFunction
         assert(defaultFunction  == null || defaultFunction in functions)
     }
 
-    protected List createCompleters() {
+    @Override
+    protected List<Completer> createCompleters() {
         def c = new SimpleCompletor()
-        
-        getFunctions().each { String it -> c.add(it) }
-        
+
+        functions.each { String it -> c.add(it) }
+
         return [ c, null ]
     }
 
-    List<String> getFunctions() {
-        return functions
-    }
-    
+    @Override
     Object execute(List<String> args) {
         assert args != null
-        
+
         if (args.size() == 0) {
             if (defaultFunction) {
                 args = [ defaultFunction ]
             } else {
-                fail("Command '$name' requires at least one argument of ${getFunctions()}")
+                fail("Command '$name' requires at least one argument of ${functions}")
             }
         }
-        
+
         return executeFunction(args[0], args.tail())
     }
-    
-    protected executeFunction(String fname, List<String> args) {
+
+    protected executeFunction(final String fname, final List<String> args) {
         assert args != null
 
-        List<String> myFunctions = getFunctions()
-        assert myFunctions
+        List<String> myFunctions = functions
 
         if (fname in myFunctions) {
-            def func = loadFunction(fname)
-            
+            Closure func = loadFunction(fname)
+
             log.debug("Invoking function '$fname' w/args: $args")
-            
+
             return func.call(args)
         }
         fail("Unknown function name: '$fname'. Valid arguments: $myFunctions")
     }
-    
+
     protected Closure loadFunction(final String name) {
         assert name
-        
+
         try {
             return this."do_${name}"
         } catch (MissingPropertyException e) {
             fail("Failed to load delegate function: $e")
         }
     }
-    
+
     def do_all = {
-        getFunctions().findAll {it != 'all'}.collect {executeFunction(it, [])}
+        functions.findAll {it != 'all'}.collect {executeFunction(it, [])}
     }
 }
 

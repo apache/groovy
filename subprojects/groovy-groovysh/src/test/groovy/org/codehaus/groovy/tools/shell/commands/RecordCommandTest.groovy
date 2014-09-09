@@ -46,7 +46,7 @@ class RecordCommandTest
         try {
             // too many args
             command.do_start(['1', '2', '3'])
-            fail()
+            fail('expected Exception')
         } catch (CommandException e) {
             // pass
         }

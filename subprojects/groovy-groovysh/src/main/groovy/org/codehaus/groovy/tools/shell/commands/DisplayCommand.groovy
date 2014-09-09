@@ -34,9 +34,10 @@ class DisplayCommand
         super(shell, COMMAND_NAME, ':d')
     }
 
+    @Override
     Object execute(final List<String> args) {
         assertNoArguments(args)
-        
+
         if (buffer.isEmpty()) {
             io.out.println('Buffer is empty') // TODO: i18n
         }
