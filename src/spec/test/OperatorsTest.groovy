@@ -265,7 +265,7 @@ assert user.@name == 'Bob'                                 // <1>
         // end::pattern_op[]
         // tag::pattern_op_variants[]
         p = ~'foo'                                                                              // <1>
-        p = ~'foo'                                                                              // <2>
+        p = ~"foo"                                                                              // <2>
         p = ~$/dollar/slashy $ string/$                                                         // <3>
         p = ~"${pattern}"                                                                       // <4>
         // end::pattern_op_variants[]

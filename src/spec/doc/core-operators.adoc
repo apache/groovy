@@ -374,8 +374,8 @@ instance:
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_op,indent=0]
 ----
-<1> `~=` creates a matcher against the `text` variable, using the pattern on the right hand side
-<2> the return type of `~=` is a `Matcher`
+<1> `=~` creates a matcher against the `text` variable, using the pattern on the right hand side
+<2> the return type of `=~` is a `Matcher`
 <3> equivalent to calling `if (!m.find())`
 
 Since a `Matcher` coerces to a `boolean` by calling its `find` method, the `=~` operator is consistent with the simple
@@ -390,8 +390,8 @@ and requires a strict match of the input string:
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_strict_op,indent=0]
 ----
-<1> `~==` matches the subject with the regular expression, but match must be strict
-<2> the return type of `~==` is therefore a `boolean`
+<1> `==~` matches the subject with the regular expression, but match must be strict
+<2> the return type of `==~` is therefore a `boolean`
 <3> equivalent to calling `if (text ==~ /match/)`
 
 == Other operators (WIP)
