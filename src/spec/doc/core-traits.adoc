@@ -27,7 +27,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=bird,ind
 <2> instantiate a new `Bird`
 <3> the `Bird` class automatically gets the behavior of the `FlyingAbility` trait
 
-Traits allow a wide range of capabilities, from simple composition to testing, which are described throughfully in this section.
+Traits allow a wide range of capabilities, from simple composition to testing, which are described thoroughly in this section.
 
 == Methods
 === Public methods
