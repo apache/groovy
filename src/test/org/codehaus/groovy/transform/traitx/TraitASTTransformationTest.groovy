@@ -2113,6 +2113,25 @@ d.foo()
 '''
     }
 
+    // GROOVY-7058
+    void testShouldNotThrowNPEBecauseOfIncompleteGenericsTypeInformation() {
+        assertScript '''
+    class Project { Task task(String name, Map args) {} }
+    class Task {}
+    interface Plugin<P>{}
+    trait PluginUtils {
+        abstract Project getProject()
+
+        public <T extends Task> T createTask(String name, Class<T> type, Closure<?> config) {
+          project.task(name, type: type, config)
+        }
+    }
+
+    class MyPlugin implements Plugin<Project>, PluginUtils { Project project }
+    new MyPlugin()
+'''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }

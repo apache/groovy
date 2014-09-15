@@ -420,6 +420,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         );
         mNode.setSourcePosition(methodNode);
         mNode.addAnnotations(methodNode.getAnnotations());
+        mNode.setGenericsTypes(methodNode.getGenericsTypes());
         if (methodNode.isAbstract()) {
             mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         } else {

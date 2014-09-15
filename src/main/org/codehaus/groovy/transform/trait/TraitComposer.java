@@ -20,6 +20,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -55,6 +56,7 @@ import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -134,7 +136,7 @@ public abstract class TraitComposer {
     private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers) {
         ClassNode helperClassNode = helpers.getHelper();
         ClassNode fieldHelperClassNode = helpers.getFieldHelper();
-        Map genericsSpec = GenericsUtils.createGenericsSpec(cNode);
+        Map<String,ClassNode> genericsSpec = GenericsUtils.createGenericsSpec(cNode);
         genericsSpec = GenericsUtils.createGenericsSpec(trait, genericsSpec);
 
         for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
@@ -146,10 +148,23 @@ public abstract class TraitComposer {
                 argList.addExpression(new VariableExpression("this"));
                 Parameter[] origParams = new Parameter[helperMethodParams.length - 1];
                 Parameter[] params = new Parameter[helperMethodParams.length - 1];
+                System.arraycopy(methodNode.getParameters(), 1, params, 0, params.length);
+                Map<String,ClassNode> methodGenericsSpec = new LinkedHashMap<String, ClassNode>(genericsSpec);
+                MethodNode originalMethod = trait.getMethod(name, params);
+                // Original method may be null in case of a private method
+                GenericsType[] originalMethodGenericsTypes = originalMethod!=null?originalMethod.getGenericsTypes():null;
+                if (originalMethodGenericsTypes!=null) {
+                    for (GenericsType type : originalMethodGenericsTypes) {
+                        String gtTypeName = type.getName();
+                        if (!methodGenericsSpec.containsKey(gtTypeName)) {
+                            methodGenericsSpec.put(gtTypeName, type.getType());
+                        }
+                    }
+                }
                 for (int i = 1; i < helperMethodParams.length; i++) {
                     Parameter parameter = helperMethodParams[i];
                     ClassNode originType = parameter.getOriginType();
-                    ClassNode fixedType = correctToGenericsSpecRecurse(genericsSpec, originType);
+                    ClassNode fixedType = correctToGenericsSpecRecurse(methodGenericsSpec, originType);
                     Parameter newParam = new Parameter(fixedType, "arg" + i);
                     List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
                     List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
@@ -159,7 +174,7 @@ public abstract class TraitComposer {
                     origParams[i-1] = parameter;
                     argList.addExpression(new VariableExpression(params[i - 1]));
                 }
-                createForwarderMethod(trait, cNode, methodNode, helperClassNode, genericsSpec, helperMethodParams, origParams, params, argList);
+                createForwarderMethod(trait, cNode, methodNode, originalMethod, helperClassNode, methodGenericsSpec, helperMethodParams, origParams, params, argList);
             }
         }
         cNode.addObjectInitializerStatements(new ExpressionStatement(
@@ -253,8 +268,9 @@ public abstract class TraitComposer {
             ClassNode trait,
             ClassNode targetNode,
             MethodNode helperMethod,
+            MethodNode originalMethod,
             ClassNode helperClassNode,
-            Map genericsSpec,
+            Map<String,ClassNode> genericsSpec,
             Parameter[] helperMethodParams,
             Parameter[] traitMethodParams,
             Parameter[] forwarderParams,
@@ -288,7 +304,9 @@ public abstract class TraitComposer {
         if (!copied.isEmpty()) {
             forwarder.addAnnotations(copied);
         }
-
+        if (originalMethod!=null) {
+            forwarder.setGenericsTypes(originalMethod.getGenericsTypes());
+        }
         // add a helper annotation indicating that it is a bridge method
         AnnotationNode bridgeAnnotation = new AnnotationNode(Traits.TRAITBRIDGE_CLASSNODE);
         bridgeAnnotation.addMember("traitClass", new ClassExpression(trait));
@@ -309,7 +327,7 @@ public abstract class TraitComposer {
      * @param forwarder a forwarder method
      * @param genericsSpec
      */
-    private static void createSuperForwarder(ClassNode targetNode, MethodNode forwarder, final Map genericsSpec) {
+    private static void createSuperForwarder(ClassNode targetNode, MethodNode forwarder, final Map<String,ClassNode> genericsSpec) {
         List<ClassNode> interfaces = new ArrayList<ClassNode>(Traits.collectAllInterfacesReverseOrder(targetNode, new LinkedHashSet<ClassNode>()));
         String name = forwarder.getName();
         Parameter[] forwarderParameters = forwarder.getParameters();
@@ -344,7 +362,7 @@ public abstract class TraitComposer {
      * @param interfacesToGenerateForwarderFor
      * @param genericsSpec
      */
-    private static void doCreateSuperForwarder(ClassNode targetNode, MethodNode forwarderMethod, ClassNode[] interfacesToGenerateForwarderFor, Map genericsSpec) {
+    private static void doCreateSuperForwarder(ClassNode targetNode, MethodNode forwarderMethod, ClassNode[] interfacesToGenerateForwarderFor, Map<String,ClassNode> genericsSpec) {
         Parameter[] parameters = forwarderMethod.getParameters();
         Parameter[] superForwarderParams = new Parameter[parameters.length];
         for (int i = 0; i < parameters.length; i++) {
@@ -354,12 +372,13 @@ public abstract class TraitComposer {
         }
         for (int i = 0; i < interfacesToGenerateForwarderFor.length; i++) {
             final ClassNode current = interfacesToGenerateForwarderFor[i];
-            final ClassNode next = i<interfacesToGenerateForwarderFor.length-1?interfacesToGenerateForwarderFor[i+1]:null;
+            final ClassNode next = i < interfacesToGenerateForwarderFor.length - 1 ? interfacesToGenerateForwarderFor[i + 1] : null;
             String forwarderName = Traits.getSuperTraitMethodName(current, forwarderMethod.getName());
-            if (targetNode.getDeclaredMethod(forwarderName, superForwarderParams)==null) {
-            ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, forwarderMethod.getReturnType());
-            Statement delegate = next==null?createSuperFallback(forwarderMethod, returnType):createDelegatingForwarder(forwarderMethod, next);
-            targetNode.addMethod(forwarderName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, returnType, superForwarderParams, ClassNode.EMPTY_ARRAY, delegate);
+            if (targetNode.getDeclaredMethod(forwarderName, superForwarderParams) == null) {
+                ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, forwarderMethod.getReturnType());
+                Statement delegate = next == null ? createSuperFallback(forwarderMethod, returnType) : createDelegatingForwarder(forwarderMethod, next);
+                MethodNode methodNode = targetNode.addMethod(forwarderName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, returnType, superForwarderParams, ClassNode.EMPTY_ARRAY, delegate);
+                methodNode.setGenericsTypes(forwarderMethod.getGenericsTypes());
             }
         }
     }
