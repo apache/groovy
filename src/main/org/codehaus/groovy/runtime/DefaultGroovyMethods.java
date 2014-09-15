@@ -14225,12 +14225,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     @Deprecated
     public static String eachMatch(CharSequence self, CharSequence regex, Closure closure) {
-        return StringGroovyMethods.eachMatch(self, regex, closure);
+        return (String) StringGroovyMethods.eachMatch(self, regex, closure);
     }
 
     @Deprecated
     public static String eachMatch(CharSequence self, Pattern pattern, Closure closure) {
-        return StringGroovyMethods.eachMatch(self, pattern, closure);
+        return (String) StringGroovyMethods.eachMatch(self, pattern, closure);
     }
 
     @Deprecated
@@ -14314,7 +14314,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     @Deprecated
-    public static List<CharSequence> findAll(CharSequence self, CharSequence regex) {
+    public static List<String> findAll(CharSequence self, CharSequence regex) {
         return StringGroovyMethods.findAll(self, regex);
     }
 
@@ -14324,7 +14324,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     @Deprecated
-    public static List<CharSequence> findAll(CharSequence self, Pattern pattern) {
+    public static List<String> findAll(CharSequence self, Pattern pattern) {
         return StringGroovyMethods.findAll(self, pattern);
     }
 
@@ -14689,7 +14689,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     @Deprecated
-    public static List<CharSequence> readLines(CharSequence self) throws IOException {
+    public static List<String> readLines(CharSequence self) throws IOException {
         return StringGroovyMethods.readLines(self);
     }
 
@@ -14949,17 +14949,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     @Deprecated
-    public static List<CharSequence> tokenize(CharSequence self) {
+    public static List<String> tokenize(CharSequence self) {
         return StringGroovyMethods.tokenize(self);
     }
 
     @Deprecated
-    public static List<CharSequence> tokenize(CharSequence self, Character token) {
+    public static List<String> tokenize(CharSequence self, Character token) {
         return StringGroovyMethods.tokenize(self, token);
     }
 
     @Deprecated
-    public static List<CharSequence> tokenize(CharSequence self, CharSequence token) {
+    public static List<String> tokenize(CharSequence self, CharSequence token) {
         return StringGroovyMethods.tokenize(self, token);
     }
 
@@ -14981,7 +14981,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     @Deprecated
-    public static List<CharSequence> toList(CharSequence self) {
+    public static List<String> toList(CharSequence self) {
         return StringGroovyMethods.toList(self);
     }
 
@@ -15001,7 +15001,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     @Deprecated
-    public static Set<CharSequence> toSet(CharSequence self) {
+    public static Set<String> toSet(CharSequence self) {
         return StringGroovyMethods.toSet(self);
     }
 
