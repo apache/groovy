@@ -36,7 +36,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * }
  *
  * CompilerConfiguration cc = new CompilerConfiguration();
- * cc.setScriptBaseClass(DelegatingScript.class);
+ * cc.setScriptBaseClass(DelegatingScript.class.getName());
  * GroovyShell sh = new GroovyShell(cl,new Binding(),cc);
  * DelegatingScript script = (DelegatingScript)sh.parse(new File("my.dsl"))
  * script.setDelegate(new MyDSL());
