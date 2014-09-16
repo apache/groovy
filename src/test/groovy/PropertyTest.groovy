@@ -222,7 +222,7 @@ class PropertyTest extends GroovyTestCase {
             class A {
                 private field
                 void setX(Integer a) {field=a}
-                void set(String b) {field=b}
+                void setX(String b) {field=b}
                 def getX(){field}
             }
             def a = new A()
