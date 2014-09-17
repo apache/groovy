@@ -216,7 +216,7 @@ class PropertyTest extends GroovyTestCase {
             assert b.bar()==1
         '''
     }
-    
+
     public void testPropertyWithMultipleSetters() {
         assertScript '''
             class A {

@@ -15,6 +15,8 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.ast.ASTNode
+
 /**
  * Unit tests for static type checking : fields and properties.
  *
@@ -573,6 +575,61 @@ new FooWorker().doSomething()''', 'Incompatible generic argument types. Cannot a
             }
             assert Foo.x instanceof Object
         '''
+    }
+
+    public void testPropertyWithMultipleSetters() {
+        assertScript '''import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.BooleanExpression
+import org.codehaus.groovy.ast.stmt.AssertStatement
+            class A {
+                private field
+                void setX(Integer a) {field=a}
+                void setX(String b) {field=b}
+                def getX(){field}
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                lookup('test1').each { stmt ->
+                    def exp = stmt.expression
+                    assert exp instanceof BinaryExpression
+                    def left = exp.leftExpression
+                    def md = left.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                    assert md
+                    assert md.name == 'setX'
+                    assert md.parameters[0].originType == Integer_TYPE
+                }
+                lookup('test2').each { stmt ->
+                    def exp = stmt.expression
+                    assert exp instanceof BinaryExpression
+                    def left = exp.leftExpression
+                    def md = left.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                    assert md
+                    assert md.name == 'setX'
+                    assert md.parameters[0].originType == STRING_TYPE
+                }
+            })
+            void testBody() {
+                def a = new A()
+                test1:
+                a.x = 1
+                assert a.x==1
+                test2:
+                a.x = "3"
+                assert a.x == "3"
+            }
+            testBody()
+        '''
+    }
+
+    void testPropertyAssignmentAsExpression() {
+        assertScript '''
+            class Foo {
+                int x = 2
+            }
+            def f = new Foo()
+            def v = f.x = 3
+            assert v == 3
+'''
     }
 
     public static interface InterfaceWithField {
