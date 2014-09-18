@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.classgen.asm.sc.StaticPropertyAccessHelper;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -231,23 +232,16 @@ public class BinaryExpressionTransformer {
     private Expression transformPropertyAssignmentToSetterCall(final PropertyExpression leftExpression, final Expression rightExpression, final MethodNode directMCT) {
         // transform "a.x = b" into "def tmp = b; a.setX(tmp); tmp"
         Expression arg = staticCompilationTransformer.transform(rightExpression);
-        TemporaryVariableExpression tmp = new TemporaryVariableExpression(arg);
-        MethodCallExpression setting = new MethodCallExpression(
+        return StaticPropertyAccessHelper.transformToSetterCall(
                 leftExpression.getObjectExpression(),
-                directMCT.getName(),
-                tmp
+                directMCT,
+                arg,
+                false,
+                false,
+                false,
+                true, // to be replaced with a proper test whether a return value should be used or not
+                leftExpression
         );
-        setting.setImplicitThis(false);
-        setting.setSourcePosition(leftExpression);
-        setting.setMethodTarget(directMCT);
-        ListOfExpressionsExpression seq = new ListOfExpressionsExpression(
-                Arrays.asList(
-                        tmp,
-                        setting,
-                        tmp
-                )
-        );
-        return seq;
     }
 
     protected static boolean isNullConstant(final Expression expression) {

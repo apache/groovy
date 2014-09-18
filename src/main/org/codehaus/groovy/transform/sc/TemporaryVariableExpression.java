@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform.sc;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
@@ -58,5 +59,14 @@ public class TemporaryVariableExpression extends Expression {
         } else {
             expression.visit(visitor);
         }
+    }
+
+    public void remove(WriterController controller) {
+        controller.getCompileStack().removeVar(variable.getIndex());
+    }
+
+    @Override
+    public ClassNode getType() {
+        return expression.getType();
     }
 }

@@ -357,15 +357,16 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 }
             }
             if (setterMethod != null) {
-                MethodCallExpression call = new MethodCallExpression(
+                Expression call = StaticPropertyAccessHelper.transformToSetterCall(
                         receiver,
-                        setter,
-                        arguments
+                        setterMethod,
+                        arguments,
+                        implicitThis,
+                        safe,
+                        spreadSafe,
+                        true, // to be replaced with a proper test whether a return value should be used or not
+                        message
                 );
-                call.setImplicitThis(implicitThis);
-                call.setSafe(safe);
-                call.setSpreadSafe(spreadSafe);
-                call.setMethodTarget(setterMethod);
                 call.visit(controller.getAcg());
                 return true;
             }

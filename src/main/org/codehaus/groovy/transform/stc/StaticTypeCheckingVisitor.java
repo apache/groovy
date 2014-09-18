@@ -482,43 +482,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             final Expression leftExpression = expression.getLeftExpression();
             final Expression rightExpression = expression.getRightExpression();
             int op = expression.getOperation().getType();
-//            if (rightExpression instanceof ClosureExpression) {
-                leftExpression.visit(this);
-                SetterInfo setterInfo = removeSetterInfo(leftExpression);
-                if (setterInfo != null) {
-                    // for expressions like foo = { ... }
-                    // we know that the RHS type is a closure
-                    // but we must check if the binary expression is an assignment
-                    // because we need to check if a setter uses @DelegatesTo
-                    VariableExpression ve = new VariableExpression("%", setterInfo.receiverType);
-                    MethodCallExpression call = new MethodCallExpression(
-                            ve,
-                            setterInfo.name,
-                            rightExpression
-                    );
-                    call.setImplicitThis(false);
-                    visitMethodCallExpression(call);
-                    MethodNode directSetterCandidate = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-                    if (directSetterCandidate!=null) {
-                        for (MethodNode setter : setterInfo.setters) {
-                            if (setter==directSetterCandidate) {
-                                leftExpression.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directSetterCandidate);
-                                storeType(leftExpression, getType(rightExpression));
-                                break;
-                            }
-                        }
-                    } else {
-                        ClassNode firstSetterType = setterInfo.setters.iterator().next().getParameters()[0].getOriginType();
-                        addAssignmentError(firstSetterType, getType(rightExpression), expression);
-                        return;
-                    }
-                } else {
-                    rightExpression.visit(this);
+            leftExpression.visit(this);
+            SetterInfo setterInfo = removeSetterInfo(leftExpression);
+            if (setterInfo != null) {
+                if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
+                    return;
                 }
-//            } else {
-//                leftExpression.visit(this);
-//                rightExpression.visit(this);
-//            }
+
+            } else {
+                rightExpression.visit(this);
+            }
             ClassNode lType = getType(leftExpression);
             ClassNode rType = getType(rightExpression);
             if (isNullConstant(rightExpression)) {
@@ -651,6 +624,45 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } finally {
             typeCheckingContext.popEnclosingBinaryExpression();
         }
+    }
+
+    /**
+     * Given a binary expression corresponding to an assignment, will check that the type of the RHS matches one
+     * of the possible setters and if not, throw a type checking error.
+     * @param expression the assignment expression
+     * @param leftExpression left expression of the assignment
+     * @param rightExpression right expression of the assignment
+     * @param setterInfo possible setters
+     * @return true if type checking passed
+     */
+    private boolean ensureValidSetter(final BinaryExpression expression, final Expression leftExpression, final Expression rightExpression, final SetterInfo setterInfo) {
+        // for expressions like foo = { ... }
+        // we know that the RHS type is a closure
+        // but we must check if the binary expression is an assignment
+        // because we need to check if a setter uses @DelegatesTo
+        VariableExpression ve = new VariableExpression("%", setterInfo.receiverType);
+        MethodCallExpression call = new MethodCallExpression(
+                ve,
+                setterInfo.name,
+                rightExpression
+        );
+        call.setImplicitThis(false);
+        visitMethodCallExpression(call);
+        MethodNode directSetterCandidate = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        if (directSetterCandidate != null) {
+            for (MethodNode setter : setterInfo.setters) {
+                if (setter == directSetterCandidate) {
+                    leftExpression.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directSetterCandidate);
+                    storeType(leftExpression, getType(rightExpression));
+                    break;
+                }
+            }
+        } else {
+            ClassNode firstSetterType = setterInfo.setters.iterator().next().getParameters()[0].getOriginType();
+            addAssignmentError(firstSetterType, getType(rightExpression), expression);
+            return true;
+        }
+        return false;
     }
 
     protected ClassNode getOriginalDeclarationType(Expression lhs) {

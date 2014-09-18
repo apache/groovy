@@ -76,5 +76,14 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
             assert map['bytes'] == 'TEST'
         '''
     }
+
+    @Override
+    void testForInLoop() {
+        try {
+            super.testForInLoop()
+        } finally {
+            println astTrees
+        }
+    }
 }
 

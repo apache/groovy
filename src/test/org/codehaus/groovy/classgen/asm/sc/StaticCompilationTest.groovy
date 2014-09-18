@@ -365,6 +365,10 @@ assert o.blah() == 'outer'
 ''').hasStrictSequence([
         'GETFIELD Outer$Inner.this$0',
         'INVOKEVIRTUAL Outer.getOuterProperty',
+        'DUP',
+        'ASTORE',
+        'ALOAD',
+        'ALOAD',
         'INVOKEVIRTUAL Holder.setValue'
 ])
     }
