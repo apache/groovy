@@ -16,6 +16,8 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -1045,5 +1047,16 @@ public class SwingGroovyMethods {
      */
     public static Component getAt(JToolBar self, int index) {
         return self.getComponentAtIndex(index);
+    }
+
+    /**
+     * Allows the usage of a one-element string for a mnemonic
+     * @param button a AbstractButton
+     * @param mnemonic the String
+     * @since 2.4.0
+     */
+    public static void setMnemonic(AbstractButton button, String mnemonic) {
+        char c = ShortTypeHandling.castToChar(mnemonic);
+        button.setMnemonic(c);
     }
 }
