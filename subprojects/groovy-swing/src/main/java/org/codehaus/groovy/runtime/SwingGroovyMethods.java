@@ -16,7 +16,6 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
 import javax.swing.*;
@@ -1053,7 +1052,7 @@ public class SwingGroovyMethods {
      * Allows the usage of a one-element string for a mnemonic
      * @param button a AbstractButton
      * @param mnemonic the String
-     * @since 2.4.0
+     * @since 2.3.7
      */
     public static void setMnemonic(AbstractButton button, String mnemonic) {
         char c = ShortTypeHandling.castToChar(mnemonic);
