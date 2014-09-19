@@ -58,6 +58,7 @@ import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.MultipleSetterProperty;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.NewMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
@@ -2112,7 +2113,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return ret;
     }
 
-    private MetaMethod findPropertyMethod(Object methodOrList, boolean isGetter, boolean booleanGetter) {
+    /**
+     * return null if nothing valid has been found, a MetaMethod (for getter always the case if not null) or
+     * a LinkedList<MetaMethod> if there are multiple setter
+     */
+    private Object filterPropertyMethod(Object methodOrList, boolean isGetter, boolean booleanGetter) {
         if (methodOrList == null)
           return null;
 
@@ -2153,6 +2158,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         if (ret == null) return null;
         if (ret instanceof MetaMethod) return (MetaMethod) ret;
+        if (!isGetter) return ret;
 
         // we found multiple matching methods
         // this is a problem, because we can use only one
@@ -2163,12 +2169,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         int distance = -1;
         for (Iterator iter = ((List) ret).iterator(); iter.hasNext();) {
             MetaMethod element = (MetaMethod) iter.next();
-            Class c;
-            if (isGetter) {
-                c = element.getReturnType();
-            } else {
-                c = element.getParameterTypes()[0].getTheClass();
-            }
+            Class c  = element.getReturnType();
             int localDistance = distanceToObject(c);
             //TODO: maybe implement the case localDistance==distance
             if (distance == -1 || distance > localDistance) {
@@ -2278,6 +2279,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 else {
                     mp = result;
                 }
+            } else if (mp instanceof MultipleSetterProperty) {
+                MultipleSetterProperty msp = (MultipleSetterProperty) mp;
+                mp = msp.createStaticVersion();
             } else {
                 continue; // ignore all other types
             }
@@ -2397,11 +2401,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 boolean isSetter = methodName.startsWith("set");
                 if (!isGetter && !isSetter) continue;
 
-                MetaMethod propertyMethod = findPropertyMethod(isThis ? e.methods : e.methodsForSuper, isGetter, isBooleanGetter);
-                if (propertyMethod == null) continue;
+                Object propertyMethods = filterPropertyMethod(isThis ? e.methods : e.methodsForSuper, isGetter, isBooleanGetter);
+                if (propertyMethods == null) continue;
 
                 String propName = getPropName(methodName);
-                createMetaBeanProperty(propertyIndex, propName, isGetter, propertyMethod);
+                if (propertyMethods instanceof MetaMethod) {
+                    createMetaBeanProperty(propertyIndex, propName, isGetter, (MetaMethod) propertyMethods);
+                } else {
+                    LinkedList<MetaMethod> methods = (LinkedList<MetaMethod>) propertyMethods;
+                    for (MetaMethod m: methods) {
+                        createMetaBeanProperty(propertyIndex, propName, isGetter, m);
+                    }
+                }
             }
         }
     }
@@ -2422,44 +2433,61 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private void createMetaBeanProperty(SingleKeyHashMap propertyIndex, String propName, boolean isGetter, MetaMethod propertyMethod) {
-        // is this property already accounted for?
-        MetaProperty mp = (MetaProperty) propertyIndex.get(propName);
+    private MetaProperty makeReplacementMetaProperty(MetaProperty mp, String propName, boolean isGetter, MetaMethod propertyMethod) {
         if (mp == null) {
             if (isGetter) {
-                mp = new MetaBeanProperty(propName,
+                return new MetaBeanProperty(propName,
                         propertyMethod.getReturnType(),
                         propertyMethod, null);
             } else {
                 //isSetter
-                mp = new MetaBeanProperty(propName,
+                return new MetaBeanProperty(propName,
                         propertyMethod.getParameterTypes()[0].getTheClass(),
                         null, propertyMethod);
             }
-        } else {
-            MetaBeanProperty mbp;
-            CachedField mfp;
-            if (mp instanceof MetaBeanProperty) {
-                mbp = (MetaBeanProperty) mp;
-                mfp = mbp.getField();
-            } else if (mp instanceof CachedField) {
-                mfp = (CachedField) mp;
-                mbp = new MetaBeanProperty(propName,
-                        mfp.getType(),
-                        null, null);
-            } else {
-                throw new GroovyBugError("unknown MetaProperty class used. Class is " + mp.getClass());
-            }
-            // we may have already found one for this name
-            if (isGetter && mbp.getGetter() == null) {
-                mbp.setGetter(propertyMethod);
-            } else if (!isGetter && mbp.getSetter() == null) {
-                mbp.setSetter(propertyMethod);
-            }
-            mbp.setField(mfp);
-            mp = mbp;
         }
-        propertyIndex.put(propName, mp);
+
+        if (mp instanceof CachedField) {
+            CachedField mfp = (CachedField) mp;
+            MetaBeanProperty mbp = new MetaBeanProperty(propName, mfp.getType(),
+                                            isGetter? propertyMethod: null,
+                                            isGetter? null: propertyMethod);
+            mbp.setField(mfp);
+            return mbp;
+        } else if (mp instanceof MultipleSetterProperty) {
+            MultipleSetterProperty msp = (MultipleSetterProperty) mp;
+            if (isGetter) {
+                msp.setGetter(propertyMethod);
+            }
+            return msp;
+        } else if (mp instanceof MetaBeanProperty) {
+            MetaBeanProperty mbp = (MetaBeanProperty) mp;
+            if (isGetter) {
+                mbp.setGetter(propertyMethod);
+                return mbp;
+            } else if (mbp.getSetter()==null || mbp.getSetter()==propertyMethod) {
+                mbp.setSetter(propertyMethod);
+                return mbp;
+            } else {
+                MultipleSetterProperty msp = new MultipleSetterProperty(propName);
+                msp.setField(mbp.getField());
+                msp.setGetter(mbp.getGetter());
+                return msp;
+            }
+        } else {
+            throw new GroovyBugError("unknown MetaProperty class used. Class is " + mp.getClass());
+        }
+
+
+    }
+
+    private void createMetaBeanProperty(SingleKeyHashMap propertyIndex, String propName, boolean isGetter, MetaMethod propertyMethod) {
+        // is this property already accounted for?
+        MetaProperty mp = (MetaProperty) propertyIndex.get(propName);
+        MetaProperty newMp = makeReplacementMetaProperty(mp, propName, isGetter, propertyMethod);
+        if (newMp!=mp) {
+            propertyIndex.put(propName, newMp);
+        }
     }
 
     protected void applyPropertyDescriptors(PropertyDescriptor[] propertyDescriptors) {

@@ -216,6 +216,22 @@ class PropertyTest extends GroovyTestCase {
             assert b.bar()==1
         '''
     }
+
+    public void testPropertyWithMultipleSetters() {
+        assertScript '''
+            class A {
+                private field
+                void setX(Integer a) {field=a}
+                void setX(String b) {field=b}
+                def getX(){field}
+            }
+            def a = new A()
+            a.x = 1
+            assert a.x==1
+            a.x = "3"
+            assert a.x == "3"
+        '''
+    }
     
 }
 

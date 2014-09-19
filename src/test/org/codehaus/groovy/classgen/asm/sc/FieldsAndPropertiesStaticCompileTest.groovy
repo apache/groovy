@@ -429,4 +429,40 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest im
         '''
     }
 
+    @Override
+    void testPropertyWithMultipleSetters() {
+        // we need to override the test because the AST is going to be changed
+        assertScript '''import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.BooleanExpression
+import org.codehaus.groovy.ast.stmt.AssertStatement
+import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
+            class A {
+                private field
+                void setX(Integer a) {field=a}
+                void setX(String b) {field=b}
+                def getX(){field}
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                lookup('test1').each { stmt ->
+                    def exp = stmt.expression
+                    assert exp instanceof ListOfExpressionsExpression
+                }
+                lookup('test2').each { stmt ->
+                    def exp = stmt.expression
+                    assert exp instanceof ListOfExpressionsExpression
+                }
+            })
+            void testBody() {
+                def a = new A()
+                test1:
+                a.x = 1
+                assert a.x==1
+                test2:
+                a.x = "3"
+                assert a.x == "3"
+            }
+            testBody()
+            '''
+    }
 }

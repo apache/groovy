@@ -2049,4 +2049,26 @@ public abstract class StaticTypeCheckingSupport {
                 && !genericsTypes[0].isPlaceholder()
                 && !genericsTypes[0].isWildcard();
     }
+
+    public static List<MethodNode> findSetters(ClassNode cn, String setterName, boolean voidOnly) {
+        List<MethodNode> result = null;
+        for (MethodNode method : cn.getDeclaredMethods(setterName)) {
+            if (setterName.equals(method.getName())
+                    && (!voidOnly || ClassHelper.VOID_TYPE==method.getReturnType())
+                    && method.getParameters().length == 1) {
+                if (result==null) {
+                    result = new LinkedList<MethodNode>();
+                }
+                result.add(method);
+            }
+        }
+        if (result==null) {
+            ClassNode parent = cn.getSuperClass();
+            if (parent != null) {
+                return findSetters(parent, setterName, voidOnly);
+            }
+            return Collections.emptyList();
+        }
+        return result;
+    }
 }

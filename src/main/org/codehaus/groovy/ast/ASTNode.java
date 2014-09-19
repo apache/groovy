@@ -18,6 +18,10 @@ package org.codehaus.groovy.ast;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.util.ListHashMap;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Base class for any AST node. This class supports basic information used in all nodes of the AST:
  * <ul>
@@ -175,5 +179,16 @@ public class ASTNode {
             return;
         }
         metaDataMap.remove(key);
+    }
+
+    /**
+     * Returns an unmodifiable view of the current node metadata.
+     * @return the node metadata. Always not null.
+     */
+    public Map<?,?> getNodeMetaData() {
+        if (metaDataMap==null) {
+            return Collections.emptyMap();
+        }
+        return Collections.unmodifiableMap(metaDataMap);
     }
 }
