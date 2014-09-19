@@ -632,6 +632,62 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
 '''
     }
 
+    void testPropertyAssignmentInSubClassAndMultiSetter() {
+        10.times {
+            assertScript '''import org.codehaus.groovy.ast.PropertyNode
+
+            public class Activity {
+                int debug
+
+                Activity() {
+                    contentView = 1
+                }
+
+                public void setContentView(Date layoutResID) { debug = 2 }
+                public void setContentView(int layoutResID) { debug = 3 }
+            }
+
+            class MyActivity extends Activity {
+                void foo() {
+                    contentView = 1
+                    assert debug == 3
+                    contentView = new Date()
+                    assert debug == 2
+                }
+            }
+            new MyActivity().foo()
+        '''
+        }
+    }
+
+    void testPropertyAssignmentInSubClassAndMultiSetterThroughDelegation() {
+        10.times {
+            assertScript '''import org.codehaus.groovy.ast.PropertyNode
+
+            public class Activity {
+                int debug
+
+                Activity() {
+                    contentView = 1
+                }
+
+                public void setContentView(Date layoutResID) { debug = 2 }
+                public void setContentView(int layoutResID) { debug = 3 }
+            }
+
+            class MyActivity extends Activity {
+            }
+            def activity = new  MyActivity()
+            activity.with {
+                 contentView = 1
+                 assert debug == 3
+                 contentView = new Date()
+                 assert debug == 2
+            }
+        '''
+        }
+    }
+
     public static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
     }

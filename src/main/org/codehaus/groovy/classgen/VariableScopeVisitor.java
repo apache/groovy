@@ -164,7 +164,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         for (MethodNode mn : cn.getMethods()) {
             String pName = getPropertyName(mn);
             if (pName != null && pName.equals(name))
-                return new PropertyNode(pName, mn.getModifiers(), getPropertyType(mn), cn, null, null, null);
+                return new PropertyNode(pName, mn.getModifiers(), ClassHelper.OBJECT_TYPE, cn, null, null, null);
         }
 
         for (PropertyNode pn : cn.getProperties()) {
@@ -174,13 +174,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         Variable ret = findClassMember(cn.getSuperClass(), name);
         if (ret != null) return ret;
         return findClassMember(cn.getOuterClass(), name);
-    }
-
-    private ClassNode getPropertyType(MethodNode m) {
-        if (m.getReturnType() != ClassHelper.VOID_TYPE) {
-            return m.getReturnType();
-        }
-        return m.getParameters()[0].getType();
     }
 
     private String getPropertyName(MethodNode m) {

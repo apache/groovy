@@ -387,6 +387,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (storeTypeForThis(vexp)) return;
         if (storeTypeForSuper(vexp)) return;
+        if (vexp.getAccessedVariable() instanceof PropertyNode) {
+            // we must be careful, because the property node may be of a wrong type:
+            // if a class contains a getter and a setter of different types or
+            // overloaded setters, the type of the property node is arbitrary!
+            if (tryVariableExpressionAsProperty(vexp, vexp.getName())) {
+                BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
+                if (enclosingBinaryExpression != null) {
+                    Expression leftExpression = enclosingBinaryExpression.getLeftExpression();
+                    Expression rightExpression = enclosingBinaryExpression.getRightExpression();
+                    SetterInfo setterInfo = removeSetterInfo(leftExpression);
+                    if (setterInfo != null) {
+                        if (!ensureValidSetter(vexp, leftExpression, rightExpression, setterInfo)) {
+                            return;
+                        }
+
+                    }
+                }
+            }
+        }
 
         TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
         if (enclosingClosure != null) {
@@ -410,6 +429,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         DynamicVariable dyn = (DynamicVariable) vexp.getAccessedVariable();
         // first, we must check the 'with' context
         String dynName = dyn.getName();
+        if (tryVariableExpressionAsProperty(vexp, dynName)) return;
+
+        if (!extension.handleUnresolvedVariableExpression(vexp)) {
+            addStaticTypeError("The variable [" + vexp.getName() + "] is undeclared.", vexp);
+        }
+    }
+
+    private boolean tryVariableExpressionAsProperty(final VariableExpression vexp, final String dynName) {
         VariableExpression implicitThis = new VariableExpression("this");
         PropertyExpression pe = new PropertyExpression(implicitThis, dynName);
         pe.setImplicitThis(true);
@@ -422,12 +449,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (val!=null) vexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY,val);
             val = pe.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
             if (val!=null) vexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER,val);
-            return;
+            return true;
         }
-
-        if (!extension.handleUnresolvedVariableExpression(vexp)) {
-            addStaticTypeError("The variable [" + vexp.getName() + "] is undeclared.", vexp);
-        }
+        return false;
     }
 
     private boolean visitPropertyExpressionSilent(PropertyExpression pe, Expression lhsPart) {
@@ -635,7 +659,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param setterInfo possible setters
      * @return true if type checking passed
      */
-    private boolean ensureValidSetter(final BinaryExpression expression, final Expression leftExpression, final Expression rightExpression, final SetterInfo setterInfo) {
+    private boolean ensureValidSetter(final Expression expression, final Expression leftExpression, final Expression rightExpression, final SetterInfo setterInfo) {
         // for expressions like foo = { ... }
         // we know that the RHS type is a closure
         // but we must check if the binary expression is an assignment
@@ -668,6 +692,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected ClassNode getOriginalDeclarationType(Expression lhs) {
         if (lhs instanceof VariableExpression) {
             Variable var = findTargetVariable((VariableExpression) lhs);
+            if (var instanceof PropertyNode) {
+                // Do NOT trust the type of the property node!
+                return getType(lhs);
+            }
             if (var instanceof DynamicVariable) return getType(lhs);
             return var.getOriginType();
         }
