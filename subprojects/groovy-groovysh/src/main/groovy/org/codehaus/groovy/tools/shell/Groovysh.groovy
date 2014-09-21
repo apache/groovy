@@ -35,6 +35,11 @@ import java.util.regex.Pattern
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
  *
+ * The set of available commands can be modified by placing a file in the classpath named
+ * <code>org/codehaus/groovy/tools/shell/commands.xml</code>
+ *
+ * See {@link XmlCommandRegistrar}
+ *
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class Groovysh extends Shell {
