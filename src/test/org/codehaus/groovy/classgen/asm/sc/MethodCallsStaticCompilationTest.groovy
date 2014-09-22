@@ -179,8 +179,7 @@ import groovy.transform.TypeCheckingMode//import org.codehaus.groovy.classgen.as
 
     // GROOVY-7063
     void testCallToProtectedMethodFromClosureInSubclassAndDifferentPackage() {
-        try {
-            assertScript ''' import org.codehaus.groovy.classgen.asm.sc.MethodCallsStaticCompilationTest.Base
+        assertScript ''' import org.codehaus.groovy.classgen.asm.sc.MethodCallsStaticCompilationTest.Base
 
         class Ext extends Base {
 
@@ -194,9 +193,6 @@ import groovy.transform.TypeCheckingMode//import org.codehaus.groovy.classgen.as
         def ext = new Ext()
         assert ext.doSomething() == 123
         '''
-        } finally {
-            println astTrees
-        }
     }
 
     public static class Base {
