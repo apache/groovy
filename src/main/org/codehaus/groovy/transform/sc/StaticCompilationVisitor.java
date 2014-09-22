@@ -188,7 +188,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     private void addPrivateBridgeMethods(final ClassNode node) {
         Set<ASTNode> accessedMethods = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS);
         if (accessedMethods==null) return;
-        List<MethodNode> methods = new ArrayList<MethodNode>(node.getMethods());
+        List<MethodNode> methods = new ArrayList<MethodNode>(node.getAllDeclaredMethods());
         Map<MethodNode, MethodNode> privateBridgeMethods = (Map<MethodNode, MethodNode>) node.getNodeMetaData(PRIVATE_BRIDGE_METHODS);
         if (privateBridgeMethods!=null) {
             // private bridge methods already added
@@ -224,7 +224,9 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 bridge.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
             }
         }
-        node.setNodeMetaData(PRIVATE_BRIDGE_METHODS, privateBridgeMethods);
+        if (!privateBridgeMethods.isEmpty()) {
+            node.setNodeMetaData(PRIVATE_BRIDGE_METHODS, privateBridgeMethods);
+        }
     }
 
     private void memorizeInitialExpressions(final MethodNode node) {

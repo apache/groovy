@@ -152,7 +152,16 @@ public class StaticInvocationWriter extends InvocationWriter {
      * Attempts to make a direct method call on a bridge method, if it exists.
      */
     protected boolean tryBridgeMethod(MethodNode target, Expression receiver, boolean implicitThis, TupleExpression args) {
-        Map<MethodNode, MethodNode> bridges = target.getDeclaringClass().redirect().getNodeMetaData(PRIVATE_BRIDGE_METHODS);
+        ClassNode lookupClassNode;
+        if (target.isProtected()) {
+            lookupClassNode = controller.getClassNode();
+            if (controller.isInClosure()) {
+                lookupClassNode = lookupClassNode.getOuterClass();
+            }
+        } else {
+            lookupClassNode = target.getDeclaringClass().redirect();
+        }
+        Map<MethodNode, MethodNode> bridges = lookupClassNode.getNodeMetaData(PRIVATE_BRIDGE_METHODS);
         MethodNode bridge = bridges==null?null:bridges.get(target);
         if (bridge != null) {
             Expression fixedReceiver = receiver;
@@ -217,7 +226,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             ClassNode classNode = controller.getClassNode();
             if (classNode.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
                     && controller.isInClosure()
-                    && !(target.isPublic() || target.isProtected())
+                    && !target.isPublic()
                     && target.getDeclaringClass() != classNode) {
                 if (!tryBridgeMethod(target, receiver, implicitThis, args)) {
                     // replace call with an invoker helper call
