@@ -345,10 +345,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * Given a method node, checks if we are calling a private method from an inner class.
      */
     private void checkOrMarkPrivateAccess(MethodNode mn) {
-        if (mn!=null && Modifier.isPrivate(mn.getModifiers()) &&
-            (mn.getDeclaringClass() != typeCheckingContext.getEnclosingClassNode() || typeCheckingContext.getEnclosingClosure()!=null) &&
-            mn.getDeclaringClass().getModule() == typeCheckingContext.getEnclosingClassNode().getModule()) {
-            addPrivateFieldOrMethodAccess(mn.getDeclaringClass(), StaticTypesMarker.PV_METHODS_ACCESS, mn);
+        if (mn==null) {
+            return;
+        }
+        ClassNode declaringClass = mn.getDeclaringClass();
+        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
+        if (declaringClass != enclosingClassNode || typeCheckingContext.getEnclosingClosure() != null) {
+            int mods = mn.getModifiers();
+            boolean sameModule = declaringClass.getModule() == enclosingClassNode.getModule();
+            String packageName = declaringClass.getPackageName();
+            if (packageName==null) {
+                packageName = "";
+            }
+            if ((Modifier.isPrivate(mods) && sameModule)
+                    || (Modifier.isProtected(mods) && !packageName.equals(enclosingClassNode.getPackageName()))) {
+                addPrivateFieldOrMethodAccess(sameModule? declaringClass : enclosingClassNode, StaticTypesMarker.PV_METHODS_ACCESS, mn);
+            }
         }
     }
 
