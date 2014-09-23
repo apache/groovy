@@ -23,7 +23,7 @@ The following binary arithmetic operators are available in Groovy:
 |
 
 | +-+
-| substraction
+| subtraction
 |
 
 | +*+
@@ -32,7 +32,7 @@ The following binary arithmetic operators are available in Groovy:
 
 | +/+
 | division
-| Use +intdiv()+ for integer division, and see the section about <<core-syntax.adoc#integer_division,the integer division>> for more information on the return type of the division.
+| Use +intdiv()+ for integer division, and see the section about <<core-syntax.adoc#integer_division,integer division>> for more information on the return type of the division.
 
 | +%+
 | modulo
@@ -60,7 +60,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=unary_plus_minus,i
 ----
 <1> Note the usage of parentheses to surround an expression to apply the unary minus to that surrounded expression.
 
-In terms of unary arithmetics operators, the ++++ (increment) and +--+ (decrement) operators are available, 
+In terms of unary arithmetic operators, the ++++ (increment) and +--+ (decrement) operators are available, 
 both in prefix and postfix notation:
 
 [source,groovy]
@@ -92,7 +92,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=binary_assign_oper
 == Relational operators
 
 Relational operators allow comparisons between objects, to know if two objects are the same or different,
-or if one is greater or lower than or equal to the other.
+or if one is greater than, less than, or equal to the other.
 
 The following operators are available:
 
@@ -120,7 +120,7 @@ The following operators are available:
 | greater than or equal
 |====
 
-These operators into action in simple number comparisons:
+Here are some examples of simple number comparisons using these operators:
 
 [source,groovy]
 ----
