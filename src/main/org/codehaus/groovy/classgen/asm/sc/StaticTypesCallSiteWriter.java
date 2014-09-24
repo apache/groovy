@@ -177,6 +177,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 call.setMethodTarget(getterMethod);
                 call.setImplicitThis(false);
                 call.setSourcePosition(receiver);
+                call.setSafe(safe);
                 call.visit(controller.getAcg());
                 return;
             }
@@ -196,6 +197,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 );
                 call.setMethodTarget(getter);
                 call.setImplicitThis(false);
+                call.setSafe(safe);
                 call.setSourcePosition(receiver);
                 call.visit(controller.getAcg());
                 return;
