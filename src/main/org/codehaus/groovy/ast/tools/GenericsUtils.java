@@ -188,8 +188,11 @@ public class GenericsUtils {
      * @return a parameterized interface class node
      */
     public static ClassNode parameterizeType(final ClassNode hint, final ClassNode target) {
-        if (hint.isArray() && target.isArray()) {
-            return parameterizeType(hint.getComponentType(), target.getComponentType()).makeArray();
+        if (hint.isArray()) {
+            if (target.isArray()) {
+                return parameterizeType(hint.getComponentType(), target.getComponentType()).makeArray();
+            }
+            return target;
         }
         if (!target.equals(hint) && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(target, hint)) {
             ClassNode nextSuperClass = ClassHelper.getNextSuperClass(target, hint);
