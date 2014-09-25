@@ -116,30 +116,37 @@ class OperatorsTest extends CompilableTestSupport {
 
     void testLogicalOperatorPrecedence() {
         // tag::logical_precendence_1[]
-        assert !false && true    // <1>
+        assert (!false && false) == false   // <1>
         // end::logical_precendence_1[]
 
         // tag::logical_precendence_2[]
-        assert false || true && true    // <1>
+        assert true || true && false        // <1>
         // end::logical_precendence_2[]
     }
 
-    void testLogicalOrShortCircuit() {
+    void testLogicalShortCircuit() {
         assertScript '''
-            // tag::logical_or_shortcircuit[]
-            called = false
+	        // tag::logical_shortcircuit[]
+	        boolean checkIfCalled() {   // <1>
+	            called = true
+	        }
 
-            boolean somethingTrueOrFalse(boolean b) {  // <1>
-                called = true
-                return b
-            }
+	        called = false
+	        true || checkIfCalled()
+	        assert !called              // <2>
 
-            assert true || somethingTrueOrFalse(false)
-            assert !called                              // <2>
+	        called = false
+	        false || checkIfCalled()
+	        assert called               // <3>
 
-            assert false || somethingTrueOrFalse(true)
-            assert called                               // <3>
-            // end::logical_or_shortcircuit[]
+	        called = false
+	        false && checkIfCalled()
+	        assert !called              // <4>
+
+	        called = false
+	        true && checkIfCalled()
+	        assert called               // <5>
+	        // end::logical_shortcircuit[]
         '''
     }
 
@@ -161,12 +168,12 @@ class OperatorsTest extends CompilableTestSupport {
         assert result == 'Found'
         result = null
         // tag::conditional_op_ternary_ternary[]
-        result = (string!=null && string.length()>0)?'Found':'Not found'
+        result = (string!=null && string.length()>0) ? 'Found' : 'Not found'
         // end::conditional_op_ternary_ternary[]
         assert result == 'Found'
 
         // tag::conditional_op_ternary_groovytruth[]
-        result = string?'Found':'Not found'
+        result = string ? 'Found' : 'Not found'
         // end::conditional_op_ternary_groovytruth[]
         assert result == 'Found'
 
@@ -181,9 +188,9 @@ class OperatorsTest extends CompilableTestSupport {
 
     void testNullSafeOperator() {
         // tag::nullsafe[]
-        def person = Person.find { it.id == 123 }           // <1>
-        def name = person?.name                             // <2>
-        assert name == null                                 // <3>
+        def person = Person.find { it.id == 123 }    // <1>
+        def name = person?.name                      // <2>
+        assert name == null                          // <3>
         // end::nullsafe[]
     }
 
@@ -194,15 +201,15 @@ class OperatorsTest extends CompilableTestSupport {
         assertScript '''
 // tag::direct_field_class[]
 class User {
-    public final String name                               // <1>
+    public final String name                 // <1>
     User(String name) { this.name = name}
-    String getName() { "Name: $name" }                     // <2>
+    String getName() { "Name: $name" }       // <2>
 }
 def user = new User('Bob')
-assert user.name == 'Name: Bob'                            // <3>
+assert user.name == 'Name: Bob'              // <3>
 // end::direct_field_class[]
 // tag::direct_field_op[]
-assert user.@name == 'Bob'                                 // <1>
+assert user.@name == 'Bob'                   // <1>
 // end::direct_field_op[]
 '''
     }
@@ -222,30 +229,32 @@ assert user.@name == 'Bob'                                 // <1>
                 int age
             }
             // tag::method_reference_strategy[]
-            def transform(List elements, Closure action) {                                      // <1>
+            def transform(List elements, Closure action) {                    // <1>
                 def result = []
                 elements.each {
                     result << action(it)
                 }
                 result
             }
-            String describe(Person p) {                                                         // <2>
+            String describe(Person p) {                                       // <2>
                 "$p.name is $p.age"
             }
-            def action = this.&describe                                                         // <3>
-            def list = [new Person(name:'Bob', age:42), new Person(name:'Julia',age:35)]        // <4>
-            assert transform(list, action) == ['Bob is 42', 'Julia is 35']                      // <5>
+            def action = this.&describe                                       // <3>
+            def list = [
+                new Person(name: 'Bob',   age: 42),
+                new Person(name: 'Julia', age: 35)]                           // <4>
+            assert transform(list, action) == ['Bob is 42', 'Julia is 35']    // <5>
 
             // end::method_reference_strategy[]
         '''
 
         assertScript '''
             // tag::method_reference_dispatch[]
-            def doSomething(String str) { str.toUpperCase() }                                   // <1>
-            def doSomething(Integer x) { 2*x }                                                  // <2>
-            def reference = this.&doSomething                                                   // <3>
-            assert reference('foo') == 'FOO'                                                    // <4>
-            assert reference(123)   == 246                                                      // <5>
+            def doSomething(String str) { str.toUpperCase() }    // <1>
+            def doSomething(Integer x) { 2*x }                   // <2>
+            def reference = this.&doSomething                    // <3>
+            assert reference('foo') == 'FOO'                     // <4>
+            assert reference(123)   == 246                       // <5>
             // end::method_reference_dispatch[]
         '''
     }
@@ -257,25 +266,25 @@ assert user.@name == 'Bob'                                 // <1>
         assert p instanceof Pattern
         // end::pattern_op[]
         // tag::pattern_op_variants[]
-        p = ~'foo'                                                                              // <1>
-        p = ~'foo'                                                                              // <2>
-        p = ~$/dollar/slashy $ string/$                                                         // <3>
-        p = ~"${pattern}"                                                                       // <4>
+        p = ~'foo'                                                        // <1>
+        p = ~"foo"                                                        // <2>
+        p = ~$/dollar/slashy $ string/$                                   // <3>
+        p = ~"${pattern}"                                                 // <4>
         // end::pattern_op_variants[]
 
         // tag::pattern_matcher_op[]
         def text = "some text to match"
-        def m = text =~ /match/                                                                 // <1>
-        assert m instanceof Matcher                                                             // <2>
-        if (!m) {                                                                               // <3>
+        def m = text =~ /match/                                           // <1>
+        assert m instanceof Matcher                                       // <2>
+        if (!m) {                                                         // <3>
             throw new RuntimeException("Oops, text not found!")
         }
         // end::pattern_matcher_op[]
 
         // tag::pattern_matcher_strict_op[]
-        m = text ==~ /match/                                                                    // <1>
-        assert m instanceof Boolean                                                             // <2>
-        if (m) {                                                                                // <3>
+        m = text ==~ /match/                                              // <1>
+        assert m instanceof Boolean                                       // <2>
+        if (m) {                                                          // <3>
             throw new RuntimeException("Should not reach that point!")
         }
         // end::pattern_matcher_strict_op[]
@@ -289,18 +298,18 @@ class Car {
     String model
 }
 def cars = [
-       new Car(make:'Peugeot', model:'508'),
-       new Car(make:'Renault', model:'Clio')]                                    // <1>
-def makes = cars*.make                                                           // <2>
-assert makes == ['Peugeot', 'Renault']                                           // <3>
+       new Car(make: 'Peugeot', model: '508'),
+       new Car(make: 'Renault', model: 'Clio')]       // <1>
+def makes = cars*.make                                // <2>
+assert makes == ['Peugeot', 'Renault']                // <3>
 // end::spreaddot[]
 // tag::spreaddot_nullsafe[]
 cars = [
-   new Car(make:'Peugeot', model:'508'),
-   null,                                                                         // <1>
-   new Car(make:'Renault', model:'Clio')]
-assert cars*.make == ['Peugeot', null, 'Renault']                                // <2>
-assert null*.make == null                                                        // <3>
+   new Car(make: 'Peugeot', model: '508'),
+   null,                                              // <1>
+   new Car(make: 'Renault', model: 'Clio')]
+assert cars*.make == ['Peugeot', null, 'Renault']     // <2>
+assert null*.make == null                             // <3>
 // end::spreaddot_nullsafe[]
 '''
         assertScript '''
@@ -311,8 +320,8 @@ class Component {
 }
 class CompositeObject implements Iterable<Component> {
     def components = [
-        new Component(id:1, name: 'Foo'),
-        new Component(id:2, name:'Bar')]
+        new Component(id: 1, name: 'Foo'),
+        new Component(id: 2, name: 'Bar')]
 
     @Override
     Iterator<Component> iterator() {
@@ -357,7 +366,7 @@ assert function(*args,5,6) == 26
     void testSpreadMap() {
         assertScript '''
         // tag::spread_map[]
-        def m1 = [c: 3, d: 4]                 // <1>
+        def m1 = [c:3, d:4]                   // <1>
         def map = [a:1, b:2, *:m1]            // <2>
         assert map == [a:1, b:2, c:3, d:4]    // <3>
         // end::spread_map[]
@@ -365,7 +374,7 @@ assert function(*args,5,6) == 26
 
         assertScript '''
         // tag::spread_map_position[]
-        def m1 = [c: 3, d: 4]                 // <1>
+        def m1 = [c:3, d:4]                   // <1>
         def map = [a:1, b:2, *:m1, d: 8]      // <2>
         assert map == [a:1, b:2, c:3, d:8]    // <3>
         // end::spread_map_position[]
@@ -418,14 +427,14 @@ assert function(*args,5,6) == 26
         class User {
             Long id
             String name
-            def getAt(int i) {                                                  // <1>
+            def getAt(int i) {                                             // <1>
                 switch (i) {
                     case 0: return id
                     case 1: return name
                 }
                 throw new IllegalArgumentException("No such element $i")
             }
-            void putAt(int i, def value) {                                      // <2>
+            void putAt(int i, def value) {                                 // <2>
                 switch (i) {
                     case 0: id = value; return
                     case 1: name = value; return
@@ -433,11 +442,11 @@ assert function(*args,5,6) == 26
                 throw new IllegalArgumentException("No such element $i")
             }
         }
-        def user = new User(id: 1, name: 'Alex')                                // <3>
-        assert user[0] == 1                                                     // <4>
-        assert user[1] == 'Alex'                                                // <5>
-        user[1] = 'Bob'                                                         // <6>
-        assert user.name == 'Bob'                                               // <7>
+        def user = new User(id: 1, name: 'Alex')                           // <3>
+        assert user[0] == 1                                                // <4>
+        assert user[1] == 'Alex'                                           // <5>
+        user[1] = 'Bob'                                                    // <6>
+        assert user.name == 'Bob'                                          // <7>
         // end::subscript_destructuring[]
         '''
     }

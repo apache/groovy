@@ -1927,7 +1927,7 @@ for testing purposes, or when integrating with third-party libraries which requi
 ===== @groovy.lang.DelegatesTo
 
 `@DelegatesTo` is not, technically speaking, an AST transformation. It is aimed at documenting code and helping the compiler in case you are
-using <<xform-TypeChecked,type checking>> or <<xform-CompileStatic, static compilation>>. The annotation is described throughfully in the
+using <<xform-TypeChecked,type checking>> or <<xform-CompileStatic, static compilation>>. The annotation is described thoroughly in the
 <<section-delegatesto,DSL section>> of this guide.
 
 ==== Swing patterns
@@ -2124,7 +2124,7 @@ include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=memoriz
 ===== @groovy.lang.Grapes
 
 `Grape` is a dependency management engine embedded into Groovy, relying on several annotations which are described
-throughfully in this <<section-grape,section of the guide>>.
+thoroughly in this <<section-grape,section of the guide>>.
 
 [[developing-ast-xforms]]
 === Developing AST transformations (TBD)

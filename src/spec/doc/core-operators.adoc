@@ -60,7 +60,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=unary_plus_minus,i
 ----
 <1> Note the usage of parentheses to surround an expression to apply the unary minus to that surrounded expression.
 
-In terms of unary arithmetic operators, the ++++ (increment) and +--+ (decrement) operators are available, 
+In terms of unary arithmetics operators, the `++` (increment) and +--+ (decrement) operators are available,
 both in prefix and postfix notation:
 
 [source,groovy]
@@ -153,7 +153,7 @@ The logical "not" has a higher priority than the logical "and".
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_precendence_1,indent=0]
 ----
-<1> Here, the assertion is true, because "not" has a higher precedence than "and", otherwise, the assertion would have failed
+<1> Here, the assertion is true (as the expression in parentheses is false), because "not" has a higher precedence than "and", so it only applies to the first "false" term; otherwise, it would have applied to the result of the "and", turned it into true, and the assertion would have failed
 
 The logical "and" has a higher priority than the logical "or".
 
@@ -161,21 +161,25 @@ The logical "and" has a higher priority than the logical "or".
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_precendence_2,indent=0]
 ----
-<1> Here, the assertion is true, because "and" has a higher precedence than "or", otherwise, the assertion would have failed
+<1> Here, the assertion is true, because "and" has a higher precedence than "or", therefore the "or" is executed last and returns true, having one true argument; otherwise, the "and" would have executed last and returned false, having one false argument, and the assertion would have failed
 
-=== Short-circuiting for `||`
+=== Short-circuiting
 
-The logical "or" operator is supporting short-circuiting: if the left operand is true, it won't evaluate the right operand.
+The logical `||` operator supports short-circuiting: if the left operand is true, it knows that the result will be true in any case, so it won't evaluate the right operand.
 The right operand will be evaluated only if the left operand is false.
+
+Likewise for the logical `&&` operator: if the left operand is false, it knows that the result will be false in any case, so it won't evaluate the right operand.
+The right operand will be evaluated only if the left operand is true.
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_or_shortcircuit,indent=0]
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_shortcircuit,indent=0]
 ----
-<1> We create a function that returns its boolean argument, but it sets the `called` flag 
-<2> In the first case, we confirm that the function is not called, as `||` short-circuits the evaluation of the right operand.
-<3> In the second case, the right operand is called, as indicated by the fact our flag is now true
-
+<1> We create a function that sets the `called` flag to true whenever it's called
+<2> In the first case, after resetting the called flag, we confirm that if the left operand to `||` is true, the function is not called, as `||` short-circuits the evaluation of the right operand
+<3> In the second case, the left operand is false and so the function is called, as indicated by the fact our flag is now true
+<4> Likewise for `&&`, we confirm that the function is not called with a false left operand
+<5> But the function is called with a true left operand
 
 == Bitwise operators
 
@@ -370,8 +374,8 @@ instance:
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_op,indent=0]
 ----
-<1> `~=` creates a matcher against the `text` variable, using the pattern on the right hand side
-<2> the return type of `~=` is a `Matcher`
+<1> `=~` creates a matcher against the `text` variable, using the pattern on the right hand side
+<2> the return type of `=~` is a `Matcher`
 <3> equivalent to calling `if (!m.find())`
 
 Since a `Matcher` coerces to a `boolean` by calling its `find` method, the `=~` operator is consistent with the simple
@@ -386,8 +390,8 @@ and requires a strict match of the input string:
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_strict_op,indent=0]
 ----
-<1> `~==` matches the subject with the regular expression, but match must be strict
-<2> the return type of `~==` is therefore a `boolean`
+<1> `==~` matches the subject with the regular expression, but match must be strict
+<2> the return type of `==~` is therefore a `boolean`
 <3> equivalent to calling `if (text ==~ /match/)`
 
 == Other operators (WIP)

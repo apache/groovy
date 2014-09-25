@@ -27,7 +27,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=bird,ind
 <2> instantiate a new `Bird`
 <3> the `Bird` class automatically gets the behavior of the `FlyingAbility` trait
 
-Traits allow a wide range of capabilities, from simple composition to testing, which are described throughfully in this section.
+Traits allow a wide range of capabilities, from simple composition to testing, which are described thoroughly in this section.
 
 == Methods
 === Public methods
@@ -142,10 +142,14 @@ will let you do that:
 ----
 include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_with_private_field,indent=0]
 ----
+<1> declare a private field `count` inside a trait
+<2> declare a public method `count` that increments the counter and returns it
+<3> declare a class that implements the `Counter` trait
+<4> the `count` method can use the private field to keep state
 
 TIP: This is a major difference with http://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html[Java 8 virtual extension methods]. While virtual extension methods
-do not carry state, traits can. Also interesting traits in Groovy are supported starting with Java 6, but their implementation do not rely on virtual extension methods. This
-means that even if a trait can be seen from a Java class as a regular interface, this interface will *not* have default methods, only abstract ones.
+do not carry state, traits can. Moreover, traits in Groovy are supported starting with Java 6, because their implementation does not rely on virtual extension methods. This
+means that even if a trait can be seen from a Java class as a regular interface, that interface will *not* have default methods, only abstract ones.
 
 === Public fields
 
@@ -435,7 +439,7 @@ that start with `say`:
 include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=sayhandler,indent=0]
 -----
 <1> a handler specific precondition
-<2> if the precondition is not meant, pass the message to the next handler in the chain
+<2> if the precondition is not met, pass the message to the next handler in the chain
 
 Then our final handler looks like this:
 
@@ -505,8 +509,8 @@ is used for `toString`, so that the string representation of the proxy object wh
 == Advanced features
 === SAM type coercion
 
-If a trait defines a single abstract method, it is candidate for SAM type coercion. For example, imagine the following
-trait:
+If a trait defines a single abstract method, it is candidate for SAM (Single Abstract Method) type coercion. For example,
+imagine the following trait:
 
 [source,groovy]
 ----
