@@ -30,6 +30,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -406,29 +407,42 @@ public class InvokerHelper {
         return invokeMethod(script, "run", EMPTY_ARGS);
     }
 
+    static class NullScript extends Script {
+        public NullScript() { this(new Binding()); }
+        public NullScript(Binding context) { super(context); }
+        public Object run() { return null; }
+    }
+
     public static Script createScript(Class scriptClass, Binding context) {
-        Script script = null;
-        // for empty scripts
+        Script script;
+
         if (scriptClass == null) {
-            script = new Script() {
-                public Object run() {
-                    return null;
-                }
-            };
+            script = new NullScript(context);
         } else {
             try {
-                final GroovyObject object = (GroovyObject) scriptClass.newInstance();
-                if (object instanceof Script) {
-                    script = (Script) object;
+                if (Script.class.isAssignableFrom(scriptClass)) {
+                    try {
+                        Constructor constructor = scriptClass.getConstructor(Binding.class);
+                        script = (Script) constructor.newInstance(context);
+                    } catch (NoSuchMethodException e) {
+                        // Fallback for non-standard "Script" classes.
+                        script = (Script) scriptClass.newInstance();
+                        script.setBinding(context);
+                    }
                 } else {
+                    final GroovyObject object = (GroovyObject) scriptClass.newInstance();
                     // it could just be a class, so let's wrap it in a Script
                     // wrapper; though the bindings will be ignored
-                    script = new Script() {
+                    script = new Script(context) {
                         public Object run() {
-                            Object args = getBinding().getVariables().get("args");
                             Object argsToPass = EMPTY_MAIN_ARGS;
-                            if (args != null && args instanceof String[]) {
-                                argsToPass = args;
+                            try {
+                                Object args = getProperty("args");
+                                if (args instanceof String[]) {
+                                    argsToPass = args;
+                                }
+                            } catch (MissingPropertyException e) {
+                                // They'll get empty args since none exist in the context.
                             }
                             object.invokeMethod("main", argsToPass);
                             return null;
@@ -449,7 +463,6 @@ public class InvokerHelper {
                                 + scriptClass + ". Reason: " + e, e);
             }
         }
-        script.setBinding(context);
         return script;
     }
 

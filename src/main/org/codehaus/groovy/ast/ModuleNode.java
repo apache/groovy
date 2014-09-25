@@ -18,6 +18,7 @@ package org.codehaus.groovy.ast;
 import groovy.lang.Binding;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -65,6 +66,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     private boolean importsResolved = false;
     private ClassNode scriptDummy;
     private String mainClassName = null;
+    private final Parameter[] SCRIPT_CONTEXT_CTOR = {new Parameter(ClassHelper.BINDING_TYPE, "context")};
 
     public ModuleNode (SourceUnit context ) {
         this.context = context;
@@ -301,12 +303,25 @@ public class ModuleNode extends ASTNode implements Opcodes {
         classNode.addMethod(methodNode);
 
         classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
-        Statement stmt = new ExpressionStatement(
-                        new MethodCallExpression(
+
+        Statement stmt;
+        // A script's contextual constructor should call it's super class' contextual constructor, if it has one.
+        // In practice this will always be true because currently this visitor is run before the AST transformations
+        // (like @BaseScript) that could change this.  But this is cautious and anticipates possible compiler changes.
+        if (classNode.getSuperClass().getDeclaredConstructor(SCRIPT_CONTEXT_CTOR) != null) {
+            stmt = new ExpressionStatement(
+                    new ConstructorCallExpression(ClassNode.SUPER,
+                            new ArgumentListExpression(
+                                    new VariableExpression("context"))));
+        } else {
+            // Fallback for non-standard base "script" classes with no context (Binding) constructor.
+            stmt = new ExpressionStatement(
+                    new MethodCallExpression(
                             new VariableExpression("super"),
                             "setBinding",
                             new ArgumentListExpression(
-                                        new VariableExpression("context"))));
+                                    new VariableExpression("context"))));
+        }
 
         classNode.addConstructor(
             ACC_PUBLIC,

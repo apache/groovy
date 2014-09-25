@@ -243,23 +243,39 @@ public class GroovyShell extends GroovyObjectSupport {
      * }
      */
     private Object runScriptOrMainOrTestOrRunnable(Class scriptClass, String[] args) {
+        // Always set the "args" property, regardless of what path we take in the code.
+        // Bad enough to have side effects but worse if their behavior is wonky.
+        context.setProperty("args", args);
+
         if (scriptClass == null) {
             return null;
         }
+
+        //TODO: This logic mostly duplicates InvokerHelper.createScript.  They should probably be unified.
+
         if (Script.class.isAssignableFrom(scriptClass)) {
             // treat it just like a script if it is one
-            Script script  = null;
             try {
-                script = (Script) scriptClass.newInstance();
+                Constructor constructor = scriptClass.getConstructor(Binding.class);
+                Script script = (Script) constructor.newInstance(context);
+                return script.run();
             } catch (InstantiationException e) {
                 // ignore instantiation errors,, try to do main
             } catch (IllegalAccessException e) {
                // ignore instantiation errors, try to do main
-            }
-            if (script != null) {
-                script.setBinding(context);
-                script.setProperty("args", args);
-                return script.run();
+            } catch (NoSuchMethodException e) {
+                try {
+                    // Fallback for non-standard "Scripts" that don't have contextual constructor.
+                    Script script = (Script) scriptClass.newInstance();
+                    script.setBinding(context);
+                    return script.run();
+                } catch (InstantiationException e1) {
+                    // ignore instantiation errors, try to do main
+                } catch (IllegalAccessException e1) {
+                    // ignore instantiation errors, try to do main
+                }
+            } catch (InvocationTargetException e) {
+                // ignore instantiation errors, try to do main
             }
         }
         try {
@@ -570,7 +586,6 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     public Object evaluate(GroovyCodeSource codeSource) throws CompilationFailedException {
         Script script = parse(codeSource);
-        script.setBinding(context);
         return script.run();
     }
 
@@ -649,7 +664,6 @@ public class GroovyShell extends GroovyObjectSupport {
         Script script = null;
         try {
             script = parse(in, fileName);
-            script.setBinding(context);
             return script.run();
         } finally {
             if (script != null) {

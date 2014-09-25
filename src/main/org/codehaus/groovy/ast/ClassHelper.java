@@ -69,7 +69,8 @@ public class ClassHelper {
         MAP_TYPE = makeWithoutCaching(Map.class), RANGE_TYPE = makeCached(Range.class),
         PATTERN_TYPE = makeCached(Pattern.class), STRING_TYPE = makeCached(String.class),
         SCRIPT_TYPE = makeCached(Script.class),   REFERENCE_TYPE = makeWithoutCaching(Reference.class),
-        
+        BINDING_TYPE = makeCached(Binding.class),
+
         boolean_TYPE = makeCached(boolean.class),     char_TYPE = makeCached(char.class),
         byte_TYPE = makeCached(byte.class),           int_TYPE = makeCached(int.class),
         long_TYPE = makeCached(long.class),           short_TYPE = makeCached(short.class),
