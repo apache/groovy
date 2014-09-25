@@ -163,6 +163,7 @@ trait Counter {
 class Foo implements Counter {}             // <3>
 def f = new Foo()
 assert f.count() == 1                       // <4>
+assert f.count() == 2
 // end::trait_with_private_field[]
 '''
     }
@@ -236,10 +237,10 @@ trait DynamicObject {                               // <1>
         name.toUpperCase()
     }
     def propertyMissing(String prop) {
-        props['prop']
+        props[prop]
     }
     void setProperty(String prop, Object value) {
-        props['prop'] = value
+        props[prop] = value
     }
 }
 

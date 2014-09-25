@@ -2,7 +2,7 @@ class PackageTest extends GroovyTestCase {
     void testPackages() {
         assertScript '''
 			// tag::package_statement[]
-			//Defines a package named com.yoursite
+			// defining a package named com.yoursite
 			package com.yoursite
 			// end::package_statement[]
 
@@ -18,11 +18,11 @@ class PackageTest extends GroovyTestCase {
 
         assertScript '''
 			//tag::import_statement[]
-			//imports the class MarkupBuilder
+			// importing the class MarkupBuilder
 			import groovy.xml.MarkupBuilder
 			
-			//uses the imported class to create an object
-			def xml = new MarkupBuilder( )
+			// using the imported class to create an object
+			def xml = new MarkupBuilder()
 			
 			assert xml != null
 			// end::import_statement[]
@@ -45,7 +45,7 @@ class PackageTest extends GroovyTestCase {
 			import groovy.xml.MarkupBuilder
 			import groovy.xml.StreamingMarkupBuilder
 			
-			def markupBuilder = new MarkupBuilder( )
+			def markupBuilder = new MarkupBuilder()
 			
 			assert markupBuilder != null
 			
@@ -60,7 +60,7 @@ class PackageTest extends GroovyTestCase {
 			// tag::star_import[]
 			import groovy.xml.*
 			
-			def markupBuilder = new MarkupBuilder( )
+			def markupBuilder = new MarkupBuilder()
 			
 			assert markupBuilder != null
 			
@@ -147,20 +147,19 @@ class PackageTest extends GroovyTestCase {
 
     void testFixThirdLib() {
         assertScript '''
-			
 			// tag::fixing_thrid_party_lib[]
-			
 			import thirdpartylib.MultiplyTwo as OrigMultiplyTwo
+
 			class MultiplyTwo extends OrigMultiplyTwo {
-				def multiply(def value)
-				{
-					return value * 2 //corrected here
+				def multiply(def value) {
+					return value * 2 // fixed here
 				}
 			}
-			// nothing changes below here
+
+			// nothing to change below here
 			def multiplylib = new MultiplyTwo()
 
-			//assert passes as well
+			// assert passes as well
 			assert 4 == new MultiplyTwo().multiply(2)
 			// end::fixing_thrid_party_lib[]
 		'''

@@ -391,6 +391,10 @@ class SyntaxTest extends CompilableTestSupport {
     }
 
     void testTripleSingleQuotedString() {
+        // tag::triple_single_0[]
+        '''a triple single quoted string'''
+        // end::triple_single_0[]
+
         // tag::triple_single_1[]
         def aMultilineString = '''line one
         line two
