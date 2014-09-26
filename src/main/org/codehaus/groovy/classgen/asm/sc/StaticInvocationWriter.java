@@ -425,6 +425,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     cce
             );
             declr.visit(controller.getAcg());
+            operandStack.pop();
             // if (receiver != null)
             receiver.visit(controller.getAcg());
             Label ifnull = compileStack.createLocalLabel("ifnull_" + counter);
@@ -441,6 +442,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     origMCE.getMethodAsString(),
                     origMCE.getArguments()
             );
+            newMCE.setImplicitThis(false);
             newMCE.setMethodTarget(origMCE.getMethodTarget());
             newMCE.setSafe(true);
             MethodCallExpression add = new MethodCallExpression(
@@ -448,6 +450,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     "add",
                     newMCE
             );
+            add.setImplicitThis(false);
             add.setMethodTarget(StaticCompilationVisitor.ARRAYLIST_ADD_METHOD);
             // for (e in receiver) { result.add(e?.method(arguments) }
             ForStatement stmt = new ForStatement(
