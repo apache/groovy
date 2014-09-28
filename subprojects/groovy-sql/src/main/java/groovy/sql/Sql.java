@@ -2709,6 +2709,7 @@ public class Sql {
      *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
      * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
+     * @since 2.3.2
      */
     public List<GroovyRowResult> executeInsert(String sql, String[] keyColumnNames) throws SQLException {
         Connection connection = createConnection();
@@ -2743,6 +2744,7 @@ public class Sql {
      *                       into the SQL statement's parameter slots
      * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
+     * @since 2.3.2
      */
     public List<GroovyRowResult> executeInsert(String sql, String[] keyColumnNames, Object[] params) throws SQLException {
         return executeInsert(sql, Arrays.asList(params), Arrays.asList(keyColumnNames));
