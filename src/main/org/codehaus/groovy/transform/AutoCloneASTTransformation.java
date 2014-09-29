@@ -162,9 +162,9 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
                 Expression direct = propX(other, name);
                 Expression to = propX(varX("this"), name);
                 Statement assignDirect = assignS(to, direct);
-                Statement assignCloned = assignS(to, castX(fieldType, callX(direct, "clone")));
+                Statement assignCloned = assignS(to, castX(fieldType, callCloneDirectX(direct)));
                 Statement assignClonedDynamic = assignS(to, castX(fieldType, callCloneDynamicX(direct)));
-                if (isOrImplements(fieldType, CLONEABLE_TYPE)) {
+                if (isCloneableType(fieldType)) {
                     initBody.addStatement(assignCloned);
                 } else if (!possiblyCloneable(fieldType)) {
                     initBody.addStatement(assignDirect);
@@ -178,12 +178,20 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, block(stmt(ctorX(cNode, args(varX("this"))))));
     }
 
+    private boolean isCloneableType(ClassNode fieldType) {
+        return isOrImplements(fieldType, CLONEABLE_TYPE) || !fieldType.getAnnotations(MY_TYPE).isEmpty();
+    }
+
     private boolean possiblyCloneable(ClassNode type) {
-        return !isPrimitiveType(type) && ((isOrImplements(type, CLONEABLE_TYPE) || (type.getModifiers() & ACC_FINAL) == 0));
+        return !isPrimitiveType(type) && ((isCloneableType(type) || (type.getModifiers() & ACC_FINAL) == 0));
     }
 
     private Expression callCloneDynamicX(Expression target) {
         return callX(INVOKER_TYPE, "invokeMethod", args(target, constX("clone"), ConstantExpression.NULL));
+    }
+
+    private Expression callCloneDirectX(Expression direct) {
+        return ternaryX(equalsNullX(direct), ConstantExpression.NULL, callX(direct, "clone"));
     }
 
     private void createSimpleClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
@@ -215,9 +223,9 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             Expression direct = propX(varX("this"), name);
             Expression to = propX(other, name);
             Statement assignDirect = assignS(to, direct);
-            Statement assignCloned = assignS(to, castX(fieldType, callX(direct, "clone")));
+            Statement assignCloned = assignS(to, castX(fieldType, callCloneDirectX(direct)));
             Statement assignClonedDynamic = assignS(to, castX(fieldType, callCloneDynamicX(direct)));
-            if (isOrImplements(fieldType, CLONEABLE_TYPE)) {
+            if (isCloneableType(fieldType)) {
                 methodBody.addStatement(assignCloned);
             } else if (!possiblyCloneable(fieldType)) {
                 methodBody.addStatement(assignDirect);
@@ -238,9 +246,9 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             ClassNode fieldType = fieldNode.getType();
             Expression fieldExpr = varX(fieldNode);
             Expression to = propX(result, fieldNode.getName());
-            Statement doClone = assignS(to, castX(fieldType, callX(fieldExpr, "clone")));
+            Statement doClone = assignS(to, castX(fieldType, callCloneDirectX(fieldExpr)));
             Statement doCloneDynamic = assignS(to, castX(fieldType, callCloneDynamicX(fieldExpr)));
-            if (isOrImplements(fieldType, CLONEABLE_TYPE)) {
+            if (isCloneableType(fieldType)) {
                 body.addStatement(doClone);
             } else if (possiblyCloneable(fieldType)) {
                 body.addStatement(ifS(isInstanceOfX(fieldExpr, CLONEABLE_TYPE), doCloneDynamic));
