@@ -546,6 +546,35 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
             assert p2.shoppingHistory[0] == ['bread', 'jam']
         """
     }
+
+    void testNullCloneableField_GROOVY7091() {
+        new GroovyShell().evaluate """
+            import groovy.transform.AutoClone
+            @AutoClone
+            class B {
+              String name='B'
+            }
+
+            @AutoClone
+            class A {
+              B b
+              C c
+              ArrayList x
+              List y
+              String name='A'
+            }
+
+            @AutoClone
+            class C {
+              String name='C'
+            }
+
+            def b = new B().clone()
+            assert b
+            assert new A(b:b).clone()
+            assert new A().clone()
+        """
+    }
 }
 
 @TupleConstructor
