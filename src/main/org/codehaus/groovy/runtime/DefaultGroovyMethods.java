@@ -5350,6 +5350,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Provide the standard Groovy <code>size()</code> method for <code>Iterable</code>.
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 3]
+     * def iterable = { [ hasNext:{ !items.isEmpty() }, next:{ items.pop() } ] as Iterator } as Iterable
+     * assert iterable.size() == 3
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return the length of the Iterable
+     * @since 2.3.8
+     */
+    public static int size(Iterable self) {
+        return size(self.iterator());
+    }
+
+    /**
      * Provide the standard Groovy <code>size()</code> method for an array.
      *
      * @param self an Array of objects
