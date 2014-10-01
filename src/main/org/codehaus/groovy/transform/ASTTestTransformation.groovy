@@ -71,6 +71,7 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
                     CompilerConfiguration config = new CompilerConfiguration()
                     def customizer = new ImportCustomizer()
                     config.addCompilationCustomizers(customizer)
+                    binding['sourceUnit'] = source
                     binding['node'] = nodes[1]
                     binding['lookup'] = new MethodClosure(LabelFinder, "lookup").curry(nodes[1])
                     binding['compilationUnit'] = compilationUnit
