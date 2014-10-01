@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.tools.shell;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,7 +33,7 @@ import org.fusesource.jansi.AnsiRenderWriter;
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-public class IO
+public class IO implements Closeable
 {
     /** Raw input stream. */
     public final InputStream inputStream;
