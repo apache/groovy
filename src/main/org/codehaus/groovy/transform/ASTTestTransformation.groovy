@@ -70,8 +70,11 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
                     def customizer = new ImportCustomizer()
                     config.addCompilationCustomizers(customizer)
                     def binding = new Binding()
+                    binding['sourceUnit'] = source
                     binding['node'] = nodes[1]
                     binding['lookup'] = new MethodClosure(LabelFinder, "lookup").curry(nodes[1])
+                    binding['compilationUnit'] = compilationUnit
+                    binding['compilePhase'] = CompilePhase.fromPhaseNumber(phaseRef)
 
                     GroovyShell shell = new GroovyShell(binding, config)
 

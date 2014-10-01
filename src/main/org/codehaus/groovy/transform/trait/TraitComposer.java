@@ -189,7 +189,7 @@ public abstract class TraitComposer {
                         Traits.STATIC_INIT_METHOD,
                         new ArgumentListExpression(new VariableExpression("this")))
         )), false);
-        if (fieldHelperClassNode != null) {
+        if (fieldHelperClassNode != null && !cNode.declaresInterface(fieldHelperClassNode)) {
             // we should implement the field helper interface too
             cNode.addInterface(fieldHelperClassNode);
             // implementation of methods
