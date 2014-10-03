@@ -455,6 +455,18 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertEquals("There has to be at least a single reference to the ArrayPropertyLink[]", "ArrayPropertyLink", m.group(2));
     }
 
+    public void testClassesAreNotInitialized() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/staticInit/UsesClassesWithFailingStaticInit.groovy");
+        htmlTool.add(srcList);
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        String doc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/staticInit/UsesClassesWithFailingStaticInit.html");
+
+        assertTrue(doc.contains("org.codehaus.groovy.tools.groovydoc.testfiles.staticInit.JavaWithFailingStaticInit"));
+    }
+
     public void testArrayPropertyLinkWithExternalReference() throws Exception {
         List<String> srcList = new ArrayList<String>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/PropertyLink.groovy");
