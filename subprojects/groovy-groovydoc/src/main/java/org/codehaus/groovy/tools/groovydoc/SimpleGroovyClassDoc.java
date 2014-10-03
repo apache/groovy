@@ -282,7 +282,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private Class getClassOf(String next) {
         try {
-            return Class.forName(next.replace("/", "."));
+            return Class.forName(next.replace("/", "."), false, getClass().getClassLoader());
         } catch (Throwable t) {
             return null;
         }
@@ -606,7 +606,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private Class resolveFromJavaLang(String name) {
         try {
-            return Class.forName("java.lang." + name);
+            return Class.forName("java.lang." + name, false, getClass().getClassLoader());
         } catch (NoClassDefFoundError e) {
             // ignore
         } catch (ClassNotFoundException e) {
@@ -647,7 +647,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             if (candidate != null) {
                 try {
                     // TODO cache these??
-                    return Class.forName(candidate);
+                    return Class.forName(candidate, false, getClass().getClassLoader());
                 } catch (NoClassDefFoundError e) {
                     // ignore
                 } catch (ClassNotFoundException e) {
@@ -662,7 +662,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         String candidate = name.replace('/', '.');
         try {
             // TODO cache these??
-            return Class.forName(candidate);
+            return Class.forName(candidate, false, getClass().getClassLoader());
         } catch (NoClassDefFoundError e) {
             // ignore
         } catch (ClassNotFoundException e) {
