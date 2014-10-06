@@ -424,7 +424,11 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             );
             mce.setSourcePosition(parent);
             visitor.visitMethodCallExpression(mce);
+            OperandStack operandStack = controller.getOperandStack();
+            int height = operandStack.getStackLength();
             mce.visit(controller.getAcg());
+            operandStack.pop();
+            operandStack.remove(operandStack.getStackLength()-height);
             // return value of assignment
             rhsValueLoader.visit(controller.getAcg());
         }
