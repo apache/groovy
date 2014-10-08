@@ -674,7 +674,7 @@ public class SwingGroovyMethods {
      */
     @SuppressWarnings("unchecked")
     public static Iterator<TreeNode> iterator(TreeNode self) {
-        return DefaultGroovyMethods.iterator(self.children());
+        return (Iterator<TreeNode>) DefaultGroovyMethods.iterator(self.children());
     }
 
     /**
