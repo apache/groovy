@@ -23,9 +23,9 @@ package org.codehaus.groovy.runtime
 class AppendableDgmMethodsTest extends GroovyTestCase {
     List<String> store = []
     Appendable app = new Appendable() {
-        Appendable append(char c) { null }
+        Appendable append(char c) { store+="$c"; this }
         Appendable append(CharSequence cs) { store += cs; this }
-        Appendable append(CharSequence cs, int i1, int i2) { null }
+        Appendable append(CharSequence cs, int i1, int i2) { store += cs.subSequence(i1,i2); this }
     }
 
     void testFoo() {
