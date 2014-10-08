@@ -71,7 +71,7 @@ class GenericsGenTest extends GroovyTestCase {
         config.targetDirectory = createTempDir("groovy-target-", "-target")
         config.jointCompilationOptions = [
                 "stubDir": createTempDir("groovy-stub-", "-stub"),
-                "namedValues": ["target", "1.5", "source", "1.5"] as String[]
+                "namedValues": ["target", "1.6", "source", "1.6"] as String[]
         ]
         config.classpath = "target/classes"
         FileSystemCompiler compiler = new FileSystemCompiler(config)
