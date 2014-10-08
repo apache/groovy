@@ -11,7 +11,9 @@
  ******************************************************************************/
 package org.codehaus.groovy.classgen;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -28,6 +30,7 @@ import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.trait.Traits;
 
 import static java.lang.reflect.Modifier.*;
 import static org.objectweb.asm.Opcodes.*;
@@ -61,13 +64,39 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             checkMethodsForWeakerAccess(node);
             checkMethodsForOverridingFinal(node);
             checkNoAbstractMethodsNonabstractClass(node);
+            checkNoStaticMethodWithSameSignatureAsNonStatic(node);
             checkGenericsUsage(node, node.getUnresolvedInterfaces());
             checkGenericsUsage(node, node.getUnresolvedSuperClass());
         }
         super.visitClass(node);
         currentClass = oldClass;
     }
-    
+
+    private void checkNoStaticMethodWithSameSignatureAsNonStatic(final ClassNode node) {
+        Map<String, MethodNode> result = new HashMap<String, MethodNode>();
+        // add in unimplemented abstract methods from the interfaces
+        for (ClassNode iface : node.getInterfaces()) {
+            Map<String, MethodNode> ifaceMethodsMap = iface.getDeclaredMethodsMap();
+            for (String methSig : ifaceMethodsMap.keySet()) {
+                if (!result.containsKey(methSig)) {
+                    MethodNode methNode = ifaceMethodsMap.get(methSig);
+                    result.put(methSig, methNode);
+                }
+            }
+        }
+        for (MethodNode methodNode : node.getMethods()) {
+            MethodNode mn = result.get(methodNode.getTypeDescriptor());
+            if (mn!=null && methodNode.isStatic() && !methodNode.isStaticConstructor()) {
+                ClassNode cn = mn.getDeclaringClass().getOuterClass();
+                if (cn==null || !Traits.isTrait(cn)) {
+                    addError("Method '" + mn.getName() + "' is already defined in " + getDescription(node) + ". You cannot have " +
+                            "both a static and a non static method with the same signature", methodNode);
+                }
+            }
+            result.put(methodNode.getTypeDescriptor(), methodNode);
+        }
+    }
+
     private void checkInterfaceMethodVisibility(ClassNode node) {
         if (!node.isInterface()) return;
         for (MethodNode method : node.getMethods()) {
@@ -84,9 +113,18 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         List<MethodNode> abstractMethods = node.getAbstractMethods();
         if (abstractMethods == null) return;
         for (MethodNode method : abstractMethods) {
-            addError("Can't have an abstract method in a non-abstract class." +
-                    " The " + getDescription(node) + " must be declared abstract or" +
-                    " the " + getDescription(method) + " must be implemented.", node);
+            MethodNode sameArgsMethod = node.getMethod(method.getName(), method.getParameters());
+            if (sameArgsMethod==null) {
+                addError("Can't have an abstract method in a non-abstract class." +
+                        " The " + getDescription(node) + " must be declared abstract or" +
+                        " the " + getDescription(method) + " must be implemented.", node);
+            } else {
+                addError("Abstract "+getDescription(method)+" is not implemented but a " +
+                                "method of the same name but different return type is defined: "+
+                                (sameArgsMethod.isStatic()?"static ":"")+
+                                getDescription(sameArgsMethod), method
+                );
+            }
         }
     }
 

@@ -399,6 +399,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         } else {
             return result;
         }
+
     }
 
     public List<MethodNode> getAllDeclaredMethods() {
