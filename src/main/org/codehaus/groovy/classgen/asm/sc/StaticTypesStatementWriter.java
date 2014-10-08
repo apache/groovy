@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -69,7 +70,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         Expression collectionExpression = loop.getCollectionExpression();
         ClassNode collectionType = typeChooser.resolveType(collectionExpression, controller.getClassNode());
 
-        if (collectionType.implementsInterface(ITERABLE_CLASSNODE)) {
+        if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(collectionType,ITERABLE_CLASSNODE)) {
             MethodCallExpression iterator = new MethodCallExpression(collectionExpression, "iterator", new ArgumentListExpression());
             iterator.setMethodTarget(collectionType.getMethod("iterator", Parameter.EMPTY_ARRAY));
             iterator.setImplicitThis(false);
