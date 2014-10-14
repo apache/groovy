@@ -35,6 +35,20 @@ class InterfaceConversionTest extends GroovyTestCase {
         assert m2.a() == 1
         assert m2.b(null) == 2
     }
+
+    //GROOVY-7104
+    void testDefaultInterfaceMethodCallOnProxy() {
+        try {
+            // checks for Java 8
+            Class.forName("java.util.function.Consumer", false, this.class.classLoader);
+        } catch (e) {
+            return
+        }
+        Comparator c1 = {a,b -> a<=>b}
+        assert c1.compare("a","b") == -1
+        def c2 = c1.reversed()
+        assert c2.compare("a","b") == 1
+    }
 }
 
 interface InterfaceConversionTestFoo {

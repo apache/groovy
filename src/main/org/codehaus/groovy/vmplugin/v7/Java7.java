@@ -16,7 +16,16 @@
 
 package org.codehaus.groovy.vmplugin.v7;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.vmplugin.v6.Java6;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Java 7 based functions. Currently just a stub but you can
@@ -26,8 +35,59 @@ import org.codehaus.groovy.vmplugin.v6.Java6;
  * @author Jochen Theodorou
  */
 public class Java7 extends Java6 {
+    private final static Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
+    static {
+        try {
+            LOOKUP_Constructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
+        } catch (NoSuchMethodException e) {
+            throw new GroovyBugError(e);
+        }
+        if (!LOOKUP_Constructor.isAccessible()) {
+            AccessController.doPrivileged(new PrivilegedAction() {
+                @Override
+                public Object run() {
+                    LOOKUP_Constructor.setAccessible(true);
+                    return null;
+                }
+            });
+        }
+    }
+
     @Override
     public void invalidateCallSites() {
     	IndyInterface.invalidateSwitchPoints();
+    }
+
+    @Override
+    public int getVersion() {
+        return 7;
+    }
+
+    @Override
+    public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
+        if (!method.isAccessible()) {
+            AccessController.doPrivileged(new PrivilegedAction() {
+                @Override
+                public Object run() {
+                    method.setAccessible(true);
+                    return null;
+                }
+            });
+        }
+        Class declaringClass = method.getDeclaringClass();
+        try {
+            return LOOKUP_Constructor.
+                    newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).
+                    unreflectSpecial(method, declaringClass).
+                    bindTo(receiver);
+        } catch (ReflectiveOperationException e) {
+            throw new GroovyBugError(e);
+        }
+    }
+
+    @Override
+    public Object invokeHandle(Object handle, Object[] args) throws Throwable {
+        MethodHandle mh = (MethodHandle) handle;
+        return mh.invokeWithArguments(args);
     }
 }

@@ -452,5 +452,20 @@ public class Java5 implements VMPlugin {
     }
 
     public void invalidateCallSites() {}
+
+    @Override
+    public Object getInvokeSpecialHandle(Method m, Object receiver){
+        throw new GroovyBugError("getInvokeSpecialHandle requires at least JDK 7");
+    }
+
+    @Override
+    public int getVersion() {
+        return 5;
+    }
+
+    @Override
+    public Object invokeHandle(Object handle, Object[] args) throws Throwable {
+        throw new GroovyBugError("invokeHandle requires at least JDK 7");
+    }
 }
 
