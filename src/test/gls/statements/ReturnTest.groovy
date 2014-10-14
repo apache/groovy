@@ -21,4 +21,24 @@ public class ReturnTest extends CompilableTestSupport {
          assert A.foo==2
       """      
   }
+
+  public void testReturnAdditionInFinally() {
+      //GROOVY-7065
+      assertScript """
+        class CountDown { int counter = 10 }
+
+        CountDown finalCountDown() {
+            def countDown = new CountDown()
+            try {
+                countDown.counter = --countDown.counter
+            } catch (ignored) {
+                countDown.counter = Integer.MIN_VALUE
+            } finally {
+                return countDown
+            }
+        }
+
+        assert finalCountDown().counter == 9
+      """
+  }
 }
