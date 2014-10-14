@@ -148,6 +148,20 @@ public class ReturnAdder {
 
         if (statement instanceof TryCatchStatement) {
             TryCatchStatement trys = (TryCatchStatement) statement;
+            final boolean[] missesReturn = new boolean[1];
+            new ReturnAdder(new ReturnStatementListener() {
+                @Override
+                public void returnStatementAdded(ReturnStatement returnStatement) {
+                    missesReturn[0] = true;
+                }
+            }).addReturnsIfNeeded(trys.getFinallyStatement(), scope);
+            boolean hasFinally = !(trys.getFinallyStatement() instanceof EmptyStatement);
+
+            // if there is no missing return in the finally block and the block exists
+            // there is nothing to do
+            if (hasFinally && !missesReturn[0]) return trys;
+
+            // add returns to try and catch blocks
             final Statement tryStatement = addReturnsIfNeeded(trys.getTryStatement(), scope);
             if (doAdd) trys.setTryStatement(tryStatement);
             final int len = trys.getCatchStatements().size();
