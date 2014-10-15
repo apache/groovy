@@ -48,7 +48,7 @@ public class GetEffectivePojoPropertySite extends AbstractCallSite {
 
     public final CallSite acceptGetProperty(Object receiver) {
 //        if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
-        if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver.getClass() != metaClass.getTheClass()
+        if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver==null || receiver.getClass() != metaClass.getTheClass()
             || version != metaClass.getVersion()) { // metaClass is invalid
             return createGetPropertySite(receiver);
         } else {
