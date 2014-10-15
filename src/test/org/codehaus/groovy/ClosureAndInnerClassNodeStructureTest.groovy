@@ -22,13 +22,13 @@ class ClosureAndInnerClassNodeStructureTest extends GroovyTestCase {
         def cu = new CompilationUnit()
         cu.addSource("t.groovy", '''
             exec {                               // t$_run_closure1
-                def d = {                        // t$_run_closure1_closure3
+                def d = {                        // t$_run_closure1$_closure3
                     def o = new Object() {       // t$1
                         void run() {             //
-                            def f = {}           // t$_1_run_closure1
+                            def f = {}           // t$1$_run_closure1
                         }                        //
                     }                            //
-                    def e = {}                   // t$_run_closure1_closure3_closure4
+                    def e = {}                   // t$_run_closure1$_closure3$_closure4
                 }                                //
             }                                    //
             def g = {}                           // t$_run_closure2
@@ -57,11 +57,28 @@ class ClosureAndInnerClassNodeStructureTest extends GroovyTestCase {
             }]
         }
 
-        assertParentOf 't$1'                               isClass 't'
-        assertParentOf 't$_1_run_closure1'                 isClass 't$1'
-        assertParentOf 't$_run_closure1'                   isClass 't'
-        assertParentOf 't$_run_closure2'                   isClass 't'
-        assertParentOf 't$_run_closure1_closure3'          isClass 't$_run_closure1'
-        assertParentOf 't$_run_closure1_closure3_closure4' isClass 't$_run_closure1_closure3'
+        assertParentOf 't$1'                                 isClass 't'
+        assertParentOf 't$1$_run_closure1'                   isClass 't$1'
+        assertParentOf 't$_run_closure1'                     isClass 't'
+        assertParentOf 't$_run_closure2'                     isClass 't'
+        assertParentOf 't$_run_closure1$_closure3'           isClass 't$_run_closure1'
+        assertParentOf 't$_run_closure1$_closure3$_closure4' isClass 't$_run_closure1$_closure3'
+    }
+
+    // GROOVY-5351
+    void testGetSimpleName() {
+        assertScript '''
+            class X {
+                static class Y {
+                    def foo() {
+                        def cl = {return{}}
+                        def cl2 = cl()
+                        [cl.getClass().getSimpleName(), cl2.getClass().getSimpleName()]
+                    }
+                }
+            }
+            def simpleNames = new X.Y().foo()
+            assert simpleNames == ['_foo_closure1', '_closure2']
+        '''
     }
 }

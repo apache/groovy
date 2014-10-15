@@ -51,23 +51,6 @@ public class GeneratorContext {
     }
 
     public String getNextClosureInnerName(ClassNode owner, ClassNode enclosingClass, MethodNode enclosingMethod) {
-        String ownerShortName = owner.getNameWithoutPackage();
-        String classShortName = enclosingClass.getNameWithoutPackage();
-        if (classShortName.equals(ownerShortName)) {
-            classShortName = "";
-        }
-        else {
-            classShortName += "_";
-        }
-        // remove $
-        int dp = classShortName.lastIndexOf("$");
-        if (dp >= 0) {
-            classShortName = classShortName.substring(++dp);
-        }
-        // remove leading _
-        if (classShortName.startsWith("_")) {
-            classShortName = classShortName.substring(1);
-        }
         String methodName = "";
         if (enclosingMethod != null) {
             methodName = enclosingMethod.getName() + "_";
@@ -79,6 +62,6 @@ public class GeneratorContext {
             methodName = methodName.replace('>', '_');
             methodName = methodName.replaceAll(" ", "_");
         }
-        return "_" + classShortName + methodName + "closure" + closureClassIdx++;
+        return "_" + methodName + "closure" + closureClassIdx++;
     }
 }
