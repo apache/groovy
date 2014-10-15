@@ -13,11 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.ast;
+package org.codehaus.groovy.macro.matcher;
 
-import groovy.lang.Closure;
-import groovy.lang.DelegatesTo;
-import groovy.lang.MapWithDefault;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.PackageNode;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -38,16 +44,13 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * A class code visitor which is capable of remembering the context of the current
@@ -68,6 +71,10 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
 
     public TreeContext getTreeContext() {
         return treeContextStack.isEmpty()?null:treeContextStack.peek();
+    }
+
+    public TreeContext getLastContext() {
+        return lastContext;
     }
 
     protected void pushContext(TreeContext ctx) {
@@ -509,14 +516,6 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
         popContext();
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> Closure<T> cloneWithDelegate(final Closure<T> predicate, final Object delegate) {
-        Closure<T> clone = (Closure<T>) predicate.clone();
-        clone.setDelegate(delegate);
-        clone.setResolveStrategy(Closure.DELEGATE_FIRST);
-        return clone;
-    }
-
     public List<TreeContext> getTreePath() {
         List<TreeContext> path = new LinkedList<TreeContext>();
         path.add(lastContext);
@@ -580,97 +579,6 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
     }
 
     // ----------------------------- inner classes --------------------------------------
-
-    public static class TreeContext {
-        private static enum TreeContextKey {
-            expression_replacement
-        }
-        final TreeContext parent;
-        final ASTNode node;
-        final List<TreeContext> siblings = new LinkedList<TreeContext>();
-        final List<TreeContextAction> onPopHandlers = new LinkedList<TreeContextAction>();
-        final Map<Object, List<?>> userdata = MapWithDefault.newInstance(
-                new HashMap<Object, List<?>>(),
-                new Closure(this) {
-                    public Object doCall(Object key) {
-                        return new LinkedList<Object>();
-                    }
-                }
-        );
-
-        private TreeContext(final TreeContext parent, final ASTNode node) {
-            this.parent = parent;
-            this.node = node;
-            if (parent!=null) {
-                parent.siblings.add(this);
-            }
-        }
-
-        public Map<?, ?> getUserdata() {
-            return userdata;
-        }
-
-        public TreeContext getParent() { return parent; }
-        public ASTNode getNode() { return node; }
-
-        public TreeContext fork(ASTNode node) {
-            return new TreeContext(this, node);
-        }
-
-        public boolean matches(ASTNodePredicate predicate) {
-            return predicate.matches(node);
-        }
-
-        public boolean matches(@DelegatesTo(value=ASTNode.class, strategy=Closure.DELEGATE_FIRST) Closure<Boolean> predicate) {
-            return cloneWithDelegate(predicate, node).call();
-        }
-
-        public List<TreeContext> getSiblings() {
-            return Collections.unmodifiableList(siblings);
-        }
-
-        public List<TreeContextAction> getOnPopHandlers() {
-            return Collections.unmodifiableList(onPopHandlers);
-        }
-
-        public void afterVisit(TreeContextAction action) {
-            onPopHandlers.add(action);
-        }
-
-        public void afterVisit(@DelegatesTo(value=TreeContext.class, strategy=Closure.DELEGATE_FIRST) Closure<?> action) {
-            Closure<?> clone = cloneWithDelegate(action, this);
-            afterVisit(DefaultGroovyMethods.asType(clone, TreeContextAction.class));
-        }
-
-        public void setReplacement(Expression replacement) {
-            userdata.put(TreeContextKey.expression_replacement, Collections.singletonList(replacement));
-        }
-
-        public Expression getReplacement() {
-            List<?> list = userdata.get(TreeContextKey.expression_replacement);
-            if (list.size()==1) {
-                return (Expression) list.get(0);
-            }
-            return null;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder("TreeContext{");
-            sb.append("node=").append(node!=null?node.getClass().getSimpleName():"undefined");
-            //sb.append(", siblings=").append(siblings);
-            sb.append('}');
-            return sb.toString();
-        }
-    }
-
-    public static interface ASTNodePredicate {
-        boolean matches(ASTNode node);
-    }
-
-    public static interface TreeContextAction {
-        void call(TreeContext context);
-    }
 
     public static List<ASTNodePredicate> matchByClass(Class<ASTNode>... classes) {
         ArrayList<ASTNodePredicate> result = new ArrayList<ASTNodePredicate>(classes.length);
