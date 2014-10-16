@@ -171,4 +171,36 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast4)
         assert !ASTMatcher.matches(ast1, ast5)
     }
+
+    void testBooleanExpression() {
+        def ast1 = macro { a==1 }
+        def ast2 = macro { a==1 }
+        def ast3 = macro { 1==a }
+        def ast4 = macro { a==a }
+        def ast5 = macro { a==2 }
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+        assert !ASTMatcher.matches(ast1, ast5)
+    }
+
+    void testClosureExpression() {
+        def ast1 = macro { {-> a } }
+        def ast2 = macro { {-> a } }
+        def ast3 = macro { {-> b } }
+        def ast4 = macro { { a -> a } }
+        def ast5 = macro { { a -> a } }
+        def ast6 = macro { { a,b -> a } }
+        def ast7 = macro { { int a -> a } }
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+        assert ASTMatcher.matches(ast4, ast5)
+        assert !ASTMatcher.matches(ast5, ast6)
+        assert !ASTMatcher.matches(ast5, ast7)
+    }
 }

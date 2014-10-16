@@ -517,7 +517,37 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
-        super.visitClosureExpression(expression);
+        doWithNode(ClosureExpression, current) {
+            def code = expression.code
+            def cl = (ClosureExpression) current
+            doWithNode(code.class, cl.code) {
+                code.visit(this)
+                checkParameters(expression.parameters, cl.parameters)
+            }
+        }
+    }
+
+    private void checkParameters(Parameter[] nodeParams, Parameter[] curParams) {
+        if (nodeParams==null && curParams!=null || nodeParams!=null && curParams==null) {
+            match = false
+            return
+        }
+        if (nodeParams) {
+            if (curParams.length==nodeParams.length) {
+                for (int i = 0; i < nodeParams.length && match; i++) {
+                    def n = nodeParams[i]
+                    def c = curParams[i]
+                    doWithNode(n.class, c) {
+                        match = match &&
+                                (n.name == c.name) &&
+                                (n.originType == c.originType) &&
+                                (n.type == c.originType)
+                    }
+                }
+            } else {
+                match = false
+            }
+        }
     }
 
     @Override
