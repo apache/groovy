@@ -16,11 +16,13 @@
 package org.codehaus.groovy.macro.matcher
 
 import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.transform.stc.StaticTypesMarker
 
 @CompileStatic
 class ASTMatcher extends ClassCodeVisitorSupport {
@@ -288,6 +290,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     }
 
     @Override
+    @CompileStatic(TypeCheckingMode.SKIP)
     public void visitDeclarationExpression(final DeclarationExpression expression) {
         doWithNode(DeclarationExpression, current) {
             super.visitDeclarationExpression(expression)
@@ -416,7 +419,8 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             }
             match = match && (call.methodAsString==mce.methodAsString) &&
                     (call.safe==mce.safe) &&
-                    (call.spreadSafe == mce.spreadSafe)
+                    (call.spreadSafe == mce.spreadSafe) &&
+                    (call.implicitThis == mce.implicitThis)
         }
     }
 
@@ -427,8 +431,11 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression call) {
-        doWithNode(call.arguments.class, ((ConstructorCallExpression)call).arguments) {
+        def cur = (ConstructorCallExpression) current
+        doWithNode(call.arguments.class, cur.arguments) {
             call.arguments.visit(this)
+            match = match &&
+                    (call.type == cur.type)
         }
     }
 
@@ -469,18 +476,29 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     }
 
     @Override
-    public void visitShortTernaryExpression(final ElvisOperatorExpression expression) {
-        super.visitShortTernaryExpression(expression);
-    }
-
-    @Override
     public void visitPostfixExpression(final PostfixExpression expression) {
-        super.visitPostfixExpression(expression);
+        doWithNode(PostfixExpression, current) {
+            def origExpr = expression.expression
+            def curExpr = (PostfixExpression) current
+            doWithNode(origExpr.class, curExpr.expression) {
+                origExpr.visit(this)
+                match = match &&
+                        (expression.operation.type==curExpr.operation.type)
+            }
+        }
     }
 
     @Override
     public void visitPrefixExpression(final PrefixExpression expression) {
-        super.visitPrefixExpression(expression);
+        doWithNode(PrefixExpression, current) {
+            def origExpr = expression.expression
+            def curExpr = (PrefixExpression) current
+            doWithNode(origExpr.class, curExpr.expression) {
+                origExpr.visit(this)
+                match = match &&
+                        (expression.operation.type==curExpr.operation.type)
+            }
+        }
     }
 
     @Override
@@ -572,25 +590,54 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     }
 
     @Override
+    @CompileStatic(TypeCheckingMode.SKIP)
     public void visitConstantExpression(final ConstantExpression expression) {
-        super.visitConstantExpression(expression);
+        doWithNode(ConstantExpression, current) {
+            def cur = (ConstantExpression) current
+            super.visitConstantExpression(expression)
+            match = match &&
+                    (expression.type==cur.type) &&
+                    (expression.value==cur.value)
+        }
     }
 
     @Override
+    @CompileStatic(TypeCheckingMode.SKIP)
     public void visitClassExpression(final ClassExpression expression) {
-        super.visitClassExpression(expression);
+        doWithNode(ClassExpression, current) {
+            super.visitClassExpression(expression)
+            def cexp = (ClassExpression) current
+            match = match && (cexp.type == expression.type)
+        }
     }
 
     @Override
     public void visitVariableExpression(final VariableExpression expression) {
         doWithNode(VariableExpression, current) {
-            match = expression.name == ((VariableExpression) current).name
+            def curVar = (VariableExpression) current
+            match = match &&
+                    (expression.name == curVar.name) &&
+                    (expression.type == curVar.type) &&
+                    (expression.originType == curVar.originType)
         }
     }
 
     @Override
     public void visitPropertyExpression(final PropertyExpression expression) {
-        super.visitPropertyExpression(expression);
+        doWithNode(PropertyExpression, current) {
+            def currentPexp = (PropertyExpression) current
+            doWithNode(expression.objectExpression.class, currentPexp.objectExpression) {
+                expression.objectExpression.visit(this)
+            }
+            doWithNode(expression.property.class, currentPexp.property) {
+                expression.property.visit(this)
+            }
+            match = match &&
+                    (expression.propertyAsString==currentPexp.propertyAsString) &&
+                    (expression.implicitThis==currentPexp.implicitThis) &&
+                    (expression.safe==currentPexp.safe) &&
+                    (expression.spreadSafe==currentPexp.spreadSafe)
+        }
     }
 
     @Override
@@ -611,7 +658,12 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     @Override
     protected void visitListOfExpressions(final List<? extends Expression> list) {
         if (list == null) return;
-        def iter = ((List<Expression>) current).iterator()
+        def currentExprs = (List<Expression>) current
+        if (currentExprs.size()!=list.size()) {
+            match = false
+            return
+        }
+        def iter = currentExprs.iterator()
         for (Expression expression : list) {
             def next = iter.next()
             if (expression instanceof SpreadExpression) {
