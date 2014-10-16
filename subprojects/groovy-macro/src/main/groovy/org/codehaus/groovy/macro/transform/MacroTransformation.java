@@ -16,6 +16,7 @@
 package org.codehaus.groovy.macro.transform;
 
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
@@ -32,8 +33,25 @@ public class MacroTransformation extends MethodCallTransformation {
     public static final String MACRO_METHOD = "macro";
 
     @Override
-    protected GroovyCodeVisitor getTransformer(ASTNode[] nodes, SourceUnit sourceUnit) {
-        return new MacroInvocationTrap(sourceUnit.getSource(), sourceUnit);
+    protected GroovyCodeVisitor getTransformer(final ASTNode[] nodes, final SourceUnit sourceUnit) {
+        final ClassCodeExpressionTransformer trn = new ClassCodeExpressionTransformer() {
+            @Override
+            protected SourceUnit getSourceUnit() {
+                return sourceUnit;
+            }
+
+            @Override
+            public Expression transform(final Expression exp) {
+                if (exp instanceof ConstructorCallExpression) {
+                    MethodCallExpression call = exp.getNodeMetaData(MacroTransformation.class);
+                    if (call!=null) {
+                        return call;
+                    }
+                }
+                return super.transform(exp);
+            }
+        };
+        return new TransformingMacroTrap(sourceUnit, trn);
     }
 }
 

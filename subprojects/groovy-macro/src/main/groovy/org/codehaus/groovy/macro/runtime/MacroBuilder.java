@@ -18,6 +18,7 @@ package org.codehaus.groovy.macro.runtime;
 import groovy.lang.Closure;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.builder.AstBuilder;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -53,46 +54,64 @@ public enum MacroBuilder {
 
     @SuppressWarnings("unchecked")
     public <T> T macro(CompilePhase compilePhase, boolean asIs, String source, final Map<MacroSubstitutionKey, Closure<Expression>> context, Class<T> resultClass) {
-        final String label = "__synthesized__label__" + System.currentTimeMillis() + "__:";
+        boolean isClosure = source.startsWith("{");
+        final String label = isClosure ?"__synthesized__label__" + System.currentTimeMillis() + "__:":"";
         final String labelledSource = label + source;
         final int linesOffset = 1;
-        final int columnsOffset = label.length() + 1; // +1 because of {
-        
+        final int columnsOffset = label.length() + (isClosure?1:0); // +1 because of {
+
         List<ASTNode> nodes = (new AstBuilder()).buildFromString(compilePhase, true, labelledSource);
 
         for(ASTNode node : nodes) {
             if (node instanceof BlockStatement) {
 
-                BlockStatement closureBlock = (BlockStatement) ((BlockStatement)node).getStatements().get(0);
+                List<Statement> statements = ((BlockStatement) node).getStatements();
+                if (!statements.isEmpty()) {
+                    BlockStatement closureBlock = (BlockStatement) statements.get(0);
 
-                (new ClassCodeExpressionTransformer() {
-                    public Expression transform(Expression expression) {
-                        if(!(expression instanceof MethodCallExpression)) {
-                            return super.transform(expression);
-                        }
+                    performSubstitutions(linesOffset, columnsOffset, context, closureBlock);
 
-                        MethodCallExpression call = (MethodCallExpression) expression;
 
-                        if(!MacroInvocationTrap.isBuildInvocation(call, MacroTransformation.DOLLAR_VALUE)) {
-                            return super.transform(expression);
-                        }
-
-                        MacroSubstitutionKey key = new MacroSubstitutionKey(call, linesOffset, columnsOffset);
-                        
-                        return context.get(key).call();
-                    }
-
-                    @Override
-                    protected SourceUnit getSourceUnit() {
-                        // Could be null if there are no errors
-                        return null;
-                    }
-                }).visitBlockStatement(closureBlock);
-
-                return (T) getMacroValue(closureBlock, asIs);
+                    return (T) getMacroValue(closureBlock, asIs);
+                }
+            }
+            if (node instanceof ClassNode) {
+                performSubstitutions(linesOffset, columnsOffset, context, node);
+                return (T) node;
             }
         }
         return null;
+    }
+
+    private void performSubstitutions(final int linesOffset, final int columnsOffset, final Map<MacroSubstitutionKey, Closure<Expression>> context, final ASTNode astNode) {
+        ClassCodeExpressionTransformer trn = new ClassCodeExpressionTransformer() {
+            public Expression transform(Expression expression) {
+                if (!(expression instanceof MethodCallExpression)) {
+                    return super.transform(expression);
+                }
+
+                MethodCallExpression call = (MethodCallExpression) expression;
+
+                if (!MacroInvocationTrap.isBuildInvocation(call, MacroTransformation.DOLLAR_VALUE)) {
+                    return super.transform(expression);
+                }
+
+                MacroSubstitutionKey key = new MacroSubstitutionKey(call, linesOffset, columnsOffset);
+
+                return context.get(key).call();
+            }
+
+            @Override
+            protected SourceUnit getSourceUnit() {
+                // Could be null if there are no errors
+                return null;
+            }
+        };
+        if (astNode instanceof BlockStatement) {
+            trn.visitBlockStatement((BlockStatement) astNode);
+        } else if (astNode instanceof ClassNode) {
+            trn.visitClass((ClassNode) astNode);
+        }
     }
 
     public static ASTNode getMacroValue(BlockStatement closureBlock, boolean asIs) {
