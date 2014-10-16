@@ -16,6 +16,7 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -244,7 +245,7 @@ public class CallSiteGenerator {
 
     public static boolean isCompilable (CachedMethod method) {
         return (GroovySunClassLoader.sunVM != null || Modifier.isPublic(method.cachedClass.getModifiers()) && method.isPublic() && publicParams(method))
-                && !AndroidSupport.isRunningAndroid();
+                && !AndroidSupport.isRunningAndroid() && containsOnlyValidChars(method.getName());
     }
 
     private static boolean publicParams(CachedMethod method) {
@@ -253,6 +254,13 @@ public class CallSiteGenerator {
                 return false;
         }
         return true;
+    }
+
+    private static boolean containsOnlyValidChars(String name) {
+        // TODO: this might not do enough or too much
+        // But it is a good start without spreading logic everywhere
+        String encoded = GeneratorContext.encodeAsValidClassName(name);
+        return encoded.equals(name);
     }
 
 }

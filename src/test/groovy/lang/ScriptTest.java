@@ -78,4 +78,12 @@ public class ScriptTest extends TestSupport {
         shell.evaluate(script);
     }
 
+    // GROOVY-6344
+    public void testScriptNameMangling() {
+        String script = "this.getClass().getName()";
+        GroovyShell shell = new GroovyShell();
+        String name = (String) shell.evaluate(script,"a!b");
+        assertEquals("a_b", name);
+    }
+
 }

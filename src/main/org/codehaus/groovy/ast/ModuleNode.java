@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.transform.BaseScriptASTTransformation;
@@ -242,7 +243,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
         if (getDescription() == null) {
             throw new RuntimeException("Cannot generate main(String[]) class for statements when we have no file description");
         }
-        name += extractClassFromFileDescription();
+        name += GeneratorContext.encodeAsValidClassName(extractClassFromFileDescription());
 
         ClassNode classNode;
         if (isPackageInfo()) {

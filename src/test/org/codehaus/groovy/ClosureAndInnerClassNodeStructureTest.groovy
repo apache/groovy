@@ -81,4 +81,17 @@ class ClosureAndInnerClassNodeStructureTest extends GroovyTestCase {
             assert simpleNames == ['_foo_closure1', '_closure2']
         '''
     }
+
+    //GROOVY-7119 && GROOVY-7120
+    void testIrregularMethodName() {
+        assertScript '''
+            class X {
+                def 'foo!bar'() {
+                    return {}
+                }
+            }
+            def str = new X().'foo!bar'().getClass().getName()
+            assert str == 'X$_foo_bar_closure1'
+        '''
+    }
 }
