@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.macro.transform;
 
+import groovy.lang.Closure;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -33,15 +34,18 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.macro.runtime.MacroBuilder;
 import org.codehaus.groovy.macro.runtime.MacroSubstitutionKey;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
 
@@ -52,10 +56,12 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
 
     private final static ClassNode MACROCLASS_TYPE = ClassHelper.make(MacroClass.class);
     private final ReaderSource readerSource;
+    private final SourceUnit sourceUnit;
 
     public MacroInvocationTrap(ReaderSource source, SourceUnit sourceUnit) {
         super(source, sourceUnit);
         this.readerSource = source;
+        this.sourceUnit = sourceUnit;
     }
 
     @Override
@@ -82,6 +88,13 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
                     macroCall.setSafe(false);
                     macroCall.setImplicitThis(false);
                     call.putNodeMetaData(MacroTransformation.class, macroCall);
+                    List<ClassNode> classes = sourceUnit.getAST().getClasses();
+                    for (Iterator<ClassNode> iterator = classes.iterator(); iterator.hasNext(); ) {
+                        final ClassNode aClass = iterator.next();
+                        if (aClass==type || type==aClass.getOuterClass()) {
+                            iterator.remove();
+                        }
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -157,6 +170,7 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
     }
 
     private MapExpression buildSubstitutionMap(final ASTNode expr) {
+        final Map<MacroSubstitutionKey, ClosureExpression> map = new HashMap<MacroSubstitutionKey, ClosureExpression>();
         final MapExpression mapExpression = new MapExpression();
 
         ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
@@ -186,9 +200,14 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
                         return;
                     }
 
+                    Statement code = substitutionClosureExpression.getCode();
+                    if (code instanceof BlockStatement) {
+                        ((BlockStatement) code).setVariableScope(null);
+                    }
+
                     MacroSubstitutionKey key = new MacroSubstitutionKey(call, expr.getLineNumber(), expr.getColumnNumber());
 
-                    mapExpression.addMapEntryExpression(key.toConstructorCallExpression(), substitutionClosureExpression);
+                    map.put(key, substitutionClosureExpression);
                 }
             }
         };
@@ -196,6 +215,9 @@ public class MacroInvocationTrap extends MethodInvocationTrap {
             visitor.visitClass((ClassNode) expr);
         } else {
             expr.visit(visitor);
+        }
+        for (Map.Entry<MacroSubstitutionKey, ClosureExpression> entry : map.entrySet()) {
+            mapExpression.addMapEntryExpression(entry.getKey().toConstructorCallExpression(), entry.getValue());
         }
         return mapExpression;
     }
