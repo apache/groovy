@@ -574,4 +574,34 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
     }
+
+    void testWildcardMatchVariable() {
+        def ast1 = macro { a }
+        def ast2 = macro { _ }
+        def ast3 = macro { b }
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast3)
+    }
+
+    void testWildcardMatchVariableInBinaryExpression() {
+        def ast1 = macro { a+b }
+        def ast2 = macro { _+_ }
+        def ast3 = macro { _+c }
+        def ast4 = macro { c+_ }
+        def ast5 = macro { a+_ }
+        def ast6 = macro { _+b }
+        assert ASTMatcher.matches(ast1, ast2)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+        assert ASTMatcher.matches(ast1, ast5)
+        assert ASTMatcher.matches(ast1, ast6)
+    }
+
+    void testWildcardForSubExpression() {
+        def ast1 = macro { a+foo(b) }
+        def ast2 = macro { _+foo(b) }
+        def ast3 = macro { a+_ }
+        //assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast1, ast3)
+    }
 }
