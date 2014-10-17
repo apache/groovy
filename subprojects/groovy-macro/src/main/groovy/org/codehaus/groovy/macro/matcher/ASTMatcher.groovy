@@ -19,10 +19,11 @@ import groovy.transform.CompileStatic
 import groovy.transform.TypeCheckingMode
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
-import org.codehaus.groovy.ast.stmt.*
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.transform.stc.StaticTypesMarker
 
 @CompileStatic
 class ASTMatcher extends ClassCodeVisitorSupport {
@@ -57,6 +58,10 @@ class ASTMatcher extends ClassCodeVisitorSupport {
         matcher.match
     }
 
+    private boolean failIfNot(boolean value) {
+        match = match && value
+    }
+
     /**
      * Locates all nodes in the given AST which match the pattern AST.
      * This operation can cost a lot, because it tries to match a sub-tree
@@ -73,13 +78,16 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     }
 
     private void doWithNode(Class expectedClass, Object next, Closure cl) {
-        if (match && (next==null || expectedClass.isAssignableFrom(next.class))) {
+        if (expectedClass == null) {
+            expectedClass = Object
+        }
+        if (match && (next == null || expectedClass.isAssignableFrom(next.class))) {
             Object old = current
             current = next
             cl()
             current = old
         } else {
-            match = false
+            failIfNot(false)
         }
     }
 
@@ -87,15 +95,22 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     public void visitClass(final ClassNode node) {
         doWithNode(ClassNode, current) {
             visitAnnotations(node)
-        }
-        doWithNode(PackageNode, ((ClassNode) current).package) {
-            visitPackage(node.package)
-        }
-        doWithNode(ModuleNode, ((ClassNode) current).module) {
-            visitImports(node.module)
-        }
-        doWithNode(ClassNode, current) {
+            doWithNode(PackageNode, ((ClassNode) current).package) {
+                visitPackage(node.package)
+            }
+            doWithNode(ModuleNode, ((ClassNode) current).module) {
+                visitImports(node.module)
+            }
+
             def cur = (ClassNode) current
+            def intfs = node.interfaces
+            def curIntfs = cur.interfaces
+            failIfNot(intfs.length == curIntfs.length)
+            if (intfs.length == curIntfs.length) {
+                for (int i = 0; i < intfs.length && match; i++) {
+                    failIfNot(intfs[i] == curIntfs[i])
+                }
+            }
             def nodeProps = node.properties
             def curProps = cur.properties
             if (nodeProps.size() == curProps.size()) {
@@ -109,7 +124,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
                 def nodeFields = node.fields
                 def curFields = cur.fields
-                if (nodeFields.size()==curFields.size()) {
+                if (nodeFields.size() == curFields.size()) {
                     iter = curFields.iterator()
                     for (FieldNode fn : nodeFields) {
                         doWithNode(fn.class, iter.next()) {
@@ -119,7 +134,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
                     def nodeConstructors = node.declaredConstructors
                     def curConstructors = cur.declaredConstructors
-                    if (nodeConstructors.size()==curConstructors.size()) {
+                    if (nodeConstructors.size() == curConstructors.size()) {
                         iter = curConstructors.iterator()
                         for (ConstructorNode cn : nodeConstructors) {
                             doWithNode(cn.class, iter.next()) {
@@ -140,19 +155,16 @@ class ASTMatcher extends ClassCodeVisitorSupport {
                         }
                     }
                 }
-
-
-                return
             }
-            match = false
+            failIfNot(cur.name == node.name)
         }
     }
 
     @Override
     protected void visitObjectInitializerStatements(final ClassNode node) {
         doWithNode(ClassNode, current) {
-            def initializers = ((ClassNode)current).objectInitializerStatements
-            if (initializers.size()==node.objectInitializerStatements.size()) {
+            def initializers = ((ClassNode) current).objectInitializerStatements
+            if (initializers.size() == node.objectInitializerStatements.size()) {
                 def iterator = initializers.iterator()
                 for (Statement element : node.objectInitializerStatements) {
                     doWithNode(element.class, iterator.next()) {
@@ -160,7 +172,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
                     }
                 }
             } else {
-                match = false
+                failIfNot(false)
             }
         }
     }
@@ -190,7 +202,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
                         }
                     }
                 } else {
-                    match = false
+                    failIfNot(false)
                     return
                 }
                 imports = module.starImports
@@ -203,7 +215,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
                         }
                     }
                 } else {
-                    match = false
+                    failIfNot(false)
                     return
                 }
                 imports = module.staticImports
@@ -216,8 +228,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
                         }
                     }
                 } else {
-                    match = false
-                    return
+                    failIfNot(false)
                 }
                 imports = module.staticStarImports
                 if (imports.size() == node.staticStarImports.size()) {
@@ -229,8 +240,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
                         }
                     }
                 } else {
-                    match = false
-                    return
+                    failIfNot(false)
                 }
             }
         }
@@ -242,39 +252,39 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             List<AnnotationNode> refAnnotations = node.annotations
             AnnotatedNode cur = (AnnotatedNode) current
             List<AnnotationNode> curAnnotations = cur.annotations
-            if (refAnnotations.size()!=curAnnotations.size()) {
-                match = false
+            if (refAnnotations.size() != curAnnotations.size()) {
+                failIfNot(false)
                 return
             }
             if (refAnnotations.empty) return
             def iter = curAnnotations.iterator()
             for (AnnotationNode an : refAnnotations) {
                 AnnotationNode curNext = iter.next()
+
                 // skip built-in properties
                 if (an.builtIn) {
                     if (!curNext.builtIn) {
-                        match = false
-                        return
+                        failIfNot(false)
                     }
                     continue
                 }
-
+                failIfNot(an.classNode==curNext.classNode)
                 def refEntrySet = an.members.entrySet()
                 def curEntrySet = curNext.members.entrySet()
-                if (refEntrySet.size()==curEntrySet.size()) {
+                if (refEntrySet.size() == curEntrySet.size()) {
                     def entryIt = curEntrySet.iterator()
                     for (Map.Entry<String, Expression> member : refEntrySet) {
                         def next = entryIt.next()
-                        if (next.key==member.key) {
+                        if (next.key == member.key) {
                             doWithNode(member.value.class, next.value) {
                                 member.value.visit(this)
                             }
                         } else {
-                            match = false
+                            failIfNot(false)
                         }
                     }
                 } else {
-                    match = false
+                    failIfNot(false)
                 }
             }
         }
@@ -307,14 +317,14 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             }
             def params = node.parameters
             def curParams = cur.parameters
-            if (params.length==curParams.length) {
+            if (params.length == curParams.length) {
                 params.eachWithIndex { Parameter entry, int i ->
                     doWithNode(entry.class, curParams[i]) {
                         visitAnnotations(entry)
                     }
                 }
             } else {
-                match = false
+                failIfNot(false)
             }
         }
     }
@@ -324,23 +334,23 @@ class ASTMatcher extends ClassCodeVisitorSupport {
         doWithNode(FieldNode, current) {
             visitAnnotations(node)
             def fieldNode = (FieldNode) current
-            if (fieldNode.name==node.name) {
-                Expression init = node.initialExpression
+            failIfNot(fieldNode.name == node.name)
+            failIfNot(fieldNode.originType == node.originType)
+            failIfNot(fieldNode.modifiers == node.modifiers)
 
-                Expression curInit = fieldNode.initialExpression
-                if (init) {
-                    if (curInit) {
-                        doWithNode(init.class, curInit) {
-                            init.visit(this)
-                        }
-                    } else {
-                        match = false
+            Expression init = node.initialExpression
+
+            Expression curInit = fieldNode.initialExpression
+            if (init) {
+                if (curInit) {
+                    doWithNode(init.class, curInit) {
+                        init.visit(this)
                     }
-                } else if (curInit) {
-                    match = false
+                } else {
+                    failIfNot(false)
                 }
-            } else {
-                match = false
+            } else if (curInit) {
+                failIfNot(false)
             }
         }
     }
@@ -353,13 +363,13 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
             Statement statement = node.getterBlock
             Statement curStatement = pNode.getterBlock
-            doWithNode(statement.class, curStatement) {
+            doWithNode(statement?.class, curStatement) {
                 visitClassCodeContainer(statement)
             }
 
             statement = node.setterBlock
             curStatement = pNode.setterBlock
-            doWithNode(statement.class, curStatement) {
+            doWithNode(statement?.class, curStatement) {
                 visitClassCodeContainer(statement)
             }
 
@@ -371,10 +381,10 @@ class ASTMatcher extends ClassCodeVisitorSupport {
                         init.visit(this)
                     }
                 } else {
-                    match = false
+                    failIfNot(false)
                 }
             } else if (curInit) {
-                match = false
+                failIfNot(false)
             }
         }
     }
@@ -382,7 +392,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     @Override
     void visitExpressionStatement(final ExpressionStatement statement) {
         visitStatement(statement)
-        doWithNode(statement.expression.class, ((ExpressionStatement)current).expression) {
+        doWithNode(statement.expression.class, ((ExpressionStatement) current).expression) {
             statement.expression.visit(this)
         }
     }
@@ -391,7 +401,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     public void visitBlockStatement(BlockStatement block) {
         doWithNode(BlockStatement, current) {
             def statements = ((BlockStatement) current).statements
-            if (statements.size()==block.statements.size()) {
+            if (statements.size() == block.statements.size()) {
                 def iter = statements.iterator()
                 for (Statement statement : block.statements) {
                     doWithNode(statement.class, iter.next()) {
@@ -399,7 +409,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
                     }
                 }
             } else {
-                match = false
+                failIfNot(false)
             }
         }
     }
@@ -417,10 +427,10 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             doWithNode(call.arguments.class, mce.arguments) {
                 call.arguments.visit(this)
             }
-            match = match && (call.methodAsString==mce.methodAsString) &&
-                    (call.safe==mce.safe) &&
+            failIfNot((call.methodAsString == mce.methodAsString) &&
+                    (call.safe == mce.safe) &&
                     (call.spreadSafe == mce.spreadSafe) &&
-                    (call.implicitThis == mce.implicitThis)
+                    (call.implicitThis == mce.implicitThis))
         }
     }
 
@@ -434,8 +444,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
         def cur = (ConstructorCallExpression) current
         doWithNode(call.arguments.class, cur.arguments) {
             call.arguments.visit(this)
-            match = match &&
-                    (call.type == cur.type)
+            failIfNot(call.type == cur.type)
         }
     }
 
@@ -451,8 +460,8 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             doWithNode(rightExpression.class, bin.rightExpression) {
                 rightExpression.visit(this)
             }
-            if (bin.operation.type!=expression.operation.type) {
-                match = false
+            if (bin.operation.type != expression.operation.type) {
+                failIfNot(false)
             }
         }
     }
@@ -482,8 +491,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             def curExpr = (PostfixExpression) current
             doWithNode(origExpr.class, curExpr.expression) {
                 origExpr.visit(this)
-                match = match &&
-                        (expression.operation.type==curExpr.operation.type)
+                failIfNot(expression.operation.type == curExpr.operation.type)
             }
         }
     }
@@ -495,8 +503,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             def curExpr = (PrefixExpression) current
             doWithNode(origExpr.class, curExpr.expression) {
                 origExpr.visit(this)
-                match = match &&
-                        (expression.operation.type==curExpr.operation.type)
+                failIfNot(expression.operation.type == curExpr.operation.type)
             }
         }
     }
@@ -504,7 +511,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     @Override
     public void visitBooleanExpression(final BooleanExpression expression) {
         doWithNode(BooleanExpression, current) {
-            doWithNode(expression.expression.class, ((BooleanExpression)current).expression) {
+            doWithNode(expression.expression.class, ((BooleanExpression) current).expression) {
                 expression.expression.visit(this)
             }
         }
@@ -514,7 +521,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     public void visitNotExpression(final NotExpression expression) {
         doWithNode(NotExpression, current) {
             def expr = expression.expression
-            def cur = ((NotExpression)current).expression
+            def cur = ((NotExpression) current).expression
             doWithNode(expr.class, cur) {
                 expr.visit(this)
             }
@@ -534,24 +541,23 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     }
 
     private void checkParameters(Parameter[] nodeParams, Parameter[] curParams) {
-        if (nodeParams==null && curParams!=null || nodeParams!=null && curParams==null) {
-            match = false
+        if (nodeParams == null && curParams != null || nodeParams != null && curParams == null) {
+            failIfNot(false)
             return
         }
         if (nodeParams) {
-            if (curParams.length==nodeParams.length) {
+            if (curParams.length == nodeParams.length) {
                 for (int i = 0; i < nodeParams.length && match; i++) {
                     def n = nodeParams[i]
                     def c = curParams[i]
                     doWithNode(n.class, c) {
-                        match = match &&
-                                (n.name == c.name) &&
+                        failIfNot((n.name == c.name) &&
                                 (n.originType == c.originType) &&
-                                (n.type == c.originType)
+                                (n.type == c.originType))
                     }
                 }
             } else {
-                match = false
+                failIfNot(false)
             }
         }
     }
@@ -569,7 +575,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     public void visitListExpression(final ListExpression expression) {
         doWithNode(ListExpression, current) {
             def exprs = expression.expressions
-            doWithNode(exprs.class, ((ListExpression)current).expressions) {
+            doWithNode(exprs.class, ((ListExpression) current).expressions) {
                 visitListOfExpressions(exprs)
             }
         }
@@ -577,14 +583,27 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
     @Override
     public void visitArrayExpression(final ArrayExpression expression) {
-        super.visitArrayExpression(expression);
+        doWithNode(ArrayExpression, current) {
+            def expressions = expression.expressions
+            def size = expression.sizeExpression
+            def cur = (ArrayExpression) current
+            def curExprs = cur.expressions
+            def curSize = cur.sizeExpression
+            doWithNode(expressions.class, curExprs) {
+                visitListOfExpressions(expressions)
+            }
+            doWithNode(size.class, curSize) {
+                visitListOfExpressions(size)
+            }
+            failIfNot(expression.elementType == cur.elementType)
+        }
     }
 
     @Override
     public void visitMapExpression(final MapExpression expression) {
         doWithNode(MapExpression, current) {
             def entries = expression.mapEntryExpressions
-            def curEntries = ((MapExpression)current).mapEntryExpressions
+            def curEntries = ((MapExpression) current).mapEntryExpressions
             doWithNode(entries.class, curEntries) {
                 visitListOfExpressions(entries)
             }
@@ -629,7 +648,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     public void visitSpreadExpression(final SpreadExpression expression) {
         doWithNode(SpreadExpression, current) {
             def expr = expression.expression
-            doWithNode(expr.class, ((SpreadExpression)current).expression) {
+            doWithNode(expr.class, ((SpreadExpression) current).expression) {
                 expr.visit(this)
             }
         }
@@ -642,27 +661,60 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
     @Override
     public void visitMethodPointerExpression(final MethodPointerExpression expression) {
-        super.visitMethodPointerExpression(expression);
+        doWithNode(MethodPointerExpression, current) {
+            def cur = (MethodPointerExpression) current
+            def expr = expression.expression
+            def methodName = expression.methodName
+            def curExpr = cur.expression
+            def curName = cur.methodName
+            doWithNode(expr.class, curExpr) {
+                expr.visit(this)
+            }
+            doWithNode(methodName.class, curName) {
+                methodName.visit(this)
+            }
+        }
     }
 
     @Override
     public void visitUnaryMinusExpression(final UnaryMinusExpression expression) {
-        super.visitUnaryMinusExpression(expression);
+        doWithNode(UnaryMinusExpression, current) {
+            def expr = expression.expression
+            doWithNode(expr.class, ((UnaryMinusExpression) current).expression) {
+                expr.visit(this)
+            }
+        }
     }
 
     @Override
     public void visitUnaryPlusExpression(final UnaryPlusExpression expression) {
-        super.visitUnaryPlusExpression(expression);
+        doWithNode(UnaryPlusExpression, current) {
+            def expr = expression.expression
+            doWithNode(expr.class, ((UnaryPlusExpression) current).expression) {
+                expr.visit(this)
+            }
+        }
     }
 
     @Override
     public void visitBitwiseNegationExpression(final BitwiseNegationExpression expression) {
-        super.visitBitwiseNegationExpression(expression);
+        doWithNode(BitwiseNegationExpression, current) {
+            def expr = expression.expression
+            doWithNode(expr.class, ((BitwiseNegationExpression) current).expression) {
+                expr.visit(this)
+            }
+        }
     }
 
     @Override
     public void visitCastExpression(final CastExpression expression) {
-        super.visitCastExpression(expression);
+        doWithNode(CastExpression, current) {
+            def expr = expression.expression
+            doWithNode(expr.class, ((CastExpression) current).expression) {
+                expr.visit(this)
+            }
+            failIfNot(expression.type == ((CastExpression) current).type)
+        }
     }
 
     @Override
@@ -671,9 +723,8 @@ class ASTMatcher extends ClassCodeVisitorSupport {
         doWithNode(ConstantExpression, current) {
             def cur = (ConstantExpression) current
             super.visitConstantExpression(expression)
-            match = match &&
-                    (expression.type==cur.type) &&
-                    (expression.value==cur.value)
+            failIfNot((expression.type == cur.type) &&
+                    (expression.value == cur.value))
         }
     }
 
@@ -683,7 +734,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
         doWithNode(ClassExpression, current) {
             super.visitClassExpression(expression)
             def cexp = (ClassExpression) current
-            match = match && (cexp.type == expression.type)
+            failIfNot(cexp.type == expression.type)
         }
     }
 
@@ -691,10 +742,9 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     public void visitVariableExpression(final VariableExpression expression) {
         doWithNode(VariableExpression, current) {
             def curVar = (VariableExpression) current
-            match = match &&
-                    (expression.name == curVar.name) &&
+            failIfNot((expression.name == curVar.name) &&
                     (expression.type == curVar.type) &&
-                    (expression.originType == curVar.originType)
+                    (expression.originType == curVar.originType))
         }
     }
 
@@ -708,17 +758,28 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             doWithNode(expression.property.class, currentPexp.property) {
                 expression.property.visit(this)
             }
-            match = match &&
-                    (expression.propertyAsString==currentPexp.propertyAsString) &&
-                    (expression.implicitThis==currentPexp.implicitThis) &&
-                    (expression.safe==currentPexp.safe) &&
-                    (expression.spreadSafe==currentPexp.spreadSafe)
+            failIfNot((expression.propertyAsString == currentPexp.propertyAsString) &&
+                    (expression.implicitThis == currentPexp.implicitThis) &&
+                    (expression.safe == currentPexp.safe) &&
+                    (expression.spreadSafe == currentPexp.spreadSafe))
         }
     }
 
     @Override
     public void visitAttributeExpression(final AttributeExpression expression) {
-        super.visitAttributeExpression(expression);
+        doWithNode(AttributeExpression, current) {
+            def currentPexp = (AttributeExpression) current
+            doWithNode(expression.objectExpression.class, currentPexp.objectExpression) {
+                expression.objectExpression.visit(this)
+            }
+            doWithNode(expression.property.class, currentPexp.property) {
+                expression.property.visit(this)
+            }
+            failIfNot((expression.propertyAsString == currentPexp.propertyAsString) &&
+                    (expression.implicitThis == currentPexp.implicitThis) &&
+                    (expression.safe == currentPexp.safe) &&
+                    (expression.spreadSafe == currentPexp.spreadSafe))
+        }
     }
 
     @Override
@@ -728,15 +789,27 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
     @Override
     public void visitGStringExpression(final GStringExpression expression) {
-        super.visitGStringExpression(expression);
+        doWithNode(GStringExpression, current) {
+            def cur = (GStringExpression) current
+            def strings = expression.strings
+            def values = expression.values
+            def curStrings = cur.strings
+            def curValues = cur.values
+            doWithNode(strings.class, curStrings) {
+                visitListOfExpressions(strings)
+            }
+            doWithNode(values.class, curValues) {
+                visitListOfExpressions(values)
+            }
+        }
     }
 
     @Override
     protected void visitListOfExpressions(final List<? extends Expression> list) {
         if (list == null) return;
         def currentExprs = (List<Expression>) current
-        if (currentExprs.size()!=list.size()) {
-            match = false
+        if (currentExprs.size() != list.size()) {
+            failIfNot(false)
             return
         }
         def iter = currentExprs.iterator()
@@ -745,7 +818,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             if (expression instanceof SpreadExpression) {
                 doWithNode(SpreadExpression, next) {
                     Expression spread = ((SpreadExpression) expression).getExpression()
-                    doWithNode(Expression, ((SpreadExpression)current).expression) {
+                    doWithNode(Expression, ((SpreadExpression) current).expression) {
                         spread.visit(this)
                     }
                 }

@@ -16,9 +16,18 @@
 
 package org.codehaus.groovy.macro.matcher
 
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.expr.ArrayExpression
+import org.codehaus.groovy.ast.expr.BitwiseNegationExpression
+import org.codehaus.groovy.ast.expr.CastExpression
 import org.codehaus.groovy.ast.expr.ClassExpression
+import org.codehaus.groovy.ast.expr.GStringExpression
+import org.codehaus.groovy.ast.expr.MethodPointerExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+import org.codehaus.groovy.ast.expr.UnaryMinusExpression
+import org.codehaus.groovy.ast.expr.UnaryPlusExpression
 import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.macro.transform.MacroClass
 
 class ASTMatcherTest extends GroovyTestCase {
     void testMatchesSimpleVar() {
@@ -68,6 +77,22 @@ class ASTMatcherTest extends GroovyTestCase {
         def ast4 = macro { this.p2 }
         def ast5 = macro { this?.p }
         def ast6 = macro { this*.p }
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+        assert !ASTMatcher.matches(ast1, ast5)
+        assert !ASTMatcher.matches(ast1, ast6)
+    }
+
+    void testAttributeExpression() {
+        def ast1 = macro { this.@p }
+        def ast2 = macro { this.@p }
+        def ast3 = macro { that.@p }
+        def ast4 = macro { this.@p2 }
+        def ast5 = macro { this?.@p }
+        def ast6 = macro { this*.@p }
         assert ASTMatcher.matches(ast1, ast1)
         assert ASTMatcher.matches(ast1, ast2)
         assert ASTMatcher.matches(ast2, ast1)
@@ -288,5 +313,206 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+    }
+
+    void testArrayExpression() {
+        def ast1 = macro { new Integer[0] }
+        def ast2 = macro { new Integer[0] }
+        def ast3 = macro { new Integer[1] }
+        def ast4 = macro { new int[0] }
+        def ast5 = macro { new Integer[a] }
+        assert ast1 instanceof ArrayExpression
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+        assert !ASTMatcher.matches(ast1, ast5)
+    }
+
+    void testMethodPointerExpression() {
+        def ast1 = macro { this.&foo }
+        def ast2 = macro { this.&foo }
+        def ast3 = macro { that.&foo }
+        def ast4 = macro { this.&bar }
+        assert ast1 instanceof MethodPointerExpression
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+    }
+
+    void testUnaryMinus() {
+        def ast1 = macro { -a }
+        def ast2 = macro { -a }
+        def ast3 = macro { -0 }
+        def ast4 = macro { a }
+        assert ast1 instanceof UnaryMinusExpression
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+    }
+
+    void testUnaryPlus() {
+        def ast1 = macro { +a }
+        def ast2 = macro { +a }
+        def ast3 = macro { +0 }
+        def ast4 = macro { a }
+        assert ast1 instanceof UnaryPlusExpression
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+    }
+
+    void testBitwiseNegate() {
+        def ast1 = macro { ~a }
+        def ast2 = macro { ~a }
+        def ast3 = macro { ~0 }
+        def ast4 = macro { a }
+        assert ast1 instanceof BitwiseNegationExpression
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+    }
+
+    void testCastExpression() {
+        def ast1 = macro { (String) foo }
+        def ast2 = macro { (String) foo }
+        def ast3 = macro { (Integer) foo }
+        def ast4 = macro { (String) bar }
+        assert ast1 instanceof CastExpression
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+    }
+
+    void testGStringExpression() {
+        def ast1 = macro { "123$a" }
+        def ast2 = macro { "123$a" }
+        def ast3 = macro { "$a" }
+        def ast4 = macro { "123$b" }
+        assert ast1 instanceof GStringExpression
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+    }
+
+    void testClassComparison() {
+        def ast1 = new MacroClass() {
+            class A {}
+        }
+        def ast2 = new MacroClass() {
+            class A {}
+        }
+        def ast3 = new MacroClass() {
+            class A implements Serializable {}
+        }
+        def ast4 = new MacroClass() {
+            class B {}
+        }
+        assert ast1 instanceof ClassNode
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+    }
+
+    void testPropertyComparison() {
+        def ast1 = new MacroClass() {
+            class A { String str }
+        }
+        def ast2 = new MacroClass() {
+            class A { String str }
+        }
+        def ast3 = new MacroClass() {
+            class A { String foo }
+        }
+        def ast4 = new MacroClass() {
+            class A { Integer str }
+        }
+        def ast5 = new MacroClass() {
+            class A { String str = null }
+        }
+        def ast6 = new MacroClass() {
+            class A { String str = 'foo' }
+        }
+        def ast7 = new MacroClass() {
+            class A { String str = 'bar' }
+        }
+        def ast8 = new MacroClass() {
+            class A { @Foo String str }
+        }
+        def ast9 = new MacroClass() {
+            class A { @Bar String str }
+        }
+        assert ast1 instanceof ClassNode
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+        assert !ASTMatcher.matches(ast1, ast5)
+        assert !ASTMatcher.matches(ast1, ast6)
+        assert !ASTMatcher.matches(ast6, ast7)
+        assert !ASTMatcher.matches(ast1, ast8)
+        assert ASTMatcher.matches(ast8, ast8)
+        assert !ASTMatcher.matches(ast8, ast9)
+    }
+    void testFieldComparison() {
+        def ast1 = new MacroClass() {
+            class A { public String str }
+        }
+        def ast2 = new MacroClass() {
+            class A { public String str }
+        }
+        def ast3 = new MacroClass() {
+            class A { public String foo }
+        }
+        def ast4 = new MacroClass() {
+            class A { public Integer str }
+        }
+        def ast5 = new MacroClass() {
+            class A { public String str = null }
+        }
+        def ast6 = new MacroClass() {
+            class A { public String str = 'foo' }
+        }
+        def ast7 = new MacroClass() {
+            class A { public String str = 'bar' }
+        }
+        def ast8 = new MacroClass() {
+            class A { public @Foo String str }
+        }
+        def ast9 = new MacroClass() {
+            class A { public @Bar String str }
+        }
+        def ast10 = new MacroClass() {
+            class A { private String str }
+        }
+        assert ast1 instanceof ClassNode
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+        assert !ASTMatcher.matches(ast1, ast5)
+        assert !ASTMatcher.matches(ast1, ast6)
+        assert !ASTMatcher.matches(ast6, ast7)
+        assert !ASTMatcher.matches(ast1, ast8)
+        assert ASTMatcher.matches(ast8, ast8)
+        assert !ASTMatcher.matches(ast8, ast9)
+        assert !ASTMatcher.matches(ast1, ast10)
     }
 }
