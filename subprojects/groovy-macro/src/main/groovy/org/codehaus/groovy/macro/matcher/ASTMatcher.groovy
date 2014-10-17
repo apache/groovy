@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ForStatement
 import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.control.SourceUnit
 
@@ -874,6 +875,22 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             def block = forLoop.loopBlock
             doWithNode(col.class, cur.collectionExpression) {
                 col.visit(this)
+            }
+            doWithNode(block.class, cur.loopBlock) {
+                block.visit(this)
+            }
+        }
+    }
+
+    @Override
+    void visitWhileLoop(final WhileStatement loop) {
+        doWithNode(WhileStatement, current) {
+            visitStatement(loop)
+            def cur = (WhileStatement) current
+            def bool = loop.booleanExpression
+            def block = loop.loopBlock
+            doWithNode(bool.class, cur.booleanExpression) {
+                bool.visit(this)
             }
             doWithNode(block.class, cur.loopBlock) {
                 block.visit(this)

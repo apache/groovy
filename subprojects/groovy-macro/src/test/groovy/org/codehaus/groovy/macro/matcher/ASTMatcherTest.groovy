@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.expr.UnaryMinusExpression
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression
 import org.codehaus.groovy.ast.stmt.ForStatement
 import org.codehaus.groovy.ast.stmt.IfStatement
+import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.macro.transform.MacroClass
 
@@ -554,5 +555,19 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast3, ast4)
         assert !ASTMatcher.matches(ast3, ast5)
         assert !ASTMatcher.matches(ast3, ast6)
+    }
+
+    void testWhileLoop() {
+        def ast1 = macro { while (true) {} }
+        def ast2 = macro { while (true) {} }
+        def ast3 = macro { while (false) {} }
+        def ast4 = macro { while (true) { a } }
+
+        assert ast1 instanceof WhileStatement
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
     }
 }
