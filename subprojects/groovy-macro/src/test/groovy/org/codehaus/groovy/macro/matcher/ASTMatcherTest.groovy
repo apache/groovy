@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.expr.MethodPointerExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression
+import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.macro.transform.MacroClass
 
@@ -514,5 +515,26 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast8, ast8)
         assert !ASTMatcher.matches(ast8, ast9)
         assert !ASTMatcher.matches(ast1, ast10)
+    }
+
+    void testIf() {
+        def ast1 = macro { if (a) b }
+        def ast2 = macro { if (a) b }
+        def ast3 = macro { if (a) c }
+        def ast4 = macro { if (b) b }
+        def ast5 = macro { if (a) { b } }
+        def ast6 = macro { if (a) { b } else { c }}
+        def ast7 = macro { if (a) { b } else { c }}
+        def ast8 = macro { if (a) { b } else { d }}
+        assert ast1 instanceof IfStatement
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+        assert !ASTMatcher.matches(ast1, ast5)
+        assert !ASTMatcher.matches(ast1, ast6)
+        assert ASTMatcher.matches(ast6, ast7)
+        assert !ASTMatcher.matches(ast7, ast8)
     }
 }

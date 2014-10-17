@@ -20,7 +20,9 @@ import groovy.transform.TypeCheckingMode
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.control.SourceUnit
@@ -391,8 +393,8 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
     @Override
     void visitExpressionStatement(final ExpressionStatement statement) {
-        visitStatement(statement)
         doWithNode(statement.expression.class, ((ExpressionStatement) current).expression) {
+            visitStatement(statement)
             statement.expression.visit(this)
         }
     }
@@ -834,5 +836,26 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     @Override
     public void visitBytecodeExpression(final BytecodeExpression cle) {
         super.visitBytecodeExpression(cle);
+    }
+
+    @Override
+    void visitIfElse(final IfStatement ifElse) {
+        doWithNode(IfStatement, current) {
+            visitStatement(ifElse)
+            def cur = (IfStatement) current
+            def bool = ifElse.booleanExpression
+            def ifBlock = ifElse.ifBlock
+            def elseBlock = ifElse.elseBlock
+            doWithNode(bool.class, cur.booleanExpression) {
+                bool.visit(this)
+            }
+            doWithNode(ifBlock.class, cur.ifBlock) {
+                ifBlock.visit(this)
+            }
+            failIfNot(elseBlock && cur.elseBlock || !elseBlock && !cur.elseBlock)
+            doWithNode(elseBlock.class, cur.elseBlock) {
+                elseBlock.visit(this)
+            }
+        }
     }
 }
