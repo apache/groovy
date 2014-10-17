@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.expr.MethodPointerExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression
+import org.codehaus.groovy.ast.stmt.ForStatement
 import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.macro.transform.MacroClass
@@ -536,5 +537,22 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast1, ast6)
         assert ASTMatcher.matches(ast6, ast7)
         assert !ASTMatcher.matches(ast7, ast8)
+    }
+
+    void testForLoop() {
+        def ast1 = macro { for (;;) {} }
+        def ast2 = macro { for (;;) {} }
+        def ast3 = macro { for (int i=0;i<10;i++) {} }
+        def ast4 = macro { for (long i=0;i<10;i++) {} }
+        def ast5 = macro { for (int i=0;i<100;i++) {} }
+        def ast6 = macro { for (int i=0;i<10;i++) { a } }
+        assert ast1 instanceof ForStatement
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast3, ast4)
+        assert !ASTMatcher.matches(ast3, ast5)
+        assert !ASTMatcher.matches(ast3, ast6)
     }
 }

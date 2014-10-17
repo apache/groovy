@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.ForStatement
 import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.classgen.BytecodeExpression
@@ -830,7 +831,12 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClosureListExpression(final ClosureListExpression cle) {
-        super.visitClosureListExpression(cle);
+        doWithNode(ClosureListExpression, current) {
+            def exprs = cle.expressions
+            doWithNode(exprs.class, ((ClosureListExpression)current).expressions) {
+                visitListOfExpressions(exprs)
+            }
+        }
     }
 
     @Override
@@ -855,6 +861,22 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             failIfNot(elseBlock && cur.elseBlock || !elseBlock && !cur.elseBlock)
             doWithNode(elseBlock.class, cur.elseBlock) {
                 elseBlock.visit(this)
+            }
+        }
+    }
+
+    @Override
+    void visitForLoop(final ForStatement forLoop) {
+        doWithNode(ForStatement, current) {
+            visitStatement(forLoop)
+            def cur = (ForStatement) current
+            def col = forLoop.collectionExpression
+            def block = forLoop.loopBlock
+            doWithNode(col.class, cur.collectionExpression) {
+                col.visit(this)
+            }
+            doWithNode(block.class, cur.loopBlock) {
+                block.visit(this)
             }
         }
     }
