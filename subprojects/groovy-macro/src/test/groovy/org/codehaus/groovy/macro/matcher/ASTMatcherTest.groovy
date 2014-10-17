@@ -17,6 +17,7 @@
 package org.codehaus.groovy.macro.matcher
 
 import org.codehaus.groovy.ast.expr.ClassExpression
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.control.CompilePhase
 
 class ASTMatcherTest extends GroovyTestCase {
@@ -202,5 +203,90 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast4, ast5)
         assert !ASTMatcher.matches(ast5, ast6)
         assert !ASTMatcher.matches(ast5, ast7)
+    }
+
+    void testNotExpression() {
+        def ast1 = macro { !a }
+        def ast2 = macro { !a }
+        def ast3 = macro { a }
+        def ast4 = macro { !b }
+        def ast5 = macro { !(a+b) }
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+        assert !ASTMatcher.matches(ast1, ast5)
+    }
+
+    void testMapExpression() {
+        def ast1 = macro { [:] }
+        def ast2 = macro { [:] }
+        def ast3 = macro { [a:''] }
+        def ast4 = macro { [b:''] }
+        def ast5 = macro { [a:'a'] }
+        def ast6 = macro { [a:'a',b:'b'] }
+        def ast7 = macro { [b:'b', a:'a'] }
+        def ast8 = macro { [a:'a', *:'b'] }
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+        assert !ASTMatcher.matches(ast1, ast5)
+        assert !ASTMatcher.matches(ast4, ast5)
+        assert !ASTMatcher.matches(ast5, ast6)
+        assert !ASTMatcher.matches(ast6, ast7)
+        assert !ASTMatcher.matches(ast3, ast8)
+        assert !ASTMatcher.matches(ast6, ast8)
+    }
+
+    void testRangeExpression() {
+        def ast1 = macro { (0..10) }
+        def ast2 = macro { (0..10) }
+        def ast3 = macro { (1..10) }
+        def ast4 = macro { (0..9) }
+        def ast5 = macro { ('a'..'z') }
+        def ast6 = macro { (0.0..10.0) }
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
+        assert !ASTMatcher.matches(ast1, ast5)
+        assert !ASTMatcher.matches(ast1, ast6)
+    }
+
+    void testListExpression() {
+        def ast1 = macro { [] }
+        def ast2 = macro { [] }
+        def ast3 = macro { [a] }
+        def ast4 = macro { [a] }
+        def ast5 = macro { [b] }
+        def ast6 = macro { [a,b] }
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert ASTMatcher.matches(ast3, ast3)
+        assert ASTMatcher.matches(ast3, ast4)
+        assert ASTMatcher.matches(ast4, ast3)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast5)
+        assert !ASTMatcher.matches(ast4, ast5)
+        assert !ASTMatcher.matches(ast5, ast4)
+        assert !ASTMatcher.matches(ast5, ast6)
+        assert !ASTMatcher.matches(ast1, ast6)
+    }
+
+    void testSpreadExpression() {
+        def ast1 = macro { [*a] }
+        def ast2 = macro { [*a] }
+        def ast3 = macro { [*b] }
+        def ast4 = macro { [a] }
+        assert ASTMatcher.matches(ast1, ast1)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
+        assert !ASTMatcher.matches(ast1, ast4)
     }
 }

@@ -512,7 +512,13 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
     @Override
     public void visitNotExpression(final NotExpression expression) {
-        super.visitNotExpression(expression);
+        doWithNode(NotExpression, current) {
+            def expr = expression.expression
+            def cur = ((NotExpression)current).expression
+            doWithNode(expr.class, cur) {
+                expr.visit(this)
+            }
+        }
     }
 
     @Override
@@ -561,7 +567,12 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
     @Override
     public void visitListExpression(final ListExpression expression) {
-        super.visitListExpression(expression);
+        doWithNode(ListExpression, current) {
+            def exprs = expression.expressions
+            doWithNode(exprs.class, ((ListExpression)current).expressions) {
+                visitListOfExpressions(exprs)
+            }
+        }
     }
 
     @Override
@@ -571,22 +582,57 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
     @Override
     public void visitMapExpression(final MapExpression expression) {
-        super.visitMapExpression(expression);
+        doWithNode(MapExpression, current) {
+            def entries = expression.mapEntryExpressions
+            def curEntries = ((MapExpression)current).mapEntryExpressions
+            doWithNode(entries.class, curEntries) {
+                visitListOfExpressions(entries)
+            }
+        }
     }
 
     @Override
     public void visitMapEntryExpression(final MapEntryExpression expression) {
-        super.visitMapEntryExpression(expression);
+        doWithNode(MapEntryExpression, current) {
+            def key = expression.keyExpression
+            def value = expression.valueExpression
+            def cur = (MapEntryExpression) current
+            def curKey = cur.keyExpression
+            def curValue = cur.valueExpression
+            doWithNode(key.class, curKey) {
+                key.visit(this)
+            }
+            doWithNode(value.class, curValue) {
+                value.visit(this)
+            }
+        }
     }
 
     @Override
     public void visitRangeExpression(final RangeExpression expression) {
-        super.visitRangeExpression(expression);
+        doWithNode(RangeExpression, current) {
+            def from = expression.from
+            def to = expression.to
+            def cur = (RangeExpression) current
+            def curFrom = cur.from
+            def curTo = cur.to
+            doWithNode(from.class, curFrom) {
+                from.visit(this)
+            }
+            doWithNode(to.class, curTo) {
+                to.visit(this)
+            }
+        }
     }
 
     @Override
     public void visitSpreadExpression(final SpreadExpression expression) {
-        super.visitSpreadExpression(expression);
+        doWithNode(SpreadExpression, current) {
+            def expr = expression.expression
+            doWithNode(expr.class, ((SpreadExpression)current).expression) {
+                expr.visit(this)
+            }
+        }
     }
 
     @Override
