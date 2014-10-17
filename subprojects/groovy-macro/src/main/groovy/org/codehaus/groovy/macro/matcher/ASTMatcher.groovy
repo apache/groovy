@@ -20,7 +20,6 @@ import groovy.transform.TypeCheckingMode
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ForStatement
 import org.codehaus.groovy.ast.stmt.IfStatement
@@ -68,12 +67,13 @@ class ASTMatcher extends ClassCodeVisitorSupport {
         match = match && value
     }
 
-    private static boolean matchByName(String a, String b) {
-        return a.equals(b) || WILDCARD.equals(a) || WILDCARD.equals(b);
+    private static boolean matchByName(String potentialWildcard, String node) {
+        return node.equals(potentialWildcard) || WILDCARD.equals(potentialWildcard);
     }
 
     private static boolean isWildcardExpression(Object exp) {
-        return exp instanceof VariableExpression && WILDCARD.equals(exp.getName());
+        return (exp instanceof VariableExpression && WILDCARD.equals(exp.getName())
+            || (exp instanceof ConstantExpression && WILDCARD.equals(exp.getValue())));
     }
 
     /**
@@ -176,7 +176,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
                     }
                 }
             }
-            failIfNot(matchByName(cur.name,node.name))
+            failIfNot(matchByName(cur.name, node.name))
         }
     }
 
@@ -354,7 +354,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
         doWithNode(node, current) {
             visitAnnotations(node)
             def fieldNode = (FieldNode) current
-            failIfNot(matchByName(fieldNode.name,node.name))
+            failIfNot(matchByName(node.name, fieldNode.name))
             failIfNot(fieldNode.originType == node.originType)
             failIfNot(fieldNode.modifiers == node.modifiers)
 
@@ -571,7 +571,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
                     def n = nodeParams[i]
                     def c = curParams[i]
                     doWithNode(n, c) {
-                        failIfNot(matchByName(n.name,c.name) &&
+                        failIfNot(matchByName(n.name, c.name) &&
                                 (n.originType == c.originType) &&
                                 (n.type == c.originType))
                     }
@@ -762,7 +762,7 @@ class ASTMatcher extends ClassCodeVisitorSupport {
     public void visitVariableExpression(final VariableExpression expression) {
         doWithNode(expression, current) {
             def curVar = (VariableExpression) current
-            failIfNot(matchByName(expression.name,curVar.name) &&
+            failIfNot(matchByName(expression.name, curVar.name) &&
                     (expression.type == curVar.type) &&
                     (expression.originType == curVar.originType))
         }

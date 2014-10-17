@@ -580,7 +580,8 @@ class ASTMatcherTest extends GroovyTestCase {
         def ast2 = macro { _ }
         def ast3 = macro { b }
         assert ASTMatcher.matches(ast1, ast2)
-        assert ASTMatcher.matches(ast2, ast3)
+        assert !ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast2, ast3)
     }
 
     void testWildcardMatchVariableInBinaryExpression() {
@@ -591,6 +592,7 @@ class ASTMatcherTest extends GroovyTestCase {
         def ast5 = macro { a+_ }
         def ast6 = macro { _+b }
         assert ASTMatcher.matches(ast1, ast2)
+        assert !ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
         assert ASTMatcher.matches(ast1, ast5)
@@ -601,7 +603,17 @@ class ASTMatcherTest extends GroovyTestCase {
         def ast1 = macro { a+foo(b) }
         def ast2 = macro { _+foo(b) }
         def ast3 = macro { a+_ }
-        //assert ASTMatcher.matches(ast1, ast2)
+        assert ASTMatcher.matches(ast1, ast2)
+        assert !ASTMatcher.matches(ast2, ast1)
         assert ASTMatcher.matches(ast1, ast3)
+    }
+
+    void testWildcardInMethodName() {
+        def ast1 = macro { a+foo(b) }
+        def ast2 = macro { a+_(b) }
+        def ast3 = macro { a+_(c) }
+        assert ASTMatcher.matches(ast1, ast2)
+        assert !ASTMatcher.matches(ast2, ast1)
+        assert !ASTMatcher.matches(ast1, ast3)
     }
 }
