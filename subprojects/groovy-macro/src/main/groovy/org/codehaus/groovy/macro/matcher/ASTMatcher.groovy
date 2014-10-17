@@ -815,17 +815,8 @@ class ASTMatcher extends ClassCodeVisitorSupport {
         def iter = currentExprs.iterator()
         for (Expression expression : list) {
             def next = iter.next()
-            if (expression instanceof SpreadExpression) {
-                doWithNode(SpreadExpression, next) {
-                    Expression spread = ((SpreadExpression) expression).getExpression()
-                    doWithNode(Expression, ((SpreadExpression) current).expression) {
-                        spread.visit(this)
-                    }
-                }
-            } else {
-                doWithNode(Expression, next) {
-                    expression.visit(this)
-                }
+            doWithNode(expression.class, next) {
+                expression.visit(this)
             }
         }
     }
