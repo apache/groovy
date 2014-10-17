@@ -107,6 +107,8 @@ class ASTMatcher extends ClassCodeVisitorSupport {
             }
 
             def cur = (ClassNode) current
+            failIfNot(cur.superClass==node.superClass)
+
             def intfs = node.interfaces
             def curIntfs = cur.interfaces
             failIfNot(intfs.length == curIntfs.length)

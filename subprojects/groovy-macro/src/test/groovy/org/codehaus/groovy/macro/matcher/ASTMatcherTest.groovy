@@ -424,12 +424,16 @@ class ASTMatcherTest extends GroovyTestCase {
         def ast4 = new MacroClass() {
             class B {}
         }
+        def ast5 = new MacroClass() {
+            class A extends B {}
+        }
         assert ast1 instanceof ClassNode
         assert ASTMatcher.matches(ast1, ast1)
         assert ASTMatcher.matches(ast1, ast2)
         assert ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
         assert !ASTMatcher.matches(ast1, ast4)
+        assert !ASTMatcher.matches(ast1, ast5)
     }
 
     void testPropertyComparison() {
