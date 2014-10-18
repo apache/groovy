@@ -616,4 +616,42 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast2, ast1)
         assert !ASTMatcher.matches(ast1, ast3)
     }
+
+    void testConstrainedMatcher() {
+        def ast = macro { a+foo(b) }
+        def pattern = macro {
+            a+b
+        }
+        ASTMatcher.withConstraints(pattern) {
+            placeholder a,b
+        }
+        assert ASTMatcher.matches(ast, pattern)
+    }
+
+    void testPlaceholdersMustMatch() {
+        def ast1 = macro { foo(a)+foo(a) }
+        def ast2 = macro { foo(a)+foo(b) }
+        def pattern = macro {
+            x+x
+        }
+        ASTMatcher.withConstraints(pattern) {
+            placeholder x
+        }
+        assert ASTMatcher.matches(ast1, pattern)
+        assert !ASTMatcher.matches(ast2, pattern)
+    }
+
+    void testPlaceholdersMustMatch2() {
+        use(ASTMatcher) {
+            def ast1 = macro { foo(a) + foo(a) }
+            def ast2 = macro { foo(a) + foo(foo(a)) }
+            def pattern = macro {
+                x + foo(x)
+            }.withConstraints {
+                placeholder x
+            }
+            assert !ast1.matches(pattern)
+            assert ast2.matches(pattern)
+        }
+    }
 }

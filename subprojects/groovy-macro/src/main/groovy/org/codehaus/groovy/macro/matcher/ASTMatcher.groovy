@@ -29,7 +29,7 @@ import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.control.SourceUnit
 
 @CompileStatic
-class ASTMatcher extends ClassCodeVisitorSupport {
+class ASTMatcher extends ContextualClassCodeVisitor {
 
     public static final String WILDCARD = "_";
 
@@ -67,8 +67,8 @@ class ASTMatcher extends ClassCodeVisitorSupport {
         match = match && value
     }
 
-    private static boolean matchByName(String potentialWildcard, String node) {
-        return node.equals(potentialWildcard) || WILDCARD.equals(potentialWildcard);
+    private static boolean matchByName(String patternText, String nodeText) {
+        return nodeText.equals(patternText) || WILDCARD.equals(patternText);
     }
 
     private static boolean isWildcardExpression(Object exp) {
@@ -91,21 +91,63 @@ class ASTMatcher extends ClassCodeVisitorSupport {
         finder.matches
     }
 
-    private void doWithNode(Object search, Object next, Closure cl) {
-        Class expectedClass = search?search.class:Object
+    private void storeContraints(ASTNode src) {
+        def constraints = src.getNodeMetaData(MatchingConstraints)
+        if (constraints) {
+            treeContext.putUserdata(MatchingConstraints, constraints)
+        }
+    }
+
+    private String findPlaceholder(Object exp) {
+        def constraints = (List<MatchingConstraints>) treeContext.getUserdata(MatchingConstraints, true)
+        if (constraints) {
+            def placeholders = constraints[0].placeholders
+            if ((exp instanceof VariableExpression && placeholders.contains(exp.name))) {
+                return exp.name
+            }
+            if ((exp instanceof ConstantExpression && placeholders.contains(exp.value))) {
+                return exp.value
+            }
+        }
+        null
+    }
+
+    private void doWithNode(Object patternNode, Object foundNode, Closure cl) {
+        Class expectedClass = patternNode?patternNode.class:Object
         if (expectedClass == null) {
             expectedClass = Object
         }
-        if (isWildcardExpression(search)) {
-            return
+
+        boolean doPush = treeContext.node!=foundNode && foundNode instanceof ASTNode
+        if (doPush) {
+            if (patternNode instanceof ASTNode) {
+                storeContraints(patternNode)
+            }
+            pushContext((ASTNode)foundNode)
         }
-        if (match && (next == null || expectedClass.isAssignableFrom(next.class))) {
-            Object old = current
-            current = next
-            cl()
-            current = old
-        } else {
-            failIfNot(false)
+
+        if (!isWildcardExpression(patternNode)) {
+            String placeholder = findPlaceholder(patternNode)
+            if (placeholder) {
+                def alreadySeenAST = treeContext.getUserdata("placeholder_$placeholder", true)
+                if (!alreadySeenAST) {
+                    treeContext.parent.putUserdata("placeholder_$placeholder", foundNode)
+                } else {
+                    // during the tree inspection, placeholder already found
+                    // so we need to check that they are identical
+                    failIfNot(matches((ASTNode)alreadySeenAST[0], (ASTNode)foundNode))
+                }
+            } else if (match && (foundNode == null || expectedClass.isAssignableFrom(foundNode.class))) {
+                Object old = current
+                current = foundNode
+                cl()
+                current = old
+            } else {
+                failIfNot(false)
+            }
+        }
+        if (doPush) {
+            popContext()
         }
     }
 
@@ -461,10 +503,12 @@ class ASTMatcher extends ClassCodeVisitorSupport {
 
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression call) {
-        def cur = (ConstructorCallExpression) current
-        doWithNode(call.arguments, cur.arguments) {
-            call.arguments.visit(this)
-            failIfNot(call.type == cur.type)
+        doWithNode(call, current) {
+            def cur = (ConstructorCallExpression) current
+            doWithNode(call.arguments, cur.arguments) {
+                call.arguments.visit(this)
+                failIfNot(call.type == cur.type)
+            }
         }
     }
 
@@ -912,5 +956,26 @@ class ASTMatcher extends ClassCodeVisitorSupport {
                 block.visit(this)
             }
         }
+    }
+
+    /**
+     * // todo: experimental!
+     *
+     * Annotates an AST node with matching contraints. This method should be called
+     * on an AST intended to be used as a pattern only. It will put node metadata on
+     * the AST node allowing customized behavior in pattern matching.
+     *
+     * @param pattern a pattern AST
+     * @param constraintsSpec a closure specification of matching constraints
+     * @return the same pattern, annotated with constraints
+     */
+    public static ASTNode withConstraints(
+            final ASTNode pattern,
+            final @DelegatesTo(value=MatchingConstraints.Builder, strategy=Closure.DELEGATE_ONLY) Closure constraintsSpec) {
+        def builder = new MatchingConstraints.Builder()
+        def constraints = builder.build(constraintsSpec)
+        pattern.putNodeMetaData(MatchingConstraints, constraints)
+
+        pattern
     }
 }

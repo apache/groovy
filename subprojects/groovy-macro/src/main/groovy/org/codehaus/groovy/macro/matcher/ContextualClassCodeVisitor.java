@@ -107,7 +107,8 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
                     return super.transform(exp);
                 }
             };
-            parentNode.visit(trn);
+            // todo: reliable way to call the transformer
+            //parentNode.visit(trn);
         }
         return treeContext;
     }

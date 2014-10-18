@@ -53,8 +53,21 @@ public class TreeContext {
         }
     }
 
-    public Map<?, ?> getUserdata() {
+    public Map<?, List<?>> getUserdata() {
         return userdata;
+    }
+
+    public void putUserdata(Object key, Object value) {
+        ((List)userdata.get(key)).add(value);
+    }
+
+    public List<?> getUserdata(Object key, boolean searchParent) {
+        if (userdata.containsKey(key)) {
+            return userdata.get(key);
+        } else if (parent!=null && searchParent) {
+            return parent.getUserdata(key, true);
+        }
+        return null;
     }
 
     public TreeContext getParent() { return parent; }
@@ -104,18 +117,22 @@ public class TreeContext {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("TreeContext{");
-        sb.append("node=").append(node!=null?node.getClass().getSimpleName():"undefined");
+        sb.append("node=").append(dumpNode());
         TreeContext p = parent;
         if (p!=null) {
             sb.append(", path=");
         }
         while (p!=null) {
-            sb.append(p.node!=null?p.node.getClass().getSimpleName():"undefined");
+            sb.append(p.dumpNode());
             sb.append("<-");
             p = p.parent;
         }
         //sb.append(", siblings=").append(siblings);
         sb.append('}');
         return sb.toString();
+    }
+
+    private String dumpNode() {
+        return node!=null?node.getClass().getSimpleName():"undefined";
     }
 }
