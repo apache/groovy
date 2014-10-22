@@ -22,8 +22,8 @@ class InterfaceConversionTest extends GroovyTestCase {
         def c2 = c1 as InterfaceConversionTestFoo
         assert !(c1 instanceof InterfaceConversionTestFoo)
         assert c2 instanceof InterfaceConversionTestFoo
-        assert c2.a() == null
-        assert c2.b(null) == 1
+        assert c2.a() == 0
+        assert c2.b(null) == null
     }
 
     void testMapConversion() {

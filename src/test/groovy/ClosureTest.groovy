@@ -518,6 +518,24 @@ class ClosureTest extends GroovyTestCase {
         }
         assert msg.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
     }
+
+    // GROOVY-6989
+    void testEachCall() {
+        assertScript '''
+            Object[] arr = new Object[1]
+            arr[0] = "1"
+            List list = new ArrayList()
+            list.add(arr)
+
+            list.each { def obj ->
+                assert obj[0] == "1"
+            }
+
+            list.each { Object[] obj ->
+                assert obj[0] == "1"
+            }
+        '''
+    }
 }
 
 public class TinyAgent {

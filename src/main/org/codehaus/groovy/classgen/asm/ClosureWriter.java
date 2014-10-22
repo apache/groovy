@@ -211,7 +211,9 @@ public class ClosureWriter {
         if (parameters.length > 1
                 || (parameters.length == 1
                 && parameters[0].getType() != null
-                && parameters[0].getType() != ClassHelper.OBJECT_TYPE)) {
+                && parameters[0].getType() != ClassHelper.OBJECT_TYPE
+                && !ClassHelper.OBJECT_TYPE.equals(parameters[0].getType().getComponentType())))
+        {
 
             // let's add a typesafe call method
             MethodNode call = answer.addMethod(
