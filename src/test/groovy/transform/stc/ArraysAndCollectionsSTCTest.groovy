@@ -542,5 +542,17 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert foo==[]
         """
     }
+
+    // GROOVY-7122
+    void testIterableLoop() {
+        assertScript '''
+            int countIt(Iterable<Integer> list) {
+                int count = 0
+                for (Integer obj : list) {count ++}
+                return count
+            }
+            countIt([1,2,3])==3
+        '''
+    }
 }
 

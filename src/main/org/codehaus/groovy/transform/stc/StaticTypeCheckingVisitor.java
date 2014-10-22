@@ -1535,7 +1535,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public static ClassNode inferLoopElementType(final ClassNode collectionType) {
         ClassNode componentType = collectionType.getComponentType();
         if (componentType == null) {
-            if (collectionType.implementsInterface(ITERABLE_TYPE)) {
+            if (implementsInterfaceOrIsSubclassOf(collectionType, ITERABLE_TYPE)) {
                 ClassNode intf = GenericsUtils.parameterizeType(collectionType, ITERABLE_TYPE);
                 GenericsType[] genericsTypes = intf.getGenericsTypes();
                 componentType = genericsTypes[0].getType();
