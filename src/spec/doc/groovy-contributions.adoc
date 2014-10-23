@@ -1,12 +1,4 @@
 = Groovy Contributions
-Community Documentation <user@groovy.codehaus.org>
-v1.0, 2014-07-24 updated 3 Oct. 2014
-:toc: left
-:toc-title: Contributions to Groovy Documentation  
-:icons: font
-:linkattrs:
-:sectlinks:
-:compat-mode:
 
 ++++
 <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/themes/blitzer/jquery-ui.css">
@@ -69,7 +61,7 @@ You can find live icon:twitter[] https://twitter.com/hashtag/groovylang[#groovyl
 
 === Where Is image:assets/img/groovy1.png[Groovy, 60, 30, link="http://groovy-lang.org/"] ?
 
-Open source developers often need somewhere to keep all their assets. These assets are typically stored in a repository somewhere on the internet. icon:github[link="https://github.com/"] https://github.com/[*GitHub*] is one such storage facility. At *[blue]#Groovy#*, we keep https://github.com/groovy/groovy-core[our _source code_ here, window="_blank"]. 
+Open source developers often need somewhere to keep all their assets. These assets are typically stored in a repository somewhere on the internet. icon:github[link="https://github.com/"] https://github.com/[*GitHub*] is one such storage facility. At *[blue]#Groovy#*, we keep https://github.com/groovy/groovy-core[our _source code_ here]. 
 
 Visit our *[blue]#Groovy#* information portal at image:assets/img/groovy.png[Groovy Website, 60, 30, link="http://groovy-lang.org/"] 
 
@@ -82,7 +74,7 @@ There are two paths to contribute :
 
 For small things, you can change the relevant document on-line, within the *GitHub* system. For spelling or punctuation typos, broken language, etc, you can edit the document live from within Github. We mention this approach for small contributions that don't require us to run the tests / create or update new tests. link:#_quick_fixes[Follow this trail.]
 
-For larger contributions, it's more likely you'll need to copy [blue]#Groovy# into your own work environment, then :link:#_take_the_long_way_home[Take The Long Way Home.]
+For larger contributions, it's more likely you'll need to copy [blue]#Groovy# into your own work environment, then link:#_take_the_long_way_home[Take The Long Way Home.]
 
 '''
 
@@ -124,7 +116,7 @@ http://beta.groovy-lang.org/syntax.html</a></p>
 <p>It embeds in an iframe the following asciidoctor-generated html file:<a href="http://docs.groovy-lang.org/docs/next/html/documentation/core-syntax.html" target="_blank">
 http://docs.groovy-lang.org/docs/next/html/documentation/core-syntax.html</a></p></div>
  
-<h4>4. The syntax (and LAF) of asciidoctor 0.1.5 differs from 0.1.4 in several ways, do we need to rejig existing *.adoc files to use the revised syntax ?</h4>
+<h4>4. The syntax (and LAF) of asciidoctor 1.5.0 differs from 1.4.0 in several ways, do we need to rejig existing *.adoc files to use the revised syntax ?</h4>
 <div><p>GLA: We need to go through all that's written so far to check for incompatibilities, indeed.</p></div>
  
 <h4>5. What groovy-core folder should hold the image assets relating to a particular .adoc file ? ( Like screen pix, or tiny icons )</h4>
@@ -190,9 +182,9 @@ This way needs more work on your part though it it is more rewarding too.
 
 First we look at the home of [blue]#Groovy# . Then we review the structure and important items. After that we pick up the story at link:#_getting_started[Getting Started.]
 
-=== Notes About GitHub  icon:github[link="https://github.com/", window="_blank"]
+=== Notes About GitHub  icon:github[link="https://github.com/"]
 
-At *[blue]#Groovy#*, we keep https://github.com/groovy/groovy-core[our _source code_ here, window="_blank"].
+At *[blue]#Groovy#*, we keep https://github.com/groovy/groovy-core[our _source code_ here].
 
 ==== GitHub Information icon:github[link="https://github.com/", window="_blank"]
 
@@ -210,8 +202,8 @@ At *[blue]#Groovy#*, we keep https://github.com/groovy/groovy-core[our _source c
  <li>switch to your new feature branch
  <li>build/amend the documents
  <li>provide screen images if needed
- <li>provide test cases to confirm your documentation
- <li>test and build everything
+ <li>provide test cases to match your documentation
+ <li>build and test everything
  <li>commit your changes
  <li>switch to your master branch
  <li>merge your branch full of changes into the master branch
@@ -309,7 +301,7 @@ If you would like to know more about writing effective test cases, please http:/
 
 Ok, that's a quick review of our [blue]#Groovy# code base, the directory/folder structure and important bits. It _should_ give you a starting point  to explore [blue]#Groovy# icon:thumbs-up-alt[]
 
-
+'''
 
 <<<
 
@@ -329,18 +321,18 @@ This is the typical panel you use to work with *GitHub*. It has a variety of thi
 .Search icon:search[] on *GitHub* for Groovy-Core
 image::assets/img/githubsearch.png[Github Search Feature,align="center"] 
 
-Ok, let's look for the *groovy-core* repository. In the field named +Search or type a command+ enter *groovy-core* then click +Search+. You should see a repository named *groovy/groovy-core* so click that to go to home to [blue]#Groovy#.
+Ok, let's look for the *groovy-core* repository. In the field named +Search or type a command+ enter *groovy-core* then click +Search+. You should see a repository named *groovy/groovy-core* so click that to visit the home of [blue]#Groovy#.
 
 ''' 
 
 .Fork Groovy Core on *GitHub*
 image::assets/img/githubfork.png[Fork The Code, 541, 156, link="https://github.com/groovy/groovy-core",align="center"] 
 
-So you can work on your own version of [blue]#Groovy#, you'll need to make a copy of it. This copy is placed in your own *GitHub* account under your credentials. This task of making a copy is known as *Fork* ing.
+So you can work on your own version of [blue]#Groovy#, you'll need to make a copy of it. This copy is placed in your own *GitHub* account under your credentials. This task of making a copy is known as *Fork* -ing.
 
 Check you're logged into your own *GitHub* account before you start to search.
 
-Fork the https://github.com/groovy/groovy-core[groovy/groovy-core] repository on *GitHub* to your own *GitHub* account. Click the +Fork+ button while on the *groovy/groovy-core* panel. When you look at your *GitHub* home page, you'll see the list of your forked repos and any new repos you make.
+Fork the https://github.com/groovy/groovy-core[groovy/groovy-core] repository on *GitHub* to your own *GitHub* account. Click the +Fork+ button while on the *groovy/groovy-core* panel. When you look at your own *GitHub* home page, you'll see the list of your forked repos and any new repos you make.
 
 .Fork Groovy Core on *GitHub*
 image::assets/img/repolist.png[List of Repos, link="https://github.com/groovy/groovy-core",align="center"] 
@@ -384,7 +376,7 @@ If your java version is earlier than 1.6 you might not be able to do much testin
 
 === Check Your Installation
 
-To make sure you can build and test your [blue]#Groovy# version, try to build the full [blue]#Groovy# document suite. 
+To make sure you can build and test your [blue]#Groovy# version, try to build just the [blue]#Groovy# document suite. 
 
 .Run one of these commands depending on your operating system:
  * +bash ./gradlew asciidocAll+ on Linux/Ubuntu 
@@ -529,12 +521,12 @@ Total time: 5 mins 22.43 secs
 
 If your command log looks something like the above, then you have a valid [blue]#Groovy# installation, and you've also constructed a fresh local copy of the [blue]#Groovy# documentation. 
 
-You can check your local copy to see if it looks good. Using the example above, you should have an *index.html* page located in +file://localhost/media/martin/LINKS/groovy-core/groovy-core/target/asciidoc/index.html+ though your actual address of the index.html file will differ a little. Enter your own address as a browser address, then you should see this :
+You can check your local copy to see if it looks good. Using the example above, you should have an *index.html* page located in +file:///media/martin/LINKS/groovy-core/target/asciidoc/index.html+ though your actual address of the index.html file will differ a little. Enter your own address as a browser address, then you should see this :
 
 .Groovy Document Index
 image::assets/img/console3.png[Groovy Document Index, align="center"] 
 
-As you update documents, you may need to see how it looks. Following the previous procedure, you can do it using the +./gradlew asciidocAll+ command, then open Groovy Index page and navigate to the topic you've updated.
+As you update documents, you may need to see how it looks. Following the previous steps, you can do it using the +./gradlew asciidocAll+ command, then open the *Groovy Index* page and navigate to the topic you've updated.
 
 <<<
 
@@ -544,7 +536,7 @@ As you update documents, you may need to see how it looks. Following the previou
 
 Do you have a special interest, or know some areas where you have some knowledge or where your skills may be useful ? There are many areas where your expertise can be put to good use. Here's one idea.
 
-Open the https://github.com/groovy/groovy-core/tree/master/src/spec/doc[Groovy Documentation Tree]. There are a large number of  document files, one for each core component and each separate sub-project extension within [blue]#Groovy#. They are written as simple text in a markup syntax called *asciidoc*. Document files end with *.adoc*.
+Open the https://github.com/groovy/groovy-core/tree/master/src/spec/doc[Groovy Documentation Tree]. There are a large number of  document files, one for each core component and each separate sub-project extension within [blue]#Groovy#. These are simple text file (no funny stuff)  in a markup syntax called *asciidoc*. Document files end with *.adoc*.
 
 '''
 
@@ -615,7 +607,7 @@ Then after you decide how/where to donate, register your interest in that area a
 
 === Declare Your Interest 
 
-To let us know you're working on a topic, it's useful to put your id, like nickname, date, etc., next to your topic. Edit the *.adoc* file to insert your id. After that, save the document, commit the change and send ( *PUSH* ) it back to your own *GitHub* copy of [blue]#Groovy#. Finally, you issue a request to the [blue]#Groovy# admins icon:user[] to merge your amendment back into the [blue]#Groovy# code base from your *GitHub* account. 
+To let us know you're working on a topic, it's useful to put your id, like nickname, date, etc., next to your topic. Edit the *.adoc* file directly in your own online copy of groovy-core to insert your id. After that, save the document, comment and commit the change. Finally, you issue a *PULL* request to the [blue]#Groovy# admins icon:user[] to merge your amendment back into the [blue]#Groovy# code base from your *GitHub* account. 
 
 This way you stake a claim to a particular topic and everyone knows it's what you're working on. If someone else wants to work on that topic, they'll see your id and should avoid it. 
 
@@ -632,13 +624,15 @@ image::assets/img/console2.png[Sample Markup, align="center"]
 
 Here's a demo we did earlier. Notice the line +==== MarkupBuilder (TBD) - assigned to JNorthr 1July14+ assigned to one of our documentation team ?
 
-You need to do the same, to an +.adoc+ document in your own local system. Look in a folder named something like +./groovy-core/groovy-core/src/spec/doc+ to see where your topic has been discussed. Then edit it, adding your id and save as plain text format using the *UTF-8* character set.
+You need to do the same, to an +.adoc+ document in your own GitHub copy. Look in a folder named something like +./groovy-core/groovy-core/src/spec/doc+ to see where your topic has been discussed. Then edit it, adding your id and, if necessary, save as plain text format using the *UTF-8* character set.
 
 '''
 
 WARNING: We do not have a procedure yet for new topics. Can you suggest one ?
 
 '''
+
+If you've cloned/copied groovy-core to your local system, you can do the same thing this way :
 
 [source,role="console",options="nowrap"]
 .Add your remarks
@@ -773,7 +767,7 @@ Given an asciidoctor declaration like this :
  ----
 ....
 
-would only insert source between the +BuilderSupportTest_add_node_with_value_object4+ tag start and end as follows : 
+would only insert source statements between the +BuilderSupportTest_add_node_with_value_object4+ tag start and end as follows : 
 
 image::assets/img/example19.png[BuilderSupportTest.groovy Listing] 
 
@@ -795,7 +789,7 @@ NOTE: +//+ characters identify the remainder of a line as remarks.
 
 '''
 
-Asciidoc tags are simply remarks / comments and so are invisible at build time. They're declared in pairs as a tag set. The *tag* keyword preceeds the tag name +BuilderSupportTest_add_node_with_value_object4+ followed by the asciidoc required tag ending of +[]+
+Asciidoctor tags are simply remarks / comments and so are invisible at build time. They're declared in pairs as a tag set. The *tag* keyword preceeds the tag name +BuilderSupportTest_add_node_with_value_object4+ followed by the asciidoc required tag ending of +[]+
 
 +// tag::+ says start using text after this line.
 
@@ -812,7 +806,7 @@ icon:thumbs-up[] Ok, let's review test cases next.
 
 === Review Current Tests
 
-Review the https://github.com/groovy/groovy-core/tree/master/src/spec/test[Test Case] folder. There may already be tests that cover your area of interest. Some were written before tag standards  came into existence. It might be as simple as adding asciidoc tags around a test method.
+Review the https://github.com/groovy/groovy-core/tree/master/src/spec/test[Test Case] folder. There may already be tests that cover your area of interest. Some were written before tag standards  came into existence. It might be as simple as adding asciidoctor tags around a test method.
 
 ==== Change Known Test Cases 
 
@@ -865,7 +859,7 @@ class CliBuilderTest extends GroovyTestCase {
 	assert clibuilder == null;
 ----
 
-The *assert* statement should have a remark before it. It should explain say why the test should succeed - *not* why it would fail icon:exclamation[]
+TIP: The *assert* statement should have a remark before it. It should explain say why the test should succeed - *not* why it would fail icon:exclamation[]
 
 '''
 
@@ -898,13 +892,13 @@ It's always useful to identify the license terms for use with any asset you crea
 ----
 
 
-=== Forget Test Cases 
+=== Forget Test Cases ?
 
-It's not critical to have samples of test stuff. Plenty of great documents do not require any reference to tests or the content may not even be about code, logic, tests, scripts.
+Well, why not ? It's not critical to have samples of test stuff. Plenty of great documentation does not require any reference to tests or the content may not even be about code, logic, tests, scripts.
 
 <<<
 
-== Write Documentation
+== How To Write Documentation
 
 Review current [blue]#Groovy# documents to gain an understanding of how it's written and what sort of content it has. http://groovy-lang.org/json.html[Look at this page about Json]. It uses our latest document standards. Now you know about *tags* you can appreciate how test samples are picked from external sources.
 
@@ -912,7 +906,7 @@ Review current [blue]#Groovy# documents to gain an understanding of how it's wri
 
 An introduction describes the purpose of the document. Major topical areas are started by level one headings. More detailed text pieces would be started with level two headings. 
 
-Follow guidelines for version 0.1.4 of Asciidoctor.
+Follow guidelines for version 1.4.0 of Asciidoctor.
 
 === Refer To Testcase Tags 
 
@@ -940,7 +934,7 @@ WARNING: Some assets/img folders do not exist and must be created.
 
 '''
 
-Try to keep the size of images small rather than use a very large image then ask asciidoctor to re-scale it smaller. This improves page load times for end users.
+Please try to keep the size of images small rather than use a very large image then ask asciidoctor to re-scale it smaller. This improves page load times for end users.
 
 <<<
 
@@ -995,7 +989,7 @@ Ok, we have everything in place. All our changes are good-to-go so now they can 
 
 === Commit Changes 
 
-+git commit -am \'put a nice clear note here about what your did'+
++git commit -am \'put a nice clear note here about what you did'+
 
 === Go To Master Branch
 
@@ -1167,7 +1161,7 @@ Here we can see that our request *488* has been executed a number of times. Each
 
 '''
 
-NOTE: Task *1968* failed as there is a  [red]#red icon:exclamation[]
+NOTE: Task *1968* failed as there is a  [red]#red# icon:exclamation[]
 
 '''
 
@@ -1212,6 +1206,7 @@ You can find a live icon:twitter[] https://twitter.com/hashtag/groovylang[#groov
  * eclipse-plugin-user@groovy.codehaus.org - all about the [blue]#Groovy# plugin for Eclipse
  * scm@groovy.codehaus.org - see those commits !
 
+'''
 
 ++++
 <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
