@@ -12131,7 +12131,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Power of a Number to a certain exponent.  Called by the '**' operator.
+     * Power of a Number to a certain exponent. Called by the '**' operator.
      *
      * @param self     a Number
      * @param exponent a Number exponent
@@ -12154,7 +12154,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Power of a BigDecimal to an integer certain exponent.  If the
+     * Power of a BigDecimal to an integer certain exponent. If the
      * exponent is positive, call the BigDecimal.pow(int) method to
      * maintain precision. Called by the '**' operator.
      *
@@ -12171,7 +12171,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Power of a BigInteger to an integer certain exponent.  If the
+     * Power of a BigInteger to an integer certain exponent. If the
      * exponent is positive, call the BigInteger.pow(int) method to
      * maintain precision. Called by the '**' operator.
      *
@@ -12188,7 +12188,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Power of an integer to an integer certain exponent.  If the
+     * Power of an integer to an integer certain exponent. If the
      * exponent is positive, convert to a BigInteger and call
      * BigInteger.pow(int) method to maintain precision. Called by the
      * '**' operator.
@@ -12211,7 +12211,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Power of a long to an integer certain exponent.  If the
+     * Power of a long to an integer certain exponent. If the
      * exponent is positive, convert to a BigInteger and call
      * BigInteger.pow(int) method to maintain precision. Called by the
      * '**' operator.
@@ -12230,6 +12230,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         } else {
             return power(self, (double) exponent);
+        }
+    }
+
+    /**
+     * Power of a BigInteger to an BigInteger certain exponent. Called by the
+     * '**' operator.
+     *
+     * @param self     a BigInteger
+     * @param exponent an BigInteger exponent
+     * @return a BigInteger to the power of a the exponent
+     * @since 2.4
+     */
+    public static BigInteger power(BigInteger self, BigInteger exponent) {
+        if ((exponent.signum() >= 0) && (exponent.compareTo(BI_INT_MAX) <= 0)) {
+            return self.pow(exponent.intValue());
+        } else {
+            return BigDecimal.valueOf(Math.pow(self.doubleValue(), exponent.doubleValue())).toBigInteger();
         }
     }
 
