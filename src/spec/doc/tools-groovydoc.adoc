@@ -211,4 +211,9 @@ Once you've written the class, using it is just a matter of redefining the `groo
 Please note that template customization is provided as is. APIs are subject to change, so you must consider this as a
 fragile feature.
 
+[[Groovydoc-GMavenPlus]]
+== GMavenPlus Maven Plugin
+http://gmavenplus.codehaus.org[GMavenPlus] is a Maven plugin with goals that
+support GroovyDoc generation.
+
 :leveloffset: 2

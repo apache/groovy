@@ -200,12 +200,28 @@ the enclosing `groovyc` task.
 
 More details about joint compilation can be found in the <<section-jointcompilation,joint compilation>> section.
 
+[[Gant]]
+== Gant
+http://gant.codehaus.org/[Gant] is a tool for scripting Ant tasks using Groovy
+instead of XML to specify the logic. As such, it has exactly the same features
+as the Groovyc Ant task.
+
+[[Gradle]]
+== Gradle
+http://www.gradle.org/[Gradle] is a build tool that allows you to leverage the
+flexibility of http://ant.apache.org/[Ant], while keeping the simplicity of
+convention over configuration that tools like http://maven.apache.org/[Maven]
+offer. Builds are specified using a Groovy DSL, which offers great flexibility
+and succinctness.
+
 == Maven integration
 There are several approaches to compiling Groovy code in your Maven
-projects. <<section-gmaven,GMaven>> is the
-most flexible and feature rich, but it has some difficulties with joint
-Java-Groovy projects and it is no longer under active development. The
-<<section-groovyeclipse,Groovy-Eclipse compiler plugin for Maven>> sidesteps the joint compilation issues. Read
+projects. <<section-gmavenplus,GMavenPlus>> is the
+most flexible and feature rich, but like most Groovy compiler tools, it can
+have difficulties with joint Java-Groovy projects (for the same reason
+<<section-gmaven,GMaven>> and <<Gradle>> can have issues).
+The <<section-groovyeclipse,Groovy-Eclipse compiler plugin for Maven>>
+sidesteps the joint compilation issues. Read
 <<Groovy-EclipsecompilerpluginforMaven-WhyanotherGroovycompilerforMavenWhataboutGMaven, this>>
 for a deeper discussion of the benefits and disadvantages of the two
 approaches.
@@ -309,70 +325,39 @@ execute the jar phase bundling up all of your compiled production
 classes into a jar after all of the unit tests pass. For more detail on
 Maven build phases consult the Maven2 documentation.
 
-== GMaven and GMavenPlus
+=== GMaven and GMavenPlus
 [[section-gmaven]]
-=== GMaven
-GMaven is a separate project and documentation for http://docs.codehaus.org/display/GMAVEN[GMaven] can
-be found http://docs.codehaus.org/display/GMAVEN[here].
-
-*Example:*
-
-[source,xml]
-----
-<dependencies>
-    <dependency>
-        <groupId>org.codehaus.gmaven.runtime</groupId>
-        <artifactId>gmaven-runtime-default</artifactId>
-    </dependency>
-</dependencies>
-
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.codehaus.gmaven</groupId>
-            <artifactId>gmaven-plugin</artifactId>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>generateStubs</goal>
-                        <goal>compile</goal>
-                        <goal>generateTestStubs</goal>
-                        <goal>testCompile</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-    </plugins>
-</build>
-----
+==== GMaven
+http://docs.codehaus.org/display/GMAVEN[GMaven] is the original Maven plugin
+for Groovy, supporting both compiling and scripting Groovy.
 
 *Important:*
 
-You should be aware that GMaven is *not supported anymore* and has problems with <<section-jointcompilation,joint compilation>>.
-Should you need joint compilation, we advise that you use the <<section-groovyeclipse,Groovy Eclipse maven plugin>>.
+You should be aware that GMaven is *not supported anymore* and can have
+difficulties with <<section-jointcompilation,joint compilation>>.
+<<section-gmavenplus,GMavenPlus>> can be a good replacement, but if you
+are having problems with joint compilation, you might consider the
+<<section-groovyeclipse,Groovy Eclipse maven plugin>>.
 
 [[section-gmavenplus]]
-=== GMavenPlus
+==== GMavenPlus
 
-https://github.com/groovy/GMavenPlus[GMavenPlus] is a rewrite of <<section-gmaven,GMaven>> which is in active development. It does not support all the features
-of <<section-gmaven,GMaven>> but supports newer versions of Groovy, invokedynamic, as well as joint compilation, through stubs (which
-means it has the same potential issues as <<section-gmaven,GMaven>>). The main advantage over its predecessor is that
-it compiles with recent versions of the compiler and supports choosing what version of Groovy is used.
+http://gmavenplus.codehaus.org[GMavenPlus] is a rewrite of
+<<section-gmaven,GMaven>> and is in active development. It supports most of the
+features of GMaven (a couple notable exceptions being
+http://maven.apache.org/plugin-tools/maven-plugin-tools-java/index.html[mojo Javadoc tags]
+and support for older Groovy versions). Its joint compilation uses stubs (which
+means it has the same potential issues as GMaven and <<Gradle>>. The main
+advantage over its predecessor is that it supports recent Groovy versions,
+InvokeDynamic, and GroovyDoc.
 
 [[section-gmaven2]]
-=== GMaven2
+==== GMaven 2
 
-See http://groovy.github.io/gmaven/[GMaven 2]
-
-Unlike the name seems to indicate, http://groovy.github.io/gmaven/[GMaven 2] is not aimed at replacing
-<<section-gmaven,GMaven>>. In fact, it's a rewrite of the scripting features of the GMaven plugin. Interestingly,
-it supports the missing features of <<section-gmavenplus,GMavenPlus>>, that is to say:
-
-* Script execution
-* Command-line shell access
-* GUI console access
-
-So it may be used as a complement to <<section-groovyeclipse,the Groovy Eclipse plugin>> or <<section-gmavenplus,GMavenPlus>>.
+Unlike the name might seem to suggest, http://groovy.github.io/gmaven/[GMaven 2]
+is not aimed at replacing <<section-gmaven,GMaven>>. In fact, it removes the
+non-scripting features of the GMaven plugin. It has not yet had any release and
+appears to be inactive currently.
 
 [[section-groovyeclipse]]
 
