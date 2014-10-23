@@ -1,6 +1,6 @@
 = Groovy Contributions
 Community Documentation <user@groovy.codehaus.org>
-v1.0, 2014-07-24 updated 11 Sept. 2014
+v1.0, 2014-07-24 updated 3 Oct. 2014
 :toc: left
 :toc-title: Contributions to Groovy Documentation  
 :icons: font
@@ -912,7 +912,7 @@ Review current [blue]#Groovy# documents to gain an understanding of how it's wri
 
 An introduction describes the purpose of the document. Major topical areas are started by level one headings. More detailed text pieces would be started with level two headings. 
 
-Follow guidelines for version 0.1.5 of Asciidoctor.
+Follow guidelines for version 0.1.4 of Asciidoctor.
 
 === Refer To Testcase Tags 
 
