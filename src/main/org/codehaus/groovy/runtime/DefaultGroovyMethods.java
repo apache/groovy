@@ -12240,7 +12240,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self     a BigInteger
      * @param exponent an BigInteger exponent
      * @return a BigInteger to the power of a the exponent
-     * @since 2.4
+     * @since 2.3.8
      */
     public static BigInteger power(BigInteger self, BigInteger exponent) {
         if ((exponent.signum() >= 0) && (exponent.compareTo(BI_INT_MAX) <= 0)) {
