@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,6 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.Closure;
-import groovy.util.GroovyTestCase;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.net.URI;
-import java.net.URL;
 import java.util.*;
 
 /**
@@ -95,6 +85,12 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.trunc(d, 6), 1000.123456);
     }
 
+    // GROOVY-6626
+    void testBigIntegerPower() {
+        assert DefaultGroovyMethods.power(2G, 63G) == DefaultGroovyMethods.power(2G, 63)
+        assert DefaultGroovyMethods.power(13G, 15G) == DefaultGroovyMethods.power(13G, 15)
+    }
+
     public void testToMethods() throws Exception {
         Number n = 7L;
         assertEquals(DefaultGroovyMethods.toInteger(n), new Integer(7));
@@ -112,7 +108,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
     }
 
     public void testGetBytes() {
-        byte[] bytes = {42,45,47,14,10,84};
+        byte[] bytes = [42,45,47,14,10,84] as byte[]
         ByteArrayInputStream is = new ByteArrayInputStream(bytes);
         try {
             byte[] answer = IOGroovyMethods.getBytes(is);
@@ -126,7 +122,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
     }
 
     public void testSetBytes() {
-        byte[] bytes = {42,45,47,14,10,84};
+        byte[] bytes = [42,45,47,14,10,84] as byte[]
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
             IOGroovyMethods.setBytes(os, bytes);
@@ -141,7 +137,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
     }
 
     public void testDownto() {
-        final int[] count = new int[]{0};
+        final int[] count = [0] as int[]
         final Closure closure = new Closure(null) {
             public Object doCall(final Object params) {
                 count[0]++;
