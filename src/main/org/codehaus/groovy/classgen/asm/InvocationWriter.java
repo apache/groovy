@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Label;
@@ -45,6 +46,7 @@ public class InvocationWriter {
     public static final MethodCallerMultiAdapter invokeMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeMethod", true, false);
     public static final MethodCallerMultiAdapter invokeStaticMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod", true, true);
     public static final MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
+    public static final MethodCaller castToVargsArray = MethodCaller.newStatic(DefaultTypeTransformation.class, "castToVargsArray");
     private static final MethodNode CLASS_FOR_NAME_STRING = ClassHelper.CLASS_Type.getDeclaredMethod("forName", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE,"name")});
 
     // type conversions
@@ -661,7 +663,6 @@ public class InvocationWriter {
     private void makeMOPBasedConstructorCall(List<ConstructorNode> constructors, ConstructorCallExpression call, ClassNode callNode) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
-
         call.getArguments().visit(controller.getAcg());
         // keep Object[] on stack
         mv.visitInsn(DUP);
@@ -732,23 +733,31 @@ public class InvocationWriter {
 
             ConstructorNode cn = constructorIt.next();
             String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
+
             // unwrap the Object[] and make transformations if needed
             // that means, to duplicate the Object[], make a cast with possible
             // unboxing and then swap it with the Object[] for each parameter
+            // vargs need special attention and transformation though
             Parameter[] parameters = cn.getParameters();
-            for (int p = 0; p < parameters.length; p++) {
-                operandStack.push(ClassHelper.OBJECT_TYPE);
-                mv.visitInsn(DUP);
-                BytecodeHelper.pushConstant(mv, p);
-                mv.visitInsn(AALOAD);
-                operandStack.push(ClassHelper.OBJECT_TYPE);
-                ClassNode type = parameters[p].getType();
-                operandStack.doGroovyCast(type);
-                operandStack.swap();
-                operandStack.remove(2);
+            int lengthWithoutVargs = parameters.length;
+            if (parameters.length>0 && parameters[parameters.length-1].getType().isArray()) {
+                lengthWithoutVargs--;
             }
-            // at the end we remove the Object[]
-            mv.visitInsn(POP);
+            for (int p = 0; p < lengthWithoutVargs; p++) {
+                loadAndCastElement(operandStack, mv, parameters, p);
+            }
+            if (parameters.length>lengthWithoutVargs) {
+                ClassNode type = parameters[lengthWithoutVargs].getType();
+                BytecodeHelper.pushConstant(mv, lengthWithoutVargs);
+                controller.getAcg().visitClassExpression(new ClassExpression(type));
+                operandStack.remove(1);
+                castToVargsArray.call(mv);
+                BytecodeHelper.doCast(mv, type);
+            } else {
+                // at the end we remove the Object[]
+                // the vargs case simply the last swap so no pop is needed
+                mv.visitInsn(POP);
+            }
             // make the constructor call
             mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor, false);
             mv.visitJumpInsn(GOTO, afterSwitch);
@@ -776,6 +785,18 @@ public class InvocationWriter {
             operandStack.push(callNode); // for call result
         }
         mv.visitInsn(POP);
+    }
+
+    private static void loadAndCastElement(OperandStack operandStack, MethodVisitor mv, Parameter[] parameters, int p) {
+        operandStack.push(ClassHelper.OBJECT_TYPE);
+        mv.visitInsn(DUP);
+        BytecodeHelper.pushConstant(mv, p);
+        mv.visitInsn(AALOAD);
+        operandStack.push(ClassHelper.OBJECT_TYPE);
+        ClassNode type = parameters[p].getType();
+        operandStack.doGroovyCast(type);
+        operandStack.swap();
+        operandStack.remove(2);
     }
 
     // we match only on the number of arguments, not anything else

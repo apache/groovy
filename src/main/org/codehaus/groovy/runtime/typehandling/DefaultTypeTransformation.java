@@ -853,4 +853,17 @@ public class DefaultTypeTransformation {
         }
     }
 
+    public static Object castToVargsArray(Object[] origin, int firstVargsPos, Class<?> arrayType) {
+        Class<?> componentType = arrayType.getComponentType();
+        if (firstVargsPos>= origin.length) return Array.newInstance(componentType, 0);
+        int length = origin.length-firstVargsPos;
+        if (length==1 && arrayType.isInstance(origin[firstVargsPos])) return origin[firstVargsPos];
+        Object newArray = Array.newInstance(componentType, length);
+        for (int i=0; i<length; i++) {
+            Object convertedValue = castToType(origin[firstVargsPos+i],componentType);
+            Array.set(newArray, i, convertedValue);
+        }
+        return newArray;
+    }
+
 }

@@ -115,4 +115,40 @@ public class ConstructorDelegationTest extends CompilableTestSupport {
         """
         shouldNotCompile(scriptStr)
     }
+
+    // GROOVY-6618
+    public void testVarsConstructor() {
+        assertScript '''
+            class Foo {
+                public info
+                Foo(String s,Integer[] a){info=a}
+                Foo() {this("foo",1)}
+            }
+            assert new Foo().info == [1]
+        '''
+        assertScript '''
+            class Foo {
+                public info
+                Foo(String s,Integer[] a){info=a}
+                Foo() {this("foo",null)}
+            }
+            assert new Foo().info == null
+        '''
+        assertScript '''
+            class Foo {
+                public info
+                Foo(String s,Integer[] a){info=a}
+                Foo() {this("foo",1,2,3)}
+            }
+            assert new Foo().info == [1,2,3]
+        '''
+        assertScript '''
+            class Foo {
+                public info
+                Foo(String s,Integer[] a){info=a}
+                Foo() {this("foo")}
+            }
+            assert new Foo().info == []
+        '''
+    }
 }

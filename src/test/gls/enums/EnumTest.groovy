@@ -539,6 +539,20 @@ class EnumTest extends CompilableTestSupport {
             assert MyEnum.ENUM1.accept(new ConcreteVisitor(), null) == 'I have been visited!'
         """
     }
+
+    void testVargsConstructor() {
+        assertScript '''
+            enum Test {
+                TEST1(1, 2, 3)
+                public final info
+
+                Test(Integer... ints) {
+                    info = ints
+                }
+            }
+            println Test.TEST1.info == [1,2,3]
+        '''
+    }
 }
 
 enum UsCoin {
