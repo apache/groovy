@@ -16,6 +16,7 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.lang.GeneratedGroovyProxy;
+import groovy.transform.SelfType;
 import groovy.transform.Trait;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -24,9 +25,13 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.transform.stc.Receiver;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -49,6 +54,7 @@ public abstract class Traits {
     public static final Class TRAIT_CLASS = Trait.class;
     public static final ClassNode TRAIT_CLASSNODE = ClassHelper.make(TRAIT_CLASS);
     public static final ClassNode GENERATED_PROXY_CLASSNODE = ClassHelper.make(GeneratedGroovyProxy.class);
+    public static final ClassNode SELFTYPE_CLASSNODE = ClassHelper.make(SelfType.class);
 
     static final String TRAIT_TYPE_NAME = "@" + TRAIT_CLASSNODE.getNameWithoutPackage();
     static final String TRAIT_HELPER = "$Trait$Helper";
@@ -259,6 +265,67 @@ public abstract class Traits {
             collectAllInterfacesReverseOrder(anInterface, interfaces);
         }
         return interfaces;
+    }
+
+    /**
+     * Collects all the self types that a type should extend or implement, given
+     * the traits is implements. Collects from interfaces and superclasses too.
+     * @param receiver a class node that may implement a trait
+     * @param selfTypes a collection where the list of self types will be written
+     * @return the selfTypes collection itself
+     * @since 2.4.0
+     */
+    public static LinkedHashSet<ClassNode> collectSelfTypes(
+            ClassNode receiver,
+            LinkedHashSet<ClassNode> selfTypes) {
+        return collectSelfTypes(receiver, selfTypes, true, true);
+    }
+
+    /**
+     * Collects all the self types that a type should extend or implement, given
+     * the traits is implements.
+     * @param receiver a class node that may implement a trait
+     * @param selfTypes a collection where the list of self types will be written
+     * @param checkInterfaces should the interfaces that the node implements be collected too
+     * @param checkSuper should we collect from the superclass too
+     * @return the selfTypes collection itself
+     * @since 2.4.0
+     */
+    public static LinkedHashSet<ClassNode> collectSelfTypes(
+            ClassNode receiver,
+            LinkedHashSet<ClassNode> selfTypes,
+            boolean checkInterfaces,
+            boolean checkSuper) {
+        if (Traits.isTrait(receiver)) {
+            List<AnnotationNode> annotations = receiver.getAnnotations(SELFTYPE_CLASSNODE);
+            for (AnnotationNode annotation : annotations) {
+                Expression value = annotation.getMember("value");
+                if (value instanceof ClassExpression) {
+                    selfTypes.add(value.getType());
+                } else if (value instanceof ListExpression) {
+                    List<Expression> expressions = ((ListExpression) value).getExpressions();
+                    for (Expression expression : expressions) {
+                        if (expression instanceof ClassExpression) {
+                            selfTypes.add(expression.getType());
+                        }
+                    }
+                }
+            }
+        }
+        if (checkInterfaces) {
+            ClassNode[] interfaces = receiver.getInterfaces();
+            for (ClassNode anInterface : interfaces) {
+                collectSelfTypes(anInterface, selfTypes, true, checkSuper);
+            }
+        }
+
+        if (checkSuper) {
+            ClassNode superClass = receiver.getSuperClass();
+            if (superClass != null) {
+                collectSelfTypes(superClass, selfTypes, checkInterfaces, true);
+            }
+        }
+        return selfTypes;
     }
 
     static String getSuperTraitMethodName(ClassNode trait, String method) {

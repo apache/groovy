@@ -17,6 +17,10 @@
 package org.codehaus.groovy.transform.traitx
 
 import groovy.transform.NotYetImplemented
+import groovy.transform.SelfType
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.expr.ClassExpression
+import org.codehaus.groovy.ast.expr.ListExpression
 
 class TraitASTTransformationTest extends GroovyTestCase {
     void testTraitWithNoMethod() {
@@ -2135,4 +2139,124 @@ d.foo()
     static trait TestTrait {
         int a() { 123 }
     }
+
+    void testSimpleSelfType() {
+        assertScript '''import groovy.transform.SelfType
+        import groovy.transform.CompileStatic
+
+        trait A {
+            int a() { 1 }
+        }
+
+        @CompileStatic
+        @SelfType(A)
+        trait B {
+            int b() { 2*a() }
+        }
+        class C implements A,B {}
+        def c = new C()
+        assert c.b() == 2
+        '''
+    }
+
+    void testSimpleSelfTypeInSubTrait() {
+        assertScript '''import groovy.transform.SelfType
+        import groovy.transform.CompileStatic
+
+        trait A {
+            int a() { 1 }
+        }
+
+        @CompileStatic
+        @SelfType(A)
+        trait B {
+            int b() { 2*a() }
+        }
+
+        @CompileStatic
+        trait SubB extends B {
+            int c() { 3*a() }
+        }
+
+
+        class C implements A,SubB {}
+        def c = new C()
+        assert c.c() == 3
+        '''
+    }
+
+    void testDoubleSelfType() {
+        assertScript '''import groovy.transform.SelfType
+        import groovy.transform.CompileStatic
+
+        trait A {
+            int a() { 1 }
+        }
+        trait A2 {
+            int a2() { 2 }
+        }
+
+        @CompileStatic
+        @SelfType([A,A2])
+        trait B {
+            int b() { 2*a()*a2() }
+        }
+        class C implements A,A2,B {}
+        def c = new C()
+        assert c.b() == 4
+        '''
+    }
+
+    void testClassDoesNotImplementSelfType() {
+        def err = shouldFail '''
+        import groovy.transform.SelfType
+        import groovy.transform.CompileStatic
+
+        @CompileStatic
+        @SelfType([String,Serializable])
+        trait B {
+            String b() { toUpperCase() }
+        }
+        class C implements B {}
+        def c = new C()
+        '''
+        assert err.contains("class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'")
+        assert err.contains("class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'")
+    }
+
+    void testClassDoesNotImplementSelfTypeUsingAbstractClass() {
+        def err = shouldFail '''
+        import groovy.transform.SelfType
+        import groovy.transform.CompileStatic
+
+        @CompileStatic
+        @SelfType([String,Serializable])
+        trait B {
+            String b() { toUpperCase() }
+        }
+        abstract class C implements B {}
+        class D extends C {}
+        def c = new D()
+
+        '''
+        assert err.contains("class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'")
+        assert err.contains("class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'")
+    }
+
+    void testAnnotationsOfPrecompiledTrait() {
+        def cn = ClassHelper.make(DoubleSelfTypeTrait)
+        def ann = cn.getAnnotations(ClassHelper.make(SelfType))
+        assert ann.size() == 1
+        def st = ann[0]
+        def val = st.getMember('value')
+        assert val instanceof ListExpression
+        val.expressions.each {
+            assert it instanceof ClassExpression
+        }
+    }
+
+
+    @SelfType([String, Date])
+    trait DoubleSelfTypeTrait {}
+
 }

@@ -12,6 +12,7 @@
 package org.codehaus.groovy.classgen;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +28,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Types;
@@ -64,6 +66,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             checkMethodsForWeakerAccess(node);
             checkMethodsForOverridingFinal(node);
             checkNoAbstractMethodsNonabstractClass(node);
+            checkClassExtendsAllSelfTypes(node);
             checkNoStaticMethodWithSameSignatureAsNonStatic(node);
             checkGenericsUsage(node, node.getUnresolvedInterfaces());
             checkGenericsUsage(node, node.getUnresolvedSuperClass());
@@ -128,6 +131,30 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
     }
 
+    private void checkClassExtendsAllSelfTypes(ClassNode node) {
+        int modifiers = node.getModifiers();
+        if (!isInterface(modifiers)) {
+            for (ClassNode anInterface : GeneralUtils.getInterfacesAndSuperInterfaces(node)) {
+                if (Traits.isTrait(anInterface)) {
+                    LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<ClassNode>();
+                    for (ClassNode type : Traits.collectSelfTypes(anInterface, selfTypes, true, false)) {
+                        if (type.isInterface() && !node.implementsInterface(type)) {
+                            addError(getDescription(node)
+                                    + " implements " + getDescription(anInterface)
+                                    + " but does not implement self type " + getDescription(type),
+                                    anInterface);
+                        } else if (!type.isInterface() && !node.isDerivedFrom(type)) {
+                            addError(getDescription(node)
+                                            + " implements " + getDescription(anInterface)
+                                            + " but does not extend self type " + getDescription(type),
+                                    anInterface);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private void checkClassForIncorrectModifiers(ClassNode node) {
         checkClassForAbstractAndFinal(node);
         checkClassForOtherModifiers(node);
@@ -165,7 +192,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private String getDescription(ClassNode node) {
-        return (node.isInterface() ? "interface" : "class") + " '" + node.getName() + "'";
+        return (node.isInterface() ? (Traits.isTrait(node)?"trait":"interface") : "class") + " '" + node.getName() + "'";
     }
 
     private String getDescription(MethodNode node) {

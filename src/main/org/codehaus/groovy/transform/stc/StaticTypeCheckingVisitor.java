@@ -19,6 +19,7 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import groovy.lang.IntRange;
 import groovy.lang.Range;
+import groovy.transform.SelfType;
 import groovy.transform.TypeChecked;
 import groovy.transform.TypeCheckingMode;
 import groovy.transform.stc.ClosureParams;
@@ -63,6 +64,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
 
@@ -2326,7 +2328,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression options) {
-        List<ClassNode[]> closureSignatures = getSignaturesFromHint(expression,selectedMethod,hintClass,options);
+        List<ClassNode[]> closureSignatures = getSignaturesFromHint(expression, selectedMethod, hintClass, options);
         List<ClassNode[]> candidates = new LinkedList<ClassNode[]>();
         for (ClassNode[] signature : closureSignatures) {
             // in order to compute the inferred types of the closure parameters, we're using the following trick:
@@ -2954,6 +2956,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // GROOVY-xxxx
             owners.add(Receiver.<String>make(OBJECT_TYPE));
         }
+        addSelfTypes(receiver, owners);
         if (!typeCheckingContext.temporaryIfBranchTypeInformation.empty()) {
             List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
             if (potentialReceiverType != null) {
@@ -2968,6 +2971,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             owners.add(Receiver.<String>make(typeCheckingContext.lastImplicitItType));
         }
         return owners;
+    }
+
+    private void addSelfTypes(final ClassNode receiver, final List<Receiver<String>> owners) {
+        LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<ClassNode>();
+        for (ClassNode selfType : Traits.collectSelfTypes(receiver, selfTypes)) {
+            owners.add(Receiver.<String>make(selfType));
+        }
     }
 
     protected void checkForbiddenSpreadArgument(ArgumentListExpression argumentList) {
