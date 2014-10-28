@@ -727,6 +727,75 @@ getters and setters, like in this last example:
 include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override_directgetter,indent=0]
 ----
 
+== Self types
+=== Type constraints on traits
+
+Sometimes you will want to write a trait that can only be applied to some type. For example, you may want to apply a
+trait on a class that extends another class which is beyond your control, and still be able to call those methods.
+To illustrate this, let's start with this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_intro,indent=0]
+----
+<1> A `Service` class, beyond your control (in a library, ...) defines a `sendMessage` method
+<2> A `Device` class, beyond your control (in a library, ...)
+<3> Defines a communicating trait for devices that can call the service
+<4> Defines `MyDevice` as a communicating device
+<5> The method from the trait is called, and `id` is resolved
+
+It is clear, here, that the `Communicating` trait can only apply to `Device`. However, there's no explicit
+contract to tell that, because traits cannot extend classes. However, the code compiles and runs perfectly
+fine, because `id` in the trait method will be resolved dynamically. The problem is that there is nothing that
+prevents the trait from being applied to any class which is *not* a `Device`. Any class which has an `id` would
+work, while any class that does not have an `id` property would cause a runtime error.
+
+The problem is even more complex if you want to enable type checking or apply `@CompileStatic` on the trait: because
+the trait knows nothing about itself being a `Device`, the type checker will complain saying that it does not find
+the `id` property.
+
+One possibility is to explicitly add a `getId` method in the trait, but it would not solve all issues. What if a method
+requires `this` as a parameter, and actually requires it to be a `Device`?
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_securityservice,indent=0]
+----
+
+If you want to be able to call this in the trait, then you will explicitly need to cast `this` into a `Device`. This can
+quickly become unreadable with explicit casts to this everywhere.
+
+=== The @SelfType annotation
+
+In order to make this contract explicit, and to make the type checker aware of the _type of itself_, Groovy provides
+a `@SelfType` annotation that will:
+
+* let you declare the types that a class that implements this trait must inherit or implement
+* throw a compile time error if those type constraints are not satisfied
+
+So in our previous example, we can fix the trait using the `@groovy.transform.SelfType` annotation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_fixed,indent=0]
+----
+
+Now if you try to implement this trait on a class that is *not* a device, a compile-time error will occur:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_compiletimeerror,indent=0]
+----
+
+The error will be:
+
+----
+class 'MyDevice' implements trait 'Communicating' but does not extend self type class 'Device'
+----
+
+In conclusion, self types are a powerful way of declaring constraints on traits without having to declare the contract
+directly in the trait or having to use casts everywhere, maintaining separation of concerns as tight as it should be.
+
 == Limitations
 === Compatibility with AST transformations
 

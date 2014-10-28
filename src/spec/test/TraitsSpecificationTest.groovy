@@ -775,6 +775,37 @@ class SecurityService {
 }
 
 '''
+
+        def message = shouldFail '''import groovy.transform.SelfType
+import groovy.transform.CompileStatic
+
+class CommunicationService {
+    static void sendMessage(String from, String to, String message) {
+        println "$from sent [$message] to $to"
+    }
+}
+
+class Device { String id }
+
+@SelfType(Device)
+@CompileStatic
+trait Communicating {
+    void sendMessage(Device to, String message) {
+        SecurityService.check(this)
+        CommunicationService.sendMessage(id, to.id, message)
+    }
+}
+
+// tag::selftype_compiletimeerror[]
+class MyDevice implements Communicating {} // forgot to extend Device
+// end::selftype_compiletimeerror[]
+
+class SecurityService {
+    static void check(Device d) { if (d.id==null) throw new SecurityException() }
+}
+
+'''
+        assert message.contains("class 'MyDevice' implements trait 'Communicating' but does not extend self type class 'Device'")
     }
 
     static class PrintCategory {
