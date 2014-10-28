@@ -710,6 +710,73 @@ assert elem.f() == 7
 '''
     }
 
+    void testSelfType() {
+        assertScript '''
+// tag::selftype_intro[]
+class CommunicationService {
+    static void sendMessage(String from, String to, String message) {       // <1>
+        println "$from sent [$message] to $to"
+    }
+}
+
+class Device { String id }                                                  // <2>
+
+trait Communicating {
+    void sendMessage(Device to, String message) {
+        CommunicationService.sendMessage(id, to.id, message)                // <3>
+    }
+}
+
+class MyDevice extends Device implements Communicating {}                   // <4>
+
+def bob = new MyDevice(id:'Bob')
+def alice = new MyDevice(id:'Alice')
+bob.sendMessage(alice,'secret')                                             // <5>
+// end::selftype_intro[]
+
+// tag::selftype_securityservice[]
+class SecurityService {
+    static void check(Device d) { if (d.id==null) throw new SecurityException() }
+}
+// end::selftype_securityservice[]
+'''
+
+
+        assertScript '''import groovy.transform.SelfType
+import groovy.transform.CompileStatic
+
+class CommunicationService {
+    static void sendMessage(String from, String to, String message) {
+        println "$from sent [$message] to $to"
+    }
+}
+
+class Device { String id }
+
+// tag::selftype_fixed[]
+@SelfType(Device)
+@CompileStatic
+trait Communicating {
+    void sendMessage(Device to, String message) {
+        SecurityService.check(this)
+        CommunicationService.sendMessage(id, to.id, message)
+    }
+}
+// end::selftype_fixed[]
+
+class MyDevice extends Device implements Communicating {}
+
+def bob = new MyDevice(id:'Bob')
+def alice = new MyDevice(id:'Alice')
+bob.sendMessage(alice,'secret')
+
+class SecurityService {
+    static void check(Device d) { if (d.id==null) throw new SecurityException() }
+}
+
+'''
+    }
+
     static class PrintCategory {
         static StringBuilder BUFFER = new StringBuilder()
         static void println(Object self, String message) {

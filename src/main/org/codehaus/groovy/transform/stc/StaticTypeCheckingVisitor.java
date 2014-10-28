@@ -3779,6 +3779,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return node;
         } else if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;
+            ClassNode selfTrait = isTraitSelf(vexp);
+            if (selfTrait!=null) return makeSelf(selfTrait);
             if (vexp == VariableExpression.THIS_EXPRESSION) return makeThis();
             if (vexp == VariableExpression.SUPER_EXPRESSION) return makeSuper();
             final Variable variable = vexp.getAccessedVariable();
@@ -3891,6 +3893,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             GenericsType gt = new GenericsType(ret);
             staticRet.setGenericsTypes(new GenericsType[]{gt});
             ret = staticRet;
+        }
+        return ret;
+    }
+
+    private ClassNode makeSelf(ClassNode trait) {
+        ClassNode ret = trait;
+        LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<ClassNode>();
+        Traits.collectSelfTypes(ret, selfTypes);
+        if (!selfTypes.isEmpty()) {
+            selfTypes.add(ret);
+            ret = new UnionTypeClassNode(selfTypes.toArray(new ClassNode[selfTypes.size()]));
         }
         return ret;
     }

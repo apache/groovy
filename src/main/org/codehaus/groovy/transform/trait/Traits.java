@@ -63,7 +63,7 @@ public abstract class Traits {
     static final String DIRECT_GETTER_SUFFIX = "$get";
     static final String INIT_METHOD = "$init$";
     static final String STATIC_INIT_METHOD = "$static$init$";
-    static final String THIS_OBJECT = "$self";
+    public static final String THIS_OBJECT = "$self";
     static final String STATIC_THIS_OBJECT = "$static$self";
     static final String STATIC_FIELD_PREFIX = "$static";
     static final String FIELD_PREFIX = "$ins";

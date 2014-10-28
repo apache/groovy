@@ -2243,6 +2243,39 @@ d.foo()
         assert err.contains("class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'")
     }
 
+    void testMethodAcceptingThisAsSelfTrait() {
+        assertScript '''
+import groovy.transform.SelfType
+import groovy.transform.CompileStatic
+
+class CommunicationService {
+    static void sendMessage(String from, String to, String message) {
+        println "$from sent [$message] to $to"
+    }
+}
+
+class Device { String id }
+
+@SelfType(Device)
+@CompileStatic
+trait Communicating {
+    void sendMessage(Device to, String message) {
+        SecurityService.check(this)
+        CommunicationService.sendMessage(id, to.id, message)
+    }
+}
+
+class MyDevice extends Device implements Communicating {}
+
+def bob = new MyDevice(id:'Bob')
+def alice = new MyDevice(id:'Alice')
+bob.sendMessage(alice,'secret')
+
+class SecurityService {
+    static void check(Device d) { if (d.id==null) throw new SecurityException() }
+}
+'''
+    }
     void testAnnotationsOfPrecompiledTrait() {
         def cn = ClassHelper.make(DoubleSelfTypeTrait)
         def ann = cn.getAnnotations(ClassHelper.make(SelfType))

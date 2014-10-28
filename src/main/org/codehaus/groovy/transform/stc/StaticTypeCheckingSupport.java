@@ -32,6 +32,7 @@ import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
 import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.tools.GroovyClass;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.ref.WeakReference;
@@ -2070,5 +2071,16 @@ public abstract class StaticTypeCheckingSupport {
             return Collections.emptyList();
         }
         return result;
+    }
+
+    public static ClassNode isTraitSelf(VariableExpression vexp) {
+        if (Traits.THIS_OBJECT.equals(vexp.getName())) {
+            ClassNode type = vexp.getAccessedVariable().getType();
+            if (vexp.getAccessedVariable() instanceof Parameter
+                    && Traits.isTrait(type)) {
+                return type;
+            }
+        }
+        return null;
     }
 }
