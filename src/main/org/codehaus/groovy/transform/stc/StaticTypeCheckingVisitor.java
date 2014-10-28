@@ -3779,10 +3779,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return node;
         } else if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;
-            ClassNode selfTrait = isTraitSelf(vexp);
-            if (selfTrait!=null) return makeSelf(selfTrait);
             if (vexp == VariableExpression.THIS_EXPRESSION) return makeThis();
             if (vexp == VariableExpression.SUPER_EXPRESSION) return makeSuper();
+            ClassNode selfTrait = isTraitSelf(vexp);
+            if (selfTrait!=null) return makeSelf(selfTrait);
             final Variable variable = vexp.getAccessedVariable();
             if (variable instanceof FieldNode) {
                 checkOrMarkPrivateAccess((FieldNode) variable);

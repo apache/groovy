@@ -2075,8 +2075,9 @@ public abstract class StaticTypeCheckingSupport {
 
     public static ClassNode isTraitSelf(VariableExpression vexp) {
         if (Traits.THIS_OBJECT.equals(vexp.getName())) {
-            ClassNode type = vexp.getAccessedVariable().getType();
-            if (vexp.getAccessedVariable() instanceof Parameter
+            Variable accessedVariable = vexp.getAccessedVariable();
+            ClassNode type = accessedVariable!=null?accessedVariable.getType():null;
+            if (accessedVariable instanceof Parameter
                     && Traits.isTrait(type)) {
                 return type;
             }
