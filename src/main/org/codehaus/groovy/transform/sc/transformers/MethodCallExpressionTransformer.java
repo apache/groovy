@@ -18,16 +18,22 @@ package org.codehaus.groovy.transform.sc.transformers;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
+
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 public class MethodCallExpressionTransformer {
     private final StaticCompilationTransformer staticCompilationTransformer;
@@ -37,6 +43,10 @@ public class MethodCallExpressionTransformer {
     }
 
     Expression transformMethodCallExpression(final MethodCallExpression expr) {
+        ClassNode superCallReceiver = expr.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
+        if (superCallReceiver!=null) {
+            return transformMethodCallExpression(transformToMopSuperCall(superCallReceiver, expr));
+        }
         Expression objectExpression = expr.getObjectExpression();
         ClassNode type = staticCompilationTransformer.getTypeChooser().resolveType(objectExpression, staticCompilationTransformer.getClassNode());
         if (isCallOnClosure(expr)) {
@@ -109,6 +119,31 @@ public class MethodCallExpressionTransformer {
             }
         }
         return staticCompilationTransformer.superTransform(expr);
+    }
+
+    private MethodCallExpression transformToMopSuperCall(final ClassNode superCallReceiver, final MethodCallExpression expr) {
+        MethodNode mn = expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        String mopName = MopWriter.getMopMethodName(mn, false);
+        MethodNode direct = new MethodNode(
+                mopName,
+                ACC_PUBLIC | ACC_SYNTHETIC,
+                mn.getReturnType(),
+                mn.getParameters(),
+                mn.getExceptions(),
+                EmptyStatement.INSTANCE
+        );
+        direct.setDeclaringClass(superCallReceiver);
+        MethodCallExpression result = new MethodCallExpression(
+                new VariableExpression("this"),
+                mopName,
+                expr.getArguments()
+        );
+        result.setImplicitThis(true);
+        result.setSpreadSafe(false);
+        result.setSafe(false);
+        result.setSourcePosition(expr);
+        result.setMethodTarget(direct);
+        return result;
     }
 
     private boolean isCallOnClosure(final MethodCallExpression expr) {

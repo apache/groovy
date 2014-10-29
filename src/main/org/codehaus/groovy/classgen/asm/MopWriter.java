@@ -144,7 +144,7 @@ public class MopWriter {
      * @param mopCalls list of methods a mop call method should be generated for
      * @param useThis  true if "this" should be used for the naming
      */
-    private void generateMopCalls(LinkedList<MethodNode> mopCalls, boolean useThis) {
+    protected void generateMopCalls(LinkedList<MethodNode> mopCalls, boolean useThis) {
         for (MethodNode method : mopCalls) {
             String name = getMopMethodName(method, useThis);
             Parameter[] parameters = method.getParameters();
