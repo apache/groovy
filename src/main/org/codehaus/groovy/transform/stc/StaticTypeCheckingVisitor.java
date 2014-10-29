@@ -366,6 +366,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private void checkSuperCallFromClosure(Expression call, MethodNode directCallTarget) {
+        if (call instanceof MethodCallExpression && typeCheckingContext.getEnclosingClosure() != null) {
+            Expression objectExpression = ((MethodCallExpression)call).getObjectExpression();
+            if (objectExpression instanceof VariableExpression) {
+                VariableExpression var = (VariableExpression) objectExpression;
+                if (var.isSuperExpression()) {
+                    ClassNode current = typeCheckingContext.getEnclosingClassNode();
+                    LinkedList<MethodNode> list = current.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
+                    if (list == null) {
+                        list = new LinkedList<MethodNode>();
+                        current.putNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED, list);
+                    }
+                    list.add(directCallTarget);
+                    call.putNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED, current);
+                }
+            }
+        }
+    }
+
     /**
      * wrap type in Class<> if usingClass==true
      */
@@ -3002,6 +3021,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected void storeTargetMethod(final Expression call, final MethodNode directMethodCallCandidate) {
         call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
         checkOrMarkPrivateAccess(directMethodCallCandidate);
+        checkSuperCallFromClosure(call, directMethodCallCandidate);
         extension.onMethodSelection(call, directMethodCallCandidate);
     }
 

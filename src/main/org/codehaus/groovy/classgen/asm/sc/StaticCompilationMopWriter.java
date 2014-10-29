@@ -15,8 +15,13 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
+
+import java.util.LinkedList;
 
 /**
  * A MOP Writer that skips the generation of MOP methods. This writer is used
@@ -44,7 +49,11 @@ public class StaticCompilationMopWriter extends MopWriter {
 
 
     public void createMopMethods() {
-
+        ClassNode classNode = controller.getClassNode();
+        LinkedList<MethodNode> requiredMopMethods = classNode.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
+        if (requiredMopMethods!=null) {
+            generateMopCalls(requiredMopMethods, false);
+        }
     }
 
 }

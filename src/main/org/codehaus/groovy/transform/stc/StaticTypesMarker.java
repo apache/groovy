@@ -32,5 +32,6 @@ public enum StaticTypesMarker {
     IMPLICIT_RECEIVER, // if the receiver is implicit but not "this", store the name of the receiver (delegate or owner)
     PV_FIELDS_ACCESS, // set of private fields that are accessed from closures or inner classes
     PV_METHODS_ACCESS, // set of private methods that are accessed from closures or inner classes
-    DYNAMIC_RESOLUTION // call recognized by a type checking extension as a dynamic method call
+    DYNAMIC_RESOLUTION, // call recognized by a type checking extension as a dynamic method call
+    SUPER_MOP_METHOD_REQUIRED // used to store the list of MOP methods that still have to be generated
 }
