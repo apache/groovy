@@ -45,7 +45,7 @@ public class IO {
             if (size != -1) {
                 charBuf._len(size);
             }
-            if (size < buffer.length) {
+            if (size < 0 ) {
                 return charBuf;
             }
 
