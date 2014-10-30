@@ -147,7 +147,8 @@ public class BytecodeHelper implements Opcodes {
         StringBuilder buf = new StringBuilder();
         ClassNode d = c;
         while (true) {
-            if (ClassHelper.isPrimitiveType(d)) {
+            if (ClassHelper.isPrimitiveType(d.redirect())) {
+                d = d.redirect();
                 char car;
                 if (d == ClassHelper.int_TYPE) {
                     car = 'I';
