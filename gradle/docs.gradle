@@ -1,13 +1,20 @@
-task doc(dependsOn: ['asciidocAll', 'assembleAsciidoc', 'javadocAll', 'groovydocAll', 'docGDK']) {
+task doc(dependsOn: ['javadocAll', 'groovydocAll', 'docGDK']) {
+    if (JavaVersion.current().java7Compatible) {
+        dependsOn 'asciidocAll', 'assembleAsciidoc'
+    }
     ext.footer = 'Copyright &amp;copy; 2003-2014 The Codehaus. All rights reserved.'
     ext.title = "Groovy ${groovyVersion}"
 }
 
-task assembleAsciidoc(type: Copy, dependsOn: 'asciidocAll') {
-    subprojects {
-        from project.asciidoctor
+if (JavaVersion.current().java7Compatible) {
+    task assembleAsciidoc(type: Copy, dependsOn: 'asciidocAll') {
+        subprojects {
+            from project.asciidoctor
+        }
+        into "$buildDir/asciidoc"
     }
-    into "$buildDir/asciidoc"
+
+    task asciidocAll(dependsOn: 'asciidoctor')
 }
 
 def javadocSpec = {
@@ -48,8 +55,6 @@ def groovydocSpec = {
 allprojects {
     javadoc javadocSpec
     groovydoc groovydocSpec
-
-    task asciidocAll(dependsOn: 'asciidoctor')
 }
 
 // Root project has an extra 'all' javadoc task
