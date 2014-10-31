@@ -54,6 +54,8 @@ include::{projectdir}/src/spec/doc/grape.adoc[]
 
 include::{projectdir}/src/spec/doc/core-testing-guide.adoc[]
 
+include::{projectdir}/src/spec/doc/groovy-contributions.adoc[]
+
 include::{subprojroot}json/{specfolder}/json-userguide.adoc[]
 
 === Interacting with a SQL database (TBD)

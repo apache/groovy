@@ -1,3 +1,7 @@
+= Contributions
+
+If you can offer time to improve groovy or our documentation, link:groovy-contributions.html[read this tutorial].
+
 = Contributors
 
 
