@@ -44,6 +44,8 @@ include::{projectdir}/src/spec/doc/grape.adoc[leveloffset=+2]
 
 include::{projectdir}/src/spec/doc/core-testing-guide.adoc[leveloffset=+2]
 
+include::{projectdir}/src/spec/doc/groovy-contributions.adoc[leveloffset=+2]
+
 include::{projectdir}/subprojects/groovy-json/{specfolder}/json-userguide.adoc[leveloffset=+2]
 
 === Interacting with a SQL database (TBD)
