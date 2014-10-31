@@ -595,4 +595,3 @@ http://gmavenplus.codehaus.org[GMavenPlus] is a Maven plugin with goals
 that support launching a Groovy Shell or Groovy Console bound to a Maven
 project.
 
-:leveloffset: 2

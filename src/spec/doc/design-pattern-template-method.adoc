@@ -7,7 +7,7 @@ image::assets/img/TemplateMethodClasses.gif[]
 
 == Example
 
-In this example, ++Accumulator++ captures the essence of the accumulation algorithm. The base classes ++Sum++ and ++Product++ provide particular customised ways to use the generic accumulation algorithm.
+In this example, `Accumulator` captures the essence of the accumulation algorithm. The base classes `Sum` and `Product` provide particular customised ways to use the generic accumulation algorithm.
 
 [source,groovy]
 ----

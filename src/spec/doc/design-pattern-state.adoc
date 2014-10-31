@@ -35,7 +35,7 @@ One approach we could take is to leverage http://www.pragmaticprogrammer.com/tit
 include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=state_variation1_interface,indent=0]
 ----
 
-Then our ++Client++, ++Online++ and ++Offline++ classes could be modified to implement that interface, e.g.:
+Then our `Client`, `Online` and 'Offline` classes could be modified to implement that interface, e.g.:
 
 [source,groovy]
 ----
@@ -62,7 +62,7 @@ This is all quite generic and can be used wherever we want to introduce the stat
 include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=state_variation2_impl,indent=0]
 ----
 
-You can see here the ++startFrom++ and ++transitionTo++ methods begin to give our example code a DSL feel.
+You can see here the `startFrom` and `transitionTo` methods begin to give our example code a DSL feel.
 
 == Variation 3: Bring on the DSL
 
@@ -87,6 +87,6 @@ Now we can define and test our state machine like this:
 include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=state_variation33,indent=0]
 ----
 
-This example isn't an exact equivalent of the others. It doesn't use predefined ++Online++ and ++Offline++ classes. Instead it defines the entire state machine on the fly as needed. See the http://www.bytemycode.com/snippets/snippet/640/[previous reference] for more elaborate examples of this style.
+This example isn't an exact equivalent of the others. It doesn't use predefined `Online` and `Offline` classes. Instead it defines the entire state machine on the fly as needed. See the http://www.bytemycode.com/snippets/snippet/640/[previous reference] for more elaborate examples of this style.
 
 See also: <<_model_based_testing_using_modeljunit,Model-based testing using ModelJUnit>>

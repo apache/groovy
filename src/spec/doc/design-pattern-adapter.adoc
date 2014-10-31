@@ -11,7 +11,7 @@ Suppose we have the following classes:
 include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=adapter_delegation_classes,indent=0]
 ----
 
-We can ask the ++RoundHole++ class if a ++RoundPeg++ fits in it, but if we ask the same question for a ++SquarePeg++, then it will fail because the ++SquarePeg++ class doesn't have a ++radius++ property (i.e. doesn't satisfy the required interface).
+We can ask the `RoundHole` class if a `RoundPeg` fits in it, but if we ask the same question for a `SquarePeg`, then it will fail because the `SquarePeg` class doesn't have a `radius` property (i.e. doesn't satisfy the required interface).
 
 To get around this problem, we can create an adapter to make it appear to have the correct interface. It would look like this:
 

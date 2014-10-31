@@ -1,6 +1,8 @@
 [[section-grape]]
 = Dependency management with Grape
+
 == Quick start
+
 === Add a Dependency
 
 Grape is a JAR dependency manager embedded into Groovy. Grape lets you quickly add maven repository dependencies to your

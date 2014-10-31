@@ -57,7 +57,7 @@ The `groovydoc` Ant task allows generating groovydocs from an Ant build.
 [[ThegroovydocAnttask-Requiredtaskdef]]
 === Required taskdef
 
-Assuming +groovy-all-{groovyversion}.jar+ is in _my.classpath_ you will need to
+Assuming `groovy-all-{groovyversion}.jar` is in _my.classpath_ you will need to
 declare this task at some point in the build.xml prior to the groovydoc
 task being invoked.
 
@@ -216,4 +216,3 @@ fragile feature.
 http://gmavenplus.codehaus.org[GMavenPlus] is a Maven plugin with goals that
 support GroovyDoc generation.
 
-:leveloffset: 2

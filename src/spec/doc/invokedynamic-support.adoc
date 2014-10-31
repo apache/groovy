@@ -26,7 +26,7 @@ The first jar is Groovy compiled without invokedynamic support, while the second
 Both jars contain a fully working groovy implementation. They are mutually exclusive (don't put both on classpath).
 
 === Command-line and indy
-If you download the distribution and that you use the command line, it's always the "normal" version of Groovy which is picked up in classpath. This means that whatever command you use (++groovy++, ++groovyc++, ++groovysh++ or ++groovyConsole++), invokedynamic support is not available out of the box. To use the invokedynamic version, you have to switch the jars manually. The distribution makes use of the jars in the ++lib++ directory, while the indy jars are available in the ++indy++ directory. You have three things to do:
+If you download the distribution and that you use the command line, it's always the "normal" version of Groovy which is picked up in classpath. This means that whatever command you use (`groovy`, `groovyc`, `groovysh` or `groovyConsole`), invokedynamic support is not available out of the box. To use the invokedynamic version, you have to switch the jars manually. The distribution makes use of the jars in the ++lib++ directory, while the indy jars are available in the ++indy++ directory. You have three things to do:
 
 - remove or rename the groovy-*.jar files in the lib directory
 - replace them with the indy version from the indy directory

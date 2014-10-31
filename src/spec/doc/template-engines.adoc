@@ -2,22 +2,22 @@
 
 == Introduction
 
-Groovy supports multiple ways to generate text dynamically including ++GStrings++, ++printf++ if you are using Java 5, and <<_markupbuilder, MarkupBuilder>> just to name a few. In addition to these, there is a dedicated template framework which is well-suited to applications where the text to be generated follows the form of a static template.
+Groovy supports multiple ways to generate text dynamically including `GStrings`, `printf` if you are using Java 5, and <<_markupbuilder, MarkupBuilder>> just to name a few. In addition to these, there is a dedicated template framework which is well-suited to applications where the text to be generated follows the form of a static template.
 
 == Template framework
 
-The template framework in Groovy consists of a ++TemplateEngine++ abstract base class that engines must implement and a ++Template++ interface that the resulting templates they generate must implement.
+The template framework in Groovy consists of a `TemplateEngine` abstract base class that engines must implement and a `Template` interface that the resulting templates they generate must implement.
 
 Included with Groovy are several template engines:
 
-- ++SimpleTemplateEngine++ - for basic templates
-- ++GStringTemplateEngine++ - stores the template as writable closures (useful for streaming scenarios)
-- ++XmlTemplateEngine++ - works well when the template and output are valid XML
-- ++MarkupTemplateEngine++ - a very complete, optimized, template engine
+- `SimpleTemplateEngine` - for basic templates
+- `GStringTemplateEngine` - stores the template as writable closures (useful for streaming scenarios)
+- `XmlTemplateEngine` - works well when the template and output are valid XML
+- `MarkupTemplateEngine` - a very complete, optimized, template engine
 
 == SimpleTemplateEngine
 
-Shown here is the ++SimpleTemplateEngine++ that allows you to use JSP-like scriptlets (see example below), script, and EL expressions in your template in order to generate parameterized text. Here is an example of using the system:
+Shown here is the `SimpleTemplateEngine` that allows you to use JSP-like scriptlets (see example below), script, and EL expressions in your template in order to generate parameterized text. Here is an example of using the system:
 
 [source,groovy]
 ----
@@ -68,7 +68,7 @@ Similarly, if we wanted a newline, we would use:
 include::{projectdir}/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine7,indent=0]
 ----
 
-in any GString expression or scriptlet $$'code'$$ that appears inside a Groovy script. A normal "++\n++" is fine within the static template text itself or if the entire template itself is in an external template file. Similarly, to represent an actual backslash in your text you would need
+in any GString expression or scriptlet $$'code'$$ that appears inside a Groovy script. A normal "`\n`" is fine within the static template text itself or if the entire template itself is in an external template file. Similarly, to represent an actual backslash in your text you would need
 
 [source,groovy]
 ----
@@ -86,7 +86,7 @@ in any GString expression or scriptlet $$'code'$$. (Note: the necessity to have 
 
 == GStringTemplateEngine
 
-As an example of using the ++GStringTemplateEngine++, here is the example above done again (with a few changes to show some other options). First we will store the template in a file this time:
+As an example of using the `GStringTemplateEngine`, here is the example above done again (with a few changes to show some other options). First we will store the template in a file this time:
 
 [source,groovy]
 .test.template
@@ -94,7 +94,7 @@ As an example of using the ++GStringTemplateEngine++, here is the example above 
 include::{projectdir}/src/spec/test/TemplateEnginesTest.groovy[tags=gstring_template_engine1,indent=0]
 ----
 
-Note that we used ++out++ instead of ++print++ to support the streaming nature of ++GStringTemplateEngine++. Because we have the template in a separate file, there is no need to escape the backslashes. Here is how we call it:
+Note that we used `out` instead of `print` to support the streaming nature of `GStringTemplateEngine`. Because we have the template in a separate file, there is no need to escape the backslashes. Here is how we call it:
 
 [source,groovy]
 ----
@@ -112,9 +112,9 @@ Groovy-Dev
 
 == XmlTemplateEngine
 
-++XmlTemplateEngine++ for use in templating scenarios where both the template source and the expected output are intended to be XML. Templates may use the normal ++${expression}++ and ++$variable++ notations to insert an arbitrary expression into the template. In addition, support is also provided for special tags: ++<gsp:scriptlet>++ (for inserting code fragments) and ++<gsp:expression>++ (for code fragments which produce output).
+`XmlTemplateEngine` for use in templating scenarios where both the template source and the expected output are intended to be XML. Templates may use the normal `${expression}` and `$variable` notations to insert an arbitrary expression into the template. In addition, support is also provided for special tags: `<gsp:scriptlet>` (for inserting code fragments) and `<gsp:expression>` (for code fragments which produce output).
 
-Comments and processing instructions will be removed as part of processing and special XML characters such as ++<++, ++>++, ++"++ and ++'++ will be escaped using the respective XML notation. The output will also be indented using standard XML pretty printing.
+Comments and processing instructions will be removed as part of processing and special XML characters such as `<`, `>`, `"` and `'` will be escaped using the respective XML notation. The output will also be indented using standard XML pretty printing.
 
 The xmlns namespace definition for gsp: tags will be removed but other namespace definitions will be preserved (but may change to an equivalent position within the XML tree).
 
@@ -138,9 +138,7 @@ This example will produce this output:
 </document>
 ----
 
-:leveloffset: 3
-include::{rootDir}/subprojects/groovy-templates/src/spec/doc/markup-template-engine.adoc[]
-:leveloffset: 2
+include::{rootProjectDir}/subprojects/groovy-templates/src/spec/doc/markup-template-engine.adoc[leveloffset=+1]
 
 == Other solutions
 

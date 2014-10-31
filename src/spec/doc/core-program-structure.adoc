@@ -13,13 +13,13 @@ Defining a package is very similar to Java:
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=package_statement,indent=0]
 ----
 
-To refer to some class ++Foo++ in the ++com.yoursite.com++ package you will need to use the fully qualified name ++com.yoursite.com.Foo++, or else you can use an ++import++ statement as we'll see below.
+To refer to some class `Foo` in the `com.yoursite.com` package you will need to use the fully qualified name `com.yoursite.com.Foo`, or else you can use an `import` statement as we'll see below.
 
 == Imports
 
-In order to refer to any class you need a qualified reference to its package. Groovy follows Java's notion of allowing ++import++ statement to resolve class references. 
+In order to refer to any class you need a qualified reference to its package. Groovy follows Java's notion of allowing `import` statement to resolve class references.
 
-For example, Groovy provides several builder classes, such as ++MarkupBuilder++. ++MarkupBuilder++ is inside the package ++groovy.xml++ so in order to use this class, you need to ++import++ it as shown:
+For example, Groovy provides several builder classes, such as `MarkupBuilder`. `MarkupBuilder` is inside the package `groovy.xml` so in order to use this class, you need to `import` it as shown:
 
 [source,groovy]
 ----
@@ -35,7 +35,7 @@ Default imports are the imports that Groovy language provides by default. For ex
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=default_import,indent=0]
 ----
 
-The same code in Java needs an import statement to ++Date++ class like this: ++import java.util.Date++. Groovy by default imports these classes for you. There are six packages that groovy imports for you, they are:
+The same code in Java needs an import statement to `Date` class like this: ++import java.util.Date++. Groovy by default imports these classes for you. There are six packages that groovy imports for you, they are:
 
 [source,groovy]
 ----
@@ -60,14 +60,14 @@ include::{projectdir}/src/spec/test/PackageTest.groovy[tags=import_statement,ind
 
 === Star import
 
-Groovy, like Java, provides a special way to import all classes from a package using ++*++, a so called Star import. ++MarkupBuilder++ is a class which is in package ++groovy.xml++, alongside another class called ++StreamingMarkupBuilder++. In case you need to use both classes, you can do:
+Groovy, like Java, provides a special way to import all classes from a package using `*`, a so called Star import. `MarkupBuilder` is a class which is in package `groovy.xml`, alongside another class called `StreamingMarkupBuilder`. In case you need to use both classes, you can do:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=multiple_import,indent=0]
 ----
 
-That's perfectly valid code. But with a ++*++ import, we can achieve the same effect with just one line, where `*` imports all the classes under package ++groovy.xml++:
+That's perfectly valid code. But with a `*` import, we can achieve the same effect with just one line, where `*` imports all the classes under package `groovy.xml`:
 
 [source,groovy]
 ----
@@ -85,11 +85,11 @@ Groovy's static import capability allows you to reference imported classes as if
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=static_imports,indent=0]
 ----
 
-As you can see, now we can able to refer to the static variable ++FALSE++ in our code base cleanly. 
+As you can see, now we can able to refer to the static variable `FALSE` in our code base cleanly.
 
 === Static import aliasing
 
-Static imports with the ++as++ keyword provide an elegant solution to namespace problems. Suppose you want to get a ++Calendar++ instance, using its ++getInstance()++ method. It's a static method, so we can use a static import. But instead of calling ++getInstance()++ every time, which can be misleading when separated from its class name, we can import it with an alias, to increase code readability:
+Static imports with the `as` keyword provide an elegant solution to namespace problems. Suppose you want to get a `Calendar` instance, using its `getInstance()` method. It's a static method, so we can use a static import. But instead of calling `getInstance()` every time, which can be misleading when separated from its class name, we can import it with an alias, to increase code readability:
 
 [source,groovy]
 ----
@@ -103,18 +103,18 @@ Now, that's clean!
 A static star import is very similar to the regular star import. It will import all the static methods from the given class.
 
 For example, lets say we need to calculate sines and cosines for our application. 
-The class ++java.lang.Math++ has static methods named ++sin++ and ++cos++ which fit our need. With the help of a static star import, we can do:
+The class `java.lang.Math` has static methods named `sin` and `cos` which fit our need. With the help of a static star import, we can do:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=static_importswithstar,indent=0]
 ----
 
-As you can see, we were able to access the methods ++sin++ and ++cos++ directly, without the ++Math.++ prefix.
+As you can see, we were able to access the methods `sin` and `cos` directly, without the `Math.` prefix.
 
 === Import aliasing
 
-With type aliasing, we can refer to a fully qualified class name using a name of our choice. This can be done with the ++as++ keyword, as before.
+With type aliasing, we can refer to a fully qualified class name using a name of our choice. This can be done with the `as` keyword, as before.
 
 Consider the following class, provided by some third-party library code:
 
@@ -139,9 +139,9 @@ With a simple import aliasing, we can fix the bug like this:
 include::{projectdir}/src/spec/test/PackageTest.groovy[tags=fixing_thrid_party_lib,indent=0]
 ----
 
-Thats it! Notice how Groovy allowed us to use the ++as++ keyword to rename our imported class and solve this common problem.
+Thats it! Notice how Groovy allowed us to use the `as` keyword to rename our imported class and solve this common problem.
 
-Type aliasing is also useful to solve name collision problems which can occur with ++*++ imports.
+Type aliasing is also useful to solve name collision problems which can occur with `*` imports.
 
 == Scripts versus classes (TBD)
 

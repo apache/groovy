@@ -22,6 +22,7 @@ asciidoctor {
     sourceDir = project.file('src/spec/doc')
     options = [
             attributes: [
+                    'rootProjectDir': rootProject.projectDir,
                     'source-highlighter': 'prettify',
                     groovyversion: groovyVersion,
                     'groovy-major-version': major,
@@ -33,7 +34,6 @@ asciidoctor {
                     revnumber: groovyVersion,
                     icons: 'font',
                     toc2: '',
-                    subprojroot: 'subprojects/groovy-',
                     specfolder: 'src/spec/doc',
                     linkcss: '',
                     stylesheet: "assets/css/style.css",

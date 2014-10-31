@@ -185,4 +185,3 @@ particularly handy when you want to develop AST transformations.
 
 image:assets/img/astbrowser.png[AST Browser]
 
-:leveloffset: 2

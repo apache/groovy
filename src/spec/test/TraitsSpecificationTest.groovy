@@ -72,7 +72,8 @@ def p = new Person()
 assert p.greeting() == 'Hello, Bob!'                    // <5>
 assert p instanceof Named                               // <6>
 assert p instanceof Greetable                           // <7>
-// end::trait_implementing_interface[]'''
+// end::trait_implementing_interface[]
+'''
     }
 
     void testTraitWithProperty() {
@@ -84,7 +85,8 @@ class Person implements Named {}            // <2>
 def p = new Person(name: 'Bob')             // <3>
 assert p.name == 'Bob'                      // <4>
 assert p.getName() == 'Bob'                 // <5>
-// end::trait_with_property[]'''
+// end::trait_with_property[]
+'''
     }
 
     void testCompositionOfTraits() {
@@ -127,7 +129,8 @@ def d = new Duck()
 assert d.fly() == "I'm flying!"                         // <3>
 assert d.quack() == "Quack!"                            // <4>
 assert d.speak() == "Quack!"                            // <5>
-// end::quackingduck[]'''
+// end::quackingduck[]
+'''
     }
 
     void testPrivateMethodInTrait() {
@@ -176,7 +179,8 @@ trait Named {
 class Person implements Named {}            // <2>
 def p = new Person()                        // <3>
 p.Named__name = 'Bob'                       // <4>
-// end::trait_with_public_field[]'''
+// end::trait_with_public_field[]
+'''
     }
 
     void testRemappedName() {
@@ -196,7 +200,8 @@ class Duck implements SpeakingDuck {
 }
 def d = new Duck()
 assert d.speak() == 'Quack!'                        // <3>
-// end::ducktyping[]'''
+// end::ducktyping[]
+'''
     }
 
     void testTraitInheritance() {
@@ -255,7 +260,8 @@ d.foo = 'bar'                                       // <6>
 assert d.foo == 'bar'                               // <7>
 assert d.existingMethod() == 'ok'                   // <8>
 assert d.someMethod() == 'SOMEMETHOD'               // <9>
-// end::dynamicobject[]'''
+// end::dynamicobject[]
+'''
     }
 
     void testDefaultMultipleInheritanceResolution() {
@@ -272,7 +278,8 @@ class C implements A,B {}               // <3>
 // tag::multiple_inherit_default_assert[]
 def c = new C()
 assert c.exec() == 'B'
-// end::multiple_inherit_default_assert[]'''
+// end::multiple_inherit_default_assert[]
+'''
     }
 
     void testUserMultipleInheritanceResolution() {
@@ -288,7 +295,8 @@ class C implements A,B {
 }
 def c = new C()
 assert c.exec() == 'A'                  // <2>
-// end::multiple_inherit_user[]'''
+// end::multiple_inherit_user[]
+'''
     }
 
     void testRuntimeCoercion() {
@@ -313,7 +321,8 @@ s.extra()
 def s = new Something() as Extra                        // <1>
 s.extra()                                               // <2>
 s.doSomething()                                         // <3>
-// end::runtime_success[]'''
+// end::runtime_success[]
+'''
     }
 
     void testWithTraits() {
@@ -356,7 +365,8 @@ Greeter greeter = { 'Alice' }               // <1>
 // tag::sam_trait_method[]
 void greet(Greeter g) { println g.greet() } // <1>
 greet { 'Alice' }                           // <2>
-// end::sam_trait_method[]'''
+// end::sam_trait_method[]
+'''
     }
 
     void testTraitOverrideBehavior() {
@@ -441,7 +451,8 @@ def p = new Person(name: 'Alice')
 assert p.name == 'Alice'                                // <3>
 def p2 = p as Bob                                       // <4>
 assert p2.name == 'Bob'                                 // <5>
-// end::runtime_forceoverride[]'''
+// end::runtime_forceoverride[]
+'''
     }
 
     void testDifferenceWithMixin() {
@@ -454,7 +465,8 @@ assert o.methodFromA() == 'A'                   // <4>
 assert o.methodFromB() == 'B'                   // <5>
 assert o instanceof A                           // <6>
 assert !(o instanceof B)                        // <7>
-// end::diff_mixin[]'''
+// end::diff_mixin[]
+'''
     }
 
     void testMeaningOfThis() {
@@ -470,7 +482,8 @@ foo.whoAmI()
 // end::meaningofthis_snippet[]
 // tag::meaningofthis_assert[]
 assert foo.whoAmI().is(foo)
-// end::meaningofthis_assert[]'''
+// end::meaningofthis_assert[]
+'''
     }
 
     void testPublicStaticFieldInTrait() {
@@ -572,7 +585,8 @@ use(PC) {
     def expect = """// tag::handlerwithlogger_assert_output[]
 Seeing test logging with payload [:]
 Received test logging with payload [:]
-// end::handlerwithlogger_assert_output[]"""
+// end::handlerwithlogger_assert_output[]
+"""
     assert PC.BUFFER.toString() == filterTags(expect)
     PC.reset()
 }
@@ -615,7 +629,8 @@ Seeing foo with payload [:]
 Received foo with payload [:]
 Seeing sayHello with payload [:]
 I say Hello!
-// end::implementinghandler_output[]"""
+// end::implementinghandler_output[]
+"""
     assert PC.BUFFER.toString() == filterTags(expect)
     PC.reset()
 }
@@ -633,7 +648,8 @@ def expect = """// tag::alternatehandler_output[]
 Seeing foo with payload [:]
 Received foo with payload [:]
 I say Hello!
-// end::alternatehandler_output[]"""
+// end::alternatehandler_output[]
+"""
     assert PC.BUFFER.toString() == filterTags(expect)
     PC.reset()
 PC.reset()

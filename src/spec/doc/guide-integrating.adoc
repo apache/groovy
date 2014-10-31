@@ -1,4 +1,5 @@
 = Integrating Groovy in a Java application
+
 == Groovy integration mechanisms
 
 The Groovy language proposes several ways to integrate itself into applications (Java or even Groovy) at runtime, from
@@ -298,12 +299,8 @@ stub generation is done, for the joint compiler.
 
 However, overriding `CompilationUnit` is not recommanded and should only be done if no other standard solution works.
 
-:leveloffset: 3
-include::{projectdir}/subprojects/groovy-bsf/{specfolder}/integrating-bsf.adoc[]
-:leveloffset: 2
+include::{projectdir}/subprojects/groovy-bsf/{specfolder}/integrating-bsf.adoc[leveloffset=+1]
 
-:leveloffset: 3
-include::{projectdir}/subprojects/groovy-jsr223/{specfolder}/integrating-jsr223.adoc[]
-:leveloffset: 2
+include::{projectdir}/subprojects/groovy-jsr223/{specfolder}/integrating-jsr223.adoc[leveloffset=+1]
 
 

@@ -141,7 +141,8 @@ def script = shell.parse('greet()')                                         // <
 assert script instanceof MyScript
 script.setName('Michel')
 assert script.run() == 'Hello, Michel!'
-// end::custom_script_usage[]'''
+// end::custom_script_usage[]
+'''
     }
 
     void testGroovyClassLoader() {

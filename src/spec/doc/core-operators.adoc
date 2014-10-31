@@ -18,27 +18,27 @@ The following binary arithmetic operators are available in Groovy:
 | Purpose
 | Remarks
 
-| +++
+| `+`
 | addition
 |
 
-| +-+
+| `-`
 | subtraction
 |
 
-| +*+
+| `*`
 | multiplication
 |
 
-| +/+
+| `/`
 | division
-| Use +intdiv()+ for integer division, and see the section about <<core-syntax.adoc#integer_division,integer division>> for more information on the return type of the division.
+| Use `intdiv()` for integer division, and see the section about <<core-syntax.adoc#integer_division,integer division>> for more information on the return type of the division.
 
-| +%+
+| `%`
 | modulo
 |
 
-| +**+
+| `**`
 | power
 | See the section about <<core-syntax.adoc#power_operator,the power operation>> for more information on the return type of the operation.
 |====
@@ -52,7 +52,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=binary_arith_ops,i
 
 === Unary operators
 
-The +++ and +-+ operators are also available as unary operators:
+The `+` and `-` operators are also available as unary operators:
 
 [source,groovy]
 ----
@@ -60,27 +60,27 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=unary_plus_minus,i
 ----
 <1> Note the usage of parentheses to surround an expression to apply the unary minus to that surrounded expression.
 
-In terms of unary arithmetics operators, the `++` (increment) and +--+ (decrement) operators are available,
+In terms of unary arithmetics operators, the `++` (increment) and `--` (decrement) operators are available,
 both in prefix and postfix notation:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=plusplus_minusminus,indent=0]
 ----
-<1> The postfix increment will increment +a+ after the expression has been evaluated and assigned into +b+
-<2> The postfix decrement will decrement +c+ after the expression has been evaluated and assigned into +d+
-<3> The prefix increment will increment +e+ before the expression is evaluated and assigned into +f+
-<4> The prefix decrement will decrement +g+ before the expression is evaluated and assigned into +h+
+<1> The postfix increment will increment `a` after the expression has been evaluated and assigned into `b`
+<2> The postfix decrement will decrement `c` after the expression has been evaluated and assigned into `d`
+<3> The prefix increment will increment `e` before the expression is evaluated and assigned into `f`
+<4> The prefix decrement will decrement `g` before the expression is evaluated and assigned into `h`
 
 === Assignment arithmetic operators
 
 From the binary arithmetic operators we have seen above, certain of them are also available in an assignment form:
 
-* ++=+
-* +-=+
-* +*=+
-* +/=+
-* +%=+
+* `+=`
+* `-=`
+* `*=`
+* `/=`
+* `%=`
 
 Let's see them in action:
 
@@ -101,22 +101,22 @@ The following operators are available:
 | Operator
 | Purpose
 
-| +==+
+| `==`
 | equal
 
-| +!=+
+| `!=`
 | different
 
-| +<+
+| `<`
 | less than
 
 | `<=`
 | less than or equal
 
-| +>+
+| `>`
 | greater than
 
-| +>=+
+| `>=`
 | greater than or equal
 |====
 
@@ -688,49 +688,49 @@ Here is a complete list of the operators and their corresponding methods:
 | Operator
 | Method
 
-| +++
+| `+`
 | a.plus(b)
-| +a[b]+
+| `a[b]`
 | a.getAt(b)
 
-| +-+
+| `-`
 | a.minus(b)
-| +a[b] = c+
+| `a[b] = c`
 | a.putAt(b, c)
 
-| +*+
+| `*`
 | a.multiply(b)
-| +<<+
+| `<<`
 | a.leftShift(b)
 
-| +/+
+| `/`
 | a.div(b)
-| +>>+
+| `>>`
 | a.rightShift(b)
 
-| +%+
+| `%`
 | a.mod(b)
 | `++`
 | a.next()
 
-| +**+
+| `**`
 | a.power(b)
-| +--+
+| `--`
 | a.previous()
 
-| +\|+
+| `\|`
 | a.or(b)
 | `+a`
 | a.positive()
 
-| +&+
+| `&`
 | a.and(b)
-| +-a+
+| `-a`
 | a.negative()
 
-| +^+
+| `^`
 | a.xor(b)
-| +~a+
+| `~a`
 | a.bitwiseNegative()
 |====
 

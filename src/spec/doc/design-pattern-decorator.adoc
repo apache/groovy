@@ -4,16 +4,16 @@ The http://en.wikipedia.org/wiki/Decorator_pattern[Decorator Pattern] provides a
 
 == Traditional Example
 
-Suppose we have the following ++Logger++ class.
+Suppose we have the following `Logger` class.
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_logger_class,indent=0]
 ----
 
-There might be times when it is useful to timestamp a log message, or times when we might want to change the case of the message. We could try to build all of this functionality into our ++Logger++ class. If we did that, the ++Logger++ class would start to be very complex. Also, everyone would obtain all of features even when they might not want a small subset of the features. Finally, feature interaction would become quite difficult to control.
+There might be times when it is useful to timestamp a log message, or times when we might want to change the case of the message. We could try to build all of this functionality into our `Logger` class. If we did that, the `Logger` class would start to be very complex. Also, everyone would obtain all of features even when they might not want a small subset of the features. Finally, feature interaction would become quite difficult to control.
 
-To overcome these drawbacks, we instead define two decorator classes. Uses of the ++Logger++ class are free to embellish their base logger with zero or more decorator classes in whatever order they desire. The classes look like this:
+To overcome these drawbacks, we instead define two decorator classes. Uses of the `Logger` class are free to embellish their base logger with zero or more decorator classes in whatever order they desire. The classes look like this:
 
 [source,groovy]
 ----
@@ -38,21 +38,21 @@ Now the timestamp itself has also been changed to be uppercase.
 
 == A touch of dynamic behaviour
 
-Our previous decorators were specific to ++Logger++ objects. We can use Groovy's Meta-Object Programming capabilities to create a decorator which is far more general purpose in nature. Consider this class:
+Our previous decorators were specific to `Logger` objects. We can use Groovy's Meta-Object Programming capabilities to create a decorator which is far more general purpose in nature. Consider this class:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_dynamic_behaviour_class,indent=0]
 ----
 
-It takes any class and decorates it so that any ++String++ method parameter will automatically be changed to lower case.
+It takes any class and decorates it so that any `String` method parameter will automatically be changed to lower case.
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_dynamic_behaviour_usage,indent=0]
 ----
 
-Just be careful with ordering here. The original decorators were restricted to decorating ++Logger++ objects. This decorator work with any object type, so we can't swap the ordering around, i.e. this won't work:
+Just be careful with ordering here. The original decorators were restricted to decorating `Logger` objects. This decorator work with any object type, so we can't swap the ordering around, i.e. this won't work:
 
 ----
 // Can't mix and match Interface-Oriented and Generic decorators
@@ -63,7 +63,7 @@ We could overcome this limitation be generating an appropriate Proxy type at run
 
 == Runtime behaviour embellishment
 
-You can also consider using the ++ExpandoMetaClass++ from Groovy 1.1 to dynamically embellish a class with behaviour. This isn't the normal style of usage of the decorator pattern (it certainly isn't nearly as flexible) but may help you to achieve similar results in some cases without creating a new class.
+You can also consider using the `ExpandoMetaClass` from Groovy 1.1 to dynamically embellish a class with behaviour. This isn't the normal style of usage of the decorator pattern (it certainly isn't nearly as flexible) but may help you to achieve similar results in some cases without creating a new class.
 
 Here's what the code looks like:
 
@@ -83,7 +83,7 @@ Suppose we have a calculator class (Actually any class would do).
 include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_calc_class,indent=0]
 ----
 
-We might be interested in observing usage of the class over time. If it is buried deep within our codebase, it might be hard to determine when it is being called and with what parameters. Also, it might be hard to know if it is performing well. We can easily make a generic tracing decorator that prints out tracing information whenever any method on the ++Calc++ class is called and also provide timing information about how long it took to execute. Here is the code for the tracing decorator:
+We might be interested in observing usage of the class over time. If it is buried deep within our codebase, it might be hard to determine when it is being called and with what parameters. Also, it might be hard to know if it is performing well. We can easily make a generic tracing decorator that prints out tracing information whenever any method on the `Calc` class is called and also provide timing information about how long it took to execute. Here is the code for the tracing decorator:
 
 [source,groovy]
 ----
@@ -106,9 +106,9 @@ Got 15 in 31 ms
 
 == Decorating with an Interceptor
 
-The above timing example hooks into the lifecycle of Groovy objects (via ++invokeMethod++). This is such an important style performing meta-programming that Groovy has special support for this style of decorating using __interceptors__.
+The above timing example hooks into the lifecycle of Groovy objects (via `invokeMethod`). This is such an important style performing meta-programming that Groovy has special support for this style of decorating using __interceptors__.
 
-Groovy even comes with a built-in ++TracingInterceptor++. We can extend the built-in class like this:
+Groovy even comes with a built-in `TracingInterceptor`. We can extend the built-in class like this:
 
 [source,groovy]
 ----
@@ -135,7 +135,7 @@ Duration: 2 ms
 
 == Decorating with java.lang.reflect.Proxy
 
-If you are trying to decorate an object (i.e. just a particular instance of the class, not the class generally), then you can use Java's ++java.lang.reflect.Proxy++. Groovy makes working with this easier than just Java. Below is a code sample taken out of a grails project that wraps a ++java.sql.Connection++ so that it's close method is a no-op:
+If you are trying to decorate an object (i.e. just a particular instance of the class, not the class generally), then you can use Java's `java.lang.reflect.Proxy`. Groovy makes working with this easier than just Java. Below is a code sample taken out of a grails project that wraps a `java.sql.Connection` so that it's close method is a no-op:
 
 [source,groovy]
 ----
@@ -164,7 +164,7 @@ Here's the class:
 include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_spring_calc_impl,indent=0]
 ----
 
-Now, we define our wiring in a file called ++beans.xml++ as follows:
+Now, we define our wiring in a file called `beans.xml` as follows:
 
 [source,xml]
 ----
@@ -202,11 +202,11 @@ And when we run it, we see the results:
 FINEST: StopWatch 'util.Calc.add': running time (millis) = 16
 ----
 
-You may have to adjust your ++logging.properties++ file for messages at log level ++FINEST++ to be displayed.
+You may have to adjust your `logging.properties` file for messages at log level `FINEST` to be displayed.
 
 == Asynchronous Decorators using GPars
 
-Using the example code in http://www.cs.iastate.edu/~design/projects/panini/docs/starting.shtml[Panini] for inspiration. Here is a Groovy version that avoids using an ++@AddedBehavior++ annotation at the expense of not having as general an algorithm for selecting the methods to decorate. This isn't a limitation of the particular approach chosen but just a simplification for illustrative purposes (but don't assume below is an exact equivalent).
+Using the example code in http://www.cs.iastate.edu/~design/projects/panini/docs/starting.shtml[Panini] for inspiration. Here is a Groovy version that avoids using an `@AddedBehavior` annotation at the expense of not having as general an algorithm for selecting the methods to decorate. This isn't a limitation of the particular approach chosen but just a simplification for illustrative purposes (but don't assume below is an exact equivalent).
 
 [source,groovy]
 ----

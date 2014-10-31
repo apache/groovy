@@ -4,7 +4,7 @@ The http://www.c2.com/cgi/wiki?BouncerPattern[Bouncer Pattern] describes usage o
 
 When writing utility methods, you should always guard against faulty input arguments. When writing internal methods, you may be able to ensure that certain pre-conditions always hold by having sufficient unit tests in place. Under such circumstances, you may reduce the desirability to have guards on your methods.
 
-Groovy differs from other languages in that you frequently use the ++assert++ method within your methods rather than having a large number of utility checker methods or classes.
+Groovy differs from other languages in that you frequently use the `assert` method within your methods rather than having a large number of utility checker methods or classes.
 
 == Null Checking Example
 

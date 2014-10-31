@@ -6,93 +6,68 @@ include::{projectdir}/src/spec/doc/core-introduction.adoc[]
 
 == Groovy Language Specification
 
-:leveloffset: 2
+include::{projectdir}/src/spec/doc/core-syntax.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-syntax.adoc[]
+include::{projectdir}/src/spec/doc/core-operators.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-operators.adoc[]
+include::{projectdir}/src/spec/doc/core-program-structure.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-program-structure.adoc[]
+include::{projectdir}/src/spec/doc/core-object-orientation.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-object-orientation.adoc[]
+include::{projectdir}/src/spec/doc/core-closures.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-closures.adoc[]
-
-include::{projectdir}/src/spec/doc/core-semantics.adoc[]
-
-:leveloffset: 0
+include::{projectdir}/src/spec/doc/core-semantics.adoc[leveloffset=+2]
 
 == Tools
 
-:leveloffset: 2
+include::{projectdir}/src/spec/doc/tools-groovyc.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/tools-groovyc.adoc[]
+include::{projectdir}/src/spec/doc/tools-groovysh.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/tools-groovysh.adoc[]
+include::{projectdir}/src/spec/doc/tools-groovyconsole.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/tools-groovyconsole.adoc[]
+include::{projectdir}/src/spec/doc/tools-groovydoc.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/tools-groovydoc.adoc[]
-
-include::{projectdir}/src/spec/doc/tools-ide.adoc[]
-
-:leveloffset: 0
+include::{projectdir}/src/spec/doc/tools-ide.adoc[leveloffset=+2]
 
 == User Guides
 
-:leveloffset: 2
+include::{projectdir}/src/spec/doc/core-getting-started.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-getting-started.adoc[]
+include::{projectdir}/src/spec/doc/core-differences-java.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-differences-java.adoc[]
+include::{projectdir}/src/spec/doc/core-gdk.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-gdk.adoc[]
+include::{projectdir}/src/spec/doc/core-metaprogramming.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-metaprogramming.adoc[]
+include::{projectdir}/src/spec/doc/grape.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/grape.adoc[]
+include::{projectdir}/src/spec/doc/core-testing-guide.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-testing-guide.adoc[]
-
-include::{projectdir}/src/spec/doc/groovy-contributions.adoc[]
-
-include::{subprojroot}json/{specfolder}/json-userguide.adoc[]
+include::{projectdir}/subprojects/groovy-json/{specfolder}/json-userguide.adoc[leveloffset=+2]
 
 === Interacting with a SQL database (TBD)
 === Processing XML (TBD)
 === Scripting Ant tasks (TBD)
 
-:leveloffset: 2
-
-include::{projectdir}/src/spec/doc/template-engines.adoc[]
-
-:leveloffset: 0
+include::{projectdir}/src/spec/doc/template-engines.adoc[leveloffset=+2]
 
 === Servlet support (TBD)
 
-:leveloffset: 2
+include::{projectdir}/src/spec/doc/guide-integrating.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/guide-integrating.adoc[]
+include::{projectdir}/src/spec/doc/core-domain-specific-languages.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-domain-specific-languages.adoc[]
-
-include::{projectdir}/subprojects/groovy-jmx/src/spec/doc/jmx.adoc[]
-
-:leveloffset: 0
+include::{projectdir}/subprojects/groovy-jmx/src/spec/doc/jmx.adoc[leveloffset=+2]
 
 === Creating Swing UIs (TBD)
 === Security (TBD)
 
-:leveloffset: 2
-
-include::{projectdir}/src/spec/doc/design-pattern-in-groovy.adoc[]
-
-:leveloffset: 0
+include::{projectdir}/src/spec/doc/design-pattern-in-groovy.adoc[leveloffset=+2]
 
 == Acknowledgements
 
-:leveloffset: 2
+include::{projectdir}/src/spec/doc/contributors.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/license-contributors.adoc[]
+include::{projectdir}/src/spec/doc/license.adoc[leveloffset=+2]
 
-:leveloffset: 0

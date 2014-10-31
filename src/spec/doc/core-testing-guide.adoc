@@ -84,8 +84,8 @@ assert [[1,2,3,3,3,3,4]].first().unique() == [1,2,3]
 <1> The error message shows the actual state of the collection, not the state before the `unique` method was applied
 
 [NOTE]
-If you choose to provide a custom assertion error message this can be done by using the Java syntax +assert
-expression1 : expression2+ where +expression1+ is the Boolean expression and +expression2+ is the custom error message.
+If you choose to provide a custom assertion error message this can be done by using the Java syntax `assert
+expression1 : expression2` where `expression1` is the Boolean expression and `expression2` is the custom error message.
  Be aware though that this will disable the power assert and will fully fallback to custom
  error messages on assertion errors.
 
@@ -189,7 +189,7 @@ include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags
 <4> a call to `verify` (optional) checks whether the number of method calls is as expected
 
 `MockFor` and `StubFor` can not be used to test statically compiled classes e.g for Java classes or Groovy classes that
-make use of +@CompileStatic+. To stub and/or mock these classes you can use Spock or one of the Java mocking libraries.
+make use of `@CompileStatic`. To stub and/or mock these classes you can use Spock or one of the Java mocking libraries.
 
 [[testing_guide_emc]]
 ==== Expando Meta-Class (EMC)

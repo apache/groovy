@@ -145,7 +145,7 @@ Switch supports the following kinds of comparisons:
 * Closure case values match if the calling the closure returns a result which is true according to the <<Groovy-Truth,Groovy truth>>
 * If none of the above are used then the case value matches if the case value equals the switch value
 
-NOTE: +default+ must go at the end of the switch/case. While in Java the default can be placed anywhere in the switch/case, the default in Groovy is used more as an else than assigning a default case.
+NOTE: `default` must go at the end of the switch/case. While in Java the default can be placed anywhere in the switch/case, the default in Groovy is used more as an else than assigning a default case.
 
 NOTE: when using a closure case value, the default `it` parameter is actually the switch value (in our example, variable `x`)
 
@@ -187,7 +187,7 @@ Exception handling is the same as Java.
 
 ==== try / catch / finally
 
-You can specify a complete +try-catch-finally+, a +try-catch+, or a +try-finally+ set of blocks.
+You can specify a complete `try-catch-finally`, a `try-catch`, or a `try-finally` set of blocks.
 
 NOTE: Braces are required around each block's body.
 
@@ -355,7 +355,7 @@ The type of the exception depends on the call itself:
 
 === String to enum coercion
 
-Groovy allows transparent +String+ (or +GString+) to enum values coercion. Imagine you define the following enum:
+Groovy allows transparent `String` (or `GString`) to enum values coercion. Imagine you define the following enum:
 
 [source,groovy]
 ----
@@ -369,7 +369,7 @@ then you can assign a string to the enum without having to use an explicit `as` 
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_coerce_assignment,indent=0]
 ----
 
-It is also possible to use a +GString+ as the value:
+It is also possible to use a `GString` as the value:
 
 [source,groovy]
 ----
@@ -377,7 +377,7 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_coerce_assignm
 ----
 
 
-However, this would throw a runtime error (+IllegalArgumentException+):
+However, this would throw a runtime error (`IllegalArgumentException`):
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_coerce_assignment_wrong,indent=0]
@@ -390,7 +390,7 @@ Note that it is also possible to use implicit coercion in switch statements:
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_switch_method,indent=0]
 ----
 
-in particular, see how the `case` use string constants. But if you call a method that uses an enum with a +String+
+in particular, see how the `case` use string constants. But if you call a method that uses an enum with a `String`
 argument, you still have to use an explicit `as` coercion:
 
 [source,groovy]
@@ -400,9 +400,9 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=enum_switch_test,in
 
 === Custom type coercion
 
-It is possible for a class to define custom coercion strategies by implementing the +asType+ method. Custom coercion
+It is possible for a class to define custom coercion strategies by implementing the `asType` method. Custom coercion
 is invoked using the `as` operator and is never implicit. As an example,
-imagine you defined two classes, +Polar+ and +Cartesian+, like in the following example:
+imagine you defined two classes, `Polar` and `Cartesian`, like in the following example:
 
 [source,groovy]
 ----
@@ -412,21 +412,21 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=cartesian_class,ind
 ----
 
 And that you want to convert from polar coordinates to cartesian coordinates. One way of doing this is to define
-the +asType+ method in the +Polar+ class:
+the `asType` method in the `Polar` class:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_astype,indent=0]
 ----
 
-which allows you to use the +as+ coercion operator:
+which allows you to use the `as` coercion operator:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_astype_assert,indent=0]
 ----
 
-Putting it all together, the +Polar+ class looks like this:
+Putting it all together, the `Polar` class looks like this:
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_header,indent=0]
@@ -434,7 +434,7 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_astype,
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=polar_class_footer,indent=0]
 ----
 
-but it is also possible to define +asType+ outside of the +Polar+ class, which can be practical if you want to define
+but it is also possible to define `asType` outside of the `Polar` class, which can be practical if you want to define
 custom coercion strategies for "closed" classes or classes for which you don't own the source code, for example using
 a metaclass:
 

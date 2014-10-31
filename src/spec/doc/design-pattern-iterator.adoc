@@ -3,7 +3,7 @@
 
 The http://en.wikipedia.org/wiki/Iterator_pattern[Iterator Pattern] allows sequential access to the elements of an aggregate object without exposing its underlying representation.
 
-Groovy has the iterator pattern built right in to many of its closure operators, e.g. ++each++ and ++eachWithIndex++ as well as the ++for .. in++ loop.
+Groovy has the iterator pattern built right in to many of its closure operators, e.g. `each` and `eachWithIndex` as well as the `for .. in` loop.
 
 For example:
 
@@ -40,4 +40,4 @@ Position 0 contains 'java.awt.Color[r=0,g=0,b=0]'
 Position 1 contains 'java.awt.Color[r=255,g=255,b=255]'
 ----
 
-The iterator pattern is also built in to other special operators such as the ++eachByte++, ++eachFile++, ++eachDir++, ++eachLine++, ++eachObject++, ++eachMatch++ operators for working with streams, URLs, files, directories and regular expressions matches.
+The iterator pattern is also built in to other special operators such as the `eachByte`, `eachFile`, `eachDir`, `eachLine`, `eachObject`, `eachMatch` operators for working with streams, URLs, files, directories and regular expressions matches.

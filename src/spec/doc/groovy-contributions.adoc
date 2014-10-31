@@ -59,7 +59,7 @@ You can find live icon:twitter[] https://twitter.com/hashtag/groovylang[#groovyl
 '''
 
 
-=== Where Is image:assets/img/groovy1.png[Groovy, 60, 30, link="http://groovy-lang.org/"] ?
+=== Where is Groovy ?
 
 Open source developers often need somewhere to keep all their assets. These assets are typically stored in a repository somewhere on the internet. icon:github[link="https://github.com/"] https://github.com/[*GitHub*] is one such storage facility. At *[blue]#Groovy#*, we keep https://github.com/groovy/groovy-core[our _source code_ here]. 
 
@@ -182,11 +182,11 @@ This way needs more work on your part though it it is more rewarding too.
 
 First we look at the home of [blue]#Groovy# . Then we review the structure and important items. After that we pick up the story at link:#_getting_started[Getting Started.]
 
-=== Notes About GitHub  icon:github[link="https://github.com/"]
+=== Notes About GitHub
 
 At *[blue]#Groovy#*, we keep https://github.com/groovy/groovy-core[our _source code_ here].
 
-==== GitHub Information icon:github[link="https://github.com/", window="_blank"]
+==== GitHub Information
 
 ++++
 <div id="accordion2">
@@ -247,7 +247,7 @@ At *[blue]#Groovy#*, we keep https://github.com/groovy/groovy-core[our _source c
 
 From here on, we've assumed you have logged into your own *GitHub* account. 
 
-==== Visit Groovy Core Repository on GitHub icon:github[link="https://github.com/groovy/groovy-core", window="_blank"]
+==== Visit Groovy Core Repository on GitHub
 
 Open a web browser, then use address https://github.com/groovy/groovy-core[https://github.com/groovy/groovy-core] to review the [blue]#Groovy# code base. It looks like this :
 

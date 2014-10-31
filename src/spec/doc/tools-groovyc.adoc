@@ -361,11 +361,7 @@ appears to be inactive currently.
 
 [[section-groovyeclipse]]
 
-:leveloffset: 3
-
-include::{projectdir}/{specfolder}/tools-groovyeclipse.adoc[]
-
-:leveloffset: 1
+include::{projectdir}/{specfolder}/tools-groovyeclipse.adoc[leveloffset=+1]
 
 [[section-jointcompilation]]
 === Joint compilation

@@ -11,11 +11,11 @@ The installer first copies the groovy files to where the user wants,
 
 image::assets/img/outdir.png[]
 
-then asks for permission to create a variable ++GROOVY_HOME++ and to add the respective bin directory (++%GROOVY_HOME%/bin++) to the path, if no reference to groovy already exists in it.
+then asks for permission to create a variable `GROOVY_HOME` and to add the respective bin directory (`%GROOVY_HOME%/bin` to the path, if no reference to groovy already exists in it.
 
 image::assets/img/variables.jpg[]
 
-The user can decide whether to put these into the user or system environment (on Win 95 and Win 98 this information is appended to the autoexec.bat instead) i.e., whether the installation will be for the current user or for all users. Then the installer checks for the existence of ++JAVA_HOME++. If it doesn't exist, a message box points out the potential problem.
+The user can decide whether to put these into the user or system environment (on Win 95 and Win 98 this information is appended to the autoexec.bat instead) i.e., whether the installation will be for the current user or for all users. Then the installer checks for the existence of `JAVA_HOME`. If it doesn't exist, a message box points out the potential problem.
 
 Next the user can decide whether or not to install the native launcher,
 

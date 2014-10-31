@@ -197,7 +197,8 @@ class A {
 
 def a = new A(val: 123)
 a.@val // <1>
-// end::secure_cz_custom_assert[]'''
+// end::secure_cz_custom_assert[]
+'''
         }
     }
 

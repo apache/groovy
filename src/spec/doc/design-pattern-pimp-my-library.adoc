@@ -14,9 +14,9 @@ First, we'll define a suitable category.
 include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=pimp_my_library_example,indent=0]
 ----
 
-We have added two methods which augment the Integer methods by providing the ++greaterThanAll++ method. Categories follow conventions where they are defined as static methods with a special first parameter representing the class we wish to extend. The ++greaterThanAll(Integer self, others)++ static method becomes the ++greaterThanAll(other)++ instance method.
+We have added two methods which augment the Integer methods by providing the `greaterThanAll` method. Categories follow conventions where they are defined as static methods with a special first parameter representing the class we wish to extend. The ++greaterThanAll(Integer self, others)++ static method becomes the `greaterThanAll(other)` instance method.
 
-We defined two versions of ++greaterThanAll++. One which works for collections, ranges etc. The other which works with a variable number of ++Integer++ arguments.
+We defined two versions of `greaterThanAll`. One which works for collections, ranges etc. The other which works with a variable number of `Integer` arguments.
 
 Here is how you would use the category.
 

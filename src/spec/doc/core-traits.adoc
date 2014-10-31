@@ -423,6 +423,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=handlerw
 -----
 
 which will print:
+
 ----
 include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=handlerwithlogger_assert_output,indent=0]
 ----
@@ -816,3 +817,4 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=prefix_p
 <2> `x` is defined within the trait, prefix decrement is not allowed
 
 A workaround is to use the `+=` operator instead.
+
