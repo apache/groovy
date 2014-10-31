@@ -347,9 +347,9 @@ http://gmavenplus.codehaus.org[GMavenPlus] is a rewrite of
 features of GMaven (a couple notable exceptions being
 http://maven.apache.org/plugin-tools/maven-plugin-tools-java/index.html[mojo Javadoc tags]
 and support for older Groovy versions). Its joint compilation uses stubs (which
-means it has the same potential issues as GMaven and <<Gradle>>. The main
-advantage over its predecessor is that it supports recent Groovy versions,
-InvokeDynamic, and GroovyDoc.
+means it has the same potential issues as GMaven and <<Gradle>>). The main
+advantages over its predecessor are that it supports recent Groovy versions,
+InvokeDynamic, Groovy on Android, and GroovyDoc.
 
 [[section-gmaven2]]
 ==== GMaven 2
@@ -360,8 +360,7 @@ non-scripting features of the GMaven plugin. It has not yet had any release and
 appears to be inactive currently.
 
 [[section-groovyeclipse]]
-
-include::{projectdir}/{specfolder}/tools-groovyeclipse.adoc[leveloffset=+1]
+include::{projectdir}/{specfolder}/tools-groovyeclipse.adoc[leveloffset=+2]
 
 [[section-jointcompilation]]
 === Joint compilation
