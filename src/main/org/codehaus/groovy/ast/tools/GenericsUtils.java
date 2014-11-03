@@ -15,17 +15,33 @@
  */
 package org.codehaus.groovy.ast.tools;
 
+import antlr.RecognitionException;
+import antlr.TokenStreamException;
+import groovy.transform.stc.IncorrectTypeHintException;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.antlr.AntlrParserPlugin;
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.ResolveVisitor;
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.ParserException;
+import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
@@ -445,5 +461,70 @@ public class GenericsUtils {
                 extractSuperClassGenerics(ui.getGenericsTypes(), di.getGenericsTypes(), spec);
             }
         }
+    }
+
+    public static ClassNode[] parseClassNodesFromString(
+            final String option,
+            final SourceUnit sourceUnit,
+            final CompilationUnit compilationUnit,
+            final MethodNode mn,
+            final ASTNode usage) {
+        GroovyLexer lexer = new GroovyLexer(new StringReader("DummyNode<" + option + ">"));
+        final GroovyRecognizer rn = GroovyRecognizer.make(lexer);
+        try {
+            rn.classOrInterfaceType(true);
+            final AtomicReference<ClassNode> ref = new AtomicReference<ClassNode>();
+            AntlrParserPlugin plugin = new AntlrParserPlugin() {
+                @Override
+                public ModuleNode buildAST(final SourceUnit sourceUnit, final ClassLoader classLoader, final Reduction cst) throws ParserException {
+                    ref.set(makeTypeWithArguments(rn.getAST()));
+                    return null;
+                }
+            };
+            plugin.buildAST(null, null, null);
+            ClassNode parsedNode = ref.get();
+            // the returned node is DummyNode<Param1, Param2, Param3, ...)
+            GenericsType[] parsedNodeGenericsTypes = parsedNode.getGenericsTypes();
+            if (parsedNodeGenericsTypes == null) {
+                return null;
+            }
+            ClassNode[] signature = new ClassNode[parsedNodeGenericsTypes.length];
+            for (int i = 0; i < parsedNodeGenericsTypes.length; i++) {
+                final GenericsType genericsType = parsedNodeGenericsTypes[i];
+                signature[i] = resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
+            }
+            return signature;
+        } catch (RecognitionException e) {
+            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
+        } catch (TokenStreamException e) {
+            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
+        } catch (ParserException e) {
+            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
+        }
+        return null;
+    }
+
+    private static ClassNode resolveClassNode(final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final MethodNode mn, final ASTNode usage, final ClassNode parsedNode) {
+        ClassNode dummyClass = new ClassNode("dummy",0, ClassHelper.OBJECT_TYPE);
+        dummyClass.setModule(new ModuleNode(sourceUnit));
+        dummyClass.setGenericsTypes(mn.getDeclaringClass().getGenericsTypes());
+        MethodNode dummyMN = new MethodNode(
+                "dummy",
+                0,
+                parsedNode,
+                Parameter.EMPTY_ARRAY,
+                ClassNode.EMPTY_ARRAY,
+                EmptyStatement.INSTANCE
+        );
+        dummyMN.setGenericsTypes(mn.getGenericsTypes());
+        dummyClass.addMethod(dummyMN);
+        ResolveVisitor visitor = new ResolveVisitor(compilationUnit) {
+            @Override
+            protected void addError(final String msg, final ASTNode expr) {
+                sourceUnit.addError(new IncorrectTypeHintException(mn, msg, usage.getLineNumber(), usage.getColumnNumber()));
+            }
+        };
+        visitor.startResolving(dummyClass, sourceUnit);
+        return dummyMN.getReturnType();
     }
 }

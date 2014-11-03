@@ -49,6 +49,7 @@ public @interface DelegatesTo {
     int genericTypeIndex() default -1;
 
     String target() default "";
+    String type() default "";
 
     @Retention(RetentionPolicy.RUNTIME)
     @java.lang.annotation.Target({ElementType.PARAMETER})
