@@ -469,11 +469,18 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             }
         }
 
+        // check direct interfaces (GROOVY-7149)
+        for (ClassNode node : receiverType.getInterfaces()) {
+            if (makeGetPropertyWithGetter(receiver, node, methodName, safe, implicitThis)) {
+                return true;
+            }
+        }
         // go upper level
         ClassNode superClass = receiverType.getSuperClass();
         if (superClass !=null) {
             return makeGetPropertyWithGetter(receiver, superClass, methodName, safe, implicitThis);
         }
+
         return false;
     }
 
