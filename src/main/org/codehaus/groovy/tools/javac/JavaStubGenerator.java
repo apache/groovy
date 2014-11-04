@@ -280,6 +280,19 @@ public class JavaStubGenerator {
             }
             printMethod(out, classNode, method);
         }
+
+        for (ClassNode node : classNode.getInterfaces()) {
+            if (Traits.isTrait(node)) {
+                List<MethodNode> traitMethods = node.getMethods();
+                for (MethodNode traitMethod : traitMethods) {
+                    MethodNode method = classNode.getMethod(traitMethod.getName(), traitMethod.getParameters());
+                    if (method == null) {
+                        printMethod(out, classNode, traitMethod);
+                    }
+                }
+            }
+        }
+
     }
 
     private void printConstructors(PrintWriter out, ClassNode classNode) {
