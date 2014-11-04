@@ -41,13 +41,13 @@ class AnnotationTest extends CompilableTestSupport {
         """
     }
 
-    void testCannotAnnotateAnotationDefinitionIfTargetIsNotOfType() {
+    void testCannotAnnotateAnnotationDefinitionIfTargetIsNotOfTypeOrAnnotationType() {
         shouldNotCompile """
             import java.lang.annotation.*
             import static java.lang.annotation.ElementType.*
 
-            // all target elements except ANNOTATION_TYPE
-            @Target([CONSTRUCTOR, METHOD, FIELD, LOCAL_VARIABLE, PACKAGE, PARAMETER, TYPE])
+            // all target elements except ANNOTATION_TYPE and TYPE
+            @Target([CONSTRUCTOR, METHOD, FIELD, LOCAL_VARIABLE, PACKAGE, PARAMETER])
             @interface MyAnnotation { }
 
             @MyAnnotation
@@ -646,5 +646,32 @@ class AnnotationTest extends CompilableTestSupport {
             }
             assert GroovyEnum.class.getField('BAD').isAnnotationPresent(XmlEnumValue)
         '''
+    }
+
+    // GROOVY-7151
+    void testAnnotateAnnotationDefinitionWithAnnotationWithTypeTarget() {
+        shouldCompile codeWithMetaAnnotationWithTarget("TYPE")
+    }
+
+    void testAnnotateAnnotationDefinitionWithAnnotationWithAnnotationTypeTarget() {
+        shouldCompile codeWithMetaAnnotationWithTarget("ANNOTATION_TYPE")
+    }
+
+    //Parametrized tests in Spock would allow to make it much more readable
+    private static String codeWithMetaAnnotationWithTarget(String targetElementTypeName) {
+        """
+            import java.lang.annotation.*
+            import static java.lang.annotation.RetentionPolicy.*
+            import static java.lang.annotation.ElementType.*
+
+            @Retention(RUNTIME)
+            @Target(${targetElementTypeName})
+            @interface Import {}
+
+            @Retention(RUNTIME)
+            @Target([FIELD])
+            @Import
+            @interface EnableFeature { }
+        """
     }
 }
