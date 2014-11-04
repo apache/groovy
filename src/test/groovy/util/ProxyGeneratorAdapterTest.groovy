@@ -138,6 +138,19 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
         '''
     }
 
+    // GROOVY-7146
+    void testShouldNotThrowVerifyErrorBecauseOfStackSize() {
+        assertScript '''
+            interface DoStuff {
+            }
+            class Foo {
+               void foo(double a, int b) {} // first a parameter that requires 2 slots, then one that requires only 1
+            }
+
+            def gp=new Foo() as DoStuff
+            '''
+    }
+
     void testGetTypeArgsRegisterLength() {
         def types = { list -> list as org.objectweb.asm.Type[] }
         def proxyGeneratorAdapter = new ProxyGeneratorAdapter([:], Object, [] as Class[], null, false, Object)
