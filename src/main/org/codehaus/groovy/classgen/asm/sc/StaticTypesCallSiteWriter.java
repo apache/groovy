@@ -136,21 +136,21 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             return;
         }
         if (makeGetPropertyWithGetter(receiver, receiverType, methodName, safe, implicitThis)) return;
-        if (makeGetField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
+        if (makeGetField(receiver, receiverType, methodName, safe, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
         if (receiverType.isEnum()) {
             mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), methodName, BytecodeHelper.getTypeDescription(receiverType));
             controller.getOperandStack().push(receiverType);
             return;
         }
         if (receiver instanceof ClassExpression) {
-            if (makeGetField(receiver, receiver.getType(), methodName, implicitThis, samePackages(receiver.getType().getPackageName(), classNode.getPackageName()))) return;
+            if (makeGetField(receiver, receiver.getType(), methodName, safe, implicitThis, samePackages(receiver.getType().getPackageName(), classNode.getPackageName()))) return;
             if (makeGetPropertyWithGetter(receiver, receiver.getType(), methodName, safe, implicitThis)) return;
             if (makeGetPrivateFieldWithBridgeMethod(receiver, receiver.getType(), methodName, safe, implicitThis)) return;
         }
         if (isClassReceiver) {
             // we are probably looking for a property of the class
             if (makeGetPropertyWithGetter(receiver, CLASS_Type, methodName, safe, implicitThis)) return;
-            if (makeGetField(receiver, CLASS_Type, methodName, false, true)) return;
+            if (makeGetField(receiver, CLASS_Type, methodName, safe, false, true)) return;
         }
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, safe, implicitThis)) return;
 
@@ -398,7 +398,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
 
         if (makeGetPropertyWithGetter(receiver, receiverType, property, safe, implicitThis)) return;
-        if (makeGetField(receiver, receiverType, property, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
+        if (makeGetField(receiver, receiverType, property, safe, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
 
         MethodCallExpression call = new MethodCallExpression(
                 receiver,
@@ -484,7 +484,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         return false;
     }
 
-    boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean implicitThis, final boolean samePackage) {
+    boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis, final boolean samePackage) {
         FieldNode field = receiverType.getField(fieldName);
         // direct access is allowed if we are in the same class as the declaring class
         // or we are in an inner class
@@ -492,26 +492,44 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 && isDirectAccessAllowed(field, controller.getClassNode(), samePackage)) {
             CompileStack compileStack = controller.getCompileStack();
             MethodVisitor mv = controller.getMethodVisitor();
+            ClassNode replacementType = field.getOriginType();
+            OperandStack operandStack = controller.getOperandStack();
             if (field.isStatic()) {
-                mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
-                controller.getOperandStack().push(field.getOriginType());
+                mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(replacementType));
+                operandStack.push(replacementType);
             } else {
                 if (implicitThis) {
                     compileStack.pushImplicitThis(implicitThis);
                 }
                 receiver.visit(controller.getAcg());
                 if (implicitThis) compileStack.popImplicitThis();
-                if (!controller.getOperandStack().getTopOperand().isDerivedFrom(field.getOwner())) {
+                Label exit = new Label();
+                if (safe) {
+                    mv.visitInsn(DUP);
+                    Label doGet = new Label();
+                    mv.visitJumpInsn(IFNONNULL, doGet);
+                    mv.visitJumpInsn(GOTO, exit);
+                    mv.visitLabel(doGet);
+                }
+                if (!operandStack.getTopOperand().isDerivedFrom(field.getOwner())) {
                     mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(field.getOwner()));
                 }
-                mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
+                mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(replacementType));
+                if (safe) {
+                    if (ClassHelper.isPrimitiveType(replacementType)) {
+                        operandStack.replace(replacementType);
+                        operandStack.box();
+                        replacementType = operandStack.getTopOperand();
+                    }
+                    mv.visitLabel(exit);
+                }
             }
-            controller.getOperandStack().replace(field.getOriginType());
+            operandStack.replace(replacementType);
             return true;
         }
         ClassNode superClass = receiverType.getSuperClass();
         if (superClass !=null) {
-            return makeGetField(receiver, superClass, fieldName, implicitThis, false);
+            return makeGetField(receiver, superClass, fieldName, safe, implicitThis, false);
         }
         return false;
     }
