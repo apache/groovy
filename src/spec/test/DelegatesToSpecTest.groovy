@@ -494,4 +494,48 @@ class DelegatesToSpecTest extends GroovyTestCase {
         '''
 
     }
+
+    void testDelegatesToType() {
+        def msg = shouldFail '''
+
+// tag::delegatestotype_mapper[]
+class Mapper<T,U> {                             // <1>
+    final T value                               // <2>
+    Mapper(T value) { this.value = value }
+    U map(Closure<U> producer) {                // <3>
+        producer.delegate = value
+        producer()
+    }
+}
+// end::delegatestotype_mapper[]
+@groovy.transform.CompileStatic
+void test() {
+    // tag::delegatestotype_mapper_test[]
+    def mapper = new Mapper<String,Integer>('Hello')
+    assert mapper.map { length() } == 5
+    // end::delegatestotype_mapper_test[]
+}
+'''
+        assert msg.contains('Static type checking] - Cannot find matching method')
+
+        assertScript '''
+
+// tag::delegatestotype_mapper_fixed[]
+class Mapper<T,U> {
+    final T value
+    Mapper(T value) { this.value = value }
+    U map(@DelegatesTo(type="T") Closure<U> producer) {  // <1>
+        producer.delegate = value
+        producer()
+    }
+}
+// end::delegatestotype_mapper_fixed[]
+@groovy.transform.CompileStatic
+void test() {
+    def mapper = new Mapper<String,Integer>('Hello')
+    assert mapper.map { length() } == 5
+}
+test()
+'''
+    }
 }

@@ -793,5 +793,17 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
             assert module.value == 'test-1.0'
         '''
     }
+
+    void testDelegatesToWithType2() {
+        assertScript '''
+            public <T> boolean evalAsSet(List<T> list, @DelegatesTo(type="Set<T>") Closure<Boolean> cl) {
+                cl.delegate = list as Set
+                cl()
+            }
+            assert evalAsSet([1,1,2,3]) {
+                size() == 3
+            }
+        '''
+    }
 }
 

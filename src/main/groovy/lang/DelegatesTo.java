@@ -49,6 +49,17 @@ public @interface DelegatesTo {
     int genericTypeIndex() default -1;
 
     String target() default "";
+
+    /**
+     * The type member should be used when the type of the delagate cannot
+     * be represented with {@link #value()}, {@link #genericTypeIndex()} or
+     * {@link #target()}. In this case, it is possible to use a String to represent
+     * the type, at the cost of potential uncatched errors at compile time if the
+     * type is invalid and increased compile time.
+     *
+     * @return a String representation of a type
+     * @since 2.4.0
+     */
     String type() default "";
 
     @Retention(RetentionPolicy.RUNTIME)

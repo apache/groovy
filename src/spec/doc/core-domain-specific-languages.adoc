@@ -386,6 +386,49 @@ the example above, that means that the delegate type is resolved against `List<T
 
 NOTE: We're using a `genericTypeIndex` instead of a placeholder (`T`) because of JVM limitations.
 
+==== Delegating to an arbitrary type
+
+It is possible that none of the options above can represent the type you want to delegate to. For example, let's define
+a mapper class which is parametrized with an object and defines a map method which returns an object of another type:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatestotype_mapper,indent=0]
+----
+<1> The mapper class takes two generic type arguments: the source type and the target type
+<2> The source object is stored in a final field
+<3> The `map` method asks to convert the source object to a target object
+
+As you can see, the method signature from `map` does not give any information about what object will
+be manipulated by the closure. Reading the method body, we know that it will be the `value` which is
+of type `T`, but `T` is not found in the method signature, so we are facing a case where none of the
+available options for `@DelegatesTo` is suitable. For example, if we try to statically compile this code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatestotype_mapper_test,indent=0]
+----
+
+Then the compiler will fail with:
+
+----
+Static type checking] - Cannot find matching method TestScript0#length()
+----
+
+In that case, you can use the `type` member of the `@DelegatesTo` annotation to reference `T` as a type token:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatestotype_mapper_fixed,indent=0]
+----
+<1> The `@DelegatesTo` annotation references a generic type which is not found in the method signature
+
+Note that you are not limited to generic type tokens. The `type` member can be used to represent complex types, such
+as `List<T>` or `Map<T,List<U>>`. The reason why you should use that in last resort is that the type is only checked
+when the type checker finds usage of `@DelegatesTo`, not when the annotated method itself is compiled. This means that
+type safety is only ensured at the call site. Additionally, compilation will be slower (though probably unnoticeable for
+most cases).
+
 [[compilation-customizers]]
 == Compilation customizers
 === Introduction
