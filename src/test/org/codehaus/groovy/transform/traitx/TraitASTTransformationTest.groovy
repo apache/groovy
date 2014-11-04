@@ -2276,6 +2276,47 @@ class SecurityService {
 }
 '''
     }
+
+    void testRuntimeSelfType() {
+        assertScript '''import groovy.transform.CompileStatic
+import groovy.transform.SelfType
+
+trait A {
+    int a() { 1 }
+}
+
+@CompileStatic
+@SelfType(A)
+trait B {
+    int b() { 2*a() }
+}
+class C implements A {}
+def c = new C() as B
+assert c.b() == 2
+'''
+    }
+
+    void testRuntimeSelfTypeWithInheritance() {
+        assertScript '''import groovy.transform.CompileStatic
+import groovy.transform.SelfType
+
+trait A {
+    int a() { 1 }
+}
+
+@CompileStatic
+@SelfType(A)
+trait B {
+    int b() { 2*a() }
+}
+
+trait B2 extends B {}
+
+class C implements A {}
+def c = new C() as B2
+assert c.b() == 2
+'''
+    }
     void testAnnotationsOfPrecompiledTrait() {
         def cn = ClassHelper.make(DoubleSelfTypeTrait)
         def ann = cn.getAnnotations(ClassHelper.make(SelfType))

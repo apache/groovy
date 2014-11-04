@@ -21,6 +21,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.Trait;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -30,6 +31,7 @@ import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.tools.GroovyClass;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -234,7 +236,15 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     private void collectTraits(final Class clazz, final Set<ClassNode> traits) {
         Annotation annotation = clazz.getAnnotation(Trait.class);
         if (annotation!=null) {
-            traits.add(ClassHelper.make(clazz));
+            ClassNode trait = ClassHelper.make(clazz);
+            traits.add(trait);
+            LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<ClassNode>();
+            Traits.collectSelfTypes(trait, selfTypes, true, true);
+            for (ClassNode selfType : selfTypes) {
+                if (Traits.isTrait(selfType)) {
+                    traits.add(selfType);
+                }
+            }
         }
     }
 
