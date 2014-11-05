@@ -528,6 +528,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             operandStack.replace(replacementType);
             return true;
         }
+
+        for (ClassNode intf : receiverType.getInterfaces()) {
+            // GROOVY-7039
+            if (intf!=receiverType && makeGetField(receiver, intf, fieldName, safe, implicitThis, false)) {
+                return true;
+            }
+        }
+
         ClassNode superClass = receiverType.getSuperClass();
         if (superClass !=null) {
             return makeGetField(receiver, superClass, fieldName, safe, implicitThis, false);
