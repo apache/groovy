@@ -370,7 +370,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         fieldHelper.addMethod(
                 Traits.helperSetterName(field),
                 ACC_PUBLIC | ACC_ABSTRACT,
-                ClassHelper.VOID_TYPE,
+                field.getOriginType(),
                 new Parameter[]{new Parameter(field.getOriginType(), "val")},
                 ClassNode.EMPTY_ARRAY,
                 null

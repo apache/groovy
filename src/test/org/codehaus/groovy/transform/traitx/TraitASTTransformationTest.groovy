@@ -2136,6 +2136,19 @@ d.foo()
 '''
     }
 
+    // GROOVY-7123
+    void testHelperSetterShouldNotReturnVoid() {
+        assertScript '''
+            trait A {
+                def foo
+                def bar() { foo = 42 }
+            }
+            class C implements A {}
+
+            assert new C().bar() == 42
+        '''
+    }
+
     static trait TestTrait {
         int a() { 123 }
     }
