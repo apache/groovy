@@ -19,7 +19,7 @@ class StreamingTemplateEngineTest {
   }
 
   @Before
-  public void setUp() {
+  void setUp() {
     engine = new StreamingTemplateEngine()
     binding = [alice: 'Alice', rabbit: 'Rabbit', queen: 'Queen', desk: 'writing desk']
   }
@@ -34,151 +34,148 @@ class StreamingTemplateEngineTest {
     return sw.toString()
   }
 
-
   @Test
-  public void testEmptyStringNoBinding() {
+  void testEmptyStringNoBinding() {
     String data = ''
     String result = template(data)
     assert data == result
   }
 
   @Test
-  public void testEmptyStringWithBinding() {
+  void testEmptyStringWithBinding() {
     String data = ''
     String result = template(data, binding)
     assert data == result
   }
 
   @Test
-  public void noExpressionsNoBinding() {
+  void noExpressionsNoBinding() {
     String data = 'Hello World!'
     String result = template(data)
     assert data == result
   }
 
   @Test
-  public void noExpressionsEscapingAtEnd() {
+  void noExpressionsEscapingAtEnd() {
     String data = 'Hello World\\'
     String result = template(data)
     assert data == result
   }
 
   @Test
-  public void noExpressionsDoubleEscapingAtEnd() {
+  void noExpressionsDoubleEscapingAtEnd() {
     String data = 'Hello World\\\\'
     String result = template(data)
     assert data == result
   }
 
   @Test
-  public void noExpressionsTripleEscapingAtEnd() {
+  void noExpressionsTripleEscapingAtEnd() {
     String data = 'Hello World\\\\\\'
     String result = template(data)
     assert data == result
   }
 
-
   @Test
-  public void noExpressionsEscapingAtStart() {
+  void noExpressionsEscapingAtStart() {
     String data = '\\Hello World'
     String result = template(data)
     assert data == result
   }
 
   @Test
-  public void noExpressionsDoubleEscapingAtStart() {
+  void noExpressionsDoubleEscapingAtStart() {
     String data = '\\\\Hello World'
     String result = template(data)
     assert data == result
   }
 
   @Test
-  public void noExpressionsTripleEscapingAtStart() {
+  void noExpressionsTripleEscapingAtStart() {
     String data = '\\\\\\Hello World'
     String result = template(data)
     assert data == result
   }
 
   @Test
-  public void incompleteGStringExpressionEscapedAtStart() {
+  void incompleteGStringExpressionEscapedAtStart() {
     String data = '\\$Hello World'
     String result = template(data)
     assert data == result
   }
 
   @Test
-  public void incompleteGStringExpressionEscapedAtEnd() {
+  void incompleteGStringExpressionEscapedAtEnd() {
     String data = 'Hello World\\$'
     String result = template(data)
     assert data == result
   }
 
   @Test
-  public void incompleteTwoCharGStringExpressionEscapedAtStart() {
+  void incompleteTwoCharGStringExpressionEscapedAtStart() {
     String data = '\\${Hello World'
     String result = template(data)
     assert '${Hello World' == result
   }
 
   @Test
-  public void incompleteTwoCharGStringExpressionEscapedAtEnd() {
+  void incompleteTwoCharGStringExpressionEscapedAtEnd() {
     String data = 'Hello World\\${'
     String result = template(data)
     assert 'Hello World${' == result
   }
 
   @Test
-  public void escapedSlashesInFrontOfGStringExpressionAtStart() {
+  void escapedSlashesInFrontOfGStringExpressionAtStart() {
     String data = '\\\\${alice}'
     String result = template(data, binding)
     assert '\\Alice' == result
   }
 
   @Test
-  public void escapedSlashesInFrontOfGStringExpressionAtEnd() {
+  void escapedSlashesInFrontOfGStringExpressionAtEnd() {
     String data = '${alice}\\\\'
     String result = template(data, binding)
     assert 'Alice\\\\' == result
   }
 
-
   @Test
-  public void incompleteLessThanExpressionEscapedAtStart() {
+  void incompleteLessThanExpressionEscapedAtStart() {
     String data = '\\<Hello World'
     String result = template(data)
     assert data == result
   }
 
   @Test
-  public void incompleteLessThanExpressionEscapedAtEnd() {
+  void incompleteLessThanExpressionEscapedAtEnd() {
     String data = 'Hello World\\<'
     String result = template(data)
     assert data == result
   }
 
   @Test
-  public void incompleteTwoCharLessThanExpressionEscapedAtStart() {
+  void incompleteTwoCharLessThanExpressionEscapedAtStart() {
     String data = '\\<%Hello World'
     String result = template(data)
     assert '<%Hello World' == result
   }
 
   @Test
-  public void incompleteTwoCharLessThanExpressionEscapedAtEnd() {
+  void incompleteTwoCharLessThanExpressionEscapedAtEnd() {
     String data = 'Hello World\\<%'
     String result = template(data)
     assert 'Hello World<%' == result
   }
 
   @Test
-  public void escapedSlashesInFrontOfLessThanExpressionAtStart() {
+  void escapedSlashesInFrontOfLessThanExpressionAtStart() {
     String data = '\\\\<%= alice %>'
     String result = template(data, binding)
     assert '\\Alice' == result
   }
 
   @Test
-  public void escapedSlashesInFrontOfLessThanExpressionAtEnd() {
+  void escapedSlashesInFrontOfLessThanExpressionAtEnd() {
     String data = '<%= alice %>\\\\'
     String result = template(data, binding)
     assert 'Alice\\\\' == result
@@ -199,7 +196,7 @@ class StreamingTemplateEngineTest {
    *
    */
   @Test(expected=groovy.lang.GroovyRuntimeException)
-  public void testStringOver64kNoBinding_SimpleTemplateEngine() {
+  void testStringOver64kNoBinding_SimpleTemplateEngine() {
     StringBuilder data = new StringBuilder()
     data.append(SIXTY_FOUR_K_OF_A)
 
@@ -232,7 +229,7 @@ class StreamingTemplateEngineTest {
    *
    */
   @Test(expected=groovy.lang.GroovyRuntimeException)
-  public void testStringOver64kNoBinding_GStringTemplateEngine() {
+  void testStringOver64kNoBinding_GStringTemplateEngine() {
     StringBuilder data = new StringBuilder()
     data.append(SIXTY_FOUR_K_OF_A)
 
@@ -255,7 +252,7 @@ class StreamingTemplateEngineTest {
    * And expect the StreamingTemplateEngine to work with arbitrary length strings
    */
   @Test
-  public void testStringOver64kNoBinding() {
+  void testStringOver64kNoBinding() {
     StringBuilder data = new StringBuilder()
     data.append(SIXTY_FOUR_K_OF_A)
 
@@ -267,7 +264,7 @@ class StreamingTemplateEngineTest {
   }
 
   @Test
-  public void testStringOver64kWithStartingGString() {
+  void testStringOver64kWithStartingGString() {
     StringBuilder data = new StringBuilder()
     String prefix = '${alice}, why is a raven like a ${desk}?'
     data.append(prefix)
@@ -282,7 +279,7 @@ class StreamingTemplateEngineTest {
   }
 
   @Test
-  public void testStringOver64kWithEndingGString() {
+  void testStringOver64kWithEndingGString() {
     StringBuilder data = new StringBuilder()
     data.append(SIXTY_FOUR_K_OF_A)
     String postfix = '${alice}, why is a raven like a ${desk}'
@@ -296,9 +293,8 @@ class StreamingTemplateEngineTest {
     assert result.length() == SIXTY_FOUR_K + expectedEnding.length()
   }
 
-
   @Test
-  public void testStringOver64kWithMiddleGString() {
+  void testStringOver64kWithMiddleGString() {
     StringBuilder data = new StringBuilder()
     data.append(SIXTY_FOUR_K_OF_A)
     String middle = '${alice}, why is a raven like a ${desk}?'
@@ -315,7 +311,7 @@ class StreamingTemplateEngineTest {
   }
 
   @Test
-  public void testStringOver64kWithStartingExpression() {
+  void testStringOver64kWithStartingExpression() {
     StringBuilder data = new StringBuilder()
     String prefix = '<%= alice %>, why is a raven like a <%= desk %>?'
     data.append(prefix)
@@ -330,7 +326,7 @@ class StreamingTemplateEngineTest {
   }
 
   @Test
-  public void testStringOver64kWithEndingExpression() {
+  void testStringOver64kWithEndingExpression() {
     StringBuilder data = new StringBuilder()
     data.append(SIXTY_FOUR_K_OF_A)
     String postfix = '<%= alice %>, why is a raven like a <%= desk %>'
@@ -344,9 +340,8 @@ class StreamingTemplateEngineTest {
     assert result.length() == SIXTY_FOUR_K + expectedEnding.length()
   }
 
-
   @Test
-  public void testStringOver64kWithMiddleExpression() {
+  void testStringOver64kWithMiddleExpression() {
     StringBuilder data = new StringBuilder()
     data.append(SIXTY_FOUR_K_OF_A)
     String middle = '<%= alice %>, why is a raven like a <%= desk %>?'
@@ -362,11 +357,8 @@ class StreamingTemplateEngineTest {
     assert result.length() == SIXTY_FOUR_K * 2 + expectedMiddle.length()
   }
 
-
-
-
   @Test
-  public void testStringOver64kWithStartingSection() {
+  void testStringOver64kWithStartingSection() {
     StringBuilder data = new StringBuilder()
     String prefix = '<% out << alice %>, why is a raven like a <% out << desk %>?'
     data.append(prefix)
@@ -381,7 +373,7 @@ class StreamingTemplateEngineTest {
   }
 
   @Test
-  public void testStringOver64kWithEndingSection() {
+  void testStringOver64kWithEndingSection() {
     StringBuilder data = new StringBuilder()
     data.append(SIXTY_FOUR_K_OF_A)
     String postfix = '<% out << alice %>, why is a raven like a <% out << desk %>'
@@ -395,9 +387,8 @@ class StreamingTemplateEngineTest {
     assert result.length() == SIXTY_FOUR_K + expectedEnding.length()
   }
 
-
   @Test
-  public void testStringOver64kWithMiddleSection() {
+  void testStringOver64kWithMiddleSection() {
     StringBuilder data = new StringBuilder()
     data.append(SIXTY_FOUR_K_OF_A)
     String middle = '<% out << alice %>, why is a raven like a <% out << desk %>?'
@@ -413,61 +404,57 @@ class StreamingTemplateEngineTest {
     assert result.length() == SIXTY_FOUR_K * 2 + expectedMiddle.length()
   }
 
-
   @Test
-  public void testEscapingGString() {
+  void testEscapingGString() {
     String data = 'This should be \\${left alone}!'
     String result = template(data, binding)
     assert 'This should be ${left alone}!' == result
   }
 
   @Test
-  public void testEscapingNonGString() {
+  void testEscapingNonGString() {
     String data = 'This should be \\$[left alone]!'
     String result = template(data, binding)
     assert 'This should be \\$[left alone]!' == result
   }
 
   @Test
-  public void testEscapingDollarSign() {
+  void testEscapingDollarSign() {
     String data = 'This should be \\$ left alone'
     String result = template(data, binding)
     assert 'This should be \\$ left alone' == result
   }
 
-
   @Test
-  public void testEscapingAtEndOfString() {
+  void testEscapingAtEndOfString() {
     String data = 'This should be \\'
     String result = template(data, binding)
     assert 'This should be \\' == result
   }
 
   @Test
-  public void testEscapingGStringExtraSlashInFront() {
+  void testEscapingGStringExtraSlashInFront() {
     String data = 'This should be \\\\${alice}!'
     String result = template(data, binding)
     assert 'This should be \\Alice!' == result
   }
 
-
   @Test
-  public void mixedGStringExpressionSequenceNoStringSections() {
+  void mixedGStringExpressionSequenceNoStringSections() {
     String data = '${alice}<% out << rabbit %><%= queen %>'
     String result = template(data, binding)
     assert 'AliceRabbitQueen' == result
   }
 
   @Test
-  public void mixedGStringExpressionSequenceWithStringSections() {
+  void mixedGStringExpressionSequenceWithStringSections() {
     String data = 'Hi ${alice}, have you seen the <% out << rabbit %> and the <%= queen %>?'
     String result = template(data, binding)
     assert 'Hi Alice, have you seen the Rabbit and the Queen?' == result
   }
 
-
   @Test
-  public void multiLineCodeSectionWithEmbeddedBindings() {
+  void multiLineCodeSectionWithEmbeddedBindings() {
     String data = '''<%
       out << "Hi ${alice}, "
       out << "have you seen the ${rabbit} "
@@ -478,7 +465,7 @@ class StreamingTemplateEngineTest {
   }
 
   @Test
-  public void multiLineCodeSectionWithErrorsAndBindings() {
+  void multiLineCodeSectionWithErrorsAndBindings() {
     String data = '''<%
       out << "Hi ${alice}, "
       out << "have you seen the ${ :rabbit} "
@@ -493,7 +480,7 @@ class StreamingTemplateEngineTest {
   }
 
   @Test
-  public void nonTerminatedGStringExpression() {
+  void nonTerminatedGStringExpression() {
     String data = '''Hi
                      ${alice'''
     try {
@@ -505,7 +492,7 @@ class StreamingTemplateEngineTest {
   }
 
   @Test
-  public void nonTerminatedLessThanExpression() {
+  void nonTerminatedLessThanExpression() {
     String data = 'Hi <%=alice'
     try {
       template(data, binding)
@@ -516,13 +503,12 @@ class StreamingTemplateEngineTest {
   }
 
   @Test
-  public void nonTerminatedLessThanCodeBlock() {
+  void nonTerminatedLessThanCodeBlock() {
     String data = 'Hi <% out << alice'
 
     String result = template(data, binding)
     //weirdly this is actually ok with the current implementation...
     assert "Hi Alice" == result
-
   }
 
 }

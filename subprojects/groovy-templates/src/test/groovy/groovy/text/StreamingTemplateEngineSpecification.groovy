@@ -4,10 +4,8 @@ import spock.lang.*
 
 import static StreamingTemplateEngineSpecification.EngineType.*
 
-/**
- * http://code.google.com/p/spock/wiki/SpockBasics
- */
 class StreamingTemplateEngineSpecification extends Specification {
+
   enum EngineType { 
     STREAMING('StreamingTemplateEngine'),
     SIMPLE('SimpleTemplateEngine'), 
@@ -23,22 +21,7 @@ class StreamingTemplateEngineSpecification extends Specification {
     }
   }
 
-  @Shared String SIXTY_FOUR_K_OF_A
-  @Shared int SIXTY_FOUR_K = 64*1024
   @Shared Map defaultBinding = [alice: 'Alice', rabbit: 'Rabbit', queen: 'Queen', desk: 'writing desk']
-
-  // run before the first feature method
-  def setupSpec() {     
-    StringBuilder b = new StringBuilder()
-    def sixtyFourAs = "a"*64
-    (1..1024).each {
-      b.append(sixtyFourAs)
-    }
-    SIXTY_FOUR_K_OF_A = b.toString()    
-  }  
-  def cleanupSpec() {}   // run after the last feature method
-  def setup() {}          // run before every feature method
-  def cleanup() {}        // run after every feature method
 
   private String template(EngineType type, String data, Map binding=null) {
     TemplateEngine engine
@@ -87,19 +70,9 @@ class StreamingTemplateEngineSpecification extends Specification {
       'Hello World\\\\'      | 'Hello World\\\\'   | STREAMING      | defaultBinding | 'noExpressionsWithBindingDoubleEscapingAtEnd'
       'Hello World\\\\\\'    | 'Hello World\\\\\\' | STREAMING      | null           | 'noExpressionsNoBindingTripleEscapingAtEnd'
       'Hello World\\\\\\'    | 'Hello World\\\\\\' | STREAMING      | defaultBinding | 'noExpressionsWithBindingTripleEscapingAtEnd'
-
-
-      /*
-      'bob'                  | 'bob'              | STREAMING        | defaultBinding | 'noExpressionWithBinding'
-      'bob'                  | 'bob'              | STREAMING        | null           | 'noExpressionsNoBinding'
-      'bob'                  | 'bob'              | STREAMING        | defaultBinding | 'noExpressionWithBinding'
-*/
   }
 
-  /**
-   * Validate fix of handling of \r\n line endings as reported by Wilfried Middleton 2014.02.12
-   */
-  def "should handle \\r\\n line feeds correctly (issue #1 on GitHub)"() {
+  def "should handle \\r\\n line feeds correctly"() {
     setup:
       String basic = '<%\r\n' +
                      'def var1 = "cookie"\r\n' +
@@ -119,16 +92,11 @@ class StreamingTemplateEngineSpecification extends Specification {
       gStringTemplate == streamingTemplate
   }
 
-
-  /**
-   * Validate fix of handling of if statements as reported by Wilfried Middleton 2014.02.12
-   */
-  def "should handle simple embedded if statements (issue #2 on GitHub)"() {
+  def "should handle simple embedded if statements"() {
     setup:
       String templateText = 'before "<% if (false) { %>should not be included<% } else { %>should be included<% } %>" after'
 
     when:
-
       Template template = new StreamingTemplateEngine().createTemplate(templateText)
       String result  = template.make().toString()
 
@@ -136,10 +104,7 @@ class StreamingTemplateEngineSpecification extends Specification {
       result == 'before "should be included" after'
   }
 
-  /**
-   * Validate fix of handling of if statements as reported by Wilfried Middleton 2014.02.12
-   */
-  def "should handle complex embedded if statements (issue #2 on GitHub)"() {
+  def "should handle complex embedded if statements"() {
     setup:
       String templateText = 'first line text\n' +
                             '<%\n' +

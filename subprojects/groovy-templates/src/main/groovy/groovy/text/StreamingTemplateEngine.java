@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -209,8 +209,6 @@ public class StreamingTemplateEngine extends TemplateEngine {
             }
             currentSection.lastSourcePosition = new Position(lastSourcePosition);
             sections.add(currentSection);
-            //templateExpressions.append("//lines[").append(currentSection.firstLine).append(",").append(currentSection.lastLine).append("]\n");           
-            //append(templateExpressions, targetPosition, "out<<_s[_i++];");
             append(templateExpressions, targetPosition, "out<<_s[_i=" + index++ + "];");
             currentSection.lastTargetPosition = new Position(targetPosition.row, targetPosition.column);
         }
@@ -452,16 +450,6 @@ public class StreamingTemplateEngine extends TemplateEngine {
         /**
          * Parse a <% .... %> section if we are writing a GString close and
          * append ';' then write the section as a statement
-         *
-         * @param pendingC
-         * @param reader
-         * @param target
-         * @param sourcePosition
-         * @param targetPosition
-         * @return
-         * @throws IOException
-         * @throws
-         *
          */
         private void parseSection(final int pendingC,
                 final Reader reader,
@@ -489,11 +477,6 @@ public class StreamingTemplateEngine extends TemplateEngine {
 
         /**
          * Parse a <%= .... %> expression
-         *
-         * @param reader
-         * @param target
-         * @return
-         * @throws IOException
          */
         private void parseExpression(final Reader reader,
                 final StringBuilder target,
