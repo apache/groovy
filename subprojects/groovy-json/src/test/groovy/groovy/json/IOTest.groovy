@@ -1,8 +1,5 @@
 package groovy.json
 
-import java.io.IOException;
-import java.io.Reader;
-
 import groovy.json.internal.CharBuf
 import groovy.json.internal.IO
 
@@ -40,7 +37,6 @@ class IOTest extends GroovyTestCase {
 		assertEquals(TEST_STRING,result) 
 	}
 
-	
 }
 
 /**
@@ -52,7 +48,6 @@ class BumpyReader extends Reader {
 	int index = 0;
 	def stopIndex = [69, 84, 500]
 	int nextStop=0;
-
 
 	@Override
 	public int read(char[] cbuf, int off, int len) throws IOException {
@@ -73,8 +68,6 @@ class BumpyReader extends Reader {
 
 	@Override
 	public void close() throws IOException {
-		// TODO Auto-generated method stub
-
 	}
 }
 
@@ -85,7 +78,6 @@ class BumpyReader extends Reader {
 class ProperReader extends Reader {
 
 	int index = 0;
-
 
 	@Override
 	public int read(char[] cbuf, int off, int len) throws IOException {
@@ -103,7 +95,5 @@ class ProperReader extends Reader {
 
 	@Override
 	public void close() throws IOException {
-		// TODO Auto-generated method stub
-
 	}
 }
