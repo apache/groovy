@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.json
+package groovy.json;
+
+import groovy.lang.Closure;
+import groovy.lang.GroovyObjectSupport;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.*;
 
 /**
  * A builder for creating JSON payloads.
@@ -53,21 +60,33 @@ package groovy.json
  * </pre>
  *
  * @author Tim Yates
+ * @author Andrey Bloschetsov
  * @since 1.8.1
  */
-class StreamingJsonBuilder {
+public class StreamingJsonBuilder extends GroovyObjectSupport {
 
-    Writer writer
-    
+    private Writer writer;
+
+    /**
+     * Instantiates a JSON builder.
+     *
+     * @param writer A writer to which Json will be written
+     */
+    public StreamingJsonBuilder(Writer writer) {
+        this.writer = writer;
+    }
+
     /**
      * Instantiates a JSON builder, possibly with some existing data structure.
      *
-     * @param writer A writer to which Json will be written
+     * @param writer  A writer to which Json will be written
      * @param content a pre-existing data structure, default to null
      */
-    StreamingJsonBuilder( Writer writer, content = null) {
-        this.writer = writer
-        if( content ) writer.write( JsonOutput.toJson( content ) )
+    public StreamingJsonBuilder(Writer writer, Object content) throws IOException {
+        this(writer);
+        if (content != null) {
+            writer.write(JsonOutput.toJson(content));
+        }
     }
 
     /**
@@ -86,9 +105,10 @@ class StreamingJsonBuilder {
      * @param m a map of key / value pairs
      * @return a map of key / value pairs
      */
-    def call(Map m) {
-        writer.write JsonOutput.toJson( m )
-        return m
+    public Object call(Map m) throws IOException {
+        writer.write(JsonOutput.toJson(m));
+
+        return m;
     }
 
     /**
@@ -108,9 +128,10 @@ class StreamingJsonBuilder {
      * @param l a list of values
      * @return a list of values
      */
-    def call(List l) {
-        writer.write( JsonOutput.toJson( l ) )
-        return l
+    public Object call(List l) throws IOException {
+        writer.write(JsonOutput.toJson(l));
+
+        return l;
     }
 
     /**
@@ -130,10 +151,8 @@ class StreamingJsonBuilder {
      * @param args an array of values
      * @return a list of values
      */
-    def call(Object... args) {
-        def l = args.toList()
-        writer.write JsonOutput.toJson( l )
-        return l
+    public Object call(Object... args) throws IOException {
+        return call(Arrays.asList(args));
     }
 
     /**
@@ -159,8 +178,10 @@ class StreamingJsonBuilder {
      * @param coll a collection
      * @param c a closure used to convert the objects of coll
      */
-    def call (Collection coll, Closure c) {
-        StreamingJsonDelegate.writeCollectionWithClosure( writer, coll, c)
+    public Object call(Collection coll, Closure c) throws IOException {
+        StreamingJsonDelegate.writeCollectionWithClosure(writer, coll, c);
+
+        return null;
     }
 
     /**
@@ -181,10 +202,12 @@ class StreamingJsonBuilder {
      *
      * @param c a closure whose method call statements represent key / values of a JSON object
      */
-    def call(Closure c) {
-        writer.write( '{' )
-        StreamingJsonDelegate.cloneDelegateAndGetContent( writer, c )
-        writer.write( '}' )
+    public Object call(Closure c) throws IOException {
+        writer.write("{");
+        StreamingJsonDelegate.cloneDelegateAndGetContent(writer, c);
+        writer.write("}");
+
+        return null;
     }
 
     /**
@@ -249,101 +272,152 @@ class StreamingJsonBuilder {
      * @param name the single key
      * @param args the value associated with the key
      */
-    def invokeMethod(String name, Object args) {
-        if (args?.size() == 0) {
-            writer.write JsonOutput.toJson( [(name): [:]] )
-        } else if (args?.size() == 1) {
-            if (args[0] instanceof Closure) {
-                writer.write "{${JsonOutput.toJson( name )}:"
-                this.call( args[0] )
-                writer.write '}'
-            } else if (args[0] instanceof Map) {
-                writer.write JsonOutput.toJson( [(name): args[0]] )
+    public Object invokeMethod(String name, Object args) {
+        boolean notExpectedArgs = false;
+        if (args != null && Object[].class.isAssignableFrom(args.getClass())) {
+            Object[] arr = (Object[]) args;
+            try {
+                if (arr.length == 0) {
+                    writer.write(JsonOutput.toJson(Collections.singletonMap(name, Collections.emptyMap())));
+                } else if (arr.length == 1) {
+                    if (arr[0] instanceof Closure) {
+                        writer.write("{");
+                        writer.write(JsonOutput.toJson(name));
+                        writer.write(":");
+                        call((Closure) arr[0]);
+                        writer.write("}");
+                    } else if (arr[0] instanceof Map) {
+                        writer.write(JsonOutput.toJson(Collections.singletonMap(name, (Map) arr[0])));
+                    } else {
+                        notExpectedArgs = true;
+                    }
+                } else if (arr.length == 2 && arr[0] instanceof Map && arr[1] instanceof Closure) {
+                    writer.write("{");
+                    writer.write(JsonOutput.toJson(name));
+                    writer.write(":{");
+                    boolean first = true;
+                    Map map = (Map) arr[0];
+                    for (Object it : map.entrySet()) {
+                        if (!first) {
+                            writer.write(",");
+                        } else {
+                            first = false;
+                        }
+
+                        Map.Entry entry = (Map.Entry) it;
+                        writer.write(JsonOutput.toJson(entry.getKey()));
+                        writer.write(":");
+                        writer.write(JsonOutput.toJson(entry.getValue()));
+                    }
+                    StreamingJsonDelegate.cloneDelegateAndGetContent(writer, (Closure) arr[1], map.size() == 0);
+                    writer.write("}}");
+                } else if (StreamingJsonDelegate.isCollectionWithClosure(arr)) {
+                    writer.write("{");
+                    writer.write(JsonOutput.toJson(name));
+                    writer.write(":");
+                    call((Collection) arr[0], (Closure) arr[1]);
+                    writer.write("}");
+                } else {
+                    notExpectedArgs = true;
+                }
+            } catch (IOException ioe) {
+                throw new JsonException(ioe);
             }
-            else {
-                throw new JsonException("Expected no arguments, a single map, a single closure, or a map and closure as arguments.")
-            }
-        } else if (args?.size() == 2 && args[0] instanceof Map && args[1] instanceof Closure) {
-            writer.write "{${JsonOutput.toJson( name )}:{"
-            args[0].eachWithIndex { it, idx ->
-                if( idx > 0 ) writer.write ','
-                writer.write JsonOutput.toJson( it.key )
-                writer.write ':'
-                writer.write JsonOutput.toJson( it.value )
-            }
-            StreamingJsonDelegate.cloneDelegateAndGetContent( writer, args[1], !args[0].size() )
-            writer.write '}}'
-        } else if (StreamingJsonDelegate.isCollectionWithClosure( args )) {
-            writer.write "{${JsonOutput.toJson( name )}:"
-            call( args[0], args[1] )
-            writer.write '}'
+        } else {
+            notExpectedArgs = true;
         }
-        else {
-            throw new JsonException("Expected no arguments, a single map, a single closure, or a map and closure as arguments.")
+
+        if (!notExpectedArgs) {
+            return this;
+        } else {
+            throw new JsonException("Expected no arguments, a single map, a single closure, or a map and closure as arguments.");
         }
     }
+
 }
 
-class StreamingJsonDelegate {
-    Writer writer
-    boolean first
-    
-    StreamingJsonDelegate( Writer w, boolean first ) {
-        this.writer = w
-        this.first = first
+class StreamingJsonDelegate extends GroovyObjectSupport {
+
+    private Writer writer;
+    private boolean first;
+
+    public StreamingJsonDelegate(Writer w, boolean first) {
+        this.writer = w;
+        this.first = first;
     }
 
-    def invokeMethod(String name, Object args) {
-        if (args) {
-            if( !first ) {
-                writer.write ','
-            }
-            writer.write JsonOutput.toJson( name )
-            writer.write ':'
+    public Object invokeMethod(String name, Object args) {
+        if (args != null && Object[].class.isAssignableFrom(args.getClass())) {
+            try {
+                if (!first) {
+                    writer.write(",");
+                } else {
+                    first = false;
+                }
+                writer.write(JsonOutput.toJson(name));
+                writer.write(":");
+                Object[] arr = (Object[]) args;
 
-            if (args.size() == 1) {
-                writer.write JsonOutput.toJson( args[0] )
-            } else if (isCollectionWithClosure( args )) {
-                writeCollectionWithClosure ( writer, args[0], args[1] )
+                if (arr.length == 1) {
+                    writer.write(JsonOutput.toJson(arr[0]));
+                } else if (isCollectionWithClosure(arr)) {
+                    writeCollectionWithClosure(writer, (Collection) arr[0], (Closure) arr[1]);
+                } else {
+                    writer.write(JsonOutput.toJson(Arrays.asList(arr)));
+                }
+            } catch (IOException ioe) {
+                throw new JsonException(ioe);
+            }
+        }
+
+        return this;
+    }
+
+    public static boolean isCollectionWithClosure(Object[] args) {
+        return args.length == 2 && args[0] instanceof Collection && args[1] instanceof Closure;
+    }
+
+    public static Object writeCollectionWithClosure(Writer writer, Collection coll, Closure closure) throws IOException {
+        writer.write("[");
+        boolean first = true;
+        for (Object it : coll) {
+            if (!first) {
+                writer.write(",");
             } else {
-                writer.write JsonOutput.toJson( args.toList() )
+                first = false;
             }
 
-            first = false
+            writer.write("{");
+            curryDelegateAndGetContent(writer, closure, it);
+            writer.write("}");
         }
+        writer.write("]");
+
+        return writer;
     }
 
-    static boolean isCollectionWithClosure (Object[] args) {
-        args.size() == 2 && args[0] instanceof Collection && args[1] instanceof Closure
+    public static void cloneDelegateAndGetContent(Writer w, Closure c) {
+        cloneDelegateAndGetContent(w, c, true);
     }
 
-    static def writeCollectionWithClosure (Writer writer, Collection coll, Closure closure) {
-        writer.write '['
-        coll.eachWithIndex { it, idx ->
-            if (idx > 0) {
-                writer.write ','
-            }
-
-            writer.write '{'
-            curryDelegateAndGetContent (writer, closure, it)
-            writer.write '}'
-        }
-        writer.write ']'
+    public static void cloneDelegateAndGetContent(Writer w, Closure c, boolean first) {
+        StreamingJsonDelegate delegate = new StreamingJsonDelegate(w, first);
+        Closure cloned = (Closure) c.clone();
+        cloned.setDelegate(delegate);
+        cloned.setResolveStrategy(Closure.DELEGATE_FIRST);
+        cloned.call();
     }
 
-    static cloneDelegateAndGetContent(Writer w, Closure c, boolean first=true ) {
-        def delegate = new StreamingJsonDelegate( w, first )
-        Closure cloned = c.clone()
-        cloned.delegate = delegate
-        cloned.resolveStrategy = Closure.DELEGATE_FIRST
-        cloned()
+    public static void curryDelegateAndGetContent(Writer w, Closure c, Object o) {
+        curryDelegateAndGetContent(w, c, o, true);
     }
 
-    static curryDelegateAndGetContent(Writer w, Closure c, Object o, boolean first=true) {
-        def delegate = new StreamingJsonDelegate( w, first )
-        Closure curried = c.curry (o)
-        curried.delegate = delegate
-        curried.resolveStrategy = Closure.DELEGATE_FIRST
-        curried()
+    public static void curryDelegateAndGetContent(Writer w, Closure c, Object o, boolean first) {
+        StreamingJsonDelegate delegate = new StreamingJsonDelegate(w, first);
+        Closure curried = c.curry(o);
+        curried.setDelegate(delegate);
+        curried.setResolveStrategy(Closure.DELEGATE_FIRST);
+        curried.call();
     }
+
 }
