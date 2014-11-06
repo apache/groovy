@@ -25,6 +25,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -39,13 +40,6 @@ import java.util.*;
  * @since 1.8.0
  */
 public class JsonOutput {
-
-    /**
-     * Date formatter for outputting dates to a string
-     * that can be parsed back from JavaScript with:
-     * <code>Date.parse(stringRepresentation)</code>
-     */
-    private static final DateFormatThreadLocal dateFormatter = new DateFormatThreadLocal();
 
     /**
      * @return "true" or "false" for a boolean value
@@ -316,7 +310,9 @@ public class JsonOutput {
      * Serializes date and writes it into specified buffer.
      */
     private static void writeDate(Date date, CharBuf buffer) {
-        buffer.addQuoted(dateFormatter.get().format(date));
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+        buffer.addQuoted(formatter.format(date));
     }
 
     /**
