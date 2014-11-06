@@ -57,7 +57,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean inPropertyExpression = false;
     private boolean inClosure = false;
 
-    private final Map<String, GenericsType> genericParameterNames = new HashMap<String, GenericsType>();
+    private Map<String, GenericsType> genericParameterNames = new HashMap<String, GenericsType>();
     private final Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
     private final Set<String> resolutionFailedCache = new HashSet<String>(32);
 
