@@ -6,20 +6,22 @@ import static StreamingTemplateEngineSpecification.EngineType.*
 
 /**
  * http://code.google.com/p/spock/wiki/SpockBasics
+ *
+ * Author: Matias Bjarland
  */
 class StreamingTemplateEngineSpecification extends Specification {
-  enum EngineType { 
+  enum EngineType {
     STREAMING('StreamingTemplateEngine'),
-    SIMPLE('SimpleTemplateEngine'), 
+    SIMPLE('SimpleTemplateEngine'),
     GSTRING('GStringTemplateEngine')
     String displayString
-    
+
     EngineType(displayString) {
       this.displayString = displayString
     }
-    
+
     String toString() {
-      displayString      
+      displayString
     }
   }
 
@@ -28,14 +30,14 @@ class StreamingTemplateEngineSpecification extends Specification {
   @Shared Map defaultBinding = [alice: 'Alice', rabbit: 'Rabbit', queen: 'Queen', desk: 'writing desk']
 
   // run before the first feature method
-  def setupSpec() {     
+  def setupSpec() {
     StringBuilder b = new StringBuilder()
     def sixtyFourAs = "a"*64
     (1..1024).each {
       b.append(sixtyFourAs)
     }
-    SIXTY_FOUR_K_OF_A = b.toString()    
-  }  
+    SIXTY_FOUR_K_OF_A = b.toString()
+  }
   def cleanupSpec() {}   // run after the last feature method
   def setup() {}          // run before every feature method
   def cleanup() {}        // run after every feature method
@@ -46,10 +48,10 @@ class StreamingTemplateEngineSpecification extends Specification {
       case STREAMING:
         engine = new StreamingTemplateEngine()
         break
-      case SIMPLE: 
+      case SIMPLE:
         engine = new SimpleTemplateEngine()
         break
-      case GSTRING: 
+      case GSTRING:
         engine = new GStringTemplateEngine()
         break
     }
@@ -62,9 +64,10 @@ class StreamingTemplateEngineSpecification extends Specification {
     sw
   }
 
+  //TODO: Handle dollarExpressionSlashAtStart case better below
   @Unroll
   def "#testName - #engineType should evaluate '#data' to '#expectedResult' using binding '#binding'"() {
-    expect: 
+    expect:
       template(engineType, data, binding) == expectedResult
 
     where:
@@ -88,18 +91,33 @@ class StreamingTemplateEngineSpecification extends Specification {
       'Hello World\\\\\\'    | 'Hello World\\\\\\' | STREAMING      | null           | 'noExpressionsNoBindingTripleEscapingAtEnd'
       'Hello World\\\\\\'    | 'Hello World\\\\\\' | STREAMING      | defaultBinding | 'noExpressionsWithBindingTripleEscapingAtEnd'
 
+      'Hello $alice'         | 'Hello Alice'       | STREAMING      | defaultBinding | 'dollarExpressionAtEnd'
+      '$alice Hello'         | 'Alice Hello'       | STREAMING      | defaultBinding | 'dollarExpressionAtBeginning'
+      '$alice'               | 'Alice'             | STREAMING      | defaultBinding | 'dollarExpressionByItself'
 
-      /*
-      'bob'                  | 'bob'              | STREAMING        | defaultBinding | 'noExpressionWithBinding'
-      'bob'                  | 'bob'              | STREAMING        | null           | 'noExpressionsNoBinding'
-      'bob'                  | 'bob'              | STREAMING        | defaultBinding | 'noExpressionWithBinding'
-*/
+      '$rabbit$alice'        | 'RabbitAlice'       | STREAMING      | defaultBinding | 'dollarExpressionTwoAdjacentButDifferent'
+      '$alice$alice'         | 'AliceAlice'        | STREAMING      | defaultBinding | 'dollarExpressionTwoAdjacentAndIdentical'
+      '$rabbit $alice'       | 'Rabbit Alice'      | STREAMING      | defaultBinding | 'dollarExpressionTwoAdjacentButDifferentWithSpace'
+      '$alice $alice'        | 'Alice Alice'       | STREAMING      | defaultBinding | 'dollarExpressionTwoAdjacentAndIdenticalWithSpace'
+      '$'                    | '$'                 | STREAMING      | defaultBinding | 'literalDollarSignByItself'
+      '\\$'                  | '\\$'               | STREAMING      | defaultBinding | 'literalDollarSignEscapingAtStart'
+      '$\\'                  | '$\\'               | STREAMING      | defaultBinding | 'literalDollarSignEscapingAtEnd'
+      '\\$alice'             | '\\$alice'          | STREAMING      | defaultBinding | 'dollarExpressionSlashAtStart'
+      '\$alice'              | 'Alice'             | STREAMING      | defaultBinding | 'dollarExpressionEscapingAtStart'
+
+      '${rabbit}${alice}'    | 'RabbitAlice'       | STREAMING      | defaultBinding | 'curlyExpressionTwoAdjacentButDifferent'
+      '${alice}${alice}'     | 'AliceAlice'        | STREAMING      | defaultBinding | 'curlyExpressionTwoAdjacentAndIdentical'
+      '${rabbit} ${alice}'   | 'Rabbit Alice'      | STREAMING      | defaultBinding | 'curlyExpressionTwoAdjacentButDifferentWithSpace'
+      '${alice} ${alice}'    | 'Alice Alice'       | STREAMING      | defaultBinding | 'curlyExpressionTwoAdjacentAndIdenticalWithSpace'
+      '${}'                  | 'null'              | STREAMING      | defaultBinding | 'curlyExpressionEmptyEvaluatesToNull'
   }
 
   /**
    * Validate fix of handling of \r\n line endings as reported by Wilfried Middleton 2014.02.12
+   * https://github.com/mbjarland/groovy-streaming-template-engine/issues/1
+   * Note: This was before the template engine got merged into groovy-core
    */
-  def "should handle \\r\\n line feeds correctly (issue #1 on GitHub)"() {
+  def "should handle \\r\\n line feeds correctly"() {
     setup:
       String basic = '<%\r\n' +
                      'def var1 = "cookie"\r\n' +
@@ -122,8 +140,10 @@ class StreamingTemplateEngineSpecification extends Specification {
 
   /**
    * Validate fix of handling of if statements as reported by Wilfried Middleton 2014.02.12
+   * https://github.com/mbjarland/groovy-streaming-template-engine/issues/2
+   * Note: This was before the template engine got merged into groovy-core
    */
-  def "should handle simple embedded if statements (issue #2 on GitHub)"() {
+  def "should handle simple embedded if statements"() {
     setup:
       String templateText = 'before "<% if (false) { %>should not be included<% } else { %>should be included<% } %>" after'
 
@@ -138,8 +158,10 @@ class StreamingTemplateEngineSpecification extends Specification {
 
   /**
    * Validate fix of handling of if statements as reported by Wilfried Middleton 2014.02.12
+   * https://github.com/mbjarland/groovy-streaming-template-engine/issues/2
+   * Note: This was before the template engine got merged into groovy-core
    */
-  def "should handle complex embedded if statements (issue #2 on GitHub)"() {
+  def "should handle complex embedded if statements"() {
     setup:
       String templateText = 'first line text\n' +
                             '<%\n' +
@@ -164,5 +186,59 @@ class StreamingTemplateEngineSpecification extends Specification {
 
     then:
       streamingResult == gStringResult
+  }
+
+  def "should execute the javadoc example without errors"() {
+    setup:
+      def binding = [firstname : "Grace",
+                     lastname  : "Hopper",
+                     accepted  : false,
+                     title     : 'Groovy for COBOL programmers']
+      def text = '''\
+        |Dear <% out.print firstname %> ${lastname},
+        |
+        |We <% if (accepted) out.print 'are pleased' else out.print 'regret' %> to inform you that your paper entitled
+        |'$title' was ${ accepted ? 'accepted' : 'rejected' }.
+        |
+        |The conference committee.
+        '''.stripMargin()
+
+      def expected = '''\
+        |Dear Grace Hopper,
+        |
+        |We regret to inform you that your paper entitled
+        |'Groovy for COBOL programmers' was rejected.
+        |
+        |The conference committee.
+        '''.stripMargin()
+
+    when:
+      String result = template(STREAMING, text, binding)
+
+    then:
+     result == expected
+  }
+
+  def "should throw exception with correct line number on template errors"() {
+    setup:
+    def binding = [firstname : "Grace",
+                   lastname  : "Hopper",
+                   accepted  : false,
+                   title     : 'Groovy for COBOL programmers']
+    def text = '''\
+        |Dear <% out.print firstname %> ${lastname},
+        |
+        |We <% if (accepted) out.print 'are pleased' else out.print 'regret' %> to inform you that your paper entitled
+        |'$txitle' was ${ accepted ? 'accepted' : 'rejected' }.
+        |
+        |The conference committee.
+        '''.stripMargin()
+
+    when:
+      String result = template(STREAMING, text, binding)
+
+    then:
+      def e = thrown(TemplateExecutionException)
+      e.lineNumber == 4
   }
 }
