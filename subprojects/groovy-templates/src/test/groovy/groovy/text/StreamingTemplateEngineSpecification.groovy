@@ -229,7 +229,7 @@ class StreamingTemplateEngineSpecification extends Specification {
 
   def "should execute the javadoc example same as GStringTemplateEngine"() {
     setup:
-    def binding = [firstname : "Grace",
+      def binding = [firstname : "Grace",
                    lastname  : "Hopper",
                    accepted  : false,
                    title     : 'Groovy for COBOL programmers']
@@ -247,7 +247,7 @@ class StreamingTemplateEngineSpecification extends Specification {
       String gString   = template(GSTRING, text, binding)
 
     then:
-    streaming == gString
+      streaming == gString
   }
 
   def "should throw exception with correct line number on template errors"() {
@@ -290,8 +290,6 @@ class StreamingTemplateEngineSpecification extends Specification {
         ['<% out << desk %>'      , 'writing desk'],
       ].permutations().collect { p ->
         p.inject(['','']) { acc, val ->
-          println "VAL0: ${val[0]}"
-          println "VAL1: ${val[1]}"
           acc[0] += val[0]
           acc[1] += val[1]
           acc
