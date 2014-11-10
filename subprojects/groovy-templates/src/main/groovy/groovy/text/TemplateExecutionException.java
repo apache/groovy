@@ -19,19 +19,34 @@ package groovy.text;
  * A custom exception class to flag template execution errors
  */
 public class TemplateExecutionException extends Exception  {
-  public TemplateExecutionException() {
-    super();
-  }
+    private int lineNumber;
 
-  public TemplateExecutionException(String message) {
-    super(message);
-  }
+    public TemplateExecutionException(int lineNumber) {
+        super();
+        this.lineNumber = lineNumber;
+    }
 
-  public TemplateExecutionException(String message, Throwable cause) {
-    super(message, cause);
-  }
+    public TemplateExecutionException(int lineNumber, String message) {
+        super(message);
+        this.lineNumber = lineNumber;
+    }
 
-  public TemplateExecutionException(Throwable cause) {
-    super(cause);
-  }
+    public TemplateExecutionException(int lineNumber, String message, Throwable cause) {
+        super(message, cause);
+        this.lineNumber = lineNumber;
+    }
+
+    public TemplateExecutionException(int lineNumber, Throwable cause) {
+        super(cause);
+        this.lineNumber = lineNumber;
+    }
+
+    /**
+     * Returns the line number in the template source where the error occurred
+     *
+     * @return the one-based line number of the template parsing error.
+     */
+    public int getLineNumber() {
+        return lineNumber;
+    }
 }
