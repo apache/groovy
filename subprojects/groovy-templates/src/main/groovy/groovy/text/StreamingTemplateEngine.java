@@ -54,6 +54,7 @@ import java.util.Map;
  * Frequently, the template source will be in a file but here is a simple
  * example providing the template as a string:
  * <pre>
+ *
  * def binding = [
  *   firstname : "Grace",
  *   lastname  : "Hopper",
@@ -78,7 +79,9 @@ import java.util.Map;
  * This example uses a mix of the JSP style and GString style
  * placeholders but you can typically use just one style if you wish. Running
  * this example will produce this output:
+ *
  * <pre>
+ *
  * Dear Grace Hopper,
  *
  * We are pleased to inform you that your paper entitled
@@ -92,6 +95,7 @@ import java.util.Map;
  * {@link groovy.servlet.TemplateServlet} by placing the following in your
  * <code>web.xml</code> file (plus a corresponding servlet-mapping element):
  * <pre>
+ *
  * &lt;servlet&gt;
  *   &lt;servlet-name&gt;StreamingTemplate&lt;/servlet-name&gt;
  *   &lt;servlet-class&gt;groovy.servlet.TemplateServlet&lt;/servlet-class&gt;
