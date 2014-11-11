@@ -250,7 +250,7 @@ class StreamingTemplateEngineSpecification extends Specification {
       streaming == gString
   }
 
-  def "should throw exception with correct line number on template errors"() {
+  def "should throw exception with correct line number on template execution error in mid template"() {
     setup:
       def binding = [firstname : "Grace",
                      lastname  : "Hopper",
@@ -266,16 +266,135 @@ class StreamingTemplateEngineSpecification extends Specification {
         '''.stripMargin()
 
     when:
-      String result = template(STREAMING, text, binding)
+      template(STREAMING, text, binding)
 
     then:
       def e = thrown(TemplateExecutionException)
       e.lineNumber == 4
   }
 
+  def "should throw exception with correct line number on template execution error at start of template"() {
+    setup:
+      def binding = [firstname : "Grace",
+                     lastname  : "Hopper",
+                     accepted  : false,
+                     title     : 'Groovy for COBOL programmers']
+      def text = '''\
+          |$txitle Dear <% out.print firstname %> ${lastname},
+          |
+          |We <% if (accepted) out.print 'are pleased' else out.print 'regret' %> to inform you that your paper entitled
+          |'$title' was ${ accepted ? 'accepted' : 'rejected' }.
+          |
+          |The conference committee.
+          '''.stripMargin()
+
+    when:
+      template(STREAMING, text, binding)
+
+    then:
+      def e = thrown(TemplateExecutionException)
+      e.lineNumber == 1
+  }
+
+  def "should throw exception with correct line number on template execution error at end of template"() {
+    setup:
+    def binding = [firstname : "Grace",
+                   lastname  : "Hopper",
+                   accepted  : false,
+                   title     : 'Groovy for COBOL programmers']
+    def text = '''\
+        |Dear <% out.print firstname %> ${lastname},
+        |
+        |We <% if (accepted) out.print 'are pleased' else out.print 'regret' %> to inform you that your paper entitled
+        |'$title' was ${ accepted ? 'accepted' : 'rejected' }.
+        |
+        |The conference committee.
+        |$txitle'''.stripMargin()
+
+    when:
+    template(STREAMING, text, binding)
+
+    then:
+    def e = thrown(TemplateExecutionException)
+    e.lineNumber == 7
+  }
+
+
+  def "should throw exception with correct line number on template parse error in mid template"() {
+    setup:
+      def binding = [firstname : "Grace",
+                     lastname  : "Hopper",
+                     accepted  : false,
+                     title     : 'Groovy for COBOL programmers']
+    def text = '''\
+        |Dear <% out.print firstname %> ${lastname},
+        |
+        |We <% if (accepted) out.print 'are pleased' else out.print 'regret' %> to inform you that your paper entitled
+        |<% -- %> was ${ accepted ? 'accepted' : 'rejected' }.
+        |
+        |The conference committee.
+        '''.stripMargin()
+
+    when:
+      template(STREAMING, text, binding)
+
+    then:
+      def e = thrown(TemplateParseException)
+      e.lineNumber == 4
+  }
+
+  def "should throw exception with correct line number on template parse error at start of template"() {
+    setup:
+      def binding = [firstname : "Grace",
+                     lastname  : "Hopper",
+                     accepted  : false,
+                     title     : 'Groovy for COBOL programmers']
+      def text = '''\
+          ||<% -- %> Dear <% out.print firstname %> ${lastname},
+          |
+          |We <% if (accepted) out.print 'are pleased' else out.print 'regret' %> to inform you that your paper entitled
+          |'$title' was ${ accepted ? 'accepted' : 'rejected' }.
+          |
+          |The conference committee.
+          '''.stripMargin()
+
+    when:
+      template(STREAMING, text, binding)
+
+    then:
+      def e = thrown(TemplateParseException)
+      e.lineNumber == 1
+  }
+
+  def "should throw exception with correct line number on template parse error at end of template"() {
+    setup:
+      def binding = [firstname : "Grace",
+                     lastname  : "Hopper",
+                     accepted  : false,
+                     title     : 'Groovy for COBOL programmers']
+      def text = '''\
+          |Dear <% out.print firstname %> ${lastname},
+          |
+          |We <% if (accepted) out.print 'are pleased' else out.print 'regret' %> to inform you that your paper entitled
+          |'$title' was ${ accepted ? 'accepted' : 'rejected' }.
+          |
+          |The conference committee.
+          ||<% -- %>'''.stripMargin()
+
+    when:
+      template(STREAMING, text, binding)
+
+    then:
+      def e = thrown(TemplateParseException)
+      e.lineNumber == 7
+  }
+
+
+
   @Unroll
   def "should evaluate adjacent expressions '#expression' to '#expected'"() {
     expect:
+      //noinspection GroovyAssignabilityCheck
       template(STREAMING, expression, defaultBinding) == expected
 
     where:
@@ -289,7 +408,7 @@ class StreamingTemplateEngineSpecification extends Specification {
         ['<%= queen %>'           , 'Queen'],
         ['<% out << desk %>'      , 'writing desk'],
       ].permutations().collect { p ->
-        p.inject(['','']) { acc, val ->
+        p.inject(['','']) { List acc, val ->
           acc[0] += val[0]
           acc[1] += val[1]
           acc
