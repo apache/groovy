@@ -796,8 +796,6 @@ public class StreamingTemplateEngine extends TemplateEngine {
             if (errors.size() > 0) {
                 Message firstMessage = errors.get(0);
                 if (firstMessage instanceof SyntaxErrorMessage) {
-                    //System.out.println("Syntax message: " + firstMessage);
-
                     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
                     SyntaxException syntaxException = ((SyntaxErrorMessage) firstMessage).getCause();
                     Position errorPosition = new Position(syntaxException.getLine(), syntaxException.getStartColumn());
@@ -819,7 +817,6 @@ public class StreamingTemplateEngine extends TemplateEngine {
                         }
 
                         String message = mangleExceptionMessage(e.getMessage(), errorPosition);
-
                         result = new TemplateParseException(message, e, errorPosition.row, errorPosition.column);
                     }
                 }
@@ -851,7 +848,6 @@ public class StreamingTemplateEngine extends TemplateEngine {
             String msg = "Template parse error '" + result + "' at line " + p.row + ", column " + p.column;
             try {
                 msg += "\n" + getErrorContext(p.row);
-
             } catch (IOException e) {
                 //we opt for not doing anthing here...we just do not get context if
                 //this happens
