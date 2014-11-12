@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.macro.matcher.internal.MatchingConstraintsBuilder
 
 @CompileStatic
 class ASTMatcher extends ContextualClassCodeVisitor {
@@ -98,18 +99,28 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         }
     }
 
-    private String findPlaceholder(Object exp) {
+    public <T> T ifConstraint(T defaultValue, @DelegatesTo(MatchingConstraints) Closure<T> code) {
         def constraints = (List<MatchingConstraints>) treeContext.getUserdata(MatchingConstraints, true)
         if (constraints) {
-            def placeholders = constraints[0].placeholders
+            def clone = (Closure<T>) code.clone()
+            clone.resolveStrategy = Closure.DELEGATE_FIRST
+            clone.delegate = constraints[0]
+            clone()
+        } else {
+            defaultValue
+        }
+    }
+
+    private String findPlaceholder(Object exp) {
+        ifConstraint(null) {
             if ((exp instanceof VariableExpression && placeholders.contains(exp.name))) {
                 return exp.name
-            }
-            if ((exp instanceof ConstantExpression && placeholders.contains(exp.value))) {
+            } else if ((exp instanceof ConstantExpression && placeholders.contains(exp.value))) {
                 return exp.value
+            } else {
+                null
             }
         }
-        null
     }
 
     private void doWithNode(Object patternNode, Object foundNode, Closure cl) {
@@ -525,7 +536,13 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                 rightExpression.visit(this)
             }
             if (bin.operation.type != expression.operation.type) {
-                failIfNot(false)
+                failIfNot(ifConstraint(false) {
+                    if (tokenPredicate) {
+                        tokenPredicate.apply(bin.operation)
+                    } else {
+                        false
+                    }
+                })
             }
         }
     }
@@ -971,8 +988,8 @@ class ASTMatcher extends ContextualClassCodeVisitor {
      */
     public static ASTNode withConstraints(
             final ASTNode pattern,
-            final @DelegatesTo(value=MatchingConstraints.Builder, strategy=Closure.DELEGATE_ONLY) Closure constraintsSpec) {
-        def builder = new MatchingConstraints.Builder()
+            final @DelegatesTo(value=MatchingConstraintsBuilder, strategy=Closure.DELEGATE_ONLY) Closure constraintsSpec) {
+        def builder = new MatchingConstraintsBuilder()
         def constraints = builder.build(constraintsSpec)
         pattern.putNodeMetaData(MatchingConstraints, constraints)
 

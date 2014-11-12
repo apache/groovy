@@ -14,26 +14,19 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.macro.matcher
+package org.codehaus.groovy.macro.matcher.internal
 
 import groovy.transform.CompileStatic
-import groovy.transform.Immutable
-import org.codehaus.groovy.macro.matcher.internal.AnyTokenMatch
-import org.codehaus.groovy.macro.matcher.internal.ConstraintPredicate
 import org.codehaus.groovy.syntax.Token
 
-/**
- * Represents constraints in AST pattern matching.
- *
- * @author Cedric Champeau
- * @since 2.4.0
- */
 @CompileStatic
-@Immutable(knownImmutables = ['tokenPredicate'])
-class MatchingConstraints {
-    public final static ConstraintPredicate<Token> ANY_TOKEN = AnyTokenMatch.INSTANCE
+class AnyTokenMatch implements ConstraintPredicate<Token> {
+    public static final AnyTokenMatch INSTANCE = new AnyTokenMatch()
 
-    final Set<String> placeholders
-    final ConstraintPredicate<Token> tokenPredicate
+    private AnyTokenMatch() {}
 
+    @Override
+    boolean apply(final Token a) {
+        true
+    }
 }

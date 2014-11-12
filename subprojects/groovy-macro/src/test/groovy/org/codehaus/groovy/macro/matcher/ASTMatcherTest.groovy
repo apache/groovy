@@ -18,6 +18,7 @@ package org.codehaus.groovy.macro.matcher
 
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.expr.ArrayExpression
+import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.BitwiseNegationExpression
 import org.codehaus.groovy.ast.expr.CastExpression
 import org.codehaus.groovy.ast.expr.ClassExpression
@@ -31,6 +32,7 @@ import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.macro.transform.MacroClass
+import org.codehaus.groovy.syntax.Types
 
 class ASTMatcherTest extends GroovyTestCase {
     void testMatchesSimpleVar() {
@@ -654,4 +656,56 @@ class ASTMatcherTest extends GroovyTestCase {
             assert ast2.matches(pattern)
         }
     }
+
+    void testMacroCombination() {
+        use(ASTMatcher) {
+            def lhs = macro { a }
+            def rhs = macro { b }
+            def ast = macro { $v { lhs } + $v { rhs } }
+            assert ast instanceof BinaryExpression
+            assert ast.leftExpression.is(lhs)
+            assert ast.rightExpression.is(rhs)
+            def pattern = macro { a + b }
+            assert ast.matches(pattern)
+        }
+    }
+
+    void testRelaxedBinaryExpression() {
+        use(ASTMatcher) {
+            def ast1 = macro { a + b }
+            def ast2 = macro { a - b }
+            def ast3 = macro { a * b }
+            def ast4 = macro { a + c }
+            def pattern = macro {
+                a + b
+            }.withConstraints {
+                anyToken()
+            }
+            assert ast1.matches(pattern)
+            assert ast2.matches(pattern)
+            assert ast3.matches(pattern)
+            assert !ast4.matches(pattern)
+        }
+    }
+
+    void testRelaxedBinaryExpressionWithConstrainedToken() {
+        use(ASTMatcher) {
+            def ast1 = macro { a + b }
+            def ast2 = macro { a - b }
+            def ast3 = macro { a * b }
+            def ast4 = macro { a + c }
+            def pattern = macro {
+                a + b
+            }.withConstraints {
+                token {
+                    type in [Types.PLUS, Types.MINUS]
+                }
+            }
+            assert ast1.matches(pattern)
+            assert ast2.matches(pattern)
+            assert !ast3.matches(pattern)
+            assert !ast4.matches(pattern)
+        }
+    }
+
 }
