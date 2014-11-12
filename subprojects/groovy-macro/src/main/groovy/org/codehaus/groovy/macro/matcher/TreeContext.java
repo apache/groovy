@@ -61,6 +61,10 @@ public class TreeContext {
         ((List)userdata.get(key)).add(value);
     }
 
+    public List<?> getUserdata(Object key) {
+        return getUserdata(key,true);
+    }
+
     public List<?> getUserdata(Object key, boolean searchParent) {
         if (userdata.containsKey(key)) {
             return userdata.get(key);

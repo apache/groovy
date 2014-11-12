@@ -16,12 +16,15 @@
 
 package org.codehaus.groovy.macro.matcher.internal
 
+import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.macro.matcher.MatchingConstraints
+import org.codehaus.groovy.macro.matcher.TreeContext
 import org.codehaus.groovy.syntax.Token
 
 class MatchingConstraintsBuilder {
     Set<String> placeholders = new LinkedHashSet<>()
     ConstraintPredicate<Token> tokenPredicate
+    ConstraintPredicate<TreeContext> eventually
 
 
     MatchingConstraints build(@DelegatesTo(value=MatchingConstraintsBuilder, strategy=Closure.DELEGATE_ONLY) Closure spec) {
@@ -32,7 +35,9 @@ class MatchingConstraintsBuilder {
 
         new MatchingConstraints(
                 placeholders: Collections.unmodifiableSet(placeholders),
-                tokenPredicate: tokenPredicate)
+                tokenPredicate: tokenPredicate,
+                eventually: eventually
+        )
     }
 
     def propertyMissing(String name) {
@@ -55,6 +60,19 @@ class MatchingConstraintsBuilder {
         tokenPredicate = new ConstraintPredicate<Token>() {
             @Override
             boolean apply(final Token a) {
+                clone.delegate = a
+                clone.call(a)
+            }
+        }
+        this
+    }
+
+    MatchingConstraintsBuilder eventually(@DelegatesTo(value=TreeContext, strategy = Closure.DELEGATE_FIRST) Closure<Boolean> predicate) {
+        def clone = (Closure<Boolean>) predicate.clone()
+        clone.resolveStrategy = Closure.DELEGATE_FIRST
+        eventually = new ConstraintPredicate<TreeContext>() {
+            @Override
+            boolean apply(final TreeContext a) {
                 clone.delegate = a
                 clone.call(a)
             }

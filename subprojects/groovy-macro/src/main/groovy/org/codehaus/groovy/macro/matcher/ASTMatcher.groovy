@@ -544,6 +544,13 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                     }
                 })
             }
+            failIfNot(ifConstraint(true) {
+                if (eventually) {
+                    eventually.apply(treeContext)
+                } else {
+                    true
+                }
+            })
         }
     }
 

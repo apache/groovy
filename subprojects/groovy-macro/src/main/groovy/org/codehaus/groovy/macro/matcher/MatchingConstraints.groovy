@@ -18,6 +18,7 @@ package org.codehaus.groovy.macro.matcher
 
 import groovy.transform.CompileStatic
 import groovy.transform.Immutable
+import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.macro.matcher.internal.AnyTokenMatch
 import org.codehaus.groovy.macro.matcher.internal.ConstraintPredicate
 import org.codehaus.groovy.syntax.Token
@@ -29,11 +30,12 @@ import org.codehaus.groovy.syntax.Token
  * @since 2.4.0
  */
 @CompileStatic
-@Immutable(knownImmutables = ['tokenPredicate'])
+@Immutable(knownImmutableClasses = [ConstraintPredicate])
 class MatchingConstraints {
     public final static ConstraintPredicate<Token> ANY_TOKEN = AnyTokenMatch.INSTANCE
 
     final Set<String> placeholders
     final ConstraintPredicate<Token> tokenPredicate
+    final ConstraintPredicate<TreeContext> eventually
 
 }

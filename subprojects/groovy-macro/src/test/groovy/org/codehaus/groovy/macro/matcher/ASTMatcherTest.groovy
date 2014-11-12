@@ -746,4 +746,27 @@ class ASTMatcherTest extends GroovyTestCase {
             assert ast4.matches(pattern)
         }
     }
+
+    void testRelationshipMatching() {
+        use (ASTMatcher) {
+            def ast1 = macro { (a + b) + (a + b ) }
+            def ast2 = macro { (a + b) - (a + b ) }
+            def ast3 = macro { (a - b) + (a - b ) }
+            def ast4 = macro { (a + b) + (a - b ) }
+            def ast5 = macro { (a - b) + (a + b ) }
+            def lhs = macro { a + b }.withConstraints { anyToken() }
+            def rhs = macro { a + b }.withConstraints { anyToken() }
+            def pattern = macro { $v{lhs} + $v{rhs} }.withConstraints {
+                eventually {
+                    node.leftExpression.operation.type == node.rightExpression.operation.type
+                }
+            }
+            assert ast1.matches(pattern)
+            assert !ast2.matches(pattern)
+            assert ast3.matches(pattern)
+            assert !ast4.matches(pattern)
+            assert !ast5.matches(pattern)
+
+        }
+    }
 }
