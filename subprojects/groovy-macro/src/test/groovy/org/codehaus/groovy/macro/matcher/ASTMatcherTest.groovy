@@ -727,4 +727,23 @@ class ASTMatcherTest extends GroovyTestCase {
         }
     }
 
+    void testInlineMacroCombinationWithSimplifiedConstraints() {
+        use(ASTMatcher) {
+            def ast1 = macro { a + b }
+            def ast2 = macro { b + b }
+            def ast3 = macro { b + c }
+            def ast4 = macro { b - b }
+            def pattern = macro {
+                a + b
+            }.withConstraints {
+                placeholder a
+                anyToken()
+            }
+            assert pattern instanceof BinaryExpression
+            assert ast1.matches(pattern)
+            assert ast2.matches(pattern)
+            assert !ast3.matches(pattern)
+            assert ast4.matches(pattern)
+        }
+    }
 }
