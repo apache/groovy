@@ -131,17 +131,17 @@ class ASTMatcher extends ContextualClassCodeVisitor {
 
         boolean doPush = treeContext.node!=foundNode && foundNode instanceof ASTNode
         if (doPush) {
+            pushContext((ASTNode)foundNode)
             if (patternNode instanceof ASTNode) {
                 storeContraints(patternNode)
             }
-            pushContext((ASTNode)foundNode)
         }
 
         if (!isWildcardExpression(patternNode)) {
             String placeholder = findPlaceholder(patternNode)
             if (placeholder) {
                 def alreadySeenAST = treeContext.getUserdata("placeholder_$placeholder", true)
-                if (!alreadySeenAST) {
+                if (alreadySeenAST==null) {
                     treeContext.parent.putUserdata("placeholder_$placeholder", foundNode)
                 } else {
                     // during the tree inspection, placeholder already found
