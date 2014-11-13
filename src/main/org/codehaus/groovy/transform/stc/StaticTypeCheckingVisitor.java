@@ -3725,6 +3725,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             final Variable variable = vexp.getAccessedVariable();
             if (variable instanceof FieldNode) {
                 checkOrMarkPrivateAccess((FieldNode) variable);
+                return getType((FieldNode) variable);
             }
             if (variable != null && variable != vexp && variable instanceof VariableExpression) {
                 return getType((Expression) variable);
@@ -3806,12 +3807,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return ((Parameter) exp).getOriginType();
         }
         if (exp instanceof FieldNode) {
-            return ((FieldNode) exp).getOriginType();
+            FieldNode fn = (FieldNode) exp;
+            return getGenericsResolvedTypeOfFieldOrProperty(fn, fn.getOriginType());
         }
         if (exp instanceof PropertyNode) {
-            return ((PropertyNode) exp).getOriginType();
+            PropertyNode pn = (PropertyNode) exp;
+            return getGenericsResolvedTypeOfFieldOrProperty(pn, pn.getOriginType());
         }
         return exp instanceof VariableExpression ? ((VariableExpression) exp).getOriginType() : ((Expression) exp).getType();
+    }
+
+    /**
+     * resolves a Field or Property node generics by using the current class and
+     * the declaring class to extract the right meaning of the generics symbols
+     * @param an a FieldNode or PropertyNode
+     * @param type the origin type
+     * @return the new ClassNode with corrected generics
+     */
+    private ClassNode getGenericsResolvedTypeOfFieldOrProperty(AnnotatedNode an, ClassNode type) {
+        if (!type.isUsingGenerics()) return type;
+        Map<String, GenericsType> connections = new HashMap();
+        //TODO: inner classes mean a different this-type. This is ignored here!
+        extractGenericsConnections(connections, typeCheckingContext.getEnclosingClassNode(), an.getDeclaringClass());
+        type= applyGenericsContext(connections, type);
+        return type;
     }
 
     private ClassNode makeSuper() {
