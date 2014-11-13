@@ -806,5 +806,26 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             int[] array = o
         ''', 'Cannot assign value of type java.lang.Object to variable of type int[]'
     }
+
+    // GROOVY-7015
+    void testAssingmentToSuperclassFieldWithDifferingGenerics() {
+        assertScript '''
+            class Base {}
+            class Derived extends Base {
+                public String sayHello() { "hello"}
+            }
+
+            class GBase<T extends Base> {
+                T myVar;
+            }
+            class GDerived extends GBase<Derived> {
+                GDerived() { myVar = new Derived(); }
+                public String method() {myVar.sayHello()}
+            }
+
+            GDerived d = new GDerived();
+            assert d.method() == "hello"
+        '''
+    }
 }
 
