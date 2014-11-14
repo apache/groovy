@@ -602,25 +602,40 @@ public class JsonParserLax extends JsonParserCharArray {
 
             list.add(arrayItem);
 
-            skipWhiteSpace();
+            boolean doStop = false;
 
-            char c = __currentChar;
+            done:
+            do { // Find either next array element or end of array while ignoring comments
 
-            if (c == ',') {
-                __index++;
-                continue;
-            } else if (c == ']') {
-                __index++;
-                break;
-            } else {
-                String charString = charDescription(c);
+                skipWhiteSpace();
 
-                complain(
-                        String.format("expecting a ',' or a ']', " +
-                                " but got \nthe current character of  %s " +
-                                " on array index of %s \n", charString, list.size())
-                );
-            }
+                switch (__currentChar) {
+                    case '/':
+                        handleComment();
+                        continue;
+                    case '#':
+                        handleBashComment();
+                        continue;
+                    case ',':
+                        __index++;
+                        break done;
+                    case ']':
+                        __index++;
+                        doStop = true;
+                        break done;
+                    default:
+                        String charString = charDescription(__currentChar);
+
+                        complain(
+                                String.format("expecting a ',' or a ']', " +
+                                        " but got \nthe current character of  %s " +
+                                        " on array index of %s \n", charString, list.size())
+                        );
+                }
+            } while (this.hasMore());
+
+            if (doStop) break;
+
         } while (this.hasMore());
 
         return value;
