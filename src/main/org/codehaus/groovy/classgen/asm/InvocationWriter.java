@@ -33,6 +33,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -148,25 +149,40 @@ public class InvocationWriter {
                 argumentsToRemove++;
             } else {
                 mv.visitIntInsn(ALOAD,0);
+                operandStack.push(classNode);
+                argumentsToRemove++;
             }
         }
 
         int stackSize = operandStack.getStackLength();
-        loadArguments(args.getExpressions(), target.getParameters());
-
 
         String owner = BytecodeHelper.getClassInternalName(declaringClass);
         ClassNode receiverType = receiver!=null?controller.getTypeChooser().resolveType(receiver, classNode):target.getDeclaringClass();
-        if (opcode==INVOKEVIRTUAL
-                && target.isPublic()
-                && (!Modifier.isPublic(declaringClass.getModifiers())
-                && !receiverType.equals(declaringClass))
-                && receiverType.isDerivedFrom(declaringClass)
-                && !receiverType.getPackageName().equals(classNode.getPackageName())) {
-            // package private class, public method
-            // see GROOVY-6962
-            owner = BytecodeHelper.getClassInternalName(receiverType);
+        if (opcode == INVOKEVIRTUAL) {
+            if (!receiverType.equals(declaringClass)
+                    && !receiverType.isArray()
+                    && !receiverType.isInterface()
+                    && !ClassHelper.isPrimitiveType(receiverType) // e.g int.getClass()
+                    && receiverType.isDerivedFrom(declaringClass)) {
+
+                owner = BytecodeHelper.getClassInternalName(receiverType);
+                ClassNode top = operandStack.getTopOperand();
+                if (!receiverType.equals(top)) {
+                    mv.visitTypeInsn(CHECKCAST, owner);
+                }
+            } else if (target.isPublic()
+                    && (!Modifier.isPublic(declaringClass.getModifiers())
+                    && !receiverType.equals(declaringClass))
+                    && receiverType.isDerivedFrom(declaringClass)
+                    && !receiverType.getPackageName().equals(classNode.getPackageName())) {
+                // package private class, public method
+                // see GROOVY-6962
+                owner = BytecodeHelper.getClassInternalName(receiverType);
+            }
         }
+
+        loadArguments(args.getExpressions(), target.getParameters());
+
         String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
         mv.visitMethodInsn(opcode, owner, methodName, desc, opcode == INVOKEINTERFACE);
         ClassNode ret = target.getReturnType().redirect();

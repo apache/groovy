@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.*;
@@ -46,6 +47,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
 import static org.objectweb.asm.Opcodes.*;
 
@@ -581,6 +584,8 @@ public class StaticInvocationWriter extends InvocationWriter {
         private final Expression receiver;
         private final MethodNode target;
 
+        private ClassNode resolvedType;
+
         public CheckcastReceiverExpression(final Expression receiver, final MethodNode target) {
             this.receiver = receiver;
             this.target = target;
@@ -596,12 +601,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             receiver.visit(visitor);
             if (visitor instanceof AsmClassGenerator) {
                 ClassNode topOperand = controller.getOperandStack().getTopOperand();
-                ClassNode type;
-                if (target instanceof ExtensionMethodNode) {
-                    type = ((ExtensionMethodNode) target).getExtensionMethodNode().getDeclaringClass();
-                } else {
-                    type = target.getDeclaringClass();
-                }
+                ClassNode type = getType();
                 if (ClassHelper.GSTRING_TYPE.equals(topOperand) && ClassHelper.STRING_TYPE.equals(type)) {
                     // perform regular type conversion
                     controller.getOperandStack().doGroovyCast(type);
@@ -622,7 +622,25 @@ public class StaticInvocationWriter extends InvocationWriter {
 
         @Override
         public ClassNode getType() {
-            return controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+            if (resolvedType!=null) {
+                return resolvedType;
+            }
+            ClassNode type;
+            if (target instanceof ExtensionMethodNode) {
+                type = ((ExtensionMethodNode) target).getExtensionMethodNode().getDeclaringClass();
+            } else {
+                type = getWrapper(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
+                ClassNode declaringClass = target.getDeclaringClass();
+                if (type.getClass() != ClassNode.class && type.getClass() !=InnerClassNode.class) {
+                    type = declaringClass; // ex: LUB type
+                }
+                if (OBJECT_TYPE.equals(type) && !OBJECT_TYPE.equals(declaringClass)) {
+                    // can happen for compiler rewritten code, where type information is missing
+                    type = declaringClass;
+                }
+            }
+            resolvedType = type;
+            return type;
         }
     }
 

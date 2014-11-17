@@ -179,7 +179,7 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest im
                 assert b.isSetterCalled() == true
                 assert b.x == 2
             '''
-        assert astTrees['B'][1].contains('INVOKEVIRTUAL A.setX')
+        assert astTrees['B'][1].contains('INVOKEVIRTUAL B.setX')
     }
 
     void testDirectReadFieldFromSameClass() {
@@ -257,7 +257,7 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest im
                     b.usingGetter()
                     assert b.isGetterCalled() == true
                 '''
-        assert astTrees['B'][1].contains('INVOKEVIRTUAL A.getX')
+        assert astTrees['B'][1].contains('INVOKEVIRTUAL B.getX')
     }
 
     void testUseAttributeExternal() {

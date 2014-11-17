@@ -80,7 +80,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         // call(Object)
         Parameter args = new Parameter(ClassHelper.OBJECT_TYPE, "args");
         MethodCallExpression doCall1arg = new MethodCallExpression(
-                new VariableExpression("this"),
+                new VariableExpression("this", closureClass),
                 "doCall",
                 new ArgumentListExpression(new VariableExpression(args))
         );
@@ -95,7 +95,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
                         new ReturnStatement(doCall1arg)));
 
         // call()
-        MethodCallExpression doCallNoArgs = new MethodCallExpression(new VariableExpression("this"), "doCall", new ArgumentListExpression(new ConstantExpression(null)));
+        MethodCallExpression doCallNoArgs = new MethodCallExpression(new VariableExpression("this", closureClass), "doCall", new ArgumentListExpression(new ConstantExpression(null)));
         doCallNoArgs.setImplicitThis(true);
         doCallNoArgs.setMethodTarget(doCallMethod);
         closureClass.addMethod(
