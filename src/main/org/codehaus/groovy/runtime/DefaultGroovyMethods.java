@@ -6306,6 +6306,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns indices of the list.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert 0..2 == [5, 6, 7].indices
+     * </pre>
+     *
+     * @param self a list
+     * @return an index range
+     * @since 2.4.0
+     */
+    public static IntRange getIndices(List self) {
+        return new IntRange(false, 0, self.size());
+    }
+
+    /**
      * Provide the standard Groovy <code>size()</code> method for <code>Iterator</code>.
      * The iterator will become exhausted of elements after determining the size value.
      *

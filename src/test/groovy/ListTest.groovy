@@ -291,6 +291,11 @@ class ListTest extends GroovyTestCase {
         }
     }
 
+    void testIndices() {
+        assert 0..2 == [5, 6, 7].indices
+        assert 0..<0 == [].indices
+    }
+
     // see also SubscriptTest
     void testGetAtRange() {
         def list = [0, 1, 2, 3]
