@@ -110,8 +110,10 @@ The following list represents all the keywords of the Groovy language:
 |throw
 
 |throws
+|trait
 |true
 |try
+
 |while
 
 |===
