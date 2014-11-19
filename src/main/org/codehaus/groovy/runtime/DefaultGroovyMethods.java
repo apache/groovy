@@ -7394,6 +7394,41 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Zips a list with indices.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [["a", 0], ["b", 1]] == ["a", "b"].withIndex()
+     * assert ["0: a", "1: b"] == ["a", "b"].withIndex().collect { str, idx -> "$idx: $str" }
+     * </pre>
+     *
+     * @param self a list
+     * @return a zipped list with indices
+     * @since 2.4.0
+     */
+    public static List withIndex(List self) {
+        return withIndex(self, 0);
+    }
+
+    /**
+     * Zips a list with indices.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [["a", 5], ["b", 6]] == ["a", "b"].withIndex(5)
+     * assert ["1: a", "2: b"] == ["a", "b"].withIndex(1).collect { str, idx -> "$idx: $str" }
+     * </pre>
+     *
+     * @param self a list
+     * @param offset an index start from
+     * @return a zipped list with indices
+     * @since 2.4.0
+     */
+    public static List withIndex(List self, int offset) {
+        return transpose(Arrays.asList(self, new IntRange(false, offset, offset + self.size())));
+    }
+
+    /**
      * @deprecated Use the Iterable version of sort instead
      * @see #sort(Iterable,boolean)
      * @since 1.0

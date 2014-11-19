@@ -404,6 +404,15 @@ class ListTest extends GroovyTestCase {
         }
     }
 
+    void testWithIndex() {
+        assert [] == [].withIndex()
+        assert [] == [].withIndex(10)
+        assert [["a", 0], ["b", 1]] == ["a", "b"].withIndex()
+        assert [["a", 5], ["b", 6]] == ["a", "b"].withIndex(5)
+        assert ["0: a", "1: b"] == ["a", "b"].withIndex().collect { str, idx -> "$idx: $str" }
+        assert ["1: a", "2: b"] == ["a", "b"].withIndex(1).collect { str, idx -> "$idx: $str" }
+    }
+
     // GROOVY-4946
     void testLazyDefault() {
         def l1 = [].withLazyDefault { 42 }
