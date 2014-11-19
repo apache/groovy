@@ -465,4 +465,54 @@ import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
             testBody()
             '''
     }
+
+    void testCallSetterAsPropertyWithinFinallyBlockShouldNotThrowVerifyError() {
+        try {
+            assertScript '''
+            class Multi {
+               void setOut(int a) {}
+            }
+
+            void foo() {
+               def m = new Multi()
+               try {
+               } finally {
+                  m.out = 1
+               }
+            }
+            foo()
+            '''
+        } finally {
+            assert astTrees.values().any {
+                it.toString().contains 'INVOKEVIRTUAL Multi.setOut (I)V'
+            }
+        }
+    }
+
+    void testCallMultiSetterAsPropertyWithinFinallyBlockShouldNotThrowVerifyError() {
+        try {
+            assertScript '''
+            class Multi {
+               void setOut(int a) {}
+               void setOut(String a) {}
+            }
+
+            void foo() {
+               def m = new Multi()
+               try {
+               } finally {
+                  m.out = 1
+                  m.out = 'foo'
+               }
+            }
+            foo()
+            '''
+        } finally {
+            assert astTrees.values().any {
+                def code = it.toString()
+                code.contains('INVOKEVIRTUAL Multi.setOut (I)V') &&
+                        code.contains('INVOKEVIRTUAL Multi.setOut (Ljava/lang/String;)V')
+            }
+        }
+    }
 }

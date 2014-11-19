@@ -18,6 +18,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression;
@@ -42,40 +43,13 @@ public abstract class StaticPropertyAccessHelper {
             boolean requiresReturnValue,
             Expression location) {
         if (requiresReturnValue) {
-            final TemporaryVariableExpression tmp = new TemporaryVariableExpression(arguments);
-            MethodCallExpression call = new MethodCallExpression(
-                    receiver,
-                    setterMethod.getName(),
-                    tmp
-            ) {
-                @Override
-                public void visit(final GroovyCodeVisitor visitor) {
-                    super.visit(visitor);
-                    if (visitor instanceof AsmClassGenerator) {
-                        // ignore the return of the call
-                        ((AsmClassGenerator) visitor).getController().getOperandStack().pop();
-                    }
-                }
-            };
+            TemporaryVariableExpression tmp = new TemporaryVariableExpression(arguments);
+            PoppingMethodCallExpression call = new PoppingMethodCallExpression(receiver, setterMethod, tmp);
             call.setImplicitThis(implicitThis);
             call.setSafe(safe);
             call.setSpreadSafe(spreadSafe);
-            call.setMethodTarget(setterMethod);
             call.setSourcePosition(location);
-            ListOfExpressionsExpression result = new ListOfExpressionsExpression(
-                    Arrays.asList(
-                            tmp,
-                            call
-                    )
-            ) {
-                @Override
-                public void visit(final GroovyCodeVisitor visitor) {
-                    super.visit(visitor);
-                    if (visitor instanceof AsmClassGenerator) {
-                        tmp.remove(((AsmClassGenerator) visitor).getController());
-                    }
-                }
-            };
+            PoppingListOfExpressionsExpression result = new PoppingListOfExpressionsExpression(tmp, call);
             result.setSourcePosition(location);
             return result;
         } else {
@@ -90,6 +64,67 @@ public abstract class StaticPropertyAccessHelper {
             call.setMethodTarget(setterMethod);
             call.setSourcePosition(location);
             return call;
+        }
+    }
+
+    private static class PoppingListOfExpressionsExpression extends ListOfExpressionsExpression {
+        private final TemporaryVariableExpression tmp;
+        private final PoppingMethodCallExpression call;
+
+        public PoppingListOfExpressionsExpression(final TemporaryVariableExpression tmp, final PoppingMethodCallExpression call) {
+            super(Arrays.asList(
+                    tmp,
+                    call
+            ));
+            this.tmp = tmp;
+            this.call = call;
+        }
+
+        @Override
+        public Expression transformExpression(final ExpressionTransformer transformer) {
+            PoppingMethodCallExpression tcall = (PoppingMethodCallExpression) call.transformExpression(transformer);
+            return new PoppingListOfExpressionsExpression(tcall.tmp, tcall);
+        }
+
+        @Override
+        public void visit(final GroovyCodeVisitor visitor) {
+            super.visit(visitor);
+            if (visitor instanceof AsmClassGenerator) {
+                tmp.remove(((AsmClassGenerator) visitor).getController());
+            }
+        }
+    }
+
+    private static class PoppingMethodCallExpression extends MethodCallExpression {
+        private final Expression receiver;
+        private final MethodNode setter;
+        private final TemporaryVariableExpression tmp;
+
+        public PoppingMethodCallExpression(final Expression receiver, final MethodNode setterMethod, final TemporaryVariableExpression tmp) {
+            super(receiver, setterMethod.getName(), tmp);
+            this.receiver = receiver;
+            this.setter = setterMethod;
+            this.tmp = tmp;
+            setMethodTarget(setterMethod);
+        }
+
+        @Override
+        public Expression transformExpression(final ExpressionTransformer transformer) {
+            PoppingMethodCallExpression trn = new PoppingMethodCallExpression(receiver.transformExpression(transformer), setter, (TemporaryVariableExpression) tmp.transformExpression(transformer));
+            trn.copyNodeMetaData(this);
+            trn.setImplicitThis(isImplicitThis());
+            trn.setSafe(isSafe());
+            trn.setSpreadSafe(isSpreadSafe());
+            return trn;
+        }
+
+        @Override
+        public void visit(final GroovyCodeVisitor visitor) {
+            super.visit(visitor);
+            if (visitor instanceof AsmClassGenerator) {
+                // ignore the return of the call
+                ((AsmClassGenerator) visitor).getController().getOperandStack().pop();
+            }
         }
     }
 }

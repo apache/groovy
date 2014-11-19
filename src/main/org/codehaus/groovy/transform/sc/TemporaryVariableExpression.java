@@ -43,8 +43,9 @@ public class TemporaryVariableExpression extends Expression {
 
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
-        expression = expression.transformExpression(transformer);
-        return this;
+        TemporaryVariableExpression result = new TemporaryVariableExpression(expression.transformExpression(transformer));
+        result.copyNodeMetaData(this);
+        return result;
     }
 
     @Override
@@ -63,6 +64,7 @@ public class TemporaryVariableExpression extends Expression {
 
     public void remove(WriterController controller) {
         controller.getCompileStack().removeVar(variable.getIndex());
+        variable = null;
     }
 
     @Override
