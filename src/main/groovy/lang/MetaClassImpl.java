@@ -240,11 +240,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public List respondsTo(Object obj, String name, Object[] argTypes) {
         Class[] classes = MetaClassHelper.castArgumentsToClassArray(argTypes);
         MetaMethod m = getMetaMethod(name, classes);
-        List<MetaMethod> methods = new ArrayList<MetaMethod>();
-        if (m != null) {
-            methods.add(m);
+        if (m!=null) {
+            return Collections.singletonList(m);
         }
-        return methods;
+        return Collections.emptyList();
     }
 
     /**

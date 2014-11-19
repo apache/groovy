@@ -17,6 +17,7 @@ package org.codehaus.groovy.util;
 
 import java.util.AbstractList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class FastArray implements Cloneable {
@@ -107,6 +108,11 @@ public class FastArray implements Cloneable {
     }
 
     public List toList () {
+        if (size==0) {
+            return Collections.emptyList();
+        } else if (size==1) {
+            return Collections.singletonList(data[0]);
+        }
         return new AbstractList() {
 
             public Object get(int index) {
