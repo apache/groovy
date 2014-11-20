@@ -350,5 +350,20 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             assert b.toString() == 'Test'
         '''
     }
+
+    void testMapStyleConstructorShouldNotCarrySetterInfoToOuterBinExp() {
+        assertScript '''
+            class Blah {
+                void setA(String a) {}
+            }
+
+            void blah(Map attrs) {
+               Closure c = {
+                  def blah = new Blah(a:attrs.a as String)
+               }
+            }
+            blah(a:'foo')
+        '''
+    }
 }
 
