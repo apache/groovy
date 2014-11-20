@@ -232,7 +232,22 @@ class PropertyTest extends GroovyTestCase {
             assert a.x == "3"
         '''
     }
-    
+
+    void testOverrideMultiSetterThroughMetaClass() {
+        assertScript '''
+        class A {
+            private String field
+            void setConstraints(Closure cl) {}
+            void setConstraints(String s) {}
+            String getField() { field }
+        }
+
+        A.metaClass.setConstraints = { delegate.field = it+it }
+        def a = new A()
+        a.constraints = '100'
+        assert a.field == '100100'
+        '''
+    }
 }
 
 class Base {

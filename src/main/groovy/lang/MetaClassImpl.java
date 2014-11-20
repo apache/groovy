@@ -2545,6 +2545,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (old != null) {
                 if (old instanceof MetaBeanProperty) {
                     field = ((MetaBeanProperty) old).getField();
+                } else if (old instanceof MultipleSetterProperty) {
+                    field = ((MultipleSetterProperty)old).getField();
                 } else {
                     field = (CachedField) old;
                 }
