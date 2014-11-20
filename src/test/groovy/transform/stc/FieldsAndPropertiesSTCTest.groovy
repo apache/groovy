@@ -688,6 +688,33 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
         }
     }
 
+    void testShouldAcceptPropertyAssignmentEvenIfSetterOnlyBecauseOfSpecialType() {
+        assertScript '''
+            class BooleanSetterOnly {
+                void setFlag(boolean b) {}
+            }
+
+            def b = new BooleanSetterOnly()
+            b.flag = 'foo'
+        '''
+        assertScript '''
+            class StringSetterOnly {
+                void setFlag(String b) {}
+            }
+
+            def b = new StringSetterOnly()
+            b.flag = false
+        '''
+        assertScript '''
+            class ClassSetterOnly {
+                void setFlag(Class b) {}
+            }
+
+            def b = new ClassSetterOnly()
+            b.flag = 'java.lang.String'
+        '''
+    }
+
     public static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
     }

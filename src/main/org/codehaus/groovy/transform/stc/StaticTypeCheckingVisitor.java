@@ -706,6 +706,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         call.setImplicitThis(false);
         visitMethodCallExpression(call);
         MethodNode directSetterCandidate = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        if (directSetterCandidate==null) {
+            // this may happen if there's a setter of type boolean/String/Class, and that we are using the property
+            // notation AND that the RHS is not a boolean/String/Class
+            for (MethodNode setter : setterInfo.setters) {
+                ClassNode type = getWrapper(setter.getParameters()[0].getOriginType());
+                if (Boolean_TYPE.equals(type) || STRING_TYPE.equals(type) || CLASS_Type.equals(type)) {
+                    call = new MethodCallExpression(
+                            ve,
+                            setterInfo.name,
+                            new CastExpression(type,rightExpression)
+                    );
+                    call.setImplicitThis(false);
+                    visitMethodCallExpression(call);
+                    directSetterCandidate = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+                    if (directSetterCandidate!=null) {
+                        break;
+                    }
+                }
+            }
+        }
         if (directSetterCandidate != null) {
             for (MethodNode setter : setterInfo.setters) {
                 if (setter == directSetterCandidate) {
