@@ -638,6 +638,12 @@ public class StaticInvocationWriter extends InvocationWriter {
                     // can happen for compiler rewritten code, where type information is missing
                     type = declaringClass;
                 }
+                if (OBJECT_TYPE.equals(declaringClass)) {
+                    // check cast not necessary because Object never evolves
+                    // and it prevents a potential ClassCastException if the delegate of a closure
+                    // is changed in a statically compiled closure
+                    type = OBJECT_TYPE;
+                }
             }
             resolvedType = type;
             return type;

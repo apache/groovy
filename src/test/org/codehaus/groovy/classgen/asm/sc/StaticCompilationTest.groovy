@@ -437,4 +437,19 @@ assert o.blah() == 'outer'
         ''').hasStrictSequence(['INVOKEVIRTUAL B.m'])
     }
 
+    void testShouldNotTryToCastToSupposedDelegateType() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class ClassCastOhNoes {
+               def foo(def o) {
+                   def cl = {
+                       delegate.getClass()
+                   }
+                   cl.delegate = o
+                   cl()
+               }
+            }
+            new ClassCastOhNoes().foo(100)
+        '''
+    }
 }

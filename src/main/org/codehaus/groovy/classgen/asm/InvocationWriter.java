@@ -157,9 +157,15 @@ public class InvocationWriter {
         int stackSize = operandStack.getStackLength();
 
         String owner = BytecodeHelper.getClassInternalName(declaringClass);
-        ClassNode receiverType = receiver!=null?controller.getTypeChooser().resolveType(receiver, classNode):target.getDeclaringClass();
+        ClassNode receiverType = receiver!=null?controller.getTypeChooser().resolveType(receiver, classNode):declaringClass;
+        if (opcode == INVOKEVIRTUAL && ClassHelper.OBJECT_TYPE.equals(declaringClass)) {
+            // avoid using a narrowed type if the method is defined on object because it can interfere
+            // with delegate type inference in static compilation mode and trigger a ClassCastException
+            receiverType = declaringClass;
+        }
         if (opcode == INVOKEVIRTUAL) {
             if (!receiverType.equals(declaringClass)
+                    && !ClassHelper.OBJECT_TYPE.equals(declaringClass)
                     && !receiverType.isArray()
                     && !receiverType.isInterface()
                     && !ClassHelper.isPrimitiveType(receiverType) // e.g int.getClass()
