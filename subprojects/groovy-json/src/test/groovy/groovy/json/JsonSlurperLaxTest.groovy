@@ -84,6 +84,13 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
             flag2 : false,
             strings : [we, are, string, here, us, roar],
             he said : '"fire all your guns at once baby, and explode into the night"',
+            "going deeper" : [
+                "nestedArrays", // needs comments
+                "anotherThing" // commented
+                // only one comment
+                ,
+                "a last thing" // explain that too
+            ],
             the : end
             }
         """
