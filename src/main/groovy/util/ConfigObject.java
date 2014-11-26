@@ -16,6 +16,7 @@
 package groovy.util;
 
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Writable;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -24,6 +25,7 @@ import org.codehaus.groovy.syntax.Types;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.util.*;
@@ -142,7 +144,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
     public Properties toProperties() {
         Properties props = new Properties();
         flatten(props);
-        
+
         props = convertValuesToString(props);
 
         return props;
@@ -364,7 +366,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
             throw new AssertionError();
         }
     }
-    
+
     /**
      * Checks if a config option is set. Example usage:
      * <pre>
@@ -372,7 +374,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
      * assert config.foo.isSet('password')
      * assert config.foo.isSet('username') == false
      * </pre>
-     * 
+     *
      * The check works <b>only</v> for options <b>one</b> block below the current block.
      * E.g. <code>config.isSet('foo.password')</code> will always return false.
      *
@@ -384,9 +386,32 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
         if (delegateMap.containsKey(option)) {
             Object entry = delegateMap.get(option);
             if (!(entry instanceof ConfigObject) || !((ConfigObject) entry).isEmpty()) {
-                return Boolean.TRUE; 
-            } 
+                return Boolean.TRUE;
+            }
         }
-        return Boolean.FALSE; 
+        return Boolean.FALSE;
+    }
+
+    public String prettyPrint() {
+        StringWriter sw = new StringWriter();
+        try {
+            writeTo(sw);
+        } catch (IOException e) {
+            throw new GroovyRuntimeException(e);
+        }
+
+        return sw.toString();
+    }
+
+    @Override
+    public String toString() {
+        StringWriter sw = new StringWriter();
+        try {
+            InvokerHelper.write(sw, this);
+        } catch (IOException e) {
+            throw new GroovyRuntimeException(e);
+        }
+
+        return sw.toString();
     }
 }

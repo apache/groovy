@@ -66,4 +66,17 @@ class ConfigObjectTest extends GroovyTestCase {
         def config = new ConfigSlurper().parse('foo { emptyNestedBlock { } }')
         assert config.foo.isSet('emptyNestedBlock') == false
     }
+
+    void test_prettyPrint() {
+        def configString = '''\
+development {
+    rabbitmq {
+        active=true
+        hostname='localhost'
+    }
+}'''
+
+        def config = new ConfigSlurper().parse(configString)
+        assert config == new ConfigSlurper().parse(config.prettyPrint())
+    }
 }
