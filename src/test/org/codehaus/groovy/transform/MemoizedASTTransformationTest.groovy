@@ -144,6 +144,16 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
         assertEquals(ins.methodWithoutParams(), 123)
     }
 
+    void testVarargsMemoizedMethod() {
+        def ins = new MemoizedTestClassWithVarargs()
+        assertEquals(ins.getValue(12, 'foo', 'boo'), 'foo')
+    }
+
+    void testMultiDimensionalArrayMemoizedMethod() {
+        def ins = new MemoizedTestClassWithMultiDimensionalArray()
+        assertEquals(ins.getValue(new String[2][2]), 'foo')
+    }
+
     // -- static methods -- //
 
     void testStaticMethodWithoutParams() {
@@ -271,6 +281,20 @@ class MemoizedTestClass {
     private static long privateStaticMethodWithParams(long n, long m) {
         privateStaticMethodWithParamsCounter++
         n - m
+    }
+}
+
+class MemoizedTestClassWithVarargs {
+    @Memoized
+    String getValue(Integer inp, ... params) {
+        'foo'
+    }
+}
+
+class MemoizedTestClassWithMultiDimensionalArray {
+    @Memoized
+    String getValue(Object[][] params) {
+        'foo'
     }
 }
 

@@ -165,7 +165,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         StringBuilder nameBuilder = new StringBuilder("memoizedMethod" + ident + "$").append(methodNode.getName());
         if (methodNode.getParameters() != null) {
             for (Parameter parameter : methodNode.getParameters()) {
-                nameBuilder.append(parameter.getType().getNameWithoutPackage());
+                nameBuilder.append(buildTypeName(parameter.getType()));
             }
         }
         while (owner.getField(nameBuilder.toString()) != null) {
@@ -173,6 +173,13 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         }
 
         return nameBuilder.toString();
+    }
+
+    private static String buildTypeName(ClassNode type) {
+        if (type.isArray()) {
+            return String.format("%sArray", buildTypeName(type.getComponentType()));
+        }
+        return type.getNameWithoutPackage();
     }
 
 }
