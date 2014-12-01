@@ -707,9 +707,11 @@ public class MetaClassHelper {
     }
 
     public static boolean isAssignableFrom(Class classToTransformTo, Class classToTransformFrom) {
-        if (classToTransformTo == classToTransformFrom) return true;
-        if (classToTransformFrom == null) return true;
-        if (classToTransformTo == Object.class) return true;
+        if (classToTransformTo == classToTransformFrom
+                || classToTransformFrom == null
+                || classToTransformTo == Object.class) {
+            return true;
+        }
 
         classToTransformTo = ReflectionCache.autoboxType(classToTransformTo);
         classToTransformFrom = ReflectionCache.autoboxType(classToTransformFrom);
@@ -717,14 +719,12 @@ public class MetaClassHelper {
 
         // note: there is no coercion for boolean and char. Range matters, precision doesn't
         if (classToTransformTo == Integer.class) {
-            if (classToTransformFrom == Integer.class
-                    || classToTransformFrom == Short.class
+            if (classToTransformFrom == Short.class
                     || classToTransformFrom == Byte.class
                     || classToTransformFrom == BigInteger.class)
                 return true;
         } else if (classToTransformTo == Double.class) {
-            if (classToTransformFrom == Double.class
-                    || classToTransformFrom == Integer.class
+            if (classToTransformFrom == Integer.class
                     || classToTransformFrom == Long.class
                     || classToTransformFrom == Short.class
                     || classToTransformFrom == Byte.class
@@ -739,36 +739,30 @@ public class MetaClassHelper {
                     || classToTransformFrom == Short.class
                     || classToTransformFrom == Byte.class
                     || classToTransformFrom == Float.class
-                    || classToTransformFrom == BigDecimal.class
                     || classToTransformFrom == BigInteger.class)
                 return true;
         } else if (classToTransformTo == BigInteger.class) {
             if (classToTransformFrom == Integer.class
                     || classToTransformFrom == Long.class
                     || classToTransformFrom == Short.class
-                    || classToTransformFrom == Byte.class
-                    || classToTransformFrom == BigInteger.class)
+                    || classToTransformFrom == Byte.class)
                 return true;
         } else if (classToTransformTo == Long.class) {
-            if (classToTransformFrom == Long.class
-                    || classToTransformFrom == Integer.class
+            if (classToTransformFrom == Integer.class
                     || classToTransformFrom == Short.class
                     || classToTransformFrom == Byte.class)
                 return true;
         } else if (classToTransformTo == Float.class) {
-            if (classToTransformFrom == Float.class
-                    || classToTransformFrom == Integer.class
+            if (classToTransformFrom == Integer.class
                     || classToTransformFrom == Long.class
                     || classToTransformFrom == Short.class
                     || classToTransformFrom == Byte.class)
                 return true;
         } else if (classToTransformTo == Short.class) {
-            if (classToTransformFrom == Short.class
-                    || classToTransformFrom == Byte.class)
+            if (classToTransformFrom == Byte.class)
                 return true;
         } else if (classToTransformTo == String.class) {
-            if (classToTransformFrom == String.class ||
-                    GString.class.isAssignableFrom(classToTransformFrom)) {
+            if (GString.class.isAssignableFrom(classToTransformFrom)) {
                 return true;
             }
         }
