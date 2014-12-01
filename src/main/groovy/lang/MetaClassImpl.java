@@ -2117,47 +2117,51 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * a LinkedList<MetaMethod> if there are multiple setter
      */
     private Object filterPropertyMethod(Object methodOrList, boolean isGetter, boolean booleanGetter) {
-        if (methodOrList == null)
-          return null;
-
+        // Method has been optimized to reach a target of 325 bytecode size, making it JIT'able
         Object ret = null;
+
         if (methodOrList instanceof MetaMethod) {
             MetaMethod element = (MetaMethod)methodOrList;
+            int parameterCount = element.getParameterTypes().length;
             if (!isGetter &&
                     //(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
-                    element.getParameterTypes().length == 1) {
-                ret = addElementToList(ret, element);
+                    parameterCount == 1) {
+                ret = element;
             }
+            Class returnType = element.getReturnType();
             if (isGetter &&
-                    !(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
-                    (!booleanGetter || element.getReturnType() == Boolean.class || element.getReturnType() == Boolean.TYPE) &&
-                    element.getParameterTypes().length == 0) {
-                ret = addElementToList(ret, element);
+                    !(returnType == Void.class || returnType == Void.TYPE) &&
+                    (!booleanGetter || returnType == Boolean.class || returnType == Boolean.TYPE) &&
+                    parameterCount == 0) {
+                ret = element;
             }
-
         }
-        else {
+        if (methodOrList instanceof FastArray) {
             FastArray methods = (FastArray) methodOrList;
             final int len = methods.size();
             final Object[] data = methods.getArray();
             for (int i = 0; i != len; ++i) {
                 MetaMethod element = (MetaMethod) data[i];
+                int parameterCount = element.getParameterTypes().length;
                 if (!isGetter &&
                         //(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
-                        element.getParameterTypes().length == 1) {
+                        parameterCount == 1) {
                     ret = addElementToList(ret, element);
                 }
+                Class returnType = element.getReturnType();
                 if (isGetter &&
-                        !(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
-                        element.getParameterTypes().length == 0) {
+                        !(returnType == Void.class || returnType == Void.TYPE) &&
+                        parameterCount == 0) {
                     ret = addElementToList(ret, element);
                 }
             }
         }
 
-        if (ret == null) return null;
-        if (ret instanceof MetaMethod) return (MetaMethod) ret;
-        if (!isGetter) return ret;
+        if (ret == null
+                || (ret instanceof MetaMethod)
+                || !isGetter) {
+            return ret;
+        }
 
         // we found multiple matching methods
         // this is a problem, because we can use only one
@@ -2166,10 +2170,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // we use the type of the first parameter
         MetaMethod method = null;
         int distance = -1;
-        for (Iterator iter = ((List) ret).iterator(); iter.hasNext();) {
-            MetaMethod element = (MetaMethod) iter.next();
-            Class c  = element.getReturnType();
-            int localDistance = distanceToObject(c);
+        for (final Object o : ((List) ret)) {
+            MetaMethod element = (MetaMethod) o;
+            int localDistance = distanceToObject(element.getReturnType());
             //TODO: maybe implement the case localDistance==distance
             if (distance == -1 || distance > localDistance) {
                 distance = localDistance;

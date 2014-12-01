@@ -275,8 +275,8 @@ public class ObjectRange extends AbstractList implements Range {
             } else if (from instanceof BigDecimal || to instanceof BigDecimal ||
                        from instanceof BigInteger || to instanceof BigInteger) {
                 // let's fast calculate the size
-                BigDecimal fromNum = new BigDecimal("" + from);
-                BigDecimal toNum = new BigDecimal("" + to);
+                BigDecimal fromNum = new BigDecimal(from.toString());
+                BigDecimal toNum = new BigDecimal(to.toString());
                 BigInteger sizeNum = toNum.subtract(fromNum).add(new BigDecimal(1.0)).toBigInteger();
                 size = sizeNum.intValue();
             } else {
