@@ -3203,8 +3203,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         long matchesDistance = -1;
         LinkedList matches = new LinkedList();
-        for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
-            Object method = iter.next();
+        for (Object method : matchingMethods) {
             ParameterTypes paramTypes = (ParameterTypes) method;
             long dist = MetaClassHelper.calculateParameterDistance(arguments, paramTypes);
             if (dist == 0) return method;
@@ -3228,16 +3227,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         //more than one matching method found --> ambiguous!
-        String msg = "Ambiguous method overloading for method ";
-        msg += theClass.getName() + "#" + name;
-        msg += ".\nCannot resolve which method to invoke for ";
-        msg += InvokerHelper.toString(arguments);
-        msg += " due to overlapping prototypes between:";
-        for (Iterator iter = matches.iterator(); iter.hasNext();) {
-            Class[] types = ((ParameterTypes) iter.next()).getNativeParameterTypes();
-            msg += "\n\t" + InvokerHelper.toString(types);
+        StringBuilder msg = new StringBuilder("Ambiguous method overloading for method ");
+        msg.append(theClass.getName()).append("#").append(name)
+           .append(".\nCannot resolve which method to invoke for ")
+           .append(InvokerHelper.toString(arguments))
+           .append(" due to overlapping prototypes between:");
+        for (final Object matche : matches) {
+            Class[] types = ((ParameterTypes) matche).getNativeParameterTypes();
+            msg.append("\n\t").append(InvokerHelper.toString(types));
         }
-        throw new GroovyRuntimeException(msg);
+        throw new GroovyRuntimeException(msg.toString());
     }
 
     private boolean isGenericGetMethod(MetaMethod method) {
