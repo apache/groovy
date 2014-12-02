@@ -302,7 +302,7 @@ public class GenericsUtils {
         }
         if (type == null) type = ClassHelper.OBJECT_TYPE;
         GenericsType[] oldgTypes = type.getGenericsTypes();
-        GenericsType[] newgTypes = new GenericsType[0];
+        GenericsType[] newgTypes = GenericsType.EMPTY_ARRAY;
         if (oldgTypes != null) {
             newgTypes = new GenericsType[oldgTypes.length];
             for (int i = 0; i < newgTypes.length; i++) {

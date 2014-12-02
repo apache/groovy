@@ -161,6 +161,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         });
     }
 
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     protected final ReturnAdder.ReturnStatementListener returnListener = new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
             ClassNode returnType = checkReturnType(returnStatement);
@@ -2518,7 +2520,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private static String[] convertToStringArray(final Expression options) {
         if (options==null) {
-            return new String[0];
+            return EMPTY_STRING_ARRAY;
         }
         if (options instanceof ConstantExpression) {
             return new String[] { options.getText() };

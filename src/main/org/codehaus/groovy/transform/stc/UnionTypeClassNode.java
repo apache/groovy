@@ -39,7 +39,7 @@ class UnionTypeClassNode extends ClassNode {
     
     public UnionTypeClassNode(ClassNode... classNodes) {
         super("<UnionType"+asArrayDescriptor(classNodes)+">", 0, ClassHelper.OBJECT_TYPE);
-        delegates = classNodes==null?new ClassNode[0] : classNodes;
+        delegates = classNodes==null ? ClassNode.EMPTY_ARRAY : classNodes;
     }
     
     private static String asArrayDescriptor(ClassNode... nodes) {

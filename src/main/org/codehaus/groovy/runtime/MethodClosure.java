@@ -30,6 +30,7 @@ import java.util.List;
  */
 public class MethodClosure extends Closure {
 
+    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private String method;
     
     public MethodClosure(Object owner, String method) {
@@ -39,7 +40,7 @@ public class MethodClosure extends Closure {
         final Class clazz = owner.getClass()==Class.class?(Class) owner:owner.getClass();
         
         maximumNumberOfParameters = 0;
-        parameterTypes = new Class [0];
+        parameterTypes = EMPTY_CLASS_ARRAY;
 
         List<MetaMethod> methods = InvokerHelper.getMetaClass(clazz).respondsTo(owner, method);
         

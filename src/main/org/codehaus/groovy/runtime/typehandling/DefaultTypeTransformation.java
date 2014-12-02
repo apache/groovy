@@ -39,10 +39,11 @@ import java.util.*;
  * @author Guillaume Laforge
  */
 public class DefaultTypeTransformation {
-    
+
     protected static final Object[] EMPTY_ARGUMENTS = {};
     protected static final BigInteger ONE_NEG = new BigInteger("-1");
-    
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+
     //  --------------------------------------------------------
     //                  unboxing methods
     //  --------------------------------------------------------       
@@ -461,7 +462,7 @@ public class DefaultTypeTransformation {
             }
         }
         else if (value instanceof Class && ((Class)value).isEnum()) {
-            Object[] values = (Object[])InvokerHelper.invokeMethod(value, "values", new Object[0]);
+            Object[] values = (Object[])InvokerHelper.invokeMethod(value, "values", EMPTY_OBJECT_ARRAY);
             return Arrays.asList(values);
         }
         else {

@@ -70,7 +70,7 @@ public class MixinASTTransformation extends AbstractASTTransformation {
         if (parent instanceof ClassNode) {
             ClassNode annotatedClass = (ClassNode) parent;
 
-            final Parameter[] noparams = new Parameter[0];
+            final Parameter[] noparams = Parameter.EMPTY_ARRAY;
             MethodNode clinit = annotatedClass.getDeclaredMethod("<clinit>", noparams);
             if (clinit == null) {
                 clinit = annotatedClass.addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC, ClassHelper.VOID_TYPE, noparams, null, new BlockStatement());

@@ -38,6 +38,7 @@ import java.util.List;
  */
 public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMethod {
 
+    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private final Closure callable;
     private final CachedMethod doCall;
     private final String name;
@@ -121,7 +122,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
     
     private static MetaMethod adjustParamTypesForStdMethods(MetaMethod metaMethod, String methodName) {
         Class[] nativeParamTypes = metaMethod.getNativeParameterTypes();
-        nativeParamTypes = (nativeParamTypes != null) ? nativeParamTypes : new Class[0];
+        nativeParamTypes = (nativeParamTypes != null) ? nativeParamTypes : EMPTY_CLASS_ARRAY;
         // for methodMissing, first parameter should be String type - to allow overriding of this method without
         // type String explicitly specified for first parameter (missing method name) - GROOVY-2951
         if("methodMissing".equals(methodName) && nativeParamTypes.length == 2 && nativeParamTypes[0] != String.class) {

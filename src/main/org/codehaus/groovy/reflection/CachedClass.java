@@ -35,6 +35,7 @@ import java.util.*;
  * @author Alex.Tkachman
  */
 public class CachedClass {
+    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private final Class cachedClass;
     public ClassInfo classInfo;
     
@@ -91,7 +92,7 @@ public class CachedClass {
                            return dm;
                        } catch (Throwable e) {
                            // Typically, Android can throw ClassNotFoundException
-                           return new Method[0];
+                           return EMPTY_METHOD_ARRAY;
                        }
                    }
                });

@@ -67,6 +67,8 @@ import java.util.Set;
  */
 public class DataSet extends Sql {
 
+    private static final int[] EMPTY_INT_ARRAY = new int[0];
+
     private Closure where;
     private Closure sort;
     private boolean reversed = false;
@@ -207,7 +209,7 @@ public class DataSet extends Sql {
         closure.call(this);
         withinDataSetBatch = false;
         if (batchData.size() == 0) {
-            return new int[0];
+            return EMPTY_INT_ARRAY;
         }
         Closure transformedClosure = new Closure(null) {
             public void doCall(BatchingPreparedStatementWrapper stmt) throws SQLException {

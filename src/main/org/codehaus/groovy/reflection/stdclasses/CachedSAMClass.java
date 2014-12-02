@@ -40,9 +40,10 @@ import org.codehaus.groovy.transform.trait.Traits;
 
 public class CachedSAMClass extends CachedClass {
 
-    private static final int ABSTRACT_STATIC_PRIVATE = 
+    private static final int ABSTRACT_STATIC_PRIVATE =
             Modifier.ABSTRACT|Modifier.PRIVATE|Modifier.STATIC;
     private static final int VISIBILITY = 5; // public|protected
+    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private final Method method;
 
     public CachedSAMClass(Class klazz, ClassInfo classInfo) {
@@ -104,7 +105,7 @@ public class CachedSAMClass extends CachedClass {
         } catch (java.security.AccessControlException ace) {
             // swallow and do as if no method is available
         }
-        return new Method[0];
+        return EMPTY_METHOD_ARRAY;
     }
 
     private static void getAbstractMethods(Class c, List<Method> current) {

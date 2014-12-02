@@ -33,6 +33,8 @@ import java.util.Set;
  * @see ClassNode
  */
 public class GenericsType extends ASTNode {
+    public static final GenericsType[] EMPTY_ARRAY = new GenericsType[0];
+    
     private final ClassNode[] upperBounds;
     private final ClassNode lowerBound;
     private ClassNode type;

@@ -70,6 +70,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     private static final ClassLoader CL_STUB = new ClassLoader() {
     };
+    private static final URL[] EMPTY_URL_ARRAY = new URL[0];
 
     private static class LocalData {
         CompilationUnit cu;
@@ -451,7 +452,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      *              be laid out using their package structure like Java classes
      */
     private GroovyScriptEngine(URL[] roots, ClassLoader parent, ResourceConnector rc) {
-        if (roots == null) roots = new URL[0];
+        if (roots == null) roots = EMPTY_URL_ARRAY;
         this.roots = roots;
         if (rc == null) rc = this;
         this.rc = rc;

@@ -113,7 +113,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
         {
             // create values() method
-            MethodNode valuesMethod = new MethodNode("values", PUBLIC_FS, enumRef.makeArray(), new Parameter[0], ClassNode.EMPTY_ARRAY, null);
+            MethodNode valuesMethod = new MethodNode("values", PUBLIC_FS, enumRef.makeArray(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
             valuesMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             MethodCallExpression cloneCall = new MethodCallExpression(new FieldExpression(values), "clone", MethodCallExpression.NO_ARGUMENTS);
@@ -132,7 +132,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             //     }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token ge = Token.newSymbol(Types.COMPARE_GREATER_THAN_EQUAL, -1, -1);
-            MethodNode nextMethod = new MethodNode("next", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumRef, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
+            MethodNode nextMethod = new MethodNode("next", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
             nextMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();
@@ -191,7 +191,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             //    }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token lt = Token.newSymbol(Types.COMPARE_LESS_THAN, -1, -1);
-            MethodNode nextMethod = new MethodNode("previous", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumRef, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
+            MethodNode nextMethod = new MethodNode("previous", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
             nextMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();

@@ -41,6 +41,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class ResultSetMetaDataWrapper extends GroovyObjectSupport {
 
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
     private ResultSetMetaData target;
     private int index;
 
@@ -73,7 +74,7 @@ public class ResultSetMetaDataWrapper extends GroovyObjectSupport {
 
     @Override
     public Object getProperty(String property) {
-        return invokeMethod(getPropertyGetterName(property), new Object[0]);
+        return invokeMethod(getPropertyGetterName(property), EMPTY_OBJECT_ARRAY);
     }
 
     @Override

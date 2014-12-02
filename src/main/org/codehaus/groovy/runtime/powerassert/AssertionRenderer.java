@@ -80,9 +80,10 @@ public final class AssertionRenderer {
 
     private void renderValues() {
         List<Value> values = recorder.getValues();
+        int valuesSize = values.size();
 
         nextValue:
-        for (int i = 0; i < values.size(); i++) {
+        for (int i = 0; i < valuesSize; i++) {
             final Value value = values.get(i);
             final int startColumn = value.getColumn();
             if (startColumn < 1) continue; // skip values with unknown source position
@@ -91,7 +92,7 @@ public final class AssertionRenderer {
             // render the value which was recorded last (i.e. the value
             // corresponding to the outermost expression)
             // important for GROOVY-4344
-            Value next = i + 1 < values.size() ? values.get(i + 1) : null;
+            Value next = i + 1 < valuesSize ? values.get(i + 1) : null;
             if (next != null && next.getColumn() == startColumn) continue;
 
             String str = valueToString(value.getValue());

@@ -49,7 +49,8 @@ public class MethodRankHelper{
     public static final int MAX_METHOD_SCORE = 50;
     public static final int MAX_CONSTRUCTOR_SCORE = 20;
     public static final int MAX_FIELD_SCORE = 30;
-    
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+
     private static final class Pair<U,V> {
         private U u;
         private V v;
@@ -227,7 +228,7 @@ public class MethodRankHelper{
      */
     private static List<MetaMethod> rankMethods(String name, Object[] original, List<MetaMethod> methods) {
         List<RankableMethod> rm = new ArrayList<RankableMethod>(methods.size());
-        if (original==null) original = new Object[0];
+        if (original==null) original = EMPTY_OBJECT_ARRAY;
         Class[] ta = new Class[original.length];
     
         Class nullC =  NullObject.class;

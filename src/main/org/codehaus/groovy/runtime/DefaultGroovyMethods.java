@@ -166,6 +166,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 //            XmlGroovyMethods.class,
 //            NioGroovyMethods.class
     };
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
@@ -609,7 +610,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void println(Closure self) {
         Object owner = getClosureOwner(self);
-        InvokerHelper.invokeMethod(owner, "println", new Object[0]);
+        InvokerHelper.invokeMethod(owner, "println", EMPTY_OBJECT_ARRAY);
     }
 
     private static Object getClosureOwner(Closure cls) {
