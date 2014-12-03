@@ -542,11 +542,11 @@ public class DefaultTypeTransformation {
         }
         if (left instanceof Comparable) {
             if (left instanceof Number) {
-                if (isValidCharacterString(right)) {
-                    return DefaultGroovyMethods.compareTo((Number) left, ShortTypeHandling.castToChar(right));
-                }
                 if (right instanceof Character || right instanceof Number) {
                     return DefaultGroovyMethods.compareTo((Number) left, castToNumber(right));
+                }
+                if (isValidCharacterString(right)) {
+                    return DefaultGroovyMethods.compareTo((Number) left, ShortTypeHandling.castToChar(right));
                 }
             }
             else if (left instanceof Character) {
