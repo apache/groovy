@@ -624,19 +624,37 @@ public class OptimizingStatementWriter extends StatementWriter {
                     case Types.COMPARE_GREATER_THAN:
                     case Types.COMPARE_GREATER_THAN_EQUAL:
                     case Types.COMPARE_NOT_EQUAL:
+                        if (isIntCategory(leftType) && isIntCategory(rightType)) {
+                            opt.chainShouldOptimize(true);
+                        } else if (isLongCategory(leftType) && isLongCategory(rightType)) {
+                            opt.chainShouldOptimize(true);
+                        } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
+                            opt.chainShouldOptimize(true);
+                        } else {
+                            opt.chainCanOptimize(true);
+                        }
+                        resultType = boolean_TYPE;
+                        break;
                     case Types.LOGICAL_AND: case Types.LOGICAL_AND_EQUAL:
                     case Types.LOGICAL_OR: case Types.LOGICAL_OR_EQUAL:
+                        if (boolean_TYPE.equals(leftType) && boolean_TYPE.equals(rightType)) {
+                            opt.chainShouldOptimize(true);
+                        } else {
+                            opt.chainCanOptimize(true);
+                        }
                         expression.setType(boolean_TYPE);
                         resultType = boolean_TYPE;
                         break;
                     case Types.DIVIDE: case Types.DIVIDE_EQUAL:
                         if (isLongCategory(leftType) && isLongCategory(rightType)) {
                             resultType = BigDecimal_TYPE;
+                            opt.chainShouldOptimize(true);
                         } else if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) {
                             // no optimization for BigDecimal yet
                             //resultType = BigDecimal_TYPE;
                         } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
                             resultType = double_TYPE;
+                            opt.chainShouldOptimize(true);
                         }
                         break;
                     case Types.POWER: case Types.POWER_EQUAL:
@@ -649,13 +667,16 @@ public class OptimizingStatementWriter extends StatementWriter {
                     default:
                         if (isIntCategory(leftType) && isIntCategory(rightType)) {
                             resultType = int_TYPE;
+                            opt.chainShouldOptimize(true);
                         } else if (isLongCategory(leftType) && isLongCategory(rightType)) {
                             resultType = long_TYPE;
+                            opt.chainShouldOptimize(true);
                         } else if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) {
                             // no optimization for BigDecimal yet
                             //resultType = BigDecimal_TYPE;
                         } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
                             resultType = double_TYPE;
+                            opt.chainShouldOptimize(true);
                         }
                 }
             }
@@ -663,7 +684,6 @@ public class OptimizingStatementWriter extends StatementWriter {
             if (resultType!=null) {
                 StatementMeta meta = addMeta(expression);
                 meta.type = resultType;
-                opt.chainShouldOptimize(true);
                 opt.chainInvolvedType(resultType);
                 opt.chainInvolvedType(leftType);
                 opt.chainInvolvedType(rightType);

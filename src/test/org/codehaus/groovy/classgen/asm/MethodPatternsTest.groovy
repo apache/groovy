@@ -347,6 +347,15 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             'IADD',
             'IRETURN'
         ])
+
+        // check that there is no fastpath for this method, since n is Object
+        def seq = compile(method: "fib", """
+            def fib(n) {
+                n<=2L?n:fib(n-1L)+fib(n-2L)
+            }
+        """).toSequence()
+        // isOrigXY is used for the fastpath guards
+        assert !seq.contains("isOrig")
     }
 
     void testNoBoxUnbox() {
