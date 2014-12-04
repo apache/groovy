@@ -152,7 +152,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 
 
         public ThreadBoundGetter(String name) {
-            setParametersTypes(new CachedClass[0]);
+            setParametersTypes(CachedClass.EMPTY_ARRAY);
             this.name = getGetterName(name, type);
         }
 

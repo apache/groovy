@@ -2117,47 +2117,51 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * a LinkedList<MetaMethod> if there are multiple setter
      */
     private Object filterPropertyMethod(Object methodOrList, boolean isGetter, boolean booleanGetter) {
-        if (methodOrList == null)
-          return null;
-
+        // Method has been optimized to reach a target of 325 bytecode size, making it JIT'able
         Object ret = null;
+
         if (methodOrList instanceof MetaMethod) {
             MetaMethod element = (MetaMethod)methodOrList;
+            int parameterCount = element.getParameterTypes().length;
             if (!isGetter &&
                     //(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
-                    element.getParameterTypes().length == 1) {
-                ret = addElementToList(ret, element);
+                    parameterCount == 1) {
+                ret = element;
             }
+            Class returnType = element.getReturnType();
             if (isGetter &&
-                    !(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
-                    (!booleanGetter || element.getReturnType() == Boolean.class || element.getReturnType() == Boolean.TYPE) &&
-                    element.getParameterTypes().length == 0) {
-                ret = addElementToList(ret, element);
+                    !(returnType == Void.class || returnType == Void.TYPE) &&
+                    (!booleanGetter || returnType == Boolean.class || returnType == Boolean.TYPE) &&
+                    parameterCount == 0) {
+                ret = element;
             }
-
         }
-        else {
+        if (methodOrList instanceof FastArray) {
             FastArray methods = (FastArray) methodOrList;
             final int len = methods.size();
             final Object[] data = methods.getArray();
             for (int i = 0; i != len; ++i) {
                 MetaMethod element = (MetaMethod) data[i];
+                int parameterCount = element.getParameterTypes().length;
                 if (!isGetter &&
                         //(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
-                        element.getParameterTypes().length == 1) {
+                        parameterCount == 1) {
                     ret = addElementToList(ret, element);
                 }
+                Class returnType = element.getReturnType();
                 if (isGetter &&
-                        !(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
-                        element.getParameterTypes().length == 0) {
+                        !(returnType == Void.class || returnType == Void.TYPE) &&
+                        parameterCount == 0) {
                     ret = addElementToList(ret, element);
                 }
             }
         }
 
-        if (ret == null) return null;
-        if (ret instanceof MetaMethod) return (MetaMethod) ret;
-        if (!isGetter) return ret;
+        if (ret == null
+                || (ret instanceof MetaMethod)
+                || !isGetter) {
+            return ret;
+        }
 
         // we found multiple matching methods
         // this is a problem, because we can use only one
@@ -2166,10 +2170,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // we use the type of the first parameter
         MetaMethod method = null;
         int distance = -1;
-        for (Iterator iter = ((List) ret).iterator(); iter.hasNext();) {
-            MetaMethod element = (MetaMethod) iter.next();
-            Class c  = element.getReturnType();
-            int localDistance = distanceToObject(c);
+        for (final Object o : ((List) ret)) {
+            MetaMethod element = (MetaMethod) o;
+            int localDistance = distanceToObject(element.getReturnType());
             //TODO: maybe implement the case localDistance==distance
             if (distance == -1 || distance > localDistance) {
                 distance = localDistance;
@@ -3200,8 +3203,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         long matchesDistance = -1;
         LinkedList matches = new LinkedList();
-        for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
-            Object method = iter.next();
+        for (Object method : matchingMethods) {
             ParameterTypes paramTypes = (ParameterTypes) method;
             long dist = MetaClassHelper.calculateParameterDistance(arguments, paramTypes);
             if (dist == 0) return method;
@@ -3225,16 +3227,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         //more than one matching method found --> ambiguous!
-        String msg = "Ambiguous method overloading for method ";
-        msg += theClass.getName() + "#" + name;
-        msg += ".\nCannot resolve which method to invoke for ";
-        msg += InvokerHelper.toString(arguments);
-        msg += " due to overlapping prototypes between:";
-        for (Iterator iter = matches.iterator(); iter.hasNext();) {
-            Class[] types = ((ParameterTypes) iter.next()).getNativeParameterTypes();
-            msg += "\n\t" + InvokerHelper.toString(types);
+        StringBuilder msg = new StringBuilder("Ambiguous method overloading for method ");
+        msg.append(theClass.getName()).append("#").append(name)
+           .append(".\nCannot resolve which method to invoke for ")
+           .append(InvokerHelper.toString(arguments))
+           .append(" due to overlapping prototypes between:");
+        for (final Object matche : matches) {
+            Class[] types = ((ParameterTypes) matche).getNativeParameterTypes();
+            msg.append("\n\t").append(InvokerHelper.toString(types));
         }
-        throw new GroovyRuntimeException(msg);
+        throw new GroovyRuntimeException(msg.toString());
     }
 
     private boolean isGenericGetMethod(MetaMethod method) {

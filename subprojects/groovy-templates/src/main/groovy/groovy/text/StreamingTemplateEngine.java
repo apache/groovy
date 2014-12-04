@@ -205,9 +205,11 @@ public class StreamingTemplateEngine extends TemplateEngine {
         private static final FinishedReadingException finishedReadingException;
         //CHECKSTYLE.ON: ConstantNameCheck
 
+        public static final StackTraceElement[] EMPTY_STACKTRACE = new StackTraceElement[0];
+
         static {
             finishedReadingException = new FinishedReadingException();
-            finishedReadingException.setStackTrace(new StackTraceElement[0]);
+            finishedReadingException.setStackTrace(EMPTY_STACKTRACE);
         }
 
         private static final class Position {

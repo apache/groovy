@@ -72,6 +72,7 @@ import java.util.Map;
  */
 public class RootLoader extends URLClassLoader {
 
+    private static final URL[] EMPTY_URL_ARRAY = new URL[0];
     private Map<String, Class> customClasses = new HashMap<String, Class>();
 
     /**
@@ -80,7 +81,7 @@ public class RootLoader extends URLClassLoader {
      * @param parent the parent Loader
      */
     private RootLoader(ClassLoader parent) {
-        this(new URL[0], parent);
+        this(EMPTY_URL_ARRAY, parent);
     }
 
     /**

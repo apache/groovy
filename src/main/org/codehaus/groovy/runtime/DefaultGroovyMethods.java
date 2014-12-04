@@ -66,6 +66,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Logger;
@@ -165,6 +166,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 //            XmlGroovyMethods.class,
 //            NioGroovyMethods.class
     };
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
@@ -608,7 +610,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void println(Closure self) {
         Object owner = getClosureOwner(self);
-        InvokerHelper.invokeMethod(owner, "println", new Object[0]);
+        InvokerHelper.invokeMethod(owner, "println", EMPTY_OBJECT_ARRAY);
     }
 
     private static Object getClosureOwner(Closure cls) {
@@ -13844,8 +13846,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
-                        ") to upto() cannot be less than the value (" + self + ") it's called on.");
+                throw new GroovyRuntimeException(
+                        MessageFormat.format(
+                                "The argument ({0}) to upto() cannot be less than the value ({1}) it''s called on.",
+                                to, self));
         } else if (to instanceof BigInteger) {
             final BigInteger one = BigInteger.valueOf(1);
             BigInteger to1 = (BigInteger) to;
@@ -13854,8 +13858,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
-                        ") to upto() cannot be less than the value (" + self + ") it's called on.");
+                throw new GroovyRuntimeException(
+                        MessageFormat.format("The argument ({0}) to upto() cannot be less than the value ({1}) it''s called on.",
+                                to, self));
         } else {
             final BigInteger one = BigInteger.valueOf(1);
             BigInteger to1 = new BigInteger(to.toString());
@@ -13864,8 +13869,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
-                        ") to upto() cannot be less than the value (" + self + ") it's called on.");
+                throw new GroovyRuntimeException(MessageFormat.format(
+                        "The argument ({0}) to upto() cannot be less than the value ({1}) it''s called on.",
+                        to, self));
         }
     }
 
@@ -14070,8 +14076,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i.toBigInteger());
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
-                        ") to downto() cannot be greater than the value (" + self + ") it's called on.");        } else if (to instanceof BigInteger) {
+                throw new GroovyRuntimeException(
+                        MessageFormat.format(
+                                "The argument ({0}) to downto() cannot be greater than the value ({1}) it''s called on.",
+                                to, self));
+        } else if (to instanceof BigInteger) {
             final BigInteger one = BigInteger.valueOf(1);
             final BigInteger to1 = (BigInteger) to;
             if (self.compareTo(to1) >= 0) {
@@ -14079,8 +14088,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
-                        ") to downto() cannot be greater than the value (" + self + ") it's called on.");        } else {
+                throw new GroovyRuntimeException(
+                        MessageFormat.format(
+                                "The argument ({0}) to downto() cannot be greater than the value ({1}) it''s called on.",
+                                to, self));
+        } else {
             final BigInteger one = BigInteger.valueOf(1);
             final BigInteger to1 = new BigInteger(to.toString());
             if (self.compareTo(to1) >= 0) {
@@ -14088,8 +14100,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else
-                throw new GroovyRuntimeException("The argument (" + to + 
-                        ") to downto() cannot be greater than the value (" + self + ") it's called on.");        }
+                throw new GroovyRuntimeException(
+                        MessageFormat.format("The argument ({0}) to downto() cannot be greater than the value ({1}) it''s called on.",
+                                to, self));
+        }
     }
 
     /**

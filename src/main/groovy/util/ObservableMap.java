@@ -377,7 +377,9 @@ public class ObservableMap implements Map {
 
     public static class MultiPropertyEvent extends PropertyEvent {
         public static final String MULTI_PROPERTY = "groovy_util_ObservableMap_MultiPropertyEvent_MULTI";
-        private PropertyEvent[] events = new PropertyEvent[0];
+        private static final PropertyEvent[] EMPTY_PROPERTY_EVENTS = new PropertyEvent[0];
+
+        private PropertyEvent[] events = EMPTY_PROPERTY_EVENTS;
 
         public MultiPropertyEvent(Object source, PropertyEvent[] events) {
             super(source, MULTI_PROPERTY, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI);

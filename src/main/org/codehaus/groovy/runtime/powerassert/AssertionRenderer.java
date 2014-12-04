@@ -80,26 +80,27 @@ public final class AssertionRenderer {
 
     private void renderValues() {
         List<Value> values = recorder.getValues();
+        int valuesSize = values.size();
 
         nextValue:
-        for (int i = 0; i < values.size(); i++) {
-            Value value = values.get(i);
-            int startColumn = value.getColumn();
+        for (int i = 0; i < valuesSize; i++) {
+            final Value value = values.get(i);
+            final int startColumn = value.getColumn();
             if (startColumn < 1) continue; // skip values with unknown source position
 
             // if multiple values are associated with the same column, only
             // render the value which was recorded last (i.e. the value
             // corresponding to the outermost expression)
             // important for GROOVY-4344
-            Value next = i + 1 < values.size() ? values.get(i + 1) : null;
-            if (next != null && next.getColumn() == value.getColumn()) continue;
+            Value next = i + 1 < valuesSize ? values.get(i + 1) : null;
+            if (next != null && next.getColumn() == startColumn) continue;
 
             String str = valueToString(value.getValue());
             if (str == null) continue; // null signals the value shouldn't be rendered
 
             String[] strs = str.split("\r\n|\r|\n");
             int endColumn = strs.length == 1 ?
-                    value.getColumn() + str.length() : // exclusive
+                    startColumn + str.length() : // exclusive
                     Integer.MAX_VALUE; // multi-line strings are always placed on new lines
 
             for (int j = 1; j < lines.size(); j++)

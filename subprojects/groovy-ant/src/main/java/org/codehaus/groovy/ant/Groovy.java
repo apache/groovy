@@ -59,6 +59,7 @@ import java.util.Vector;
 public class Groovy extends Java {
     private static final String PREFIX = "embedded_script_in_";
     private static final String SUFFIX = "groovy_Ant_task";
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     private final LoggingHelper log = new LoggingHelper(this);
 
@@ -419,7 +420,7 @@ public class Groovy extends Java {
                 final Field contextField = propsHandler.getClass().getDeclaredField("context");
                 contextField.setAccessible(true);
                 final Object context = contextField.get(propsHandler);
-                mavenPom = InvokerHelper.invokeMethod(context, "getProject", new Object[0]);
+                mavenPom = InvokerHelper.invokeMethod(context, "getProject", EMPTY_OBJECT_ARRAY);
             }
             catch (Exception e) {
                 throw new BuildException("Impossible to retrieve Maven's Ant project: " + e.getMessage(), getLocation());

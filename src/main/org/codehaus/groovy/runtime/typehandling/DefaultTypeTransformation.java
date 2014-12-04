@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.MessageFormat;
 import java.util.*;
 
 /**
@@ -38,10 +39,11 @@ import java.util.*;
  * @author Guillaume Laforge
  */
 public class DefaultTypeTransformation {
-    
+
     protected static final Object[] EMPTY_ARGUMENTS = {};
     protected static final BigInteger ONE_NEG = new BigInteger("-1");
-    
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+
     //  --------------------------------------------------------
     //                  unboxing methods
     //  --------------------------------------------------------       
@@ -266,40 +268,48 @@ public class DefaultTypeTransformation {
         if (Number.class.isAssignableFrom(type)) {
             Number n = castToNumber(object, type);
             if (type == Byte.class) {
-                return new Byte(n.byteValue());
-            } else if (type == Character.class) {
-                return new Character((char) n.intValue());
-            } else if (type == Short.class) {
-                return new Short(n.shortValue());
-            } else if (type == Integer.class) {
-                return Integer.valueOf(n.intValue());
-            } else if (type == Long.class) {
-                return new Long(n.longValue());
-            } else if (type == Float.class) {
-                return new Float(n.floatValue());
-            } else if (type == Double.class) {
-                Double answer = new Double(n.doubleValue());
+                return n.byteValue();
+            }
+            if (type == Character.class) {
+                return (char) n.intValue();
+            }
+            if (type == Short.class) {
+                return n.shortValue();
+            }
+            if (type == Integer.class) {
+                return n.intValue();
+            }
+            if (type == Long.class) {
+                return n.longValue();
+            }
+            if (type == Float.class) {
+                return n.floatValue();
+            }
+            if (type == Double.class) {
+                Double answer = n.doubleValue();
                 //throw a runtime exception if conversion would be out-of-range for the type.
-                if (!(n instanceof Double) && (answer.doubleValue() == Double.NEGATIVE_INFINITY
-                        || answer.doubleValue() == Double.POSITIVE_INFINITY)) {
+                if (!(n instanceof Double) && (answer == Double.NEGATIVE_INFINITY
+                        || answer == Double.POSITIVE_INFINITY)) {
                     throw new GroovyRuntimeException("Automatic coercion of " + n.getClass().getName()
                             + " value " + n + " to double failed.  Value is out of range.");
                 }
                 return answer;
-            } else if (type == BigDecimal.class) {
+            }
+            if (type == BigDecimal.class) {
                 if (n instanceof Float || n instanceof Double) {
                     return new BigDecimal(n.doubleValue());
                 }
                 return new BigDecimal(n.toString());
-            } else if (type == BigInteger.class) {
+            }
+            if (type == BigInteger.class) {
                 if (object instanceof Float || object instanceof Double) {
                     BigDecimal bd = new BigDecimal(n.doubleValue());
                     return bd.toBigInteger();
-                } else if (object instanceof BigDecimal) {
-                    return ((BigDecimal) object).toBigInteger();
-                } else {
-                    return new BigInteger(n.toString());
                 }
+                if (object instanceof BigDecimal) {
+                    return ((BigDecimal) object).toBigInteger();
+                }
+                return new BigInteger(n.toString());
             }
         }
 
@@ -452,7 +462,7 @@ public class DefaultTypeTransformation {
             }
         }
         else if (value instanceof Class && ((Class)value).isEnum()) {
-            Object[] values = (Object[])InvokerHelper.invokeMethod(value, "values", new Object[0]);
+            Object[] values = (Object[])InvokerHelper.invokeMethod(value, "values", EMPTY_OBJECT_ARRAY);
             return Arrays.asList(values);
         }
         else {
@@ -579,8 +589,12 @@ public class DefaultTypeTransformation {
         if (equalityCheckOnly) {
             return -1; // anything other than 0
         }
-        throw new GroovyRuntimeException("Cannot compare " + left.getClass().getName() + " with value '" +
-                left + "' and " + right.getClass().getName() + " with value '" + right + "'");
+        throw new GroovyRuntimeException(
+                MessageFormat.format("Cannot compare {0} with value ''{1}'' and {2} with value ''{3}''",
+                        left.getClass().getName(),
+                        left,
+                        right.getClass().getName(),
+                        right));
     }
 
     public static boolean compareEqual(Object left, Object right) {

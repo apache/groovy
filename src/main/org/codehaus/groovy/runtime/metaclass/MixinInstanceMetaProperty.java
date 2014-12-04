@@ -66,7 +66,7 @@ public class MixinInstanceMetaProperty extends MetaBeanProperty {
         return new MetaMethod() {
             final String name = getGetterName(property.getName(), property.getType());
             {
-                setParametersTypes (new CachedClass [0]);
+                setParametersTypes (CachedClass.EMPTY_ARRAY);
             }
 
             public int getModifiers() {

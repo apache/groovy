@@ -210,7 +210,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                     ce.getVariableScope().putReferencedLocalVariable((Parameter) parameter.get());
                     Parameter[] params = ce.getParameters();
                     if (params == null) {
-                        params = new Parameter[0];
+                        params = Parameter.EMPTY_ARRAY;
                     } else if (params.length == 0) {
                         params = new Parameter[]{
                                 new Parameter(ClassHelper.OBJECT_TYPE, "it")

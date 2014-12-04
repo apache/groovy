@@ -61,6 +61,8 @@ import java.util.regex.Pattern;
  */
 public class GroovyClassLoader extends URLClassLoader {
 
+    private static final URL[] EMPTY_URL_ARRAY = new URL[0];
+
     /**
      * this cache contains the loaded classes or PARSING, if the class is currently parsed
      */
@@ -125,7 +127,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @param useConfigurationClasspath determines if the configurations classpath should be added
      */
     public GroovyClassLoader(ClassLoader parent, CompilerConfiguration config, boolean useConfigurationClasspath) {
-        super(new URL[0], parent);
+        super(EMPTY_URL_ARRAY, parent);
         if (config == null) config = CompilerConfiguration.DEFAULT;
         this.config = config;
         if (useConfigurationClasspath) {

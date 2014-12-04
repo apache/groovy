@@ -24,11 +24,13 @@ import groovy.lang.Closure;
  */
 public class ClosureSourceBinding implements SourceBinding {
 
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+
     Closure closure;
     Object[] arguments;
 
     public ClosureSourceBinding(Closure closure) {
-        this(closure, new Object[0]);
+        this(closure, EMPTY_OBJECT_ARRAY);
     }
 
     public ClosureSourceBinding(Closure closure, Object[] arguments) { //TODO in Groovy 2.0 use varargs?

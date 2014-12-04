@@ -169,6 +169,7 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
  * @author Paul King
  */
 public class Groovyc extends MatchingTask {
+    private static final URL[] EMPTY_URL_ARRAY = new URL[0];
     private final LoggingHelper log = new LoggingHelper(this);
 
     private Path src;
@@ -1252,7 +1253,7 @@ public class Groovyc extends MatchingTask {
         }
         ClassLoader parent = getIncludeantruntime()
                 ? getClass().getClassLoader()
-                : new AntClassLoader(new RootLoader(new URL[0], null), getProject(), getClasspath());
+                : new AntClassLoader(new RootLoader(EMPTY_URL_ARRAY, null), getProject(), getClasspath());
         if (parent instanceof AntClassLoader) {
             AntClassLoader antLoader = (AntClassLoader) parent;
             String[] pathElm = antLoader.getClasspath().split(File.pathSeparator);

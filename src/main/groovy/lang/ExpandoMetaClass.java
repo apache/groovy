@@ -253,6 +253,7 @@ import org.codehaus.groovy.util.FastArray;
  */
 public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
+    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private static final String META_CLASS = "metaClass";
     private static final String CLASS = "class";
     private static final String META_METHODS = "metaMethods";
@@ -365,11 +366,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                 MetaMethod method = new MixinInstanceMetaMethod(metaMethod, mixin);
 
                 if (method.getParameterTypes().length == 1 && !method.getParameterTypes()[0].isPrimitive) {
-                    MetaMethod noParam = pickMethod(methodName, new Class[0]);
+                    MetaMethod noParam = pickMethod(methodName, EMPTY_CLASS_ARRAY);
                     // if the current call itself is with empty arg class array, no need to recurse with 'new Class[0]'
                     if (noParam == null && arguments.length != 0) {
                         try {
-                            findMixinMethod(methodName, new Class[0]);
+                            findMixinMethod(methodName, EMPTY_CLASS_ARRAY);
                         } catch (MethodSelectionException msex) {
                             /*
                              * Here we just additionally tried to find another no-arg mixin method of the same name and register that as well, if found.

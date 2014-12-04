@@ -69,7 +69,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             thisField = innerClass.getField("this$0");
             if (innerClass.getVariableScope() == null && innerClass.getDeclaredConstructors().isEmpty()) {
                 // add dummy constructor
-                innerClass.addConstructor(ACC_PUBLIC, new Parameter[0], null, null);
+                innerClass.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, null, null);
             }
         }
         if (node.isEnum() || node.isInterface()) return;
