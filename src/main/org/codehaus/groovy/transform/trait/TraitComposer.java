@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
@@ -51,6 +52,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
+import org.codehaus.groovy.transform.sc.StaticCompileTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
@@ -183,11 +185,17 @@ public abstract class TraitComposer {
                         Traits.INIT_METHOD,
                         new ArgumentListExpression(new VariableExpression("this")))
         ));
+        MethodCallExpression staticInitCall = new MethodCallExpression(
+                new ClassExpression(helperClassNode),
+                Traits.STATIC_INIT_METHOD,
+                new ArgumentListExpression(new ClassExpression(cNode)));
+        MethodNode staticInitMethod = new MethodNode(
+                Traits.STATIC_INIT_METHOD, Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, ClassHelper.VOID_TYPE,
+                new Parameter[] {new Parameter(ClassHelper.CLASS_Type,"clazz")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+        staticInitMethod.setDeclaringClass(helperClassNode);
+        staticInitCall.setMethodTarget(staticInitMethod);
         cNode.addStaticInitializerStatements(Collections.<Statement>singletonList(new ExpressionStatement(
-                new MethodCallExpression(
-                        new ClassExpression(helperClassNode),
-                        Traits.STATIC_INIT_METHOD,
-                        new ArgumentListExpression(new VariableExpression("this")))
+                staticInitCall
         )), false);
         if (fieldHelperClassNode != null && !cNode.declaresInterface(fieldHelperClassNode)) {
             // we should implement the field helper interface too
@@ -257,7 +265,9 @@ public abstract class TraitComposer {
                             ClassNode.EMPTY_ARRAY,
                             body
                     );
-                    impl.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
+                    AnnotationNode an = new AnnotationNode(COMPILESTATIC_CLASSNODE);
+                    impl.addAnnotation(an);
+                    cNode.addTransform(StaticCompileTransformation.class, an);
                     cNode.addMethod(impl);
                 }
             }
