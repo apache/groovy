@@ -570,4 +570,18 @@ assert (b1 + 11).size == 15
         String name
         static Person find(Closure c) { null }
     }
+
+    void testGStringEquals() {
+        assertScript '''
+            w = 'world'
+            str1 = "Hello $w"
+            str1 += "!"
+            str2 = "Hello $w!"
+            str3 = 'Hello world!'
+
+            assert str1 == str3
+            assert str2 == str3
+            assert str1 == str2
+            '''
+    }
 }

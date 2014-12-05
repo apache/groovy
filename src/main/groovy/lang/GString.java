@@ -15,6 +15,7 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
@@ -110,11 +111,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         stringList.toArray(newStrings);
         Object[] newValues = valueList.toArray();
 
-        return new GString(newValues) {
-            public String[] getStrings() {
-                return newStrings;
-            }
-        };
+        return new GStringImpl(newValues, newStrings);
     }
 
     public GString plus(String that) {
@@ -139,13 +136,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
             newStrings[lastIndex] = that;
         }
 
-        final String[] finalStrings = newStrings;
-        return new GString(newValues) {
-
-            public String[] getStrings() {
-                return finalStrings;
-            }
-        };
+        return new GStringImpl(newValues, newStrings);
     }
 
     public int getValueCount() {
