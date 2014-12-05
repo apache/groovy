@@ -921,9 +921,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
 
-        for (FieldNode fn : node.getFields()) {
-            addFieldInitialization(statements, staticStatements, fn, isEnum,
-                    initStmtsAfterEnumValuesInit, explicitStaticPropsInEnum);
+        if (!Traits.isTrait(node)) {
+            for (FieldNode fn : node.getFields()) {
+                addFieldInitialization(statements, staticStatements, fn, isEnum,
+                        initStmtsAfterEnumValuesInit, explicitStaticPropsInEnum);
+            }
         }
 
         statements.addAll(node.getObjectInitializerStatements());
@@ -1401,7 +1403,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     private boolean moveOptimizedConstantsInitialization(final ClassNode node) {
-        if (node.isInterface()) return false;
+        if (node.isInterface() && !Traits.isTrait(node)) return false;
 
         final int mods = Opcodes.ACC_STATIC|Opcodes.ACC_SYNTHETIC| Opcodes.ACC_PUBLIC;
         String name = SWAP_INIT;

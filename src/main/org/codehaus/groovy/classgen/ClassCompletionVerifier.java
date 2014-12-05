@@ -90,7 +90,16 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (MethodNode methodNode : node.getMethods()) {
             MethodNode mn = result.get(methodNode.getTypeDescriptor());
             if (mn!=null && methodNode.isStatic() && !methodNode.isStaticConstructor()) {
-                ClassNode cn = mn.getDeclaringClass().getOuterClass();
+                ClassNode declaringClass = mn.getDeclaringClass();
+                ClassNode cn = declaringClass.getOuterClass();
+                if (cn==null && declaringClass.isResolved()) {
+                    // in case of a precompiled class, the outerclass is unknown
+                    Class typeClass = declaringClass.getTypeClass();
+                    typeClass = typeClass.getEnclosingClass();
+                    if (typeClass!=null) {
+                        cn = ClassHelper.make(typeClass);
+                    }
+                }
                 if (cn==null || !Traits.isTrait(cn)) {
                     addError("Method '" + mn.getName() + "' is already defined in " + getDescription(node) + ". You cannot have " +
                             "both a static and a non static method with the same signature", methodNode);
