@@ -16,7 +16,7 @@ But... semicolons are optional in Groovy, you can omit them, and it's more idiom
 
 == Return keyword optional
 
-In Groovy, the last expression evaluated in the body of a method can be returned without necessitating the 'return' keyword.
+In Groovy, the last expression evaluated in the body of a method can be returned without necessitating the `return` keyword.
 Especially for short methods and for closures, it's nicer to omit it for brevity:
 
 [source,groovy]
@@ -37,18 +37,18 @@ def props() {
 }
 ----
 
-In such case, either putting a newline before the last expression, or explicitly using 'return' may yield better readability.
+In such case, either putting a newline before the last expression, or explicitly using `return` may yield better readability.
 
-I, for myself, sometimes use the return keyword, sometimes not, it's often a matter of taste.
+I, for myself, sometimes use the `return` keyword, sometimes not, it's often a matter of taste.
 But often, inside of closure, we omit it more often than not, for example. So even if the keyword is optional,
 this is by no means mandatory to not use it if you think it halters the readability of your code.
 
-A word of caution, however. When using methods which are defined with the 'def' keyword instead of a specific concrete type,
+A word of caution, however. When using methods which are defined with the `def` keyword instead of a specific concrete type,
 you may be surprise to see the last expression being returned sometimes. So usually prefer using a specific return type like void or a type.
 In our example above, imagine we forgot to put m2 as last statement to be returned,
-the last expression would be m2.c = 3, which would return... 3, and not the map you expect.
+the last expression would be `m2.c = 3`, which would return... `3`, and not the map you expect.
 
-Statements like if/else, try/catch can thus return a value as well, as there's a "last expression" evaluated in those statements:
+Statements like `if`/`else`, `try`/`catch` can thus return a value as well, as there's a "last expression" evaluated in those statements:
 
 [source,groovy]
 ----
@@ -66,8 +66,8 @@ assert foo(2) == "Dawrani"
 
 == Def and type
 
-As we're talking about def and types, I often see developers using both 'def' and a type. But 'def' is redundant here.
-So make a choice, either use 'def' or a type.
+As we're talking about `def` and types, I often see developers using both `def` and a type. But `def` is redundant here.
+So make a choice, either use `def` or a type.
 
 So don't write:
 
@@ -83,10 +83,10 @@ But:
 String name = "Guillaume"
 ----
 
-When using def in Groovy, the actual type holder is Object (so you can assign any object to variables defined with def,
-and return any kind of object if a method is declared returning def).
+When using `def` in Groovy, the actual type holder is `Object` (so you can assign any object to variables defined with `def`,
+and return any kind of object if a method is declared returning `def`).
 
-When defining a method with untyped parameters, you can use 'def' but it's not needed, so we tend to omit them.
+When defining a method with untyped parameters, you can use `def` but it's not needed, so we tend to omit them.
 So instead of:
 
 [source,groovy]
@@ -105,7 +105,7 @@ But as we mention in the last section of the document, it's usually better to ty
 so as to help with documenting your code, and also help IDEs for code-completion,
 or for leveraging the static type checking or static compilation capabilities of Groovy.
 
-Another place where 'def' is redundant and should be avoided is when defining constructors:
+Another place where `def` is redundant and should be avoided is when defining constructors:
 
 [source,groovy]
 ----
@@ -114,7 +114,7 @@ class MyClass {
 }
 ----
 
-Instead, just remove the 'def':
+Instead, just remove the `def`:
 
 [source,groovy]
 ----
@@ -125,8 +125,8 @@ class MyClass {
 
 == Public by default
 
-By default, Groovy considers classes and methods 'public'.
-So you don't have to use the 'public' modifier everywhere something is public.
+By default, Groovy considers classes and methods `public`.
+So you don't have to use the `public` modifier everywhere something is public.
 Only if it's not public, you should put a visibility modifier.
 
 So instead of:
@@ -176,8 +176,8 @@ println("Hello")
 method(a, b)
 ----
 
-When a closure is the last parameter of a method call, like when using Groovy's 'each‘ iteration mechanism,
-you can put the closure outside the closing parens, and even omit the parentheses:
+When a closure is the last parameter of a method call, like when using Groovy's `each{}` iteration mechanism,
+you can put the closure outside the closing parentheses, and even omit the parentheses:
 
 [source,groovy]
 ----
@@ -202,15 +202,19 @@ def m = foo 1
 
 == Classes as first-class citizens
 
-The .class suffix is not needed in Groovy, a bit like in Java's instanceof.
+The `.class` suffix is not needed in Groovy, a bit like in Java's `instanceof`.
 
 For example:
 
 [source,groovy]
 ----
 connection.doPost(BASE_URI + "/modify.hqu", params, ResourcesResponse.class)
+----
+
 Using GStrings we're going to cover below, and using first class citizens:
 
+[source,groovy]
+----
 connection.doPost("${BASE_URI}/modify.hqu", params, ResourcesResponse)
 ----
 
@@ -261,7 +265,8 @@ Although the compiler creates the usual getter/setter logic,
 if you wish to do anything additional or different in those getters/setters,
 you're free to still provide them, and the compiler will use your logic, instead of the default generated one.
 
-Initializing beans with named parameters and the default constructor
+== Initializing beans with named parameters and the default constructor
+
 With a bean like:
 
 [source,groovy]
@@ -315,14 +320,14 @@ server.with {
 }
 ----
 
-== Equals and ==
+== Equals and `==`
 
-Java's == is actually Groovy's is() method, and Groovy's == is a clever equals()!
+Java's `==` is actually Groovy's `is()` method, and Groovy's `==` is a clever `equals()`!
 
-To compare the references of objects, instead of ==, you should use a.is(b).
+To compare the references of objects, instead of `==`, you should use `a.is(b)`.
 
-But to do the usual equals() comparison, you should prefer Groovy's ==,
-as it also takes care of avoiding NullPointerException, independently of whether the left or right is null or not.
+But to do the usual `equals()` comparison, you should prefer Groovy's `==`,
+as it also takes care of avoiding `NullPointerException`, independently of whether the left or right is `null` or not.
 
 Instead of:
 
@@ -340,8 +345,9 @@ status == ControlConstants.STATUS_COMPLETED
 
 == GStrings (interpolation, multiline)
 
-We often use string and variable concatenation in Java, with many opening / closing of double quotes, plus signs,
-and \n characters for newlines. With interpolated strings (called GStrings), such strings look better and are less painful to type:
+We often use string and variable concatenation in Java, with many opening `/` closing of double quotes, plus signs,
+and `\n` characters for newlines.
+ With interpolated strings (called GStrings), such strings look better and are less painful to type:
 
 [source,groovy]
 ----
@@ -356,15 +362,15 @@ throw new Exception("Unable to convert resource: ${resource}")
 ----
 
 Inside the curly braces, you can put any kind of expression, not just variables.
-For simple variables, or variable.property, you can even drop the curly braces:
+For simple variables, or `variable.property`, you can even drop the curly braces:
 
 [source,groovy]
 ----
 throw new Exception("Unable to convert resource: $resource")
 ----
 
-You can even lazily evaluate those expressions using a closure notation with ${-> resource }.
-When the GString will be coerced to a String, it'll evaluate the closure and get the toString() representation of the return value.
+You can even lazily evaluate those expressions using a closure notation with `${-> resource }`.
+When the GString will be coerced to a String, it'll evaluate the closure and get the `toString()` representation of the return value.
 
 Example:
 
@@ -392,7 +398,7 @@ throw new PluginException("Failed to execute command list-applications:" +
     SERVER_TYPE_NAME)
 ----
 
-You can use the \ continuation character (this is not a multiline string):
+You can use the `\` continuation character (this is not a multiline string):
 
 [source,groovy]
 ----
@@ -410,7 +416,7 @@ throw new PluginException("""Failed to execute command list-applications:
     is not compatible group of type ${SERVER_TYPE_NAME)}""")
 ----
 
-You can also strip the indentation appearing on the left side of the multiline strings by calling .stripIndent() on that string.
+You can also strip the indentation appearing on the left side of the multiline strings by calling `.stripIndent()` on that string.
 
 Also note the difference between single quotes and double quotes in Groovy: single quotes always create Java Strings,
 without interpolation of variables, whereas double quotes either create Java Strings or GStrings when interpolated variables are present.
@@ -473,17 +479,17 @@ assert 'foo' =~ pattern
 
 Continuing on the data structures, when you need to iterate over collections,
 Groovy provides various additional methods, decorating Java's core data structures,
-like each{}, find{}, findAll{}, every{}, collect{}, inject{}.
+like `each{}`, `find{}`, `findAll{}`, `every{}`, `collect{}`, `inject{}`.
 These methods add a functional flavor to the programming language and help working with complex algorithms more easily.
 Lots of new methods are applied to various types, through decoration, thanks to the dynamic nature of the language.
 You can find lots of very useful methods on String, Files, Streams, Collections, and much more:
 
-http://groovy.codehaus.org/groovy-jdk/
+http://beta.groovy-lang.org/gdk.html
 
 == The power of switch
 
-Groovy's switch is much more powerful than in C-ish languages which usually only accept primitives and assimilated.
-Groovy's switch accepts pretty much any kind of type.
+Groovy's `switch` is much more powerful than in C-ish languages which usually only accept primitives and assimilated.
+Groovy's `switch` accepts pretty much any kind of type.
 
 [source,groovy]
 ----
@@ -505,16 +511,19 @@ switch (x) {
     case Number:
         result = "number"
         break
+    case { it > 3 }
+        result = "number > 3"
+        break
     default: result = "default"
 }
 assert result == "number"
 ----
 
-And more generally, types with an isCase() method can also decide whether a value corresponds with a case
+And more generally, types with an `isCase()` method can also decide whether a value corresponds with a case
 
 == Import aliasing
 
-In Java, when using two classes of the same name but from different packages, like java.util.List and java.awt.List,
+In Java, when using two classes of the same name but from different packages, like `java.util.List` and `java.awt.List`,
 you can import one class, but have to use a fully-qualified name for the other.
 
 Also sometimes, in your code, when using often a long class name, and the code becomes a bit more verbose.
@@ -539,7 +548,8 @@ foo()
 
 == Groovy Truth
 
-All objects can be 'coerced' to a boolean value: everything that's null, void or empty evaluates to false, and if not, evaluates to true.
+All objects can be 'coerced' to a boolean value: everything that's `null`, `void`, equal to zero,
+or empty evaluates to `false`, and if not, evaluates to `true`.
 
 So instead of writing:
 
@@ -549,6 +559,7 @@ if (name != null && name.length > 0) {}
 ----
 
 You can just do:
+
 [source,groovy]
 ----
 if (name) {}
@@ -556,16 +567,16 @@ if (name) {}
 
 Same thing for collections, etc.
 
-Thus, you can use some shortcuts in things like while(), if(), the ternary operator, the Elvis operator (see below), etc.
+Thus, you can use some shortcuts in things like `while()`, `if()`, the ternary operator, the Elvis operator (see below), etc.
 
-It's even possible to customize the Groovy Truth, by adding an boolean asBoolean() method to your classes!
+It's even possible to customize the Groovy Truth, by adding an boolean `asBoolean()` method to your classes!
 
 == Safe graph navigation
 
-Groovy supports a variant of the . operator to safely navigate an object graph.
+Groovy supports a variant of the `.` operator to safely navigate an object graph.
 
-In Java, when you're interested in a node deep in the graph and need to check for null,
-you often end up writing complex if, or nested if statements like this:
+In Java, when you're interested in a node deep in the graph and need to check for `null`,
+you often end up writing complex `if`, or nested `if` statements like this:
 
 [source,groovy]
 ----
@@ -578,21 +589,21 @@ if (order != null) {
 }
 ----
 
-With ?. safe dereference operator, you can simplify such code with:
+With `?.` safe dereference operator, you can simplify such code with:
 
 [source,groovy]
 ----
 println order?.customer?.address
 ----
 
-Nulls are checked throughout the call chain and no NullPointerException will be thrown if any element is null,
-and the resulting value will be null if something's null.
+Nulls are checked throughout the call chain and no `NullPointerException` will be thrown if any element is `null`,
+and the resulting value will be null if something's `null`.
 
 == Assert
 
-To check your parameters, your return values, and more, you can use the 'assert' statement.
+To check your parameters, your return values, and more, you can use the `assert` statement.
 
-Contrary to Java's assert, asserts don't need to be activated to be working, so asserts are always checked.
+Contrary to Java's `assert`, `assert`s don't need to be activated to be working, so `assert`s are always checked.
 
 [source,groovy]
 ----
@@ -618,7 +629,7 @@ We often have to write code like:
 def result = name != null ? name : "Unknown"
 ----
 
-Thanks to Groovy Truth, the null check can be simplified to just 'name'.
+Thanks to Groovy Truth, the `null` check can be simplified to just 'name'.
 
 And to go even further, since you return 'name' anyway, instead of repeating name twice in this ternary expression,
 we can somehow remove what's in between the question mark and colon, by using the Elvis operator, so that the above becomes:
@@ -630,7 +641,7 @@ def result = name ?: "Unknown"
 
 == Catch any exception
 
-If you don't really care of the exception which are thrown inside your try block,
+If you don't really care of the exception which are thrown inside your `try` block,
 you can simply catch any of them and simply omit the type of the caught exception.
 So instead of catching the exceptions like in:
 
@@ -655,13 +666,13 @@ try {
 ----
 
 [NOTE]
-Note that it's catching all Exceptions, not Throwables. If you need to really catch "everything",
-you'll have to be explicit and say you want to catch Throwables.
+Note that it's catching all Exceptions, not `Throwable`s. If you need to really catch "everything",
+you'll have to be explicit and say you want to catch `Throwable`s.
 
 == Optional typing advice
 
 I'll finish on some words on when and how to use optional typing.
-Groovy lets you decide whether you use explicit strong typing, or when you use 'def'.
+Groovy lets you decide whether you use explicit strong typing, or when you use `def`.
 
 I've got a rather simple rule of thumb: whenever the code you're writing is going to be used by others as a public API,
 you should always favor the use of strong typing, it helps making the contract stronger,
