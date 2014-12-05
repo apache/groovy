@@ -558,7 +558,7 @@ public abstract class StaticTypeCheckingSupport {
         if (leftRedirect==rightRedirect) return true;
 
         if (leftRedirect.isArray() && rightRedirect.isArray()) {
-            return checkCompatibleAssignmentTypes(leftRedirect.getComponentType(), rightRedirect.getComponentType(), rightExpression, allowConstructorCoercion);
+            return checkCompatibleAssignmentTypes(leftRedirect.getComponentType(), rightRedirect.getComponentType(), rightExpression, false);
         }
 
         if (right==VOID_TYPE||right==void_WRAPPER_TYPE) {
@@ -608,11 +608,7 @@ public abstract class StaticTypeCheckingSupport {
 
         // if right is array, map or collection we try invoking the
         // constructor
-        if (allowConstructorCoercion && (rightRedirect.implementsInterface(MAP_TYPE) ||
-                rightRedirect.implementsInterface(Collection_TYPE) ||
-                rightRedirect.equals(MAP_TYPE) ||
-                rightRedirect.equals(Collection_TYPE) ||
-                rightRedirect.isArray())) {
+        if (allowConstructorCoercion && isGroovyConstructorCompatible(rightExpression)) {
             //TODO: in case of the array we could maybe make a partial check
             if (leftRedirect.isArray() && rightRedirect.isArray()) {
                 return checkCompatibleAssignmentTypes(leftRedirect.getComponentType(), rightRedirect.getComponentType());
@@ -639,6 +635,12 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         return false;
+    }
+
+    private static boolean isGroovyConstructorCompatible(final Expression rightExpression) {
+        return rightExpression instanceof ListExpression
+                || rightExpression instanceof MapExpression
+                || rightExpression instanceof ArrayExpression;
     }
 
     /**
