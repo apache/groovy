@@ -26,7 +26,9 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -35,10 +37,13 @@ import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
 
 import java.util.Collection;
 import java.util.List;
@@ -56,6 +61,8 @@ import java.util.List;
  * @since 2.3.0
  */
 class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
+
+    private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
 
     private final VariableExpression weaved;
     private final SourceUnit unit;
@@ -163,13 +170,22 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             if (accessedVariable instanceof FieldNode) {
                 FieldNode fn = (FieldNode) accessedVariable;
                 Expression receiver = createFieldHelperReceiver();
+                MethodCallExpression mce;
                 if (fn.isStatic()) {
-                    receiver = new PropertyExpression(createFieldHelperReceiver(), "class");
+                    receiver = new TernaryExpression(
+                            new BooleanExpression(new BinaryExpression(
+                                    receiver,
+                                    Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1),
+                                    new ClassExpression(ClassHelper.CLASS_Type)
+                            )),
+                            receiver,
+                            new MethodCallExpression(createFieldHelperReceiver(), "getClass", ArgumentListExpression.EMPTY_ARGUMENTS)
+                    );
                 }
-                MethodCallExpression mce = new MethodCallExpression(
-                        receiver,
-                        Traits.helperGetterName((FieldNode) accessedVariable),
-                        ArgumentListExpression.EMPTY_ARGUMENTS
+                mce = new MethodCallExpression(
+                            receiver,
+                            Traits.helperGetterName((FieldNode) accessedVariable),
+                            ArgumentListExpression.EMPTY_ARGUMENTS
                 );
                 mce.setSourcePosition(exp);
                 mce.setImplicitThis(false);
