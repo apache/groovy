@@ -21,7 +21,6 @@ import org.codehaus.groovy.control.ClassNodeResolver;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.objectweb.asm.Type;
 
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -44,12 +43,6 @@ class DecompiledClassNode extends ClassNode {
     public List<FieldNode> getFields() {
         lazyInit();
         return super.getFields();
-    }
-
-    @Override
-    public Iterator<InnerClassNode> getInnerClasses() {
-        lazyInit(); //todo
-        return super.getInnerClasses();
     }
 
     @Override
