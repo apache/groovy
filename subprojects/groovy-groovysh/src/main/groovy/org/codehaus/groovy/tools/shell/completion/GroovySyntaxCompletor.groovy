@@ -24,6 +24,7 @@ import org.codehaus.groovy.antlr.UnicodeEscapingReader
 import org.codehaus.groovy.antlr.parser.GroovyLexer
 import org.codehaus.groovy.tools.shell.CommandRegistry
 import org.codehaus.groovy.tools.shell.Groovysh
+import org.codehaus.groovy.tools.shell.util.Logger
 
 import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
 
@@ -34,6 +35,8 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
  * @author <a href="mailto:probabilitytrees@gmail.com">Marty Saxton</a>
  */
 class GroovySyntaxCompletor implements Completer {
+
+    protected final static Logger LOG = Logger.create(GroovySyntaxCompletor)
 
     private final Groovysh shell
     private final List<IdentifierCompletor> identifierCompletors
@@ -190,7 +193,7 @@ class GroovySyntaxCompletor implements Completer {
             }
             return CompletionCase.SPREAD_DOT_LAST
         } else {
-            println(currentToken.type)
+            LOG.debug('Untreated toke type: ' + currentToken.type)
         }
         return CompletionCase.NO_COMPLETION
     }
