@@ -25,11 +25,6 @@ import org.codehaus.groovy.control.ClassNodeResolver
 import org.codehaus.groovy.control.CompilationUnit
 import org.objectweb.asm.Opcodes
 
-import java.lang.annotation.ElementType
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
-import java.lang.annotation.Target
-
 /**
  * @author Peter Gromov
  */
@@ -37,7 +32,7 @@ class AsmDecompilerTest extends TestCase {
 
     void "test decompile class"() {
         ClassNode node = decompile()
-        assert ToDecompile.name == node.name
+        assert AsmDecompilerTestData.name == node.name
         assert (node.modifiers & Opcodes.ACC_PUBLIC) != 0
     }
 
@@ -58,7 +53,7 @@ class AsmDecompilerTest extends TestCase {
 
         assert method.parameters.length == 2
         assert method.parameters[0].type == ClassHelper.int_TYPE
-        assert method.parameters[1].type.componentType.name == ToDecompile.name
+        assert method.parameters[1].type.componentType.name == AsmDecompilerTestData.name
 
         assert method.exceptions.length == 1
         assert method.exceptions[0].name == IOException.name
@@ -118,7 +113,7 @@ class AsmDecompilerTest extends TestCase {
         def node = decompile().annotations[0]
 
         def list = ((ListExpression) node.members.classArrayAttr).expressions
-        assert list.collect { ((ClassExpression) it).type.name } == [ToDecompile.name]
+        assert list.collect { ((ClassExpression) it).type.name } == [AsmDecompilerTestData.name]
     }
 
     void "test annotation array attribute"() {
@@ -136,7 +131,7 @@ class AsmDecompilerTest extends TestCase {
     }
 
     private static ClassNode decompile() {
-        def classFileName = ToDecompile.name.replace('.', '/') + '.class'
+        def classFileName = AsmDecompilerTestData.name.replace('.', '/') + '.class'
         def resource = AsmDecompilerTest.classLoader.getResource(classFileName)
         assert resource: classFileName
         def file = new File(resource.toURI())
@@ -148,45 +143,3 @@ class AsmDecompilerTest extends TestCase {
 
 }
 
-interface Intf {}
-
-class SuperClass {}
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target([ElementType.TYPE, ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER])
-@interface Anno {
-    String stringAttr() default ""
-    SomeEnum enumAttr() default SomeEnum.FOO
-    Class clsAttr() default Object
-    boolean booleanAttr() default true
-    int[] intArrayAttr() default []
-    Class[] classArrayAttr() default []
-    Anno[] annoArrayAttr() default []
-}
-
-enum SomeEnum {
-    FOO, BAR
-}
-
-@SuppressWarnings(["GroovyUnusedDeclaration", "GrMethodMayBeStatic"])
-@Anno(
-        stringAttr = "s",
-        enumAttr = SomeEnum.BAR,
-        intArrayAttr = [4, 2],
-        clsAttr = String,
-        classArrayAttr = [ToDecompile],
-        annoArrayAttr = [@Anno, @Anno(booleanAttr = false)]
-)
-class ToDecompile extends SuperClass implements Intf {
-    @Anno
-    protected aField
-
-    ToDecompile(boolean b) {}
-
-    @Anno
-    ClassNode objectMethod() { null }
-
-    void withParametersThrowing(@Anno int a, ToDecompile[] b) throws IOException { }
-
-    int[][] primitiveArrayMethod() { null }
-}
