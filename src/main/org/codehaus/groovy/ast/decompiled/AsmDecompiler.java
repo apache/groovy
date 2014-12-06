@@ -31,7 +31,7 @@ public abstract class AsmDecompiler {
 
         @Override
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaceNames) {
-            result = new ClassStub(fromInternalName(name), access, superName, interfaceNames);
+            result = new ClassStub(fromInternalName(name), access, signature, superName, interfaceNames);
         }
 
         @Override

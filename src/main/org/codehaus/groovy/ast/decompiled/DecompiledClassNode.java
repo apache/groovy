@@ -18,8 +18,6 @@ package org.codehaus.groovy.ast.decompiled;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.control.ClassNodeResolver;
-import org.codehaus.groovy.control.CompilationUnit;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Array;
@@ -31,15 +29,31 @@ import java.util.Map;
  */
 class DecompiledClassNode extends ClassNode {
     private final ClassStub classData;
-    private final ClassNodeResolver resolver;
-    private final CompilationUnit unit;
+    private final AsmReferenceResolver resolver;
     private boolean lazyInitDone = false;
 
-    public DecompiledClassNode(ClassStub data, ClassNodeResolver resolver, CompilationUnit unit) {
+    public DecompiledClassNode(ClassStub data, AsmReferenceResolver resolver) {
         super(data.className, data.accessModifiers, null, null, MixinNode.EMPTY_ARRAY);
         classData = data;
         this.resolver = resolver;
-        this.unit = unit;
+    }
+
+    @Override
+    public GenericsType[] getGenericsTypes() {
+        lazyInit();
+        return super.getGenericsTypes();
+    }
+
+    @Override
+    public boolean isUsingGenerics() {
+        lazyInit();
+        return super.isUsingGenerics();
+    }
+
+    @Override
+    public boolean isGenericsPlaceHolder() {
+        lazyInit();
+        return super.isGenericsPlaceHolder();
     }
 
     @Override
@@ -105,16 +119,7 @@ class DecompiledClassNode extends ClassNode {
     private void lazyInit() {
         synchronized (lazyInitLock) {
             if (!lazyInitDone) {
-
-                if (classData.superName != null) {
-                    setSuperClass(resolveClassNode(AsmDecompiler.fromInternalName(classData.superName)));
-                }
-
-                ClassNode[] interfaces = new ClassNode[classData.interfaceNames.length];
-                for (int i = 0; i < classData.interfaceNames.length; i++) {
-                    interfaces[i] = resolveClassNode(AsmDecompiler.fromInternalName(classData.interfaceNames[i]));
-                }
-                setInterfaces(interfaces);
+                ClassSignatureParser.configureClass(this, this.classData, this.resolver);
 
                 addAnnotations(classData, this);
 
@@ -134,7 +139,7 @@ class DecompiledClassNode extends ClassNode {
 
                     ClassNode[] exceptions = new ClassNode[method.exceptions.length];
                     for (int i = 0; i < method.exceptions.length; i++) {
-                        exceptions[i] = resolveClassNode(AsmDecompiler.fromInternalName(method.exceptions[i]));
+                        exceptions[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(method.exceptions[i]));
                     }
 
                     if ("<init>".equals(method.methodName)) {
@@ -222,16 +227,7 @@ class DecompiledClassNode extends ClassNode {
             return ClassHelper.make(className);
         }
 
-        return resolveClassNode(className);
-    }
-
-    private ClassNode resolveClassNode(String className) {
-        ClassNodeResolver.LookupResult lookupResult = resolver.resolveName(className, unit);
-        if (lookupResult == null || lookupResult.getClassNode() == null) {
-            throw new NoClassDefFoundError(className);
-        }
-
-        return lookupResult.getClassNode();
+        return resolver.resolveClass(className);
     }
 
 }

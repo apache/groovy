@@ -15,7 +15,6 @@
  */
 
 package org.codehaus.groovy.ast.decompiled
-
 import junit.framework.TestCase
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
@@ -24,7 +23,6 @@ import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.control.ClassNodeResolver
 import org.codehaus.groovy.control.CompilationUnit
 import org.objectweb.asm.Opcodes
-
 /**
  * @author Peter Gromov
  */
@@ -34,6 +32,36 @@ class AsmDecompilerTest extends TestCase {
         ClassNode node = decompile()
         assert AsmDecompilerTestData.name == node.name
         assert (node.modifiers & Opcodes.ACC_PUBLIC) != 0
+
+        assert !node.genericsPlaceHolder
+        assert node.usingGenerics
+
+        def t = node.genericsTypes[0]
+        assert t.name == 'T'
+        assert t.placeholder
+        assert t.type.name == 'T'
+        assert t.type.genericsPlaceHolder
+        assert !t.lowerBound
+
+        def list = t.upperBounds[0]
+        assert list.name == List.name
+        assert list.usingGenerics
+        assert !list.genericsPlaceHolder
+
+        def wildcard = list.genericsTypes[0]
+        assert wildcard.wildcard
+        assert !wildcard.type.genericsPlaceHolder //todo?
+        assert !wildcard.upperBounds
+
+        def tRef = wildcard.lowerBound
+        assert tRef.name == 'T'
+        assert tRef.genericsPlaceHolder
+        assert tRef.usingGenerics
+
+        def v = node.genericsTypes[1]
+        assert v.name == 'V'
+        assert v.placeholder
+        assert v.upperBounds[0].toString() == Object.name
     }
 
     void "test method object return type"() {
@@ -72,7 +100,27 @@ class AsmDecompilerTest extends TestCase {
     void "test supers"() {
         def node = decompile()
         assert node.superClass.name == SuperClass.name
+        assert !node.superClass.usingGenerics
+
         assert node.interfaces[0].name == Intf.name
+        assert node.interfaces[0].usingGenerics
+
+        def map = node.interfaces[0].genericsTypes[0]
+        assert !map.placeholder
+        assert map.name == Map.name
+        assert !map.lowerBound
+        assert !map.upperBounds
+
+        assert node.interfaces[0].redirect().genericsTypes[0].name == 'S'
+
+        def t = map.type.genericsTypes[0]
+        assert t.placeholder
+        assert t.name == 'T'
+        assert t.type.usingGenerics
+
+        def string = map.type.genericsTypes[1]
+        assert string.name == String.name
+        assert !string.type.usingGenerics
     }
 
     void "test simple class annotations"() {
@@ -138,7 +186,7 @@ class AsmDecompilerTest extends TestCase {
         def stub = AsmDecompiler.parseClass(file)
 
         def unit = new CompilationUnit(new GroovyClassLoader(AsmDecompilerTest.classLoader))
-        return new DecompiledClassNode(stub, new ClassNodeResolver(), unit)
+        return new DecompiledClassNode(stub, new AsmReferenceResolver(new ClassNodeResolver(), unit))
     }
 
 }

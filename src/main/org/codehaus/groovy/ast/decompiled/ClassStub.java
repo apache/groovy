@@ -24,15 +24,16 @@ import java.util.*;
 public class ClassStub extends MemberStub {
     final String className;
     final int accessModifiers;
+    final String signature;
     final String superName;
     final String[] interfaceNames;
     final List<MethodStub> methods = new ArrayList<MethodStub>();
     final List<FieldStub> fields = new ArrayList<FieldStub>();
 
-
-    public ClassStub(String className, int accessModifiers, String superName, String[] interfaceNames) {
+    public ClassStub(String className, int accessModifiers, String signature, String superName, String[] interfaceNames) {
         this.className = className;
         this.accessModifiers = accessModifiers;
+        this.signature = signature;
         this.superName = superName;
         this.interfaceNames = interfaceNames;
     }

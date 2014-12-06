@@ -26,7 +26,7 @@ import java.lang.annotation.Target
 /**
  * @author Peter Gromov
  */
-interface Intf {}
+interface Intf<S> {}
 
 class SuperClass {}
 
@@ -55,7 +55,7 @@ enum SomeEnum {
         classArrayAttr = [AsmDecompilerTestData],
         annoArrayAttr = [@Anno, @Anno(booleanAttr = false)]
 )
-class AsmDecompilerTestData extends SuperClass implements Intf {
+class AsmDecompilerTestData<T extends List<? super T>, V> extends SuperClass implements Intf<Map<T, String>> {
     @Anno
     protected aField
 
