@@ -16,19 +16,19 @@
 
 package org.codehaus.groovy.ast.decompiled;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Peter Gromov
  */
-public class ClassStub {
+public class ClassStub extends MemberStub {
     final String className;
     final int accessModifiers;
     final String superName;
     final String[] interfaceNames;
     final List<MethodStub> methods = new ArrayList<MethodStub>();
     final List<FieldStub> fields = new ArrayList<FieldStub>();
+
 
     public ClassStub(String className, int accessModifiers, String superName, String[] interfaceNames) {
         this.className = className;
@@ -38,12 +38,23 @@ public class ClassStub {
     }
 }
 
-class MethodStub {
+class MemberStub {
+    final List<AnnotationStub> annotations = new ArrayList<AnnotationStub>();
+
+    AnnotationStub addAnnotation(String desc) {
+        AnnotationStub stub = new AnnotationStub(desc);
+        annotations.add(stub);
+        return stub;
+    }
+}
+
+class MethodStub extends MemberStub {
     final String methodName;
     final int accessModifiers;
     final String desc;
     final String signature;
     final String[] exceptions;
+    final Map<Integer, List<AnnotationStub>> parameterAnnotations = new HashMap<Integer, List<AnnotationStub>>();
 
     public MethodStub(String methodName, int accessModifiers, String desc, String signature, String[] exceptions) {
         this.methodName = methodName;
@@ -54,7 +65,7 @@ class MethodStub {
     }
 }
 
-class FieldStub {
+class FieldStub extends MemberStub {
     final String fieldName;
     final int accessModifiers;
     final String desc;
@@ -65,5 +76,32 @@ class FieldStub {
         this.accessModifiers = accessModifiers;
         this.desc = desc;
         this.signature = signature;
+    }
+}
+
+class AnnotationStub {
+    final String className;
+    final Map<String, Object> members = new LinkedHashMap<String, Object>();
+
+    public AnnotationStub(String className) {
+        this.className = className;
+    }
+}
+
+class TypeWrapper {
+    final String desc;
+
+    public TypeWrapper(String desc) {
+        this.desc = desc;
+    }
+}
+
+class EnumConstantWrapper {
+    final String enumDesc;
+    final String constant;
+
+    public EnumConstantWrapper(String enumDesc, String constant) {
+        this.enumDesc = enumDesc;
+        this.constant = constant;
     }
 }

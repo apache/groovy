@@ -17,11 +17,18 @@
 package org.codehaus.groovy.ast.decompiled
 
 import junit.framework.TestCase
+import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.control.ClassNodeResolver
 import org.codehaus.groovy.control.CompilationUnit
 import org.objectweb.asm.Opcodes
+
+import java.lang.annotation.ElementType
+import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
+import java.lang.annotation.Target
 
 /**
  * @author Peter Gromov
@@ -73,6 +80,61 @@ class AsmDecompilerTest extends TestCase {
         assert node.interfaces[0].name == Intf.name
     }
 
+    void "test simple class annotations"() {
+        def node = decompile().annotations[0]
+
+        assert node.classNode.name == Anno.name
+
+        assert ((ConstantExpression) node.members.stringAttr).value == "s"
+        assert !node.members.booleanAttr
+        assert ((ClassExpression) node.members.clsAttr).type.name == String.name
+
+        assert ((PropertyExpression) node.members.enumAttr).propertyAsString == 'BAR'
+        assert ((PropertyExpression) node.members.enumAttr).objectExpression.type.name == SomeEnum.name
+    }
+
+    void "test member annotations"() {
+        def node = decompile()
+        assert node.getDeclaredField("aField").annotations[0].classNode.name == Anno.name
+        assert node.getDeclaredMethod("objectMethod").annotations[0].classNode.name == Anno.name
+        assert !node.getDeclaredMethods("withParametersThrowing")[0].annotations
+    }
+
+    void "test parameter annotations"() {
+        def node = decompile()
+        def params = node.getDeclaredMethods("withParametersThrowing")[0].parameters
+        assert params[0].annotations.collect { it.classNode.name } == [Anno.name]
+        assert !params[1].annotations
+    }
+
+    void "test primitive array attribute"() {
+        def node = decompile().annotations[0]
+
+        def list = ((ListExpression) node.members.intArrayAttr).expressions
+        assert list.collect { ((ConstantExpression) it).value } == [4, 2]
+    }
+
+    void "test class array attribute"() {
+        def node = decompile().annotations[0]
+
+        def list = ((ListExpression) node.members.classArrayAttr).expressions
+        assert list.collect { ((ClassExpression) it).type.name } == [ToDecompile.name]
+    }
+
+    void "test annotation array attribute"() {
+        def node = decompile().annotations[0]
+
+        def list = ((ListExpression) node.members.annoArrayAttr).expressions
+        assert list.size() == 2
+        list.each {
+            assert it.type.name == Anno.name
+            assert it instanceof AnnotationConstantExpression
+        }
+
+        def annotationNode = (AnnotationNode) ((AnnotationConstantExpression) list[1]).value
+        assert ((ConstantExpression) annotationNode.members.booleanAttr).value == false
+    }
+
     private static ClassNode decompile() {
         def classFileName = ToDecompile.name.replace('.', '/') + '.class'
         def resource = AsmDecompilerTest.classLoader.getResource(classFileName)
@@ -90,15 +152,41 @@ interface Intf {}
 
 class SuperClass {}
 
+@Retention(RetentionPolicy.RUNTIME)
+@Target([ElementType.TYPE, ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER])
+@interface Anno {
+    String stringAttr() default ""
+    SomeEnum enumAttr() default SomeEnum.FOO
+    Class clsAttr() default Object
+    boolean booleanAttr() default true
+    int[] intArrayAttr() default []
+    Class[] classArrayAttr() default []
+    Anno[] annoArrayAttr() default []
+}
+
+enum SomeEnum {
+    FOO, BAR
+}
+
 @SuppressWarnings(["GroovyUnusedDeclaration", "GrMethodMayBeStatic"])
+@Anno(
+        stringAttr = "s",
+        enumAttr = SomeEnum.BAR,
+        intArrayAttr = [4, 2],
+        clsAttr = String,
+        classArrayAttr = [ToDecompile],
+        annoArrayAttr = [@Anno, @Anno(booleanAttr = false)]
+)
 class ToDecompile extends SuperClass implements Intf {
+    @Anno
     protected aField
 
     ToDecompile(boolean b) {}
 
+    @Anno
     ClassNode objectMethod() { null }
 
-    void withParametersThrowing(int a, ToDecompile[] b) throws IOException { null }
+    void withParametersThrowing(@Anno int a, ToDecompile[] b) throws IOException { }
 
     int[][] primitiveArrayMethod() { null }
 }

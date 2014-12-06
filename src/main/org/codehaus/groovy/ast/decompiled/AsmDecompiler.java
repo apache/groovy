@@ -7,6 +7,8 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Peter Gromov
@@ -35,29 +37,96 @@ public abstract class AsmDecompiler {
         @Override
         public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
             if (!"<clinit>".equals(name)) {
-                result.methods.add(new MethodStub(name, access, desc, signature, exceptions != null ? exceptions : EMPTY_STRING_ARRAY));
+                final MethodStub stub = new MethodStub(name, access, desc, signature, exceptions != null ? exceptions : EMPTY_STRING_ARRAY);
+                result.methods.add(stub);
+                return new MethodVisitor(api) {
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                        return readAnnotationMembers(stub.addAnnotation(desc));
+                    }
+
+                    @Override
+                    public AnnotationVisitor visitParameterAnnotation(int parameter, String desc, boolean visible) {
+                        List<AnnotationStub> list = stub.parameterAnnotations.get(parameter);
+                        if (list == null) {
+                            stub.parameterAnnotations.put(parameter, list = new ArrayList<AnnotationStub>());
+                        }
+                        AnnotationStub annotationStub = new AnnotationStub(desc);
+                        list.add(annotationStub);
+                        return readAnnotationMembers(annotationStub);
+                    }
+                };
             }
             return null;
         }
 
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-            return super.visitAnnotation(desc, visible);
-        }
-
-        @Override
-        public void visitInnerClass(String name, String outerName, String innerName, int access) {
-            super.visitInnerClass(name, outerName, innerName, access);
+            return readAnnotationMembers(result.addAnnotation(desc));
         }
 
         @Override
         public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
-            result.fields.add(new FieldStub(name, access, desc, signature));
-            return null;
+            final FieldStub stub = new FieldStub(name, access, desc, signature);
+            result.fields.add(stub);
+            return new FieldVisitor(api) {
+                @Override
+                public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                    return readAnnotationMembers(stub.addAnnotation(desc));
+                }
+            };
         }
+    }
+
+    private static AnnotationReader readAnnotationMembers(final AnnotationStub stub) {
+        return new AnnotationReader() {
+            @Override
+            void visitAttribute(String name, Object value) {
+                stub.members.put(name, value);
+            }
+        };
     }
 
     static String fromInternalName(String name) {
         return name.replace('/', '.');
     }
+
+    private static abstract class AnnotationReader extends AnnotationVisitor {
+        public AnnotationReader() {
+            super(Opcodes.ASM5);
+        }
+
+        abstract void visitAttribute(String name, Object value);
+
+        @Override
+        public void visit(String name, Object value) {
+            visitAttribute(name, value instanceof Type ? new TypeWrapper(((Type) value).getDescriptor()) : value);
+        }
+
+        @Override
+        public void visitEnum(String name, String desc, String value) {
+            visitAttribute(name, new EnumConstantWrapper(desc, value));
+        }
+
+        @Override
+        public AnnotationVisitor visitAnnotation(String name, String desc) {
+            AnnotationStub stub = new AnnotationStub(desc);
+            visitAttribute(name, stub);
+            return readAnnotationMembers(stub);
+        }
+
+        @Override
+        public AnnotationVisitor visitArray(String name) {
+            final ArrayList<Object> list = new ArrayList<>();
+            visitAttribute(name, list);
+            return new AnnotationReader() {
+                @Override
+                void visitAttribute(String name, Object value) {
+                    list.add(value);
+                }
+            };
+        }
+
+    }
 }
+

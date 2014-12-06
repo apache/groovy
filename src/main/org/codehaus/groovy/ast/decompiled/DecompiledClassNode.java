@@ -17,11 +17,14 @@
 package org.codehaus.groovy.ast.decompiled;
 
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.control.ClassNodeResolver;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Array;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Peter Gromov
@@ -88,13 +91,13 @@ class DecompiledClassNode extends ClassNode {
     }
 
     @Override
-    public List<AnnotationNode> getAnnotations() { //todo
+    public List<AnnotationNode> getAnnotations() {
         lazyInit();
         return super.getAnnotations();
     }
 
     @Override
-    public List<AnnotationNode> getAnnotations(ClassNode type) { //todo
+    public List<AnnotationNode> getAnnotations(ClassNode type) {
         lazyInit();
         return super.getAnnotations(type);
     }
@@ -113,12 +116,20 @@ class DecompiledClassNode extends ClassNode {
                 }
                 setInterfaces(interfaces);
 
+                addAnnotations(classData, this);
+
                 for (MethodStub method : classData.methods) {
-                    //todo method generics, annotations
+                    //todo method generics
                     Type[] argumentTypes = Type.getArgumentTypes(method.desc);
                     Parameter[] parameters = new Parameter[argumentTypes.length];
                     for (int i = 0; i < argumentTypes.length; i++) {
                         parameters[i] = new Parameter(resolveType(argumentTypes[i]), "param" + i);
+                    }
+
+                    for (Map.Entry<Integer, List<AnnotationStub>> entry : method.parameterAnnotations.entrySet()) {
+                        for (AnnotationStub stub : entry.getValue()) {
+                            parameters[entry.getKey()].addAnnotation(createAnnotationNode(stub));
+                        }
                     }
 
                     ClassNode[] exceptions = new ClassNode[method.exceptions.length];
@@ -127,21 +138,70 @@ class DecompiledClassNode extends ClassNode {
                     }
 
                     if ("<init>".equals(method.methodName)) {
-                        addConstructor(new ConstructorNode(method.accessModifiers, parameters, exceptions, null));
+                        addConstructor(addAnnotations(method, new ConstructorNode(method.accessModifiers, parameters, exceptions, null)));
                     } else {
                         ClassNode returnType = resolveType(Type.getReturnType(method.desc));
-                        addMethod(new MethodNode(method.methodName, method.accessModifiers, returnType, parameters, exceptions, null));
+                        addMethod(addAnnotations(method, new MethodNode(method.methodName, method.accessModifiers, returnType, parameters, exceptions, null)));
                     }
                 }
 
                 for (FieldStub field : classData.fields) {
-                    //todo field generics, annotations
-                    addField(new FieldNode(field.fieldName, field.accessModifiers, resolveType(Type.getType(field.desc)), this, null));
+                    //todo field generics
+                    addField(addAnnotations(field, new FieldNode(field.fieldName, field.accessModifiers, resolveType(Type.getType(field.desc)), this, null)));
                 }
 
                 lazyInitDone = true;
             }
         }
+    }
+
+    private <T extends AnnotatedNode> T addAnnotations(MemberStub stub, T node) {
+        for (AnnotationStub annotation : stub.annotations) {
+            node.addAnnotation(createAnnotationNode(annotation));
+        }
+        return node;
+    }
+
+    private AnnotationNode createAnnotationNode(AnnotationStub annotation) {
+        AnnotationNode node = new AnnotationNode(resolveType(Type.getType(annotation.className)));
+        for (Map.Entry<String, Object> entry : annotation.members.entrySet()) {
+            node.addMember(entry.getKey(), annotationValueToExpression(entry.getValue()));
+        }
+        return node;
+    }
+
+    private Expression annotationValueToExpression(Object value) {
+        if (value instanceof TypeWrapper) {
+            return new ClassExpression(resolveType(Type.getType(((TypeWrapper) value).desc)));
+        }
+
+        if (value instanceof EnumConstantWrapper) {
+            EnumConstantWrapper wrapper = (EnumConstantWrapper) value;
+            return new PropertyExpression(new ClassExpression(resolveType(Type.getType(wrapper.enumDesc))), wrapper.constant);
+        }
+
+        if (value instanceof AnnotationStub) {
+            return new AnnotationConstantExpression(createAnnotationNode((AnnotationStub) value));
+        }
+
+        if (value != null && value.getClass().isArray()) {
+            ListExpression elementExprs = new ListExpression();
+            int len = Array.getLength(value);
+            for (int i = 0; i != len; ++i) {
+                elementExprs.addExpression(annotationValueToExpression(Array.get(value, i)));
+            }
+            return elementExprs;
+        }
+
+        if (value instanceof List) {
+            ListExpression elementExprs = new ListExpression();
+            for (Object o : (List) value) {
+                elementExprs.addExpression(annotationValueToExpression(o));
+            }
+            return elementExprs;
+        }
+
+        return new ConstantExpression(value);
     }
 
     private ClassNode resolveType(Type type) {
