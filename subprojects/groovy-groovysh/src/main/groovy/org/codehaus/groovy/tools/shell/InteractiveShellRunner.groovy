@@ -56,11 +56,14 @@ class InteractiveShellRunner
         this.completer = new CommandsMultiCompleter()
         reader.addCompleter(this.completer)
 
+        CustomClassSyntaxCompletor classnameCompletor = new CustomClassSyntaxCompletor(shell)
+
         reader.addCompleter(new GroovySyntaxCompletor(shell,
                 new ReflectionCompletor(shell),
+                classnameCompletor,
                 [new KeywordSyntaxCompletor(),
                         new VariableSyntaxCompletor(shell),
-                        new CustomClassSyntaxCompletor(shell),
+                        classnameCompletor,
                         new ImportsSyntaxCompletor(shell)],
                 new FileNameCompleter(false)))
     }

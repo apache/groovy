@@ -40,6 +40,7 @@ class GroovySyntaxCompletor implements Completer {
 
     private final Groovysh shell
     private final List<IdentifierCompletor> identifierCompletors
+    private final IdentifierCompletor classnameCompletor
     private final ReflectionCompletor reflectionCompletor
     private final InfixKeywordSyntaxCompletor infixCompletor
     private final Completer filenameCompletor
@@ -51,14 +52,17 @@ class GroovySyntaxCompletor implements Completer {
         SPREAD_DOT_LAST,
         PREFIX_AFTER_DOT,
         PREFIX_AFTER_SPREAD_DOT,
-        NO_DOT_PREFIX
+        NO_DOT_PREFIX,
+        INSTANCEOF
     }
 
     GroovySyntaxCompletor(final Groovysh shell,
                           final ReflectionCompletor reflectionCompletor,
+                          IdentifierCompletor classnameCompletor,
                           final List<IdentifierCompletor> identifierCompletors,
                           final Completer filenameCompletor) {
         this.shell = shell
+        this.classnameCompletor = classnameCompletor
         this.identifierCompletors = identifierCompletors
         infixCompletor = new InfixKeywordSyntaxCompletor()
         this.reflectionCompletor = reflectionCompletor
@@ -96,6 +100,12 @@ class GroovySyntaxCompletor implements Completer {
         }
         if (completionCase == CompletionCase.SECOND_IDENT) {
             if (infixCompletor.complete(tokens, candidates)) {
+                return tokens.last().column - 1
+            }
+            return -1
+        }
+        if (completionCase == CompletionCase.INSTANCEOF) {
+            if (classnameCompletor.complete(tokens, candidates)) {
                 return tokens.last().column - 1
             }
             return -1
@@ -192,6 +202,8 @@ class GroovySyntaxCompletor implements Completer {
                 return CompletionCase.NO_COMPLETION
             }
             return CompletionCase.SPREAD_DOT_LAST
+        } else if (currentToken.type == LITERAL_instanceof) {
+            return CompletionCase.INSTANCEOF
         } else {
             LOG.debug('Untreated toke type: ' + currentToken.type)
         }
