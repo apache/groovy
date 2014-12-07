@@ -217,6 +217,16 @@ class AsmDecompilerTest extends TestCase {
         assert wildcard.upperBounds[0].name == Object.name
     }
 
+    public void "test non-generic exceptions"() {
+        def method = decompile().getDeclaredMethods("nonGenericExceptions")[0]
+        assert method.exceptions[0].name == IOException.name
+    }
+
+    public void "test non-generic parameters"() {
+        def method = decompile().getDeclaredMethods("nonGenericParameters")[0]
+        assert method.parameters[0].type == ClassHelper.boolean_TYPE
+    }
+
     void "test generic field"() {
         def type = decompile().getDeclaredField("genericField").type
         assert type.name == List.name

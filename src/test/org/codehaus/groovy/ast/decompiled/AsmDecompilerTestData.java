@@ -35,7 +35,13 @@ public class AsmDecompilerTestData<T extends List<? super T>, V> extends SuperCl
         return null;
     }
 
-    public <A, B extends IOException> List<?> genericMethod(A a, int[] array) throws B {
+    public <A extends Number, B extends IOException> List<?> genericMethod(A a, int[] array) throws B {
+        return null;
+    }
+    public <A, B extends IOException> List<?> nonGenericExceptions(A a, int[] array) throws IOException {
+        return null;
+    }
+    public <A, B extends IOException> List<?> nonGenericParameters(boolean b) throws B {
         return null;
     }
 

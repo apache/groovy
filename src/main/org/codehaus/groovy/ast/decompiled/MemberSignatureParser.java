@@ -35,14 +35,22 @@ class MemberSignatureParser {
         GenericsType[] typeParameters = null;
 
         Type[] argumentTypes = Type.getArgumentTypes(method.desc);
-
         final ClassNode[] parameterTypes = new ClassNode[argumentTypes.length];
+        for (int i = 0; i < argumentTypes.length; i++) {
+            parameterTypes[i] = resolver.resolveType(argumentTypes[i]);
+        }
+
         final ClassNode[] exceptions = new ClassNode[method.exceptions.length];
-        final Reference<ClassNode> returnType = new Reference<ClassNode>();
+        for (int i = 0; i < method.exceptions.length; i++) {
+            exceptions[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(method.exceptions[i]));
+        }
+
+        final Reference<ClassNode> returnType = new Reference<ClassNode>(resolver.resolveType(Type.getReturnType(method.desc)));
 
         if (method.signature != null) {
             FormalParameterParser v = new FormalParameterParser(resolver) {
                 int paramIndex = 0;
+
                 @Override
                 public SignatureVisitor visitParameterType() {
                     return new TypeSignatureParser(resolver) {
@@ -64,6 +72,7 @@ class MemberSignatureParser {
                 }
 
                 int exceptionIndex = 0;
+
                 @Override
                 public SignatureVisitor visitExceptionType() {
                     return new TypeSignatureParser(resolver) {
@@ -76,16 +85,7 @@ class MemberSignatureParser {
             };
             new SignatureReader(method.signature).accept(v);
             typeParameters = v.getTypeParameters();
-        } else {
-            for (int i = 0; i < argumentTypes.length; i++) {
-                parameterTypes[i] = resolver.resolveType(argumentTypes[i]);
-            }
-
-            for (int i = 0; i < method.exceptions.length; i++) {
-                exceptions[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(method.exceptions[i]));
-            }
         }
-
 
         Parameter[] parameters = new Parameter[parameterTypes.length];
         for (int i = 0; i < parameterTypes.length; i++) {
@@ -102,9 +102,6 @@ class MemberSignatureParser {
         if ("<init>".equals(method.methodName)) {
             result = new ConstructorNode(method.accessModifiers, parameters, exceptions, null);
         } else {
-            if (returnType.get() == null) {
-                returnType.set(resolver.resolveType(Type.getReturnType(method.desc)));
-            }
             result = new MethodNode(method.methodName, method.accessModifiers, returnType.get(), parameters, exceptions, null);
             if (method.annotationDefault != null) {
                 result.setCode(new ReturnStatement(new ConstantExpression(method.annotationDefault)));
@@ -117,7 +114,7 @@ class MemberSignatureParser {
     }
 
     static FieldNode createFieldNode(FieldStub field, AsmReferenceResolver resolver, DecompiledClassNode owner) {
-        final Reference<ClassNode> type = new Reference<ClassNode>();
+        final Reference<ClassNode> type = new Reference<ClassNode>(resolver.resolveType(Type.getType(field.desc)));
         if (field.signature != null) {
             new SignatureReader(field.signature).accept(new TypeSignatureParser(resolver) {
                 @Override
@@ -125,8 +122,6 @@ class MemberSignatureParser {
                     type.set(result);
                 }
             });
-        } else {
-            type.set(resolver.resolveType(Type.getType(field.desc)));
         }
         return new FieldNode(field.fieldName, field.accessModifiers, type.get(), owner, null);
     }
