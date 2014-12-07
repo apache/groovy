@@ -16,9 +16,11 @@
 
 package org.codehaus.groovy.ast.decompiled;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.ClassNodeResolver;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.objectweb.asm.Type;
 
 /**
  * @author Peter Gromov
@@ -41,4 +43,26 @@ public class AsmReferenceResolver {
         return lookupResult.getClassNode();
 
     }
+
+    public ClassNode resolveType(Type type) {
+        if (type.getSort() == Type.ARRAY) {
+            ClassNode result = resolveNonArrayType(type.getElementType());
+            for (int i = 0; i < type.getDimensions(); i++) {
+                result = result.makeArray();
+            }
+            return result;
+        }
+
+        return resolveNonArrayType(type);
+    }
+
+    private ClassNode resolveNonArrayType(Type type) {
+        String className = type.getClassName();
+        if (type.getSort() != Type.OBJECT) {
+            return ClassHelper.make(className);
+        }
+
+        return resolveClass(className);
+    }
+
 }

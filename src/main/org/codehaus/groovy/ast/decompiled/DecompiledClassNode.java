@@ -134,7 +134,7 @@ class DecompiledClassNode extends ClassNode {
 
                 for (FieldStub field : classData.fields) {
                     //todo field generics
-                    addField(addAnnotations(field, new FieldNode(field.fieldName, field.accessModifiers, resolveType(Type.getType(field.desc)), this, null)));
+                    addField(addAnnotations(field, new FieldNode(field.fieldName, field.accessModifiers, resolver.resolveType(Type.getType(field.desc)), this, null)));
                 }
 
                 lazyInitDone = true;
@@ -147,7 +147,7 @@ class DecompiledClassNode extends ClassNode {
         Type[] argumentTypes = Type.getArgumentTypes(method.desc);
         Parameter[] parameters = new Parameter[argumentTypes.length];
         for (int i = 0; i < argumentTypes.length; i++) {
-            parameters[i] = new Parameter(resolveType(argumentTypes[i]), "param" + i);
+            parameters[i] = new Parameter(resolver.resolveType(argumentTypes[i]), "param" + i);
         }
 
         for (Map.Entry<Integer, List<AnnotationStub>> entry : method.parameterAnnotations.entrySet()) {
@@ -163,7 +163,7 @@ class DecompiledClassNode extends ClassNode {
 
         return "<init>".equals(method.methodName) ?
                 new ConstructorNode(method.accessModifiers, parameters, exceptions, null) :
-                new MethodNode(method.methodName, method.accessModifiers, resolveType(Type.getReturnType(method.desc)), parameters, exceptions, null);
+                new MethodNode(method.methodName, method.accessModifiers, resolver.resolveType(Type.getReturnType(method.desc)), parameters, exceptions, null);
     }
 
     private <T extends AnnotatedNode> T addAnnotations(MemberStub stub, T node) {
@@ -174,7 +174,7 @@ class DecompiledClassNode extends ClassNode {
     }
 
     private AnnotationNode createAnnotationNode(AnnotationStub annotation) {
-        AnnotationNode node = new AnnotationNode(resolveType(Type.getType(annotation.className)));
+        AnnotationNode node = new AnnotationNode(resolver.resolveType(Type.getType(annotation.className)));
         for (Map.Entry<String, Object> entry : annotation.members.entrySet()) {
             node.addMember(entry.getKey(), annotationValueToExpression(entry.getValue()));
         }
@@ -183,12 +183,12 @@ class DecompiledClassNode extends ClassNode {
 
     private Expression annotationValueToExpression(Object value) {
         if (value instanceof TypeWrapper) {
-            return new ClassExpression(resolveType(Type.getType(((TypeWrapper) value).desc)));
+            return new ClassExpression(resolver.resolveType(Type.getType(((TypeWrapper) value).desc)));
         }
 
         if (value instanceof EnumConstantWrapper) {
             EnumConstantWrapper wrapper = (EnumConstantWrapper) value;
-            return new PropertyExpression(new ClassExpression(resolveType(Type.getType(wrapper.enumDesc))), wrapper.constant);
+            return new PropertyExpression(new ClassExpression(resolver.resolveType(Type.getType(wrapper.enumDesc))), wrapper.constant);
         }
 
         if (value instanceof AnnotationStub) {
@@ -213,27 +213,6 @@ class DecompiledClassNode extends ClassNode {
         }
 
         return new ConstantExpression(value);
-    }
-
-    private ClassNode resolveType(Type type) {
-        if (type.getSort() == Type.ARRAY) {
-            ClassNode result = resolveNonArrayType(type.getElementType());
-            for (int i = 0; i < type.getDimensions(); i++) {
-                result = result.makeArray();
-            }
-            return result;
-        }
-
-        return resolveNonArrayType(type);
-    }
-
-    private ClassNode resolveNonArrayType(Type type) {
-        String className = type.getClassName();
-        if (type.getSort() != Type.OBJECT) {
-            return ClassHelper.make(className);
-        }
-
-        return resolver.resolveClass(className);
     }
 
 }
