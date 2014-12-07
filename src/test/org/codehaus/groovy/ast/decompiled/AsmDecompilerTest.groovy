@@ -39,7 +39,7 @@ class AsmDecompilerTest extends TestCase {
         def t = node.genericsTypes[0]
         assert t.name == 'T'
         assert t.placeholder
-        assert t.type.name == 'T'
+        assert t.type.name == Object.name
         assert t.type.genericsPlaceHolder
         assert !t.lowerBound
 

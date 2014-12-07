@@ -44,6 +44,10 @@ abstract class TypeSignatureParser extends SignatureVisitor {
 
     @Override
     public void visitTypeVariable(String name) {
+        finished(createTypeVariableReference(name));
+    }
+
+    static ClassNode createTypeVariableReference(String name) {
         //todo duplicates Java5
         ClassNode cn = ClassHelper.makeWithoutCaching(name);
         cn.setGenericsPlaceHolder(true);
@@ -52,7 +56,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         GenericsType[] gts = new GenericsType[]{new GenericsType(cn2)};
         cn.setGenericsTypes(gts);
         cn.setRedirect(ClassHelper.OBJECT_TYPE);
-        finished(cn);
+        return cn;
     }
 
     @Override
