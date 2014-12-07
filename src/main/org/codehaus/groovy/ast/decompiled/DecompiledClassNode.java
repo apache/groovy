@@ -124,29 +124,11 @@ class DecompiledClassNode extends ClassNode {
                 addAnnotations(classData, this);
 
                 for (MethodStub method : classData.methods) {
-                    //todo method generics
-                    Type[] argumentTypes = Type.getArgumentTypes(method.desc);
-                    Parameter[] parameters = new Parameter[argumentTypes.length];
-                    for (int i = 0; i < argumentTypes.length; i++) {
-                        parameters[i] = new Parameter(resolveType(argumentTypes[i]), "param" + i);
-                    }
-
-                    for (Map.Entry<Integer, List<AnnotationStub>> entry : method.parameterAnnotations.entrySet()) {
-                        for (AnnotationStub stub : entry.getValue()) {
-                            parameters[entry.getKey()].addAnnotation(createAnnotationNode(stub));
-                        }
-                    }
-
-                    ClassNode[] exceptions = new ClassNode[method.exceptions.length];
-                    for (int i = 0; i < method.exceptions.length; i++) {
-                        exceptions[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(method.exceptions[i]));
-                    }
-
-                    if ("<init>".equals(method.methodName)) {
-                        addConstructor(addAnnotations(method, new ConstructorNode(method.accessModifiers, parameters, exceptions, null)));
+                    MethodNode node = addAnnotations(method, parseMethodSignature(method));
+                    if (node instanceof ConstructorNode) {
+                        addConstructor((ConstructorNode) node);
                     } else {
-                        ClassNode returnType = resolveType(Type.getReturnType(method.desc));
-                        addMethod(addAnnotations(method, new MethodNode(method.methodName, method.accessModifiers, returnType, parameters, exceptions, null)));
+                        addMethod(node);
                     }
                 }
 
@@ -158,6 +140,30 @@ class DecompiledClassNode extends ClassNode {
                 lazyInitDone = true;
             }
         }
+    }
+
+    private MethodNode parseMethodSignature(MethodStub method) {
+        //todo method generics
+        Type[] argumentTypes = Type.getArgumentTypes(method.desc);
+        Parameter[] parameters = new Parameter[argumentTypes.length];
+        for (int i = 0; i < argumentTypes.length; i++) {
+            parameters[i] = new Parameter(resolveType(argumentTypes[i]), "param" + i);
+        }
+
+        for (Map.Entry<Integer, List<AnnotationStub>> entry : method.parameterAnnotations.entrySet()) {
+            for (AnnotationStub stub : entry.getValue()) {
+                parameters[entry.getKey()].addAnnotation(createAnnotationNode(stub));
+            }
+        }
+
+        ClassNode[] exceptions = new ClassNode[method.exceptions.length];
+        for (int i = 0; i < method.exceptions.length; i++) {
+            exceptions[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(method.exceptions[i]));
+        }
+
+        return "<init>".equals(method.methodName) ?
+                new ConstructorNode(method.accessModifiers, parameters, exceptions, null) :
+                new MethodNode(method.methodName, method.accessModifiers, resolveType(Type.getReturnType(method.desc)), parameters, exceptions, null);
     }
 
     private <T extends AnnotatedNode> T addAnnotations(MemberStub stub, T node) {
