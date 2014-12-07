@@ -3,10 +3,7 @@ package org.codehaus.groovy.ast.decompiled;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import org.objectweb.asm.*;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,9 +12,9 @@ import java.util.List;
  */
 public abstract class AsmDecompiler {
 
-    public static ClassStub parseClass(File file) throws IOException {
+    public static ClassStub parseClass(InputStream stream) throws IOException {
         DecompilingVisitor visitor = new DecompilingVisitor();
-        new ClassReader(new BufferedInputStream(new FileInputStream(file))).accept(visitor, ClassReader.SKIP_FRAMES);
+        new ClassReader(new BufferedInputStream(stream)).accept(visitor, ClassReader.SKIP_FRAMES);
         return visitor.result;
     }
 

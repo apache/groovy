@@ -226,10 +226,8 @@ class AsmDecompilerTest extends TestCase {
 
     private static ClassNode decompile() {
         def classFileName = AsmDecompilerTestData.name.replace('.', '/') + '.class'
-        def resource = AsmDecompilerTest.classLoader.getResource(classFileName)
-        assert resource: classFileName
-        def file = new File(resource.toURI())
-        def stub = AsmDecompiler.parseClass(file)
+        def resource = AsmDecompilerTest.classLoader.getResourceAsStream(classFileName)
+        def stub = AsmDecompiler.parseClass(resource)
 
         def unit = new CompilationUnit(new GroovyClassLoader(AsmDecompilerTest.classLoader))
         return new DecompiledClassNode(stub, new AsmReferenceResolver(new ClassNodeResolver(), unit))
