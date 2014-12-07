@@ -54,9 +54,10 @@ class AsmDecompilerTest extends TestCase {
         assert !wildcard.upperBounds
 
         def tRef = wildcard.lowerBound
-        assert tRef.name == 'T'
         assert tRef.genericsPlaceHolder
         assert tRef.usingGenerics
+        assert tRef.name == Object.name
+        assert tRef.genericsTypes[0].name == 'T'
 
         def v = node.genericsTypes[1]
         assert v.name == 'V'
@@ -170,7 +171,7 @@ class AsmDecompilerTest extends TestCase {
         def list = ((ListExpression) node.members.annoArrayAttr).expressions
         assert list.size() == 2
         list.each {
-            assert it.type.name == Anno.name
+            assert it.type.name == InnerAnno.name
             assert it instanceof AnnotationConstantExpression
         }
 
