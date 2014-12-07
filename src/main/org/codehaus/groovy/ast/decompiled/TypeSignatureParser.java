@@ -20,6 +20,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureVisitor;
 
 import java.util.ArrayList;
@@ -56,12 +57,18 @@ abstract class TypeSignatureParser extends SignatureVisitor {
 
     @Override
     public void visitBaseType(char descriptor) {
-        throw new UnsupportedOperationException(); //todo
+        finished(resolver.resolveType(Type.getType(String.valueOf(descriptor))));
     }
 
     @Override
     public SignatureVisitor visitArrayType() {
-        throw new UnsupportedOperationException(); //todo
+        final TypeSignatureParser outer = this;
+        return new TypeSignatureParser(resolver) {
+            @Override
+            void finished(ClassNode result) {
+                outer.finished(result.makeArray());
+            }
+        };
     }
 
     @Override
@@ -71,7 +78,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
 
     @Override
     public void visitTypeArgument() {
-//            todo ?
+        arguments.add(createWildcard(new ClassNode[]{ClassHelper.OBJECT_TYPE}, null));
     }
 
     @Override
@@ -84,17 +91,20 @@ abstract class TypeSignatureParser extends SignatureVisitor {
                     return;
                 }
 
-                //todo duplicates Java 5
-                ClassNode base = ClassHelper.makeWithoutCaching("?");
-                base.setRedirect(ClassHelper.OBJECT_TYPE);
-
                 ClassNode[] upper = wildcard == EXTENDS ? new ClassNode[]{result} : null;
                 ClassNode lower = wildcard == SUPER ? result : null;
-                GenericsType t = new GenericsType(base, upper, lower);
-                t.setWildcard(true);
-                arguments.add(t);
+                arguments.add(createWildcard(upper, lower));
             }
         };
+    }
+
+    private static GenericsType createWildcard(ClassNode[] upper, ClassNode lower) {
+        //todo duplicates Java 5
+        ClassNode base = ClassHelper.makeWithoutCaching("?");
+        base.setRedirect(ClassHelper.OBJECT_TYPE);
+        GenericsType t = new GenericsType(base, upper, lower);
+        t.setWildcard(true);
+        return t;
     }
 
     @Override

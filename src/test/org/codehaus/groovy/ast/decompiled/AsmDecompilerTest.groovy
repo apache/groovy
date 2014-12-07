@@ -179,6 +179,39 @@ class AsmDecompilerTest extends TestCase {
         assert ((ConstantExpression) annotationNode.members.booleanAttr).value == false
     }
 
+    void "test generic method"() {
+        def method = decompile().getDeclaredMethods("genericMethod")[0]
+
+        assert method.genericsTypes.size() == 2
+        assert method.genericsTypes[0].name == 'A'
+        assert method.genericsTypes[1].name == 'B'
+        assert method.genericsTypes[1].upperBounds[0].name == IOException.name
+
+        def param1Type = method.parameters[0].type
+        assert param1Type.genericsPlaceHolder
+        assert param1Type.genericsTypes[0].name == 'A'
+        assert param1Type.genericsTypes[0].placeholder
+
+        def param2Type = method.parameters[1].type
+        assert !param2Type.genericsPlaceHolder
+        assert param2Type.array
+        assert param2Type.componentType == ClassHelper.int_TYPE
+
+        def exception = method.exceptions[0]
+        assert exception.genericsPlaceHolder
+        assert exception.genericsTypes[0].name == 'B'
+        assert exception.genericsTypes[0].placeholder
+
+        def ret = method.returnType
+        assert ret.name == List.name
+        assert ret.usingGenerics
+
+        def wildcard = ret.genericsTypes[0]
+        assert wildcard.wildcard
+        assert wildcard.upperBounds[0].name == Object.name
+    }
+
+
     private static ClassNode decompile() {
         def classFileName = AsmDecompilerTestData.name.replace('.', '/') + '.class'
         def resource = AsmDecompilerTest.classLoader.getResource(classFileName)

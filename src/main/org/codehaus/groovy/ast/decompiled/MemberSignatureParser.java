@@ -16,11 +16,11 @@
 
 package org.codehaus.groovy.ast.decompiled;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
+import groovy.lang.Reference;
+import org.codehaus.groovy.ast.*;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.signature.SignatureReader;
+import org.objectweb.asm.signature.SignatureVisitor;
 
 import java.util.List;
 import java.util.Map;
@@ -29,12 +29,65 @@ import java.util.Map;
  * @author Peter Gromov
  */
 class MemberSignatureParser {
-    static MethodNode createMethodNode(AsmReferenceResolver resolver, MethodStub method) {
-        //todo method generics
+    static MethodNode createMethodNode(final AsmReferenceResolver resolver, MethodStub method) {
+        GenericsType[] typeParameters = null;
+
         Type[] argumentTypes = Type.getArgumentTypes(method.desc);
-        Parameter[] parameters = new Parameter[argumentTypes.length];
-        for (int i = 0; i < argumentTypes.length; i++) {
-            parameters[i] = new Parameter(resolver.resolveType(argumentTypes[i]), "param" + i);
+
+        final ClassNode[] parameterTypes = new ClassNode[argumentTypes.length];
+        final ClassNode[] exceptions = new ClassNode[method.exceptions.length];
+        final Reference<ClassNode> returnType = new Reference<>();
+
+        if (method.signature != null) {
+            FormalParameterParser v = new FormalParameterParser(resolver) {
+                int paramIndex = 0;
+                @Override
+                public SignatureVisitor visitParameterType() {
+                    return new TypeSignatureParser(resolver) {
+                        @Override
+                        void finished(ClassNode result) {
+                            parameterTypes[paramIndex++] = result;
+                        }
+                    };
+                }
+
+                @Override
+                public SignatureVisitor visitReturnType() {
+                    return new TypeSignatureParser(resolver) {
+                        @Override
+                        void finished(ClassNode result) {
+                            returnType.set(result);
+                        }
+                    };
+                }
+
+                int exceptionIndex = 0;
+                @Override
+                public SignatureVisitor visitExceptionType() {
+                    return new TypeSignatureParser(resolver) {
+                        @Override
+                        void finished(ClassNode result) {
+                            exceptions[exceptionIndex++] = result;
+                        }
+                    };
+                }
+            };
+            new SignatureReader(method.signature).accept(v);
+            typeParameters = v.getTypeParameters();
+        } else {
+            for (int i = 0; i < argumentTypes.length; i++) {
+                parameterTypes[i] = resolver.resolveType(argumentTypes[i]);
+            }
+
+            for (int i = 0; i < method.exceptions.length; i++) {
+                exceptions[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(method.exceptions[i]));
+            }
+        }
+
+
+        Parameter[] parameters = new Parameter[parameterTypes.length];
+        for (int i = 0; i < parameterTypes.length; i++) {
+            parameters[i] = new Parameter(parameterTypes[i], "param" + i);
         }
 
         for (Map.Entry<Integer, List<AnnotationStub>> entry : method.parameterAnnotations.entrySet()) {
@@ -43,13 +96,16 @@ class MemberSignatureParser {
             }
         }
 
-        ClassNode[] exceptions = new ClassNode[method.exceptions.length];
-        for (int i = 0; i < method.exceptions.length; i++) {
-            exceptions[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(method.exceptions[i]));
+        MethodNode result;
+        if ("<init>".equals(method.methodName)) {
+            result = new ConstructorNode(method.accessModifiers, parameters, exceptions, null);
+        } else {
+            if (returnType.get() == null) {
+                returnType.set(resolver.resolveType(Type.getReturnType(method.desc)));
+            }
+            result = new MethodNode(method.methodName, method.accessModifiers, returnType.get(), parameters, exceptions, null);
         }
-
-        return "<init>".equals(method.methodName) ?
-                new ConstructorNode(method.accessModifiers, parameters, exceptions, null) :
-                new MethodNode(method.methodName, method.accessModifiers, resolver.resolveType(Type.getReturnType(method.desc)), parameters, exceptions, null);
+        result.setGenericsTypes(typeParameters);
+        return result;
     }
 }
