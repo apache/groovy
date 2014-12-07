@@ -36,7 +36,7 @@ class MemberSignatureParser {
 
         final ClassNode[] parameterTypes = new ClassNode[argumentTypes.length];
         final ClassNode[] exceptions = new ClassNode[method.exceptions.length];
-        final Reference<ClassNode> returnType = new Reference<>();
+        final Reference<ClassNode> returnType = new Reference<ClassNode>();
 
         if (method.signature != null) {
             FormalParameterParser v = new FormalParameterParser(resolver) {
@@ -108,4 +108,20 @@ class MemberSignatureParser {
         result.setGenericsTypes(typeParameters);
         return result;
     }
+
+    static FieldNode createFieldNode(FieldStub field, AsmReferenceResolver resolver, DecompiledClassNode owner) {
+        final Reference<ClassNode> type = new Reference<ClassNode>();
+        if (field.signature != null) {
+            new SignatureReader(field.signature).accept(new TypeSignatureParser(resolver) {
+                @Override
+                void finished(ClassNode result) {
+                    type.set(result);
+                }
+            });
+        } else {
+            type.set(resolver.resolveType(Type.getType(field.desc)));
+        }
+        return new FieldNode(field.fieldName, field.accessModifiers, type.get(), owner, null);
+    }
 }
+

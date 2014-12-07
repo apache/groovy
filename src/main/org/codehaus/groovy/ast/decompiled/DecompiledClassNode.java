@@ -17,7 +17,6 @@
 package org.codehaus.groovy.ast.decompiled;
 
 import org.codehaus.groovy.ast.*;
-import org.objectweb.asm.Type;
 
 import java.util.List;
 
@@ -130,8 +129,7 @@ class DecompiledClassNode extends ClassNode {
                 }
 
                 for (FieldStub field : classData.fields) {
-                    //todo field generics
-                    addField(addAnnotations(field, new FieldNode(field.fieldName, field.accessModifiers, resolver.resolveType(Type.getType(field.desc)), this, null)));
+                    addField(addAnnotations(field, MemberSignatureParser.createFieldNode(field, resolver, this)));
                 }
 
                 lazyInitDone = true;

@@ -41,6 +41,8 @@ public class AsmDecompilerTestData<T extends List<? super T>, V> extends SuperCl
 
     @Anno
     protected Object aField;
+
+    public List<T> genericField;
 }
 
 @SuppressWarnings("unused")

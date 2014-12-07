@@ -211,6 +211,18 @@ class AsmDecompilerTest extends TestCase {
         assert wildcard.upperBounds[0].name == Object.name
     }
 
+    void "test generic field"() {
+        def type = decompile().getDeclaredField("genericField").type
+        assert type.name == List.name
+        assert type.usingGenerics
+
+        def tRef = type.genericsTypes[0].type
+        assert tRef.genericsPlaceHolder
+        assert tRef.usingGenerics
+        assert tRef.name == Object.name
+        assert tRef.genericsTypes[0].name == 'T'
+    }
+
 
     private static ClassNode decompile() {
         def classFileName = AsmDecompilerTestData.name.replace('.', '/') + '.class'
