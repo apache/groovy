@@ -20,7 +20,6 @@ import org.codehaus.groovy.ast.*;
 import org.objectweb.asm.Type;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author Peter Gromov
@@ -122,7 +121,7 @@ class DecompiledClassNode extends ClassNode {
                 addAnnotations(classData, this);
 
                 for (MethodStub method : classData.methods) {
-                    MethodNode node = addAnnotations(method, parseMethodSignature(method));
+                    MethodNode node = addAnnotations(method, MemberSignatureParser.createMethodNode(resolver, method));
                     if (node instanceof ConstructorNode) {
                         addConstructor((ConstructorNode) node);
                     } else {
@@ -138,30 +137,6 @@ class DecompiledClassNode extends ClassNode {
                 lazyInitDone = true;
             }
         }
-    }
-
-    private MethodNode parseMethodSignature(MethodStub method) {
-        //todo method generics
-        Type[] argumentTypes = Type.getArgumentTypes(method.desc);
-        Parameter[] parameters = new Parameter[argumentTypes.length];
-        for (int i = 0; i < argumentTypes.length; i++) {
-            parameters[i] = new Parameter(resolver.resolveType(argumentTypes[i]), "param" + i);
-        }
-
-        for (Map.Entry<Integer, List<AnnotationStub>> entry : method.parameterAnnotations.entrySet()) {
-            for (AnnotationStub stub : entry.getValue()) {
-                parameters[entry.getKey()].addAnnotation(Annotations.createAnnotationNode(stub, resolver));
-            }
-        }
-
-        ClassNode[] exceptions = new ClassNode[method.exceptions.length];
-        for (int i = 0; i < method.exceptions.length; i++) {
-            exceptions[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(method.exceptions[i]));
-        }
-
-        return "<init>".equals(method.methodName) ?
-                new ConstructorNode(method.accessModifiers, parameters, exceptions, null) :
-                new MethodNode(method.methodName, method.accessModifiers, resolver.resolveType(Type.getReturnType(method.desc)), parameters, exceptions, null);
     }
 
     private <T extends AnnotatedNode> T addAnnotations(MemberStub stub, T node) {
