@@ -56,6 +56,7 @@ class MethodStub extends MemberStub {
     final String signature;
     final String[] exceptions;
     final Map<Integer, List<AnnotationStub>> parameterAnnotations = new HashMap<Integer, List<AnnotationStub>>();
+    Object annotationDefault;
 
     public MethodStub(String methodName, int accessModifiers, String desc, String signature, String[] exceptions) {
         this.methodName = methodName;

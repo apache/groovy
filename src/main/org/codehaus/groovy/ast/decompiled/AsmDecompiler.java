@@ -52,6 +52,16 @@ public abstract class AsmDecompiler {
                         list.add(annotationStub);
                         return readAnnotationMembers(annotationStub);
                     }
+
+                    @Override
+                    public AnnotationVisitor visitAnnotationDefault() {
+                        return new AnnotationReader() {
+                            @Override
+                            void visitAttribute(String name, Object value) {
+                                stub.annotationDefault = value;
+                            }
+                        };
+                    }
                 };
             }
             return null;

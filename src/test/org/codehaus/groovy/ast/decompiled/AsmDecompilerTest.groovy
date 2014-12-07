@@ -179,6 +179,12 @@ class AsmDecompilerTest extends TestCase {
         assert ((ConstantExpression) annotationNode.members.booleanAttr).value == false
     }
 
+    void "test annotation default method"() {
+        def method = decompile(Anno.name).getDeclaredMethod('booleanAttr')
+        assert method.hasAnnotationDefault()
+        assert method.code
+    }
+
     void "test generic method"() {
         def method = decompile().getDeclaredMethods("genericMethod")[0]
 
@@ -224,8 +230,8 @@ class AsmDecompilerTest extends TestCase {
     }
 
 
-    private static ClassNode decompile() {
-        def classFileName = AsmDecompilerTestData.name.replace('.', '/') + '.class'
+    private static ClassNode decompile(String cls = AsmDecompilerTestData.name) {
+        def classFileName = cls.replace('.', '/') + '.class'
         def resource = AsmDecompilerTest.classLoader.getResourceAsStream(classFileName)
         def stub = AsmDecompiler.parseClass(resource)
 

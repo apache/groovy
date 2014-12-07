@@ -18,6 +18,8 @@ package org.codehaus.groovy.ast.decompiled;
 
 import groovy.lang.Reference;
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureVisitor;
@@ -104,6 +106,11 @@ class MemberSignatureParser {
                 returnType.set(resolver.resolveType(Type.getReturnType(method.desc)));
             }
             result = new MethodNode(method.methodName, method.accessModifiers, returnType.get(), parameters, exceptions, null);
+            if (method.annotationDefault != null) {
+                result.setCode(new ReturnStatement(new ConstantExpression(method.annotationDefault)));
+                result.setAnnotationDefault(true);
+            }
+
         }
         result.setGenericsTypes(typeParameters);
         return result;
