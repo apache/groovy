@@ -16,10 +16,7 @@
 
 package org.codehaus.groovy.ast.decompiled;
 
-import jdk.internal.org.objectweb.asm.Opcodes;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.GenericsType;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureVisitor;
 
@@ -48,43 +45,8 @@ class ClassSignatureParser {
     }
 
     private static void parseClassSignature(final ClassNode classNode, String signature, final AsmReferenceResolver resolver) {
-        final List<GenericsType> typeParameters = new ArrayList<GenericsType>();
         final List<ClassNode> interfaces = new ArrayList<ClassNode>();
-        new SignatureReader(signature).accept(new SignatureVisitor(Opcodes.ASM5) {
-            String currentTypeParameter;
-            List<ClassNode> parameterBounds = new ArrayList<ClassNode>();
-
-            @Override
-            public void visitFormalTypeParameter(String name) {
-                flushTypeParameter();
-                currentTypeParameter = name;
-            }
-
-            private void flushTypeParameter() {
-                if (currentTypeParameter != null) {
-                    ClassNode[] upperBounds = parameterBounds.toArray(new ClassNode[parameterBounds.size()]);
-                    ClassNode param = ClassHelper.make(currentTypeParameter);
-                    param.setGenericsPlaceHolder(true);
-                    typeParameters.add(new GenericsType(param, upperBounds, null));
-                    currentTypeParameter = null;
-                    parameterBounds.clear();
-                }
-            }
-
-            @Override
-            public SignatureVisitor visitClassBound() {
-                return new TypeSignatureParser(resolver) {
-                    @Override
-                    void finished(ClassNode result) {
-                        parameterBounds.add(result);
-                    }
-                };
-            }
-
-            @Override
-            public SignatureVisitor visitInterfaceBound() {
-                return visitClassBound();
-            }
+        FormalParameterParser v = new FormalParameterParser(resolver) {
 
             @Override
             public SignatureVisitor visitSuperclass() {
@@ -108,8 +70,9 @@ class ClassSignatureParser {
                 };
             }
 
-        });
-        classNode.setGenericsTypes(typeParameters.toArray(new GenericsType[typeParameters.size()]));
+        };
+        new SignatureReader(signature).accept(v);
+        classNode.setGenericsTypes(v.getTypeParameters());
         classNode.setInterfaces(interfaces.toArray(new ClassNode[interfaces.size()]));
     }
 }
