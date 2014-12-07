@@ -17,10 +17,8 @@
 package org.codehaus.groovy.ast.decompiled;
 
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
 import org.objectweb.asm.Type;
 
-import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Map;
 
@@ -152,7 +150,7 @@ class DecompiledClassNode extends ClassNode {
 
         for (Map.Entry<Integer, List<AnnotationStub>> entry : method.parameterAnnotations.entrySet()) {
             for (AnnotationStub stub : entry.getValue()) {
-                parameters[entry.getKey()].addAnnotation(createAnnotationNode(stub));
+                parameters[entry.getKey()].addAnnotation(Annotations.createAnnotationNode(stub, resolver));
             }
         }
 
@@ -168,51 +166,9 @@ class DecompiledClassNode extends ClassNode {
 
     private <T extends AnnotatedNode> T addAnnotations(MemberStub stub, T node) {
         for (AnnotationStub annotation : stub.annotations) {
-            node.addAnnotation(createAnnotationNode(annotation));
+            node.addAnnotation(Annotations.createAnnotationNode(annotation, resolver));
         }
         return node;
-    }
-
-    private AnnotationNode createAnnotationNode(AnnotationStub annotation) {
-        AnnotationNode node = new AnnotationNode(resolver.resolveType(Type.getType(annotation.className)));
-        for (Map.Entry<String, Object> entry : annotation.members.entrySet()) {
-            node.addMember(entry.getKey(), annotationValueToExpression(entry.getValue()));
-        }
-        return node;
-    }
-
-    private Expression annotationValueToExpression(Object value) {
-        if (value instanceof TypeWrapper) {
-            return new ClassExpression(resolver.resolveType(Type.getType(((TypeWrapper) value).desc)));
-        }
-
-        if (value instanceof EnumConstantWrapper) {
-            EnumConstantWrapper wrapper = (EnumConstantWrapper) value;
-            return new PropertyExpression(new ClassExpression(resolver.resolveType(Type.getType(wrapper.enumDesc))), wrapper.constant);
-        }
-
-        if (value instanceof AnnotationStub) {
-            return new AnnotationConstantExpression(createAnnotationNode((AnnotationStub) value));
-        }
-
-        if (value != null && value.getClass().isArray()) {
-            ListExpression elementExprs = new ListExpression();
-            int len = Array.getLength(value);
-            for (int i = 0; i != len; ++i) {
-                elementExprs.addExpression(annotationValueToExpression(Array.get(value, i)));
-            }
-            return elementExprs;
-        }
-
-        if (value instanceof List) {
-            ListExpression elementExprs = new ListExpression();
-            for (Object o : (List) value) {
-                elementExprs.addExpression(annotationValueToExpression(o));
-            }
-            return elementExprs;
-        }
-
-        return new ConstantExpression(value);
     }
 
 }
