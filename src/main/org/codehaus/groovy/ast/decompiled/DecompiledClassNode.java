@@ -32,6 +32,7 @@ public class DecompiledClassNode extends ClassNode {
         super(data.className, data.accessModifiers, null, null, MixinNode.EMPTY_ARRAY);
         classData = data;
         this.resolver = resolver;
+        isPrimaryNode = false;
     }
 
     @Override
@@ -104,6 +105,36 @@ public class DecompiledClassNode extends ClassNode {
     public List<AnnotationNode> getAnnotations(ClassNode type) {
         lazyInit();
         return super.getAnnotations(type);
+    }
+
+    @Override
+    public void setRedirect(ClassNode cn) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setGenericsPlaceHolder(boolean b) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setUsingGenerics(boolean b) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String setName(String name) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isResolved() {
+        return true;
+    }
+
+    @Override
+    public Class getTypeClass() {
+        return resolver.resolveJvmClass(getName());
     }
 
     private void lazyInit() {

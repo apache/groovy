@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.ast.decompiled;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.ClassNodeResolver;
@@ -63,6 +64,14 @@ public class AsmReferenceResolver {
         }
 
         return resolveClass(className);
+    }
+
+    public Class resolveJvmClass(String name) {
+        try {
+            return unit.getClassLoader().loadClass(name, false, true);
+        } catch (ClassNotFoundException e) {
+            throw new GroovyBugError("JVM class can't be loaded for " + name, e);
+        }
     }
 
 }

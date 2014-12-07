@@ -1322,8 +1322,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return (getModifiers() & Opcodes.ACC_INTERFACE) > 0;
     }
 
-    public boolean isResolved(){
-        return redirect().clazz!=null || (componentType != null && componentType.isResolved());
+    public boolean isResolved() {
+        if (clazz != null) return true;
+        if (redirect != null) return redirect.isResolved();
+        return componentType != null && componentType.isResolved();
     }
 
     public boolean isArray(){
@@ -1342,13 +1344,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the class this classnode relates to. May return null.
      */
     public Class getTypeClass(){
-        Class c = redirect().clazz;
-        if (c!=null) return c;
+        if (clazz != null) return clazz;
+        if (redirect != null) return redirect.getTypeClass();
+
         ClassNode component = redirect().componentType;
         if (component!=null && component.isResolved()){
             ClassNode cn = component.makeArray();
             setRedirect(cn);
-            return redirect().clazz;
+            return redirect().getTypeClass();
         }
         throw new GroovyBugError("ClassNode#getTypeClass for "+getName()+" is called before the type class is set ");
     }
