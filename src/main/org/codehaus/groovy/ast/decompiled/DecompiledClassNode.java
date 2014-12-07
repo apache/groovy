@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * @author Peter Gromov
  */
-class DecompiledClassNode extends ClassNode {
+public class DecompiledClassNode extends ClassNode {
     private final ClassStub classData;
     private final AsmReferenceResolver resolver;
     private boolean lazyInitDone = false;
@@ -44,12 +44,6 @@ class DecompiledClassNode extends ClassNode {
     public boolean isUsingGenerics() {
         lazyInit();
         return super.isUsingGenerics();
-    }
-
-    @Override
-    public boolean isGenericsPlaceHolder() {
-        lazyInit();
-        return super.isGenericsPlaceHolder();
     }
 
     @Override

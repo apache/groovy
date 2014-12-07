@@ -17,6 +17,7 @@
 package org.codehaus.groovy.ast.decompiled;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureVisitor;
 
@@ -72,7 +73,10 @@ class ClassSignatureParser {
 
         };
         new SignatureReader(signature).accept(v);
-        classNode.setGenericsTypes(v.getTypeParameters());
+        GenericsType[] typeParameters = v.getTypeParameters();
+        if (typeParameters.length > 0) {
+            classNode.setGenericsTypes(typeParameters);
+        }
         classNode.setInterfaces(interfaces.toArray(new ClassNode[interfaces.size()]));
     }
 }
