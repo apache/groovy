@@ -31,6 +31,11 @@ public abstract class AsmDecompiler {
         }
 
         @Override
+        public void visitInnerClass(String name, String outerName, String innerName, int access) {
+            result.innerClassModifiers.put(innerName, access);
+        }
+
+        @Override
         public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
             if (!"<clinit>".equals(name)) {
                 final MethodStub stub = new MethodStub(name, access, desc, signature, exceptions != null ? exceptions : EMPTY_STRING_ARRAY);

@@ -29,10 +29,26 @@ public class DecompiledClassNode extends ClassNode {
     private boolean lazyInitDone = false;
 
     public DecompiledClassNode(ClassStub data, AsmReferenceResolver resolver) {
-        super(data.className, data.accessModifiers, null, null, MixinNode.EMPTY_ARRAY);
+        super(data.className, getFullModifiers(data, resolver), null, null, MixinNode.EMPTY_ARRAY);
         classData = data;
         this.resolver = resolver;
         isPrimaryNode = false;
+    }
+
+    private static int getFullModifiers(ClassStub data, AsmReferenceResolver resolver) {
+        int result = data.accessModifiers;
+        String className = data.className;
+        int idx = className.lastIndexOf('$');
+        if (idx > 0) {
+            ClassNode outerClass = resolver.resolveClass(className.substring(0, idx));
+            if (outerClass instanceof DecompiledClassNode) {
+                Integer outerModifiers = ((DecompiledClassNode) outerClass).classData.innerClassModifiers.get(className.substring(idx + 1));
+                if (outerModifiers != null) {
+                    result |= outerModifiers;
+                }
+            }
+        }
+        return result;
     }
 
     @Override

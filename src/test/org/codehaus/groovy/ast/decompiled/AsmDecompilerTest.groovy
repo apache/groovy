@@ -25,6 +25,7 @@ import org.codehaus.groovy.control.CompilationUnit
 import org.objectweb.asm.Opcodes
 
 import java.lang.annotation.RetentionPolicy
+import java.util.jar.Attributes
 
 /**
  * @author Peter Gromov
@@ -260,6 +261,10 @@ class AsmDecompilerTest extends TestCase {
         assert tRef.usingGenerics
         assert tRef.name == Object.name
         assert tRef.genericsTypes[0].name == 'T'
+    }
+
+    void "test static inner class"() {
+        assert (decompile(Attributes.Name.name).modifiers & Opcodes.ACC_STATIC) != 0
     }
 
 

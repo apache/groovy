@@ -29,6 +29,7 @@ public class ClassStub extends MemberStub {
     final String[] interfaceNames;
     final List<MethodStub> methods = new ArrayList<MethodStub>();
     final List<FieldStub> fields = new ArrayList<FieldStub>();
+    final Map<String, Integer> innerClassModifiers = new HashMap<String, Integer>();
 
     public ClassStub(String className, int accessModifiers, String signature, String superName, String[] interfaceNames) {
         this.className = className;
