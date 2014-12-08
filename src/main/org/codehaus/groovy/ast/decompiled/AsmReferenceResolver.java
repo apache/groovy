@@ -36,13 +36,16 @@ public class AsmReferenceResolver {
     }
 
     public ClassNode resolveClass(String className) {
-        ClassNodeResolver.LookupResult lookupResult = resolver.resolveName(className, unit);
-        if (lookupResult == null || lookupResult.getClassNode() == null) {
+        ClassNode classNode = resolveClassNullable(className);
+        if (classNode == null) {
             throw new NoClassDefFoundError(className);
         }
+        return classNode;
+    }
 
-        return lookupResult.getClassNode();
-
+    public ClassNode resolveClassNullable(String className) {
+        ClassNodeResolver.LookupResult lookupResult = resolver.resolveName(className, unit);
+        return lookupResult == null ? null :lookupResult.getClassNode();
     }
 
     public ClassNode resolveType(Type type) {

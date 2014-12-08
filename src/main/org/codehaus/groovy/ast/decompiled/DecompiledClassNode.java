@@ -40,7 +40,7 @@ public class DecompiledClassNode extends ClassNode {
         String className = data.className;
         int idx = className.lastIndexOf('$');
         if (idx > 0) {
-            ClassNode outerClass = resolver.resolveClass(className.substring(0, idx));
+            ClassNode outerClass = resolver.resolveClassNullable(className.substring(0, idx));
             if (outerClass instanceof DecompiledClassNode) {
                 Integer outerModifiers = ((DecompiledClassNode) outerClass).classData.innerClassModifiers.get(className.substring(idx + 1));
                 if (outerModifiers != null) {
