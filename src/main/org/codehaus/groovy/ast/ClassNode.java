@@ -1349,9 +1349,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
         ClassNode component = redirect().componentType;
         if (component!=null && component.isResolved()){
-            ClassNode cn = component.makeArray();
-            setRedirect(cn);
-            return redirect().getTypeClass();
+            return Array.newInstance(component.getTypeClass(), 0).getClass();
         }
         throw new GroovyBugError("ClassNode#getTypeClass for "+getName()+" is called before the type class is set ");
     }
