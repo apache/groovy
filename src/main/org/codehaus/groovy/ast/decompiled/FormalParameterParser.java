@@ -16,9 +16,9 @@
 
 package org.codehaus.groovy.ast.decompiled;
 
-import jdk.internal.org.objectweb.asm.Opcodes;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.signature.SignatureVisitor;
 
 import java.util.ArrayList;

@@ -1,6 +1,5 @@
 package org.codehaus.groovy.ast.decompiled;
 
-import jdk.internal.org.objectweb.asm.Opcodes;
 import org.objectweb.asm.*;
 
 import java.io.*;
@@ -124,7 +123,7 @@ public abstract class AsmDecompiler {
 
         @Override
         public AnnotationVisitor visitArray(String name) {
-            final ArrayList<Object> list = new ArrayList<>();
+            final ArrayList<Object> list = new ArrayList<Object>();
             visitAttribute(name, list);
             return new AnnotationReader() {
                 @Override
