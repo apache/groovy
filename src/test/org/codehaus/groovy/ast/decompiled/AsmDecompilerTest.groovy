@@ -23,6 +23,9 @@ import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.control.ClassNodeResolver
 import org.codehaus.groovy.control.CompilationUnit
 import org.objectweb.asm.Opcodes
+
+import java.lang.annotation.RetentionPolicy
+
 /**
  * @author Peter Gromov
  */
@@ -194,6 +197,15 @@ class AsmDecompilerTest extends TestCase {
         assert anno.isTargetAllowed(AnnotationNode.METHOD_TARGET)
         assert anno.isTargetAllowed(AnnotationNode.TYPE_TARGET)
         assert !anno.isTargetAllowed(AnnotationNode.LOCAL_VARIABLE_TARGET)
+    }
+
+    void "test enum field"() {
+        def node = decompile(RetentionPolicy.name).plainNodeReference
+        for (s in ['SOURCE', 'CLASS', 'RUNTIME']) {
+            def field = node.getDeclaredField(s)
+            assert field
+            assert field.type == node
+        }
     }
 
     void "test generic method"() {

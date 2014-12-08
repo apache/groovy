@@ -148,7 +148,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     // clazz!=null when resolved
     protected Class clazz;
     // only false when this classNode is constructed from a class
-    private boolean lazyInitDone=true;
+    private volatile boolean lazyInitDone=true;
     // not null if if the ClassNode is an array
     private ClassNode componentType = null;
     // if not null this instance is handled as proxy
@@ -248,6 +248,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * needed to avoid having too many objects during compilation
      */
     private void lazyClassInit() {
+        if (lazyInitDone) return;
         synchronized (lazyInitLock) {
             if (redirect!=null) {
                 throw new GroovyBugError("lazyClassInit called on a proxy ClassNode, that must not happen."+
@@ -338,8 +339,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the list of FieldNode's associated with this ClassNode
      */
     public List<FieldNode> getFields() {
-        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getFields();
+        lazyClassInit();
         if (fields == null)
             fields = new LinkedList<FieldNode> ();
         return fields;
@@ -349,8 +350,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the array of interfaces which this ClassNode implements
      */
     public ClassNode[] getInterfaces() {
-        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getInterfaces();
+        lazyClassInit();
         return interfaces;
     }
 
@@ -373,8 +374,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the list of methods associated with this ClassNode
      */
     public List<MethodNode> getMethods() {
-        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getMethods();
+        lazyClassInit();
         return methodsList;
     }
 
@@ -475,11 +476,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public List<ConstructorNode> getDeclaredConstructors() {
-        if (!redirect().lazyInitDone) redirect().lazyClassInit();
-        final ClassNode r = redirect();
-        if (r.constructors == null)
-            r.constructors = new ArrayList<ConstructorNode> ();
-        return r.constructors;
+        if (redirect != null) return redirect().getDeclaredConstructors();
+        lazyClassInit();
+        if (constructors == null)
+            constructors = new ArrayList<ConstructorNode> ();
+        return constructors;
     }
 
     /**
@@ -537,6 +538,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             r.fieldIndex = new HashMap<String,FieldNode> ();
         r.fields.addFirst(node);
         r.fieldIndex.put(node.getName(), node);
+    }
+
+    public Map<String, FieldNode> getFieldIndex() {
+        return fieldIndex;
     }
 
     public void addProperty(PropertyNode node) {
@@ -731,11 +736,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the method matching the given name and parameters or null
      */
     public FieldNode getDeclaredField(String name) {
-        if (!redirect().lazyInitDone) redirect().lazyClassInit();
-        ClassNode r = redirect ();
-        if (r.fieldIndex == null)
-            r.fieldIndex = new HashMap<String,FieldNode> ();
-        return r.fieldIndex.get(name);
+        if (redirect != null) return redirect().getDeclaredField(name);
+
+        lazyClassInit();
+        return fieldIndex == null ? null : fieldIndex.get(name);
     }
 
     /**
@@ -861,8 +865,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @see #getMethods(String)
      */
     public List<MethodNode> getDeclaredMethods(String name) {
-        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getDeclaredMethods(name);
+        lazyClassInit();
         return methods.getNotNull(name);
     }
 
@@ -993,8 +997,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public ClassNode getUnresolvedSuperClass(boolean useRedirect) {
         if (!useRedirect) return superClass;
-        if (!redirect().lazyInitDone) redirect().lazyClassInit();
-        return redirect().superClass;
+        if (redirect != null) return redirect().getUnresolvedSuperClass(true);
+        lazyClassInit();
+        return superClass;
     }
 
     public void setUnresolvedSuperClass(ClassNode sn) {
@@ -1007,8 +1012,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public ClassNode [] getUnresolvedInterfaces(boolean useRedirect) {
         if (!useRedirect) return interfaces;
-        if (!redirect().lazyInitDone) redirect().lazyClassInit();
-        return redirect().interfaces;
+        if (redirect != null) return redirect().getUnresolvedInterfaces(true);
+        lazyClassInit();
+        return interfaces;
     }
 
     public CompileUnit getCompileUnit() {

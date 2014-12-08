@@ -31,7 +31,7 @@ import java.util.Map;
  */
 class Annotations {
     static AnnotationNode createAnnotationNode(AnnotationStub annotation, AsmReferenceResolver resolver) {
-        AnnotationNode node = new CompiledAnnotationNode(resolver.resolveType(Type.getType(annotation.className)));
+        AnnotationNode node = new DecompiledAnnotationNode(resolver.resolveType(Type.getType(annotation.className)));
         for (Map.Entry<String, Object> entry : annotation.members.entrySet()) {
             node.addMember(entry.getKey(), annotationValueToExpression(entry.getValue(), resolver));
         }
@@ -72,16 +72,17 @@ class Annotations {
         return new ConstantExpression(value);
     }
 
-    private static class CompiledAnnotationNode extends AnnotationNode {
+    private static class DecompiledAnnotationNode extends AnnotationNode {
         private final Object initLock;
-        private boolean lazyInitDone;
+        private volatile boolean lazyInitDone;
 
-        public CompiledAnnotationNode(ClassNode type) {
+        public DecompiledAnnotationNode(ClassNode type) {
             super(type);
             initLock = new Object();
         }
 
         private void lazyInit() {
+            if (lazyInitDone) return;
             synchronized (initLock) {
                 if (!lazyInitDone) {
                     for (AnnotationNode annotation : getClassNode().getAnnotations()) {
