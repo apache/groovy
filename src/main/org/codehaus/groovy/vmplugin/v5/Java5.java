@@ -455,7 +455,7 @@ public class Java5 implements VMPlugin {
 
     @Override
     public Object getInvokeSpecialHandle(Method m, Object receiver){
-        throw new GroovyBugError("getInvokeSpecialHandle requires at least JDK 7");
+        throw new GroovyBugError("getInvokeSpecialHandle requires at least JDK 7 wot private access to Lookup");
     }
 
     @Override
