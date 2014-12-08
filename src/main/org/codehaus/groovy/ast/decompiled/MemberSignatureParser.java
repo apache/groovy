@@ -16,7 +16,6 @@
 
 package org.codehaus.groovy.ast.decompiled;
 
-import groovy.lang.Reference;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
@@ -45,7 +44,7 @@ class MemberSignatureParser {
             exceptions[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(method.exceptions[i]));
         }
 
-        final Reference<ClassNode> returnType = new Reference<ClassNode>(resolver.resolveType(Type.getReturnType(method.desc)));
+        final ClassNode[] returnType = {resolver.resolveType(Type.getReturnType(method.desc))};
 
         if (method.signature != null) {
             FormalParameterParser v = new FormalParameterParser(resolver) {
@@ -66,7 +65,7 @@ class MemberSignatureParser {
                     return new TypeSignatureParser(resolver) {
                         @Override
                         void finished(ClassNode result) {
-                            returnType.set(result);
+                            returnType[0] = result;
                         }
                     };
                 }
@@ -102,7 +101,7 @@ class MemberSignatureParser {
         if ("<init>".equals(method.methodName)) {
             result = new ConstructorNode(method.accessModifiers, parameters, exceptions, null);
         } else {
-            result = new MethodNode(method.methodName, method.accessModifiers, returnType.get(), parameters, exceptions, null);
+            result = new MethodNode(method.methodName, method.accessModifiers, returnType[0], parameters, exceptions, null);
             if (method.annotationDefault != null) {
                 result.setCode(new ReturnStatement(new ConstantExpression(method.annotationDefault)));
                 result.setAnnotationDefault(true);
@@ -119,16 +118,16 @@ class MemberSignatureParser {
     }
 
     static FieldNode createFieldNode(FieldStub field, AsmReferenceResolver resolver, DecompiledClassNode owner) {
-        final Reference<ClassNode> type = new Reference<ClassNode>(resolver.resolveType(Type.getType(field.desc)));
+        final ClassNode[] type = {resolver.resolveType(Type.getType(field.desc))};
         if (field.signature != null) {
             new SignatureReader(field.signature).accept(new TypeSignatureParser(resolver) {
                 @Override
                 void finished(ClassNode result) {
-                    type.set(result);
+                    type[0] = result;
                 }
             });
         }
-        return new FieldNode(field.fieldName, field.accessModifiers, type.get(), owner, null);
+        return new FieldNode(field.fieldName, field.accessModifiers, type[0], owner, null);
     }
 }
 
