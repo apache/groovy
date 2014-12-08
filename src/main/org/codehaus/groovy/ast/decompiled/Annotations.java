@@ -17,7 +17,9 @@
 package org.codehaus.groovy.ast.decompiled;
 
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.vmplugin.v5.Java5;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Array;
@@ -29,7 +31,7 @@ import java.util.Map;
  */
 class Annotations {
     static AnnotationNode createAnnotationNode(AnnotationStub annotation, AsmReferenceResolver resolver) {
-        AnnotationNode node = new AnnotationNode(resolver.resolveType(Type.getType(annotation.className)));
+        AnnotationNode node = new CompiledAnnotationNode(resolver.resolveType(Type.getType(annotation.className)));
         for (Map.Entry<String, Object> entry : annotation.members.entrySet()) {
             node.addMember(entry.getKey(), annotationValueToExpression(entry.getValue(), resolver));
         }
@@ -68,5 +70,51 @@ class Annotations {
         }
 
         return new ConstantExpression(value);
+    }
+
+    private static class CompiledAnnotationNode extends AnnotationNode {
+        private final Object initLock;
+        private boolean lazyInitDone;
+
+        public CompiledAnnotationNode(ClassNode type) {
+            super(type);
+            initLock = new Object();
+        }
+
+        private void lazyInit() {
+            synchronized (initLock) {
+                if (!lazyInitDone) {
+                    for (AnnotationNode annotation : getClassNode().getAnnotations()) {
+                        Java5.configureAnnotationFromDefinition(annotation, this);
+                    }
+
+                    lazyInitDone = true;
+                }
+            }
+        }
+
+        @Override
+        public boolean isTargetAllowed(int target) {
+            lazyInit();
+            return super.isTargetAllowed(target);
+        }
+
+        @Override
+        public boolean hasRuntimeRetention() {
+            lazyInit();
+            return super.hasRuntimeRetention();
+        }
+
+        @Override
+        public boolean hasSourceRetention() {
+            lazyInit();
+            return super.hasSourceRetention();
+        }
+
+        @Override
+        public boolean hasClassRetention() {
+            lazyInit();
+            return super.hasClassRetention();
+        }
     }
 }

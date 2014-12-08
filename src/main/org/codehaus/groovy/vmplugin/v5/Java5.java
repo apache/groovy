@@ -207,18 +207,16 @@ public class Java5 implements VMPlugin {
         }
     }
 
-    private void configureAnnotationFromDefinition(AnnotationNode definition, AnnotationNode root) {
+    public static void configureAnnotationFromDefinition(AnnotationNode definition, AnnotationNode root) {
         ClassNode type = definition.getClassNode();
-        if (!type.isResolved()) return;
-        Class clazz = type.getTypeClass();
-        if (clazz == Retention.class) {
+        if ("java.lang.annotation.Retention".equals(type.getName())) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof PropertyExpression)) return;
             PropertyExpression pe = (PropertyExpression) exp;
             String name = pe.getPropertyAsString();
             RetentionPolicy policy = RetentionPolicy.valueOf(name);
             setRetentionPolicy(policy, root);
-        } else if (clazz == Target.class) {
+        } else if ("java.lang.annotation.Target".equals(type.getName())) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof ListExpression)) return;
             ListExpression le = (ListExpression) exp;
@@ -300,7 +298,7 @@ public class Java5 implements VMPlugin {
         return null;
     }
 
-    private void setRetentionPolicy(RetentionPolicy value, AnnotationNode node) {
+    private static void setRetentionPolicy(RetentionPolicy value, AnnotationNode node) {
         switch (value) {
             case RUNTIME:
                 node.setRuntimeRetention(true);
@@ -316,7 +314,7 @@ public class Java5 implements VMPlugin {
         }
     }
 
-    private int getElementCode(ElementType value) {
+    private static int getElementCode(ElementType value) {
         switch (value) {
             case TYPE:
                 return AnnotationNode.TYPE_TARGET;

@@ -185,6 +185,17 @@ class AsmDecompilerTest extends TestCase {
         assert method.code
     }
 
+    void "test annotation retention and targets"() {
+        def anno = decompile().getAnnotations(decompile(Anno.name))[0]
+        assert anno.hasRuntimeRetention()
+        assert !anno.hasClassRetention()
+        assert !anno.hasSourceRetention()
+
+        assert anno.isTargetAllowed(AnnotationNode.METHOD_TARGET)
+        assert anno.isTargetAllowed(AnnotationNode.TYPE_TARGET)
+        assert !anno.isTargetAllowed(AnnotationNode.LOCAL_VARIABLE_TARGET)
+    }
+
     void "test generic method"() {
         def method = decompile().getDeclaredMethods("genericMethod")[0]
 
