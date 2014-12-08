@@ -112,7 +112,9 @@ class MemberSignatureParser {
             }
 
         }
-        result.setGenericsTypes(typeParameters);
+        if (typeParameters != null && typeParameters.length > 0) {
+            result.setGenericsTypes(typeParameters);
+        }
         return result;
     }
 

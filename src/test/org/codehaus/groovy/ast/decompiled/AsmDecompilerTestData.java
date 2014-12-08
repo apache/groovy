@@ -45,6 +45,10 @@ public class AsmDecompilerTestData<T extends List<? super T>, V> extends SuperCl
         return null;
     }
 
+    public List<?> nonParameterizedGenerics() {
+        return null;
+    }
+
     @Anno
     protected Object aField;
 

@@ -267,6 +267,10 @@ class AsmDecompilerTest extends TestCase {
         assert (decompile(Attributes.Name.name).modifiers & Opcodes.ACC_STATIC) != 0
     }
 
+    void "test non-parameterized generics"() {
+        assert decompile().getDeclaredMethod("nonParameterizedGenerics").genericsTypes == null
+    }
+
 
     private static ClassNode decompile(String cls = AsmDecompilerTestData.name) {
         def classFileName = cls.replace('.', '/') + '.class'
