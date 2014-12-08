@@ -84,15 +84,15 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     @Override
-    public ClassNode getUnresolvedSuperClass() {
+    public ClassNode getUnresolvedSuperClass(boolean useRedirect) {
         lazyInit();
-        return super.getUnresolvedSuperClass();
+        return super.getUnresolvedSuperClass(useRedirect);
     }
 
     @Override
-    public ClassNode[] getUnresolvedInterfaces() {
+    public ClassNode[] getUnresolvedInterfaces(boolean useRedirect) {
         lazyInit();
-        return super.getUnresolvedInterfaces();
+        return super.getUnresolvedInterfaces(useRedirect);
     }
 
     @Override
