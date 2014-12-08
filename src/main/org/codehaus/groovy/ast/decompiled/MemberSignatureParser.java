@@ -106,6 +106,9 @@ class MemberSignatureParser {
             if (method.annotationDefault != null) {
                 result.setCode(new ReturnStatement(new ConstantExpression(method.annotationDefault)));
                 result.setAnnotationDefault(true);
+            } else {
+                // Seems wrong but otherwise some tests fail (e.g. TestingASTTransformsTest)
+                result.setCode(new ReturnStatement(ConstantExpression.NULL));
             }
 
         }
