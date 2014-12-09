@@ -291,8 +291,9 @@ You can use named parameters with the default constructor (first the constructor
 [source,groovy]
 ----
 def server = new Server(name: "Obelix", cluster: aCluster)
-Using with() for repeated operations on the same bean
 ----
+
+== Using with() for repeated operations on the same bean
 
 Named-parameters with the default constructor is interesting when creating new instances,
 but what if you are updating an instance that was given to you, do you have to repeat the 'server' prefix again and again?
