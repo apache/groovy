@@ -37,20 +37,27 @@ import java.security.PrivilegedAction;
 public class Java7 extends Java6 {
     private final static Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
     static {
+        Constructor<MethodHandles.Lookup> con = null;
         try {
-            LOOKUP_Constructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
+            con = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
         } catch (NoSuchMethodException e) {
             throw new GroovyBugError(e);
         }
-        if (!LOOKUP_Constructor.isAccessible()) {
-            AccessController.doPrivileged(new PrivilegedAction() {
-                @Override
-                public Object run() {
-                    LOOKUP_Constructor.setAccessible(true);
-                    return null;
-                }
-            });
+        try {
+            if (!con.isAccessible()) {
+                final Constructor tmp = con;
+                AccessController.doPrivileged(new PrivilegedAction() {
+                    @Override
+                    public Object run() {
+                        tmp.setAccessible(true);
+                        return null;
+                    }
+                });
+            }
+        } catch (SecurityException se) {
+            con = null;
         }
+        LOOKUP_Constructor = con;
     }
 
     @Override
@@ -65,6 +72,9 @@ public class Java7 extends Java6 {
 
     @Override
     public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
+        if (LOOKUP_Constructor==null) {
+            return super.getInvokeSpecialHandle(method, receiver);
+        }
         if (!method.isAccessible()) {
             AccessController.doPrivileged(new PrivilegedAction() {
                 @Override

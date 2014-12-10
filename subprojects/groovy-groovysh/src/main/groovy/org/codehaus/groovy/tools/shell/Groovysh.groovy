@@ -21,6 +21,10 @@ import groovy.transform.CompileStatic
 import jline.Terminal
 import jline.WindowsTerminal
 import jline.console.history.FileHistory
+import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.ErrorCollector
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.messages.Message
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.commands.LoadCommand
@@ -444,52 +448,72 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     final Closure defaultErrorHook = { Throwable cause ->
         assert cause != null
 
-        io.err.println("@|bold,red ERROR|@ ${cause.getClass().name}:")
-        io.err.println("@|bold,red ${cause.message}|@")
-
-        maybeRecordError(cause)
-
-        if (log.debug) {
-            // If we have debug enabled then skip the fancy bits below
-            log.debug(cause)
+        if (log.debug || ! cause instanceof CompilationFailedException) {
+            // For CompilationErrors, the Exception Class is usually not useful to the user
+            io.err.println("@|bold,red ERROR|@ ${cause.getClass().name}:")
         }
-        else {
-            boolean sanitize = Preferences.sanitizeStackTrace
 
-            // Sanitize the stack trace unless we are in verbose mode, or the user has request otherwise
-            if (!io.verbose && sanitize) {
-                cause = StackTraceUtils.deepSanitize(cause)
+        if (cause instanceof MultipleCompilationErrorsException) {
+            StringWriter data = new StringWriter();
+            PrintWriter writer = new PrintWriter(data);
+            ErrorCollector collector = ((MultipleCompilationErrorsException) cause).getErrorCollector()
+            Iterator<Message> msgIterator = collector.getErrors().iterator()
+            while (msgIterator.hasNext()) {
+                Message errorMsg = msgIterator.next()
+                errorMsg.write(writer)
+                if (msgIterator.hasNext()) {
+                    writer.println()
+                }
             }
+            io.err.println("@|bold,red ${data.toString()}|@")
+        } else {
+            io.err.println("@|bold,red ${cause.message}|@")
 
-            def trace = cause.stackTrace
 
-            def buff = new StringBuffer()
+            maybeRecordError(cause)
 
-            boolean doBreak = false
+            if (log.debug) {
+                // If we have debug enabled then skip the fancy bits below
+                log.debug(cause)
+            }
+            else {
+                boolean sanitize = Preferences.sanitizeStackTrace
 
-            for (e in trace) {
-                // Stop the trace once we find the root of the evaluated script
-                if (e.className == Interpreter.SCRIPT_FILENAME && e.methodName == 'run') {
-                    if (io.verbosity != IO.Verbosity.DEBUG && io.verbosity != IO.Verbosity.VERBOSE) {
-                        break
-                    }
-                    doBreak = true
+                // Sanitize the stack trace unless we are in verbose mode, or the user has request otherwise
+                if (!io.verbose && sanitize) {
+                    cause = StackTraceUtils.deepSanitize(cause)
                 }
 
-                buff << "        @|bold at|@ ${e.className}.${e.methodName} (@|bold "
+                def trace = cause.stackTrace
 
-                buff << (e.nativeMethod ? 'Native Method' :
+                def buff = new StringBuffer()
+
+                boolean doBreak = false
+
+                for (e in trace) {
+                    // Stop the trace once we find the root of the evaluated script
+                    if (e.className == Interpreter.SCRIPT_FILENAME && e.methodName == 'run') {
+                        if (io.verbosity != IO.Verbosity.DEBUG && io.verbosity != IO.Verbosity.VERBOSE) {
+                            break
+                        }
+                        doBreak = true
+                    }
+
+                    buff << "        @|bold at|@ ${e.className}.${e.methodName} (@|bold "
+
+                    buff << (e.nativeMethod ? 'Native Method' :
                             (e.fileName != null && e.lineNumber != -1 ? "${e.fileName}:${e.lineNumber}" :
-                                (e.fileName != null ? e.fileName : 'Unknown Source')))
+                                    (e.fileName != null ? e.fileName : 'Unknown Source')))
 
-                buff << '|@)'
+                    buff << '|@)'
 
-                io.err.println(buff)
+                    io.err.println(buff)
 
-                buff.setLength(0) // Reset the buffer
-                if (doBreak) {
-                    io.err.println('        @|bold ...|@')
-                    break
+                    buff.setLength(0) // Reset the buffer
+                    if (doBreak) {
+                        io.err.println('        @|bold ...|@')
+                        break
+                    }
                 }
             }
         }

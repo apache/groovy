@@ -28,6 +28,8 @@ import antlr.collections.AST
 import antlr.RecognitionException
 import antlr.TokenStreamException
 
+import java.util.regex.Pattern
+
 
 interface Parsing {
     ParseStatus parse(final Collection<String> buffer)
@@ -134,6 +136,7 @@ final class RelaxedParser implements Parsing
  */
 final class RigidParser implements Parsing
 {
+    private static final Pattern ANNOTATION_PATTERN = Pattern.compile('^@[a-zA-Z_][a-zA-Z_0-9]*(.*)$')
     static final String SCRIPT_FILENAME = 'groovysh_parse'
 
     private final Logger log = Logger.create(this.class)
@@ -158,7 +161,13 @@ final class RigidParser implements Parsing
             return new ParseStatus(ParseCode.COMPLETE)
         }
         catch (CompilationFailedException e) {
-            //
+            // During a shell session often a user will hit enter without having completed a class definition
+            // for the parser this means it will raise some kind of compilation exception.
+            // The following code has to attempt to hide away all such exceptions that are due to the code being
+            // incomplete, but show all exceptions due to the code being incorrect.
+            // Unexpected EOF is most common for incomplete code, however there are several other situations
+            // where the code is incomplete, but the Exception is raised without failedWithUnexpectedEOF().
+
             // FIXME: Seems like failedWithUnexpectedEOF() is not always set as expected, as in:
             //
             // class a {               <--- is true here
@@ -169,10 +178,10 @@ final class RigidParser implements Parsing
 
                 // HACK: Super insane hack... we detect a syntax error, but might still ignore
                 // it depending on the line ending
-                if (ignoreSyntaxErrorForLineEnding(buffer[-1].trim())) {
+                if (ignoreSyntaxErrorForLineEnding(buffer[-1].trim()) ||
+                    isAnnotationExpression(e, buffer[-1].trim())) {
                     log.debug("Ignoring parse failure; might be valid: $e")
-                }
-                else {
+                } else {
                     error = e
                 }
             }
@@ -190,12 +199,18 @@ final class RigidParser implements Parsing
         return new ParseStatus(ParseCode.INCOMPLETE)
     }
 
-    private boolean ignoreSyntaxErrorForLineEnding(String line) {
-        def lineEndings = ['{', '[', '(', ',', '.', '-', '+', '/', '*', '%', '&', '|', '?', '<', '>', '=', ':', "'''", '"""', '\\']
-        for(String lineEnding in lineEndings) {
-            if(line.endsWith(lineEnding)) return true
+    static boolean ignoreSyntaxErrorForLineEnding(String line) {
+        def final lineEndings = ['{', '[', '(', ',', '.', '-', '+', '/', '*', '%', '&', '|', '?', '<', '>', '=', ':', "'''", '"""', '\\']
+        for (String lineEnding in lineEndings) {
+            if (line.endsWith(lineEnding)) {
+                return true
+            }
         }
         return false
+    }
+
+    static boolean isAnnotationExpression(CompilationFailedException e, String line) {
+        return e.getMessage().contains('unexpected token: @') && ANNOTATION_PATTERN.matcher(line).find()
     }
 }
 
