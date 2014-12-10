@@ -188,7 +188,10 @@ public class DecompiledClassNode extends ClassNode {
 
     private <T extends AnnotatedNode> T addAnnotations(MemberStub stub, T node) {
         for (AnnotationStub annotation : stub.annotations) {
-            node.addAnnotation(Annotations.createAnnotationNode(annotation, resolver));
+            AnnotationNode annotationNode = Annotations.createAnnotationNode(annotation, resolver);
+            if (annotationNode != null) {
+                node.addAnnotation(annotationNode);
+            }
         }
         return node;
     }

@@ -31,7 +31,15 @@ import java.util.Map;
  */
 class Annotations {
     static AnnotationNode createAnnotationNode(AnnotationStub annotation, AsmReferenceResolver resolver) {
-        AnnotationNode node = new DecompiledAnnotationNode(resolver.resolveType(Type.getType(annotation.className)));
+        ClassNode classNode = resolver.resolveClassNullable(Type.getType(annotation.className).getClassName());
+        if (classNode == null) {
+            // there might be annotations not present in the classpath
+            // e.g. java.lang.Synthetic (http://forge.ow2.org/tracker/?aid=307392&group_id=23&atid=100023&func=detail)
+            // so skip them
+            return null;
+        }
+
+        AnnotationNode node = new DecompiledAnnotationNode(classNode);
         for (Map.Entry<String, Object> entry : annotation.members.entrySet()) {
             node.addMember(entry.getKey(), annotationValueToExpression(entry.getValue(), resolver));
         }
@@ -49,7 +57,8 @@ class Annotations {
         }
 
         if (value instanceof AnnotationStub) {
-            return new AnnotationConstantExpression(createAnnotationNode((AnnotationStub) value, resolver));
+            AnnotationNode annotationNode = createAnnotationNode((AnnotationStub) value, resolver);
+            return annotationNode != null ? new AnnotationConstantExpression(annotationNode) : ConstantExpression.NULL;
         }
 
         if (value != null && value.getClass().isArray()) {
