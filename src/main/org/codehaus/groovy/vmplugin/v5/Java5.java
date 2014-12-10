@@ -81,15 +81,16 @@ public class Java5 implements VMPlugin {
     }
 
     private GenericsType configureTypeVariableDefinition(TypeVariable tv) {
-        ClassNode base = configureTypeVariableReference(tv);
+        return configureTypeVariableDefinition(configureTypeVariableReference(tv.getName()), configureTypes(tv.getBounds()));
+    }
+
+    public static GenericsType configureTypeVariableDefinition(ClassNode base, ClassNode[] cBounds) {
         ClassNode redirect = base.redirect();
         base.setRedirect(null);
-        Type[] tBounds = tv.getBounds();
         GenericsType gt;
-        if (tBounds.length == 0) {
+        if (cBounds == null || cBounds.length == 0) {
             gt = new GenericsType(base);
         } else {
-            ClassNode[] cBounds = configureTypes(tBounds);
             gt = new GenericsType(base, cBounds, null);
             gt.setName(base.getName());
             gt.setPlaceholder(true);
@@ -115,7 +116,7 @@ public class Java5 implements VMPlugin {
         } else if (type instanceof GenericArrayType) {
             return configureGenericArray((GenericArrayType) type);
         } else if (type instanceof TypeVariable) {
-            return configureTypeVariableReference((TypeVariable) type);
+            return configureTypeVariableReference(((TypeVariable) type).getName());
         } else if (type instanceof Class) {
             return configureClass((Class) type);
         } else if (type==null) {
@@ -165,10 +166,10 @@ public class Java5 implements VMPlugin {
         return base;
     }
 
-    private ClassNode configureTypeVariableReference(TypeVariable tv) {
-        ClassNode cn = ClassHelper.makeWithoutCaching(tv.getName());
+    public static ClassNode configureTypeVariableReference(String name) {
+        ClassNode cn = ClassHelper.makeWithoutCaching(name);
         cn.setGenericsPlaceHolder(true);
-        ClassNode cn2 = ClassHelper.makeWithoutCaching(tv.getName());
+        ClassNode cn2 = ClassHelper.makeWithoutCaching(name);
         cn2.setGenericsPlaceHolder(true);
         GenericsType[] gts = new GenericsType[]{new GenericsType(cn2)};
         cn.setGenericsTypes(gts);

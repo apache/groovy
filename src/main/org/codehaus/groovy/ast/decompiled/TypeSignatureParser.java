@@ -19,6 +19,7 @@ package org.codehaus.groovy.ast.decompiled;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.vmplugin.v5.Java5;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureVisitor;
@@ -44,19 +45,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
 
     @Override
     public void visitTypeVariable(String name) {
-        finished(createTypeVariableReference(name));
-    }
-
-    static ClassNode createTypeVariableReference(String name) {
-        //todo duplicates Java5
-        ClassNode cn = ClassHelper.makeWithoutCaching(name);
-        cn.setGenericsPlaceHolder(true);
-        ClassNode cn2 = ClassHelper.makeWithoutCaching(name);
-        cn2.setGenericsPlaceHolder(true);
-        GenericsType[] gts = new GenericsType[]{new GenericsType(cn2)};
-        cn.setGenericsTypes(gts);
-        cn.setRedirect(ClassHelper.OBJECT_TYPE);
-        return cn;
+        finished(Java5.configureTypeVariableReference(name));
     }
 
     @Override
@@ -103,7 +92,6 @@ abstract class TypeSignatureParser extends SignatureVisitor {
     }
 
     private static GenericsType createWildcard(ClassNode[] upper, ClassNode lower) {
-        //todo duplicates Java 5
         ClassNode base = ClassHelper.makeWithoutCaching("?");
         base.setRedirect(ClassHelper.OBJECT_TYPE);
         GenericsType t = new GenericsType(base, upper, lower);

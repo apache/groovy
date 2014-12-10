@@ -18,6 +18,7 @@ package org.codehaus.groovy.ast.decompiled;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.vmplugin.v5.Java5;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.signature.SignatureVisitor;
 
@@ -46,28 +47,13 @@ abstract class FormalParameterParser extends SignatureVisitor {
 
     protected void flushTypeParameter() {
         if (currentTypeParameter != null) {
-            typeParameters.add(createFormalTypeParameter(currentTypeParameter, parameterBounds));
+            ClassNode ref = Java5.configureTypeVariableReference(currentTypeParameter);
+            ClassNode[] boundNodes = parameterBounds.toArray(new ClassNode[parameterBounds.size()]);
+            typeParameters.add(Java5.configureTypeVariableDefinition(ref, boundNodes));
+
             currentTypeParameter = null;
             parameterBounds.clear();
         }
-    }
-
-    private static GenericsType createFormalTypeParameter(String name, List<ClassNode> bounds) {
-        //todo duplicates Java 5
-        ClassNode base = TypeSignatureParser.createTypeVariableReference(name);
-        ClassNode redirect = base.redirect();
-        base.setRedirect(null);
-        GenericsType gt;
-        if (bounds.isEmpty()) {
-            gt = new GenericsType(base);
-        } else {
-            ClassNode[] cBounds = bounds.toArray(new ClassNode[bounds.size()]);
-            gt = new GenericsType(base, cBounds, null);
-            gt.setName(base.getName());
-            gt.setPlaceholder(true);
-        }
-        base.setRedirect(redirect);
-        return gt;
     }
 
     @Override
