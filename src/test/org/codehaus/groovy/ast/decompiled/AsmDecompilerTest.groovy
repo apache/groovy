@@ -271,6 +271,12 @@ class AsmDecompilerTest extends TestCase {
         assert decompile().getDeclaredMethod("nonParameterizedGenerics").genericsTypes == null
     }
 
+    void "test non-static parameterized inner"() {
+        def asmType = decompile().getDeclaredMethod("returnInner").returnType
+        def jvmType = new ClassNode(AsmDecompilerTestData).getDeclaredMethod("returnInner").returnType
+        assert asmType == jvmType
+        assert asmType.genericsTypes.collect { it.name } == jvmType.genericsTypes.collect { it.name }
+    }
 
     private static ClassNode decompile(String cls = AsmDecompilerTestData.name) {
         def classFileName = cls.replace('.', '/') + '.class'

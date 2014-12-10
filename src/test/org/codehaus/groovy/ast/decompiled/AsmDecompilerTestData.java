@@ -53,6 +53,11 @@ public class AsmDecompilerTestData<T extends List<? super T>, V> extends SuperCl
     protected Object aField;
 
     public List<T> genericField;
+
+    class Inner<X> {}
+
+    static <T extends List<? super T>> AsmDecompilerTestData<T, Integer>.Inner<String> returnInner() { return null; }
+
 }
 
 @SuppressWarnings("unused")

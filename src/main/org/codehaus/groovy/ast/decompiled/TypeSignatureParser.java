@@ -39,7 +39,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
 
     abstract void finished(ClassNode result);
 
-    ClassNode base;
+    private String baseName;
     private List<GenericsType> arguments = new ArrayList<GenericsType>();
 
     @Override
@@ -77,7 +77,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
 
     @Override
     public void visitClassType(String name) {
-        base = resolver.resolveClass(AsmDecompiler.fromInternalName(name));
+        baseName = AsmDecompiler.fromInternalName(name);
     }
 
     @Override
@@ -113,11 +113,13 @@ abstract class TypeSignatureParser extends SignatureVisitor {
 
     @Override
     public void visitInnerClassType(String name) {
-        throw new UnsupportedOperationException(); //todo
+        baseName += "$" + name;
+        arguments.clear();
     }
 
     @Override
     public void visitEnd() {
+        ClassNode base = resolver.resolveClass(baseName);
         if (arguments.isEmpty()) {
             finished(base);
             return;
