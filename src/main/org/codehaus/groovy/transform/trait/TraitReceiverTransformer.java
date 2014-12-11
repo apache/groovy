@@ -100,6 +100,17 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 } else if (leftExpression instanceof PropertyExpression
                         && (((PropertyExpression) leftExpression).isImplicitThis() || "this".equals(((PropertyExpression) leftExpression).getObjectExpression().getText()))) {
                     leftFieldName = ((PropertyExpression) leftExpression).getPropertyAsString();
+                    FieldNode fn = weavedType.getDeclaredField(leftFieldName);
+
+                    if (fieldHelper == null || fn==null && !fieldHelper.hasPossibleMethod(Traits.helperSetterName(new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null)), rightExpression)) {
+                        return new BinaryExpression(
+                                new PropertyExpression(
+                                        new VariableExpression(weaved),
+                                        leftFieldName
+                                ),
+                                operation,
+                                transform(rightExpression));
+                    }
                 }
                 if (leftFieldName!=null) {
                     FieldNode fn = weavedType.getDeclaredField(leftFieldName);
