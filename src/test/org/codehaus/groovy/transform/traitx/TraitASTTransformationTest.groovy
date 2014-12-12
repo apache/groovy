@@ -16,9 +16,27 @@
 
 package org.codehaus.groovy.transform.traitx
 
-import groovy.transform.NotYetImplemented
-
 class TraitASTTransformationTest extends GroovyTestCase {
+    void testTraitOverrideAnnotation() {
+        assertScript '''
+        interface MyInterface {
+            String fooMethod()
+            void noMethod()
+        }
+
+        trait MyTrait implements MyInterface {
+            @Override String fooMethod() { "foo" }
+            @Override void noMethod() { }
+        }
+
+        class Foo implements MyTrait {}
+        def foo = new Foo()
+
+        foo.noMethod()
+        assert foo.fooMethod() == "foo"
+        '''
+    }
+
     void testTraitWithNoMethod() {
         assertScript '''
         trait MyTrait {}
