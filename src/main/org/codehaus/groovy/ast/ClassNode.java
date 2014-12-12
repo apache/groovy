@@ -325,7 +325,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             }
         }
         this.methods = new MapOfLists();
-        this.methodsList = new ArrayList<MethodNode>();
+        this.methodsList = Collections.emptyList();
     }
 
     /**
@@ -607,13 +607,20 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addMethod(MethodNode node) {
         node.setDeclaringClass(this);
-        redirect().methodsList.add(node);
-        redirect().methods.put(node.getName(), node);
+        ClassNode base = redirect();
+        if (base.methodsList.isEmpty()) {
+            base.methodsList = new ArrayList<MethodNode>();
+        }
+        base.methodsList.add(node);
+        base.methods.put(node.getName(), node);
     }
 
     public void removeMethod(MethodNode node) {
-        redirect().methodsList.remove(node);
-        redirect().methods.remove(node.getName(), node);
+        ClassNode base = redirect();
+        if (!base.methodsList.isEmpty()) {
+            base.methodsList.remove(node);
+        }
+        base.methods.remove(node.getName(), node);
     }
 
     /**

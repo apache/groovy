@@ -2,8 +2,11 @@ package org.codehaus.groovy.ast.decompiled;
 
 import org.objectweb.asm.*;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -39,6 +42,7 @@ public abstract class AsmDecompiler {
         public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
             if (!"<clinit>".equals(name)) {
                 final MethodStub stub = new MethodStub(name, access, desc, signature, exceptions != null ? exceptions : EMPTY_STRING_ARRAY);
+                if (result.methods == null) result.methods = new ArrayList<MethodStub>(1);
                 result.methods.add(stub);
                 return new MethodVisitor(api) {
                     @Override
@@ -48,6 +52,7 @@ public abstract class AsmDecompiler {
 
                     @Override
                     public AnnotationVisitor visitParameterAnnotation(int parameter, String desc, boolean visible) {
+                        if (stub.parameterAnnotations == null) stub.parameterAnnotations = new HashMap<Integer, List<AnnotationStub>>(1);
                         List<AnnotationStub> list = stub.parameterAnnotations.get(parameter);
                         if (list == null) {
                             stub.parameterAnnotations.put(parameter, list = new ArrayList<AnnotationStub>());
@@ -79,6 +84,7 @@ public abstract class AsmDecompiler {
         @Override
         public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
             final FieldStub stub = new FieldStub(name, access, desc, signature);
+            if (result.fields == null) result.fields = new ArrayList<FieldStub>(1);
             result.fields.add(stub);
             return new FieldVisitor(api) {
                 @Override

@@ -27,8 +27,8 @@ public class ClassStub extends MemberStub {
     final String signature;
     final String superName;
     final String[] interfaceNames;
-    final List<MethodStub> methods = new ArrayList<MethodStub>();
-    final List<FieldStub> fields = new ArrayList<FieldStub>();
+    List<MethodStub> methods;
+    List<FieldStub> fields;
     final Map<String, Integer> innerClassModifiers = new HashMap<String, Integer>();
 
     public ClassStub(String className, int accessModifiers, String signature, String superName, String[] interfaceNames) {
@@ -41,10 +41,11 @@ public class ClassStub extends MemberStub {
 }
 
 class MemberStub {
-    final List<AnnotationStub> annotations = new ArrayList<AnnotationStub>();
+    List<AnnotationStub> annotations = null;
 
     AnnotationStub addAnnotation(String desc) {
         AnnotationStub stub = new AnnotationStub(desc);
+        if (annotations == null) annotations = new ArrayList<AnnotationStub>(1);
         annotations.add(stub);
         return stub;
     }
@@ -56,7 +57,7 @@ class MethodStub extends MemberStub {
     final String desc;
     final String signature;
     final String[] exceptions;
-    final Map<Integer, List<AnnotationStub>> parameterAnnotations = new HashMap<Integer, List<AnnotationStub>>();
+    Map<Integer, List<AnnotationStub>> parameterAnnotations;
     Object annotationDefault;
 
     public MethodStub(String methodName, int accessModifiers, String desc, String signature, String[] exceptions) {

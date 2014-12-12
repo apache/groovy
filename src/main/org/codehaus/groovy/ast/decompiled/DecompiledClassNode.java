@@ -168,17 +168,21 @@ public class DecompiledClassNode extends ClassNode {
     private void lazyInitMembers() {
         synchronized (lazyInitLock) {
             if (!membersInitialized) {
-                for (MethodStub method : classData.methods) {
-                    MethodNode node = addAnnotations(method, MemberSignatureParser.createMethodNode(resolver, method));
-                    if (node instanceof ConstructorNode) {
-                        addConstructor((ConstructorNode) node);
-                    } else {
-                        addMethod(node);
+                if (classData.methods != null) {
+                    for (MethodStub method : classData.methods) {
+                        MethodNode node = addAnnotations(method, MemberSignatureParser.createMethodNode(resolver, method));
+                        if (node instanceof ConstructorNode) {
+                            addConstructor((ConstructorNode) node);
+                        } else {
+                            addMethod(node);
+                        }
                     }
                 }
 
-                for (FieldStub field : classData.fields) {
-                    addField(addAnnotations(field, MemberSignatureParser.createFieldNode(field, resolver, this)));
+                if (classData.fields != null) {
+                    for (FieldStub field : classData.fields) {
+                        addField(addAnnotations(field, MemberSignatureParser.createFieldNode(field, resolver, this)));
+                    }
                 }
 
                 membersInitialized = true;
@@ -187,10 +191,13 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     private <T extends AnnotatedNode> T addAnnotations(MemberStub stub, T node) {
-        for (AnnotationStub annotation : stub.annotations) {
-            AnnotationNode annotationNode = Annotations.createAnnotationNode(annotation, resolver);
-            if (annotationNode != null) {
-                node.addAnnotation(annotationNode);
+        List<AnnotationStub> annotations = stub.annotations;
+        if (annotations != null) {
+            for (AnnotationStub annotation : annotations) {
+                AnnotationNode annotationNode = Annotations.createAnnotationNode(annotation, resolver);
+                if (annotationNode != null) {
+                    node.addAnnotation(annotationNode);
+                }
             }
         }
         return node;

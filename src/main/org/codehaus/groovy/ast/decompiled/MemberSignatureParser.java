@@ -91,11 +91,13 @@ class MemberSignatureParser {
             parameters[i] = new Parameter(parameterTypes[i], "param" + i);
         }
 
-        for (Map.Entry<Integer, List<AnnotationStub>> entry : method.parameterAnnotations.entrySet()) {
-            for (AnnotationStub stub : entry.getValue()) {
-                AnnotationNode annotationNode = Annotations.createAnnotationNode(stub, resolver);
-                if (annotationNode != null) {
-                    parameters[entry.getKey()].addAnnotation(annotationNode);
+        if (method.parameterAnnotations != null) {
+            for (Map.Entry<Integer, List<AnnotationStub>> entry : method.parameterAnnotations.entrySet()) {
+                for (AnnotationStub stub : entry.getValue()) {
+                    AnnotationNode annotationNode = Annotations.createAnnotationNode(stub, resolver);
+                    if (annotationNode != null) {
+                        parameters[entry.getKey()].addAnnotation(annotationNode);
+                    }
                 }
             }
         }
