@@ -443,7 +443,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 processBody(new VariableExpression(newParams[0]), methodNode, methodNode.getCode(), traitClass, fieldHelper, knownFields)
         );
         mNode.setSourcePosition(methodNode);
-        mNode.addAnnotations(methodNode.getAnnotations());
+        mNode.addAnnotations(filterAnnotations(methodNode.getAnnotations()));
         mNode.setGenericsTypes(methodNode.getGenericsTypes());
         if (methodNode.isAbstract()) {
             mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
@@ -456,6 +456,17 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             methodNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         }
         return mNode;
+    }
+
+    private static List<AnnotationNode> filterAnnotations(List<AnnotationNode> annotations) {
+        List<AnnotationNode> result = new ArrayList<AnnotationNode>(annotations.size());
+        for (AnnotationNode annotation : annotations) {
+            if (annotation.getClassNode().getTypeClass() != Override.class) {
+                result.add(annotation);
+            }
+        }
+
+        return result;
     }
 
     private Parameter createSelfParameter(final ClassNode traitClass, boolean isStatic) {
