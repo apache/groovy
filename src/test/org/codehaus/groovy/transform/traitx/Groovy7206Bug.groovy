@@ -70,4 +70,20 @@ class Groovy7206Bug extends GroovyTestCase {
             assert a.pInt == 2
         '''
     }
+
+    void testShouldRecognizeStaticProperty() {
+        assertScript '''
+trait Validateable {
+    private static Map constraintsMapInternal
+    static Map getConstraintsMap() {
+        if(this.constraintsMapInternal == null) {
+            this.constraintsMapInternal = [:]
+        }
+    }
+}
+class ValidateTest implements Validateable {}
+def v = new ValidateTest()
+assert v.constraintsMap == [:]
+        '''
+    }
 }
