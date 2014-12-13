@@ -280,7 +280,7 @@ class AsmDecompilerTest extends TestCase {
 
     private static ClassNode decompile(String cls = AsmDecompilerTestData.name) {
         def classFileName = cls.replace('.', '/') + '.class'
-        def resource = AsmDecompilerTest.classLoader.getResourceAsStream(classFileName)
+        def resource = AsmDecompilerTest.classLoader.getResource(classFileName)
         def stub = AsmDecompiler.parseClass(resource)
 
         def unit = new CompilationUnit(new GroovyClassLoader(AsmDecompilerTest.classLoader))

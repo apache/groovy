@@ -4,20 +4,45 @@ import org.objectweb.asm.*;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.lang.ref.SoftReference;
+import java.net.URL;
+import java.util.*;
 
 /**
+ * A utility class responsible for decompiling JVM class files and producing {@link ClassStub} objects reflecting their structure.
+ *
  * @author Peter Gromov
  */
 public abstract class AsmDecompiler {
 
-    public static ClassStub parseClass(InputStream stream) throws IOException {
-        DecompilingVisitor visitor = new DecompilingVisitor();
-        new ClassReader(new BufferedInputStream(stream)).accept(visitor, ClassReader.SKIP_FRAMES);
-        return visitor.result;
+    private static class StubCache {
+        /**
+         * Caches stubs per URL. This cache is useful when performing multiple compilations in the same JVM/class loader and in tests.
+         *
+         * It's synchronized "just in case". Occasional misses are expected if several threads attempt to load the same class,
+         * but this shouldn't result in serious memory issues.
+         */
+        static Map<URL, SoftReference<ClassStub>> map = Collections.synchronizedMap(new HashMap<URL, SoftReference<ClassStub>>());
+    }
+
+    /**
+     * Loads the URL contents and parses them with ASM, producing a {@link ClassStub} object representing the structure of
+     * the corresponding class file. Stubs are cached and reused if queried several times with equal URLs.
+     *
+     * @param url an URL from a class loader, most likely a file system file or a JAR entry.
+     * @return the class stub
+     * @throws IOException if reading from this URL is impossible
+     */
+    public static ClassStub parseClass(URL url) throws IOException {
+        SoftReference<ClassStub> ref = StubCache.map.get(url);
+        ClassStub stub = ref == null ? null : ref.get();
+        if (stub == null) {
+            DecompilingVisitor visitor = new DecompilingVisitor();
+            new ClassReader(new BufferedInputStream(url.openStream())).accept(visitor, ClassReader.SKIP_FRAMES);
+            stub = visitor.result;
+            StubCache.map.put(url, new SoftReference<ClassStub>(stub));
+        }
+        return stub;
     }
 
     private static class DecompilingVisitor extends ClassVisitor {

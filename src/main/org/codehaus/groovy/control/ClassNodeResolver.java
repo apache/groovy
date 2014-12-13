@@ -247,10 +247,10 @@ public class ClassNodeResolver {
 
         DecompiledClassNode asmClass = null;
         String fileName = name.replace('.', '/') + ".class";
-        InputStream stream = loader.getResourceAsStream(fileName);
-        if (stream != null) {
+        URL resource = loader.getResource(fileName);
+        if (resource != null) {
             try {
-                asmClass = new DecompiledClassNode(AsmDecompiler.parseClass(stream), new AsmReferenceResolver(this, compilationUnit));
+                asmClass = new DecompiledClassNode(AsmDecompiler.parseClass(resource), new AsmReferenceResolver(this, compilationUnit));
             } catch (IOException e) {
                 // fall through and attempt other search strategies
             }
