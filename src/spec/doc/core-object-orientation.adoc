@@ -6,12 +6,12 @@ This chapter covers the object orientation of the Groovy programming language.
 
 === Primitive types (TBD)
 
-=== Class (TBD)
-==== Normal class (TBD)
-==== Static class (TBD)
-==== Inner class (TBD)
-===== Anonymous inner class (TBD)
-==== Abstract class (TBD)
+=== Class (MichaelSchuenck)
+==== Normal class (MichaelSchuenck)
+==== Static class (MichaelSchuenck)
+==== Inner class (MichaelSchuenck)
+===== Anonymous inner class (MichaelSchuenck)
+==== Abstract class (MichaelSchuenck)
 
 === Interface (TBD)
 

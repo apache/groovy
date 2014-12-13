@@ -23,7 +23,7 @@ It also increases developer productivity by reducing scaffolding code when devel
 
 == Downloading
 
-Latest Groovy version is availble on Bintray image:{bintray-latest-version-image}[Bintray latest version, link={bintray-latest-version-link}]
+Latest Groovy version is available on Bintray image:{bintray-latest-version-image}[Bintray latest version, link={bintray-latest-version-link}]
 
 Binary distribution links are on the package page.
 

@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
@@ -100,6 +101,23 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 } else if (leftExpression instanceof PropertyExpression
                         && (((PropertyExpression) leftExpression).isImplicitThis() || "this".equals(((PropertyExpression) leftExpression).getObjectExpression().getText()))) {
                     leftFieldName = ((PropertyExpression) leftExpression).getPropertyAsString();
+                    FieldNode fn = weavedType.getDeclaredField(leftFieldName);
+                    if (fn==null && ClassHelper.CLASS_Type.equals(weavedType)) {
+                        GenericsType[] genericsTypes = weavedType.getGenericsTypes();
+                        if (genericsTypes !=null && genericsTypes.length==1) {
+                            // for static properties
+                            fn = genericsTypes[0].getType().getDeclaredField(leftFieldName);
+                        }
+                    }
+                    if (fieldHelper == null || fn==null && !fieldHelper.hasPossibleMethod(Traits.helperSetterName(new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null)), rightExpression)) {
+                        return new BinaryExpression(
+                                new PropertyExpression(
+                                        new VariableExpression(weaved),
+                                        leftFieldName
+                                ),
+                                operation,
+                                transform(rightExpression));
+                    }
                 }
                 if (leftFieldName!=null) {
                     FieldNode fn = weavedType.getDeclaredField(leftFieldName);
