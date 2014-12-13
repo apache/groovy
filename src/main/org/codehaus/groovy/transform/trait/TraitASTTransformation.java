@@ -75,6 +75,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
     private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
 
+    private static final ClassNode OVERRIDE_CLASSNODE = ClassHelper.make(Override.class);
+
     private SourceUnit unit;
     private CompilationUnit compilationUnit;
 
@@ -461,7 +463,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     private static List<AnnotationNode> filterAnnotations(List<AnnotationNode> annotations) {
         List<AnnotationNode> result = new ArrayList<AnnotationNode>(annotations.size());
         for (AnnotationNode annotation : annotations) {
-            if (annotation.getClassNode().getTypeClass() != Override.class) {
+            if (!OVERRIDE_CLASSNODE.equals(annotation.getClassNode())) {
                 result.add(annotation);
             }
         }
