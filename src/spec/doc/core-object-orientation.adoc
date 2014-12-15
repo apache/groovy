@@ -6,7 +6,15 @@ This chapter covers the object orientation of the Groovy programming language.
 
 === Primitive types (TBD)
 
-=== Class (MichaelSchuenck)
+=== Class
+
+Groovy classes are very similar to Java classes. Thus, they may have methods and fields/properties, are compatible with Java classes at JVM level, their elements can have the same modifiers (public, protected, private, static, synchronized, etc), and the imports and package declarations have the same syntax.
+
+The first difference is the verbosity eliminated by turning fields into properties automatically. More on this aspect will be presented in the Section "Fields and properties". The second difference is that any property or method without an access modifier is public.
+
+The following code presents an example class.
+
+
 ==== Normal class (MichaelSchuenck)
 ==== Static class (MichaelSchuenck)
 ==== Inner class (MichaelSchuenck)
