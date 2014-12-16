@@ -2746,7 +2746,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return answer;
     }
 
-
     /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
@@ -7394,38 +7393,96 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Zips a list with indices.
-     * <p>
+     * Zips an Iterable with indices.
+     * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
      * assert [["a", 0], ["b", 1]] == ["a", "b"].withIndex()
      * assert ["0: a", "1: b"] == ["a", "b"].withIndex().collect { str, idx -> "$idx: $str" }
      * </pre>
      *
-     * @param self a list
+     * @param self an Iterable
      * @return a zipped list with indices
      * @since 2.4.0
      */
-    public static List withIndex(List self) {
+    public static <E> List<Tuple2<E, Integer>> withIndex(Iterable<E> self) {
         return withIndex(self, 0);
     }
 
     /**
-     * Zips a list with indices.
-     * <p>
+     * Zips an Iterable with indices.
+     * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
      * assert [["a", 5], ["b", 6]] == ["a", "b"].withIndex(5)
      * assert ["1: a", "2: b"] == ["a", "b"].withIndex(1).collect { str, idx -> "$idx: $str" }
      * </pre>
      *
-     * @param self a list
-     * @param offset an index start from
+     * @param self   an Iterable
+     * @param offset an index to start from
      * @return a zipped list with indices
      * @since 2.4.0
      */
-    public static List withIndex(List self, int offset) {
-        return transpose(Arrays.asList(self, new IntRange(false, offset, offset + self.size())));
+    public static <E> List<Tuple2<E, Integer>> withIndex(Iterable<E> self, int offset) {
+        return toList(withIndex(self.iterator(), offset));
+    }
+
+    /**
+     * Zips an iterator with indices.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [["a", 0], ["b", 1]] == ["a", "b"].iterator().withIndex().toList()
+     * assert ["0: a", "1: b"] == ["a", "b"].iterator().withIndex().collect { str, idx -> "$idx: $str" }.toList()
+     * </pre>
+     *
+     * @param self an iterator
+     * @return a zipped iterator with indices
+     * @since 2.4.0
+     */
+    public static <E> Iterator<Tuple2<E, Integer>> withIndex(Iterator<E> self) {
+        return withIndex(self, 0);
+    }
+
+    /**
+     * Zips an iterator with indices.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [["a", 5], ["b", 6]] == ["a", "b"].iterator().withIndex(5).toList()
+     * assert ["1: a", "2: b"] == ["a", "b"].iterator().withIndex(1).collect { str, idx -> "$idx: $str" }.toList()
+     * </pre>
+     *
+     * @param self   an iterator
+     * @param offset an index to start from
+     * @return a zipped iterator with indices
+     * @since 2.4.0
+     */
+    public static <E> Iterator<Tuple2<E, Integer>> withIndex(Iterator<E> self, int offset) {
+        return new ZipIterator<E>(self, offset);
+    }
+
+    private static final class ZipIterator<E> implements Iterator<Tuple2<E, Integer>> {
+        private final Iterator<E> delegate;
+        private int index;
+
+        private ZipIterator(Iterator<E> delegate, int offset) {
+            this.delegate = delegate;
+            this.index = offset;
+        }
+
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        public Tuple2<E, Integer> next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return new Tuple2<E, Integer>(delegate.next(), index++);
+        }
+
+        public void remove() {
+            delegate.remove();
+        }
     }
 
     /**
