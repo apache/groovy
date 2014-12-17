@@ -7393,7 +7393,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Zips an Iterable with indices.
+     * Zips an Iterable with indices in value, index order.
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -7403,6 +7403,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @return a zipped list with indices
+     * @see #indexed(Iterable)
      * @since 2.4.0
      */
     public static <E> List<Tuple2<E, Integer>> withIndex(Iterable<E> self) {
@@ -7410,7 +7411,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Zips an Iterable with indices.
+     * Zips an Iterable with indices in index, value order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [0: "a", 1: "b"] == ["a", "b"].indexed()
+     * assert ["0: a", "1: b"] == ["a", "b"].indexed().collect { idx, str -> "$idx: $str" }
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a zipped map with indices
+     * @see #withIndex(Iterable)
+     * @since 2.4.0
+     */
+    public static <E> Map<Integer, E> indexed(Iterable<E> self) {
+        return indexed(self, 0);
+    }
+
+    /**
+     * Zips an Iterable with indices in value, index order.
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -7421,6 +7440,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self   an Iterable
      * @param offset an index to start from
      * @return a zipped list with indices
+     * @see #indexed(Iterable, int)
      * @since 2.4.0
      */
     public static <E> List<Tuple2<E, Integer>> withIndex(Iterable<E> self, int offset) {
@@ -7428,7 +7448,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Zips an iterator with indices.
+     * Zips an Iterable with indices in index, value order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [5: "a", 6: "b"] == ["a", "b"].indexed(5)
+     * assert ["1: a", "2: b"] == ["a", "b"].indexed(1).collect { idx, str -> "$idx: $str" }
+     * </pre>
+     *
+     * @param self   an Iterable
+     * @param offset an index to start from
+     * @return a zipped map with indices
+     * @see #withIndex(Iterable, int)
+     * @since 2.4.0
+     */
+    public static <E> Map<Integer, E> indexed(Iterable<E> self, int offset) {
+        LinkedHashMap<Integer, E> result = new LinkedHashMap<Integer, E>();
+        Iterator<Map.Entry<Integer, E>> indexed = indexed(self.iterator(), offset);
+        while (indexed.hasNext()) {
+            Map.Entry<Integer, E> next = indexed.next();
+            result.put(next.getKey(), next.getValue());
+        }
+        return result;
+    }
+
+    /**
+     * Zips an iterator with indices in value, index order.
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -7438,6 +7483,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an iterator
      * @return a zipped iterator with indices
+     * @see #indexed(Iterator)
      * @since 2.4.0
      */
     public static <E> Iterator<Tuple2<E, Integer>> withIndex(Iterator<E> self) {
@@ -7445,7 +7491,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Zips an iterator with indices.
+     * Zips an iterator with indices in index, value order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [[0, "a"], [1, "b"]] == ["a", "b"].iterator().withIndex().toList()
+     * assert ["0: a", "1: b"] == ["a", "b"].iterator().withIndex().collect { idx, str -> "$idx: $str" }.toList()
+     * </pre>
+     *
+     * @param self an iterator
+     * @return a zipped iterator with indices
+     * @see #withIndex(Iterator)
+     * @since 2.4.0
+     */
+    public static <E> Iterator<Map.Entry<Integer, E>> indexed(Iterator<E> self) {
+        return indexed(self, 0);
+    }
+
+    /**
+     * Zips an iterator with indices in value, index order.
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -7456,17 +7520,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self   an iterator
      * @param offset an index to start from
      * @return a zipped iterator with indices
+     * @see #indexed(Iterator, int)
      * @since 2.4.0
      */
     public static <E> Iterator<Tuple2<E, Integer>> withIndex(Iterator<E> self, int offset) {
-        return new ZipIterator<E>(self, offset);
+        return new ZipPostIterator<E>(self, offset);
     }
 
-    private static final class ZipIterator<E> implements Iterator<Tuple2<E, Integer>> {
+    /**
+     * Zips an iterator with indices in index, value order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [[5, "a"], [6, "b"]] == ["a", "b"].iterator().indexed(5).toList()
+     * assert ["a: 1", "b: 2"] == ["a", "b"].iterator().indexed(1).collect { idx, str -> "$str: $idx" }.toList()
+     * </pre>
+     *
+     * @param self   an iterator
+     * @param offset an index to start from
+     * @return a zipped iterator with indices
+     * @see #withIndex(Iterator, int)
+     * @since 2.4.0
+     */
+    public static <E> Iterator<Map.Entry<Integer, E>> indexed(Iterator<E> self, int offset) {
+        return new ZipPreIterator<E>(self, offset);
+    }
+
+    private static final class ZipPostIterator<E> implements Iterator<Tuple2<E, Integer>> {
         private final Iterator<E> delegate;
         private int index;
 
-        private ZipIterator(Iterator<E> delegate, int offset) {
+        private ZipPostIterator(Iterator<E> delegate, int offset) {
             this.delegate = delegate;
             this.index = offset;
         }
@@ -7478,6 +7562,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         public Tuple2<E, Integer> next() {
             if (!hasNext()) throw new NoSuchElementException();
             return new Tuple2<E, Integer>(delegate.next(), index++);
+        }
+
+        public void remove() {
+            delegate.remove();
+        }
+    }
+
+    private static final class ZipPreIterator<E> implements Iterator<Map.Entry<Integer, E>> {
+        private final Iterator<E> delegate;
+        private int index;
+
+        private ZipPreIterator(Iterator<E> delegate, int offset) {
+            this.delegate = delegate;
+            this.index = offset;
+        }
+
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        public Map.Entry<Integer, E> next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return new AbstractMap.SimpleImmutableEntry<Integer, E>(index++, delegate.next());
         }
 
         public void remove() {

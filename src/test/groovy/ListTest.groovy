@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package groovy
+
+import groovy.transform.TypeChecked
 
 class ListTest extends GroovyTestCase {
 
@@ -404,13 +406,24 @@ class ListTest extends GroovyTestCase {
         }
     }
 
-    void testWithIndex() {
+    void testWithIndex_indexed_groovy7175() {
         assert [] == [].withIndex()
         assert [] == [].withIndex(10)
         assert [["a", 0], ["b", 1]] == ["a", "b"].withIndex()
         assert [["a", 5], ["b", 6]] == ["a", "b"].withIndex(5)
         assert ["0: a", "1: b"] == ["a", "b"].withIndex().collect { str, idx -> "$idx: $str" }
         assert ["1: a", "2: b"] == ["a", "b"].withIndex(1).collect { str, idx -> "$idx: $str" }
+        assert [:] == [].indexed()
+        assert [:] == [].indexed(10)
+        assert [0: 'a', 1: 'b'] == ["a", "b"].indexed()
+        assert [5: 'a', 6: 'b'] == ["a", "b"].indexed(5)
+        assert ["0: a", "1: b"] == ["a", "b"].indexed().collect { idx, str -> "$idx: $str" }
+        assert ["1: a", "2: b"] == ["a", "b"].indexed(1).collect { idx, str -> "$idx: $str" }
+    }
+
+    @TypeChecked
+    void testWithIndex_indexed_typeChecked_groovy7175() {
+        assert ["A", "BB"] == ["a", "b"].indexed(1).collect { idx, str -> str.toUpperCase() * idx }
     }
 
     // GROOVY-4946
