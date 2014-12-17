@@ -17698,8 +17698,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Removes the element at the specified position in this list.
-     * Avoid using {@link List#remove(int)} for List&lt;Integer&gt;.
+     * Modifies this list by removing the element at the specified position
+     * in this list. Returns the removed element. Essentially an alias for
+     * {@link List#remove(int)} but with no ambiguity for List&lt;Integer&gt;.
      * <p/>
      * Example:
      * <pre class="groovyTestCase">
@@ -17718,14 +17719,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Removes a single instance of the specified element from this collection, if it is present.
-     * Avoid using {@link Collection#remove(Object)} for List&lt;Integer&gt;.
+     * Modifies this collection by removing a single instance of the specified
+     * element from this collection, if it is present. Essentially an alias for
+     * {@link Collection#remove(Object)} but with no ambiguity for Collection&lt;Integer&gt;.
      * <p/>
      * Example:
      * <pre class="groovyTestCase">
-     * def list = [1, 2, 3]
+     * def list = [1, 2, 3, 2]
      * list.removeElement(2)
-     * assert [1, 3] == list
+     * assert [1, 3, 2] == list
      * </pre>
      *
      * @param self a Collection
