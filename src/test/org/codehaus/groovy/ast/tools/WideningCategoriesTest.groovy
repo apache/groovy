@@ -326,6 +326,15 @@ class WideningCategoriesTest extends GenericsTestCase {
 
     }
 
+    void testLUBOfArrayTypes() {
+        def typeA = extractTypesFromCode('Number[] type').type
+        def typeB = extractTypesFromCode('Integer[] type').type
+        def superType = lowestUpperBound(typeA, typeB)
+        assert superType.isArray()
+        def component = superType.getComponentType()
+        assert component == make(Number)
+    }
+
     // ---------- Classes and Interfaces used in this unit test ----------------
     private static interface InterfaceA {}
     private static interface InterfaceB {}

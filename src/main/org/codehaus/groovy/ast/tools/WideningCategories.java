@@ -298,6 +298,9 @@ public class WideningCategories {
             // compare two class nodes if one of them is null
             return null;
         }
+        if (a.isArray() && b.isArray()) {
+            return lowestUpperBound(a.getComponentType(), b.getComponentType(), interfacesImplementedByA, interfacesImplementedByB).makeArray();
+        }
         if (a.equals(OBJECT_TYPE) || b.equals(OBJECT_TYPE)) {
             // one of the objects is at the top of the hierarchy
             GenericsType[] gta = a.getGenericsTypes();
