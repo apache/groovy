@@ -6306,19 +6306,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns indices of the list.
+     * Returns indices of the collection.
      * <p>
      * Example:
      * <pre class="groovyTestCase">
      * assert 0..2 == [5, 6, 7].indices
      * </pre>
      *
-     * @param self a list
+     * @param self a collection
      * @return an index range
      * @since 2.4.0
      */
-    public static IntRange getIndices(List self) {
+    public static IntRange getIndices(Collection self) {
         return new IntRange(false, 0, self.size());
+    }
+
+    /**
+     * Returns indices of the array.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * String[] letters = ['a', 'b', 'c', 'd']
+     * assert 0..<4 == letters.indices
+     * </pre>
+     *
+     * @param self an array
+     * @return an index range
+     * @since 2.4.0
+     */
+    public static <T> IntRange getIndices(T[] self) {
+        return new IntRange(false, 0, self.length);
     }
 
     /**
