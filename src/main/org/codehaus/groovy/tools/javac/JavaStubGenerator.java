@@ -276,18 +276,44 @@ public class JavaStubGenerator {
             printMethod(out, classNode, method);
         }
 
-        for (ClassNode node : classNode.getInterfaces()) {
+        for (ClassNode node : classNode.getAllInterfaces()) {
             if (Traits.isTrait(node)) {
                 List<MethodNode> traitMethods = node.getMethods();
                 for (MethodNode traitMethod : traitMethods) {
                     MethodNode method = classNode.getMethod(traitMethod.getName(), traitMethod.getParameters());
                     if (method == null) {
-                        printMethod(out, classNode, traitMethod);
+                        for (MethodNode methodNode : propertyMethods) {
+                            if (methodNode.getName().equals(traitMethod.getName())) {
+                                boolean sameParams = sameParameterTypes(methodNode);
+                                if (sameParams) {
+                                    method = methodNode;
+                                    break;
+                                }
+                            }
+                        }
+                        if (method==null) {
+                            printMethod(out, classNode, traitMethod);
+                        }
                     }
                 }
             }
         }
 
+    }
+
+    private static boolean sameParameterTypes(final MethodNode methodNode) {
+        Parameter[] a = methodNode.getParameters();
+        Parameter[] b = methodNode.getParameters();
+        boolean sameParams = a.length == b.length;
+        if (sameParams) {
+            for (int i = 0; i < a.length; i++) {
+                if (!a[i].getType().equals(b[i].getType())) {
+                    sameParams = false;
+                    break;
+                }
+            }
+        }
+        return sameParams;
     }
 
     private void printConstructors(PrintWriter out, ClassNode classNode) {
@@ -558,7 +584,13 @@ public class JavaStubGenerator {
         if (methodNode.isSynthetic() && methodNode.getName().equals("$getStaticMetaClass")) return;
 
         printAnnotations(out, methodNode);
-        if (!isInterfaceOrTrait(clazz)) printModifiers(out, methodNode.getModifiers());
+        if (!isInterfaceOrTrait(clazz)) {
+            int modifiers = methodNode.getModifiers();
+            if (isDefaultTraitImpl(methodNode)) {
+                modifiers ^= Opcodes.ACC_ABSTRACT;
+            }
+            printModifiers(out, modifiers);
+        }
 
         printGenericsBounds(out, methodNode.getGenericsTypes());
         out.print(" ");
@@ -581,7 +613,7 @@ public class JavaStubGenerator {
 
         if (Traits.isTrait(clazz)) {
             out.println(";");
-        } else if ((methodNode.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
+        } else if (isAbstract(methodNode)) {
             if (clazz.isAnnotationDefinition() && methodNode.hasAnnotationDefault()) {
                 Statement fs = methodNode.getFirstStatement();
                 if (fs instanceof ExpressionStatement) {
@@ -612,6 +644,20 @@ public class JavaStubGenerator {
             printReturn(out, retType);
             out.println("}");
         }
+    }
+
+    private boolean isAbstract(final MethodNode methodNode) {
+        if (isDefaultTraitImpl(methodNode)) {
+            return false;
+        }
+        if ((methodNode.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isDefaultTraitImpl(final MethodNode methodNode) {
+        return Traits.isTrait(methodNode.getDeclaringClass()) && Traits.hasDefaultImplementation(methodNode);
     }
 
     private void printValue(PrintWriter out, Expression re, boolean assumeClass) {
