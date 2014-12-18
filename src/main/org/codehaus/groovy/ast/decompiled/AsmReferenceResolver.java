@@ -24,6 +24,11 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.objectweb.asm.Type;
 
 /**
+ * A helper class used to resolve references found in ASM-decompiled classes.
+ *
+ * @see DecompiledClassNode
+ * @see AsmDecompiler
+ *
  * @author Peter Gromov
  */
 public class AsmReferenceResolver {

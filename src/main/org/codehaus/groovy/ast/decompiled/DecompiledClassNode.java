@@ -21,6 +21,9 @@ import org.codehaus.groovy.ast.*;
 import java.util.List;
 
 /**
+ * A {@link ClassNode} kind representing the classes coming from *.class files decompiled using ASM.
+ *
+ * @see AsmDecompiler
  * @author Peter Gromov
  */
 public class DecompiledClassNode extends ClassNode {
@@ -36,20 +39,28 @@ public class DecompiledClassNode extends ClassNode {
         isPrimaryNode = false;
     }
 
+    /**
+     * Static inner classes don't have "static" part in their own modifiers. Their containing classes have to be inspected
+     * whether they have an inner class with the same name that's static. '$' separator convention is used to search
+     * for parent classes.
+     */
     private static int getFullModifiers(ClassStub data, AsmReferenceResolver resolver) {
-        int result = data.accessModifiers;
         String className = data.className;
-        int idx = className.lastIndexOf('$');
-        if (idx > 0) {
-            ClassNode outerClass = resolver.resolveClassNullable(className.substring(0, idx));
-            if (outerClass instanceof DecompiledClassNode) {
-                Integer outerModifiers = ((DecompiledClassNode) outerClass).classData.innerClassModifiers.get(className.substring(idx + 1));
-                if (outerModifiers != null) {
-                    result |= outerModifiers;
+        int bound = className.length();
+        while (bound > 0) {
+            int idx = className.lastIndexOf('$', bound);
+            if (idx > 0) {
+                ClassNode outerClass = resolver.resolveClassNullable(className.substring(0, idx));
+                if (outerClass instanceof DecompiledClassNode) {
+                    Integer outerModifiers = ((DecompiledClassNode) outerClass).classData.innerClassModifiers.get(className.substring(idx + 1));
+                    if (outerModifiers != null) {
+                        return data.accessModifiers | outerModifiers;
+                    }
                 }
             }
+            bound = idx - 1;
         }
-        return result;
+        return data.accessModifiers;
     }
 
     @Override

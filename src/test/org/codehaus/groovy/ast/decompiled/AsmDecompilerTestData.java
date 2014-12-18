@@ -55,6 +55,7 @@ public class AsmDecompilerTestData<T extends List<? super T>, V> extends SuperCl
     public List<T> genericField;
 
     class Inner<X> {}
+    static class Inner$WithDollar {}
 
     static <T extends List<? super T>> AsmDecompilerTestData<T, Integer>.Inner<String> returnInner() { return null; }
 

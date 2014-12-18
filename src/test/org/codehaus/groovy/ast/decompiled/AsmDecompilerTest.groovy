@@ -267,6 +267,10 @@ class AsmDecompilerTest extends TestCase {
         assert (decompile(Attributes.Name.name).modifiers & Opcodes.ACC_STATIC) != 0
     }
 
+    void "test static inner with dollar"() {
+        assert (decompile(AsmDecompilerTestData.Inner$WithDollar.name).modifiers & Opcodes.ACC_STATIC) != 0
+    }
+
     void "test non-parameterized generics"() {
         assert decompile().getDeclaredMethod("nonParameterizedGenerics").genericsTypes == null
     }
