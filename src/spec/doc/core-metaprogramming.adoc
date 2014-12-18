@@ -636,6 +636,11 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeSuper,indent=0]
 ----
+|includeSuperProperties|False|Should super properties be included in toString|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeSuperProperties,indent=0]
+----
 |includeFields|False|Should fields be included in toString, in addition to properties|
 [source,groovy]
 ----

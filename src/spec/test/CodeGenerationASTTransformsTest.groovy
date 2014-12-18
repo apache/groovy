@@ -128,6 +128,27 @@ assert p.toString() == 'Person(Jack, Nicholson, Id(1))'
         assertScript '''
 import groovy.transform.ToString
 
+// tag::tostring_example_includeSuperProperties[]
+
+class Person {
+    String name
+}
+
+@ToString(includeSuperProperties = true, includeNames = true)
+class BandMember extends Person {
+    String bandName
+}
+
+def bono = new BandMember(name:'Bono', bandName: 'U2').toString()
+
+assert bono.toString() == 'BandMember(bandName:U2, name:Bono)'
+// end::tostring_example_includeSuperProperties[]
+
+'''
+
+        assertScript '''
+import groovy.transform.ToString
+
 // tag::tostring_example_ignoreNulls[]
 @ToString(ignoreNulls=true)
 class Person {
