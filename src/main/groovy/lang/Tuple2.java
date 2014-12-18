@@ -15,8 +15,6 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-
 /**
  * Represents a list of 2 typed Objects.
  */
@@ -33,19 +31,5 @@ public class Tuple2<T1, T2> extends Tuple {
     @SuppressWarnings("unchecked")
     public T2 getSecond() {
         return (T2) get(1);
-    }
-
-    public boolean equals(Object that) {
-        return that instanceof Tuple2 && equals((Tuple2) that);
-    }
-
-    public boolean equals(Tuple2 that) {
-        if (size() != that.size()) return false;
-        for (int i = 0; i < size(); i++) {
-            if (!DefaultTypeTransformation.compareEqual(get(i), that.get(i))) {
-                return false;
-            }
-        }
-        return true;
     }
 }
