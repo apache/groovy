@@ -55,6 +55,7 @@ import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
 import org.codehaus.groovy.transform.sc.StaticCompileTransformation;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -295,6 +296,11 @@ public abstract class TraitComposer {
         ClassNode fixedReturnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
         Expression forwardExpression = genericsSpec.isEmpty()?mce:new CastExpression(fixedReturnType,mce);
         int access = helperMethod.getModifiers();
+        if (Modifier.isPrivate(access)) {
+            // do not create forwarder for private methods
+            // see GROOVY-7213
+            return;
+        }
         if (!helperMethodParams[0].getOriginType().equals(ClassHelper.CLASS_Type)) {
             // we could rely on the first parameter name ($static$self) but that information is not
             // guaranteed to be always present
