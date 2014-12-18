@@ -4,6 +4,7 @@ import org.objectweb.asm.*;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.net.URL;
 import java.util.*;
@@ -38,7 +39,12 @@ public abstract class AsmDecompiler {
         ClassStub stub = ref == null ? null : ref.get();
         if (stub == null) {
             DecompilingVisitor visitor = new DecompilingVisitor();
-            new ClassReader(new BufferedInputStream(url.openStream())).accept(visitor, ClassReader.SKIP_FRAMES);
+            InputStream stream = url.openStream();
+            try {
+                new ClassReader(new BufferedInputStream(stream)).accept(visitor, ClassReader.SKIP_FRAMES);
+            } finally {
+                stream.close();
+            }
             stub = visitor.result;
             StubCache.map.put(url, new SoftReference<ClassStub>(stub));
         }
