@@ -20,6 +20,7 @@ import org.codehaus.groovy.reflection.ClassInfo
 
 class MixinTest extends GroovyTestCase {
 
+    @groovy.transform.CompileStatic
     protected void setUp() {
         ClassInfo.clearModifiedExpandos()
     }
@@ -27,6 +28,7 @@ class MixinTest extends GroovyTestCase {
     protected void tearDown() {
         ArrayList.metaClass = null
         List.metaClass = null
+        ObjToTest.metaClass = null
     }
 
     void testOneClass() {
