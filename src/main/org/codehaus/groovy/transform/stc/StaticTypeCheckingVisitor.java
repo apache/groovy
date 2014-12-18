@@ -2976,7 +2976,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void addArrayMethods(List<MethodNode> methods, ClassNode receiver, String name, ClassNode[] args) {
         if (args.length!=1) return;
         if (!receiver.isArray()) return;
-        if (!isIntCategory(args[0])) return;
+        if (!isIntCategory(getUnwrapper(args[0]))) return;
         if ("getAt".equals(name)) {
             MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, receiver.getComponentType(), new Parameter[]{new Parameter(args[0],"arg")}, null, null);
             node.setDeclaringClass(receiver.redirect());
