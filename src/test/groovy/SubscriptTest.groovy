@@ -196,7 +196,22 @@ class SubscriptTest extends GroovyTestCase {
         
         assert map.getClass() == sub.getClass()
     }
-    
+
+    void testSubMapWithNonExistentKey() {
+        def map = ['a':123, 'b':456, 'c':789]
+
+        def keys = ['b', 'a', 'd']
+        def sub = map.subMap(keys)
+
+        assert sub.size() == 2
+        assert sub['a'] == 123
+        assert sub['b'] == 456
+        assert ! sub.containsKey('c')
+        assert ! sub.containsKey('d')
+
+        assert map.getClass() == sub.getClass()
+    }
+
     void testListWithinAListSyntax() {
         def list = [1, 2, 3, 4..10, 5, 6]
         
