@@ -28,7 +28,7 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_definition,inden
 <3> method definition
 
 
-==== Normal class (MichaelSchuenck)
+==== Normal class
 
 Normal classes refer to classes which are top level and concrete. This means they can be instantiated whithout restrictions from any other classes or scripts. This way, they can only be public (even though the `public` keyword may be supressed). Classes are instantiated by calling their constructors, using the `new` keywork.
 
@@ -37,12 +37,47 @@ Normal classes refer to classes which are top level and concrete. This means the
 include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_instantiation,indent=0]
 ----
 
-==== Static class (MichaelSchuenck)
+==== Inner class
 
-If a class contains only static members (fields
+Inner classes are defined within another classes. The enclosing class can use the inner class as usual. On the other side, an inner class have the power to access members of its enclosing class, even if they are private. Here is an example:
 
-==== Inner class (MichaelSchuenck)
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_class,indent=0]
+----
+<1> the inner class is instantiated and its method gets called
+<2> inner class definition, inside its enclosing class
+<3> a private field of the enclosing class is accessed
+
+There are some reasons for using inner classes:
+
+ * They increase encapsulation by hiding the inner class from other classes, which does not need to know about it. This also leads to cleaner packages and workspaces.
+ * They provide a good organization, by grouping classes that are used by only one class.
+ * They lead to more mantainable codes, since inner classes are near the classes that use them.
+
+In several cases, inner classes are implementation of interfaces whose methods are needed by the outer class. The code below illustrates this.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_class2,indent=0]
+----
+
+Note that the class `Inner2` is defined whith the only purpose of providing an implementation of the method `run` to class `Outer2`. Anonymous inner classes help to eliminate verbosity in this case.
+
+
 ===== Anonymous inner class (MichaelSchuenck)
+
+The last example of inner class can be simplified with an anonymous inner class. The same functionality can be achieved with the following code.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=anonymous_inner_class,indent=0]
+----
+<1> comparing with the last example of previous section, the `new Inner2()` was replaced by `new Runnable()` along with all its implementation.
+<2> the method `start` is invoked normally.
+
+Thus, there was no need to define a new class to be used just once.
+
 ==== Abstract class (MichaelSchuenck)
 
 === Interface (TBD)

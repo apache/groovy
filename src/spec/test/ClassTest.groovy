@@ -17,6 +17,52 @@ class Person {                       //<1>
 def p = new Person()
 // end::class_instantiation[]
 
+// tag::inner_class[]
+class Outer {
+    private String privateStr
+
+    def callInnerMethod() {
+        new Inner().methodA()       //<1>
+    }
+
+    class Inner {                   //<2>
+        def methodA() {
+            return "${privateStr}." //<3>
+        }
+    }
+}
+// end::inner_class[]
+
+// tag::inner_class2[]
+class Outer2 {
+    private String privateStr = 'some string'
+
+    def startThread() {
+       new Thread(new Inner2()).start()
+    }
+
+    class Inner2 implements Runnable {
+        void run() {
+            println "${privateStr}."
+        }
+    }
+}
+// end::inner_class2[]
+
+// tag::anonymous_inner_class[]
+class Outer3 {
+    private String privateStr = 'some string'
+
+    def startThread() {
+        new Thread(new Runnable() {      //<1>
+            void run() {
+                println "${privateStr}."
+            }
+        }).start()                       //<2>
+    }
+}
+// end::anonymous_inner_class[]
+
 assert p != null
 '''
     }
