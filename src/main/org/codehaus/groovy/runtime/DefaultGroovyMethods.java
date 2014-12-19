@@ -6554,7 +6554,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <K, V> Map<K, V> subMap(Map<K, V> map, Collection<K> keys) {
         Map<K, V> answer = new LinkedHashMap<K, V>(keys.size());
         for (K key : keys) {
-            answer.put(key, map.get(key));
+            if (map.containsKey(key)) {
+                answer.put(key, map.get(key));
+            }
         }
         return answer;
     }
@@ -6578,7 +6580,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <K, V> Map<K, V> subMap(Map<K, V> map, K[] keys) {
         Map<K, V> answer = new LinkedHashMap<K, V>(keys.length);
         for (K key : keys) {
-            answer.put(key, map.get(key));
+            if (map.containsKey(key)) {
+                answer.put(key, map.get(key));
+            }
         }
         return answer;
     }
