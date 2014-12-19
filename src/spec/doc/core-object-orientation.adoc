@@ -37,6 +37,7 @@ Normal classes refer to classes which are top level and concrete. This means the
 include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_instantiation,indent=0]
 ----
 
+
 ==== Inner class
 
 Inner classes are defined within another classes. The enclosing class can use the inner class as usual. On the other side, an inner class have the power to access members of its enclosing class, even if they are private. Here is an example:
@@ -73,12 +74,26 @@ The last example of inner class can be simplified with an anonymous inner class.
 ----
 include::{projectdir}/src/spec/test/ClassTest.groovy[tags=anonymous_inner_class,indent=0]
 ----
-<1> comparing with the last example of previous section, the `new Inner2()` was replaced by `new Runnable()` along with all its implementation.
-<2> the method `start` is invoked normally.
+<1> comparing with the last example of previous section, the `new Inner2()` was replaced by `new Runnable()` along with all its implementation
+<2> the method `start` is invoked normally
 
 Thus, there was no need to define a new class to be used just once.
 
+
 ==== Abstract class (MichaelSchuenck)
+
+Abstract classes represent generic concepts, thus, they cannot be instantiated, being created to be subclassed. Their members incluide fields/properties and abstract or concrete methods. Abstract methods do not have implementation.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=abstract_class,indent=0]
+----
+<1> abstract classes must be declared with `abstract` keyword
+<2> abstract methods also must be declared with `abstract` keyword
+
+Subclasses of an abstract classes must implement all their abstract methods.
+
+Abstract classes are commonly compared to interfaces. But there are at least two important differences of choosing one or another. First, while abstract classes may contain fields/properties and concrete methods, interfaces may contain only abstract methods (method signatures). Moreover, one classe can implement several interfaces, whereas it can extend just one class, abstract or not. 
 
 === Interface (TBD)
 

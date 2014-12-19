@@ -63,6 +63,19 @@ class Outer3 {
 }
 // end::anonymous_inner_class[]
 
+// tag::abstract_class[]
+abstract class Abstract {         //<1>
+    String name
+
+    abstract def abstractMethod() //<2>
+
+    def concreteMethod() {
+        println 'concrete'
+    }
+}
+// end::abstract_class[]
+
+
 assert p != null
 '''
     }
