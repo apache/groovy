@@ -806,7 +806,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ===== @groovy.transform.InheritConstructors
 
 The `@InheritConstructor` AST transformation aims at generating constructors matching super constructors for you. This
-is in particular useful when overridding exception classes:
+is in particular useful when overriding exception classes:
 
 [source,groovy]
 ----

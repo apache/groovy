@@ -28,8 +28,6 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
@@ -111,8 +109,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 fieldMethods.addAll(getAllMethods(next));
             }
 
-            final boolean skipInterfaces = hasBooleanValue(node.getMember(MEMBER_INTERFACES), false);
-            final boolean includeDeprecated = hasBooleanValue(node.getMember(MEMBER_DEPRECATED), true) || (type.isInterface() && !skipInterfaces);
+            final boolean skipInterfaces = memberHasValue(node, MEMBER_INTERFACES, false);
+            final boolean includeDeprecated = memberHasValue(node, MEMBER_DEPRECATED, true) || (type.isInterface() && !skipInterfaces);
             List<String> excludes = getMemberList(node, MEMBER_EXCLUDES);
             List<String> includes = getMemberList(node, MEMBER_INCLUDES);
             List<ClassNode> excludeTypes = getClassList(node, MEMBER_EXCLUDE_TYPES);
@@ -150,10 +148,6 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 }
             }
         }
-    }
-
-    private boolean hasBooleanValue(Expression expression, boolean bool) {
-        return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue().equals(bool);
     }
 
     private void addSetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name) {
@@ -224,7 +218,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
         if (existingNode == null || existingNode.getCode() == null) {
 
-            final boolean includeParameterAnnotations = hasBooleanValue(node.getMember(MEMBER_PARAMETER_ANNOTATIONS), true);
+            final boolean includeParameterAnnotations = memberHasValue(node, MEMBER_PARAMETER_ANNOTATIONS, true);
 
             final ArgumentListExpression args = new ArgumentListExpression();
             final Parameter[] params = candidate.getParameters();
@@ -253,7 +247,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     stmt(mce));
             newMethod.setGenericsTypes(candidate.getGenericsTypes());
 
-            if (hasBooleanValue(node.getMember(MEMBER_METHOD_ANNOTATIONS), true)) {
+            if (memberHasValue(node, MEMBER_METHOD_ANNOTATIONS, true)) {
                 newMethod.addAnnotations(copyAnnotatedNodeAnnotations(candidate));
             }
         }
