@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,4 +110,19 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.InheritConstructorsASTTransformation")
 public @interface InheritConstructors {
+    /**
+     * Whether to carry over annotations on the copied constructors.
+     * Currently Closure annotation members are not supported.
+     *
+     * @return true if copied constructor should keep constructor annotations
+     */
+    boolean constructorAnnotations() default false;
+
+    /**
+     * Whether to carry over parameter annotations on the copied constructors.
+     * Currently Closure annotation members are not supported.
+     *
+     * @return true if copied constructor should keep parameter annotations
+     */
+    boolean parameterAnnotations() default false;
 }

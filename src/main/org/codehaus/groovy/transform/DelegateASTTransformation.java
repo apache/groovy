@@ -28,18 +28,13 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.GeneratedClosure;
 
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -111,8 +106,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 fieldMethods.addAll(getAllMethods(next));
             }
 
-            final boolean skipInterfaces = hasBooleanValue(node.getMember(MEMBER_INTERFACES), false);
-            final boolean includeDeprecated = hasBooleanValue(node.getMember(MEMBER_DEPRECATED), true) || (type.isInterface() && !skipInterfaces);
+            final boolean skipInterfaces = memberHasValue(node, MEMBER_INTERFACES, false);
+            final boolean includeDeprecated = memberHasValue(node, MEMBER_DEPRECATED, true) || (type.isInterface() && !skipInterfaces);
             List<String> excludes = getMemberList(node, MEMBER_EXCLUDES);
             List<String> includes = getMemberList(node, MEMBER_INCLUDES);
             List<ClassNode> excludeTypes = getClassList(node, MEMBER_EXCLUDE_TYPES);
@@ -150,10 +145,6 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 }
             }
         }
-    }
-
-    private boolean hasBooleanValue(Expression expression, boolean bool) {
-        return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue().equals(bool);
     }
 
     private void addSetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name) {
@@ -224,8 +215,6 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
         if (existingNode == null || existingNode.getCode() == null) {
 
-            final boolean includeParameterAnnotations = hasBooleanValue(node.getMember(MEMBER_PARAMETER_ANNOTATIONS), true);
-
             final ArgumentListExpression args = new ArgumentListExpression();
             final Parameter[] params = candidate.getParameters();
             final Parameter[] newParams = new Parameter[params.length];
@@ -233,7 +222,9 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 Parameter newParam = new Parameter(correctToGenericsSpecRecurse(genericsSpec, params[i].getType()), getParamName(params, i, fieldNode.getName()));
                 newParam.setInitialExpression(params[i].getInitialExpression());
 
-                if (includeParameterAnnotations) newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i]));
+                if (memberHasValue(node, MEMBER_PARAMETER_ANNOTATIONS, true)) {
+                    newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i], MY_TYPE_NAME));
+                }
 
                 newParams[i] = newParam;
                 args.addExpression(varX(newParam));
@@ -253,8 +244,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     stmt(mce));
             newMethod.setGenericsTypes(candidate.getGenericsTypes());
 
-            if (hasBooleanValue(node.getMember(MEMBER_METHOD_ANNOTATIONS), true)) {
-                newMethod.addAnnotations(copyAnnotatedNodeAnnotations(candidate));
+            if (memberHasValue(node, MEMBER_METHOD_ANNOTATIONS, true)) {
+                newMethod.addAnnotations(copyAnnotatedNodeAnnotations(candidate, MY_TYPE_NAME));
             }
         }
     }
@@ -275,19 +266,4 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         return false;
     }
 
-    /**
-     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
-     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
-     * <p>
-     * Annotations with {@link GeneratedClosure} members are not supported by now.
-     */
-    private List<AnnotationNode> copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode) {
-        final ArrayList<AnnotationNode> delegateAnnotations = new ArrayList<AnnotationNode>();
-        final ArrayList<AnnotationNode> notCopied = new ArrayList<AnnotationNode>();
-        GeneralUtils.copyAnnotatedNodeAnnotations(annotatedNode, delegateAnnotations, notCopied);
-        for (AnnotationNode annotation : notCopied) {
-            addError(MY_TYPE_NAME + " does not support keeping Closure annotation members.", annotation);
-        }
-        return delegateAnnotations;
-    }
 }

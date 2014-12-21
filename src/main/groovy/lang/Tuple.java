@@ -27,11 +27,11 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  * @version $Revision$
  */
 public class Tuple extends AbstractList {
-
-    private Object[] contents;
+    private final Object[] contents;
     private int hashCode;
 
     public Tuple(Object[] contents) {
+        if (contents == null) throw new NullPointerException();
         this.contents = contents;
     }
 
@@ -43,26 +43,22 @@ public class Tuple extends AbstractList {
         return contents.length;
     }
 
-    public boolean equals(Object that) {
-        if (that instanceof Tuple) {
-            return equals((Tuple) that);
-        }
-        return false;
-    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof Tuple)) return false;
 
-    public boolean equals(Tuple that) {
-        if (contents.length == that.contents.length) {
-            for (int i = 0; i < contents.length; i++) {
-                if (! DefaultTypeTransformation.compareEqual(this.contents[i], that.contents[i])) {
-                    return false;
-                }
+        Tuple that = (Tuple) o;
+        if (size() != that.size()) return false;
+        for (int i = 0; i < contents.length; i++) {
+            if (!DefaultTypeTransformation.compareEqual(contents[i], that.contents[i])) {
+                return false;
             }
-            return true;
         }
-        return false;
+        return true;
     }
 
-
+    @Override
     public int hashCode() {
         if (hashCode == 0) {
             for (int i = 0; i < contents.length; i++ ) {
@@ -77,6 +73,7 @@ public class Tuple extends AbstractList {
         return hashCode;
     }
 
+    @Override
     public List subList(int fromIndex, int toIndex) {
         int size = toIndex - fromIndex;
         Object[] newContent = new Object[size];

@@ -57,6 +57,59 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testCopyAnnotations_groovy7059() {
+        assertScript """
+            import java.lang.annotation.*
+            import groovy.transform.InheritConstructors
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.CONSTRUCTOR])
+            public @interface Foo1 {}
+
+            @Retention(RetentionPolicy.SOURCE)
+            @Target([ElementType.CONSTRUCTOR])
+            public @interface Foo2 {}
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.PARAMETER])
+            public @interface Foo3 {}
+
+            class Bar {
+                @Foo1 @Foo2
+                Bar() {}
+
+                @Foo2
+                Bar(@Foo3 String name) {}
+
+                @Foo1
+                Bar(Integer num) {}
+
+                Bar(String name, @Foo3 Integer num) {}
+            }
+
+            @InheritConstructors(constructorAnnotations=true, parameterAnnotations=true)
+            class Baz extends Bar {}
+
+            new Baz().class.constructors.each { cons ->
+                def ans = cons.annotations.toString() + cons.parameterAnnotations.toString()
+                switch(cons.toString()) {
+                    case 'public Baz(java.lang.String,java.lang.Integer)':
+                        assert ans == '[][[], [@Foo3()]]'
+                        break
+                    case 'public Baz(java.lang.String)':
+                        assert ans == '[][[@Foo3()]]'
+                        break
+                    case 'public Baz(java.lang.Integer)':
+                        assert ans == '[@Foo1()][[]]'
+                        break
+                    case 'public Baz()':
+                        assert ans == '[@Foo1()][]'
+                        break
+                }
+            }
+        """
+    }
+
     void testInnerClassUsage() {
         assertScript """
             import groovy.transform.InheritConstructors

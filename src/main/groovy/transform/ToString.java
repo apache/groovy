@@ -136,17 +136,23 @@ public @interface ToString {
     String[] includes() default {};
 
     /**
-     * Whether to include super in generated toString.
+     * Whether to include the toString() of super in the generated toString.
      */
     boolean includeSuper() default false;
 
     /**
-     * Whether to include names of properties/fields in generated toString.
+     * Whether to include super properties in the generated toString.
+     * @since 2.4.0
+     */
+    boolean includeSuperProperties() default false;
+
+    /**
+     * Whether to include names of properties/fields in the generated toString.
      */
     boolean includeNames() default false;
 
     /**
-     * Include fields as well as properties in generated toString.
+     * Include fields as well as properties in the generated toString.
      */
     boolean includeFields() default false;
 

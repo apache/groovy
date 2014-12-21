@@ -2746,7 +2746,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return answer;
     }
 
-
     /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
@@ -6307,6 +6306,39 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns indices of the collection.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert 0..2 == [5, 6, 7].indices
+     * </pre>
+     *
+     * @param self a collection
+     * @return an index range
+     * @since 2.4.0
+     */
+    public static IntRange getIndices(Collection self) {
+        return new IntRange(false, 0, self.size());
+    }
+
+    /**
+     * Returns indices of the array.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * String[] letters = ['a', 'b', 'c', 'd']
+     * assert 0..<4 == letters.indices
+     * </pre>
+     *
+     * @param self an array
+     * @return an index range
+     * @since 2.4.0
+     */
+    public static <T> IntRange getIndices(T[] self) {
+        return new IntRange(false, 0, self.length);
+    }
+
+    /**
      * Provide the standard Groovy <code>size()</code> method for <code>Iterator</code>.
      * The iterator will become exhausted of elements after determining the size value.
      *
@@ -6522,7 +6554,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <K, V> Map<K, V> subMap(Map<K, V> map, Collection<K> keys) {
         Map<K, V> answer = new LinkedHashMap<K, V>(keys.size());
         for (K key : keys) {
-            answer.put(key, map.get(key));
+            if (map.containsKey(key)) {
+                answer.put(key, map.get(key));
+            }
         }
         return answer;
     }
@@ -6546,7 +6580,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <K, V> Map<K, V> subMap(Map<K, V> map, K[] keys) {
         Map<K, V> answer = new LinkedHashMap<K, V>(keys.length);
         for (K key : keys) {
-            answer.put(key, map.get(key));
+            if (map.containsKey(key)) {
+                answer.put(key, map.get(key));
+            }
         }
         return answer;
     }
@@ -7391,6 +7427,206 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> withEagerDefault(List<T> self, Closure init) {
         return ListWithDefault.newInstance(self, false, init);
+    }
+
+    /**
+     * Zips an Iterable with indices in (value, index) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [["a", 0], ["b", 1]] == ["a", "b"].withIndex()
+     * assert ["0: a", "1: b"] == ["a", "b"].withIndex().collect { str, idx -> "$idx: $str" }
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a zipped list with indices
+     * @see #indexed(Iterable)
+     * @since 2.4.0
+     */
+    public static <E> List<Tuple2<E, Integer>> withIndex(Iterable<E> self) {
+        return withIndex(self, 0);
+    }
+
+    /**
+     * Zips an Iterable with indices in (index, value) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [0: "a", 1: "b"] == ["a", "b"].indexed()
+     * assert ["0: a", "1: b"] == ["a", "b"].indexed().collect { idx, str -> "$idx: $str" }
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a zipped map with indices
+     * @see #withIndex(Iterable)
+     * @since 2.4.0
+     */
+    public static <E> Map<Integer, E> indexed(Iterable<E> self) {
+        return indexed(self, 0);
+    }
+
+    /**
+     * Zips an Iterable with indices in (value, index) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [["a", 5], ["b", 6]] == ["a", "b"].withIndex(5)
+     * assert ["1: a", "2: b"] == ["a", "b"].withIndex(1).collect { str, idx -> "$idx: $str" }
+     * </pre>
+     *
+     * @param self   an Iterable
+     * @param offset an index to start from
+     * @return a zipped list with indices
+     * @see #indexed(Iterable, int)
+     * @since 2.4.0
+     */
+    public static <E> List<Tuple2<E, Integer>> withIndex(Iterable<E> self, int offset) {
+        return toList(withIndex(self.iterator(), offset));
+    }
+
+    /**
+     * Zips an Iterable with indices in (index, value) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [5: "a", 6: "b"] == ["a", "b"].indexed(5)
+     * assert ["1: a", "2: b"] == ["a", "b"].indexed(1).collect { idx, str -> "$idx: $str" }
+     * </pre>
+     *
+     * @param self   an Iterable
+     * @param offset an index to start from
+     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
+     * @see #withIndex(Iterable, int)
+     * @since 2.4.0
+     */
+    public static <E> Map<Integer, E> indexed(Iterable<E> self, int offset) {
+        LinkedHashMap<Integer, E> result = new LinkedHashMap<Integer, E>();
+        Iterator<Tuple2<Integer, E>> indexed = indexed(self.iterator(), offset);
+        while (indexed.hasNext()) {
+            Tuple2<Integer, E> next = indexed.next();
+            result.put(next.getFirst(), next.getSecond());
+        }
+        return result;
+    }
+
+    /**
+     * Zips an iterator with indices in (value, index) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [["a", 0], ["b", 1]] == ["a", "b"].iterator().withIndex().toList()
+     * assert ["0: a", "1: b"] == ["a", "b"].iterator().withIndex().collect { str, idx -> "$idx: $str" }.toList()
+     * </pre>
+     *
+     * @param self an iterator
+     * @return a zipped iterator with indices
+     * @see #indexed(Iterator)
+     * @since 2.4.0
+     */
+    public static <E> Iterator<Tuple2<E, Integer>> withIndex(Iterator<E> self) {
+        return withIndex(self, 0);
+    }
+
+    /**
+     * Zips an iterator with indices in (index, value) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [[0, "a"], [1, "b"]] == ["a", "b"].iterator().indexed().collect{ e -> [e.key, e.value] }
+     * assert ["0: a", "1: b"] == ["a", "b"].iterator().indexed().collect { idx, str -> "$idx: $str" }.toList()
+     * </pre>
+     *
+     * @param self an iterator
+     * @return a zipped iterator with indices
+     * @see #withIndex(Iterator)
+     * @since 2.4.0
+     */
+    public static <E> Iterator<Tuple2<Integer, E>> indexed(Iterator<E> self) {
+        return indexed(self, 0);
+    }
+
+    /**
+     * Zips an iterator with indices in (value, index) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [["a", 5], ["b", 6]] == ["a", "b"].iterator().withIndex(5).toList()
+     * assert ["1: a", "2: b"] == ["a", "b"].iterator().withIndex(1).collect { str, idx -> "$idx: $str" }.toList()
+     * </pre>
+     *
+     * @param self   an iterator
+     * @param offset an index to start from
+     * @return a zipped iterator with indices
+     * @see #indexed(Iterator, int)
+     * @since 2.4.0
+     */
+    public static <E> Iterator<Tuple2<E, Integer>> withIndex(Iterator<E> self, int offset) {
+        return new ZipPostIterator<E>(self, offset);
+    }
+
+    /**
+     * Zips an iterator with indices in (index, value) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [[5, "a"], [6, "b"]] == ["a", "b"].iterator().indexed(5).toList()
+     * assert ["a: 1", "b: 2"] == ["a", "b"].iterator().indexed(1).collect { idx, str -> "$str: $idx" }.toList()
+     * </pre>
+     *
+     * @param self   an iterator
+     * @param offset an index to start from
+     * @return a zipped iterator with indices
+     * @see #withIndex(Iterator, int)
+     * @since 2.4.0
+     */
+    public static <E> Iterator<Tuple2<Integer, E>> indexed(Iterator<E> self, int offset) {
+        return new ZipPreIterator<E>(self, offset);
+    }
+
+    private static final class ZipPostIterator<E> implements Iterator<Tuple2<E, Integer>> {
+        private final Iterator<E> delegate;
+        private int index;
+
+        private ZipPostIterator(Iterator<E> delegate, int offset) {
+            this.delegate = delegate;
+            this.index = offset;
+        }
+
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        public Tuple2<E, Integer> next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return new Tuple2<E, Integer>(delegate.next(), index++);
+        }
+
+        public void remove() {
+            delegate.remove();
+        }
+    }
+
+    private static final class ZipPreIterator<E> implements Iterator<Tuple2<Integer, E>> {
+        private final Iterator<E> delegate;
+        private int index;
+
+        private ZipPreIterator(Iterator<E> delegate, int offset) {
+            this.delegate = delegate;
+            this.index = offset;
+        }
+
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        public Tuple2<Integer, E> next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return new Tuple2<Integer, E>(index++, delegate.next());
+        }
+
+        public void remove() {
+            delegate.remove();
+        }
     }
 
     /**
@@ -17463,5 +17699,47 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         self[i] = self[j];
         self[j] = tmp;
         return self;
+    }
+
+    /**
+     * Modifies this list by removing the element at the specified position
+     * in this list. Returns the removed element. Essentially an alias for
+     * {@link List#remove(int)} but with no ambiguity for List&lt;Integer&gt;.
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = [1, 2, 3]
+     * list.removeAt(1)
+     * assert [1, 3] == list
+     * </pre>
+     *
+     * @param self a List
+     * @param index the index of the element to be removed
+     * @return the element previously at the specified position
+     * @since 2.4.0
+     */
+    public static <E> E removeAt(List<E> self, int index) {
+        return self.remove(index);
+    }
+
+    /**
+     * Modifies this collection by removing a single instance of the specified
+     * element from this collection, if it is present. Essentially an alias for
+     * {@link Collection#remove(Object)} but with no ambiguity for Collection&lt;Integer&gt;.
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = [1, 2, 3, 2]
+     * list.removeElement(2)
+     * assert [1, 3, 2] == list
+     * </pre>
+     *
+     * @param self a Collection
+     * @param o element to be removed from this collection, if present
+     * @return true if an element was removed as a result of this call
+     * @since 2.4.0
+     */
+    public static <E> boolean removeElement(Collection<E> self, Object o) {
+        return self.remove(o);
     }
 }

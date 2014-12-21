@@ -70,12 +70,22 @@ public class TupleTest extends TestCase {
         Tuple a = new Tuple(new Object[]{"a", "b", "c"});
         Tuple b = new Tuple(new Object[]{"a", "b", "c"});
         Tuple c = new Tuple(new Object[]{"d", "b", "c"});
+        Tuple d = new Tuple(new Object[]{"a", "b"});
+        Tuple2<String, String> e = new Tuple2<String, String>("a", "b");
+        Tuple2<String, String> f = new Tuple2<String, String>("a", "c");
 
         assertEquals("hashcode", a.hashCode(), b.hashCode());
         assertTrue("hashcode", a.hashCode() != c.hashCode());
 
         assertEquals("a and b", a, b);
         assertFalse("a != c", a.equals(c));
+
+        assertFalse("!a.equals(null)", a.equals(null));
+
+        assertTrue("d.equals(e)", d.equals(e));
+        assertTrue("e.equals(d)", e.equals(d));
+        assertFalse("!e.equals(f)", e.equals(f));
+        assertFalse("!f.equals(e)", f.equals(e));
     }
 
     public void testIterator() {

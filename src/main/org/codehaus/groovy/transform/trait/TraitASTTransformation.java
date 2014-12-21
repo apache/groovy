@@ -75,6 +75,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
     private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
 
+    private static final ClassNode OVERRIDE_CLASSNODE = ClassHelper.make(Override.class);
+
     private SourceUnit unit;
     private CompilationUnit compilationUnit;
 
@@ -443,7 +445,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 processBody(new VariableExpression(newParams[0]), methodNode, methodNode.getCode(), traitClass, fieldHelper, knownFields)
         );
         mNode.setSourcePosition(methodNode);
-        mNode.addAnnotations(methodNode.getAnnotations());
+        mNode.addAnnotations(filterAnnotations(methodNode.getAnnotations()));
         mNode.setGenericsTypes(methodNode.getGenericsTypes());
         if (methodNode.isAbstract()) {
             mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
@@ -456,6 +458,17 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             methodNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         }
         return mNode;
+    }
+
+    private static List<AnnotationNode> filterAnnotations(List<AnnotationNode> annotations) {
+        List<AnnotationNode> result = new ArrayList<AnnotationNode>(annotations.size());
+        for (AnnotationNode annotation : annotations) {
+            if (!OVERRIDE_CLASSNODE.equals(annotation.getClassNode())) {
+                result.add(annotation);
+            }
+        }
+
+        return result;
     }
 
     private Parameter createSelfParameter(final ClassNode traitClass, boolean isStatic) {

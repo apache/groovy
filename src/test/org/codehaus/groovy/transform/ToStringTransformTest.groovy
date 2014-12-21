@@ -116,6 +116,27 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person(surName:Doe, age:50)", toString)
     }
 
+    void testIncludeSuperProperties() {
+        def toString = evaluate("""
+            import groovy.transform.ToString
+
+            class Person {
+                String name
+                private boolean flag = true
+                static final int MAX_NAME_LENGTH = 30
+            }
+
+            @ToString(includeSuperProperties = true, includeNames = true)
+            class BandMember extends Person {
+                String bandName
+            }
+
+            new BandMember(name:'Bono', bandName: 'U2').toString()
+        """)
+
+        assertEquals("BandMember(bandName:U2, name:Bono)", toString)
+    }
+
     void testSuper()  {
 
         def toString = evaluate("""

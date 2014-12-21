@@ -636,6 +636,11 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeSuper,indent=0]
 ----
+|includeSuperProperties|False|Should super properties be included in toString|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_example_includeSuperProperties,indent=0]
+----
 |includeFields|False|Should fields be included in toString, in addition to properties|
 [source,groovy]
 ----
@@ -801,12 +806,29 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ===== @groovy.transform.InheritConstructors
 
 The `@InheritConstructor` AST transformation aims at generating constructors matching super constructors for you. This
-is in particular useful when overridding exception classes:
+is in particular useful when overriding exception classes:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=inheritconstructors_simple,indent=0]
 ----
+
+The `@InheritConstructor` AST transformation supports the following configuration options:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|constructorAnnotations|False|Whether to carry over annotations from the constructor during copying|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=inheritconstructors_constructor_annotations,indent=0]
+----
+|parameterAnnotations|False|Whether to carry over annotations from the constructor parameters when copying the constructor|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=inheritconstructors_parameter_annotations,indent=0]
+----
+|=======================================================================
 
 [[xform-Category]]
 ===== @groovy.lang.Category
