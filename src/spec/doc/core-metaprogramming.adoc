@@ -813,6 +813,23 @@ is in particular useful when overriding exception classes:
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=inheritconstructors_simple,indent=0]
 ----
 
+The `@InheritConstructor` AST transformation supports the following configuration options:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|constructorAnnotations|False|Whether to carry over annotations from the constructor during copying|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=inheritconstructors_constructor_annotations,indent=0]
+----
+|parameterAnnotations|False|Whether to carry over annotations from the constructor parameters when copying the constructor|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=inheritconstructors_parameter_annotations,indent=0]
+----
+|=======================================================================
+
 [[xform-Category]]
 ===== @groovy.lang.Category
 

@@ -578,6 +578,42 @@ new CustomException(new RuntimeException())
 // new CustomException("A custom message", new RuntimeException(), false, true)
 // end::inheritconstructors_simple[]
 '''
+        assertScript '''
+import groovy.transform.InheritConstructors
+import java.lang.annotation.*
+// tag::inheritconstructors_constructor_annotations[]
+@Retention(RetentionPolicy.RUNTIME)
+@Target([ElementType.CONSTRUCTOR])
+public @interface ConsAnno {}
+
+class Base {
+  @ConsAnno Base() {}
+}
+
+@InheritConstructors(constructorAnnotations=true)
+class Child extends Base {}
+
+assert Child.constructors[0].annotations[0].annotationType().name == 'ConsAnno'
+// end::inheritconstructors_constructor_annotations[]
+'''
+        assertScript '''
+import groovy.transform.InheritConstructors
+import java.lang.annotation.*
+// tag::inheritconstructors_parameter_annotations[]
+@Retention(RetentionPolicy.RUNTIME)
+@Target([ElementType.PARAMETER])
+public @interface ParamAnno {}
+
+class Base {
+  Base(@ParamAnno String name) {}
+}
+
+@InheritConstructors(parameterAnnotations=true)
+class Child extends Base {}
+
+assert Child.constructors[0].parameterAnnotations[0][0].annotationType().name == 'ParamAnno'
+// end::inheritconstructors_parameter_annotations[]
+'''
     }
 
     void testIndexedProperty() {

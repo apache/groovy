@@ -59,16 +59,18 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         if (!MY_TYPE.equals(node.getClassNode())) return;
 
         if (parent instanceof ClassNode) {
-            processClass((ClassNode) parent);
+            processClass((ClassNode) parent, node);
         }
     }
 
-    private void processClass(ClassNode cNode) {
+    private void processClass(ClassNode cNode, AnnotationNode node) {
         if (cNode.isInterface()) {
             addError("Error processing interface '" + cNode.getName() +
                     "'. " + MY_TYPE_NAME + " only allowed for classes.", cNode);
             return;
         }
+        boolean copyConstructorAnnotations = memberHasValue(node, "constructorAnnotations", true);
+        boolean copyParameterAnnotations = memberHasValue(node, "parameterAnnotations", true);
         ClassNode sNode = cNode.getSuperClass();
         List<AnnotationNode> superAnnotations = sNode.getAnnotations(MY_TYPE);
         if (superAnnotations.size() == 1) {
@@ -76,28 +78,39 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
             // so force that order here. The transformation is benign on an already
             // processed node so processing twice in any order won't matter bar
             // a very small time penalty.
-            processClass(sNode);
+            processClass(sNode, node);
         }
         for (ConstructorNode cn : sNode.getDeclaredConstructors()) {
-            addConstructorUnlessAlreadyExisting(cNode, cn);
+            addConstructorUnlessAlreadyExisting(cNode, cn, copyConstructorAnnotations, copyParameterAnnotations);
         }
     }
 
-    private void addConstructorUnlessAlreadyExisting(ClassNode classNode, ConstructorNode consNode) {
+    private void addConstructorUnlessAlreadyExisting(ClassNode classNode, ConstructorNode consNode, boolean copyConstructorAnnotations, boolean copyParameterAnnotations) {
         Parameter[] origParams = consNode.getParameters();
         if (consNode.isPrivate()) return;
         Parameter[] params = new Parameter[origParams.length];
-        List<Expression> theArgs = new ArrayList<Expression>();
         Map<String, ClassNode> genericsSpec = createGenericsSpec(classNode);
         extractSuperClassGenerics(classNode, classNode.getSuperClass(), genericsSpec);
+        List<Expression> theArgs = buildParams(origParams, params, genericsSpec, copyParameterAnnotations);
+        if (isExisting(classNode, params)) return;
+        ConstructorNode added = classNode.addConstructor(consNode.getModifiers(), params, consNode.getExceptions(), block(ctorSuperS(args(theArgs))));
+        if (copyConstructorAnnotations) {
+            added.addAnnotations(copyAnnotatedNodeAnnotations(consNode, MY_TYPE_NAME));
+        }
+    }
+
+    private List<Expression> buildParams(Parameter[] origParams, Parameter[] params, Map<String, ClassNode> genericsSpec, boolean copyParameterAnnotations) {
+        List<Expression> theArgs = new ArrayList<Expression>();
         for (int i = 0; i < origParams.length; i++) {
             Parameter p = origParams[i];
             ClassNode newType = correctToGenericsSpecRecurse(genericsSpec, p.getType());
             params[i] = p.hasInitialExpression() ? param(newType, p.getName(), p.getInitialExpression()) : param(newType, p.getName());
+            if (copyParameterAnnotations) {
+                params[i].addAnnotations(copyAnnotatedNodeAnnotations(origParams[i], MY_TYPE_NAME));
+            }
             theArgs.add(varX(p.getName(), newType));
         }
-        if (isExisting(classNode, params)) return;
-        classNode.addConstructor(consNode.getModifiers(), params, consNode.getExceptions(), block(ctorSuperS(args(theArgs))));
+        return theArgs;
     }
 
     private boolean isExisting(ClassNode classNode, Parameter[] params) {
