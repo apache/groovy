@@ -10,9 +10,9 @@ This chapter covers the object orientation of the Groovy programming language.
 
 Groovy classes are very similar to Java classes, being compatible to those ones at JVM level. They may have methods and fields/properties, which can have the same modifiers (public, protected, private, static, etc) as Java classes.
 
-Here are key differences between Groovy and Java classes:
+Here are key aspects of Groovy classes, that are different from their Java counterparts:
 
- * Fields are turned into properties automatically, which results in less verbose codes, whithout so many getters and setter methods. More on this aspect will be covered in the Section "Fields and properties".
+ * Public fields are turned into properties automatically, which results in less verbose codes, whithout so many getter and setter methods. More on this aspect will be covered in the Section "Fields and properties".
  * Their declarations and any property or method without an access modifier are public.
  * Classes do not need to have the same name of the files where they are defined.
  * One file may contain one or more classes (but if a file contains no classes, it is considered a script).
@@ -23,14 +23,14 @@ The following code presents an example class.
 ----
 include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_definition,indent=0]
 ----
-<1> class opening, with the name `Person`
+<1> class beginning, with the name `Person`
 <2> string field and property named `name`
 <3> method definition
 
 
 ==== Normal class
 
-Normal classes refer to classes which are top level and concrete. This means they can be instantiated whithout restrictions from any other classes or scripts. This way, they can only be public (even though the `public` keyword may be supressed). Classes are instantiated by calling their constructors, using the `new` keywork.
+Normal classes refer to classes which are top level and concrete. This means they can be instantiated whithout restrictions from any other classes or scripts. This way, they can only be public (even though the `public` keyword may be supressed). Classes are instantiated by calling their constructors, using the `new` keywork, as in the following snippet.
 
 [source,groovy]
 ----
@@ -40,7 +40,7 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_instantiation,in
 
 ==== Inner class
 
-Inner classes are defined within another classes. The enclosing class can use the inner class as usual. On the other side, an inner class have the power to access members of its enclosing class, even if they are private. Here is an example:
+Inner classes are defined within another classes. The enclosing class can use the inner class as usual. On the other side, an inner class have the power to access members of its enclosing class, even if they are private. Classes other than the enclosing class are not allowed to access inner classes. Here is an example:
 
 [source,groovy]
 ----
@@ -48,7 +48,7 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_class,indent=0]
 ----
 <1> the inner class is instantiated and its method gets called
 <2> inner class definition, inside its enclosing class
-<3> a private field of the enclosing class is accessed
+<3> even being private, a field of the enclosing class is accessed by the inner class
 
 There are some reasons for using inner classes:
 
@@ -56,7 +56,7 @@ There are some reasons for using inner classes:
  * They provide a good organization, by grouping classes that are used by only one class.
  * They lead to more mantainable codes, since inner classes are near the classes that use them.
 
-In several cases, inner classes are implementation of interfaces whose methods are needed by the outer class. The code below illustrates this.
+In several cases, inner classes are implementation of interfaces whose methods are needed by the outer class. The code below illustrates this with the usage of threads, which are very common.
 
 [source,groovy]
 ----
@@ -66,7 +66,7 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_class2,indent=0]
 Note that the class `Inner2` is defined whith the only purpose of providing an implementation of the method `run` to class `Outer2`. Anonymous inner classes help to eliminate verbosity in this case.
 
 
-===== Anonymous inner class (MichaelSchuenck)
+===== Anonymous inner class
 
 The last example of inner class can be simplified with an anonymous inner class. The same functionality can be achieved with the following code.
 
@@ -80,20 +80,18 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=anonymous_inner_class,
 Thus, there was no need to define a new class to be used just once.
 
 
-==== Abstract class (MichaelSchuenck)
+==== Abstract class
 
-Abstract classes represent generic concepts, thus, they cannot be instantiated, being created to be subclassed. Their members incluide fields/properties and abstract or concrete methods. Abstract methods do not have implementation.
+Abstract classes represent generic concepts, thus, they cannot be instantiated, being created to be subclassed. Their members incluide fields/properties and abstract or concrete methods. Abstract methods do not have implementation, and must be implemented by concrete subclasses.
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/ClassTest.groovy[tags=abstract_class,indent=0]
 ----
 <1> abstract classes must be declared with `abstract` keyword
-<2> abstract methods also must be declared with `abstract` keyword
+<2> abstract methods must also be declared with `abstract` keyword
 
-Subclasses of an abstract classes must implement all their abstract methods.
-
-Abstract classes are commonly compared to interfaces. But there are at least two important differences of choosing one or another. First, while abstract classes may contain fields/properties and concrete methods, interfaces may contain only abstract methods (method signatures). Moreover, one classe can implement several interfaces, whereas it can extend just one class, abstract or not. 
+Abstract classes are commonly compared to interfaces. But there are at least two important differences of choosing one or another. First, while abstract classes may contain fields/properties and concrete methods, interfaces may contain only abstract methods (method signatures). Moreover, one class can implement several interfaces, whereas it can extend just one class, abstract or not. 
 
 === Interface (TBD)
 

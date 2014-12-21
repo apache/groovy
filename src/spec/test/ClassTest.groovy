@@ -27,7 +27,7 @@ class Outer {
 
     class Inner {                   //<2>
         def methodA() {
-            return "${privateStr}." //<3>
+            println "${privateStr}." //<3>
         }
     }
 }
