@@ -237,12 +237,12 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         Annotation annotation = clazz.getAnnotation(Trait.class);
         if (annotation!=null) {
             ClassNode trait = ClassHelper.make(clazz);
-            traits.add(trait);
+            traits.add(trait.getPlainNodeReference());
             LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<ClassNode>();
             Traits.collectSelfTypes(trait, selfTypes, true, true);
             for (ClassNode selfType : selfTypes) {
                 if (Traits.isTrait(selfType)) {
-                    traits.add(selfType);
+                    traits.add(selfType.getPlainNodeReference());
                 }
             }
         }
