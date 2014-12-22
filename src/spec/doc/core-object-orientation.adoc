@@ -12,7 +12,7 @@ Groovy classes are very similar to Java classes, being compatible to those ones 
 
 Here are key aspects of Groovy classes, that are different from their Java counterparts:
 
- * Public fields are turned into properties automatically, which results in less verbose codes, whithout so many getter and setter methods. More on this aspect will be covered in the Section "Fields and properties".
+ * Public fields are turned into properties automatically, which results in less verbose code, whithout so many getter and setter methods. More on this aspect will be covered in the Section "Fields and properties".
  * Their declarations and any property or method without an access modifier are public.
  * Classes do not need to have the same name of the files where they are defined.
  * One file may contain one or more classes (but if a file contains no classes, it is considered a script).
@@ -40,7 +40,7 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_instantiation,in
 
 ==== Inner class
 
-Inner classes are defined within another classes. The enclosing class can use the inner class as usual. On the other side, an inner class have the power to access members of its enclosing class, even if they are private. Classes other than the enclosing class are not allowed to access inner classes. Here is an example:
+Inner classes are defined within another classes. The enclosing class can use the inner class as usual. On the other side, a inner class can access members of its enclosing class, even if they are private. Classes other than the enclosing class are not allowed to access inner classes. Here is an example:
 
 [source,groovy]
 ----
@@ -52,7 +52,7 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_class,indent=0]
 
 There are some reasons for using inner classes:
 
- * They increase encapsulation by hiding the inner class from other classes, which does not need to know about it. This also leads to cleaner packages and workspaces.
+ * They increase encapsulation by hiding the inner class from other classes, which do not need to know about it. This also leads to cleaner packages and workspaces.
  * They provide a good organization, by grouping classes that are used by only one class.
  * They lead to more mantainable codes, since inner classes are near the classes that use them.
 
