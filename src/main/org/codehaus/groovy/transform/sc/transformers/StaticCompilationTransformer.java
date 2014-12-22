@@ -62,6 +62,7 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     private final VariableExpressionTransformer variableExpressionTransformer = new VariableExpressionTransformer();
     private final RangeExpressionTransformer rangeExpressionTransformer = new RangeExpressionTransformer(this);
     private final ListExpressionTransformer listExpressionTransformer = new ListExpressionTransformer(this);
+    private final CastExpressionOptimizer castExpressionTransformer = new CastExpressionOptimizer(this);
 
     public StaticCompilationTransformer(final SourceUnit unit) {
         this.unit = unit;
@@ -113,6 +114,9 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         }
         if (expr instanceof ListExpression) {
             return listExpressionTransformer.transformListExpression((ListExpression) expr);
+        }
+        if (expr instanceof CastExpression) {
+            return castExpressionTransformer.transformCastExpression(((CastExpression)expr));
         }
         return super.transform(expr);
     }
