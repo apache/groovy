@@ -59,5 +59,41 @@ class StaticCompileCastOptimizationTest extends DefaultGroovyMethodsSTCTest impl
             assert bytecode.contains('L2I') && bytecode.contains('I2C')
         }
     }
+
+    void testShouldOptimizeListLiteralToArrayCast() {
+        try {
+            assertScript '''
+                def x = ['a','b','c'] as String[]
+            '''
+        } finally {
+            def bytecode = astTrees.entrySet().find { it.key =~ /ShouldOptimize/ }.value[1]
+            assert bytecode.contains('ANEWARRAY java/lang/String')
+        }
+    }
+
+    void testShouldOptimizeListLiteralToArrayCastWithIncompatibleElementType() {
+        try {
+            assertScript '''
+                def x = ['a','b',new Date()] as String[]
+            '''
+        } finally {
+            def bytecode = astTrees.entrySet().find { it.key =~ /ShouldOptimize/ }.value[1]
+            assert bytecode.contains('ANEWARRAY java/lang/String')
+        }
+    }
+
+    void testShouldOptimizeListLiteralToArrayCastThroughParameter() {
+        try {
+            assertScript '''
+                int foo(String[] args) {
+                    args.length
+                }
+                assert foo(['a','b',new Date()] as String[]) == 3
+            '''
+        } finally {
+            def bytecode = astTrees.entrySet().find { it.key =~ /ShouldOptimize/ }.value[1]
+            assert bytecode.contains('ANEWARRAY java/lang/String')
+        }
+    }
 }
 

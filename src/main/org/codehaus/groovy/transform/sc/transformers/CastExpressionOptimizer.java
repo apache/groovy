@@ -17,8 +17,10 @@ package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
 public class CastExpressionOptimizer {
@@ -33,6 +35,11 @@ public class CastExpressionOptimizer {
             Expression expression = cast.getExpression();
             ClassNode exprInferredType = transformer.getTypeChooser().resolveType(expression, transformer.getClassNode());
             ClassNode castType = cast.getType();
+            if (castType.isArray() && expression instanceof ListExpression) {
+                ArrayExpression arrayExpression = new ArrayExpression(castType.getComponentType(), ((ListExpression) expression).getExpressions());
+                arrayExpression.setSourcePosition(cast);
+                return transformer.transform(arrayExpression);
+            }
             if (isOptimizable(exprInferredType, castType)) {
                 // coerce is not needed
                 CastExpression trn = new CastExpression(castType, transformer.transform(expression));
