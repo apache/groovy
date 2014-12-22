@@ -229,9 +229,11 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         );
         fixGenerics(initializer, cNode);
         helper.addMethod(initializer);
-        AnnotationNode an = new AnnotationNode(TraitComposer.COMPILESTATIC_CLASSNODE);
-        initializer.addAnnotation(an);
-        cNode.addTransform(StaticCompileTransformation.class, an);
+
+        // Cannot add static compilation of init method because of GROOVY-7217, see example 2 of test case
+        //AnnotationNode an = new AnnotationNode(TraitComposer.COMPILESTATIC_CLASSNODE);
+        //initializer.addAnnotation(an);
+        //cNode.addTransform(StaticCompileTransformation.class, an);
 
         return initializer;
     }
@@ -385,7 +387,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 mce = new MethodCallExpression(
                         new CastExpression(createReceiverType(field.isStatic(), fieldHelper), thisObject),
                         Traits.helperSetterName(field),
-                        initCode.getExpression()
+                        new CastExpression(field.getOriginType(),initCode.getExpression())
                 );
             }
             mce.setImplicitThis(false);
