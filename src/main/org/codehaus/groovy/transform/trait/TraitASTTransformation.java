@@ -91,9 +91,15 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             if (!checkNotInterface(cNode, Traits.TRAIT_TYPE_NAME)) return;
             checkNoConstructor(cNode);
             checkExtendsClause(cNode);
+            generateMethodsWithDefaultArgs(cNode);
             replaceExtendsByImplements(cNode);
             createHelperClass(cNode);
         }
+    }
+
+    private void generateMethodsWithDefaultArgs(final ClassNode cNode) {
+        DefaultArgsMethodsAdder adder = new DefaultArgsMethodsAdder();
+        adder.addDefaultParameterMethods(cNode);
     }
 
     private void checkExtendsClause(final ClassNode cNode) {
@@ -507,5 +513,14 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
     public void setCompilationUnit(final CompilationUnit unit) {
         this.compilationUnit = unit;
+    }
+
+    private static class DefaultArgsMethodsAdder extends Verifier {
+
+        @Override
+        public void addDefaultParameterMethods(final ClassNode node) {
+            setClassNode(node);
+            super.addDefaultParameterMethods(node);
+        }
     }
 }
