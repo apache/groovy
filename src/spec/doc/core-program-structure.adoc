@@ -1,4 +1,4 @@
-= Program structure (Anto Aravinth)
+= Program structure
 
 This chapter covers the program structure of the Groovy programming language.
 

@@ -831,12 +831,12 @@ hence why we suggest using the `src/main` and `src/conf` directories above.
 
 === AST transformations (TBD)
 == Custom type checking extensions (TBD)
-== Builders (TBD)  - assigned to JNorthr 29July14
+== Builders (TBD)
 === Creating a builder (TBD)
 ==== BuilderSupport (TBD)
 ==== FactoryBuilderSupport (TBD)
 === Existing builders (TBD)
-==== MarkupBuilder (TBD) - assigned to JNorthr 1July14
+==== MarkupBuilder (TBD)
 ==== StreamingMarkupBuilder (TBD)
 ==== SaxBuilder (TBD)
 ==== StaxBuilder (TBD)
