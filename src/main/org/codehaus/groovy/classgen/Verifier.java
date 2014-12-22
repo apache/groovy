@@ -102,6 +102,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return classNode;
     }
 
+    protected void setClassNode(ClassNode classNode) {
+        this.classNode = classNode;
+    }
+
     public MethodNode getMethodNode() {
         return methodNode;
     }
