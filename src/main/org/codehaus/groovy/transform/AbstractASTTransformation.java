@@ -50,6 +50,22 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
 
     protected SourceUnit sourceUnit;
 
+    /**
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
+     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * <p>
+     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported for now.
+     */
+    protected List<AnnotationNode> copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, String myTypeName) {
+        final ArrayList<AnnotationNode> copiedAnnotations = new ArrayList<AnnotationNode>();
+        final ArrayList<AnnotationNode> notCopied = new ArrayList<AnnotationNode>();
+        GeneralUtils.copyAnnotatedNodeAnnotations(annotatedNode, copiedAnnotations, notCopied);
+        for (AnnotationNode annotation : notCopied) {
+            addError(myTypeName + " does not support keeping Closure annotation members.", annotation);
+        }
+        return copiedAnnotations;
+    }
+
     protected void init(ASTNode[] nodes, SourceUnit sourceUnit) {
         if (nodes == null || nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
             throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + (nodes == null ? null : Arrays.asList(nodes)));

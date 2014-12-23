@@ -1,10 +1,10 @@
 dependencies {
     compile rootProject
-    runtime('org.testng:testng:6.8.8') {
+    runtime('org.testng:testng:6.8.13') {
         // exclude 'optional' beanshell even though testng's pom doesn't say optional
         exclude(group: 'org.beanshell', module: 'bsh')
         // and an older version of jcommander
         exclude(group: 'com.beust', module: 'jcommander')
     }
-    compile('com.beust:jcommander:1.35')
+    compile('com.beust:jcommander:1.47')
 }

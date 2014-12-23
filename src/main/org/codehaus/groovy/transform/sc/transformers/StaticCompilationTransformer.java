@@ -22,6 +22,8 @@ import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 
 import java.util.*;
 
@@ -51,6 +53,7 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     private final SourceUnit unit;
 
     private final StaticTypesTypeChooser typeChooser = new StaticTypesTypeChooser();
+    private final StaticTypeCheckingVisitor staticCompilationVisitor;
 
     // various helpers in order to avoid a potential very big class
     private final StaticMethodCallExpressionTransformer staticMethodCallExpressionTransformer = new StaticMethodCallExpressionTransformer(this);
@@ -62,9 +65,11 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     private final VariableExpressionTransformer variableExpressionTransformer = new VariableExpressionTransformer();
     private final RangeExpressionTransformer rangeExpressionTransformer = new RangeExpressionTransformer(this);
     private final ListExpressionTransformer listExpressionTransformer = new ListExpressionTransformer(this);
+    private final CastExpressionOptimizer castExpressionTransformer = new CastExpressionOptimizer(this);
 
-    public StaticCompilationTransformer(final SourceUnit unit) {
+    public StaticCompilationTransformer(final SourceUnit unit, final StaticTypeCheckingVisitor visitor) {
         this.unit = unit;
+        this.staticCompilationVisitor = visitor;
     }
 
     @Override
@@ -114,6 +119,9 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         if (expr instanceof ListExpression) {
             return listExpressionTransformer.transformListExpression((ListExpression) expr);
         }
+        if (expr instanceof CastExpression) {
+            return castExpressionTransformer.transformCastExpression(((CastExpression)expr));
+        }
         return super.transform(expr);
     }
 
@@ -135,5 +143,14 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
             visitClass(innerClassNode);
         }
         classNode = prec;
+    }
+
+    @Override
+    protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
+        if (staticCompilationVisitor.isSkipMode(node)) {
+            // method has already been visited by a static type checking visitor
+            return;
+        }
+        super.visitConstructorOrMethod(node, isConstructor);
     }
 }

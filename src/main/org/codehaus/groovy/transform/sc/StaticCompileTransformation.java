@@ -44,7 +44,6 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
 
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
-        StaticCompilationTransformer transformer = new StaticCompilationTransformer(source);
         AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
         AnnotatedNode node = (AnnotatedNode) nodes[1];
         StaticTypeCheckingVisitor visitor = null;
@@ -79,6 +78,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
         if (visitor != null) {
             visitor.performSecondPass();
         }
+        StaticCompilationTransformer transformer = new StaticCompilationTransformer(source, visitor);
         if (node instanceof ClassNode) {
             transformer.visitClass((ClassNode) node);
         } else if (node instanceof MethodNode) {
@@ -90,5 +90,4 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
     protected StaticTypeCheckingVisitor newVisitor(final SourceUnit unit, final ClassNode node) {
         return new StaticCompilationVisitor(unit, node);
     }
-
 }

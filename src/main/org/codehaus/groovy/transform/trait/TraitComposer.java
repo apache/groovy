@@ -296,14 +296,15 @@ public abstract class TraitComposer {
         ClassNode fixedReturnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
         Expression forwardExpression = genericsSpec.isEmpty()?mce:new CastExpression(fixedReturnType,mce);
         int access = helperMethod.getModifiers();
-        if (Modifier.isPrivate(access)) {
+        // we could rely on the first parameter name ($static$self) but that information is not
+        // guaranteed to be always present
+        boolean isHelperForStaticMethod = helperMethodParams[0].getOriginType().equals(ClassHelper.CLASS_Type);
+        if (Modifier.isPrivate(access) && !isHelperForStaticMethod) {
             // do not create forwarder for private methods
             // see GROOVY-7213
             return;
         }
-        if (!helperMethodParams[0].getOriginType().equals(ClassHelper.CLASS_Type)) {
-            // we could rely on the first parameter name ($static$self) but that information is not
-            // guaranteed to be always present
+        if (!isHelperForStaticMethod) {
             access = access ^ Opcodes.ACC_STATIC;
         }
         MethodNode forwarder = new MethodNode(

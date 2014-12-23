@@ -36,6 +36,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
@@ -47,6 +48,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
@@ -83,6 +85,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             ClassNode cNode = (ClassNode) parent;
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             boolean includeSuper = memberHasValue(anno, "includeSuper", true);
+            boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", true);
             boolean cacheToString = memberHasValue(anno, "cache", true);
             if (includeSuper && cNode.getSuperClass().getName().equals("java.lang.Object")) {
                 addError("Error during " + MY_TYPE_NAME + " processing: includeSuper=true but '" + cNode.getName() + "' has no super class.", anno);
@@ -100,7 +103,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
                 if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
             if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
-            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString);
+            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString, includeSuperProperties);
         }
     }
 
@@ -117,6 +120,10 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     }
 
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache) {
+        createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, false, false);
+    }
+
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingToString = hasDeclaredMethod(cNode, "toString", 0);
         if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
@@ -128,11 +135,11 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             final Expression savedToString = varX(cacheField);
             body.addStatement(ifS(
                     equalsNullX(savedToString),
-                    assignS(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, body))
+                    assignS(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, body))
             ));
             tempToString = savedToString;
         } else {
-            tempToString = calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, body);
+            tempToString = calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, body);
         }
         body.addStatement(returnS(tempToString));
 
@@ -140,7 +147,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
                 ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
-    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, BlockStatement body) {
+    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, BlockStatement body) {
         // def _result = new StringBuilder()
         final Expression result = varX("_result");
         body.addStatement(declS(result, ctorX(STRINGBUILDER_TYPE)));
@@ -154,7 +161,18 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         body.addStatement(appendS(result, constX(className + "(")));
 
         // append properties
-        List<PropertyNode> pList = getInstanceProperties(cNode);
+        List<PropertyNode> pList;
+        if (includeSuperProperties) {
+            pList = getAllProperties(cNode);
+            Iterator<PropertyNode> pIterator = pList.iterator();
+            while (pIterator.hasNext()) {
+                if (pIterator.next().isStatic()) {
+                    pIterator.remove();
+                }
+            }
+        } else {
+            pList = getInstanceProperties(cNode);
+        }
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             Expression getter = callX(INVOKER_TYPE, "getProperty", args(varX("this"), constX(pNode.getName())));
