@@ -55,7 +55,8 @@ class MemberSignatureParser {
                     return new TypeSignatureParser(resolver) {
                         @Override
                         void finished(ClassNode result) {
-                            parameterTypes[paramIndex++] = result;
+                            parameterTypes[paramIndex] = applyErasure(result, parameterTypes[paramIndex]);
+                            paramIndex++;
                         }
                     };
                 }
@@ -65,7 +66,7 @@ class MemberSignatureParser {
                     return new TypeSignatureParser(resolver) {
                         @Override
                         void finished(ClassNode result) {
-                            returnType[0] = result;
+                            returnType[0] = applyErasure(result, returnType[0]);
                         }
                     };
                 }
@@ -77,7 +78,8 @@ class MemberSignatureParser {
                     return new TypeSignatureParser(resolver) {
                         @Override
                         void finished(ClassNode result) {
-                            exceptions[exceptionIndex++] = result;
+                            exceptions[exceptionIndex] = applyErasure(result, exceptions[exceptionIndex]);
+                            exceptionIndex++;
                         }
                     };
                 }
@@ -122,13 +124,20 @@ class MemberSignatureParser {
         return result;
     }
 
+    private static ClassNode applyErasure(ClassNode genericType, ClassNode erasure) {
+        if (genericType.isGenericsPlaceHolder()) {
+            genericType.setRedirect(erasure);
+        }
+        return genericType;
+    }
+
     static FieldNode createFieldNode(FieldStub field, AsmReferenceResolver resolver, DecompiledClassNode owner) {
         final ClassNode[] type = {resolver.resolveType(Type.getType(field.desc))};
         if (field.signature != null) {
             new SignatureReader(field.signature).accept(new TypeSignatureParser(resolver) {
                 @Override
                 void finished(ClassNode result) {
-                    type[0] = result;
+                    type[0] = applyErasure(result, type[0]);
                 }
             });
         }

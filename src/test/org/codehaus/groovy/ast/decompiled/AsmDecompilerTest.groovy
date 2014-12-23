@@ -26,7 +26,6 @@ import org.objectweb.asm.Opcodes
 
 import java.lang.annotation.RetentionPolicy
 import java.util.jar.Attributes
-
 /**
  * @author Peter Gromov
  */
@@ -261,6 +260,18 @@ class AsmDecompilerTest extends TestCase {
         assert tRef.usingGenerics
         assert tRef.name == Object.name
         assert tRef.genericsTypes[0].name == 'T'
+    }
+
+    public void "test non-trivial erasure"() {
+        def cls = decompile(NonTrivialErasure.name)
+
+        def method = cls.getDeclaredMethods("method")[0]
+        assert method.returnType.toString() == 'V -> java.lang.RuntimeException'
+        assert method.parameters[0].type.toString() == 'V -> java.lang.RuntimeException'
+        assert method.exceptions[0].toString() == 'V -> java.lang.RuntimeException'
+
+        def field = cls.getDeclaredField("field")
+        assert field.type.toString() == 'V -> java.lang.RuntimeException'
     }
 
     void "test static inner class"() {

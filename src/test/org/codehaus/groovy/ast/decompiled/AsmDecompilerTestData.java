@@ -86,3 +86,9 @@ class SuperClass { }
 @interface InnerAnno {
     boolean booleanAttr() default true;
 }
+
+@SuppressWarnings("unused")
+abstract class NonTrivialErasure<V extends RuntimeException> {
+    abstract V method(V param) throws V;
+    V field;
+}
