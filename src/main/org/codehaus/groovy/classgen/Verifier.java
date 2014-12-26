@@ -202,6 +202,27 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         node.visitContents(this);
         checkForDuplicateMethods(node);
         addCovariantMethods(node);
+
+        checkFinalVariables(node);
+    }
+
+    private void checkFinalVariables(ClassNode node) {
+        FinalVariableAnalyzer analyzer = new FinalVariableAnalyzer(null, new FinalVariableAnalyzer.VariableNotFinalCallback() {
+            @Override
+            public void variableNotFinal(Variable var, BinaryExpression bexp) {
+                if (var instanceof VariableExpression) {
+                    var = ((VariableExpression) var).getAccessedVariable();
+                }
+                if (var instanceof VariableExpression && Modifier.isFinal(var.getModifiers())) {
+                    throw new RuntimeParserException("The variable ["+var.getName()+"] is declared final but is reassigned",bexp);
+                }
+                if (var instanceof Parameter && Modifier.isFinal(var.getModifiers())) {
+                    throw new RuntimeParserException("The parameter ["+var.getName()+"] is declared final but is reassigned",bexp);
+                }
+            }
+        });
+        analyzer.visitClass(node);
+
     }
 
     private void checkForDuplicateMethods(ClassNode cn) {

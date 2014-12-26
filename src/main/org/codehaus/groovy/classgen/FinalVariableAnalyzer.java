@@ -32,6 +32,7 @@ import java.util.Map;
 public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     private final SourceUnit sourceUnit;
+    private final VariableNotFinalCallback callback;
 
     private static enum VariableState {
         is_uninitialized,
@@ -54,6 +55,11 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     private final Map<Variable, VariableState> assignmentCount = new HashMap<Variable, VariableState>();
 
     public FinalVariableAnalyzer(final SourceUnit sourceUnit) {
+        this(sourceUnit, null);
+    }
+
+    public FinalVariableAnalyzer(final SourceUnit sourceUnit, final VariableNotFinalCallback callback) {
+        this.callback = callback;
         this.sourceUnit = sourceUnit;
     }
 
@@ -80,18 +86,25 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
                 boolean uninitialized =
                         isDeclaration &&
                         expression.getRightExpression() == EmptyExpression.INSTANCE;
-                recordAssignment((Variable) leftExpression, isDeclaration, uninitialized);
+                recordAssignment((Variable) leftExpression, isDeclaration, uninitialized, expression);
                 if (leftExpression instanceof VariableExpression) {
                     Variable accessed = ((VariableExpression) leftExpression).getAccessedVariable();
                     if (accessed!=leftExpression) {
-                        recordAssignment(accessed, isDeclaration, uninitialized);
+                        recordAssignment(accessed, isDeclaration, uninitialized, expression);
                     }
                 }
             }
         }
     }
 
-    private void recordAssignment(final Variable var, boolean isDeclaration, boolean uninitialized) {
+    private void recordAssignment(
+            Variable var,
+            boolean isDeclaration,
+            boolean uninitialized,
+            BinaryExpression expression) {
+        if (var==null) {
+            return;
+        }
         if (!isDeclaration && var.isClosureSharedVariable()) {
             assignmentCount.put(var, VariableState.is_var);
         }
@@ -101,9 +114,22 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             if (var instanceof Parameter) {
                 count = VariableState.is_var;
             }
-            assignmentCount.put(var, count);
         } else {
-            assignmentCount.put(var, count.getNext());
+            count = count.getNext();
         }
+        assignmentCount.put(var, count);
+        if (count==VariableState.is_var && callback!=null) {
+            callback.variableNotFinal(var, expression);
+        }
+    }
+
+    public static interface VariableNotFinalCallback {
+        /**
+         * Callback called whenever an assignment transforms an effectively final
+         * variable into a non final variable (aka, breaks the "final" modifier contract)
+         * @param var the variable detected as not final
+         * @param bexp the expression responsible for the contract to be broken
+         */
+        void variableNotFinal(Variable var, BinaryExpression bexp);
     }
 }

@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.Variable
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder
 
@@ -36,6 +37,20 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         }
         def shell = new GroovyShell(cc)
         shell.parse(script)
+    }
+
+    protected void assertFinalCompilationErrors(List<String> vars, final String script) {
+        Set<String> checked = []
+        try {
+            assertFinals [:], script
+        } catch (MultipleCompilationErrorsException e) {
+            vars.each { var ->
+                assert (e.message =~ "The variable \\[${var}\\] is declared final but is reassigned" ||
+                        e.message =~ "Cannot assign a value to final variable '${var}'")
+                checked << var
+            }
+        }
+        assert (vars - checked).empty
     }
 
     void testVariableShouldBeEffectivelyFinal() {
@@ -100,11 +115,19 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
        '''
     }
 
-    void testPlusEqualsShouldBeConsideredNotFinal() {
-        assertFinals x:false, '''
+    void testReassignedFinalVariableShouldThrowCompilationError() {
+        assertFinalCompilationErrors(['x'], '''
             final x = []
             x += [1]
-        '''
+        ''')
+    }
+
+    void testReassignedFinalParamererShouldThrowCompilationError() {
+        assertFinalCompilationErrors(['x'], '''
+            void foo(final int x) {
+               x = 2
+            }
+        ''')
     }
 
     @CompileStatic
