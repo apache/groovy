@@ -325,12 +325,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
 
     private void createConstructorMap(ClassNode cNode, List<PropertyNode> list, List<String> knownImmutableClasses, List<String> knownImmutables) {
         final BlockStatement body = new BlockStatement();
+        body.addStatement(ifS(equalsNullX(varX("args")), assignS(varX("args"), new MapExpression())));
         for (PropertyNode pNode : list) {
             body.addStatement(createConstructorStatement(cNode, pNode, knownImmutableClasses, knownImmutables));
         }
         // check for missing properties
         body.addStatement(stmt(callX(SELF_TYPE, "checkPropNames", args("this", "args"))));
-        body.addStatement(ifS(equalsNullX(varX("args")), assignS(varX("args"), new MapExpression())));
         createConstructorMapCommon(cNode, body);
         if (list.size() > 0) {
             createNoArgConstructor(cNode);
