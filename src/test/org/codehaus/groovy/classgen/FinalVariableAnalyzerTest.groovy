@@ -130,6 +130,77 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''')
     }
 
+    void testFinalVariableAssignedInIfBranchesShouldStillBeFinal() {
+        assertFinals x:true,'''
+            int x
+            if (t) {
+                x = 1
+            }
+        '''
+    }
+
+    void testFinalVariableAssignedInElseBranchesShouldStillBeFinal() {
+        assertFinals x:true,'''
+            int x
+            if (t) {
+                // nothing
+            } else {
+                x = 1
+            }
+        '''
+    }
+
+    void testFinalVariableAssignedInIfElseBranchesShouldStillBeFinal() {
+        assertFinals x:true,'''
+            int x
+            if (t) {
+                x = 1
+            } else {
+                x = 2
+            }
+        '''
+    }
+
+    void testFinalVariableAssignedInIfElseBranchesShouldNotBeFinal() {
+        assertFinals x:false,'''
+            int x
+            if (t) {
+                x = 1
+                x = 2
+            } else {
+                x = 2
+            }
+        '''
+    }
+
+    void testFinalVariableAssignedInIfElseBranchesShouldNotBeFinal2() {
+        assertFinals x:false,'''
+            int x
+            if (t) {
+                x = 1
+            } else {
+                x = 1
+                x = 2
+            }
+        '''
+    }
+
+    void testNestedIfShouldNotBeFinal() {
+        assertFinals x:false,'''
+            int x
+            if (t1) {
+                if (t2) {
+                    x = 1
+                }
+            }
+            if (t2) {
+                if (t3) {
+                    x = 1
+                }
+            }
+        '''
+    }
+
     @CompileStatic
     private static class AssertionFinalVariableAnalyzer extends FinalVariableAnalyzer {
 
