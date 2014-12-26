@@ -201,6 +201,32 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    void testPrePostfixShouldMakeVarNotFinal() {
+        assertFinals x:false, y:false, z:false, o:false, '''
+            def x = 0
+            def y = 0
+            def z = 0
+            def o = 0
+            x++
+            ++y
+            z--
+            --o
+        '''
+    }
+
+    void testPrePostfixShouldMakeUninitializedVarNotFinal() {
+        assertFinals x:false, y:false, z:false, o:false, '''
+            def x
+            def y
+            def z
+            def o
+            x++
+            ++y
+            z--
+            --o
+        '''
+    }
+
     @CompileStatic
     private static class AssertionFinalVariableAnalyzer extends FinalVariableAnalyzer {
 

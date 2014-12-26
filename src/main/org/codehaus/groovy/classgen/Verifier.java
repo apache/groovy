@@ -209,7 +209,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private void checkFinalVariables(ClassNode node) {
         FinalVariableAnalyzer analyzer = new FinalVariableAnalyzer(null, new FinalVariableAnalyzer.VariableNotFinalCallback() {
             @Override
-            public void variableNotFinal(Variable var, BinaryExpression bexp) {
+            public void variableNotFinal(Variable var, Expression bexp) {
                 if (var instanceof VariableExpression) {
                     var = ((VariableExpression) var).getAccessedVariable();
                 }

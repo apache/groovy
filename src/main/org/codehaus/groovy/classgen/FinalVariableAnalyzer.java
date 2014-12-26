@@ -22,6 +22,8 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
@@ -114,12 +116,36 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
                 boolean uninitialized =
                         isDeclaration &&
                                 expression.getRightExpression() == EmptyExpression.INSTANCE;
-                recordAssignment((Variable) leftExpression, isDeclaration, uninitialized, expression);
+                recordAssignment((Variable) leftExpression, isDeclaration, uninitialized, false, expression);
                 if (leftExpression instanceof VariableExpression) {
                     Variable accessed = ((VariableExpression) leftExpression).getAccessedVariable();
                     if (accessed != leftExpression) {
-                        recordAssignment(accessed, isDeclaration, uninitialized, expression);
+                        recordAssignment(accessed, isDeclaration, uninitialized, false, expression);
                     }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void visitPrefixExpression(final PrefixExpression expression) {
+        super.visitPrefixExpression(expression);
+        checkPrePostfixOperation(expression.getExpression(), expression);
+    }
+
+    @Override
+    public void visitPostfixExpression(final PostfixExpression expression) {
+        super.visitPostfixExpression(expression);
+        checkPrePostfixOperation(expression.getExpression(), expression);
+    }
+
+    private void checkPrePostfixOperation(final Expression variable, final Expression originalExpression) {
+        if (variable instanceof Variable) {
+            recordAssignment((Variable) variable, false, false, true, originalExpression);
+            if (variable instanceof VariableExpression) {
+                Variable accessed = ((VariableExpression) variable).getAccessedVariable();
+                if (accessed != variable) {
+                    recordAssignment(accessed, false, false, true, originalExpression);
                 }
             }
         }
@@ -165,7 +191,8 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             Variable var,
             boolean isDeclaration,
             boolean uninitialized,
-            BinaryExpression expression) {
+            boolean forceVariable,
+            Expression expression) {
         if (var == null) {
             return;
         }
@@ -181,6 +208,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         } else {
             count = count.getNext();
         }
+        if (forceVariable) {
+            count = VariableState.is_var;
+        }
         getState().put(var, count);
         if (count == VariableState.is_var && callback != null) {
             callback.variableNotFinal(var, expression);
@@ -195,6 +225,6 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
          * @param var  the variable detected as not final
          * @param bexp the expression responsible for the contract to be broken
          */
-        void variableNotFinal(Variable var, BinaryExpression bexp);
+        void variableNotFinal(Variable var, Expression bexp);
     }
 }
