@@ -87,6 +87,7 @@ import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
  * The {@code @Builder} 'buildMethodName' annotation attribute can be used for configuring the build method's name, default "build".
  *
  * The {@code @Builder} 'builderMethodName' and 'builderClassName' annotation attributes aren't applicable for this strategy.
+ * The {@code @Builder} 'useSetters' annotation attribute is ignored by this strategy which always uses setters.
  *
  * @author Marcin Grzejszczak
  * @author Paul King

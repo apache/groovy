@@ -575,6 +575,41 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
             assert new A().clone()
         """
     }
+
+    void testTupleConstructorUsesSetters_GROOVY7087() {
+        new GroovyShell().evaluate """
+            import groovy.transform.*
+
+            @ToString @TupleConstructor(useSetters=true)
+            class Foo1 {
+                String bar, baz
+                void setBar(String bar) {
+                    this.bar = bar?.toUpperCase()
+                }
+            }
+
+            assert new Foo1('cat', 'dog').toString() == 'Foo1(CAT, dog)'
+            // check the default map-style constructor too
+            assert new Foo1(bar: 'cat', baz: 'dog').toString() == 'Foo1(CAT, dog)'
+        """
+    }
+
+    void testTupleConstructorWithForceDirectBypassesSetters_GROOVY7087() {
+        new GroovyShell().evaluate """
+            import groovy.transform.*
+
+            @ToString @TupleConstructor
+            class Foo2 {
+                String bar, baz
+                void setBar(String bar) {
+                    this.bar = bar.toUpperCase()
+                }
+            }
+
+            assert new Foo2(bar: 'cat', baz: 'dog').toString() == 'Foo2(CAT, dog)'
+            assert new Foo2('cat', 'dog').toString() == 'Foo2(cat, dog)'
+        """
+    }
 }
 
 @TupleConstructor

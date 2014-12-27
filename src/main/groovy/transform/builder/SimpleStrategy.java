@@ -30,6 +30,7 @@ import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
@@ -38,6 +39,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
+import static org.codehaus.groovy.transform.AbstractASTTransformation.getMemberStringValue;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIONS;
 
 /**
@@ -70,6 +72,7 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIO
  * When using the default prefix of "set", Groovy's normal setters will be replaced by the chained versions. When using
  * a custom prefix, Groovy's unchained setters will still be available for use in the normal unchained fashion.
  *
+ * The 'useSetters' annotation attribute can be used for writable properties as per the {@code Builder} transform documentation.
  * The other annotation attributes for the {@code @Builder} transform for configuring the building process aren't applicable for this strategy.
  *
  * @author Paul King
@@ -86,11 +89,12 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
         if (unsupportedAttribute(transform, anno, "buildMethodName")) return;
         if (unsupportedAttribute(transform, anno, "builderMethodName")) return;
         if (unsupportedAttribute(transform, anno, "forClass")) return;
+        boolean useSetters = transform.memberHasValue(anno, "useSetters", true);
 
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
-        String prefix = transform.getMemberStringValue(anno, "prefix", "set");
+        String prefix = getMemberStringValue(anno, "prefix", "set");
         List<FieldNode> fields = getInstancePropertyFields(buildee);
         for (String name : includes) {
             checkKnownField(transform, anno, name, fields);
@@ -101,7 +105,10 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
                 String methodName = getSetterName(prefix, fieldName);
                 Parameter parameter = param(field.getType(), fieldName);
                 buildee.addMethod(methodName, Opcodes.ACC_PUBLIC, newClass(buildee), params(parameter), NO_EXCEPTIONS, block(
-                                stmt(assignX(fieldX(field), varX(parameter))),
+                                stmt(useSetters && !field.isFinal()
+                                                ? callThisX(getSetterName("set", fieldName), varX(parameter))
+                                                : assignX(fieldX(field), varX(parameter))
+                                ),
                                 returnS(varX("this")))
                 );
             }

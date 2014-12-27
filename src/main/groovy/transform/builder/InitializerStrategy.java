@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.BuilderASTTransformation;
 import org.codehaus.groovy.transform.ImmutableASTTransformation;
@@ -41,6 +42,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisS;
@@ -131,14 +133,15 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (unsupportedAttribute(transform, anno, "forClass")) return;
+        boolean useSetters = transform.memberHasValue(anno, "useSetters", true);
         if (annotatedNode instanceof ClassNode) {
-            createBuilderForAnnotatedClass(transform, (ClassNode) annotatedNode, anno);
+            createBuilderForAnnotatedClass(transform, (ClassNode) annotatedNode, anno, useSetters);
         } else if (annotatedNode instanceof MethodNode) {
-            createBuilderForAnnotatedMethod(transform, (MethodNode) annotatedNode, anno);
+            createBuilderForAnnotatedMethod(transform, (MethodNode) annotatedNode, anno, useSetters);
         }
     }
 
-    private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
+    private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno, boolean useSetters) {
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
@@ -148,10 +151,10 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         addFields(buildee, filteredFields, builder);
 
         buildCommon(buildee, anno, filteredFields, builder);
-        createBuildeeConstructors(transform, buildee, builder, filteredFields, true);
+        createBuildeeConstructors(transform, buildee, builder, filteredFields, true, useSetters);
     }
 
-    private void createBuilderForAnnotatedMethod(BuilderASTTransformation transform, MethodNode mNode, AnnotationNode anno) {
+    private void createBuilderForAnnotatedMethod(BuilderASTTransformation transform, MethodNode mNode, AnnotationNode anno, boolean useSetters) {
         if (transform.getMemberValue(anno, "includes") != null || transform.getMemberValue(anno, "includes") != null) {
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
                     " processing: includes/excludes only allowed on classes", anno);
@@ -172,7 +175,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
         buildCommon(buildee, anno, convertedFields, builder);
         if (mNode instanceof ConstructorNode) {
-            createBuildeeConstructors(transform, buildee, builder, convertedFields, false);
+            createBuildeeConstructors(transform, buildee, builder, convertedFields, false, useSetters);
         } else {
             createBuildeeMethods(buildee, mNode, builder, convertedFields);
         }
@@ -251,18 +254,18 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         builder.addConstructor(ACC_PRIVATE, NO_PARAMS, NO_EXCEPTIONS, block(ctorSuperS()));
         final BlockStatement body = new BlockStatement();
         body.addStatement(ctorSuperS());
-        initializeFields(fields, body);
+        initializeFields(fields, body, false);
         builder.addConstructor(ACC_PRIVATE, getParams(fields, buildee), NO_EXCEPTIONS, body);
     }
 
-    private static void createBuildeeConstructors(BuilderASTTransformation transform, ClassNode buildee, ClassNode builder, List<FieldNode> fields, boolean needsConstructor) {
+    private static void createBuildeeConstructors(BuilderASTTransformation transform, ClassNode buildee, ClassNode builder, List<FieldNode> fields, boolean needsConstructor, boolean useSetters) {
         ConstructorNode initializer = createInitializerConstructor(buildee, builder, fields);
         if (transform.hasAnnotation(buildee, ImmutableASTTransformation.MY_TYPE)) {
             initializer.putNodeMetaData(ImmutableASTTransformation.IMMUTABLE_SAFE_FLAG, Boolean.TRUE);
         } else if (needsConstructor) {
             final BlockStatement body = new BlockStatement();
             body.addStatement(ctorSuperS());
-            initializeFields(fields, body);
+            initializeFields(fields, body, useSetters);
             buildee.addConstructor(ACC_PRIVATE | ACC_SYNTHETIC, getParams(fields, buildee), NO_EXCEPTIONS, body);
         }
     }
@@ -356,9 +359,19 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         return fields;
     }
 
-    private static void initializeFields(List<FieldNode> fields, BlockStatement body) {
+    private static void initializeFields(List<FieldNode> fields, BlockStatement body, boolean useSetters) {
         for (FieldNode field : fields) {
-            body.addStatement(stmt(assignX(propX(varX("this"), field.getName()), varX(param(field.getType(), field.getName())))));
+            String name = field.getName();
+            body.addStatement(
+                    stmt(useSetters && !field.isFinal()
+                                    ? callThisX(getSetterName(name), varX(param(field.getType(), name)))
+                                    : assignX(propX(varX("this"), field.getName()), varX(param(field.getType(), name)))
+                    )
+            );
         }
+    }
+
+    private static String getSetterName(String name) {
+        return "set" + Verifier.capitalize(name);
     }
 }

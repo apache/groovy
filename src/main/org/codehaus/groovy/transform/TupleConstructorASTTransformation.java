@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ * Copyright 2008-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -46,6 +47,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
@@ -105,6 +107,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", true);
             boolean callSuper = memberHasValue(anno, "callSuper", true);
             boolean force = memberHasValue(anno, "force", true);
+            boolean useSetters = memberHasValue(anno, "useSetters", true);
             List<String> excludes = getMemberList(anno, "excludes");
             List<String> includes = getMemberList(anno, "includes");
             if (hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
@@ -115,11 +118,11 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
             // if @Immutable is found, let it pick up options and do work so we'll skip
             if (hasAnnotation(cNode, ImmutableASTTransformation.MY_TYPE)) return;
-            createConstructor(cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes);
+            createConstructor(cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes, useSetters);
         }
     }
 
-    public static void createConstructor(ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes) {
+    public static void createConstructor(ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes, boolean useSetters) {
         // no processing if existing constructors found
         List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
         if (constructors.size() > 1 && !force) return;
@@ -151,10 +154,15 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             String name = fNode.getName();
             if (shouldSkip(name, excludes, includes)) continue;
             params.add(createParam(fNode, name));
+            boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
             if (callSuper) {
                 superParams.add(varX(name));
             } else {
-                body.addStatement(assignS(propX(varX("this"), name), varX(name)));
+                if (useSetters && hasSetter) {
+                    body.addStatement(stmt(callThisX(getSetterName(name), varX(name))));
+                } else {
+                    body.addStatement(assignS(propX(varX("this"), name), varX(name)));
+                }
             }
         }
         if (callSuper) {
@@ -165,7 +173,12 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             if (shouldSkip(name, excludes, includes)) continue;
             Parameter nextParam = createParam(fNode, name);
             params.add(nextParam);
-            body.addStatement(assignS(propX(varX("this"), name), varX(nextParam)));
+            boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
+            if (useSetters && hasSetter) {
+                body.addStatement(stmt(callThisX(getSetterName(name), varX(nextParam))));
+            } else {
+                body.addStatement(assignS(propX(varX("this"), name), varX(nextParam)));
+            }
         }
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
         // add map constructor if needed, don't do it for LinkedHashMap for now (would lead to duplicate signature)
@@ -187,6 +200,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 }
             }
         }
+    }
+
+    private static String getSetterName(String name) {
+        return "set" + Verifier.capitalize(name);
     }
 
     private static Parameter createParam(FieldNode fNode, String name) {

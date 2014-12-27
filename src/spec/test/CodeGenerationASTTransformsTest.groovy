@@ -496,6 +496,39 @@ assert p1.toString() == 'Jack Nicholson: null'
 assert p2.toString() == 'Jack Nicholson: actor'
 // end::tupleconstructor_example_callSuper[]
 '''
+
+        assertScript '''
+// tag::tupleconstructor_example_force[]
+import groovy.transform.*
+
+@ToString @TupleConstructor(force=true)
+final class Person {
+    String name
+    // explicit constructor would normally disable tuple constructor
+    Person(String first, String last) { this("$first $last") }
+}
+
+assert new Person('john smith').toString() == 'Person(john smith)'
+assert new Person('john', 'smith').toString() == 'Person(john smith)'
+// end::tupleconstructor_example_force[]
+'''
+
+        assertScript '''
+// tag::tupleconstructor_example_useSetters[]
+import groovy.transform.*
+
+@ToString @TupleConstructor(useSetters=true)
+final class Foo {
+    String bar
+    void setBar(String bar) {
+        this.bar = bar?.toUpperCase() // null-safe
+    }
+}
+
+assert new Foo('cat').toString() == 'Foo(CAT)'
+assert new Foo(bar: 'cat').toString() == 'Foo(CAT)'
+// end::tupleconstructor_example_useSetters[]
+'''
     }
 
     void testCanonical() {
