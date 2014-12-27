@@ -113,6 +113,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
             if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
+            // if @Immutable is found, let it pick up options and do work so we'll skip
+            if (hasAnnotation(cNode, ImmutableASTTransformation.MY_TYPE)) return;
             createConstructor(cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes);
         }
     }
