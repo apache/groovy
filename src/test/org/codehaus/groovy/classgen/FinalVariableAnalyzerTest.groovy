@@ -227,6 +227,16 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    void testAssignmentInIfBooleanExpressionShouldFailCompilation() {
+        assertFinalCompilationErrors(['a'], '''
+            final a = 3
+
+            if ((a = 4) == 4) {
+              assert a == 3
+            }
+        ''')
+    }
+
     @CompileStatic
     private static class AssertionFinalVariableAnalyzer extends FinalVariableAnalyzer {
 
