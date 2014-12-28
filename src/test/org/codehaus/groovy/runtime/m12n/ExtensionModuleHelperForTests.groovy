@@ -63,10 +63,14 @@ public class ExtensionModuleHelperForTests {
                 )
             }
         } finally {
+            String out = ant.project.properties.out
             String err = ant.project.properties.err
             baseDir.deleteDir()
             if (err) {
                 throw new RuntimeException(err)
+            }
+            else if ( ! out.contains("OK")) {
+                throw new RuntimeException(out)
             }
         }
     }
