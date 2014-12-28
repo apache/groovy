@@ -84,6 +84,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             AutoCloneStyle style = getStyle(anno, "style");
             List<String> excludes = getMemberList(anno, "excludes");
+            if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             List<FieldNode> list = getInstancePropertyFields(cNode);
             if (includeFields) {
                 list.addAll(getInstanceNonPropertyFields(cNode));

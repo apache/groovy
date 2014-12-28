@@ -74,6 +74,8 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             List<String> excludes = getMemberList(anno, "excludes");
             List<String> includes = getMemberList(anno, "includes");
             if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
+            if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields)) return;
+            if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
             createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes);
             createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes);
         }

@@ -146,6 +146,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             ClassNode cNode = (ClassNode) parent;
             String cName = cNode.getName();
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
+            if (!checkPropertyList(cNode, knownImmutables, "knownImmutables", node, MY_TYPE_NAME, false)) return;
             makeClassFinal(cNode);
 
             final List<PropertyNode> pList = getInstanceProperties(cNode);

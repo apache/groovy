@@ -594,4 +594,50 @@ class CanonicalTransformTest extends GroovyShellTestCase {
         """
     }
 
+    // GROOVY-7227
+    void testIncludesAndExcludesTogetherResultsInError() {
+        def message = shouldFail {
+            evaluate("""
+                 import groovy.transform.Canonical
+                 @Canonical(includes='surName', excludes='surName')
+                 class Person {
+                     String surName
+                 }
+                 new Person(surName: "Doe").toString()
+             """)
+        }
+        assert message.contains("Error during @Canonical processing: Only one of 'includes' and 'excludes' should be supplied not both.")
+    }
+
+    // GROOVY-7227
+    void testIncludesWithInvalidPropertyNameResultsInError() {
+        def message = shouldFail {
+            evaluate("""
+                 import groovy.transform.Canonical
+                 @Canonical(includes='sirName')
+                 class Person {
+                     String surName
+                 }
+                 new Person(surName: "Doe").toString()
+             """)
+        }
+        assert message.contains("Error during @Canonical processing: 'includes' property 'sirName' does not exist.")
+    }
+
+    // GROOVY-7227
+    void testExcludesWithInvalidPropertyNameResultsInError() {
+        def message = shouldFail {
+            evaluate("""
+                 import groovy.transform.Canonical
+                 @Canonical(excludes='sirName')
+                 class Person {
+                     String firstName
+                     String surName
+                 }
+                 new Person(firstName: "John", surName: "Doe").toString()
+             """)
+        }
+        assert message.contains("Error during @Canonical processing: 'excludes' property 'sirName' does not exist.")
+    }
+
 }

@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * The {@code writeExternal()} method writes each property (and optionally field) of the class
  * while the {@code readExternal()} method will read each one back in the same order.
  * Properties or fields marked as {@code transient} are ignored.
- * This annotation is typically used in conjunction with the {@code @ExternalizeMethods} annotation but
+ * This annotation is typically used in conjunction with the {@code @ExternalizeVerifier} annotation but
  * most usually not directly but rather via {@code @AutoExternalizable} which is a shortcut for both annotations.
  * <p>
  * Example usage:

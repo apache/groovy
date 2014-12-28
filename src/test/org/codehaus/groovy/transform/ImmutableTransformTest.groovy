@@ -903,6 +903,21 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert result.first == [ 'tim', 'tim' ]
     }
 
+    // GROOVY-7227
+    void testKnownImmutablesWithInvalidPropertyNameResultsInError() {
+        def message = shouldFail {
+            evaluate """
+               import groovy.transform.Immutable
+               @Immutable(knownImmutables=['sirName'])
+               class Person {
+                   String surName
+               }
+               new Person(surName: "Doe")
+           """
+        }
+        assert message.contains("Error during @Immutable processing: 'knownImmutables' property 'sirName' does not exist.")
+    }
+
     // GROOVY-7162
     void testImmutableWithSuperClass() {
         assertScript '''

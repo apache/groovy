@@ -47,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 
 import static groovy.transform.Undefined.isUndefined;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFieldNames;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyNames;
 
 public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation {
     public static final ClassNode RETENTION_CLASSNODE = ClassHelper.makeWithoutCaching(Retention.class);
@@ -267,6 +269,31 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         if (found > 1) {
             addError("Error during " + typeName + " processing: Only one of 'includes', 'excludes', 'includeTypes' and 'excludeTypes' should be supplied.", node);
         }
+    }
+
+    protected boolean checkPropertyList(ClassNode cNode, List<String> propertyNameList, String listName, AnnotationNode anno, String typeName, boolean includeFields) {
+        if (propertyNameList == null || propertyNameList.isEmpty()) {
+            return true;
+        }
+        final List<String> pNames = getInstancePropertyNames(cNode);
+        boolean result = true;
+        if (includeFields) {
+            final List<String> fNames = getInstanceNonPropertyFieldNames(cNode);
+            for (String pName : propertyNameList) {
+                if (!pNames.contains(pName) && !fNames.contains(pName)) {
+                    addError("Error during " + typeName + " processing: '" + listName + "' property or field '" + pName + "' does not exist.", anno);
+                    result = false;
+                }
+            }
+        } else {
+            for (String pName : propertyNameList) {
+                if (!pNames.contains(pName)) {
+                    addError("Error during " + typeName + " processing: '" + listName + "' property '" + pName + "' does not exist.", anno);
+                    result = false;
+                }
+            }
+        }
+        return result;
     }
 
     /**
