@@ -55,6 +55,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecR
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafeWithGenerics;
+import static org.codehaus.groovy.transform.AbstractASTTransformation.getMemberStringValue;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIONS;
 import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_PARAMS;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -102,7 +103,13 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * </pre>
  * The message is a little cryptic, but it is basically the static compiler telling us that the third parameter, {@code age} in our case, is unset.
  *
+ * You can also add this annotation to your predefined constructors. These will be made private and an initializer will be set up
+ * to call your constructor. Any parameters to your constructor become the properties expected by the initializer.
+ * If you use such a builder on a constructor as well as on the class or on more than one constructor, then it is up to you
+ * to define unique values for 'builderClassName' and 'builderMethodName' for each annotation.
+ *
  * @author Paul King
+ * @author Marcin Grzejszczak
  */
 public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
 
@@ -121,46 +128,81 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     private static final Expression DEFAULT_INITIAL_VALUE = null;
 
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
-        if (!(annotatedNode instanceof ClassNode)) {
+        if (!(annotatedNode instanceof ClassNode || annotatedNode instanceof MethodNode)) {
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME + " processing: building for " +
                     annotatedNode.getClass().getSimpleName() + " not supported by " + getClass().getSimpleName(), annotatedNode);
             return;
         }
-        ClassNode buildee = (ClassNode) annotatedNode;
-        if(annotatedNode instanceof ClassNode) {
+        if (unsupportedAttribute(transform, anno, "forClass")) return;
+        if (annotatedNode instanceof ClassNode) {
             createBuilderForAnnotatedClass(transform, (ClassNode) annotatedNode, anno);
-        } else if(annotatedNode instanceof ConstructorNode) {
+        } else if (annotatedNode instanceof ConstructorNode) {
             createBuilderForAnnotatedConstructor(transform, (ConstructorNode) annotatedNode, anno);
         }
     }
 
-    private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {        List<String> excludes = new ArrayList<String>();
+    private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
+        List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
-        String prefix = transform.getMemberStringValue(anno, "prefix", "");
-        if (unsupportedAttribute(transform, anno, "forClass")) return;
-        String builderClassName = transform.getMemberStringValue(anno, "builderClassName", buildee.getName() + "Initializer");
-        String buildMethodName = transform.getMemberStringValue(anno, "buildMethodName", "create");
         List<FieldNode> fields = getInstancePropertyFields(buildee);
-        List<FieldNode> filteredFields = selectFieldsFromExistingClass(fields, includes, excludes);
-        int numFields = filteredFields.size();
-        ClassNode builder = createInnerHelperClass(buildee, builderClassName, filteredFields.size());
-        createBuilderConstructors(builder, buildee, filteredFields);
-        createBuildeeConstructors(transform, buildee, builder, filteredFields);
-        buildee.getModule().addClass(builder);
-        buildee.addMethod(createBuilderMethod(transform, anno, buildMethodName, builder, numFields));
-        for (int i = 0; i < numFields; i++) {
-            builder.addField(createFieldCopy(buildee, filteredFields.get(i)));
-            builder.addMethod(createBuilderMethodForField(builder, filteredFields, prefix, i));
-        }
-        builder.addMethod(createBuildMethod(builder, buildMethodName, filteredFields));
+        List<FieldNode> filteredFields = filterFields(fields, includes, excludes);
+        ClassNode builder = createInnerHelperClass(buildee, getBuilderClassName(buildee, anno), filteredFields.size());
+        addFields(buildee, filteredFields, builder);
+
+        buildMe(transform, buildee, anno, filteredFields, builder, true);
     }
 
-    private ClassNode createInnerHelperClass(ClassNode buildee, String builderClassName, int fieldSize) {
+    private void createBuilderForAnnotatedConstructor(BuilderASTTransformation transform, ConstructorNode annotatedConstructor, AnnotationNode anno) {
+        ClassNode buildee = annotatedConstructor.getDeclaringClass();
+        Parameter[] parameters = annotatedConstructor.getParameters();
+        annotatedConstructor.setModifiers(ACC_PRIVATE | ACC_SYNTHETIC);
+        ClassNode builder = createInnerHelperClass(buildee, getBuilderClassName(buildee, anno), parameters.length);
+        List<FieldNode> convertedFields = convertParamsToFields(builder, parameters);
+
+        buildMe(transform, buildee, anno, convertedFields, builder, false);
+    }
+
+    private String getBuilderClassName(ClassNode buildee, AnnotationNode anno) {
+        return getMemberStringValue(anno, "builderClassName", buildee.getName() + "Initializer");
+    }
+
+    private void addFields(ClassNode buildee, List<FieldNode> filteredFields, ClassNode builder) {
+        for (FieldNode filteredField : filteredFields) {
+            builder.addField(createFieldCopy(buildee, filteredField));
+        }
+    }
+
+    private void buildMe(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno, List<FieldNode> fieldNodes, ClassNode builder, boolean needsConstructor) {
+        String prefix = getMemberStringValue(anno, "prefix", "");
+        String buildMethodName = getMemberStringValue(anno, "buildMethodName", "create");
+        createBuilderConstructors(builder, buildee, fieldNodes);
+        createBuildeeConstructors(transform, buildee, builder, fieldNodes, needsConstructor);
+        buildee.getModule().addClass(builder);
+        buildee.addMethod(createBuilderMethod(anno, buildMethodName, builder, fieldNodes.size()));
+        for (int i = 0; i < fieldNodes.size(); i++) {
+            builder.addMethod(createBuilderMethodForField(builder, fieldNodes, prefix, i));
+        }
+        builder.addMethod(createBuildMethod(builder, buildMethodName, fieldNodes));
+    }
+
+    private List<FieldNode> convertParamsToFields(ClassNode builder, Parameter[] parameters) {
+        List<FieldNode> fieldNodes = new ArrayList<FieldNode>();
+        for(Parameter parameter: parameters) {
+            Map<String,ClassNode> genericsSpec = createGenericsSpec(builder);
+            ClassNode correctedType = correctToGenericsSpecRecurse(genericsSpec, parameter.getType());
+            FieldNode fieldNode = new FieldNode(parameter.getName(), parameter.getModifiers(), correctedType, builder, DEFAULT_INITIAL_VALUE);
+            fieldNodes.add(fieldNode);
+            builder.addField(fieldNode);
+        }
+        return fieldNodes;
+    }
+
+    private ClassNode createInnerHelperClass(ClassNode buildee, String builderClassName, int fieldsSize) {
         final String fullName = buildee.getName() + "$" + builderClassName;
         final int visibility = ACC_PUBLIC | ACC_STATIC;
         ClassNode builder = new InnerClassNode(buildee, fullName, visibility, ClassHelper.OBJECT_TYPE);
-        GenericsType[] gtypes = new GenericsType[fieldSize];
+        GenericsType[] gtypes = new GenericsType[fieldsSize];
         for (int i = 0; i < gtypes.length; i++) {
             gtypes[i] = makePlaceholder(i);
         }
@@ -168,8 +210,8 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         return builder;
     }
 
-    private static MethodNode createBuilderMethod(BuilderASTTransformation transform, AnnotationNode anno, String buildMethodName, ClassNode builder, int numFields) {
-        String builderMethodName = transform.getMemberStringValue(anno, "builderMethodName", "createInitializer");
+    private static MethodNode createBuilderMethod(AnnotationNode anno, String buildMethodName, ClassNode builder, int numFields) {
+        String builderMethodName = getMemberStringValue(anno, "builderMethodName", "createInitializer");
         final BlockStatement body = new BlockStatement();
         body.addStatement(returnS(callX(builder, buildMethodName)));
         final int visibility = ACC_PUBLIC | ACC_STATIC;
@@ -201,66 +243,16 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         builder.addConstructor(ACC_PRIVATE, getParams(fields, buildee), NO_EXCEPTIONS, body);
     }
 
-    private void createBuilderForAnnotatedConstructor(BuilderASTTransformation transform, ConstructorNode annotatedConstructor, AnnotationNode anno) {
-        ClassNode buildee = annotatedConstructor.getDeclaringClass();
-        String prefix = transform.getMemberStringValue(anno, "prefix", "");
-        if (unsupportedAttribute(transform, anno, "forClass")) return;
-        String builderClassName = transform.getMemberStringValue(anno, "builderClassName", buildee.getName() + "Initializer");
-        String buildMethodName = transform.getMemberStringValue(anno, "buildMethodName", "create");
-        Parameter[] parameters = getParamsFromConstructor(annotatedConstructor);
-        int numFields = parameters.length;
-        ClassNode builder = createInnerHelperClass(buildee, builderClassName, numFields);
-        List<FieldNode> convertedFields = convertParamsToFields(builder, parameters);
-        createBuilderConstructors(builder, buildee, convertedFields);
-        createBuildeeConstructor(transform, buildee, builder, convertedFields);
-        buildee.getModule().addClass(builder);
-        buildee.addMethod(createBuilderMethod(transform, anno, buildMethodName, builder, numFields));
-        for (int i = 0; i < numFields; i++) {
-            builder.addMethod(createBuilderMethodForField(builder, convertedFields, prefix, i));
-        }
-        builder.addMethod(createBuildMethod(builder, buildMethodName, convertedFields));
-    }
-
-    private List<FieldNode> convertParamsToFields(ClassNode buildee, Parameter[] parameters) {
-        List<FieldNode> fieldNodes = new ArrayList<FieldNode>();
-        for(Parameter parameter: parameters) {
-            FieldNode fieldNode = new FieldNode(parameter.getName(), parameter.getModifiers(), ClassHelper.make(parameter.getType().getName()), buildee, DEFAULT_INITIAL_VALUE);
-            fieldNodes.add(fieldNode);
-            buildee.addField(fieldNode);
-        }
-        return fieldNodes;
-    }
-
-    private Parameter[] getParamsFromConstructor(ConstructorNode buildee) {
-        return buildee.getParameters();
-    }    private static void createBuildeeConstructor(BuilderASTTransformation transform, ClassNode buildee, ClassNode builder, List<FieldNode> fields) {
-        ClassNode paramType = makeClassSafeWithGenerics(builder, setGenTypes(fields.size()));
-        List<Expression> argsList = new ArrayList<Expression>();
-        Parameter initParam = param(paramType, "initializer");
-        for (FieldNode fieldNode : fields) {
-            argsList.add(propX(varX(initParam), fieldNode.getName()));
-        }
-        ConstructorNode initializer = buildee.addConstructor(ACC_PUBLIC, params(initParam), NO_EXCEPTIONS, block(ctorThisS(args(argsList))));
-    }
-    private static void createBuildeeConstructors(BuilderASTTransformation transform, ClassNode buildee, ClassNode builder, List<FieldNode> fields) {
+    private static void createBuildeeConstructors(BuilderASTTransformation transform, ClassNode buildee, ClassNode builder, List<FieldNode> fields, boolean needsConstructor) {
         ConstructorNode initializer = createInitializerConstructor(buildee, builder, fields);
         if (transform.hasAnnotation(buildee, ImmutableASTTransformation.MY_TYPE)) {
             initializer.putNodeMetaData(ImmutableASTTransformation.IMMUTABLE_SAFE_FLAG, Boolean.TRUE);
-        } else {
+        } else if (needsConstructor) {
             final BlockStatement body = new BlockStatement();
             body.addStatement(ctorSuperS());
             initializeFields(fields, body);
             buildee.addConstructor(ACC_PRIVATE | ACC_SYNTHETIC, getParams(fields, buildee), NO_EXCEPTIONS, body);
         }
-    }
-
-    private static ConstructorNode createInitializerConstructor(ClassNode buildee, ClassNode builder, List<FieldNode> fields) {
-        ClassNode paramType = makeClassSafeWithGenerics(builder, setGenTypes(fields.size()));
-        List<Expression> argsList = new ArrayList<Expression>();
-        for (FieldNode fieldNode : fields) {
-            argsList.add(propX(varX("initializer"), fieldNode.getName()));
-        }
-        return buildee.addConstructor(ACC_PUBLIC, params(param(paramType, "initializer")), NO_EXCEPTIONS, block(ctorThisS(args(argsList))));
     }
 
     private static Parameter[] getParams(List<FieldNode> fields, ClassNode cNode) {
@@ -273,6 +265,16 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
             parameters[i] = new Parameter(correctedType, fNode.getName());
         }
         return parameters;
+    }
+
+    private static ConstructorNode createInitializerConstructor(ClassNode buildee, ClassNode builder, List<FieldNode> fields) {
+        ClassNode paramType = makeClassSafeWithGenerics(builder, setGenTypes(fields.size()));
+        List<Expression> argsList = new ArrayList<Expression>();
+        Parameter initParam = param(paramType, "initializer");
+        for (FieldNode fieldNode : fields) {
+            argsList.add(propX(varX(initParam), fieldNode.getName()));
+        }
+        return buildee.addConstructor(ACC_PUBLIC, params(param(paramType, "initializer")), NO_EXCEPTIONS, block(ctorThisS(args(argsList))));
     }
 
     private static MethodNode createBuildMethod(ClassNode builder, String buildMethodName, List<FieldNode> fields) {
@@ -314,7 +316,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         return new FieldNode(fNode.getName(), fNode.getModifiers(), correctedType, buildee, DEFAULT_INITIAL_VALUE);
     }
 
-    private static List<FieldNode> selectFieldsFromExistingClass(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes) {
+    private static List<FieldNode> filterFields(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes) {
         List<FieldNode> fields = new ArrayList<FieldNode>();
         for (FieldNode fNode : fieldNodes) {
             if (AbstractASTTransformation.shouldSkip(fNode.getName(), excludes, includes)) continue;

@@ -451,7 +451,7 @@ class BuilderTransformTest extends CompilableTestSupport {
 
             @CompileStatic
             def firstLastAge() {
-                assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)\'
+                assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)'
             }
             firstLastAge()
         '''
@@ -462,26 +462,36 @@ class BuilderTransformTest extends CompilableTestSupport {
             import groovy.transform.builder.*
             import groovy.transform.*
 
-            @ToString
+            @ToString(excludes='other')
+            @Builder(builderStrategy=InitializerStrategy)
             class Person {
                 String firstName
                 String lastName
                 int age
 
-                @Builder(builderStrategy=InitializerStrategy)
-                Person(String fullName) {
+                @Builder(builderStrategy=InitializerStrategy, builderClassName='FullNameInitializer', builderMethodName='fullNameInitializer')
+                Person(String fullName, int age) {
                     String[] splitFullName = fullName.split(' ')
                     firstName = splitFullName?.first()
                     lastName = splitFullName?.last()
-                    age = 10
+                    this.age = age
+                }
+
+                @Builder(builderStrategy=InitializerStrategy, builderClassName='NameListInitializer', builderMethodName='listInitializer')
+                Person(List<String> nameParts, Integer age) {
+                    firstName = nameParts[0]
+                    lastName = nameParts[-1]
+                    this.age = age
                 }
             }
 
             @CompileStatic
-            def firstLastAge() {
-                assert new Person(Person.createInitializer().fullName('John Smith')).toString() == 'Person(John, Smith, 10)\'
+            def test() {
+                assert new Person(Person.createInitializer().firstName('John').lastName('Smith').age(10)).toString() == 'Person(John, Smith, 10)'
+                assert new Person(Person.fullNameInitializer().fullName('John Smith').age(10)).toString() == 'Person(John, Smith, 10)'
+                assert new Person(Person.listInitializer().nameParts(['John', 'Smith']).age(10)).toString() == 'Person(John, Smith, 10)'
             }
-            firstLastAge()
+            test()
         '''
     }
 }
