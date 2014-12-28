@@ -363,12 +363,30 @@ public class GeneralUtils {
         return result;
     }
 
+    public static List<String> getInstanceNonPropertyFieldNames(ClassNode cNode) {
+        List<FieldNode> fList = getInstanceNonPropertyFields(cNode);
+        List<String> result = new ArrayList<String>(fList.size());
+        for (FieldNode fNode : fList) {
+            result.add(fNode.getName());
+        }
+        return result;
+    }
+
     public static List<PropertyNode> getInstanceProperties(ClassNode cNode) {
         final List<PropertyNode> result = new ArrayList<PropertyNode>();
         for (PropertyNode pNode : cNode.getProperties()) {
             if (!pNode.isStatic()) {
                 result.add(pNode);
             }
+        }
+        return result;
+    }
+
+    public static List<String> getInstancePropertyNames(ClassNode cNode) {
+        List<PropertyNode> pList = getInstanceProperties(cNode);
+        List<String> result = new ArrayList<String>(pList.size());
+        for (PropertyNode pNode : pList) {
+            result.add(pNode.getName());
         }
         return result;
     }

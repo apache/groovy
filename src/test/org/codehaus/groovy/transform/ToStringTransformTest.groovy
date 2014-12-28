@@ -18,11 +18,8 @@
  */
 package org.codehaus.groovy.transform
 
-/**
- * @author Andre Steingress
- */
 class ToStringTransformTest extends GroovyShellTestCase {
-    
+
     void testSimpleToString() {
         def toString = evaluate("""
             import groovy.transform.ToString
@@ -140,7 +137,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("BandMember(bandName:U2, name:Bono)", toString)
     }
 
-    void testSuper()  {
+    void testSuper() {
 
         def toString = evaluate("""
             import groovy.transform.ToString
@@ -164,7 +161,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person(null, Doe, HumanBeing())", toString)
     }
 
-    void testIgnoreStaticProperties()  {
+    void testIgnoreStaticProperties() {
 
         def toString = evaluate("""
             import groovy.transform.ToString
@@ -180,7 +177,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person()", toString)
     }
 
-    void testWithCollection()  {
+    void testWithCollection() {
 
         def toString = evaluate("""
             import groovy.transform.ToString
@@ -197,7 +194,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person(relatives:[a, b, c], mates:[friends:[c, d, e]])", toString)
     }
 
-    void testExcludesAndIgnoreNulls()  {
+    void testExcludesAndIgnoreNulls() {
 
         def toString = evaluate("""
             import groovy.transform.ToString
@@ -213,7 +210,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person()", toString)
     }
 
-    void testIncludesAndIgnoreNulls()  {
+    void testIncludesAndIgnoreNulls() {
 
         def toString = evaluate("""
             import groovy.transform.ToString
@@ -229,7 +226,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person()", toString)
     }
 
-    void testSkipInternalProperties()  {
+    void testSkipInternalProperties() {
 
         def toString = evaluate("""
             import groovy.transform.ToString
@@ -245,7 +242,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person()", toString)
     }
 
-    void testPseudoProperties()  {
+    void testPseudoProperties() {
         def toString = evaluate('''
             import groovy.transform.*
 
@@ -300,7 +297,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assert toString == "SportsPerson(title:Mr, golfer:false, adult:true, cyclist:true)"
     }
 
-    void testSelfReference()  {
+    void testSelfReference() {
 
         def toString = evaluate("""
             import groovy.transform.*
@@ -319,7 +316,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
 
         assert toString == 'Tree(val:foo, left:(this), right:(this))'
     }
-    
+
     void testIncludePackage() {
         def toString = evaluate("""
                 package my.company
@@ -333,7 +330,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
             """)
 
         assertEquals("my.company.Person()", toString)
-        
+
         toString = evaluate("""
                 package my.company
 
@@ -346,7 +343,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
             """)
 
         assertEquals("my.company.Person()", toString)
-        
+
         toString = evaluate("""
                 package my.company
                 
@@ -357,7 +354,73 @@ class ToStringTransformTest extends GroovyShellTestCase {
                 
                 new Person().toString()
             """)
-                
+
         assertEquals("Person()", toString)
     }
+
+    void testIncludeSuperWithoutSuperClassResultsInError() {
+        def message = shouldFail {
+            evaluate """
+                import groovy.transform.ToString
+
+                @ToString(includeSuper=true)
+                class Person {
+                    String surName
+                }
+
+                new Person(surName: "Doe").toString()
+            """
+        }
+        assert message.contains("Error during @ToString processing: includeSuper=true but 'Person' has no super class.")
+    }
+
+    void testIncludesAndExcludesTogetherResultsInError() {
+        def message = shouldFail {
+            evaluate """
+                import groovy.transform.ToString
+
+                @ToString(includes='surName', excludes='surName')
+                class Person {
+                    String surName
+                }
+
+                new Person(surName: "Doe").toString()
+            """
+        }
+        assert message.contains("Error during @ToString processing: Only one of 'includes' and 'excludes' should be supplied not both.")
+    }
+
+    void testIncludesWithInvalidPropertyNameResultsInError() {
+        def message = shouldFail {
+            evaluate """
+                import groovy.transform.ToString
+
+                @ToString(includes='sirName')
+                class Person {
+                    String surName
+                }
+
+                new Person(surName: "Doe").toString()
+            """
+        }
+        assert message.contains("Error during @ToString processing: 'includes' property 'sirName' does not exist.")
+    }
+
+    void testExcludesWithInvalidPropertyNameResultsInError() {
+        def message = shouldFail {
+            evaluate """
+                import groovy.transform.ToString
+
+                @ToString(excludes='sirName')
+                class Person {
+                    String firstName
+                    String surName
+                }
+
+                new Person(firstName: "John", surName: "Doe").toString()
+            """
+        }
+        assert message.contains("Error during @ToString processing: 'excludes' property 'sirName' does not exist.")
+    }
+
 }

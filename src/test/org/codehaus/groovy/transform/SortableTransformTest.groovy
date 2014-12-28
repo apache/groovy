@@ -135,7 +135,18 @@ class SortableTransformTest extends CompilableTestSupport {
               Integer born
             }
         '''
-        assert message.contains("Error during @Sortable processing: tried to include unknown property 'middle'")
+        assert message.contains("Error during @Sortable processing: 'includes' property 'middle' does not exist.")
+    }
+
+    void testBadExclude() {
+        def message = shouldFail '''
+            @groovy.transform.Sortable(excludes='first,middle') class Person {
+              String first
+              String last
+              Integer born
+            }
+        '''
+        assert message.contains("Error during @Sortable processing: 'excludes' property 'middle' does not exist.")
     }
 
     void testBadPropertyType() {
