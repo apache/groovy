@@ -1,5 +1,6 @@
 = Groovy Language Documentation
 :doctype: book
+:sectanchors:
 ifndef::projectdir[:projectdir: ../../..]
 
 include::{projectdir}/src/spec/doc/core-introduction.adoc[]
