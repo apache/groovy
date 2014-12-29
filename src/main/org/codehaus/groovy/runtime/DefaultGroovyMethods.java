@@ -13848,7 +13848,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Bitwise XOR together two Numbers.  Called when the '|' operator is used.
+     * Bitwise XOR together two Numbers.  Called when the '^' operator is used.
      *
      * @param left  a Number
      * @param right another Number to bitwse XOR
