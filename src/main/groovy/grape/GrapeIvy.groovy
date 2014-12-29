@@ -302,6 +302,7 @@ class GrapeIvy implements GrapeEngine {
                                 found
                             }.collect { it.cachedClass }
                             classesToBeUpdated*.addNewMopMethods(methods)
+                            c.addNewMopMethods(methods)
                         }
                     }
                 }
