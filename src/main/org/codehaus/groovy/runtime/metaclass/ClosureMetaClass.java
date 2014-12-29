@@ -57,15 +57,29 @@ public final class ClosureMetaClass extends MetaClassImpl {
     private MethodChooser chooser;
     private volatile boolean attributeInitDone = false;
 
-    private static final MetaClassImpl CLOSURE_METACLASS;
+    private static MetaClassImpl CLOSURE_METACLASS;
     private static MetaClassImpl classMetaClass;
     private static final Object[] EMPTY_ARGUMENTS = {};
     private static final String CLOSURE_CALL_METHOD = "call";
     private static final String CLOSURE_DO_CALL_METHOD = "doCall";
 
     static {
-        CLOSURE_METACLASS = new MetaClassImpl(Closure.class);
-        CLOSURE_METACLASS.initialize();
+        resetCachedMetaClasses();
+    }
+
+    public static void resetCachedMetaClasses() {
+        MetaClassImpl temp = new MetaClassImpl(Closure.class);
+        temp.initialize();
+        synchronized (ClosureMetaClass.class) {
+            CLOSURE_METACLASS = temp;
+        }
+        if (classMetaClass!=null) {
+            temp = new MetaClassImpl(Class.class);
+            temp.initialize();
+            synchronized (ClosureMetaClass.class) {
+                classMetaClass = temp;
+            }
+        }
     }
 
     private static synchronized MetaClass getStaticMetaClass() {

@@ -19,6 +19,7 @@ import groovy.lang.*;
 
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.callsite.CallSiteClassLoader;
+import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
 import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.ReferenceBundle;
@@ -450,6 +451,10 @@ public class CachedClass {
         res.addAll(Arrays.asList(classInfo.newMetaMethods));
         res.addAll(arr);
         classInfo.newMetaMethods = res.toArray(new MetaMethod[res.size()]);
+        Class theClass = classInfo.getCachedClass().getTheClass();
+        if (theClass==Closure.class || theClass==Class.class) {
+            ClosureMetaClass.resetCachedMetaClasses();
+        }
     }
 
     public boolean isAssignableFrom(Class argument) {
