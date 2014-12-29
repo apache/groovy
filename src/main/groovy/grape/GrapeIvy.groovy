@@ -15,6 +15,8 @@
  */
 package groovy.grape
 
+import org.codehaus.groovy.reflection.ReflectionCache
+
 import java.util.regex.Pattern
 import org.apache.ivy.Ivy
 import org.apache.ivy.core.cache.ResolutionCacheManager
@@ -294,7 +296,7 @@ class GrapeIvy implements GrapeEngine {
                                 boolean found = false
                                 CachedClass current = it.cachedClass
                                 while (!found && current != null) {
-                                    if (current == c || current.interfaces.contains(c)) {
+                                    if (current == c || ReflectionCache.isAssignableFrom(c.theClass,current.theClass)) {
                                         found = true
                                     }
                                     current = current.cachedSuperClass
