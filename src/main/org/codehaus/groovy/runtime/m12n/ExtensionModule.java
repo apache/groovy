@@ -47,4 +47,12 @@ public abstract class ExtensionModule {
 
     public abstract List<MetaMethod> getMetaMethods();
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ExtensionModule{");
+        sb.append("name='").append(name).append('\'');
+        sb.append(", version='").append(version).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
 }
