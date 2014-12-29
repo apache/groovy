@@ -391,6 +391,28 @@ public class GenericsUtils {
         return ret;
     }
 
+    public static Map<String,ClassNode> createGenericsSpec(MethodNode current, Map<String,ClassNode> oldSpec) {
+        Map<String,ClassNode> ret = new HashMap<String,ClassNode>(oldSpec);
+        // ret contains the type specs, what we now need is the type spec for the
+        // current method. We apply the same approach as for createGenericsSpec(ClassNode, Map)
+        // but use the method's generic types.
+
+        GenericsType[] sgts = current.getGenericsTypes();
+        if (sgts != null) {
+            ClassNode[] spec = new ClassNode[sgts.length];
+            for (int i = 0; i < spec.length; i++) {
+                spec[i] = correctToGenericsSpec(ret, sgts[i]);
+            }
+            GenericsType[] newGts = current.getGenericsTypes();
+            if (newGts == null) return ret;
+            ret.clear();
+            for (int i = 0; i < spec.length; i++) {
+                ret.put(newGts[i].getName(), spec[i]);
+            }
+        }
+        return ret;
+    }
+
     public static void extractSuperClassGenerics(ClassNode type, ClassNode target, Map<String,ClassNode> spec) {
         // TODO: this method is very similar to StaticTypesCheckingSupport#extractGenericsConnections,
         // but operates on ClassNodes instead of GenericsType
