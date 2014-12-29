@@ -597,6 +597,34 @@ def foo = new Foo()
 assert foo.dm.x == '123'
 '''
     }
+
+    // GROOVY-7118
+    void testDelegateOfMethodHavingPlaceholder() {
+        assertScript """
+            interface FooInt {
+              public <T extends Throwable> T get(Class<T> clazz) throws Exception
+            }
+
+            class Foo implements FooInt {
+              public <T extends Throwable> T get(Class<T> clazz) throws Exception {
+                clazz.newInstance()
+              }
+            }
+
+            class FooMain {
+                @Delegate Foo foo = new Foo()
+            }
+
+            @groovy.transform.CompileStatic
+            class FooMain2 {
+                @Delegate Foo foo = new Foo()
+            }
+
+            assert new FooMain().get(Exception).class == Exception
+            assert new FooMain2().get(Exception).class == Exception
+        """
+    }
+
 }
 
 interface DelegateFoo {
