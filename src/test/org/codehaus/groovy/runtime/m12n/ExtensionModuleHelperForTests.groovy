@@ -42,8 +42,20 @@ public class ExtensionModuleHelperForTests {
                 throw new RuntimeException("Unable to find class loader")
             }
         }
-        def cp = ((URLClassLoader)cl).URLs.collect{ new File(it.toURI()).absolutePath}
+        Set<String> cp = ((URLClassLoader)cl).URLs.collect{ new File(it.toURI()).absolutePath}
         cp << baseDir.absolutePath
+        Set<String> additionalJars = []
+        cp.each {
+            def file = new File(it)
+            if (file.directory) {
+                file.eachFileRecurse {
+                    if (it.name.startsWith('testclasspath') && !cp.contains(it.absolutePath)) {
+                        additionalJars << it.absolutePath
+                    }
+                }
+            }
+        }
+        cp.addAll(additionalJars)
         def ant = new AntBuilder()
         try {
             ant.with {
@@ -67,10 +79,9 @@ public class ExtensionModuleHelperForTests {
             String err = ant.project.properties.err
             baseDir.deleteDir()
             if (err) {
-                throw new RuntimeException(err)
-            }
-            else if ( ! out.contains("OK")) {
-                throw new RuntimeException(out)
+                throw new RuntimeException("$err\nClasspath: ${cp.join('\n')}")
+            } else if ( ! out.contains("OK")) {
+                throw new RuntimeException("$out\nClasspath: ${cp.join('\n')}")
             }
         }
     }

@@ -106,7 +106,8 @@ class ExtensionModuleTest extends GroovyTestCase {
             @Grab(value='module-test:module-test:1.0.7225-test', changing='true')
             import org.codehaus.groovy.runtime.m12n.*
 
-            assert {}.groovy7225() == '{"field":"value"}'
+            assert 'test'.groovy7225() == 'test: ok'
+            assert {->}.groovy7225() == '{"field":"value"}'
             """
         '''
     }
