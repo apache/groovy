@@ -292,19 +292,13 @@ class GrapeIvy implements GrapeEngine {
                         metaMethods.each { CachedClass c, List<MetaMethod> methods ->
                             // GROOVY-5543: if a module was loaded using grab, there are chances that subclasses
                             // have their own ClassInfo, and we must change them as well!
-                            def classesToBeUpdated = ClassInfo.allClassInfo.findAll {
-                                boolean found = false
-                                CachedClass current = it.cachedClass
-                                while (!found && current != null) {
-                                    if (current == c || ReflectionCache.isAssignableFrom(c.theClass,current.theClass)) {
-                                        found = true
-                                    }
-                                    current = current.cachedSuperClass
+                            Set<CachedClass> classesToBeUpdated = [c]
+                            ClassInfo.onAllClassInfo { ClassInfo info ->
+                                if (c.theClass.isAssignableFrom(info.cachedClass.theClass)) {
+                                    classesToBeUpdated << info.cachedClass
                                 }
-                                found
-                            }.collect { it.cachedClass }
+                            }
                             classesToBeUpdated*.addNewMopMethods(methods)
-                            c.addNewMopMethods(methods)
                         }
                     }
                 }

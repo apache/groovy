@@ -132,6 +132,18 @@ public class ClassInfo {
         return localClassInfos != null ? localClassInfos : getAllGlobalClassInfo();
     }
 
+    public static void onAllClassInfo(ClassInfoAction action) {
+        Collection<ClassInfo> localClassInfos = getAllLocalClassInfo();
+        if (localClassInfos!=null) {
+            for (ClassInfo localClassInfo : localClassInfos) {
+                action.onClassInfo(localClassInfo);
+            }
+        }
+        for (ClassInfo classInfo : getAllGlobalClassInfo()) {
+            action.onClassInfo(classInfo);
+        }
+    }
+
     private static Collection<ClassInfo> getAllGlobalClassInfo() {
         return globalClassSet.values();
     }
@@ -524,7 +536,7 @@ public class ClassInfo {
         }
 
         public void finalizeRef() {
-            System.out.println(name + " unloaded " + count.decrementAndGet() + " classes kept");
+            //System.out.println(name + " unloaded " + count.decrementAndGet() + " classes kept");
             super.finalizeReference();
         }
     }
@@ -553,5 +565,9 @@ public class ClassInfo {
     		}
     	}
 
+    }
+
+    public static interface ClassInfoAction {
+        void onClassInfo(ClassInfo classInfo);
     }
 }
