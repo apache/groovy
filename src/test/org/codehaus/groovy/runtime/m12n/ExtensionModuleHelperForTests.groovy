@@ -44,18 +44,7 @@ public class ExtensionModuleHelperForTests {
         }
         Set<String> cp = ((URLClassLoader)cl).URLs.collect{ new File(it.toURI()).absolutePath}
         cp << baseDir.absolutePath
-        Set<String> additionalJars = []
-        cp.each {
-            def file = new File(it)
-            if (file.directory) {
-                file.eachFileRecurse {
-                    if (it.name.startsWith('testclasspath') && !cp.contains(it.absolutePath)) {
-                        additionalJars << it.absolutePath
-                    }
-                }
-            }
-        }
-        cp.addAll(additionalJars)
+
         def ant = new AntBuilder()
         try {
             ant.with {

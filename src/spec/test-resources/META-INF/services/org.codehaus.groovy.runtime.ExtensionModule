@@ -14,10 +14,9 @@
 # limitations under the License.
 #
 
-# tag::extension_descriptor[]
-moduleName=Test module for specifications
+# DO NOT REMOVE BELOW!
+# IT IS A WORKAROUND FOR 2 DESCRIPTORS ON CLASSPATH!
+moduleName=Test module
 moduleVersion=1.0-test
-extensionClasses=support.MaxRetriesExtension
-staticExtensionClasses=support.StaticStringExtension
-# end::extension_descriptor[]
-
+extensionClasses=support.MaxRetriesExtension,org.codehaus.groovy.runtime.m12n.TestStringExtension,org.codehaus.groovy.runtime.m12n.Groovy6496Extension
+staticExtensionClasses=support.StaticStringExtension,org.codehaus.groovy.runtime.m12n.TestStaticStringExtension
