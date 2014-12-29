@@ -84,7 +84,10 @@ public class BinaryExpressionTransformer {
                 if (!rightExpression.getType().equals(declarationType)
                         && wrapper.isDerivedFrom(ClassHelper.Number_TYPE)
                         && WideningCategories.isDoubleCategory(unwrapper)) {
-                    return optimizeConstantInitialization(bin, operation, (ConstantExpression) rightExpression, leftExpression, declarationType);
+                    ConstantExpression constant = (ConstantExpression) rightExpression;
+                    if (constant.getValue()!=null) {
+                        return optimizeConstantInitialization(bin, operation, constant, leftExpression, declarationType);
+                    }
                 }
             }
         }
