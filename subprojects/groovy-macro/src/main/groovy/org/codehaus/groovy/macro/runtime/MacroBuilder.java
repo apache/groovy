@@ -32,6 +32,7 @@ import org.codehaus.groovy.macro.transform.MacroTransformation;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -52,10 +53,12 @@ public enum MacroBuilder {
         return macro(compilePhase, false, source, context, resultClass);
     }
 
+    private final static AtomicInteger COUNTER = new AtomicInteger();
+
     @SuppressWarnings("unchecked")
     public <T> T macro(CompilePhase compilePhase, boolean asIs, String source, final Map<MacroSubstitutionKey, Closure<Expression>> context, Class<T> resultClass) {
         boolean isClosure = source.startsWith("{");
-        final String label = isClosure ?"__synthesized__label__" + System.currentTimeMillis() + "__:":"";
+        final String label = isClosure ?"__synthesized__label__" + COUNTER.incrementAndGet() + "__:":"";
         final String labelledSource = label + source;
         final int linesOffset = 1;
         final int columnsOffset = label.length() + (isClosure?1:0); // +1 because of {
