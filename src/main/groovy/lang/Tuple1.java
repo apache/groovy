@@ -18,36 +18,34 @@
  */
 package groovy.lang;
 
-import java.util.List;
-
 /**
- * Represents a list of Objects.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * Represents a list of 1 typed Object.
+ *
+ * @since 2.5.0
  */
-public class Tuple extends AbstractTuple {
-    private final Object[] contents;
+public class Tuple1<T1> extends AbstractTuple {
+    private final T1 first;
 
-    public Tuple(Object... contents) {
-        if (contents == null) throw new NullPointerException();
-        this.contents = contents;
+    public Tuple1(T1 first) {
+        this.first = first;
     }
 
     @Override
     public Object get(int index) {
-        return contents[index];
+        switch (index) {
+            case 0:
+                return first;
+            default:
+                throw new IndexOutOfBoundsException("index: " + index);
+        }
     }
 
     @Override
     public int size() {
-        return contents.length;
+        return 1;
     }
 
-    @Override
-    public List subList(int fromIndex, int toIndex) {
-        int size = toIndex - fromIndex;
-        Object[] newContent = new Object[size];
-        System.arraycopy(contents, fromIndex, newContent, 0, size);
-        return new Tuple(newContent);
+    public T1 getFirst() {
+        return first;
     }
 }
