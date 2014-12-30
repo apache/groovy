@@ -46,6 +46,10 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import org.objectweb.asm.Opcodes;
+
+import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
+
 /**
  * This class provides an AST Transformation to add a log field to a class.
  */
@@ -57,6 +61,8 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
      * It will be replaced by the fully qualified class name of the annotated class.
      */
     public static final String DEFAULT_CATEGORY_NAME = "##default-category-name##";
+
+    public static final String DEFAULT_ACCESS_MODIFIER = "private";
 
     private CompilationUnit compilationUnit;
 
@@ -73,6 +79,8 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         final String logFieldName = lookupLogFieldName(logAnnotation);
 
         final String categoryName = lookupCategoryName(logAnnotation);
+
+        final int logFieldModifiers = lookupLogFieldModifiers(targetClass, logAnnotation);
 
         if (!(targetClass instanceof ClassNode))
             throw new GroovyBugError("Class annotation " + logAnnotation.getClassNode().getName() + " annotated no Class, this must not happen.");
@@ -107,7 +115,13 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
                 } else if (logField != null && !Modifier.isPrivate(logField.getModifiers())) {
                     addError("Class annotated with Log annotation cannot have log field declared because the field exists in the parent class: " + logField.getOwner().getName(), logField);
                 } else {
-                    logNode = loggingStrategy.addLoggerFieldToClass(node, logFieldName, categoryName);
+                    if (loggingStrategy instanceof LoggingStrategyV2) {
+                        LoggingStrategyV2 loggingStrategyV2 = (LoggingStrategyV2) loggingStrategy;
+                        logNode = loggingStrategyV2.addLoggerFieldToClass(node, logFieldName, categoryName, logFieldModifiers);
+                    } else {
+                        // support the old style but they won't be as configurable
+                        logNode = loggingStrategy.addLoggerFieldToClass(node, logFieldName, categoryName);
+                    }
                 }
                 super.visitClass(node);
             }
@@ -189,6 +203,11 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         return DEFAULT_CATEGORY_NAME;
     }
 
+    private int lookupLogFieldModifiers(AnnotatedNode targetClass, AnnotationNode logAnnotation) {
+        int modifiers = getVisibility(logAnnotation, targetClass, ClassNode.class, Opcodes.ACC_PRIVATE);
+        return Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | modifiers;
+    }
+
     private static LoggingStrategy createLoggingStrategy(AnnotationNode logAnnotation, GroovyClassLoader loader) {
 
         String annotationName = logAnnotation.getClassNode().getName();
@@ -214,10 +233,23 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
             throw new RuntimeException("Could not find default value of method named loggingStrategy on class named " + annotationName);
         }
 
-        if (!LoggingStrategy.class.isAssignableFrom((Class) defaultValue)) {
+        if (!LoggingStrategy.class.isAssignableFrom((Class) defaultValue)
+                && !LoggingStrategyV2.class.isAssignableFrom((Class) defaultValue)) {
             throw new RuntimeException("Default loggingStrategy value on class named " + annotationName + " is not a LoggingStrategy");
         }
 
+        // try V2 configurable logging strategy
+        try {
+            Class<? extends LoggingStrategyV2> strategyClass = (Class<? extends LoggingStrategyV2>) defaultValue;
+            if (AbstractLoggingStrategy.class.isAssignableFrom(strategyClass)) {
+                return DefaultGroovyMethods.newInstance(strategyClass, new Object[]{loader});
+            } else {
+                return strategyClass.newInstance();
+            }
+        } catch (Exception e) {
+        }
+
+        // try legacy logging strategy
         try {
             Class<? extends LoggingStrategy> strategyClass = (Class<? extends LoggingStrategy>) defaultValue;
             if (AbstractLoggingStrategy.class.isAssignableFrom(strategyClass)) {
@@ -228,6 +260,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         } catch (Exception e) {
             return null;
         }
+
     }
 
 
@@ -253,6 +286,40 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         String getCategoryName(ClassNode classNode, String categoryName);
 
         Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression);
+    }
+
+    /**
+     * A LoggingStrategy defines how to wire a new logger instance into an existing class.
+     * It is meant to be used with the @Log family of annotations to allow you to
+     * write your own Log annotation provider.
+     */
+    public interface LoggingStrategyV2 extends LoggingStrategy {
+        /**
+         * In this method, you are given a ClassNode, a field name and a category name, and you must add a new Field
+         * onto the class. Return the result of the ClassNode.addField operations.
+         *
+         * @param classNode      the class that was originally annotated with the Log transformation.
+         * @param fieldName      the name of the logger field
+         * @param categoryName   the name of the logging category
+         * @param fieldModifiers the modifiers (private, final, et. al.) of the logger field
+         * @return the FieldNode instance that was created and added to the class
+         */
+        FieldNode addLoggerFieldToClass(ClassNode classNode, String fieldName, String categoryName, int fieldModifiers);
+    }
+
+    public abstract static class AbstractLoggingStrategyV2 extends AbstractLoggingStrategy implements LoggingStrategyV2 {
+        protected AbstractLoggingStrategyV2(final GroovyClassLoader loader) {
+            super(loader);
+        }
+
+        protected AbstractLoggingStrategyV2() {
+            this(null);
+        }
+
+        @Override
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String fieldName, String categoryName) {
+            throw new UnsupportedOperationException("This logger requires a later version of Groovy");
+        }
     }
 
     public abstract static class AbstractLoggingStrategy implements LoggingStrategy {

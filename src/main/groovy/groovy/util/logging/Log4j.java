@@ -19,6 +19,7 @@
 package groovy.util.logging;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.transform.Undefined;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -31,7 +32,6 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 import org.codehaus.groovy.transform.LogASTTransformation;
-import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -66,9 +66,16 @@ import java.util.Locale;
 public @interface Log4j {
     String value() default "log";
     String category() default LogASTTransformation.DEFAULT_CATEGORY_NAME;
+
+    /**
+     * If specified, must match the "id" attribute in a VisibilityOptions annotation to enable a custom visibility.
+     * @since 3.0.0
+     */
+    String visibilityId() default Undefined.STRING;
+
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Log4jLoggingStrategy.class;
 
-    public static class Log4jLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
+    public static class Log4jLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
         private static final String LOGGER_NAME = "org.apache.log4j.Logger";
         private static final String PRIORITY_NAME = "org.apache.log4j.Priority";
 
@@ -76,9 +83,10 @@ public @interface Log4j {
             super(loader);
         }
 
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName) {
+        @Override
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName, int fieldModifiers) {
             return classNode.addField(logFieldName,
-                    Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                    fieldModifiers,
                     classNode(LOGGER_NAME),
                     new MethodCallExpression(
                             new ClassExpression(classNode(LOGGER_NAME)),

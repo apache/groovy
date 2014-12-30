@@ -19,6 +19,7 @@
 package groovy.util.logging;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.transform.Undefined;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -33,7 +34,6 @@ import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 import org.codehaus.groovy.transform.LogASTTransformation;
 import org.codehaus.groovy.transform.LogASTTransformation.LoggingStrategy;
-import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -70,12 +70,19 @@ import java.util.Locale;
 public @interface Log {
     String value() default "log";
     String category() default LogASTTransformation.DEFAULT_CATEGORY_NAME;
+
+    /**
+     * If specified, must match the "id" attribute in a VisibilityOptions annotation to enable a custom visibility.
+     * @since 3.0.0
+     */
+    String visibilityId() default Undefined.STRING;
+
     Class<? extends LoggingStrategy> loggingStrategy() default JavaUtilLoggingStrategy.class;
 
     /**
      * This class contains the logic of how to weave a Java Util Logging logger into the host class.
      */
-    public static class JavaUtilLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
+    public static class JavaUtilLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
 
         private static final ClassNode LOGGER_CLASSNODE = ClassHelper.make(java.util.logging.Logger.class);
         private static final ClassNode LEVEL_CLASSNODE = ClassHelper.make(java.util.logging.Level.class);
@@ -84,9 +91,10 @@ public @interface Log {
             super(loader);
         }
 
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName) {
+        @Override
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName, int fieldModifiers) {
             return classNode.addField(logFieldName,
-                        Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                        fieldModifiers,
                         LOGGER_CLASSNODE,
                         new MethodCallExpression(
                                 new ClassExpression(LOGGER_CLASSNODE),
