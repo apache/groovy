@@ -16,18 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package groovy.lang;
 
 /**
- * Represents a list of 2 typed Objects.
+ * Represents a list of 4 typed Objects.
+ *
+ * @since 2.5.0
  */
-public class Tuple2<T1, T2> extends AbstractTuple {
+public class Tuple4<T1, T2, T3, T4> extends AbstractTuple {
     private final T1 first;
     private final T2 second;
+    private final T3 third;
+    private final T4 fourth;
 
-    public Tuple2(T1 first, T2 second) {
+    public Tuple4(T1 first, T2 second, T3 third, T4 fourth) {
         this.first = first;
         this.second = second;
+        this.third = third;
+        this.fourth = fourth;
     }
 
     @Override
@@ -37,6 +44,10 @@ public class Tuple2<T1, T2> extends AbstractTuple {
                 return first;
             case 1:
                 return second;
+            case 2:
+                return third;
+            case 3:
+                return fourth;
             default:
                 throw new IndexOutOfBoundsException("index: " + index);
         }
@@ -44,7 +55,7 @@ public class Tuple2<T1, T2> extends AbstractTuple {
 
     @Override
     public int size() {
-        return 2;
+        return 4;
     }
 
     public T1 getFirst() {
@@ -53,5 +64,13 @@ public class Tuple2<T1, T2> extends AbstractTuple {
 
     public T2 getSecond() {
         return second;
+    }
+
+    public T3 getThird() {
+        return third;
+    }
+
+    public T4 getFourth() {
+        return fourth;
     }
 }

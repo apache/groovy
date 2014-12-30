@@ -16,38 +16,53 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package groovy.lang;
 
-import java.util.List;
-
 /**
- * Represents a list of Objects.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * Represents a list of 3 typed Objects.
+ *
+ * @since 2.5.0
  */
-public class Tuple extends AbstractTuple {
-    private final Object[] contents;
+public class Tuple3<T1, T2, T3> extends AbstractTuple {
+    private final T1 first;
+    private final T2 second;
+    private final T3 third;
 
-    public Tuple(Object... contents) {
-        if (contents == null) throw new NullPointerException();
-        this.contents = contents;
+    public Tuple3(T1 first, T2 second, T3 third) {
+        this.first = first;
+        this.second = second;
+        this.third = third;
     }
 
     @Override
     public Object get(int index) {
-        return contents[index];
+        switch (index) {
+            case 0:
+                return first;
+            case 1:
+                return second;
+            case 2:
+                return third;
+            default:
+                throw new IndexOutOfBoundsException("index: " + index);
+        }
     }
 
     @Override
     public int size() {
-        return contents.length;
+        return 3;
     }
 
-    @Override
-    public List subList(int fromIndex, int toIndex) {
-        int size = toIndex - fromIndex;
-        Object[] newContent = new Object[size];
-        System.arraycopy(contents, fromIndex, newContent, 0, size);
-        return new Tuple(newContent);
+    public T1 getFirst() {
+        return first;
+    }
+
+    public T2 getSecond() {
+        return second;
+    }
+
+    public T3 getThird() {
+        return third;
     }
 }
