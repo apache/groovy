@@ -627,7 +627,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static String getText(URL url, Map parameters) throws IOException {
-        return getText(url, parameters, CharsetToolkit.getDefaultSystemCharset().toString());
+        return getText(url, parameters, CharsetToolkit.getDefaultSystemCharset().name());
     }
 
     /**
