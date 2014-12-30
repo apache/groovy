@@ -182,6 +182,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         if (shouldSkip(candidate.getName(), excludes, includes)) return;
 
         Map<String,ClassNode> genericsSpec = createGenericsSpec(fieldNode.getDeclaringClass());
+        genericsSpec = createGenericsSpec(candidate, genericsSpec);
         extractSuperClassGenerics(fieldNode.getType(), candidate.getDeclaringClass(), genericsSpec);
 
         if (!excludeTypes.isEmpty() || !includeTypes.isEmpty()) {
