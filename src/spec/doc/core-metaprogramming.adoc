@@ -6,7 +6,7 @@ at compile-time. Both have pros and cons, that we will detail in this section.
 
 == Runtime metaprogramming (TBD)
 
-=== GroovyObject interface (TBD)
+=== GroovyObject interface (MaksymStavytskyi)
 ==== invokeMethod (TBD)
 ==== get/setProperty (TBD)
 ==== get/setMetaClass (TBD)
