@@ -69,6 +69,10 @@ public class MarkupTemplateEngine extends TemplateEngine {
     private final Map<String, GroovyCodeSource> codeSourceCache = new LinkedHashMap<String, GroovyCodeSource>();
     private final TemplateResolver templateResolver;
 
+    public MarkupTemplateEngine() {
+        this(new TemplateConfiguration());
+    }
+
     public MarkupTemplateEngine(final TemplateConfiguration tplConfig) {
         this(MarkupTemplateEngine.class.getClassLoader(), tplConfig);
     }
