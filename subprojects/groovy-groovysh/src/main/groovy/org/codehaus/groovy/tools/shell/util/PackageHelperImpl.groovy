@@ -75,6 +75,7 @@ class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
 
         // System classes
         Class[] systemClasses = [String, javax.swing.JFrame, GroovyObject] as Class[]
+        boolean jigsaw = false
         systemClasses.each { Class systemClass ->
             // normal slash even in Windows
             String classfileName = systemClass.name.replace('.', '/') + '.class'
@@ -87,6 +88,9 @@ class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
                 URLConnection uc = classURL.openConnection()
                 if (uc instanceof JarURLConnection) {
                     urls.add(((JarURLConnection) uc).getJarFileURL())
+                } else if (uc.getClass().getSimpleName().equals("JavaRuntimeURLConnection")) {
+                    // Java 9 Jigsaw detected
+                    jigsaw = true
                 } else {
                     String filepath = classURL.toExternalForm()
                     String rootFolder = filepath.substring(0, filepath.length() - classfileName.length() - 1)
@@ -101,7 +105,69 @@ class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
                 mergeNewPackages(packageNames, url, rootPackages)
             }
         }
+        if (jigsaw) {
+            Set<String> jigsawPackages = getPackagesAndClassesFromJigsaw()
+            mergeNewPackages(jigsawPackages,URI.create("jrt:/").toURL(), rootPackages)
+        }
         return rootPackages
+    }
+
+    /**
+     * This method returns packages or classes listed from Jigsaw modules.
+     * It makes use of a GroovyShell in order to avoid a hard dependency
+     * to JDK 7+ when building the Groovysh module (uses nio2)
+     * @return
+     */
+    private static Set<String> getPackagesAndClassesFromJigsaw(Closure<Boolean> predicate = { isPackage, name -> isPackage && name }) {
+        def shell = new GroovyShell()
+        shell.setProperty('predicate', predicate)
+        shell.evaluate '''import java.nio.file.*
+
+def fs = FileSystems.newFileSystem(URI.create("jrt:/"), [:])
+
+result = [] as Set
+
+def filterPackageName(Path path) {
+    def elems = "$path".split('/')
+
+    if (elems) {
+        elems = elems[2..<elems.length]
+
+        def name = elems.join('.')
+        if (predicate(true,name)) {
+            result << name
+        }
+    }
+}
+
+def filterClassName(Path path) {
+    def elems = "$path".split('/')
+
+    if (elems) {
+        elems = elems[2..<elems.length]
+
+        def name = elems.join('.')
+        if (name.endsWith('.class')) {
+            name = name.substring(0,name.lastIndexOf('.'))
+            if (predicate(false,name)) {
+                result << name
+            }
+        }
+    }
+}
+
+fs.rootDirectories.each {
+    Files.walkFileTree(it,
+            [preVisitDirectory: { dir, attrs -> filterPackageName(dir); FileVisitResult.CONTINUE },
+             visitFile: { file, attrs -> filterClassName(file); FileVisitResult.CONTINUE}
+            ]
+                    as SimpleFileVisitor)
+}
+'''
+
+        Set<String> jigsawPackages = (Set<String>) shell.getProperty('result')
+
+        jigsawPackages
     }
 
     static mergeNewPackages(final Collection<String> packageNames, final URL url,
@@ -300,78 +366,76 @@ class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
      */
     @CompileStatic
     static Set<String> getClassnames(final Set<URL> urls, final String packagename) {
-        List<String> classes = new LinkedList<String>()
+        Set<String> classes = new TreeSet<String>()
         // normal slash even in Windows
         String pathname = packagename.replace('.', '/')
         for (Iterator it = urls.iterator(); it.hasNext();) {
             URL url = (URL) it.next()
-            File file = new File(URLDecoder.decode(url.getFile(), 'UTF-8'))
-            if (file == null) {
-                continue
-            }
-            if (file.isDirectory()) {
-                File packFolder = new File(file, pathname)
-                if (! packFolder.isDirectory()) {
+            if (url.protocol=='jrt') {
+                getPackagesAndClassesFromJigsaw { boolean isPackage, String name ->
+                    !isPackage && name.startsWith(packagename)
+                }.collect(classes) { it - "${packagename}." }
+            } else {
+                File file = new File(URLDecoder.decode(url.getFile(), 'UTF-8'))
+                if (file == null) {
                     continue
                 }
-                File[] files = packFolder.listFiles()
-                for (int i = 0; (files != null) && (i < files.length); i++) {
-                    if (files[i].isFile()) {
-                        String filename = files[i].name
-                        if (filename.endsWith(CLASS_SUFFIX)) {
-                            String name = filename.substring(0, filename.length() - CLASS_SUFFIX.length())
-                            if (!name.matches(NAME_PATTERN)) {
-                                continue
+                if (file.isDirectory()) {
+                    File packFolder = new File(file, pathname)
+                    if (!packFolder.isDirectory()) {
+                        continue
+                    }
+                    File[] files = packFolder.listFiles()
+                    for (int i = 0; (files != null) && (i < files.length); i++) {
+                        if (files[i].isFile()) {
+                            String filename = files[i].name
+                            if (filename.endsWith(CLASS_SUFFIX)) {
+                                String name = filename.substring(0, filename.length() - CLASS_SUFFIX.length())
+                                if (!name.matches(NAME_PATTERN)) {
+                                    continue
+                                }
+                                classes.add(name)
                             }
-                            classes.add(name)
                         }
                     }
-                }
-                continue
-            }
-
-            if (!file.toString().endsWith ('.jar')) {
-                continue
-            }
-
-            JarFile jf = new JarFile(file)
-
-            for (Enumeration e = jf.entries(); e.hasMoreElements();) {
-                JarEntry entry = (JarEntry) e.nextElement()
-
-                if (entry == null) {
                     continue
                 }
 
-                String name = entry.name
+                if (!file.toString().endsWith('.jar')) {
+                    continue
+                }
 
-                // only use class files
-                if (!name.endsWith(CLASS_SUFFIX))
-                {
-                    continue
+                JarFile jf = new JarFile(file)
+
+                for (Enumeration e = jf.entries(); e.hasMoreElements();) {
+                    JarEntry entry = (JarEntry) e.nextElement()
+
+                    if (entry == null) {
+                        continue
+                    }
+
+                    String name = entry.name
+
+                    // only use class files
+                    if (!name.endsWith(CLASS_SUFFIX)) {
+                        continue
+                    }
+                    // normal slash inside jars even on windows
+                    int lastslash = name.lastIndexOf('/')
+                    if (lastslash == -1 || name.substring(0, lastslash) != pathname) {
+                        continue
+                    }
+                    name = name.substring(lastslash + 1, name.length() - CLASS_SUFFIX.length())
+                    if (!name.matches(NAME_PATTERN)) {
+                        continue
+                    }
+                    classes.add(name)
                 }
-                // normal slash inside jars even on windows
-                int lastslash = name.lastIndexOf('/')
-                if (lastslash  == -1 || name.substring(0, lastslash) != pathname) {
-                    continue
-                }
-                name = name.substring(lastslash + 1, name.length() - CLASS_SUFFIX.length())
-                if (!name.matches(NAME_PATTERN)) {
-                    continue
-                }
-                classes.add(name)
             }
         }
 
-        // now filter classes by changing "/" to "." and trimming the
-        // trailing ".class"
-        Set<String> classNames = new TreeSet<String>()
 
-        for (String name : classes) {
-            classNames.add(name)
-        }
-
-        return classNames
+        return classes
     }
 }
 
