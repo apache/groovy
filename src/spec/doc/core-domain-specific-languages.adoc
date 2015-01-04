@@ -91,7 +91,54 @@ include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_i
 -----------------------------------------------------
 
 
-== Operator overloading (TBD)
+== Operator overloading
+
+Groovy supports operator overloading which makes working with Numbers, Collections, Maps and various other data structures easier to use.
+
+Various operators in Groovy are mapped onto regular method calls on objects.
+
+This allows you the developer to provide your own Java or Groovy objects which can take advantage of operator overloading. The following table describes the operators supported in Groovy and the methods they map to.
+
+[options="header"]
+|======================
+|Operator | Method 
+|a + b | a.plus(b)
+|a - b | a.minus(b)
+|a * b | a.multiply(b)
+|a ** b | a.power(b)
+|a / b | a.div(b)
+|a % b | a.mod(b)
+|a \| b | a.or(b)
+|a & b | a.and(b)
+|a ^ b | a.xor(b)
+|a++ or ++a | a.next()
+|a-- or --a | a.previous()
+|a[b] | a.getAt(b)
+|a[b] = c | a.putAt(b, c)
+|a << b | a.leftShift(b)
+|a >> b | a.rightShift(b)
+|switch(a) { case(b) : } | b.isCase(a)
+|~a | a.bitwiseNegate()
+|-a | a.negative()
+|+a | a.positive()
+|======================
+
+Note that all the following comparison operators handle nulls gracefully avoiding the throwing of java.lang.NullPointerException.
+
+[options="header"]
+|======================
+|Operator | Method 
+|a == b | a.equals(b) or a.compareTo(b) == 0 **
+|a != b | ! a.equals(b)
+|a <=> b | a.compareTo(b)
+|a > b | a.compareTo(b) > 0
+|a >= b | a.compareTo(b) >= 0
+|a < b | a.compareTo(b) < 0
+|a \<= b | a.compareTo(b) <= 0
+|======================
+
+\** Note: The == operator doesn't always exactly match the .equals() method. You can think of them as equivalent in most situations. In situations where two objects might be thought "equal" via normal Groovy "coercion" mechanisms, the == operator will report them as equal; the .equals() method will not do so if doing so would break the normal rules Java has around the equals method.
+
 == Script base classes (TBD)
 == Adding properties to numbers (TBD)
 [[section-delegatesto]]
