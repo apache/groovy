@@ -646,25 +646,25 @@ The table below lists all groovy operators in order of precedence.
 [options="header"]
 |======================
 |Level | Operator(s) | Name(s)
-| 1 | $x | scope escape
-|   | new () | new, explicit parentheses
-|   | () {} [] | method call, closure, list/map
-|   | . ?. *. | dot, safe dereferencing, spread-dot
-|   | ~ ! $ (type) | negate, not, typecast
-| 2 | ** | power
-| 3 | ++ -- + - | pre/post increment/decrement, unary plus, unary minus
-| 4 | * / % | multiply, div, modulo
-| 5 | + - | binary plus, binary minus
-| 6 | << >> >>> .. ..< | left/right (unsigned) shift, inclusive/exclusive range
-| 7 | < <= > >= instanceof as | less/greater than/or equal, instanceof, type coercion
-| 8 | == != <\=> | equal, not equal, compare to
-| 9 | & | binary and
-| 10 | ^ | binary xor
-| 11 | \| | binary or
-| 12 | && | logical and
-| 13 | \|\| | logical or
-| 14 | ?: | ternary conditional
-| 15 | = **= *= /= %= += -= <<= >>= >>>= &=\| ^= \|= | various assignments
+| 1 | `$x` | scope escape
+|   | `new` `()` | new, explicit parentheses
+|   | `()` `{}` `[]` | method call, closure, list/map
+|   | `.` `?.` `*.` | dot, safe dereferencing, spread-dot
+|   | `~` `!$` `(type)` | bitwise negate, not, typecast
+| 2 | `**` | power
+| 3 | `++` `--` `+` `-` | pre/post increment/decrement, unary plus, unary minus
+| 4 | `*` `/` `%` | multiply, div, modulo
+| 5 | `+` `-` | binary plus, binary minus
+| 6 | `<<` `>>` `>>>` `..` `..<` | left/right (unsigned) shift, inclusive/exclusive range
+| 7 | `<` `\<=` `>` `>=` `instanceof` `as` | less/greater than/or equal, instanceof, type coercion
+| 8 | `==` `!=` `pass:[<=>]` | equal, not equal, compare to
+| 9 | `&` | binary and
+| 10 | `^` | binary xor
+| 11 | `\|` | binary or
+| 12 | `&&` | logical and
+| 13 | `\|\|` | logical or
+| 14 | `?:` | ternary conditional
+| 15 | `=` `\**=` `*=` `/=` `%=` `+=` `-=` `pass:[<<=]` `>>=` `>>>=` `&=` `^=` `\|=` | various assignments
 |======================
 
 [[Operator-Overloading]]
