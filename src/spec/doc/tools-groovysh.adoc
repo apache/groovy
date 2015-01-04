@@ -561,4 +561,4 @@ project.
 
 [[GroovyShell-GradleGroovyshPlugin]]
 == Gradle Groovysh Plugin
-https://github.com/tkruse/gradle-groovysh-plugin is a Gradle plugin that provides gradle tasks to start a Groovy Shell bound to a Gradle project.
+https://github.com/tkruse/gradle-groovysh-plugin[Gradle Groovysh Plugin] is a Gradle plugin that provides gradle tasks to start a Groovy Shell bound to a Gradle project.
