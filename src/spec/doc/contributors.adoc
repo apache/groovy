@@ -2,13 +2,21 @@
 
 The Groovy team would like to thank the contributors of this documentation (by alphabetical order):
 
+* https://github.com/mojavelinux[Dan Allen]
 * https://github.com/bura[Andrey Bloschetsov]
 * https://github.com/jeffbrown[Jeff Scott Brown]
 * http://twitter.com/CedricChampeau[Cédric Champeau]
+* https://github.com/tobia[Tobia Conforto]
+* https://github.com/ddimtirov[Dimitar Dimitrov]
 * http://twitter.com/werdnagreb[Andrew Eisenberg]
 * http://twitter.com/paulk_asert[Paul King]
+* https://github.com/davidmichaelkarr[David Michael Karr]
+* https://github.com/keeganwitt[Keegan Witt]
 * http://twitter.com/glaforge[Guillaume Laforge]
+* https://github.com/dnahodil[David Nahodil]
+* https://github.com/jnorthr[James Northrop]
 * http://twitter.com/pledbrook[Peter Ledbrook]
+* https://github.com/michaelss[Michael Schuenck]
 * https://github.com/PascalSchumacher[Pascal Schumacher]
 * https://twitter.com/asteingr[André Steingreß]
 * http://grantmcconnaughey.github.io/[Grant McConnaughey]
