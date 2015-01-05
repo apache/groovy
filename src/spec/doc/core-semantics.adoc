@@ -481,7 +481,7 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=fixed_as_usage,inde
 === Optional public keyword (TBD)
 
 [[Groovy-Truth]]
-== The Groovy Truth (TBD)
+== The Groovy Truth (Pascal Schumacher)
 
 === Customizing the truth with asBoolean() methods (TBD)
 
