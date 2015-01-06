@@ -481,7 +481,65 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=fixed_as_usage,inde
 === Optional public keyword (TBD)
 
 [[Groovy-Truth]]
-== The Groovy Truth (Pascal Schumacher)
+== The Groovy Truth
+
+Groovy decides whether a expression is true or false by applying the rules given below.
+
+=== Boolean expressions
+True if the corresponding Boolean value is `true`.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=boolean_truth,indent=0]
+----
+
+=== Collections
+Non-empty Collections are true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=collection_truth,indent=0]
+----
+
+=== Matchers
+True if the Matcher has at least one match.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=matcher_truth,indent=0]
+----
+
+=== Iterators and Enumerations
+Iterators and Enumerations with further elements are coerced to true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=iterator_enumeration_truth,indent=0]
+----
+
+=== Maps
+Non-empty Maps are evaluated to true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=map_truth,indent=0]
+----
+
+=== Strings
+Non-empty Strings, GStrings and CharSequences are coerced to true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=string_truth,indent=0]
+----
+
+=== Numbers
+Non-zero numbers are true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=number_truth,indent=0]
+----
+
+=== Object References
+Non-null object references are coerced to true.
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=object_truth,indent=0]
+----
 
 === Customizing the truth with asBoolean() methods (TBD)
 
