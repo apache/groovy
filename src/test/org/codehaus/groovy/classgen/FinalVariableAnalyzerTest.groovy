@@ -316,6 +316,20 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''', true)
     }
 
+    void testShouldNotSayThatListIsNotInitialized() {
+        assertScript '''
+                final List<String> list = ['a','b'].collect { it.toUpperCase() }
+                def result
+                if (true) {
+                    result = list[0]
+                } else {
+                    result = list[1]
+                }
+                result
+
+        '''
+    }
+
     @CompileStatic
     private static class AssertionFinalVariableAnalyzer extends FinalVariableAnalyzer {
 

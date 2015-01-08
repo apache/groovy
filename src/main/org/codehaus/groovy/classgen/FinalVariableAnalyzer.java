@@ -45,8 +45,8 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     private final SourceUnit sourceUnit;
     private final VariableNotFinalCallback callback;
-    private final Set<VariableExpression> declaredFinalVariables = new HashSet<VariableExpression>();
 
+    private Set<VariableExpression> declaredFinalVariables = null;
     private boolean inAssignment = false;
 
     private static enum VariableState {
@@ -116,17 +116,19 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
+        Set<VariableExpression> old = declaredFinalVariables;
+        declaredFinalVariables = new HashSet<VariableExpression>();
         super.visitConstructorOrMethod(node, isConstructor);
         if (callback!=null) {
             Map<Variable, VariableState> state = getState();
             for (VariableExpression declaredFinalVariable : declaredFinalVariables) {
-                VariableState variableState = state.get(declaredFinalVariable);
+                VariableState variableState = state.get(declaredFinalVariable.getAccessedVariable());
                 if (variableState == null || variableState != VariableState.is_final) {
                     callback.variableNotAlwaysInitialized(declaredFinalVariable);
                 }
             }
         }
-        declaredFinalVariables.clear();
+        declaredFinalVariables = old;
     }
 
     @Override
@@ -135,6 +137,12 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         boolean isDeclaration = expression instanceof DeclarationExpression;
         Expression leftExpression = expression.getLeftExpression();
         Expression rightExpression = expression.getRightExpression();
+        if (isDeclaration && leftExpression instanceof VariableExpression) {
+            VariableExpression var = (VariableExpression) leftExpression;
+            if (Modifier.isFinal(var.getModifiers())) {
+                declaredFinalVariables.add(var);
+            }
+        }
         leftExpression.visit(this);
         inAssignment = assignment;
         rightExpression.visit(this);
@@ -194,17 +202,14 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     @Override
     public void visitVariableExpression(final VariableExpression expression) {
         super.visitVariableExpression(expression);
-        if (Modifier.isFinal(expression.getModifiers())) {
-            declaredFinalVariables.add(expression);
-        }
         if (inAssignment) {
             Map<Variable, VariableState> state = getState();
             Variable key = expression.getAccessedVariable();
             VariableState variableState = state.get(key);
-            if (variableState==null || variableState==VariableState.is_uninitialized) {
+            if (variableState==VariableState.is_uninitialized) {
                 variableState = VariableState.is_var;
+                state.put(key, variableState);
             }
-            state.put(key, variableState);
         }
     }
 
