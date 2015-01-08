@@ -202,7 +202,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
             builder.addField(createFieldCopy(buildee, fieldName, correctedType));
             builder.addMethod(createBuilderMethodForProp(builder, new PropertyInfo(fieldName, correctedType), getPrefix(anno)));
         }
-        builder.addMethod(createBuildMethod(transform, anno, buildee, filteredFields));
+        builder.addMethod(createBuildMethod(anno, buildee, filteredFields));
     }
 
     private ClassNode getCorrectedType(ClassNode buildee, FieldNode fieldNode) {
@@ -250,7 +250,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         return new MethodNode(builderMethodName, PUBLIC_STATIC, builder, NO_PARAMS, NO_EXCEPTIONS, body);
     }
 
-    private static MethodNode createBuildMethod(BuilderASTTransformation transform, AnnotationNode anno, ClassNode buildee, List<FieldNode> fields) {
+    private static MethodNode createBuildMethod(AnnotationNode anno, ClassNode buildee, List<FieldNode> fields) {
         String buildMethodName = getMemberStringValue(anno, "buildMethodName", "build");
         final BlockStatement body = new BlockStatement();
         body.addStatement(returnS(initializeInstance(buildee, fields, body)));
