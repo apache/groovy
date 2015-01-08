@@ -220,6 +220,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     throw new RuntimeParserException("The parameter ["+var.getName()+"] is declared final but is reassigned",bexp);
                 }
             }
+
+            @Override
+            public void variableNotAlwaysInitialized(final VariableExpression var) {
+                throw new RuntimeParserException("The variable ["+var.getName()+"] may be uninitialized", var);
+            }
         });
         analyzer.visitClass(node);
 

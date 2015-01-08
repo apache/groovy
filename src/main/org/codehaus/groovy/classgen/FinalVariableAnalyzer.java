@@ -16,9 +16,11 @@
 package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -31,15 +33,21 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
+import java.lang.reflect.Modifier;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 
 public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     private final SourceUnit sourceUnit;
     private final VariableNotFinalCallback callback;
+    private final Set<VariableExpression> declaredFinalVariables = new HashSet<VariableExpression>();
+
+    private boolean inAssignment = false;
 
     private static enum VariableState {
         is_uninitialized(true),
@@ -107,15 +115,35 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     }
 
     @Override
+    protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
+        super.visitConstructorOrMethod(node, isConstructor);
+        if (callback!=null) {
+            Map<Variable, VariableState> state = getState();
+            for (VariableExpression declaredFinalVariable : declaredFinalVariables) {
+                VariableState variableState = state.get(declaredFinalVariable);
+                if (variableState == null || variableState != VariableState.is_final) {
+                    callback.variableNotAlwaysInitialized(declaredFinalVariable);
+                }
+            }
+        }
+        declaredFinalVariables.clear();
+    }
+
+    @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
-        super.visitBinaryExpression(expression);
-        if (StaticTypeCheckingSupport.isAssignment(expression.getOperation().getType())) {
-            Expression leftExpression = expression.getLeftExpression();
+        boolean assignment = StaticTypeCheckingSupport.isAssignment(expression.getOperation().getType());
+        boolean isDeclaration = expression instanceof DeclarationExpression;
+        Expression leftExpression = expression.getLeftExpression();
+        Expression rightExpression = expression.getRightExpression();
+        leftExpression.visit(this);
+        inAssignment = assignment;
+        rightExpression.visit(this);
+        inAssignment = false;
+        if (assignment) {
             if (leftExpression instanceof Variable) {
-                boolean isDeclaration = expression instanceof DeclarationExpression;
                 boolean uninitialized =
                         isDeclaration &&
-                                expression.getRightExpression() == EmptyExpression.INSTANCE;
+                                rightExpression == EmptyExpression.INSTANCE;
                 recordAssignment((Variable) leftExpression, isDeclaration, uninitialized, false, expression);
                 if (leftExpression instanceof VariableExpression) {
                     Variable accessed = ((VariableExpression) leftExpression).getAccessedVariable();
@@ -128,14 +156,26 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitClosureExpression(final ClosureExpression expression) {
+        boolean old = inAssignment;
+        inAssignment = false;
+        super.visitClosureExpression(expression);
+        inAssignment = old;
+    }
+
+    @Override
     public void visitPrefixExpression(final PrefixExpression expression) {
+        inAssignment = expression.getExpression() instanceof VariableExpression;
         super.visitPrefixExpression(expression);
+        inAssignment = false;
         checkPrePostfixOperation(expression.getExpression(), expression);
     }
 
     @Override
     public void visitPostfixExpression(final PostfixExpression expression) {
+        inAssignment = expression.getExpression() instanceof VariableExpression;
         super.visitPostfixExpression(expression);
+        inAssignment = false;
         checkPrePostfixOperation(expression.getExpression(), expression);
     }
 
@@ -148,6 +188,23 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
                     recordAssignment(accessed, false, false, true, originalExpression);
                 }
             }
+        }
+    }
+
+    @Override
+    public void visitVariableExpression(final VariableExpression expression) {
+        super.visitVariableExpression(expression);
+        if (Modifier.isFinal(expression.getModifiers())) {
+            declaredFinalVariables.add(expression);
+        }
+        if (inAssignment) {
+            Map<Variable, VariableState> state = getState();
+            Variable key = expression.getAccessedVariable();
+            VariableState variableState = state.get(key);
+            if (variableState==null || variableState==VariableState.is_uninitialized) {
+                variableState = VariableState.is_var;
+            }
+            state.put(key, variableState);
         }
     }
 
@@ -199,20 +256,20 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         if (!isDeclaration && var.isClosureSharedVariable()) {
             getState().put(var, VariableState.is_var);
         }
-        VariableState count = getState().get(var);
-        if (count == null) {
-            count = uninitialized ? VariableState.is_uninitialized : VariableState.is_final;
+        VariableState variableState = getState().get(var);
+        if (variableState == null) {
+            variableState = uninitialized ? VariableState.is_uninitialized : VariableState.is_final;
             if (var instanceof Parameter) {
-                count = VariableState.is_var;
+                variableState = VariableState.is_var;
             }
         } else {
-            count = count.getNext();
+            variableState = variableState.getNext();
         }
         if (forceVariable) {
-            count = VariableState.is_var;
+            variableState = VariableState.is_var;
         }
-        getState().put(var, count);
-        if (count == VariableState.is_var && callback != null) {
+        getState().put(var, variableState);
+        if (variableState == VariableState.is_var && callback != null) {
             callback.variableNotFinal(var, expression);
         }
     }
@@ -226,5 +283,11 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
          * @param bexp the expression responsible for the contract to be broken
          */
         void variableNotFinal(Variable var, Expression bexp);
+
+        /**
+         * Callback used whenever a variable is declared as final, but can remain in an uninitialized state
+         * @param var the variable detected as potentially uninitialized
+         */
+        void variableNotAlwaysInitialized(VariableExpression var);
     }
 }

@@ -39,14 +39,18 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         shell.parse(script)
     }
 
-    protected void assertFinalCompilationErrors(List<String> vars, final String script) {
+    protected void assertFinalCompilationErrors(List<String> vars, final String script, boolean unInitialized=false) {
         Set<String> checked = []
         try {
             assertFinals [:], script
         } catch (MultipleCompilationErrorsException e) {
             vars.each { var ->
-                assert (e.message =~ "The variable \\[${var}\\] is declared final but is reassigned" ||
-                        e.message =~ "Cannot assign a value to final variable '${var}'")
+                if (!unInitialized) {
+                    assert (e.message =~ "The variable \\[${var}\\] is declared final but is reassigned" ||
+                            e.message =~ "Cannot assign a value to final variable '${var}'")
+                } else {
+                    assert e.message =~ "The variable \\[${var}\\] may be uninitialized"
+                }
                 checked << var
             }
         }
@@ -235,6 +239,81 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
               assert a == 3
             }
         ''')
+    }
+
+    void testDirectlyAssignedClosureSharedVariableShouldBeConsideredFinal() {
+        assertFinals x:true, '''
+            def x = 1
+            def cl = { x }
+            cl()
+        '''
+    }
+
+    void testDelayedAssignedClosureSharedVariableShouldBeConsideredFinal() {
+        assertFinals x:false, '''
+            def x
+            def cl = { x }
+            x=1
+        '''
+    }
+
+    void testShouldThrowCompilationErrorBecauseClosureSharedVariable() {
+        assertFinalCompilationErrors(['x'], '''
+            final x
+
+            def cl = { x }
+            x=1
+        ''')
+    }
+
+    void testShouldBeCompileTimeErrorBecauseOfUninitializedVar() {
+        assertFinalCompilationErrors(['x'], '''
+            final x
+            def y = x
+            x = 1
+        ''')
+    }
+
+    void testShouldConsiderThatXIsEffectivelyFinalWithIfElse() {
+        assertFinals x:true, '''
+            int x
+            if (foo) {
+              x=1
+            } else {
+              x=2
+            }
+
+        '''
+    }
+
+    void testShouldConsiderThatXIsNotEffectivelyFinalWithSubsequentIfs() {
+        assertFinals x:false, '''
+            int x
+            if (foo) {
+              x=1
+            }
+            if (!foo) {
+              x=2
+            }
+        '''
+    }
+
+    void testShouldThrowCompileTimeErrorBecauseXIsNotInitialized() {
+        assertFinalCompilationErrors(['x'], '''
+            final x
+        ''', true)
+    }
+
+    void testShouldThrowCompileTimeErrorBecauseXIsNotEffectivelyFinalWithSubsequentIfs() {
+        assertFinalCompilationErrors(['x'], '''
+            final x
+            if (foo) {
+              x=1
+            }
+            if (!foo) {
+              x=2
+            }
+        ''', true)
     }
 
     @CompileStatic
