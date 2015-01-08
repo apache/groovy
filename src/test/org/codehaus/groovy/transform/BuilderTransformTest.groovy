@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ * Copyright 2008-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -457,12 +457,11 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
-    void testInitializerStrategyOnConstructor() {
+    void testInitializerStrategyOnConstructorAndMethods() {
         assertScript '''
             import groovy.transform.builder.*
             import groovy.transform.*
 
-            @ToString(excludes='other')
             @Builder(builderStrategy=InitializerStrategy)
             class Person {
                 String firstName
@@ -483,6 +482,12 @@ class BuilderTransformTest extends CompilableTestSupport {
                     lastName = nameParts[-1]
                     this.age = age
                 }
+
+                @Builder(builderStrategy=InitializerStrategy, builderClassName='StringInitializer', builderMethodName='stringInitializer')
+                static Person personStringFactory(String allBits) {
+                    String[] bits = allBits.split(',')
+                    new Person(bits[0], bits[1], bits[2].toInteger())
+                }
             }
 
             @CompileStatic
@@ -490,6 +495,7 @@ class BuilderTransformTest extends CompilableTestSupport {
                 assert new Person(Person.createInitializer().firstName('John').lastName('Smith').age(10)).toString() == 'Person(John, Smith, 10)'
                 assert new Person(Person.fullNameInitializer().fullName('John Smith').age(10)).toString() == 'Person(John, Smith, 10)'
                 assert new Person(Person.listInitializer().nameParts(['John', 'Smith']).age(10)).toString() == 'Person(John, Smith, 10)'
+                assert Person.personStringFactory(Person.stringInitializer().allBits("John,Smith,10")).toString() == 'Person(John, Smith, 10)'
             }
             test()
         '''

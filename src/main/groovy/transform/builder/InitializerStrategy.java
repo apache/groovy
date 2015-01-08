@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ * Copyright 2003-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -125,19 +126,15 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     public abstract static class UNSET {
     }
 
+    private static final int PUBLIC_STATIC = ACC_PUBLIC | ACC_STATIC;
     private static final Expression DEFAULT_INITIAL_VALUE = null;
 
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
-        if (!(annotatedNode instanceof ClassNode || annotatedNode instanceof MethodNode)) {
-            transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME + " processing: building for " +
-                    annotatedNode.getClass().getSimpleName() + " not supported by " + getClass().getSimpleName(), annotatedNode);
-            return;
-        }
         if (unsupportedAttribute(transform, anno, "forClass")) return;
         if (annotatedNode instanceof ClassNode) {
             createBuilderForAnnotatedClass(transform, (ClassNode) annotatedNode, anno);
-        } else if (annotatedNode instanceof ConstructorNode) {
-            createBuilderForAnnotatedConstructor(transform, (ConstructorNode) annotatedNode, anno);
+        } else if (annotatedNode instanceof MethodNode) {
+            createBuilderForAnnotatedMethod(transform, (MethodNode) annotatedNode, anno);
         }
     }
 
@@ -150,17 +147,35 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         ClassNode builder = createInnerHelperClass(buildee, getBuilderClassName(buildee, anno), filteredFields.size());
         addFields(buildee, filteredFields, builder);
 
-        buildMe(transform, buildee, anno, filteredFields, builder, true);
+        buildCommon(buildee, anno, filteredFields, builder);
+        createBuildeeConstructors(transform, buildee, builder, filteredFields, true);
     }
 
-    private void createBuilderForAnnotatedConstructor(BuilderASTTransformation transform, ConstructorNode annotatedConstructor, AnnotationNode anno) {
-        ClassNode buildee = annotatedConstructor.getDeclaringClass();
-        Parameter[] parameters = annotatedConstructor.getParameters();
-        annotatedConstructor.setModifiers(ACC_PRIVATE | ACC_SYNTHETIC);
+    private void createBuilderForAnnotatedMethod(BuilderASTTransformation transform, MethodNode mNode, AnnotationNode anno) {
+        if (transform.getMemberValue(anno, "includes") != null || transform.getMemberValue(anno, "includes") != null) {
+            transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
+                    " processing: includes/excludes only allowed on classes", anno);
+        }
+        if (mNode instanceof ConstructorNode) {
+            mNode.setModifiers(ACC_PRIVATE | ACC_SYNTHETIC);
+        } else {
+            if ((mNode.getModifiers() & ACC_STATIC) == 0) {
+                transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
+                        " processing: method builders only allowed on static methods", anno);
+            }
+            mNode.setModifiers(ACC_PRIVATE | ACC_SYNTHETIC | ACC_STATIC);
+        }
+        ClassNode buildee = mNode.getDeclaringClass();
+        Parameter[] parameters = mNode.getParameters();
         ClassNode builder = createInnerHelperClass(buildee, getBuilderClassName(buildee, anno), parameters.length);
         List<FieldNode> convertedFields = convertParamsToFields(builder, parameters);
 
-        buildMe(transform, buildee, anno, convertedFields, builder, false);
+        buildCommon(buildee, anno, convertedFields, builder);
+        if (mNode instanceof ConstructorNode) {
+            createBuildeeConstructors(transform, buildee, builder, convertedFields, false);
+        } else {
+            createBuildeeMethods(buildee, mNode, builder, convertedFields);
+        }
     }
 
     private String getBuilderClassName(ClassNode buildee, AnnotationNode anno) {
@@ -173,13 +188,13 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         }
     }
 
-    private void buildMe(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno, List<FieldNode> fieldNodes, ClassNode builder, boolean needsConstructor) {
+    private void buildCommon(ClassNode buildee, AnnotationNode anno, List<FieldNode> fieldNodes, ClassNode builder) {
         String prefix = getMemberStringValue(anno, "prefix", "");
         String buildMethodName = getMemberStringValue(anno, "buildMethodName", "create");
         createBuilderConstructors(builder, buildee, fieldNodes);
-        createBuildeeConstructors(transform, buildee, builder, fieldNodes, needsConstructor);
         buildee.getModule().addClass(builder);
-        buildee.addMethod(createBuilderMethod(anno, buildMethodName, builder, fieldNodes.size()));
+        String builderMethodName = getMemberStringValue(anno, "builderMethodName", "createInitializer");
+        buildee.addMethod(createBuilderMethod(buildMethodName, builder, fieldNodes.size(), builderMethodName));
         for (int i = 0; i < fieldNodes.size(); i++) {
             builder.addMethod(createBuilderMethodForField(builder, fieldNodes, prefix, i));
         }
@@ -200,8 +215,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private ClassNode createInnerHelperClass(ClassNode buildee, String builderClassName, int fieldsSize) {
         final String fullName = buildee.getName() + "$" + builderClassName;
-        final int visibility = ACC_PUBLIC | ACC_STATIC;
-        ClassNode builder = new InnerClassNode(buildee, fullName, visibility, ClassHelper.OBJECT_TYPE);
+        ClassNode builder = new InnerClassNode(buildee, fullName, PUBLIC_STATIC, OBJECT_TYPE);
         GenericsType[] gtypes = new GenericsType[fieldsSize];
         for (int i = 0; i < gtypes.length; i++) {
             gtypes[i] = makePlaceholder(i);
@@ -210,13 +224,11 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         return builder;
     }
 
-    private static MethodNode createBuilderMethod(AnnotationNode anno, String buildMethodName, ClassNode builder, int numFields) {
-        String builderMethodName = getMemberStringValue(anno, "builderMethodName", "createInitializer");
+    private static MethodNode createBuilderMethod(String buildMethodName, ClassNode builder, int numFields, String builderMethodName) {
         final BlockStatement body = new BlockStatement();
         body.addStatement(returnS(callX(builder, buildMethodName)));
-        final int visibility = ACC_PUBLIC | ACC_STATIC;
         ClassNode returnType = makeClassSafeWithGenerics(builder, unsetGenTypes(numFields));
-        return new MethodNode(builderMethodName, visibility, returnType, NO_PARAMS, NO_EXCEPTIONS, body);
+        return new MethodNode(builderMethodName, PUBLIC_STATIC, returnType, NO_PARAMS, NO_EXCEPTIONS, body);
     }
 
     private static GenericsType[] unsetGenTypes(int numFields) {
@@ -255,6 +267,25 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         }
     }
 
+    private static void createBuildeeMethods(ClassNode buildee, MethodNode mNode, ClassNode builder, List<FieldNode> fields) {
+        ClassNode paramType = makeClassSafeWithGenerics(builder, setGenTypes(fields.size()));
+        List<Expression> argsList = new ArrayList<Expression>();
+        Parameter initParam = param(paramType, "initializer");
+        for (FieldNode fieldNode : fields) {
+            argsList.add(propX(varX(initParam), fieldNode.getName()));
+        }
+        String newName = "$" + mNode.getName(); // can't have private and public methods of the same name, so rename original
+        buildee.addMethod(mNode.getName(), PUBLIC_STATIC, mNode.getReturnType(), params(param(paramType, "initializer")), NO_EXCEPTIONS,
+                block(stmt(callX(buildee, newName, args(argsList)))));
+        renameMethod(buildee, mNode, newName);
+    }
+
+    // no rename so delete and add
+    private static void renameMethod(ClassNode buildee, MethodNode mNode, String newName) {
+        buildee.addMethod(newName, mNode.getModifiers(), mNode.getReturnType(), mNode.getParameters(), mNode.getExceptions(), mNode.getCode());
+        buildee.removeMethod(mNode);
+    }
+
     private static Parameter[] getParams(List<FieldNode> fields, ClassNode cNode) {
         Parameter[] parameters = new Parameter[fields.size()];
         for (int i = 0; i < parameters.length; i++) {
@@ -279,7 +310,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private static MethodNode createBuildMethod(ClassNode builder, String buildMethodName, List<FieldNode> fields) {
         ClassNode returnType = makeClassSafeWithGenerics(builder, unsetGenTypes(fields.size()));
-        return new MethodNode(buildMethodName, ACC_PUBLIC | ACC_STATIC, returnType, NO_PARAMS, NO_EXCEPTIONS, block(returnS(ctorX(returnType))));
+        return new MethodNode(buildMethodName, PUBLIC_STATIC, returnType, NO_PARAMS, NO_EXCEPTIONS, block(returnS(ctorX(returnType))));
     }
 
     private MethodNode createBuilderMethodForField(ClassNode builder, List<FieldNode> fields, String prefix, int fieldPos) {
@@ -304,7 +335,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private GenericsType makePlaceholder(int i) {
         ClassNode type = ClassHelper.makeWithoutCaching("T" + i);
-        type.setRedirect(ClassHelper.OBJECT_TYPE);
+        type.setRedirect(OBJECT_TYPE);
         type.setGenericsPlaceHolder(true);
         return new GenericsType(type);
     }
