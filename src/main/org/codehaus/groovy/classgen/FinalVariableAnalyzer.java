@@ -118,11 +118,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     }
 
     public boolean isEffectivelyFinal(Variable v) {
-        if (v instanceof VariableExpression) {
-            v = ((VariableExpression) v).getAccessedVariable();
-        }
         VariableState state = getState().get(v);
-        return state == null || state.isFinal();
+        return (v instanceof Parameter && state == null)
+                || (state != null && state.isFinal());
     }
 
     @Override

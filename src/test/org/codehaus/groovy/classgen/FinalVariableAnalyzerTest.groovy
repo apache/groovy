@@ -18,6 +18,7 @@ package org.codehaus.groovy.classgen
 
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.InnerClassNode
 import org.codehaus.groovy.ast.Variable
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -249,7 +250,7 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
-    void testDelayedAssignedClosureSharedVariableShouldBeConsideredFinal() {
+    void testDelayedAssignedClosureSharedVariableShouldNotBeConsideredFinal() {
         assertFinals x:false, '''
             def x
             def cl = { x }
@@ -262,6 +263,32 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
             final x
 
             def cl = { x }
+            x=1
+        ''')
+    }
+
+
+    void testDirectlyAssignedAICSharedVariableShouldBeConsideredFinal() {
+        assertFinals x:true, '''
+            def x = 1
+            def cl = new Runnable() { void run() { x } }
+            cl.run()
+        '''
+    }
+
+    void testDelayedAssignedAICSharedVariableShouldNotBeConsideredFinal() {
+        assertFinals x:false, '''
+            def x
+            def cl = new Runnable() { void run() { x } }
+            cl.run()
+            x = 1
+        '''
+    }
+    void testShouldThrowCompilationErrorBecauseUsedInAIC() {
+        assertFinalCompilationErrors(['x'], '''
+            final x
+
+            def cl = new Runnable() { public void run() { x } }
             x=1
         ''')
     }
@@ -395,8 +422,8 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
     @CompileStatic
     private static class AssertionFinalVariableAnalyzer extends FinalVariableAnalyzer {
 
-        private final Set<Variable> variablesToCheck = []
-        private final Map<String,Boolean> assertionsToCheck
+        private Set<Variable> variablesToCheck
+        private Map<String,Boolean> assertionsToCheck
 
         AssertionFinalVariableAnalyzer(final SourceUnit sourceUnit, final Map<String,Boolean> assertions) {
             super(sourceUnit)
@@ -414,14 +441,20 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
 
         @Override
         void visitClass(final ClassNode node) {
+            def old = variablesToCheck
+            variablesToCheck = []
             super.visitClass(node)
-            checkAssertions()
+            if (!(node instanceof InnerClassNode)) {
+                checkAssertions()
+            }
+            variablesToCheck = old
         }
 
         private void checkAssertions() {
-            variablesToCheck.each { var ->
-                def expectedValue = assertionsToCheck[var.name]
-                assert isEffectivelyFinal(var) == expectedValue
+            assertionsToCheck.each { name, shouldBeFinal ->
+                def candidates = variablesToCheck.findAll { it.name == name }
+                assert candidates.any { isEffectivelyFinal(it) == shouldBeFinal }
+
             }
         }
     }
