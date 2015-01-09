@@ -74,8 +74,8 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
-    void testUnassignedVarShouldBeConsideredFinal() {
-        assertFinals x:true, '''def x'''
+    void testUnassignedVarShouldNotBeConsideredFinal() {
+        assertFinals x:false, '''def x'''
     }
 
     void testVariableReassignedInClosureShouldNotBeFinal() {
@@ -134,8 +134,8 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''')
     }
 
-    void testFinalVariableAssignedInIfBranchesShouldStillBeFinal() {
-        assertFinals x:true,'''
+    void testFinalVariableAssignedInIfBranchesShouldNotBeFinal() {
+        assertFinals x:false,'''
             int x
             if (t) {
                 x = 1
@@ -143,8 +143,8 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
-    void testFinalVariableAssignedInElseBranchesShouldStillBeFinal() {
-        assertFinals x:true,'''
+    void testFinalVariableAssignedInElseBranchesShouldStillNotBeFinal() {
+        assertFinals x:false,'''
             int x
             if (t) {
                 // nothing
@@ -316,7 +316,7 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''', true)
     }
 
-    void testShouldNotSayThatListIsNotInitialized() {
+    void testShouldNotSayThatVarIsNotInitialized() {
         assertScript '''
                 final List<String> list = ['a','b'].collect { it.toUpperCase() }
                 def result
@@ -328,6 +328,68 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
                 result
 
         '''
+        assertScript '''
+            private def setValueOfMethod() {
+                if (cache) {
+                    final int offset = 128;
+                }
+            }
+
+            1
+        '''
+    }
+
+    void testFinalVariableInitializedInTryCatchFinally() {
+        // x initialized in try block
+        assertFinals x:false, '''
+            int x
+            try {
+              x=1
+            } finally {
+
+            }
+        '''
+
+        // x initialized in catch block
+        assertFinals x:false, '''
+            int x
+            try {
+            } catch (e) {
+               x = 1
+            } finally {
+
+            }
+        '''
+
+        // x initialized in finally block
+        assertFinals x:true, '''
+            int x
+            try {
+            } catch(e) {
+            } finally {
+               x = 1
+            }
+        '''
+    }
+
+    void testVarInitializedInBothTryCatchAndFinallyBlocksShouldBeCompileTimeError() {
+        assertFinalCompilationErrors(['x'], '''
+            final x
+            try {
+                x = 1
+            } finally {
+                x = 2
+            }
+        ''')
+        assertFinalCompilationErrors(['x'], '''
+            final x
+            try {
+            } catch(e) {
+                x = 1
+            }finally {
+                x = 2
+            }
+        ''')
     }
 
     @CompileStatic

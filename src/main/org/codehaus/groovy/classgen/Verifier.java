@@ -207,7 +207,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     private void checkFinalVariables(ClassNode node) {
-        FinalVariableAnalyzer analyzer = new FinalVariableAnalyzer(null, new FinalVariableAnalyzer.VariableNotFinalCallback() {
+        FinalVariableAnalyzer analyzer = new FinalVariableAnalyzer(null, getFinalVariablesCallback());
+        analyzer.visitClass(node);
+
+    }
+
+    protected FinalVariableAnalyzer.VariableNotFinalCallback getFinalVariablesCallback() {
+        return new FinalVariableAnalyzer.VariableNotFinalCallback() {
             @Override
             public void variableNotFinal(Variable var, Expression bexp) {
                 if (var instanceof VariableExpression) {
@@ -225,9 +231,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             public void variableNotAlwaysInitialized(final VariableExpression var) {
                 throw new RuntimeParserException("The variable ["+var.getName()+"] may be uninitialized", var);
             }
-        });
-        analyzer.visitClass(node);
-
+        };
     }
 
     private void checkForDuplicateMethods(ClassNode cn) {
