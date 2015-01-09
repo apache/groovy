@@ -462,6 +462,7 @@ class BuilderTransformTest extends CompilableTestSupport {
             import groovy.transform.builder.*
             import groovy.transform.*
 
+            @ToString
             @Builder(builderStrategy=InitializerStrategy)
             class Person {
                 String firstName
