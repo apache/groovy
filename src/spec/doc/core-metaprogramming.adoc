@@ -1154,6 +1154,14 @@ from `@Canonical` will be re-used for `@Builder`. Here is an example using `@Bui
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_initializer_immutable,indent=0]
 ----
 
+This strategy also supports annotating static methods and constructors. In this case, the static method or constructor
+parameters become the properties to use for building purposes and in the case of static methods, the return type
+of the method becomes the target class being built. If you have more than one `@Builder` annotation used within
+a class (at either the class, method or constructor positions) then it is up to you to ensure that the generated
+helper classes and factory methods have unique names (i.e. no more than one can use the default name values).
+For an example of method and constructor usage but using the `DefaultStrategy` strategy, consult that strategy's
+documentation.
+
 The annotation attribute `forClass` is not supported for this strategy.
 
 ==== Class design annotations
