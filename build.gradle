@@ -147,16 +147,6 @@ dependencies {
     }
     compile files("${buildDir}/generated-classes")
 
-    compile "commons-cli:commons-cli:$commonsCliVersion"
-    compile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
-        exclude(group: 'xpp3', module: 'xpp3_min')
-        exclude(group: 'junit', module: 'junit')
-        exclude(group: 'jmock', module: 'jmock')
-    }
-    compile "org.fusesource.jansi:jansi:$jansiVersion"
-    compile("org.apache.ivy:ivy:$ivyVersion") {
-        transitive = false
-    }
     runtime("org.codehaus.gpars:gpars:$gparsVersion") {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
