@@ -55,7 +55,7 @@ To use the link:invokedynamic-support.html[InvokeDynamic] version of the jars ju
 
 === Snapshot Releases
 
-In addition to the stable and milestone releases you can find intermediate SNAPSHOT releases at the http://snapshots.repository.codehaus.org/org/codehaus/groovy[codehaus snapshot maven repository].
+For those who want to test the very latest versions of Groovy and live on the bleeding edge, you can use our https://oss.jfrog.org/oss-snapshot-local/org/codehaus/groovy[snapshot builds]. As soon as a build succeeds on our continuous integration server a snapshot is deployed to Artifactory's OSS snapshot repository.
 
 == GVM (the Groovy enVironment Manager)
 
