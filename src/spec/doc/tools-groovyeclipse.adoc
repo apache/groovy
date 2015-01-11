@@ -276,11 +276,11 @@ done so already). Select the _Groovy-Eclipse M2E integration_.
 [cols="25,75" options="header"]
 |=================================================================
 |Eclipse level |Release update site
-|4.4 |http://dist.springsource.org/release/GRECLIPSE/2.9.0/e4.4
-|4.3 |http://dist.springsource.org/release/GRECLIPSE/2.9.0/e4.3
-|4.3-j8 |http://dist.springsource.org/release/GRECLIPSE/2.9.0/e4.3-j8 (Includes the Java 8 Patch for Eclipse 4.3)
-|4.2 |http://dist.springsource.org/release/GRECLIPSE/2.9.0/e4.2
-|3.7 |http://dist.springsource.org/release/GRECLIPSE/2.9.0/e3.7 (untested, provided 'as is')
+|4.4 |http://dist.springsource.org/release/GRECLIPSE/e4.4
+|4.3 |http://dist.springsource.org/release/GRECLIPSE/e4.3
+|4.3-j8 |http://dist.springsource.org/release/GRECLIPSE/e4.3-j8 (Includes the Java 8 Patch for Eclipse 4.3)
+|4.2 |http://dist.springsource.org/release/GRECLIPSE/e4.2
+|3.7 |http://dist.springsource.org/release/GRECLIPSE/e3.7 (untested, provided 'as is')
 |=================================================================
 
 [[Groovy-EclipsecompilerpluginforMaven-DevelopmentBuilds]]
