@@ -1,6 +1,5 @@
 = The Groovy Eclipse Maven plugin
 
-
 Groovy-Eclipse provides a compiler plugin for Maven. Using the compiler
 plugin, it is possible to compile your maven projects using the
 Groovy-Eclipse compiler.
@@ -12,7 +11,7 @@ They are both available from maven central.
 [[Groovy-EclipsecompilerpluginforMaven-Howtousethecompilerplugin---SettingupthePOM]]
 == How to use the compiler plugin—Setting up the POM
 
-The plugin section, change the compiler used by the
+In the plugin section, change the compiler used by the
 http://maven.apache.org/plugins/maven-compiler-plugin/[maven-compiler-plugin].
 Like the http://ant.apache.org/manual/Tasks/javac.html[javac ant task],
 the maven-compiler-plugin does not actually compile, but rather
@@ -22,7 +21,7 @@ delegates the compilation to a different artifact (in our case, the
 [source,xml]
 --------------------------------------------------------------------------------------------------
 <build>
-...
+    ...
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -46,6 +45,7 @@ delegates the compilation to a different artifact (in our case, the
         </dependencies>
       </plugin>
     </plugins>
+    ...
 </build>
 --------------------------------------------------------------------------------------------------
 
@@ -231,7 +231,7 @@ appropriate for your project will depend on your requirements.
 
 http://projectlombok.org/[Project Lombok] is compatible with the
 groovy-eclipse-compiler.  There is some extra configuration that you
-need to do.  The lombok jar needs to be added to _both the build and
+need to do. The lombok jar needs to be added to _both the build and
 compile dependencies sections_:
 
 [source,xml]
@@ -239,7 +239,7 @@ compile dependencies sections_:
 <dependency>
   <groupId>org.projectlombok</groupId>
   <artifactId>lombok</artifactId>
-  <version>0.10.4</version>
+  <version>1.14.8</version>
 </dependency>
 --------------------------------------
 
@@ -301,5 +301,5 @@ sub-projects.
 [[Groovy-EclipsecompilerpluginforMaven-Wheretofindmoreinformationandaskquestions]]
 == Where to find more information and ask questions
 
-Please ask all questions on the Groovy-Eclipse mailing list. Any bugs or
-feature enhancements should go on Groovy-Eclipse’s jira.
+Please ask all questions on the http://groovy.codehaus.org/Mailing+Lists[Groovy-Eclipse mailing list]. Any bugs or
+feature enhancements should go to the https://jira.codehaus.org/browse/GRECLIPSE[Groovy-Eclipse’s jira].
