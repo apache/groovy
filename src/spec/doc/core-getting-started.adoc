@@ -18,7 +18,7 @@ If you plan on using invokedynamic support, link:invokedynamic-support.html[read
 
 === Snapshots
 
-For those who want to test the very latest versions of Groovy and live on the bleeding edge, you can use our http://snapshots.repository.codehaus.org/org/codehaus/groovy/groovy-all/[snapshot builds]. As soon as a build succeeds on our continuous integration server a snapshot is deployed to Codehaus' snapshot repository.
+For those who want to test the very latest versions of Groovy and live on the bleeding edge, you can use our https://oss.jfrog.org/oss-snapshot-local/org/codehaus/groovy[snapshot builds]. As soon as a build succeeds on our continuous integration server a snapshot is deployed to Artifactory's OSS snapshot repository.
 
 == Maven Repository
 
@@ -52,10 +52,6 @@ If you wish to embed Groovy in your application, you may just prefer to point to
 |===
 
 To use the link:invokedynamic-support.html[InvokeDynamic] version of the jars just append \':indy' for Gradle or <classifier>indy</classifier> for Maven.
-
-=== Snapshot Releases
-
-For those who want to test the very latest versions of Groovy and live on the bleeding edge, you can use our https://oss.jfrog.org/oss-snapshot-local/org/codehaus/groovy[snapshot builds]. As soon as a build succeeds on our continuous integration server a snapshot is deployed to Artifactory's OSS snapshot repository.
 
 == GVM (the Groovy enVironment Manager)
 
