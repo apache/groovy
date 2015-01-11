@@ -32,26 +32,26 @@ If you wish to embed Groovy in your application, you may just prefer to point to
 |Maven
 |Explanation
 
-|\'org.codehaus.groovy:groovy:{groovy-full-version}'
+|&#39;org.codehaus.groovy:groovy:{groovy-full-version}'
 |<groupId>org.codehaus.groovy</groupId>
 <artifactId>groovy</artifactId> 
 <version>{groovy-full-version}</version>
-|Just the core of groovy without the modules (see below). Treats Antlr, ASM, etc. as standard dependencies. Only useful if you happen to also use the same versions of these jars yourself as it will save you having two copies of these jars.
+|Just the core of groovy without the modules (see below).
 
-|\'org.codehaus.groovy:groovy-$module:{groovy-full-version}'
+|&#39;org.codehaus.groovy:groovy-$module:{groovy-full-version}'
 |<groupId>org.codehaus.groovy</groupId>
 <artifactId>groovy-$module</artifactId>
 <version>{groovy-full-version}</version>
 |"$module" stands for the different optional groovy modules "ant", "bsf", "console", "docgenerator", "groovydoc", "groovysh", "jmx", "json", "jsr223", "servlet", "sql", "swing", "test", "testng" and "xml". Example: <artifactId>groovy-sql</artifactId>
 
-|\'org.codehaus.groovy:groovy-all:{groovy-full-version}'
+|&#39;org.codehaus.groovy:groovy-all:{groovy-full-version}'
 |<groupId>org.codehaus.groovy</groupId>
 <artifactId>groovy-all</artifactId>
 <version>{groovy-full-version}</version>
-|The core plus all the modules. Also includes jar versions of Antlr, ASM, Commons-CLI and Retrotranslator runtime. Allows you or your other dependencies (e.g. Hibernate) to use other versions of these jars. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
+|The core plus all the modules. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
 |===
 
-To use the link:invokedynamic-support.html[InvokeDynamic] version of the jars just append \':indy' for Gradle or <classifier>indy</classifier> for Maven.
+To use the link:invokedynamic-support.html[InvokeDynamic] version of the jars just append &#39;:indy' for Gradle or <classifier>indy</classifier> for Maven.
 
 == GVM (the Groovy enVironment Manager)
 
