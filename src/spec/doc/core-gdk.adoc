@@ -1,6 +1,6 @@
-= Groovy Development Kit (Peter Ledbrook)
+= Groovy Development Kit (TBD)
 
-== Working with IO (Peter Ledbrook)
+== Working with IO (TBD)
 
 == Working with collections (TBD)
 
