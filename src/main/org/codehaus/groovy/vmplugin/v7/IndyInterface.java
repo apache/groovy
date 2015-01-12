@@ -214,4 +214,16 @@ public class IndyInterface {
             call = call.asType(MethodType.methodType(Object.class,Object[].class));
             return call.invokeExact(arguments);
         }
+
+        /**
+         * @since 2.5.0
+         */
+         public static CallSite staticArrayAccess(MethodHandles.Lookup lookup, String name, MethodType type) {
+            MethodHandle handle;
+            if (type.parameterCount()==2) {
+                return new ConstantCallSite(IndyArrayAccess.arrayGet(type));
+            } else {
+                return new ConstantCallSite(IndyArrayAccess.arraySet(type));
+            }
+         }
 }

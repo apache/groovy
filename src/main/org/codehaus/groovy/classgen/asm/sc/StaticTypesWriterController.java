@@ -23,6 +23,9 @@ import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Opcodes;
+
+import java.lang.reflect.Constructor;
 
 
 /**
@@ -33,6 +36,17 @@ import org.objectweb.asm.ClassVisitor;
  * @author Cedric Champeau
  */
 public class StaticTypesWriterController extends DelegatingController {
+
+    private final static Constructor indyBinHelper;
+    static {
+        Constructor ctor = null;
+        try {
+            ClassLoader cl = WriterController.class.getClassLoader();
+            Class clazz = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.sc.IndyStaticTypesMultiTypeDispatcher");
+            ctor = clazz.getConstructor(WriterController.class);
+        } catch (Exception any) {}
+        indyBinHelper = ctor;
+    }
 
     protected boolean isInStaticallyCheckedMethod;
     private StaticTypesCallSiteWriter callSiteWriter;
@@ -55,9 +69,20 @@ public class StaticTypesWriterController extends DelegatingController {
         this.statementWriter = new StaticTypesStatementWriter(this);
         this.typeChooser = new StaticTypesTypeChooser();
         this.invocationWriter = new StaticInvocationWriter(this);
-        this.binaryExprHelper = new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
         this.closureWriter = new StaticTypesClosureWriter(this);
         this.unaryExpressionHelper = new StaticTypesUnaryExpressionHelper(this);
+        boolean useIndy = getBytecodeVersion()>Opcodes.V1_6 && indyBinHelper!=null;
+
+        boolean binHelperSet = false;
+        if (useIndy) {
+            try {
+                this.binaryExprHelper = (BinaryExpressionMultiTypeDispatcher) indyBinHelper.newInstance(this);
+                binHelperSet = true;
+            } catch (Exception any) {}
+        }
+        if (!binHelperSet) {
+            this.binaryExprHelper = new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
+        }
     }
 
     @Override
