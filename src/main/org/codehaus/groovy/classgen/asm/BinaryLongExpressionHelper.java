@@ -27,8 +27,15 @@ import org.objectweb.asm.MethodVisitor;
  */
 public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
 
+    /**
+     * @since 2.5.0
+     */
+    public BinaryLongExpressionHelper(WriterController controller, MethodCaller arraySet, MethodCaller arrayGet) {
+        super(controller, arraySet, arrayGet);
+    }
+
     public BinaryLongExpressionHelper(WriterController controller) {
-        super(controller);
+        this(controller, longArraySet, longArrayGet);
     }
 
     protected void doubleTwoOperands(MethodVisitor mv) {
@@ -58,14 +65,6 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         longArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "lArrayGet"),
         longArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "lArraySet");
 
-    protected MethodCaller getArrayGetCaller() {
-        return longArrayGet;
-    }
-
-    protected MethodCaller getArraySetCaller() {
-        return longArraySet;
-    }
-    
     private static final int[] bitOp = {
         LOR,            //  BITWISE_OR / PIPE   340
         LAND,           //  BITWISE_AND         341

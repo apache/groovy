@@ -24,13 +24,26 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 /**
+ * Base class for writing primitive typed operations
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public abstract class BinaryExpressionWriter {
     
     private WriterController controller;
-    public BinaryExpressionWriter(WriterController controller) {
+    private MethodCaller arraySet, arrayGet;
+
+    public BinaryExpressionWriter(WriterController controller, MethodCaller arraySet, MethodCaller arrayGet) {
         this.controller = controller;
+        this.arraySet = arraySet;
+        this.arrayGet = arrayGet;
+    }
+
+    /**
+     * return writer controller
+     * @since 2.5.0
+     */
+    public WriterController getController() {
+        return controller;
     }
     
     protected static final int[] stdCompareCodes = {
@@ -45,10 +58,9 @@ public abstract class BinaryExpressionWriter {
     };
     
     protected abstract int getCompareCode();
-    
+
     /**
-     * writes some int standard operations. type is one of IADD, ISUB, IMUL,
-     * IDIV or IREM
+     * writes some int standard operations for compares
      * @param type the token type
      * @return true if a successful std operator write
      */
@@ -66,7 +78,7 @@ public abstract class BinaryExpressionWriter {
             Label l1 = new Label();
             mv.visitJumpInsn(bytecode,l1);
             mv.visitInsn(ICONST_1);
-            Label l2 = new Label();;
+            Label l2 = new Label();
             mv.visitJumpInsn(GOTO, l2);
             mv.visitLabel(l1);
             mv.visitInsn(ICONST_0);
@@ -148,7 +160,7 @@ public abstract class BinaryExpressionWriter {
             // no jump, so -1, need to pop off surplus LL
             removeTwoOperands(mv);
             mv.visitInsn(ICONST_M1);
-            Label l2 = new Label();;
+            Label l2 = new Label();
             mv.visitJumpInsn(GOTO, l2);
             
             mv.visitLabel(l1);
@@ -201,7 +213,7 @@ public abstract class BinaryExpressionWriter {
     
     /**
      * writes some the bitwise operations. type is one of BITWISE_OR, 
-     * BITWISE_AND, BIWISE_XOR
+     * BITWISE_AND, BITWISE_XOR
      * @param type the token type
      * @return true if a successful bitwise operation write
      */
@@ -246,13 +258,22 @@ public abstract class BinaryExpressionWriter {
                 writeShiftOp(operation, simulate);
     }
     
-    protected abstract MethodCaller getArrayGetCaller();
+    protected MethodCaller getArrayGetCaller() {
+        return arrayGet;
+    }
 
     protected ClassNode getArrayGetResultType(){
         return getNormalOpResultType();
     }
     
-    protected abstract MethodCaller getArraySetCaller();
+    protected MethodCaller getArraySetCaller() {
+        return arraySet;
+    }
+
+    public void setArraySetAndGet(MethodCaller arraySet, MethodCaller arrayGet) {
+        this.arraySet = arraySet;
+        this.arrayGet = arrayGet;
+    }
     
     public boolean arrayGet(int operation, boolean simulate) {
         if (operation!=LEFT_SQUARE_BRACKET) return false;

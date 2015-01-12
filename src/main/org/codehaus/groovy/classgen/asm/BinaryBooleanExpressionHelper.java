@@ -27,23 +27,13 @@ import org.objectweb.asm.MethodVisitor;
 public class BinaryBooleanExpressionHelper extends BinaryIntExpressionHelper {
 
     public BinaryBooleanExpressionHelper(WriterController wc) {
-        super(wc);
+        super(wc, boolArraySet, boolArrayGet);
     }
     
     private static final MethodCaller 
         boolArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "zArrayGet"),
         boolArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "zArraySet");
 
-    @Override
-    protected MethodCaller getArrayGetCaller() {
-        return boolArrayGet;
-    }
-    
-    @Override
-    protected MethodCaller getArraySetCaller() {
-        return boolArraySet;
-    }
-    
     @Override
     protected ClassNode getArrayGetResultType() {
         return ClassHelper.boolean_TYPE;
