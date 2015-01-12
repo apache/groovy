@@ -45,6 +45,7 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.*;
  * It is able to generate optimized bytecode for some operations using JVM instructions when available.
  *
  * @author Cedric Champeau
+ * @author Jochen Theodorou
  */
 public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpressionMultiTypeDispatcher implements Opcodes {
 
@@ -65,85 +66,9 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         return 0;
     }
 
- /*   @Override
-    public void evaluatePrefixMethod(final PrefixExpression expression) {
-        final Expression src = expression.getExpression();
-        ListOfExpressionsExpression list = new ListOfExpressionsExpression();
-        list.addExpression(new BinaryExpression(
-                src,
-                Token.newSymbol(Types.EQUAL, -1, -1),
-                new BinaryExpression(
-                        src,
-                        Token.newSymbol(Types.MINUS, -1, -1),
-                        new ConstantExpression(1)
-                )
-        ));
-        list.addExpression(src);
-        list.setSourcePosition(expression);
-        list.visit(getController().getAcg());
-        if (true) return;
-        if (src instanceof VariableExpression) {
-            final WriterController controller = getController();
-            final ClassNode type = controller.getTypeChooser().resolveType(src, controller.getClassNode());
-            if (ClassHelper.isPrimitiveType(type) && ClassHelper.isNumberType(type)) {
-                BytecodeExpression bytecode = new BytecodeExpression() {
-                    @Override
-                    public void visit(final MethodVisitor mv) {
-                        BytecodeVariable variable = controller.getCompileStack().getVariable(((VariableExpression) src).getName(), true);
-                        if (WideningCategories.isIntCategory(type)) {
-                            mv.visitIincInsn(variable.getIndex(), incValue(expression.getOperation()));
-                            mv.visitIntInsn(ILOAD, variable.getIndex());
-                        } else if (WideningCategories.isLongCategory(type)) {
-                            mv.visitIntInsn(LLOAD, variable.getIndex());
-                            mv.visitInsn(LCONST_1);
-                            mv.visitInsn(incValue(expression.getOperation())<0?LSUB:LADD);
-                            mv.visitVarInsn(LSTORE, variable.getIndex());
-                            mv.visitVarInsn(LLOAD, variable.getIndex());
-                        }
-                    }
-                };
-                bytecode.setType(type);
-                bytecode.visit(controller.getAcg());
-                return;
-            }
-        }
-        super.evaluatePrefixMethod(expression);
-    }
-
-    @Override
-    public void evaluatePostfixMethod(final PostfixExpression expression) {
-        final Expression src = expression.getExpression();
-        if (src instanceof VariableExpression) {
-            final WriterController controller = getController();
-            final ClassNode type = controller.getTypeChooser().resolveType(src, controller.getClassNode());
-            if (ClassHelper.isPrimitiveType(type) && ClassHelper.isNumberType(type)) {
-                BytecodeExpression bytecode = new BytecodeExpression() {
-                    @Override
-                    public void visit(final MethodVisitor mv) {
-                        BytecodeVariable variable = controller.getCompileStack().getVariable(((VariableExpression) src).getName(), true);
-                        if (WideningCategories.isIntCategory(type)) {
-                            mv.visitIntInsn(ILOAD, variable.getIndex());
-                            mv.visitIincInsn(variable.getIndex(), incValue(expression.getOperation()));
-                        } else if (WideningCategories.isLongCategory(type)) {
-                            mv.visitIntInsn(LLOAD, variable.getIndex());
-                            mv.visitInsn(DUP2);
-                            mv.visitInsn(LCONST_1);
-                            mv.visitInsn(incValue(expression.getOperation())<0?LSUB:LADD);
-                            mv.visitVarInsn(LSTORE, variable.getIndex());
-                        }
-                    }
-                };
-                bytecode.setType(type);
-                bytecode.visit(controller.getAcg());
-                return;
-            }
-        }
-        super.evaluatePostfixMethod(expression);
-    }
-*/
     @Override
     protected void writePostOrPrefixMethod(int op, String method, Expression expression, Expression orig) {
-        MethodNode mn = (MethodNode) orig.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        MethodNode mn = orig.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         WriterController controller = getController();
         OperandStack operandStack = controller.getOperandStack();
         if (mn!=null) {
@@ -383,27 +308,12 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         AsmClassGenerator acg = getController().getAcg();
 
         if (bew.arraySet(true) && arrayType.isArray()) {
-            OperandStack operandStack   =   getController().getOperandStack();
-
-            // load the array
-            receiver.visit(acg);
-            operandStack.doGroovyCast(arrayType);
-
-            // load index
-            index.visit(acg);
-            operandStack.doGroovyCast(int_TYPE);
-
-            // load rhs
-            rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(arrayComponentType);
-
-            // store value in array
-            bew.arraySet(false);
-
-            // load return value && correct operand stack stack
-            operandStack.remove(3);
-            rhsValueLoader.visit(acg);
+            super.assignToArray(parent, receiver, index, rhsValueLoader);
         } else {
+            /******
+            / This code path is needed because ACG creates array access expressions
+            *******/
+
             WriterController controller = getController();
             StaticTypeCheckingVisitor visitor = new StaticCompilationVisitor(controller.getSourceUnit(), controller.getClassNode());
             // let's replace this assignment to a subscript operator with a
