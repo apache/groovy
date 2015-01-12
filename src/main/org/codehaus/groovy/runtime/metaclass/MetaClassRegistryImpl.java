@@ -118,7 +118,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         final MetaClass emcMetaClass = metaClassCreationHandle.create(ExpandoMetaClass.class, this);
         emcMetaClass.initialize();
         ClassInfo.getClassInfo(ExpandoMetaClass.class).setStrongMetaClass(emcMetaClass);
-        
+
 
         addNonRemovableMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener(){
             public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
@@ -316,7 +316,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         return useAccessible;
     }
 
-    // the following is experimental code, not intended for stable use yet
     private volatile MetaClassCreationHandle metaClassCreationHandle = new MetaClassCreationHandle();
     
     /**
@@ -397,10 +396,11 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      */
     public MetaClassRegistryChangeEventListener[] getMetaClassRegistryChangeEventListeners() {
         synchronized (changeListenerList) {
-            ArrayList<MetaClassRegistryChangeEventListener> ret = new ArrayList(changeListenerList.size()+nonRemoveableChangeListenerList.size());
+            ArrayList<MetaClassRegistryChangeEventListener> ret =
+                    new ArrayList<MetaClassRegistryChangeEventListener>(changeListenerList.size()+nonRemoveableChangeListenerList.size());
             ret.addAll(nonRemoveableChangeListenerList);
             ret.addAll(changeListenerList);
-            return (MetaClassRegistryChangeEventListener[]) ret.toArray(new MetaClassRegistryChangeEventListener[ret.size()]);
+            return ret.toArray(new MetaClassRegistryChangeEventListener[ret.size()]);
         }
     }
     
