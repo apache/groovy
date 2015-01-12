@@ -475,7 +475,22 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=fixed_as_usage,inde
 
 == Optionality (TBD)
 
-=== Optional parentheses (TBD)
+=== Optional parentheses
+
+Method calls can omit the parentheses if there is at least one parameter and there is no ambiguity:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=optional_parentheses,indent=0]
+----
+
+Parentheses are required for method calls without parameters or ambiguous method calls: 
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=required_parentheses,indent=0]
+----
+
 === Optional semicolons (TBD)
 === Optional return keyword (TBD)
 === Optional public keyword (TBD)
