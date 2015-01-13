@@ -67,26 +67,26 @@ public class IndyStaticTypesMultiTypeDispatcher extends StaticTypesBinaryExpress
         bewArray[1].setArraySetAndGet(  new GenericArrayAccess("set","([III)V"),
                                         new GenericArrayAccess("get","([II)I"));
         /* 2: long   */
-        bewArray[2].setArraySetAndGet(  new GenericArrayAccess("set","([LLL)V"),
-                                        new GenericArrayAccess("get","([LL)L"));
+        bewArray[2].setArraySetAndGet(  new GenericArrayAccess("set","([JIJ)V"),
+                                        new GenericArrayAccess("get","([JI)J"));
         /* 3: double */
-        bewArray[3].setArraySetAndGet(  new GenericArrayAccess("set","([DDD)V"),
-                                        new GenericArrayAccess("get","([DD)D"));
+        bewArray[3].setArraySetAndGet(  new GenericArrayAccess("set","([DID)V"),
+                                        new GenericArrayAccess("get","([DI)D"));
         /* 4: char   */
-        bewArray[4].setArraySetAndGet(  new GenericArrayAccess("set","([CCC)V"),
-                                        new GenericArrayAccess("get","([CC)C"));
+        bewArray[4].setArraySetAndGet(  new GenericArrayAccess("set","([CIC)V"),
+                                        new GenericArrayAccess("get","([CI)C"));
         /* 5: byte   */
-        bewArray[5].setArraySetAndGet(  new GenericArrayAccess("set","([BBB)V"),
-                                        new GenericArrayAccess("get","([BB)B"));
+        bewArray[5].setArraySetAndGet(  new GenericArrayAccess("set","([BIB)V"),
+                                        new GenericArrayAccess("get","([BI)B"));
         /* 6: short  */
-        bewArray[6].setArraySetAndGet(  new GenericArrayAccess("set","([SSS)V"),
-                                        new GenericArrayAccess("get","([SS)S"));
+        bewArray[6].setArraySetAndGet(  new GenericArrayAccess("set","([SIS)V"),
+                                        new GenericArrayAccess("get","([SI)S"));
         /* 7: float  */
-        bewArray[7].setArraySetAndGet(  new GenericArrayAccess("get","([FFF)V"),
-                                        new GenericArrayAccess("set","([FF)F"));
+        bewArray[7].setArraySetAndGet(  new GenericArrayAccess("get","([FIF)V"),
+                                        new GenericArrayAccess("set","([FI)F"));
         /* 8: bool   */
-        bewArray[8].setArraySetAndGet(  new GenericArrayAccess("get","([ZZZ)V"),
-                                        new GenericArrayAccess("set","([ZZ)Z"));
+        bewArray[8].setArraySetAndGet(  new GenericArrayAccess("get","([ZIZ)V"),
+                                        new GenericArrayAccess("set","([ZI)Z"));
         return bewArray;
     }
 }

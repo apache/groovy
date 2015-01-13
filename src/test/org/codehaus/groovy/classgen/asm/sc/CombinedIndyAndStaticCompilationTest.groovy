@@ -48,7 +48,7 @@ class CombinedIndyAndStaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testNegativeAccess() {
-        ["byte", "short", "int", "long", "float", "double", "boolean", "char"].each { type ->
+        ["byte", "short", "int", "long", "float", "double", "char"].each { type ->
             assertScript """
                 @groovy.transform.CompileStatic
                 def foo() {
@@ -62,7 +62,25 @@ class CombinedIndyAndStaticCompilationTest extends AbstractBytecodeTestCase {
                     assert array[0] == 9
                     array[-1] = 8
                     assert array[2] == 8
+                }
+                foo()
             """
         }
+        assertScript """
+                @groovy.transform.CompileStatic
+                def foo() {
+                    boolean[] array = [false, false, true]
+                    assert array[0] == false
+                    assert array[1] == false
+                    assert array[2] == true
+                    assert array[-1] == true
+                    assert array[-2] == false
+                    array[0] = true
+                    assert array[0] == true
+                    array[-1] = false
+                    assert array[2] == false
+                }
+                foo()
+            """
     }
 }
