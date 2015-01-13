@@ -52,15 +52,15 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      */
     public static final String MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
 
-    private boolean useAccessible;
+    private final boolean useAccessible;
 
-    private FastArray instanceMethods = new FastArray();
-    private FastArray staticMethods = new FastArray();
+    private final FastArray instanceMethods = new FastArray();
+    private final FastArray staticMethods = new FastArray();
 
-    private LinkedList<MetaClassRegistryChangeEventListener> changeListenerList = new LinkedList();
-    private LinkedList<MetaClassRegistryChangeEventListener> nonRemoveableChangeListenerList = new LinkedList();
-    private ManagedLinkedList metaClassInfo = new ManagedLinkedList<MetaClass>(ReferenceBundle.getWeakBundle());
-    private ExtensionModuleRegistry moduleRegistry = new ExtensionModuleRegistry();
+    private final LinkedList<MetaClassRegistryChangeEventListener> changeListenerList = new LinkedList<MetaClassRegistryChangeEventListener>();
+    private final LinkedList<MetaClassRegistryChangeEventListener> nonRemoveableChangeListenerList = new LinkedList<MetaClassRegistryChangeEventListener>();
+    private final ManagedLinkedList metaClassInfo = new ManagedLinkedList<MetaClass>(ReferenceBundle.getWeakBundle());
+    private final ExtensionModuleRegistry moduleRegistry = new ExtensionModuleRegistry();
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;

@@ -1,6 +1,7 @@
 target
 build
 out
+*.DS_Store
 *~
 .gradle
 *.iml

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ * Copyright 2008-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -451,10 +451,54 @@ class BuilderTransformTest extends CompilableTestSupport {
 
             @CompileStatic
             def firstLastAge() {
-                assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)\'
+                assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)'
             }
             firstLastAge()
         '''
     }
 
+    void testInitializerStrategyOnConstructorAndMethods() {
+        assertScript '''
+            import groovy.transform.builder.*
+            import groovy.transform.*
+
+            @ToString
+            @Builder(builderStrategy=InitializerStrategy)
+            class Person {
+                String firstName
+                String lastName
+                int age
+
+                @Builder(builderStrategy=InitializerStrategy, builderClassName='FullNameInitializer', builderMethodName='fullNameInitializer')
+                Person(String fullName, int age) {
+                    String[] splitFullName = fullName.split(' ')
+                    firstName = splitFullName?.first()
+                    lastName = splitFullName?.last()
+                    this.age = age
+                }
+
+                @Builder(builderStrategy=InitializerStrategy, builderClassName='NameListInitializer', builderMethodName='listInitializer')
+                Person(List<String> nameParts, Integer age) {
+                    firstName = nameParts[0]
+                    lastName = nameParts[-1]
+                    this.age = age
+                }
+
+                @Builder(builderStrategy=InitializerStrategy, builderClassName='StringInitializer', builderMethodName='stringInitializer')
+                static Person personStringFactory(String allBits) {
+                    String[] bits = allBits.split(',')
+                    new Person(bits[0], bits[1], bits[2].toInteger())
+                }
+            }
+
+            @CompileStatic
+            def test() {
+                assert new Person(Person.createInitializer().firstName('John').lastName('Smith').age(10)).toString() == 'Person(John, Smith, 10)'
+                assert new Person(Person.fullNameInitializer().fullName('John Smith').age(10)).toString() == 'Person(John, Smith, 10)'
+                assert new Person(Person.listInitializer().nameParts(['John', 'Smith']).age(10)).toString() == 'Person(John, Smith, 10)'
+                assert Person.personStringFactory(Person.stringInitializer().allBits("John,Smith,10")).toString() == 'Person(John, Smith, 10)'
+            }
+            test()
+        '''
+    }
 }

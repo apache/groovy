@@ -94,4 +94,15 @@ class Groovy7222OptimizationsTest extends StaticTypeCheckingTestCase implements 
             assert !bytecode.contains('java/math/BigDecimal')
         }
     }
+
+    void testShouldNotThrowNPE() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void foo() {
+              Double d = null
+            }
+
+            foo()
+        '''
+    }
 }

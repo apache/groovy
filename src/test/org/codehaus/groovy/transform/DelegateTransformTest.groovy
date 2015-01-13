@@ -597,6 +597,40 @@ def foo = new Foo()
 assert foo.dm.x == '123'
 '''
     }
+
+    // GROOVY-7118
+    void testDelegateOfMethodHavingPlaceholder() {
+        assertScript """
+            interface FooInt {
+              public <T extends Throwable> T get(Class<T> clazz) throws Exception
+            }
+
+            class Foo implements FooInt {
+              public <T extends Throwable> T get(Class<T> clazz) throws Exception {
+                clazz.newInstance()
+              }
+            }
+
+            class FooMain {
+                @Delegate Foo foo = new Foo()
+            }
+
+            @groovy.transform.CompileStatic
+            class FooMain2 {
+                @Delegate Foo foo = new Foo()
+            }
+
+            assert new FooMain().get(Exception).class == Exception
+            assert new FooMain2().get(Exception).class == Exception
+
+            import org.codehaus.groovy.transform.Bar
+            class BarMain {
+                @Delegate Bar bar = new Bar()
+            }
+            assert new BarMain().get(Exception).class == Exception
+        """
+    }
+
 }
 
 interface DelegateFoo {
@@ -650,6 +684,16 @@ interface SomeOtherInterface4619 extends SomeInterface4619 {}
 class SomeClass4619 {
     @Delegate
     SomeOtherInterface4619 delegate
+}
+
+interface BarInt {
+    public <T extends Throwable> T get(Class<T> clazz) throws Exception
+}
+
+class Bar implements BarInt {
+    public <T extends Throwable> T get(Class<T> clazz) throws Exception {
+        clazz.newInstance()
+    }
 }
 
 // DO NOT MOVE INSIDE THE TEST SCRIPT OR IT WILL NOT TEST

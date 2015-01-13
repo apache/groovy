@@ -91,7 +91,46 @@ include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_i
 -----------------------------------------------------
 
 
-== Operator overloading (TBD)
+== Operator overloading
+
+Various operators in Groovy are mapped onto regular method calls on objects.
+
+This allows you to provide your own Java or Groovy objects which can take advantage of operator overloading. The following table describes the operators supported in Groovy and the methods they map to.
+
+[options="header"]
+|======================
+|Operator | Method 
+| `a + b` | a.plus(b)
+| `a - b` | a.minus(b)
+| `a * b` | a.multiply(b)
+| `a ** b` | a.power(b)
+| `a / b` | a.div(b)
+| `a % b` | a.mod(b)
+| `a \| b` | a.or(b)
+| `a & b` | a.and(b)
+| `a ^ b` | a.xor(b)
+| `pass:[a++]` or `pass:[++a]` | a.next()
+| `a--` or `--a` | a.previous()
+| `a[b]` | a.getAt(b)
+| `a[b] = c` | a.putAt(b, c)
+| `a << b` | a.leftShift(b)
+| `a >> b` | a.rightShift(b)
+| `a >>> b` | a.rightShiftUnsigned(b)
+| `switch(a) { case(b) : }` | b.isCase(a)
+| `if(a)` | a.asBoolean()
+| `~a` | a.bitwiseNegate()
+| `-a` | a.negative()
+| `+a` | a.positive()
+| `a as b` | a.asType(b)
+| `a == b` | a.equals(b)
+| `a != b` | ! a.equals(b)
+| `a pass:[<=>] b` | a.compareTo(b)
+| `a > b` | a.compareTo(b) > 0
+| `a >= b` | a.compareTo(b) >= 0
+| `a < b` | a.compareTo(b) < 0
+| `a \<= b` | a.compareTo(b) \<= 0
+|======================
+
 == Script base classes (TBD)
 == Adding properties to numbers (TBD)
 [[section-delegatesto]]

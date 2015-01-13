@@ -11,7 +11,7 @@ run simple experiments.
 
 * No need for `go` command to execute buffer.
 * Rich cross-platform edit-line editing, history and completion thanks
-to http://jline.sf.net[JLine].
+to https://github.com/jline/jline2[JLine2].
 * ANSI colors (prompt, exception traces, etc).
 * Simple, yet robust, command system with online help, user alias
 support and more.
@@ -31,37 +31,16 @@ usage: groovysh [options] [...]
   -D, --define=NAME=VALUE    Define a system property
   -T, --terminal=TYPE        Specify the terminal TYPE to use
   -V, --version              Display the version
+  -classpath                 Specify where to find the class files - must
+                             be first argument
+  -cp, --classpath           Aliases for '-classpath'
   -d, --debug                Enable debug output
+  -e, --evaluate=arg         Evaluate option fist when starting
+                             interactive session
   -h, --help                 Display this help message
   -q, --quiet                Suppress superfluous output
   -v, --verbose              Enable verbose output
 -----------------------------------------------------------------
-
-In addition to options, commands or expressions can be given on the
-command-line which will invoke the shell in non-interactive mode. The
-commands or expressions will be evaluated and the shell will exit. If no
-additional arguments are given the shell will startup interactively.
-
-[[GroovyShell-ExecuteaCommand]]
-==== Execute a Command
-
----------------------------------
-./bin/groovysh 'show preferences'
-No preferences are set
----------------------------------
-
-[[GroovyShell-EvaluateanExpression]]
-==== Evaluate an Expression
-
---------------------------------------------------------------------------------------------
-./bin/groovysh 'System.properties.each { k, v -> println("$k = $v") }'
-java.runtime.name = Java(TM) 2 Runtime Environment, Standard Edition
-sun.boot.library.path = /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Libraries
-java.vm.version = 1.5.0_07-87
-awt.nativeDoubleBuffering = true
-gopherProxySet = false
-...
---------------------------------------------------------------------------------------------
 
 [[GroovyShell-EvaluatingExpressions]]
 === Evaluating Expressions
@@ -111,8 +90,7 @@ foo.bar()
 [[GroovyShell-Variables]]
 ==== Variables
 
-Shell variables are *all* untyped (ie. no `def` or other type
-information).
+Shell variables are *all* untyped (ie. no `def` or other type information).
 
 This *will* set a shell variable:
 
@@ -121,8 +99,7 @@ This *will* set a shell variable:
 foo = "bar"
 -----------
 
-But, this will evaluate a local variable and will *not* be saved to the
-shell’s environment:
+But, this will evaluate a local variable and will *not* be saved to the shell’s environment:
 
 [source,groovy]
 ---------------
@@ -170,42 +147,41 @@ may also create their own aliases.
 [[GroovyShell-help]]
 ===== `help`
 
-Display the list of commands (and aliases) or the help text for specific
-command.
+Display the list of commands (and aliases) or the help text for specific command.
 
 [[GroovyShell-TheCommandList]]
 The Command List
 
 ----------------------------------------------------------------------------------
-groovy:000> help
+groovy:000> :help
 
 For information about Groovy, visit:
     http://groovy.codehaus.org
 
 Available commands:
-  help      (\h ) Display this help message
-  ?         (\? ) Alias to: help
-  exit      (\x ) Exit the shell
-  quit      (\q ) Alias to: exit
-  import    (\i ) Import a class into the namespace
-  display   (\d ) Display the current buffer
-  clear     (\c ) Clear the buffer and reset the prompt counter.
-  show      (\S ) Show variables, classes or imports
-  inspect   (\n ) Inspect a variable or the last result with the GUI object browser
-  purge     (\p ) Purge variables, classes, imports or preferences
-  edit      (\e ) Edit the current buffer
-  load      (\l ) Load a file or URL into the buffer
-  .         (\. ) Alias to: load
-  save      (\s ) Save the current buffer to a file
-  record    (\r ) Record the current session to a file
-  history   (\H ) Display, manage and recall edit-line history
-  alias     (\a ) Create an alias
-  set       (\= ) Set (or list) preferences
-  register  (\rc) Registers a new command with the shell
-  doc       (\D ) Opens a browser window displaying the doc for the argument
+  :help      (:h ) Display this help message
+  ?          (:? ) Alias to: :help
+  :exit      (:x ) Exit the shell
+  :quit      (:q ) Alias to: :exit
+  import     (:i ) Import a class into the namespace
+  :display   (:d ) Display the current buffer
+  :clear     (:c ) Clear the buffer and reset the prompt counter.
+  :show      (:S ) Show variables, classes or imports
+  :inspect   (:n ) Inspect a variable or the last result with the GUI object browser
+  :purge     (:p ) Purge variables, classes, imports or preferences
+  :edit      (:e ) Edit the current buffer
+  :load      (:l ) Load a file or URL into the buffer
+  .          (:. ) Alias to: :load
+  :save      (:s ) Save the current buffer to a file
+  :record    (:r ) Record the current session to a file
+  :history   (:H ) Display, manage and recall edit-line history
+  :alias     (:a ) Create an alias
+  :set       (:= ) Set (or list) preferences
+  :register  (:rc) Registers a new command with the shell
+  :doc       (:D ) Opens a browser window displaying the doc for the argument
 
 For help on a specific command type:
-    help <command>
+    :help <command>
 ----------------------------------------------------------------------------------
 
 [[GroovyShell-HelpforaCommand]]
@@ -216,9 +192,9 @@ get more details about its syntax or function. Here is an example of
 what happens when you ask for help for the `help` command:
 
 ------------------------------------------------------------
-groovy:000> help help
+groovy:000> :help :help
 
-usage: help [<command>]
+usage: :help [<command>]
 
 Display the list of commands or the help text for <command>.
 ------------------------------------------------------------
@@ -274,7 +250,7 @@ Show variables, classes or preferences or imports.
 `show variables`
 
 --------------------------
-groovy:000> show variables
+groovy:000> :show variables
 Variables:
   _ = true
 --------------------------
@@ -377,7 +353,9 @@ Create an alias.
 Opens a browser with documentation for the provided class. For example:
 
 ----
-doc java.net.URL
+groovy:000> :doc java.util.List
+http://docs.oracle.com/javase/1.7.0/docs/api/java/util/List.html
+http://groovy.codehaus.org/groovy-jdk/java/util/List.html
 ----
 
 will open two windows (or tabs, depending on your browser):
@@ -444,7 +422,7 @@ set editor /Applications/TextEdit.app/Contents/MacOS/TextEdit
 ==== Setting a Preference
 
 -------------------
-set verbosity DEBUG
+groovy:000> :set verbosity DEBUG
 -------------------
 
 [[GroovyShell-ListingPreferences]]
@@ -453,7 +431,7 @@ set verbosity DEBUG
 To list the current _set_ preferences (and their values):
 
 ----------------
-show preferences
+groovy:000> :show preferences
 ----------------
 
 LimitationAt the moment, there is no way to list all of the
@@ -463,7 +441,7 @@ known/available preferences to be set.
 ==== Clearing Preferences (ie. Resetting to Defaults)
 
 -----------------
-purge preferences
+groovy:000> :purge preferences
 -----------------
 
 [[GroovyShell-UserProfileScriptsandState]]
@@ -498,7 +476,7 @@ The `register` command allows you to register custom commands in the shell. For 
 will register the `Stats` command:
 
 ----
-register Stats
+groovy:000> :register Stats
 ----
 
 where the `Stats` class is a class extending the `org.codehaus.groovy.tools.shell.CommandSupport` class. For example:
@@ -523,27 +501,13 @@ class Stats extends CommandSupport {
 Then the command can be called using:
 
 ----
-groovy:000> stats
+groovy:000> :stats
 stats
 Free memory: 139474880
 groovy:000>
 ----
 
 Note that the command class must be found on classpath: you cannot define a new command from within the shell.
-
-[[GroovyShell-ScreenShots]]
-=== Screen Shots
-
-These shots have been taken over the development of the new shell, so
-some of the content might look slightly different. Also, note the yellow
-colors here are the shell’s _bold_ color, so the colors might look
-different depending on how the enclosing shell has its colors setup.
-
-image:assets/img/groovysh3.jpg[image,title="groovysh3.jpg"]
-
-image:assets/img/groovysh2.jpg[image,title="groovysh2.jpg"]
-
-image:assets/img/groovysh4.jpg[image,title="groovysh4.jpg"]
 
 [[GroovyShell-Troubleshooting]]
 === Troubleshooting
@@ -558,7 +522,7 @@ component.
 [[GroovyShell-ProblemsloadingtheJLineDLL]]
 ===== Problems loading the JLine DLL
 
-On Windows, http://jline.sf.net[JLine] (which is used for the fancy
+On Windows, https://github.com/jline/jline2[JLine2] (which is used for the fancy
 shell input/history/completion fluff), uses a *tiny* DLL file to trick
 the *evil* Windows faux-shell (`CMD.EXE` or `COMMAND.COM`) into
 providing Java with unbuffered input. In some rare cases, this might
@@ -595,3 +559,6 @@ http://gmavenplus.codehaus.org[GMavenPlus] is a Maven plugin with goals
 that support launching a Groovy Shell or Groovy Console bound to a Maven
 project.
 
+[[GroovyShell-GradleGroovyshPlugin]]
+== Gradle Groovysh Plugin
+https://github.com/tkruse/gradle-groovysh-plugin[Gradle Groovysh Plugin] is a Gradle plugin that provides gradle tasks to start a Groovy Shell bound to a Gradle project.

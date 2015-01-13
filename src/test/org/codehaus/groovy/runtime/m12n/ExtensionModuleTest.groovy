@@ -87,4 +87,28 @@ class ExtensionModuleTest extends GroovyTestCase {
             """
         '''
     }
+
+    /**
+     * Test case that reproduces GROOVY-7225.
+     */
+    void testExtensionModuleUsingGrabAndClosure() {
+        ExtensionModuleHelperForTests.doInFork '''
+            ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
+            // ensure that the module isn't loaded
+            assert !registry.modules.any { it.name == 'Groovy Test 7225' && it.version == '1.0.7225-test' }
+
+            // find jar resource
+            def jarURL = this.class.getResource("/jars")
+            assert jarURL
+
+            assertScript """
+            @GrabResolver('$jarURL')
+            @Grab(value='module-test:module-test:1.0.7225-test', changing='true')
+            import org.codehaus.groovy.runtime.m12n.*
+
+            assert 'test'.groovy7225() == 'test: ok'
+            assert {->}.groovy7225() == '{"field":"value"}'
+            """
+        '''
+    }
 }

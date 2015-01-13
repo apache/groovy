@@ -1,3 +1,19 @@
+/*
+ * Copyright 2003-2015 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package groovy.text
 
 import spock.lang.*
@@ -5,11 +21,10 @@ import spock.lang.*
 import static StreamingTemplateEngineSpecification.EngineType.*
 
 /**
- * http://code.google.com/p/spock/wiki/SpockBasics
- *
  * Author: Matias Bjarland
  */
 class StreamingTemplateEngineSpecification extends Specification {
+
   enum EngineType {
     STREAMING('StreamingTemplateEngine'),
     SIMPLE('SimpleTemplateEngine'),
@@ -26,20 +41,6 @@ class StreamingTemplateEngineSpecification extends Specification {
   }
 
   @Shared Map defaultBinding = [alice: 'Alice', rabbit: 'Rabbit', queen: 'Queen', desk: 'writing desk']
-  @Shared String SIXTY_FOUR_K_OF_A
-
-  // run before the first feature method
-  def setupSpec() {
-    StringBuilder b = new StringBuilder()
-    def sixtyFourAs = "a"*64
-    (1..1024).each {
-      b.append(sixtyFourAs)
-    }
-    SIXTY_FOUR_K_OF_A = b.toString()
-  }
-  def cleanupSpec() {}   // run after the last feature method
-  def setup() {}          // run before every feature method
-  def cleanup() {}        // run after every feature method
 
   private String template(EngineType type, String data, Map binding=null) {
     TemplateEngine engine
@@ -388,8 +389,6 @@ class StreamingTemplateEngineSpecification extends Specification {
       def e = thrown(TemplateParseException)
       e.lineNumber == 7
   }
-
-
 
   @Unroll
   def "should evaluate adjacent expressions '#expression' to '#expected'"() {
