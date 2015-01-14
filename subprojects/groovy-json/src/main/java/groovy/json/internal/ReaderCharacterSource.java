@@ -229,7 +229,11 @@ public class ReaderCharacterSource implements CharacterSource {
 
                 if (index >= length && !done) {
                     ensureBuffer();
+                    boolean hasAlreadyFoundEscape = foundEscape;
                     char results2[] = findNextChar(match, esc);
+                    if(hasAlreadyFoundEscape){
+                        foundEscape = true; //restore foundEscapeState
+                    }
                     return Chr.add(results, results2);
                 } else {
                     return Exceptions.die(char[].class, "Unable to find close char " + (char) match + " " + new String(results));
