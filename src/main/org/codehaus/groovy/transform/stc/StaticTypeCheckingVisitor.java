@@ -1182,114 +1182,119 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         HashSet<ClassNode> handledNodes = new HashSet<ClassNode>();
         for (Receiver<String> receiver : receivers) {
             ClassNode testClass = receiver.getType();
-                LinkedList<ClassNode> queue = new LinkedList<ClassNode>();
-                queue.add(testClass);
-                while (!queue.isEmpty()) {
-                    ClassNode current = queue.removeFirst();
-                    if (handledNodes.contains(current)) continue;
-                    handledNodes.add(current);
-                    Set<ClassNode> allInterfaces = current.getAllInterfaces();
-                    for (ClassNode intf : allInterfaces) {
-                        //TODO: apply right generics here!
-                        queue.add(GenericsUtils.parameterizeType(current, intf));
-                    }
-
-                    // in case of a lookup on Class we look for instance methods on Class
-                    // as well, since in case of a static property access we have the class
-                    // itself in the list of receivers already;
-                    boolean staticOnly;
-                    if (isClassClassNodeWrappingConcreteType(current)) {
-                        staticOnly = false;
-                    } else {
-                        staticOnly = staticOnlyAccess;
-                    }
-
-                    FieldNode field = current.getDeclaredField(propertyName);
-                    field  = allowStaticAccessToMember(field, staticOnly);
-                    if (storeField(field, isAttributeExpression, pexp, current, visitor, receiver.getData())) return true;
-
-                    PropertyNode propertyNode = current.getProperty(propertyName);
-                    propertyNode = allowStaticAccessToMember(propertyNode, staticOnly);
-                    if (storeProperty(propertyNode, pexp, current, visitor, receiver.getData())) return true;
-
-                    boolean isThisExpression = objectExpression instanceof VariableExpression &&
-                                                ((VariableExpression)objectExpression).isThisExpression();
-                    if (storeField(field, isThisExpression, pexp, receiver.getType(), visitor, receiver.getData())) return true;
-
-                    MethodNode getter = current.getGetterMethod("get" + capName);
-                    getter = allowStaticAccessToMember(getter, staticOnly);
-                    if (getter == null) getter = current.getGetterMethod("is" + capName);
-                    getter = allowStaticAccessToMember(getter, staticOnly);
-                    final String setterName = "set" + capName;
-                    List<MethodNode> setters = findSetters(current, setterName, false);
-                    setters = allowStaticAccessToMember(setters, staticOnly);
-
-                    // TODO: remove this visit
-                    // need to visit even if we only look for a setters for compatibility
-                    if (visitor != null && getter!=null) visitor.visitMethod(getter);
-
-                    if (readMode) {
-                        if (getter!=null) {
-                            ClassNode cn = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
-                            storeInferredTypeForPropertyExpression(pexp, cn);
-                            pexp.removeNodeMetaData(StaticTypesMarker.READONLY_PROPERTY);
-                            String delegationData = receiver.getData();
-                            if (delegationData!=null) pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
-                            return true;
-                        }
-                    } else {
-                        if (!setters.isEmpty()) {
-                            if (visitor != null) {
-                                if (field!=null) {
-                                    visitor.visitField(field);
-                                } else {
-                                    for (MethodNode setter : setters) {
-                                        ClassNode setterType = setter.getParameters()[0].getOriginType();
-                                        FieldNode virtual = new FieldNode(propertyName, 0, setterType, current, EmptyExpression.INSTANCE);
-                                        visitor.visitField(virtual);
-                                    }
-                                }
-                            }
-                            //TODO: apply generics on parameter[0]?
-//                                storeType(pexp, setter.getParameters()[0].getType());
-                            SetterInfo info = new SetterInfo(current, setterName, setters);
-                            BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
-                            if (enclosingBinaryExpression != null) {
-                                putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
-                            }
-                            String delegationData = receiver.getData();
-                            if (delegationData != null) {
-                                pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
-                            }
-                            return true;
-                        } else if (getter!=null) {
-                            pexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, true);
-                        }
-                    }
-                    foundGetterOrSetter = foundGetterOrSetter || !setters.isEmpty() || getter!=null;
-
-                    if (storeField(field, true, pexp, current, visitor, receiver.getData())) return true;
-                    // if the property expression is an attribute expression (o.@attr), then
-                    // we stop now, otherwise we must check the parent class
-                    if (/*!isAttributeExpression && */current.getSuperClass() != null) {
-                        queue.add(current.getUnresolvedSuperClass());
-                    }
+            LinkedList<ClassNode> queue = new LinkedList<ClassNode>();
+            queue.add(testClass);
+            if (isPrimitiveType(testClass)) {
+                queue.add(getWrapper(testClass));
+            }
+            while (!queue.isEmpty()) {
+                ClassNode current = queue.removeFirst();
+                if (handledNodes.contains(current)) continue;
+                handledNodes.add(current);
+                Set<ClassNode> allInterfaces = current.getAllInterfaces();
+                for (ClassNode intf : allInterfaces) {
+                    //TODO: apply right generics here!
+                    queue.add(GenericsUtils.parameterizeType(current, intf));
                 }
-                // GROOVY-5568, the property may be defined by DGM
-                List<MethodNode> methods = findDGMMethodsByNameAndArguments(getTransformLoader(), testClass, "get" + capName, ClassNode.EMPTY_ARRAY);
-                if (!methods.isEmpty()) {
-                    List<MethodNode> methodNodes = chooseBestMethod(testClass, methods, ClassNode.EMPTY_ARRAY);
-                    if (methodNodes.size() == 1) {
-                        MethodNode getter = methodNodes.get(0);
-                        if (visitor != null) {
-                            visitor.visitMethod(getter);
-                        }
-                        ClassNode cn = inferReturnTypeGenerics(testClass, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
-                        storeInferredTypeForPropertyExpression(pexp, cn);
 
+                // in case of a lookup on Class we look for instance methods on Class
+                // as well, since in case of a static property access we have the class
+                // itself in the list of receivers already;
+                boolean staticOnly;
+                if (isClassClassNodeWrappingConcreteType(current)) {
+                    staticOnly = false;
+                } else {
+                    staticOnly = staticOnlyAccess;
+                }
+
+                FieldNode field = current.getDeclaredField(propertyName);
+                field = allowStaticAccessToMember(field, staticOnly);
+                if (storeField(field, isAttributeExpression, pexp, current, visitor, receiver.getData())) return true;
+
+                PropertyNode propertyNode = current.getProperty(propertyName);
+                propertyNode = allowStaticAccessToMember(propertyNode, staticOnly);
+                if (storeProperty(propertyNode, pexp, current, visitor, receiver.getData())) return true;
+
+                boolean isThisExpression = objectExpression instanceof VariableExpression &&
+                        ((VariableExpression) objectExpression).isThisExpression();
+                if (storeField(field, isThisExpression, pexp, receiver.getType(), visitor, receiver.getData()))
+                    return true;
+
+                MethodNode getter = current.getGetterMethod("get" + capName);
+                getter = allowStaticAccessToMember(getter, staticOnly);
+                if (getter == null) getter = current.getGetterMethod("is" + capName);
+                getter = allowStaticAccessToMember(getter, staticOnly);
+                final String setterName = "set" + capName;
+                List<MethodNode> setters = findSetters(current, setterName, false);
+                setters = allowStaticAccessToMember(setters, staticOnly);
+
+                // TODO: remove this visit
+                // need to visit even if we only look for a setters for compatibility
+                if (visitor != null && getter != null) visitor.visitMethod(getter);
+
+                if (readMode) {
+                    if (getter != null) {
+                        ClassNode cn = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                        storeInferredTypeForPropertyExpression(pexp, cn);
+                        pexp.removeNodeMetaData(StaticTypesMarker.READONLY_PROPERTY);
+                        String delegationData = receiver.getData();
+                        if (delegationData != null)
+                            pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
                         return true;
                     }
+                } else {
+                    if (!setters.isEmpty()) {
+                        if (visitor != null) {
+                            if (field != null) {
+                                visitor.visitField(field);
+                            } else {
+                                for (MethodNode setter : setters) {
+                                    ClassNode setterType = setter.getParameters()[0].getOriginType();
+                                    FieldNode virtual = new FieldNode(propertyName, 0, setterType, current, EmptyExpression.INSTANCE);
+                                    visitor.visitField(virtual);
+                                }
+                            }
+                        }
+                        //TODO: apply generics on parameter[0]?
+//                                storeType(pexp, setter.getParameters()[0].getType());
+                        SetterInfo info = new SetterInfo(current, setterName, setters);
+                        BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
+                        if (enclosingBinaryExpression != null) {
+                            putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
+                        }
+                        String delegationData = receiver.getData();
+                        if (delegationData != null) {
+                            pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
+                        }
+                        return true;
+                    } else if (getter != null) {
+                        pexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, true);
+                    }
                 }
+                foundGetterOrSetter = foundGetterOrSetter || !setters.isEmpty() || getter != null;
+
+                if (storeField(field, true, pexp, current, visitor, receiver.getData())) return true;
+                // if the property expression is an attribute expression (o.@attr), then
+                // we stop now, otherwise we must check the parent class
+                if (/*!isAttributeExpression && */current.getSuperClass() != null) {
+                    queue.add(current.getUnresolvedSuperClass());
+                }
+            }
+            // GROOVY-5568, the property may be defined by DGM
+            List<MethodNode> methods = findDGMMethodsByNameAndArguments(getTransformLoader(), testClass, "get" + capName, ClassNode.EMPTY_ARRAY);
+            if (!methods.isEmpty()) {
+                List<MethodNode> methodNodes = chooseBestMethod(testClass, methods, ClassNode.EMPTY_ARRAY);
+                if (methodNodes.size() == 1) {
+                    MethodNode getter = methodNodes.get(0);
+                    if (visitor != null) {
+                        visitor.visitMethod(getter);
+                    }
+                    ClassNode cn = inferReturnTypeGenerics(testClass, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                    storeInferredTypeForPropertyExpression(pexp, cn);
+
+                    return true;
+                }
+            }
         }
 
         for (Receiver<String> receiver : receivers) {

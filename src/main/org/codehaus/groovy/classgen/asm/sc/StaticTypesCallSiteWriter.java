@@ -91,7 +91,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
-        ClassNode receiverType = (ClassNode) receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+        ClassNode receiverType = receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
         if (receiverType==null) {
             receiverType = typeChooser.resolveType(receiver, classNode);
         }
@@ -112,6 +112,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             isClassReceiver = true;
             receiverType = receiverType.getGenericsTypes()[0].getType();
         }
+
+        if (isPrimitiveType(receiverType)) {
+            // GROOVY-6590: wrap primitive types
+            receiverType = getWrapper(receiverType);
+        }
+
         MethodVisitor mv = controller.getMethodVisitor();
 
         if (receiverType.isArray() && methodName.equals("length")) {

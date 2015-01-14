@@ -715,6 +715,19 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
         '''
     }
 
+    // GROOVY-6590
+    void testShouldFindStaticPropertyOnPrimitiveType() {
+        assertScript '''
+            int i=1
+            i.MAX_VALUE
+        '''
+        assertScript '''
+            def i="d"
+            i=1
+            i.MAX_VALUE
+        '''
+    }
+
     public static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
     }
