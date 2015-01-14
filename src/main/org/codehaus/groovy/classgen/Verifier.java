@@ -1446,6 +1446,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             final FieldExpression fe = new FieldExpression(fn);
             if (fn.getType().equals(ClassHelper.REFERENCE_TYPE)) fe.setUseReferenceDirectly(true);
             ConstantExpression init = (ConstantExpression) fn.getInitialExpression();
+            init = new ConstantExpression(init.getValue(), true);
             ExpressionStatement statement =
                     new ExpressionStatement(
                             new BinaryExpression(
@@ -1453,7 +1454,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                     Token.newSymbol(Types.EQUAL, fn.getLineNumber(), fn.getColumnNumber()),
                                     init));
             fn.setInitialValueExpression(null);
-            init.setConstantName(null);
             methodCode.addStatement(statement);
         }
 
