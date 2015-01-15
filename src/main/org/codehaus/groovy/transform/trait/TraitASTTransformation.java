@@ -73,6 +73,7 @@ import java.util.Set;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class TraitASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
+    public static final String DO_DYNAMIC = TraitReceiverTransformer.class+".doDynamic";
     private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
 
     private static final ClassNode OVERRIDE_CLASSNODE = ClassHelper.make(Override.class);
