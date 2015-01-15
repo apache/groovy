@@ -600,7 +600,7 @@ include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=option
 ----
 <1> both the return type and the parameter types use `def`
 <2> it makes it possible to use the method with `String`
-<3> but also with `int`s since the `plus` method is defined
+<3> but also with `int` since the `plus` method is defined
 
 TIP: Using the `def` keyword here is recommanded to describe the intent of a method which is supposed to work on any
 type, but technically, we could use `Object` instead and the result would be the same: `def` is, in Groovy, strictly
@@ -616,7 +616,7 @@ include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=option
 ----
 <1> if we want to omit the return type, an explicit modifier has to be set.
 <2> it is still possible to use the method with `String`
-<3> and also with `int`s
+<3> and also with `int`
 
 TIP: Omitting types is in general considered a bad practice in method parameters or method return types for public APIs.
 While using `def` in a local variable is not really a problem because the visibility of the variable is limited to the
@@ -652,7 +652,8 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_intr
 
 This means that in general, in Groovy, you can't make any assumption about the type of an object beyond its declaration
 type, and even if you know it, you can't determine at compile time what method will be called, or which property will
-be retrieved, and this is *perfectly fine*. This is how dynamic languages work, and it has a lot of interest.
+be retrieved. It has a lot of interest, going from writing DSLs to testing, which is discussed in other sections of this
+manual.
 
 However, if your program doesn't rely on dynamic features and that you come from the static world (in particular, from
 a Java mindset), not catching such "errors" at compile time can be surprising. As we have seen in the previous example,
