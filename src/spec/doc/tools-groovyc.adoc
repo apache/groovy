@@ -386,7 +386,7 @@ syntax is compatible with Groovy, but semantics would be different.
 It is possible to write an Android application in Groovy. However this requires a special
 version of the compiler, meaning that you cannot use the regular
 <<section-groovyc-compiler,groovyc tool>> to target Android bytecode. In particular, Groovy
-provides specific JAR files for Android, which classifier is `grooid`. In order to make
+provides specific JAR files for Android, which have a classifier of `grooid`. In order to make
 things easier, a https://github.com/groovy/groovy-android-gradle-plugin[Gradle plugin] adds
 support for the Groovy language in the Android Gradle toolchain.
 
