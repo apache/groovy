@@ -631,6 +631,21 @@ assert foo.dm.x == '123'
         """
     }
 
+    // GROOVY-7261
+    void testShouldWorkWithLazyTransform() {
+        assertScript '''
+            class Foo {
+                private @Delegate @Lazy ArrayList list = ['bar', 'baz']
+                // fragile: $list is an internal implementation detail that may change
+                def getInternalDelegate() { $list }
+            }
+
+            def f = new Foo()
+            assert f.internalDelegate == null
+            assert f.size() == 2
+            assert f.internalDelegate == ['bar', 'baz']
+        '''
+    }
 }
 
 interface DelegateFoo {

@@ -18,6 +18,7 @@ package org.codehaus.groovy.transform;
 import groovy.lang.Delegate;
 import groovy.lang.GroovyObject;
 
+import groovy.lang.Lazy;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -74,6 +75,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode DEPRECATED_TYPE = make(Deprecated.class);
     private static final ClassNode GROOVYOBJECT_TYPE = make(GroovyObject.class);
+    private static final ClassNode LAZY_TYPE = make(Lazy.class);
 
     private static final String MEMBER_DEPRECATED = "deprecated";
     private static final String MEMBER_INTERFACES = "interfaces";
@@ -235,8 +237,10 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 newParams[i] = newParam;
                 args.addExpression(varX(newParam));
             }
+            boolean alsoLazy = !fieldNode.getAnnotations(LAZY_TYPE).isEmpty();
             // addMethod will ignore attempts to override abstract or static methods with same signature on self
             MethodCallExpression mce = callX(
+                    alsoLazy ? propX(varX("this"), fieldNode.getName().substring(1)) :
                     varX(fieldNode.getName(), correctToGenericsSpecRecurse(genericsSpec, fieldNode.getType())),
                     candidate.getName(),
                     args);
