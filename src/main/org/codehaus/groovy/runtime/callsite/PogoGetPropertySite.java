@@ -29,14 +29,14 @@ public class PogoGetPropertySite extends AbstractCallSite {
     }
 
     public CallSite acceptGetProperty(Object receiver) {
-        if (receiver.getClass() != aClass)
+        if (receiver== null || receiver.getClass() != aClass)
             return createGetPropertySite(receiver);
         else
           return this;
     }
 
     public CallSite acceptGroovyObjectGetProperty(Object receiver) {
-        if (receiver.getClass() != aClass)
+        if (receiver == null || receiver.getClass() != aClass)
             return createGroovyObjectGetPropertySite(receiver);
         else
           return this;
