@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ * Copyright 2003-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -181,6 +182,28 @@ public class DefaultGroovyStaticMethods {
      */
     public static Date parse(Date self, String format, String input) throws ParseException {
         return new SimpleDateFormat(format).parse(input);
+    }
+
+    /**
+     * Parse a String into a Date instance using the given pattern and TimeZone.
+     * This convenience method acts as a wrapper for {@link java.text.SimpleDateFormat}.
+     * <p>
+     * Note that a new SimpleDateFormat instance is created for every
+     * invocation of this method (for thread safety).
+     *
+     * @param self   placeholder variable used by Groovy categories; ignored for default static methods
+     * @param format pattern used to parse the input string.
+     * @param input  String to be parsed to create the date instance
+     * @param zone   TimeZone to use when parsing
+     * @return a new Date instance representing the parsed input string
+     * @throws ParseException if there is a parse error
+     * @see java.text.SimpleDateFormat#parse(java.lang.String)
+     * @since 2.4.1
+     */
+    public static Date parse(Date self, String format, String input, TimeZone zone) throws ParseException {
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        sdf.setTimeZone(zone);
+        return sdf.parse(input);
     }
 
     /**
