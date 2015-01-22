@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ * Copyright 2003-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,11 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
 
 /**
  * Utility methods to deal with generic types.
@@ -272,10 +271,14 @@ public class GenericsUtils {
     }
 
     public static ClassNode correctToGenericsSpecRecurse(Map<String,ClassNode> genericsSpec, ClassNode type) {
+        return correctToGenericsSpecRecurse(genericsSpec, type, new ArrayList<String>());
+    }
+
+    public static ClassNode correctToGenericsSpecRecurse(Map<String,ClassNode> genericsSpec, ClassNode type, List<String> exclusions) {
         if (type.isArray()) {
-            return correctToGenericsSpecRecurse(genericsSpec, type.getComponentType()).makeArray();
+            return correctToGenericsSpecRecurse(genericsSpec, type.getComponentType(), exclusions).makeArray();
         }
-        if (type.isGenericsPlaceHolder()) {
+        if (type.isGenericsPlaceHolder() && !exclusions.contains(type.getUnresolvedName())) {
             String name = type.getGenericsTypes()[0].getName();
             type = genericsSpec.get(name);
             if (type != null && type.isGenericsPlaceHolder() && type.getGenericsTypes() == null) {
@@ -299,13 +302,13 @@ public class GenericsUtils {
                     }
                 } else if (oldgType.isWildcard()) {
                     ClassNode oldLower = oldgType.getLowerBound();
-                    ClassNode lower = oldLower!=null?correctToGenericsSpecRecurse(genericsSpec, oldLower):null;
+                    ClassNode lower = oldLower!=null?correctToGenericsSpecRecurse(genericsSpec, oldLower, exclusions):null;
                     ClassNode[] oldUpper = oldgType.getUpperBounds();
                     ClassNode[] upper = null;
                     if (oldUpper!=null) {
                         upper = new ClassNode[oldUpper.length];
                         for (int j = 0; j < oldUpper.length; j++) {
-                            upper[j] = correctToGenericsSpecRecurse(genericsSpec,oldUpper[j]);
+                            upper[j] = correctToGenericsSpecRecurse(genericsSpec,oldUpper[j], exclusions);
                         }
                     }
                     GenericsType fixed = new GenericsType(oldgType.getType(), upper, lower);
@@ -313,7 +316,7 @@ public class GenericsUtils {
                     fixed.setWildcard(true);
                     newgTypes[i] = fixed;
                 } else {
-                    newgTypes[i] = new GenericsType(correctToGenericsSpecRecurse(genericsSpec,correctToGenericsSpec(genericsSpec, oldgType)));
+                    newgTypes[i] = new GenericsType(correctToGenericsSpecRecurse(genericsSpec,correctToGenericsSpec(genericsSpec, oldgType), exclusions));
                 }
             }
         }
@@ -370,6 +373,18 @@ public class GenericsUtils {
             ret.clear();
             for (int i = 0; i < spec.length; i++) {
                 ret.put(newGts[i].getName(), spec[i]);
+            }
+        }
+        return ret;
+    }
+
+    public static Map<String,ClassNode> addMethodGenerics(MethodNode current, Map<String,ClassNode> oldSpec) {
+        Map<String,ClassNode> ret = new HashMap<String,ClassNode>(oldSpec);
+        // ret starts with the original type specs, now add gts for the current method if any
+        GenericsType[] sgts = current.getGenericsTypes();
+        if (sgts != null) {
+            for (GenericsType sgt : sgts) {
+                ret.put(sgt.getName(), correctToGenericsSpec(ret, sgt));
             }
         }
         return ret;
