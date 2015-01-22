@@ -875,7 +875,7 @@ hence why we suggest using the `src/main` and `src/conf` directories above.
 ==== BuilderSupport (TBD)
 ==== FactoryBuilderSupport (TBD)
 === Existing builders (TBD)
-==== MarkupBuilder (TBD)
+==== MarkupBuilder (Pascal Schumacher)
 ==== StreamingMarkupBuilder (TBD)
 ==== SaxBuilder (TBD)
 ==== StaxBuilder (TBD)
