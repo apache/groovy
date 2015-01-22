@@ -40,10 +40,10 @@ public class ClassInfo {
     private final LazyCachedClassRef cachedClassRef;
     private final LazyClassLoaderRef artifactClassLoader;
     private final LockableObject lock = new LockableObject();
-    public final int hash;
+    public final int hash = -1;
     private final Class klazz;
 
-    private volatile int version;
+    private final AtomicInteger version = new AtomicInteger();
 
     private MetaClass strongMetaClass;
     private ManagedReference<MetaClass> weakMetaClass;
@@ -51,8 +51,8 @@ public class ClassInfo {
     MetaMethod[] newMetaMethods = CachedClass.EMPTY;
     private ManagedConcurrentMap<Object, MetaClass> perInstanceMetaClassMap;
     
-    private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
-    private static ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
+    private static final ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
+    private static final ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
     
     private static final ManagedLinkedList<ClassInfo> modifiedExpandos = new ManagedLinkedList<ClassInfo>(weakBundle);
 
@@ -68,7 +68,6 @@ public class ClassInfo {
     private static final GlobalClassSet globalClassSet = new GlobalClassSet();
 
     ClassInfo(Class klazz) {
-    	this.hash = System.identityHashCode(klazz);
     	this.klazz = klazz;
         if (ClassInfo.DebugRef.debug)
           new DebugRef(klazz);
@@ -79,11 +78,11 @@ public class ClassInfo {
     }
 
     public int getVersion() {
-        return version;
+        return version.get();
     }
 
     public void incVersion() {
-        version++;
+        version.incrementAndGet();
         VMPluginFactory.getPlugin().invalidateCallSites();
     }
 
@@ -115,7 +114,7 @@ public class ClassInfo {
     public static ClassInfo getClassInfo (Class cls) {
         LocalMap map = getLocalClassInfoMap();
         if (map!=null) return map.get(cls);
-        return (ClassInfo) globalClassValue.get(cls);
+        return globalClassValue.get(cls);
     }
 
     private static LocalMap getLocalClassInfoMap() {
@@ -159,7 +158,7 @@ public class ClassInfo {
     }
 
     public void setStrongMetaClass(MetaClass answer) {
-        version++;
+        version.incrementAndGet();
 
         // safe value here to avoid multiple reads with possibly
         // differing values due to concurrency
@@ -203,7 +202,7 @@ public class ClassInfo {
     }
 
     public void setWeakMetaClass(MetaClass answer) {
-        version++;
+        version.incrementAndGet();
 
         strongMetaClass = null;
         ManagedReference<MetaClass> newRef = null;
@@ -368,11 +367,11 @@ public class ClassInfo {
         if (perInstanceMetaClassMap == null)
           return null;
 
-        return (MetaClass) perInstanceMetaClassMap.get(obj);
+        return perInstanceMetaClassMap.get(obj);
     }
 
     public void setPerInstanceMetaClass(Object obj, MetaClass metaClass) {
-        version++;
+        version.incrementAndGet();
 
         if (metaClass != null) {
             if (perInstanceMetaClassMap == null)
@@ -393,8 +392,6 @@ public class ClassInfo {
 
     private static final class LocalMap extends HashMap<Class,ClassInfo> {
 
-        private static final int CACHE_SIZE = 5;
-
         // We use a PhantomReference or a WeakReference for the Thread
         // because the ThreadLocal manages a map with the thread as key.
         // If we make a strong reference to the thread here, then it is 
@@ -404,51 +401,17 @@ public class ClassInfo {
         // key gets collected, the reference will too. 
         private final PhantomReference<Thread> myThread = new PhantomReference(Thread.currentThread(),null);
 
-        private int nextCacheEntry;
-
-        private final ClassInfo[] cache = new ClassInfo[CACHE_SIZE];
-        private static final ClassInfo NOINFO = new ClassInfo(Void.class);
-
         private LocalMap() {
-            for (int i = 0; i < cache.length; i++) {
-                cache[i] = NOINFO;
-            }
         }
 
         public ClassInfo get(Class key) {
-            ClassInfo info = getFromCache(key);
+            ClassInfo info = super.get(key);
             if (info != null)
               return info;
 
-            info = super.get(key);
-            if (info != null)
-              return putToCache(info);
-
-            return putToCache((ClassInfo) globalClassValue.get(key));
+            return globalClassValue.get(key);
         }
 
-        private ClassInfo getFromCache (Class klazz) {
-            for (int i = 0, k = nextCacheEntry-1; i < cache.length; i++, k--) {
-                if (k < 0)
-                  k += CACHE_SIZE;
-
-                final ClassInfo info = cache[k];
-                if (klazz == info.klazz) {
-                    nextCacheEntry = k+1;
-                    if (nextCacheEntry == CACHE_SIZE)
-                      nextCacheEntry = 0;
-                    return info;
-                }
-            }
-            return null;
-        }
-
-        private ClassInfo putToCache (ClassInfo classInfo) {
-            cache [nextCacheEntry++] = classInfo;
-            if (nextCacheEntry == CACHE_SIZE)
-              nextCacheEntry = 0;
-            return classInfo;
-        }
     }
 
     private static class ThreadLocalMapHandler extends ThreadLocal<SoftReference<LocalMap>> {
@@ -543,7 +506,7 @@ public class ClassInfo {
     
     private static class GlobalClassSet {
     	
-    	private ManagedLinkedList<ClassInfo> items = new ManagedLinkedList<ClassInfo>(weakBundle);
+    	private final ManagedLinkedList<ClassInfo> items = new ManagedLinkedList<ClassInfo>(weakBundle);
     	
     	public int size(){
 		return values().size();
