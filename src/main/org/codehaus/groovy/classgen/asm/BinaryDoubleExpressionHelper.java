@@ -30,21 +30,13 @@ public class BinaryDoubleExpressionHelper extends BinaryLongExpressionHelper {
 
 
     public BinaryDoubleExpressionHelper(WriterController controller) {
-        super(controller);
+        super(controller, doubleArraySet, doubleArrayGet);
     }
 
     private static final MethodCaller 
         doubleArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "dArrayGet"),
         doubleArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "dArraySet");
 
-    protected MethodCaller getArrayGetCaller() {
-        return doubleArrayGet;
-    }
-
-    protected MethodCaller getArraySetCaller() {
-        return doubleArraySet;
-    }
-    
     protected boolean writeBitwiseOp(int op, boolean simulate) {
         if (!simulate) throw new GroovyBugError("should not reach here");
         return false;   

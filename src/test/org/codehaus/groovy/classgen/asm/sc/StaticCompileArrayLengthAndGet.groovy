@@ -2,6 +2,8 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
+import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
+
 class StaticCompileArrayLengthAndGet extends AbstractBytecodeTestCase {
     void testShouldCompileArrayLengthStatically() {
         def bytecode = compile([method:'m'],'''
@@ -18,6 +20,8 @@ class StaticCompileArrayLengthAndGet extends AbstractBytecodeTestCase {
     }
 
     void testArrayGet1() {
+        if (config.optimizationOptions.indy) return;
+        // this test is done with indy in another tests case
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
             int m(int[] arr) {
@@ -33,6 +37,8 @@ class StaticCompileArrayLengthAndGet extends AbstractBytecodeTestCase {
     }
 
     void testArraySet1() {
+        if (config.optimizationOptions.indy) return;
+        // this test is done with indy in another tests case
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
             void m(int[] arr) {

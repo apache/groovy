@@ -4,6 +4,8 @@ import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 
+import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
+
 class StaticCompilationTest extends AbstractBytecodeTestCase {
     void testEmptyMethod() {
         def bytecode = compile([method:'m'],'''
@@ -159,6 +161,8 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testArrayGet() {
+        if (config.optimizationOptions.indy) return;
+        // this test is done with indy in another tests case
         assert compile([method:'m'],'''
         @groovy.transform.CompileStatic
         void m(int[] arr) {
@@ -171,6 +175,8 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testArraySet() {
+        if (config.optimizationOptions.indy) return;
+        // this test is done with indy in another tests case
         assert compile([method:'m'],'''
         @groovy.transform.CompileStatic
         void m(int[] arr) {

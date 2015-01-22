@@ -28,20 +28,8 @@ public class BinaryObjectExpressionHelper extends BinaryExpressionWriter {
     private static final MethodCaller arrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "objectArrayGet");
     private static final MethodCaller arraySet = MethodCaller.newStatic(BytecodeInterface8.class, "objectArraySet");
 
-    
-//    private WriterController controller;
-    
     public BinaryObjectExpressionHelper(WriterController controller) {
-        super(controller);
-//        this.controller = controller;
-    }
-    
-    protected MethodCaller getArrayGetCaller() {
-        return arrayGet;
-    }
-    
-    protected MethodCaller getArraySetCaller() {
-        return arraySet;
+        super(controller, arraySet, arrayGet);
     }
     
     // dummy methods

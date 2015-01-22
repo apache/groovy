@@ -48,6 +48,11 @@ public class MethodCaller implements Opcodes {
         return new MethodCaller(INVOKEVIRTUAL, theClass, name);
     }
 
+    /**
+     * @since 2.5.0
+     */
+    protected MethodCaller() {}
+
     public MethodCaller(int opcode, Class theClass, String name) {
         this.opcode = opcode;
         this.internalName = Type.getInternalName(theClass);
