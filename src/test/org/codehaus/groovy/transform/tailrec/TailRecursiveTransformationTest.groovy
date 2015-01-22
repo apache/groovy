@@ -226,7 +226,7 @@ class TailRecursiveTransformationTest extends GroovyShellTestCase {
 				@TailRecursive
 				int stringSize(String s, int size = 0) {
 				    if (s)
-				        return stringSize(s.substring(1), ++size)
+				        return stringSize(s.substring(1), 1+size)
 				    return size
 				}
 			}
@@ -246,7 +246,7 @@ class TailRecursiveTransformationTest extends GroovyShellTestCase {
 				int stringSize(String s, int size = 0) {
 				    if (!s)
 				        return size
-				    return stringSize(s.substring(1), ++size)
+				    return stringSize(s.substring(1), 1+size)
 				}
 			}
 			new TargetClass()

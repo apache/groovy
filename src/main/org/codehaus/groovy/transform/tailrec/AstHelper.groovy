@@ -46,7 +46,7 @@ class AstHelper {
 	}
 
 	static ExpressionStatement createVariableAlias(String aliasName, ClassNode variableType, String variableName ) {
-		createVariableDefinition(aliasName, variableType, varX(variableName, variableType), true)
+		createVariableDefinition(aliasName, variableType, varX(variableName, variableType))
 	}
 
     static VariableExpression createVariableReference(Map variableSpec) {
