@@ -107,4 +107,8 @@ public class GroovyCollectionsTest extends GroovyTestCase {
         assert sum([1, 2, 3]) == 6
     }
 
+    // GROOVY-7267
+    void testHashCodeCollisionInMinus() {
+        assert ([[1:2],[2:3]]-[["b":"a"]]) == [[1:2],[2:3]]
+    }
 }
