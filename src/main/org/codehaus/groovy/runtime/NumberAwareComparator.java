@@ -37,10 +37,15 @@ public class NumberAwareComparator<T> implements Comparator<T> {
         // since the object does not have a valid compareTo method
         // we compare using the hashcodes. null cases are handled by
         // DefaultTypeTransformation.compareTo
+        // This is not exactly a mathematical valid approach, since we compare object
+        // that cannot be compared. To avoid strange side effects we do a pseudo order
+        // using hashcodes, but without equality. Since then an x and y with the same
+        // hashcodes will behave different depending on if we compare x with y or
+        // x with y, the result might be unstable as well. Setting x and y to equal
+        // may mean the removal of x or y in a sorting operation, which we don't want.
         int x1 = o1.hashCode();
         int x2 = o2.hashCode();
-        if (x1 == x2) return 0;
-        if (x1 < x2) return -1;
-        return 1;
+        if (x1 > x2) return 1;
+        return -1;
     }
 }

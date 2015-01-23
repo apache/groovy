@@ -9028,7 +9028,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 boolean elementRemoved = false;
                 for (Iterator<?> iterator = removeMe.iterator(); iterator.hasNext() && !elementRemoved;) {
                     Object elt = iterator.next();
-                    if (numberComparator.compare(element, (T)elt) == 0) {
+                    if (DefaultTypeTransformation.compareEqual(element, elt)) {
                         iter.remove();
                         elementRemoved = true;
                     }
