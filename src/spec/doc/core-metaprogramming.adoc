@@ -819,7 +819,7 @@ written like this:
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=oldstyle_category,indent=0]
 ----
 
-The `@Category` transformation lets you write the same using an instance-style class, rather that a static class style.
+The `@Category` transformation lets you write the same using an instance-style class, rather than a static class style.
 This removes the need for having the first argument of each method being the receiver. The category can be written like
 this:
 
