@@ -930,7 +930,9 @@ include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_as
 include::{projectdir}/subprojects/groovy-json/{specfolder}/json-builder.adoc[leveloffset=+2]
 
 ==== StreamingJsonBuilder (TBD)
-==== SwingBuilder (TBD)
+
+include::{projectdir}/subprojects/groovy-swing/{specfolder}/swing-builder.adoc[leveloffset=+2]
+
 ==== AntBuilder (TBD)
 ==== CliBuilder (TBD)
 ==== ObjectGraphBuilder (TBD)
