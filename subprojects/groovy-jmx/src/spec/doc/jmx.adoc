@@ -25,8 +25,6 @@ The remainder of this page shows you how to:
 - Monitor BEA WebLogic and display information
 - Leverage Spring's MBean annotation support to export your Groovy beans as MBeans
 
-Note: many of the examples on this page use Java 5 which incorporates JMX 1.2 (more recent versions if JMX or Java will also work). In some cases, you can run some of these examples using Java 1.4 by including a version of JMX on your `CLASSPATH`. MX4J is bundled with the full distribution of Groovy. In most cases, you can delete this jar from your distribution `lib` directory if you are running with Java 5 or above (in fact you might have to - see the Troubleshooting section below).
-
 == Monitoring the JVM
 
 MBeans are not accessed directly by an application but are managed by a repository called an __MBean server__. Java 5 and above includes a special MBean server called the __platform MBean server__, which is built into the JVM. Platform MBeans are registered in this server using unique names.
