@@ -3,7 +3,7 @@
 == Command chains
 
 Groovy lets you omit parentheses around the arguments of a
-method call for top-level statements. ``command chain'' feature extends this by allowing us to chain such
+method call for top-level statements. "command chain" feature extends this by allowing us to chain such
 parentheses-free method calls, requiring neither parentheses around arguments, nor dots between the chained calls.
 The general idea is that a call like `a b c d` will actually be equivalent to `a(b).c(d)`. This
 also works with multiple arguments, closure arguments, and even named arguments. Furthermore, such command chains can

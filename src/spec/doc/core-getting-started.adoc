@@ -125,7 +125,7 @@ If you prefer to live on the bleeding edge, you can also grab the https://github
 
 === IDE plugin
 
-If you are an IDE user, you can just grab the latest link:tools/tools-ide.html[IDE plugin] and follow the plugin installation instructions.
+If you are an IDE user, you can just grab the latest link:tools-ide.html[IDE plugin] and follow the plugin installation instructions.
 
 == Install Binary
 
@@ -143,7 +143,7 @@ You should now have Groovy installed properly. You can test this by typing the f
 groovysh
 ----
 
-Which should create an interactive groovy shell where you can type Groovy statements. Or to run the link:tools/tools-groovyconsole.html[Swing interactive console] type:
+Which should create an interactive groovy shell where you can type Groovy statements. Or to run the link:tools-groovyconsole.html[Swing interactive console] type:
 
 [source,shell]
 ----
