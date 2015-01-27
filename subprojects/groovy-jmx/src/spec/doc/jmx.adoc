@@ -1044,4 +1044,3 @@ If you use an **event listener closure (see above) that accpets a parameter**, y
 - https://blogs.oracle.com/sundararajan/entry/groovier_jconsole[Groovier jconsole!]
 - http://jmesnil.net/weblog/2007/05/23/jmx-scripts-with-eclipse-monkey[JMX Scripts with Eclipse Monkey]
 - http://activemq.apache.org/jmx.html[Using JMX to monitor Apache ActiveMQ]
-- http://jagger.berlios.de[Jagger project (JMX application monitoring with Groovy)]

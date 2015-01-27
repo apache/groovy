@@ -48,8 +48,9 @@ asciidoctor {
 asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
 
 task asciidoctorAssets(type:Copy) {
-    from rootProject.fileTree('src/spec/assets')
+    from project.fileTree('src/spec/assets')
     into "${asciidoctor.outputDir}/assets"
+    into "${rootProject.asciidoctor.outputDir}/assets"
 }
 asciidoctor.finalizedBy asciidoctorAssets
 
