@@ -60,7 +60,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
     static final ClassNode MARKUPTEMPLATEENGINE_CLASSNODE = ClassHelper.make(MarkupTemplateEngine.class);
     static final String MODELTYPES_ASTKEY = "MTE.modelTypes";
 
-    private static final Pattern LOCALIZED_RESOURCE_PATTERN = Pattern.compile("(.+?)(?:_([a-z]{2}(?:_[A-Z]{2,3})))?\\.(\\p{Alnum}+)");
+    private static final Pattern LOCALIZED_RESOURCE_PATTERN = Pattern.compile("(.+?)(?:_([a-z]{2}(?:_[A-Z]{2,3})))?\\.([\\p{Alnum}.]+)$");
 
     private static final boolean DEBUG_BYTECODE = Boolean.valueOf(System.getProperty("markuptemplateengine.compiler.debug","false"));
 
