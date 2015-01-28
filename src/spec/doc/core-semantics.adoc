@@ -102,7 +102,7 @@ include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=destructuring,inde
 <2> then, we use a multiple assignment to get the individual longitude and latitude values
 <3> and we can finally assert their values.
 
-=== Control structures (WIP)
+=== Control structures
 ==== Conditional structures
 ===== if / else
 
@@ -558,7 +558,7 @@ include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=obj
 
 === Customizing the truth with asBoolean() methods (TBD)
 
-== Typing (WIP)
+== Typing
 
 === Optional typing
 
@@ -754,7 +754,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assi
 ----
 ====
 
-* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
+* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `T`
 
 +
 
@@ -767,7 +767,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assi
 ----
 ====
 
-* _or_ `T` is an array and `A` is a list and the component type of `A` is assignable to the component type of `B`
+* _or_ `T` is an array and `A` is a list and the component type of `A` is assignable to the component type of `T`
 
 +
 
@@ -966,7 +966,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argp
 ----
 ====
 
-* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
+* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `T`
 
 +
 
@@ -1695,7 +1695,7 @@ The `@DelegatesTo` annotation is used by the type checker to infer the type of t
 to instruct the compiler what is the type of the delegate and the delegation strategy. The `@DelegatesTo` annotation is
 discussed in a link:core-domain-specific-languages.html#section-delegatesto[specific section].
 
-=== Static compilation (WIP)
+=== Static compilation
 
 ==== Dynamic vs static
 
@@ -1775,4 +1775,6 @@ of the dynamic code should be very close to the performance of statically compil
 There is only one way to determine which version you should choose: measuring. The reason is that depending on your program
 *and* the JVM that you use, the performance can be significantly different. In particular, the _invokedynamic_ version of
 Groovy is very sensitive to the JVM version in use.
+
+=== Type checking extensions (TBD)
 

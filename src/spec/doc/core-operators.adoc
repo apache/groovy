@@ -394,7 +394,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_st
 <2> the return type of `==~` is therefore a `boolean`
 <3> equivalent to calling `if (text ==~ /match/)`
 
-== Other operators (WIP)
+== Other operators
 
 === Spread operator
 
