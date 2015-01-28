@@ -238,3 +238,10 @@ with exception.
 ----
 include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=chars_c_vs_groovy_cast,indent=0]
 ----
+
+== Behaviour of `==`
+
+In Java `==` means equality of primitive types or identity for objects.  In
+Groovy `==` translates to `a.compareTo(b)==0`, iff they are `Comparable`, and
+`a.equals(b)` otherwise.  To check for identity, there is `is`.  E.g.
+`a.is(b)`.
