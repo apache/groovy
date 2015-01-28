@@ -84,7 +84,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             byte res = cl(0) // should throw an error because return type inference should be a long
-        ''', 'Possible loose of precision from long to byte'
+        ''', 'Possible loss of precision from long to byte'
     }
 
     void testClosureWithoutParam() {

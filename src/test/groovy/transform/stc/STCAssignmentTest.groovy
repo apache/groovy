@@ -141,7 +141,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             long a = Long.MAX_VALUE
             int b = a
-        ''', 'Possible loose of precision from long to int'
+        ''', 'Possible loss of precision from long to int'
     }
 
     void testPossibleLooseOfPrecision2() {
@@ -159,7 +159,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision4() {
         shouldFailWithMessages '''
             byte b = 128 // will not fit in a byte
-        ''', 'Possible loose of precision from int to byte'
+        ''', 'Possible loss of precision from int to byte'
     }
 
     void testPossibleLooseOfPrecision5() {
@@ -171,7 +171,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision6() {
         shouldFailWithMessages '''
             short b = 32768 // will not fit in a short
-        ''', 'Possible loose of precision from int to short'
+        ''', 'Possible loss of precision from int to short'
     }
 
     void testPossibleLooseOfPrecision7() {
@@ -195,7 +195,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision10() {
         shouldFailWithMessages '''
             int b = 32768.1d
-        ''', 'Possible loose of precision from double to int'
+        ''', 'Possible loss of precision from double to int'
     }
 
     void testCastIntToShort() {
