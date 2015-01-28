@@ -887,7 +887,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void addPrecisionErrors(ClassNode leftRedirect, ClassNode lhsType, ClassNode inferredrhsType, Expression rightExpression) {
         if (isNumberType(leftRedirect) && isNumberType(inferredrhsType)) {
             if (checkPossibleLooseOfPrecision(leftRedirect, inferredrhsType, rightExpression)) {
-                addStaticTypeError("Possible loose of precision from " + inferredrhsType + " to " + leftRedirect, rightExpression);
+                addStaticTypeError("Possible loss of precision from " + inferredrhsType + " to " + leftRedirect, rightExpression);
                 return;
             }
         }
