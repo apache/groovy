@@ -2,7 +2,7 @@
 
 == Working with IO (TBD)
 
-== Working with collections (TBD)
+include::{projectdir}/src/spec/doc/working-with-collections.adoc[leveloffset=+1]
 
 == Handy utilities
 
