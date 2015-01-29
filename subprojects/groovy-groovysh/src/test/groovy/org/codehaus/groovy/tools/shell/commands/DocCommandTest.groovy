@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2013 the original author or authors.
+ * Copyright 2003-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,6 +170,6 @@ class DocCommandTest extends CommandTestSupport
     }
 
     private static simpleVersion() {
-        System.getProperty("java.version").tokenize('_')[0]
+        System.getProperty('java.version').split(/\./)[1]
     }
 }
