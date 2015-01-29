@@ -67,21 +67,4 @@ class InnerInterfaceTest extends GroovyTestCase {
             }
         '''
     }
-
-    // GROOVY-5754
-    void testResolveInnerInterface() {
-        assertScript '''
-            class Usage implements Koo {
-              static class MyInner extends Inner {}
-            }
-
-            public interface Koo {
-
-                class Inner {
-                }
-
-            }
-            Koo.Inner
-        '''
-    }
 }
