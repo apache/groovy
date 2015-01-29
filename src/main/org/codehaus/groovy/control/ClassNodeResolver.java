@@ -120,7 +120,6 @@ public class ClassNodeResolver {
         ClassNode res = getFromClassCache(name);
         if (res==NO_CLASS) return null;
         if (res!=null) return new LookupResult(null,res);
-        
         LookupResult lr = findClassNode(name, compilationUnit);
         if (lr != null) {
             if (lr.isClassNode()) cacheClass(name, lr.getClassNode());
