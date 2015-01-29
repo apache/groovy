@@ -491,8 +491,47 @@ Parentheses are required for method calls without parameters or ambiguous method
 include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=required_parentheses,indent=0]
 ----
 
-=== Optional semicolons (TBD)
-=== Optional return keyword (TBD)
+=== Optional semicolons
+
+In Groovy semicolons at the end of the line can be omitted, if the line contains only a single statement.
+
+This means that:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=single_statement_with_semicolon,indent=0]
+----
+
+can be more idiomatically written as:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=single_statement_without_semicolon,indent=0]
+----
+
+Multiple statements in a line require semicolons to separate them:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=statements_separated_by_semicolon,indent=0]
+----
+
+=== Optional return keyword
+
+In Groovy, the last expression evaluated in the body of a method or a closure is returned. This means that the `return` keyword is optional.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=return_keyword,indent=0]
+----
+
+Can be shortend to:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=omitted_return_keyword,indent=0]
+----
+
 === Optional public keyword (TBD)
 
 [[Groovy-Truth]]
