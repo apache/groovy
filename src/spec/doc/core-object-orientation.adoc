@@ -110,7 +110,47 @@ Abstract classes are commonly compared to interfaces. But there are at least two
 ==== Method definition (TBD)
 ==== Named arguments (TBD)
 ==== Default arguments (TBD)
-==== Varargs (TBD)
+==== Varargs
+
+Groovy supports methods with a variable number of arguments. They are defined like this: `def foo(p1, ..., pn, T... args)`.
+Here `foo` supports `n` arguments by default, but also an unspecified number of further arguments exceeding `n`.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_example,indent=0]
+----
+
+This example defines a method `foo`, that can take any number of arguments, including no arguments at all.
+`args.length` will return the number of arguments given. Groovy allows `T[]` as a alternative notation to `T...`.
+That means any method with an array as last parameter is seen by Groovy as a method that can take a variable number of arguments.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_array_notation,indent=0]
+----
+
+If a method with varargs is called with `null` as the vararg parameter, then the argument will be `null` and not an array of length one with `null` as the only element.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_null_parameter,indent=0]
+----
+
+If a varargs method is called with an array as an argument, then the argument will be that array instead of an array of length one containing the given array as the only element.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_array_parameter,indent=0]
+----
+
+Another important point are varargs in combination with method overloading. In case of method overloading Groovy will select the most specific method.
+For example if a method `foo` takes a varargs argument of type `T` and another method `foo` also takes one argument of type `T`, the second method is preferred.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_method_overloading,indent=0]
+----
+
 ==== Method selection algorithm (TBD)
 ==== Exception declaration (TBD)
 
