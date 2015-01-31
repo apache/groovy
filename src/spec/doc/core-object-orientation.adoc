@@ -101,15 +101,15 @@ Abstract classes are commonly compared to interfaces. But there are at least two
 ==== Meta-annotations (TBD)
 ==== Annotation placement (TBD)
 
-=== Constructors (TBD)
+=== Constructors (Michael Schuenck)
 
-==== Named argument constructor (TBD)
+==== Named argument constructor (Michael Schuenck)
 
-=== Methods (TBD)
+=== Methods (Michael Schuenck)
 
-==== Method definition (TBD)
-==== Named arguments (TBD)
-==== Default arguments (TBD)
+==== Method definition (Michael Schuenck)
+==== Named arguments (Michael Schuenck)
+==== Default arguments (Michael Schuenck)
 ==== Varargs
 
 Groovy supports methods with a variable number of arguments. They are defined like this: `def foo(p1, ..., pn, T... args)`.
@@ -154,10 +154,10 @@ include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=va
 ==== Method selection algorithm (TBD)
 ==== Exception declaration (TBD)
 
-=== Fields and properties (TBD)
+=== Fields and properties (Michael Schuenck)
 
-==== Fields (TBD)
-==== Properties (TBD)
+==== Fields (Michael Schuenck)
+==== Properties (Michael Schuenck)
 
 === Inheritance (TBD)
 
