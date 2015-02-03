@@ -730,7 +730,7 @@ public abstract class StaticTypeCheckingSupport {
                     return false; // no possible loose here
             }
         }
-        return true; // possible loose of precision
+        return true; // possible loss of precision
     }
 
     static String toMethodParametersString(String methodName, ClassNode... parameters) {
