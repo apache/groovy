@@ -293,6 +293,21 @@ public class GenericsUtils {
         return correctToGenericsSpecRecurse(genericsSpec, type, new ArrayList<String>());
     }
 
+    /**
+     * @since 2.4.1
+     */
+    public static ClassNode[] correctToGenericsSpecRecurse(Map<String,ClassNode> genericsSpec, ClassNode[] types) {
+        if (types==null || types.length==1) return types;
+        ClassNode[] newTypes = new ClassNode[types.length];
+        boolean modified = false;
+        for (int i=0; i<types.length; i++) {
+            newTypes[i] = correctToGenericsSpecRecurse(genericsSpec, types[i], new ArrayList<String>());
+            modified = modified || (types[i]!=newTypes[i]);
+        }
+        if (!modified) return types;
+        return newTypes;
+    }
+
     public static ClassNode correctToGenericsSpecRecurse(Map<String,ClassNode> genericsSpec, ClassNode type, List<String> exclusions) {
         if (type.isArray()) {
             return correctToGenericsSpecRecurse(genericsSpec, type.getComponentType(), exclusions).makeArray();
@@ -403,7 +418,7 @@ public class GenericsUtils {
         GenericsType[] sgts = current.getGenericsTypes();
         if (sgts != null) {
             for (GenericsType sgt : sgts) {
-                ret.put(sgt.getName(), correctToGenericsSpec(ret, sgt));
+                ret.put(sgt.getName(), sgt.getType());
             }
         }
         return ret;
@@ -544,5 +559,48 @@ public class GenericsUtils {
         };
         visitor.startResolving(dummyClass, sourceUnit);
         return dummyMN.getReturnType();
+    }
+
+    /**
+     * transforms generics types from an old context to a new context using the given spec. This method assumes
+     * all generics types will be placeholders. WARNING: The resulting generics types may or may not be placeholders
+     * after the transformation.
+     * @param genericsSpec the generics context information spec
+     * @param oldPlaceHolders the old placeholders
+     * @return the new generics types
+     */
+    public static GenericsType[] applyGenericsContextToPlaceHolders(Map<String, ClassNode> genericsSpec, GenericsType[] oldPlaceHolders) {
+        if (oldPlaceHolders==null || oldPlaceHolders.length==0) return oldPlaceHolders;
+        if (genericsSpec.isEmpty()) return oldPlaceHolders;
+        GenericsType[] newTypes = new GenericsType[oldPlaceHolders.length];
+        for (int i=0; i<oldPlaceHolders.length; i++) {
+            GenericsType old = oldPlaceHolders[i];
+            if (!old.isPlaceholder()) throw new GroovyBugError("Given generics type "+old+" must be a placeholder!");
+            ClassNode fromSpec = genericsSpec.get(old.getName());
+            if (fromSpec!=null) {
+                newTypes[i] = new GenericsType(fromSpec);
+            } else {
+                ClassNode[] upper = old.getUpperBounds();
+                ClassNode[] newUpper = upper;
+                if (upper!=null && upper.length>0) {
+                    ClassNode[] upperCorrected = new ClassNode[upper.length];
+                    for (int j=0;j<upper.length;j++) {
+                        upperCorrected[i] = correctToGenericsSpecRecurse(genericsSpec,upper[j]);
+                    }
+                    upper = upperCorrected;
+                }
+                ClassNode lower = old.getLowerBound();
+                ClassNode newLower = correctToGenericsSpecRecurse(genericsSpec,lower);
+                if (lower==newLower && upper==newUpper) {
+                    newTypes[i] = oldPlaceHolders[i];
+                } else {
+                    ClassNode newPlaceHolder = ClassHelper.make(old.getName());
+                    GenericsType gt = new GenericsType(newPlaceHolder, newUpper, newLower);
+                    gt.setPlaceholder(true);
+                    newTypes[i] = gt;
+                }
+            }
+        }
+        return newTypes;
     }
 }
