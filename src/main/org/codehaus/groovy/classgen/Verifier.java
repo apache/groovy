@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.ClassNodeSkip;
@@ -1246,6 +1247,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         boolean normalEqualParameters = equalParametersNormal(overridingMethod, oldMethod);
         boolean genericEqualParameters = equalParametersWithGenerics(overridingMethod, oldMethod, genericsSpec);
         if (!normalEqualParameters && !genericEqualParameters) return null;
+
+        //correct to method level generics for the overriding method
+        genericsSpec = GenericsUtils.addMethodGenerics(overridingMethod, genericsSpec);
 
         // return type
         ClassNode mr = overridingMethod.getReturnType();

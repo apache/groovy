@@ -2365,4 +2365,64 @@ assert c.b() == 2
     @SelfType([String, Date])
     trait DoubleSelfTypeTrait {}
 
+    //GROOVY-7287
+    void testTraitWithMethodLevelGenericsShadowing() {
+        assertScript '''
+            trait Configurable<ConfigObject> {
+                ConfigObject configObject
+
+                void configure(Closure<Void> configSpec) {
+                    configSpec.resolveStrategy = Closure.DELEGATE_FIRST
+                    configSpec.delegate = configObject
+                    configSpec()
+                }
+            }
+            public <T,U extends Configurable<T>> U configure(Class<U> clazz, @DelegatesTo(type="T") Closure configSpec) {
+                Configurable<T> obj = (Configurable<T>) clazz.newInstance()
+                obj.configure(configSpec)
+                obj
+            }
+
+
+            class Module implements Configurable<ModuleConfig> {
+                String value
+
+                Module(){
+                    configObject = new ModuleConfig()
+                }
+
+
+                @Override
+                void configure(Closure<Void> configSpec) {
+                    Configurable.super.configure(configSpec)
+                    value = "${configObject.name}-${configObject.version}"
+                }
+            }
+
+
+            class ModuleConfig {
+                String name
+                String version
+            }
+            def module = configure(Module) {
+                name = 'test\'
+                version = '1.0\'
+            }
+            assert module.value == 'test-1.0\'
+        '''
+
+        assertScript '''
+            trait SomeTrait {
+                def <T extends Number> T someOtherMethod() {}
+            }
+            class SuperClass<T> implements SomeTrait {}
+            class SubClass extends SuperClass<String> implements SomeTrait {}
+            SubClass.declaredMethods.findAll    {it.name=="someOtherMethod"}.
+                                     each {
+                                         assert it.returnType == Number
+                                         assert it.genericReturnType.name == "T"
+                                     }
+        '''
+    }
+
 }

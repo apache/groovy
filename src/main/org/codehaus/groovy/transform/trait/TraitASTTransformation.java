@@ -134,11 +134,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
     }
 
-    private static void fixGenerics(MethodNode mn, ClassNode cNode) {
-        if (!cNode.isUsingGenerics()) return;
-        mn.setGenericsTypes(cNode.getGenericsTypes());
-    }
-
     private void createHelperClass(final ClassNode cNode) {
         ClassNode helper = new InnerClassNode(
                 cNode,
@@ -234,7 +229,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 ClassNode.EMPTY_ARRAY,
                 new BlockStatement()
         );
-        fixGenerics(initializer, cNode);
         helper.addMethod(initializer);
 
         // Cannot add static compilation of init method because of GROOVY-7217, see example 2 of test case
@@ -336,7 +330,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             MethodNode getter =
                     new MethodNode(getterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
             getter.setSynthetic(true);
-            fixGenerics(getter, cNode);
             cNode.addMethod(getter);
 
             if (ClassHelper.boolean_TYPE == node.getType() || ClassHelper.Boolean_TYPE == node.getType()) {
@@ -344,7 +337,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 MethodNode secondGetter =
                         new MethodNode(secondGetterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
                 secondGetter.setSynthetic(true);
-                fixGenerics(secondGetter, cNode);
                 cNode.addMethod(secondGetter);
             }
         }
@@ -355,7 +347,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             MethodNode setter =
                     new MethodNode(setterName, propNodeModifiers, ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
             setter.setSynthetic(true);
-            fixGenerics(setter, cNode);
             cNode.addMethod(setter);
         }
     }
