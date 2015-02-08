@@ -1408,7 +1408,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (member instanceof List)  {
             List<MethodNode> list = (List<MethodNode>) member;
             if (list.size()==1) {
-                return (T) Arrays.asList(allowStaticAccessToMember(list.get(0), staticOnly));
+                return (T) Collections.singletonList(allowStaticAccessToMember(list.get(0), staticOnly));
             }
             return (T) Collections.emptyList();
         } else {
