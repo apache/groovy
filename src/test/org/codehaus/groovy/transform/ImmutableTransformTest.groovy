@@ -544,7 +544,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             // ok, not really immutable but deem it such for the purpose of this test
             @groovy.transform.Canonical class Address { String street }
 
-            assert new Person(first: 'John', last: 'Doe', address: ['Street']).toString() == 'Person(John, Doe, Address(Street))\'
+            assert new Person(first: 'John', last: 'Doe', address: ['Street']).toString() == 'Person(John, Doe, Address(Street))'
         '''
     }
 
@@ -607,7 +607,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             }
             '''
         }
-        assert msg.contains('@Immutable processor doesn\'t know how to handle field \'name\' of type \'java.lang.Object or def\'')
+        assert msg.contains("@Immutable processor doesn't know how to handle field 'name' of type 'java.lang.Object or def'")
     }
 
     // GROOVY-6192
@@ -933,10 +933,10 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             }
 
             def d1 = new Athlete('Michael Jordan', 'BasketBall')
-            def d2 = new Athlete(name: 'Roger Rederer', sport: 'Tennis')
+            def d2 = new Athlete(name: 'Roger Federer', sport: 'Tennis')
             assert d1 != d2
-            assert d1.toString() == 'Athlete(sport:BasketBall, name:Michael Jordan)\'
-            assert d2.toString() == 'Athlete(sport:Tennis, name:Roger Rederer)\'
+            assert d1.toString() == 'Athlete(sport:BasketBall, name:Michael Jordan)'
+            assert d2.toString() == 'Athlete(sport:Tennis, name:Roger Federer)'
         '''
     }
 }
