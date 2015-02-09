@@ -157,7 +157,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             for (FieldNode fNode : fList) {
                 ensureNotPublic(cName, fNode);
             }
-            createConstructors(cNode, knownImmutableClasses, knownImmutables);
+            boolean includeSuperProperties = false;
+            if (hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
+                AnnotationNode tupleCons = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
+                includeSuperProperties = memberHasValue(tupleCons, "includeSuperProperties", true);
+            }
+            createConstructors(cNode, knownImmutableClasses, knownImmutables, includeSuperProperties);
             if (!hasAnnotation(cNode, EqualsAndHashCodeASTTransformation.MY_TYPE)) {
                 createHashCode(cNode, true, false, false, null, null);
                 createEquals(cNode, false, false, false, null, null);
@@ -251,10 +256,19 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void createConstructors(ClassNode cNode, List<String> knownImmutableClasses, List<String> knownImmutables) {
+    private void createConstructors(ClassNode cNode, List<String> knownImmutableClasses, List<String> knownImmutables, boolean includeSuperProperties) {
         if (!validateConstructors(cNode)) return;
 
         List<PropertyNode> list = getInstanceProperties(cNode);
+        if (includeSuperProperties) {
+            ClassNode next = cNode.getSuperClass();
+            while (next != null) {
+                List<PropertyNode> tail = list;
+                list = getInstanceProperties(next);
+                list.addAll(tail);
+                next = next.getSuperClass();
+            }
+        }
         boolean specialHashMapCase = list.size() == 1 && list.get(0).getField().getType().equals(HASHMAP_TYPE);
         if (specialHashMapCase) {
             createConstructorMapSpecial(cNode, list);

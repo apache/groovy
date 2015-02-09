@@ -913,4 +913,30 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert result.size() == 2
         assert result.first == [ 'tim', 'tim' ]
     }
+
+    // GROOVY-7162
+    void testImmutableWithSuperClass() {
+        assertScript '''
+            import groovy.transform.*
+
+            @EqualsAndHashCode
+            class Person {
+                String name
+            }
+
+            @Immutable
+            @TupleConstructor(includeSuperProperties=true)
+            @EqualsAndHashCode(callSuper=true)
+            @ToString(includeNames=true, includeSuperProperties=true)
+            class Athlete extends Person {
+                String sport
+            }
+
+            def d1 = new Athlete('Michael Jordan', 'BasketBall')
+            def d2 = new Athlete(name: 'Roger Rederer', sport: 'Tennis')
+            assert d1 != d2
+            assert d1.toString() == 'Athlete(sport:BasketBall, name:Michael Jordan)\'
+            assert d2.toString() == 'Athlete(sport:Tennis, name:Roger Rederer)\'
+        '''
+    }
 }
