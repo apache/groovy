@@ -1,17 +1,356 @@
 = Closures (TBD)
 
-This chapter covers Groovy Closures.
+This chapter covers Groovy Closures. A closure in Groovy is an open, anonymous, block of code that can take arguments,
+return a value and be assigned to a variable. A closure may reference variables declared in its surrounding scope. In
+opposition to the formal definition of a closure, `Closure` in the Groovy language can also contain free variables which
+are defined outside of its surrounding scope. While breaking the formal concept of a closure, it offers a variety of
+advantages which are descripted in this chapter.
 
-== Syntax (TBD)
+== Syntax
+=== Defining a closure
 
-== Parameters (TBD)
+A closure definition follows this syntax:
 
-=== Normal parameters (TBD)
-=== Implicit parameter (TBD)
-=== Default parameter (TBD)
-=== Varargs (TBD)
+[source,groovy]
+-----------------------------------
+{ [closureParameters -> ] statements }
+-----------------------------------
 
-== Delegation strategy (TBD)
+Where `+[closureParameters->]+` is an optional comma-delimited list of
+parameters, and statements are 0 or more Groovy statements. The parameters
+look similar to a method parameter list, and these parameters may be
+typed or untyped.
+
+When a parameter list is specified, the `+->+` character
+is required and serves to seperate the arguments from the closure body.
+The _statements_ portion consists of 0, 1, or many Groovy statements.
+
+Some examples of valid closure definitions:
+
+[source,groovy]
+-----------------------------------------------------------
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_1,indent=0]
+
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_1bis,indent=0]
+
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_2,indent=0]
+
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_3,indent=0]
+
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_4,indent=0]
+
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_5,indent=0]
+
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_6,indent=0]
+-----------------------------------------------------------
+<1> A closure referencing a variable named `item`
+<2> It is possible to explicitly separate closure parameters from code by adding an arrow (`+->+`)
+<3> A closure using an implicit parameter (`it`)
+<4> An alternative version where `it` is this time an explicit parameter
+<5> In that case it is often better to use an explicit name for the parameter
+<6> A closure accepting two typed parameters
+<7> A closure can contain multiple statements
+
+[[closure-as-object]]
+=== Closures as an object
+
+A closure is an instance of the `groovy.lang.Closure` class, making it assignable to a variable or a field as any
+other variable, despite being a block of code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_is_an_instance_of_Closure,indent=0]
+----
+<1> You can assign a closure to a variable, and it is an instance of `groovy.lang.Closure`
+<2> If not using `def`, you can assign a closure to a variable of type `groovy.lang.Closure`
+<3> Optionally, you can specify the return type of the closure by using the generic type of `groovy.lang.Closure`
+
+=== Calling a closure
+
+A closure, as an anonymous block of code, can be called like any other method. If you define a closure which takes
+no argument like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_call_1,indent=0]
+----
+
+Then the code inside the closure will only be executed when you _call_ the closure, which can be done by using the
+variable as if it was a regular method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_call_1_direct,indent=0]
+----
+
+Alternatively, you can be explicit and use the `call` method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_call_1_explicit,indent=0]
+----
+
+The principle is the same if the closure accepts arguments:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_call_2,indent=0]
+----
+<1> define a closure which accepts an `int` as a parameter
+<2> it can be called directly
+<3> or using the `call` method
+<4> same goes for a closure with an implicit argument (`it`)
+<5> which can be called directly using `(arg)`
+<6> or using `call`
+
+Unlike a method, a closure *always* returns a value when called. The next section discusses how to declare closure arguments, when to use them and what is the <<implicit-it,implicit
+"it" parameter>>.
+
+== Parameters
+
+=== Normal parameters
+
+Parameters of closures follow the same principle as parameters of regular methods:
+
+* an optional type
+* a name
+* an optional default value
+
+Parameters are separated with commas:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_param_declaration,indent=0]
+----
+
+[[implicit-it]]
+=== Implicit parameter
+
+When a closure does not explicitly define a parameter list (using `+->+`), a closure *always* defines an implicit
+parameter, named `it`. This means that this code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=implicit_it,indent=0]
+----
+
+is stricly equivalent to this one:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=implicit_it_equiv,indent=0]
+----
+
+If you want to declare a closure which accepts no argument and must be restricted to calls without arguments,
+then you *must* declare it with an explicit empty argument list:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_no_arg_def,indent=0]
+
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_no_arg_fail,indent=0]
+----
+
+=== Varargs
+
+It is possible for a closure to declare variable arguments like any other method. _Vargs_ methods are methods that
+can accept a variable number of arguments if the last parameter is of variable length (or an array) like in the next
+examples:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_vargs,indent=0]
+----
+<1> A closure accepting a variable number of strings as first parameter
+<2> It may be called using any number of arguments *without* having to explicitly wrap them into an array
+<3> The same behavior is directly available if the _args_ parameter is declared as an array
+<4> As long as the *last* parameter is an array of an explicit vargs type
+
+== Delegation strategy
+
+=== Groovy closures vs lambda expressions
+
+Groovy defines closures as <<closure-as-object, instances of the Closure class>>. It makes it very different from
+http://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html[lambda expressions in Java 8]. Delegation is a
+key concept in Groovy closures which has no equivalent in lambdas. The ability to _change the delegate_ or _change the
+delegation strategy_ of closures make it possible to design beautiful domain specific languages (DSLs) in Groovy.
+
+=== Owner, delegate and this
+
+To understand the concept of delegate, we must first explain the meaning of `this` inside a closure. A closure actually
+defines 3 distinct things:
+
+- `this` corresponds to the _enclosing class_ where the closure is defined
+- `owner` corresponds to the _enclosing object_ where the closure is defined, which may be either a class or a closure
+- `delegate` corresponds to a third party object where methods calls or properties are resolved whenever the receiver of
+the message is not defined
+
+[[closure-this]]
+==== The meaning of this
+
+In a closure, calling `getThisObject` will return the enclosing class where the closure is defined. It is equivalent to
+using an explicit `this`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_this,indent=0]
+----
+<1> a closure is defined inside the `Enclosing` class, and returns `getThisObject`
+<2> calling the closure will return the instance of `Enclosing` where the the closure is defined
+<3> in general, you will just want to use the shortcut `this` notation
+<4> and it returns *exactly* the same object
+<5> if the closure is defined in a inner class
+<6> `this` in the closure *will* return the inner class, not the top-level one
+<7> in case of nested closures, like here `cl` being defined inside the scope of `nestedClosures`
+<8> then `this` corresponds to the closest outer class, not the enclosing closure!
+
+It is of course possible to call methods from the enclosing class this way:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_this_call,indent=0]
+----
+<1> the closure calls `toString` on `this`, which will actually call the `toString` method on the enclosing object,
+that is to say the `Person` instance
+
+==== Owner of a closure
+
+The owner of a closure is very similar to the definition of <<closure-this,this in a closure>> with a subtle difference:
+it will return the direct enclosing object, be it a closure or a class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_owner,indent=0]
+----
+<1> a closure is defined inside the `Enclosing` class, and returns `getOwner`
+<2> calling the closure will return the instance of `Enclosing` where the the closure is defined
+<3> in general, you will just want to use the shortcut `owner` notation
+<4> and it returns *exactly* the same object
+<5> if the closure is defined in a inner class
+<6> `owner` in the closure *will* return the inner class, not the top-level one
+<7> but in case of nested closures, like here `cl` being defined inside the scope of `nestedClosures`
+<8> then `owner` corresponds to the enclosing closure, hence a different object from `this`!
+
+==== Delegate of a closure
+
+The delegate of a closure can be accessed by using the `delegate` property or calling the `getDelegate` method. It is a
+powerful concept for building domain specific languages in Groovy. While <<this,closure-this>> and <<owner,closure-owner>>
+refer to the lexical scope of a closure, the delegate is a user defined object that a closure will use. By default, the
+delegate is set to `owner`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=delegate_is_owner,indent=0]
+----
+<1> you can get the delegate of a closure calling the `getDelegate` method
+<2> or using the `delegate` property
+<3> both return the same object
+<4> which is the enclosing class or closure
+<5> in particular in case of nested closures
+<6> `delegate` will correspond to the `owner`
+
+The delegate of a closure can be changed to *any object*. Let's illustrate this by creating two classes which are not
+subclasses of each other but both define a property called `name`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=change_delegate_classes,indent=0]
+----
+
+Then let's define a closure which fetches the `name` property on the delegate:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=change_delegate_closure,indent=0]
+----
+
+Then by changing the delegate of the closure, you can see that the target object will change:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=change_delegate_asserts,indent=0]
+----
+
+At this point, the behavior is not different from having a `variable defined in the lexical scope of the closure:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=delegate_alernative,indent=0]
+----
+
+However there is are major differences:
+
+* in the last example, _target_ is a local variable referenced from within the closure
+* the delegate can be used transparently, that is to say without prefixing method calls with `delegate.` as explained
+in the next paragraph.
+
+==== Delegation strategy
+
+Whenever, in a closure, a property is accessed without explicitly setting a receiver object, then a delegation strategy
+is involved:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=delegation_strategy_intro,indent=0]
+----
+<1> `name` is not referencing a variable in the lexical scope of the closure
+<2> we can change the delegate of the closure to be an instance of `Person`
+<3> and the method call will succeed
+
+The reason this code works is that the `name` property will be resolved transparently on the `delegate` object! This is
+a very powerful way to resolve properties or method calls inside closures. There's no need to set an explicit `delegate.`
+receiver: the call will be made because the default delegation strategy of the closure makes it so. A closure actually
+defines multiple resolution strategies that you can choose:
+
+* `Closure.OWNER_FIRST` is the *default strategy*. If a property/method exists on the *owner*, then it will be called on
+the owner. If not, then the *delegate* is used.
+* `Closure.DELEGATE_FIRST` reverses the logic: the *delegate* is used first, then the *owner*
+* `Closure.OWNER_ONLY` will only resolve the property/method lookup on the owner: the delegate will be ignored.
+* `Closure.DELEGATE_ONLY` will only resolve the property/method lookup on the delegate: the owner will be ignored.
+* `Closure.TO_SELF` can be used by developers who need advanced meta-programming techniques and wish to implement a
+ custom resolution strategy: the resolution will not be made on the owner or the delegate but only on the closure class
+ itself. It makes only sense to use this if you implement your own subclass of `Closure`.
+
+Let's illustrate the default "owner first" strategy with this code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_owner_first,indent=0]
+----
+<1> for the illustration, we define a closure member which references "name"
+<2> both the `Person` and the `Thing` class define a `name` property
+<3> Using the default strategy, the `name` property is resolved on the owner first
+<4> so if we change the `delegate` to `t` which is an instance of `Thing`
+<5> there is no change in the result: `name` is first resolved on the `owner` of the closure
+
+However, it is possible to change the resolution strategy of the closure:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_delegate_first,indent=0]
+----
+
+By changing the `resolveStrategy`, we are modifying the way Groovy will resolve the "implicit this" references: in this
+case, `name` will first be looked in the delegate, then if not found, on the owner. Since `name` is defined in the
+delegate, an instance of `Thing`, then this value is used.
+
+The differene between "delegate first" and "delegate only" or "owner first" and "owner only" can be illustrated if one
+of the delegate (resp. owner) does *not* have such a method or property:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=delegate_only,indent=0]
+----
+
+In this example, we define two classes which both have a `name` property but only the `Person` class declares an `age`.
+The `Person` class also declares a closure which references `age`. We can change the default resolution strategy from
+"owner first" to "delegate only". Since the owner of the closure is the `Person` class, then we can check that if the
+delegate is an instance of `Person`, calling the closure is successful, but if we call it with a delegate being an
+instance of `Thing`, it fails with a `groovy.lang.MissingPropertyException`. Despite the closure being defined inside
+the `Person` class, the owner is not used.
+
+NOTE: A comprehensive explanation about how to use this feature to develop DSLs can be found in a
+link:dsls.html[dedicated section of the manual].
 
 == Closures in GStrings (TBD)
 
