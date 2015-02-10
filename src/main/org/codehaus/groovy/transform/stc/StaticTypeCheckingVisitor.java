@@ -4340,50 +4340,58 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isPrimitiveType(receiver) && !isPrimitiveType(declaringClass)) {
             receiver = getWrapper(receiver);
         }
-        ClassNode current = receiver;
-        while (true) {
-            boolean continueLoop = true;
-            //extract the place holders
-            Map<String, GenericsType> currentPlaceHolders = new HashMap<String, GenericsType>();
-            if (isGenericsPlaceHolderOrArrayOf(declaringClass) || declaringClass.equals(current)) {
-                extractGenericsConnections(currentPlaceHolders, current, declaringClass);
-                if (method!=null) addMethodLevelDeclaredGenerics(method, currentPlaceHolders);
-                continueLoop = false;
-            } else {
-                GenericsUtils.extractPlaceholders(current, currentPlaceHolders);
-            }
+        final List<ClassNode> queue;
+        if (receiver instanceof UnionTypeClassNode) {
+            queue = Arrays.asList(((UnionTypeClassNode) receiver).getDelegates());
+        } else {
+            queue = Collections.singletonList(receiver);
+        }
+        for (ClassNode item : queue) {
+            ClassNode current = item;
+            while (current!=null) {
+                boolean continueLoop = true;
+                //extract the place holders
+                Map<String, GenericsType> currentPlaceHolders = new HashMap<String, GenericsType>();
+                if (isGenericsPlaceHolderOrArrayOf(declaringClass) || declaringClass.equals(current)) {
+                    extractGenericsConnections(currentPlaceHolders, current, declaringClass);
+                    if (method!=null) addMethodLevelDeclaredGenerics(method, currentPlaceHolders);
+                    continueLoop = false;
+                } else {
+                    GenericsUtils.extractPlaceholders(current, currentPlaceHolders);
+                }
 
-            if (resolvedPlaceholders!=null) {
-                // merge maps 
-                Set<Map.Entry<String,GenericsType>> entries = currentPlaceHolders.entrySet();
-                for (Map.Entry<String,GenericsType> entry : entries) {
-                    GenericsType gt = entry.getValue();
-                    if (!gt.isPlaceholder()) continue;
-                    GenericsType referenced = resolvedPlaceholders.get(gt.getName());
-                    if (referenced==null) continue;
-                    entry.setValue(referenced);
+                if (resolvedPlaceholders!=null) {
+                    // merge maps
+                    Set<Map.Entry<String,GenericsType>> entries = currentPlaceHolders.entrySet();
+                    for (Map.Entry<String,GenericsType> entry : entries) {
+                        GenericsType gt = entry.getValue();
+                        if (!gt.isPlaceholder()) continue;
+                        GenericsType referenced = resolvedPlaceholders.get(gt.getName());
+                        if (referenced==null) continue;
+                        entry.setValue(referenced);
+                    }
+                }
+                resolvedPlaceholders = currentPlaceHolders;
+
+                // we are done if we are now in the declaring class
+                if (!continueLoop) break;
+
+                current = getNextSuperClass(current, declaringClass);
+                if (current==null && CLASS_Type.equals(declaringClass)) {
+                    // this can happen if the receiver is Class<Foo>, then
+                    // the actual receiver is Foo and declaringClass is Class
+                    current = declaringClass;
                 }
             }
-            resolvedPlaceholders = currentPlaceHolders;
-
-            // we are done if we are now in the declaring class
-            if (!continueLoop) break;
-
-            current = getNextSuperClass(current, declaringClass);
-            if (current==null && CLASS_Type.equals(declaringClass)) {
-                // this can happen if the receiver is Class<Foo>, then
-                // the actual receiver is Foo and declaringClass is Class
-                current = declaringClass;
-            }
-            if (current==null) {
-                String descriptor = "<>";
-                if (method!=null) descriptor = method.getTypeDescriptor();
-                throw new GroovyBugError(
-                        "Declaring class for method call to '" +
-                        descriptor + "' declared in " + declaringClass.getName() +
-                        " was not matched with found receiver "+ receiver.getName() + "." +
-                        " This should not have happened!");
-            }
+        }
+        if (resolvedPlaceholders==null) {
+            String descriptor = "<>";
+            if (method!=null) descriptor = method.getTypeDescriptor();
+            throw new GroovyBugError(
+                    "Declaring class for method call to '" +
+                            descriptor + "' declared in " + declaringClass.getName() +
+                            " was not matched with found receiver "+ receiver.getName() + "." +
+                            " This should not have happened!");
         }
         return resolvedPlaceholders;
     }
