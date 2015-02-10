@@ -227,6 +227,8 @@ try {
 == Promotion and coercion (TBD)
 
 === Number promotion (TBD)
+
+[[closure-coercion]]
 === Closure to type coercion
 ==== Assigning a closure to a SAM type
 A SAM type is a type which defines a single abstract method. This includes:

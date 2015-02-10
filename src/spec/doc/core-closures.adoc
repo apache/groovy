@@ -1,10 +1,12 @@
-= Closures (TBD)
+= Closures
+
+:lambdas: http://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html[lambda expressions in Java 8]
 
 This chapter covers Groovy Closures. A closure in Groovy is an open, anonymous, block of code that can take arguments,
 return a value and be assigned to a variable. A closure may reference variables declared in its surrounding scope. In
 opposition to the formal definition of a closure, `Closure` in the Groovy language can also contain free variables which
 are defined outside of its surrounding scope. While breaking the formal concept of a closure, it offers a variety of
-advantages which are descripted in this chapter.
+advantages which are described in this chapter.
 
 == Syntax
 === Defining a closure
@@ -171,10 +173,11 @@ include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_vargs,i
 === Groovy closures vs lambda expressions
 
 Groovy defines closures as <<closure-as-object, instances of the Closure class>>. It makes it very different from
-http://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html[lambda expressions in Java 8]. Delegation is a
+{lambdas}. Delegation is a
 key concept in Groovy closures which has no equivalent in lambdas. The ability to _change the delegate_ or _change the
 delegation strategy_ of closures make it possible to design beautiful domain specific languages (DSLs) in Groovy.
 
+[[closure-owner]]
 === Owner, delegate and this
 
 To understand the concept of delegate, we must first explain the meaning of `this` inside a closure. A closure actually
@@ -352,18 +355,193 @@ the `Person` class, the owner is not used.
 NOTE: A comprehensive explanation about how to use this feature to develop DSLs can be found in a
 link:dsls.html[dedicated section of the manual].
 
-== Closures in GStrings (TBD)
+== Closures in GStrings
 
-== Functional programming (TBD)
+Take the following code:
 
-=== Currying (TBD)
-==== Left currying (TBD)
-==== Right currying (TBD)
-==== Index based currying (TBD)
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_eager_intro,indent=0]
+----
 
-=== Memoization (TBD)
+The code behaves as you would expect, but what happens if you add:
 
-=== Composition (TBD)
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_eager_outro,indent=0]
+----
 
-=== Trampoline (TBD)
+You will see that the assert fails! There are two reaons for this:
 
+* a GString only evaluates lazily the `toString` representation of values
+* the syntax `${x}` in a GString does *not* represent a closure but an *expression* to `$x`, evalutated when the GString
+is created.
+
+In our example, the `GString` is created with an expression referencing `x`. When the `GString` is created, the *value*
+of `x` is 1, so the `GString` is created with a value of 1. When the assert is triggered, the `GString` is evaluated
+and 1 is converted to a `String` using `toString`. When we change `x` to 2, we did change the value of `x`, but it is
+a different object, and the `GString` still references the old one.
+
+TIP: A `GString` will only change its `toString` representation if the values it references are mutating. If the references
+change, nothing will happen.
+
+If you need a real closure in a GString and for example enforce lazy evaluation of variables, you need to use the
+alternate syntax `${-> x}` like in the fixed example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_lazy,indent=0]
+----
+
+And let's illustrate how it differs from mutation with this code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_mutation,indent=0]
+----
+<1> the `Person` class has a `toString` method returning the `name` property
+<2> we create a first `Person` named _Sam_
+<3> we create another `Person` named _Lucy_
+<4> the `p` variable is set to `Sam`
+<5> and a closure is created, referencing the value of `p`, that is to say _Sam_
+<6> so when we evaluate the string, it returns _Sam_
+<7> if we change `p` to _Lucy_
+<8> the string still evaluates to _Sam_ because it was the *value* of `p` when the `GString` was created
+<9> so if we mutate _Sam_ to change his name to _Lucy_
+<10> this time the `GString` is correctly mutated
+
+So if you don't want to rely on mutating objects or wrapping objects, you *must* use closures in `GString` by explicitly
+declaring an empty argument list:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_no_mutation,indent=0]
+----
+
+== Closure coercion
+
+Closures can be converted into interfaces or single-abstract method types. Please refer to
+link:core-semantics.html#closure-coercion[this section of the manual] for a complete description.
+
+== Functional programming
+
+Closures, like {lambdas} are at the core of the functional programming paradigm in Groovy. Some functional programming
+operations on functions are available directly on the `Closure` class, like illustrated in this section.
+
+=== Currying
+
+In Groovy, currying refers to the concept of partial application. It does *not* correspond to the real concept of currying
+in functional programming because of the different scoping rules that Groovy applies on closures. Currying in Groovy will
+let you set the value of one parameter of a closure, and it will return a new closure accepting one less argument.
+
+==== Left currying
+
+Left currying is the fact of setting the left-most parameter of a closure, like in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=left_curry,indent=0]
+----
+<1> the `nCopies` closure defines two parameters
+<2> `curry` will set the first parameter to `2`, creating a new closure (function) which accepts a single `String`
+<3> so the new function call be called with only a `String`
+<4> and it is equivalent to calling `nCopies` with two parameters
+
+==== Right currying
+
+Similarily to left currying, it is possible to set the right-most parameter of a closure:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=left_curry,indent=0]
+----
+<1> the `nCopies` closure defines two parameters
+<2> `rcurry` will set the last parameter to `bla`, creating a new closure (function) which accepts a single `int`
+<3> so the new function call be called with only an `int`
+<4> and it is equivalent to calling `nCopies` with two parameters
+
+==== Index based currying
+
+In case a closure accepts more than 2 parameters, it is possible to set an arbitrary parameter using `ncurry`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=ncurry,indent=0]
+----
+<1> the `volume` function defines 3 parameters
+<2> `ncurry` will set the second parameter (index = 1) to `2d`, creating a new volume function which accepts length and height
+<3> that function is equivalent to calling `volume` omitting the width
+<4> it is also possible to set multiple parameters, starting from the specified index
+<5> the resulting function accepts as many parameters as the initial one minus the number of parameters set by `ncurry`
+
+=== Memoization
+
+Memoization allows the result of the call of a closure to be cached. It is interesting if the computation done by a
+function (closure) is slow, but you know that this function is going to be called often with the same arguments. A
+typical example is the Fibonacci suite. A naive implementation may look like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=naive_fib,indent=0]
+----
+
+It is a naive implementation because 'fib' is often called recursively with the same arguments, leading to an exponential
+algorithm:
+
+- computing `fib(15)` requires the result of `fib(14)` and `fib(13)`
+- computing `fib(14)` requires the result of `fib(13)` and `fib(12)`
+
+Since calls are recursive, you call already see that we will compute the same values again and again, although they could
+be cached. This naive implementation can be "fixed" by caching the result of calls using `memoize`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=memoized_fib,indent=0]
+----
+
+WARNING: The cache works *using the actual values of the arguments*. This means that you should be very careful if you use
+memoization with something else than primitive or boxed primitive types.
+
+The behavior of the cache can be tweaked using alternate methods:
+
+* `memoizeAtMost` will generate a new closure which caches *at most* _n_ values
+* `memoizeAtLeast` will generate a new closure which caches *at least* _n_ values
+* `memoizeBetween` will generate a new closure which caches *at least* _n_ values and *at most* _n_ values
+
+The cache used in all memoize variants is a LRU cache.
+
+=== Composition
+
+Closure composition corresponds to the concept of function composition, that is to say creating a new function by
+composing two or more functions (chaining calls), as illustrated in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_composition,indent=0]
+----
+
+=== Trampoline
+
+Recursive algorithms are often restricted by a physical limit: the maximum stack height. For example, if you call a method
+that recursively calls itself too deep, you will eventually receive a `StackOverflowException`.
+
+An approach that helps in those situations is by using `Closure` and its trampoline capability.
+
+Closures are wrapped in a `TrampolineClosure`. Upon calling, a trampolined `Closure` will call the original `Closure` waiting
+for its result. If the outcome of the call is another instance of a `TrampolineClosure`, created perhaps as a result
+to a call to the `trampoline()` method, the `Closure` will again be invoked. This repetitive invocation of returned
+trampolined Closures instances will continue until a value other than a trampolined `Closure` is returned. That value
+will become the final result of the trampoline. That way, calls are made serially, rather than filling the stack.
+
+Here’s an example of the use of `trampoline()` to implement the factorial function:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=trampoline,indent=0]
+----
+
+=== Method pointers
+
+It is often practical to be able to use a regular method as a closure. For example, you might want to use the currying
+abilities of a closure, but those are not available to normal methods. In Groovy, you can obtain a closure from any
+method with the link:core-operators.html#method-pointer-operator[method pointer operator].
