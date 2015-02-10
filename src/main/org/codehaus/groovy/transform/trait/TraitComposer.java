@@ -157,14 +157,8 @@ public abstract class TraitComposer {
                 Map<String,ClassNode> methodGenericsSpec = new LinkedHashMap<String, ClassNode>(genericsSpec);
                 MethodNode originalMethod = trait.getMethod(name, params);
                 // Original method may be null in case of a private method
-                GenericsType[] originalMethodGenericsTypes = originalMethod!=null?originalMethod.getGenericsTypes():null;
-                if (originalMethodGenericsTypes!=null) {
-                    for (GenericsType type : originalMethodGenericsTypes) {
-                        String gtTypeName = type.getName();
-                        if (!methodGenericsSpec.containsKey(gtTypeName)) {
-                            methodGenericsSpec.put(gtTypeName, type.getType());
-                        }
-                    }
+                if (originalMethod!=null) {
+                    methodGenericsSpec = GenericsUtils.addMethodGenerics(originalMethod, methodGenericsSpec);
                 }
                 for (int i = 1; i < helperMethodParams.length; i++) {
                     Parameter parameter = helperMethodParams[i];
