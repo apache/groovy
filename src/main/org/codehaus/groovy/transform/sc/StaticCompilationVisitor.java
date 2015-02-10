@@ -200,6 +200,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         final int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
         for (MethodNode method : methods) {
             if (accessedMethods.contains(method)) {
+                List<String> methodSpecificGenerics = methodSpecificGenerics(method);
                 i++;
                 ClassNode declaringClass = method.getDeclaringClass();
                 Map<String,ClassNode> genericsSpec = createGenericsSpec(node);
@@ -210,7 +211,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 for (int j = 1; j < newParams.length; j++) {
                     Parameter orig = methodParameters[j-1];
                     newParams[j] = new Parameter(
-                            correctToGenericsSpecRecurse(genericsSpec, orig.getOriginType(),methodSpecificGenerics(method)),
+                            correctToGenericsSpecRecurse(genericsSpec, orig.getOriginType(), methodSpecificGenerics),
                             orig.getName()
                     );
                 }
@@ -232,10 +233,14 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 ExpressionStatement returnStatement = new ExpressionStatement(mce);
                 MethodNode bridge = node.addMethod(
                         "access$"+i, access,
-                        correctToGenericsSpecRecurse(genericsSpec, method.getReturnType(), methodSpecificGenerics(method)),
+                        correctToGenericsSpecRecurse(genericsSpec, method.getReturnType(), methodSpecificGenerics),
                         newParams,
                         method.getExceptions(),
                         returnStatement);
+                GenericsType[] origGenericsTypes = method.getGenericsTypes();
+                if (origGenericsTypes !=null) {
+                    bridge.setGenericsTypes(applyGenericsContextToPlaceHolders(genericsSpec,origGenericsTypes));
+                }
                 privateBridgeMethods.put(method, bridge);
                 bridge.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
             }
