@@ -377,4 +377,144 @@ class ClosuresSpecTest extends GroovyTestCase {
             // end::delegate_only[]
         '''
     }
+
+    void testGStringEager() {
+        // tag::gstring_eager_intro[]
+        def x = 1
+        def gs = "x = ${x}"
+        assert gs == 'x = 1'
+        // end::gstring_eager_intro[]
+        /* do not uncomment, this is used in documentation!
+        // tag::gstring_eager_outro[]
+        x = 2
+        assert gs == 'x = 2'
+        // end::gstring_eager_outro[]
+        */
+        x = 2
+        assert gs == 'x = 1'
+    }
+
+    void testGStringLazy() {
+        // tag::gstring_lazy[]
+        def x = 1
+        def gs = "x = ${-> x}"
+        assert gs == 'x = 1'
+
+        x = 2
+        assert gs == 'x = 2'
+        // end::gstring_lazy[]
+    }
+
+    void testGStringWithMutation() {
+        assertScript '''
+            // tag::gstring_mutation[]
+            class Person {
+                String name
+                String toString() { name }          // <1>
+            }
+            def sam = new Person(name:'Sam')        // <2>
+            def lucy = new Person(name:'Lucy')      // <3>
+            def p = sam                             // <4>
+            def gs = "Name: ${p}"                   // <5>
+            assert gs == 'Name: Sam'                // <6>
+            p = lucy                                // <7>
+            assert gs == 'Name: Sam'                // <8>
+            sam.name = 'Lucy'                       // <9>
+            assert gs == 'Name: Lucy'               // <10>
+            // end::gstring_mutation[]
+        '''
+    }
+
+    void testGStringWithoutMutation() {
+        assertScript '''
+            // tag::gstring_no_mutation[]
+            class Person {
+                String name
+                String toString() { name }
+            }
+            def sam = new Person(name:'Sam')
+            def lucy = new Person(name:'Lucy')
+            def p = sam
+            // Create a GString with lazy evaluation of "p"
+            def gs = "Name: ${-> p}"
+            assert gs == 'Name: Sam'
+            p = lucy
+            assert gs == 'Name: Lucy'
+            // end::gstring_no_mutation[]
+        '''
+    }
+
+    void testLeftCurry() {
+        // tag::left_curry[]
+        def nCopies = { int n, String str -> str*n }    // <1>
+        def twice = nCopies.curry(2)                    // <2>
+        assert twice('bla') == 'blabla'                 // <3>
+        assert twice('bla') == nCopies(2, 'bla')        // <4>
+        // end::left_curry[]
+    }
+
+    void testRightCurry() {
+        // tag::right_curry[]
+        def nCopies = { int n, String str -> str*n }    // <1>
+        def blah = nCopies.rcurry('bla')                // <2>
+        assert blah(2) == 'blabla'                      // <3>
+        assert blah(2) == nCopies(2, 'bla')             // <4>
+        // end::right_curry[]
+    }
+
+    void testNCurry() {
+        // tag::ncurry[]
+        def volume = { double l, double w, double h -> l*w*h }      // <1>
+        def fixedWidthVolume = volume.ncurry(1, 2d)                 // <2>
+        assert volume(3d, 2d, 4d) == fixedWidthVolume(3d, 4d)       // <3>
+        def fixedWidthAndHeight = volume.ncurry(1, 2d, 4d)          // <4>
+        assert volume(3d, 2d, 4d) == fixedWidthAndHeight(3d)        // <5>
+        // end::ncurry[]
+    }
+
+    void testMemoize() {
+        // tag::naive_fib[]
+        def fib
+        fib = { long n -> n<2?n:fib(n-1)+fib(n-2) }
+        assert fib(15) == 610 // slow!
+        // end::naive_fib[]
+        // tag::memoized_fib[]
+        fib = { long n -> n<2?n:fib(n-1)+fib(n-2) }.memoize()
+        assert fib(25) == 75025 // fast!
+        // end::memoized_fib[]
+    }
+
+    void testComposition() {
+        // tag::closure_composition[]
+        def plus2  = { it + 2 }
+        def times3 = { it * 3 }
+
+        def times3plus2 = plus2 << times3
+        assert times3plus2(3) == 11
+        assert times3plus2(4) == plus2(times3(4))
+
+        def plus2times3 = times3 << plus2
+        assert plus2times3(3) == 15
+        assert plus2times3(5) == times3(plus2(5))
+
+        // reverse composition
+        assert times3plus2(3) == (times3 >> plus2)(3)
+        // end::closure_composition[]
+
+    }
+
+    void testTrampoline() {
+        // tag::trampoline[]
+        def factorial
+        factorial = { int n, def accu = 1G ->
+            if (n < 2) return accu
+            factorial.trampoline(n - 1, n * accu)
+        }
+        factorial = factorial.trampoline()
+
+        assert factorial(1)    == 1
+        assert factorial(3)    == 1 * 2 * 3
+        assert factorial(1000) // == 402387260.. plus another 2560 digits
+        // end::trampoline[]
+    }
 }
