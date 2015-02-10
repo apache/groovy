@@ -2425,4 +2425,19 @@ assert c.b() == 2
         '''
     }
 
+    //GROOVY-7297
+    void testMethodlevelGenericsFromPrecompiledClass() {
+        //SomeTrait needs to be outside the script
+        assertScript '''
+            trait SomeTrait {
+                String title
+                public <T> List<T> someMethod(T data) {}
+            }
+            class Foo implements SomeTrait {}
+
+            def sc = new Foo(title: 'some title')
+            assert 'some title' == sc.title
+        '''
+    }
+
 }

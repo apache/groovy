@@ -578,7 +578,12 @@ public class GenericsUtils {
             if (!old.isPlaceholder()) throw new GroovyBugError("Given generics type "+old+" must be a placeholder!");
             ClassNode fromSpec = genericsSpec.get(old.getName());
             if (fromSpec!=null) {
-                newTypes[i] = new GenericsType(fromSpec);
+                if (fromSpec.isGenericsPlaceHolder()) {
+                    ClassNode[] upper = new ClassNode[]{fromSpec.redirect()};
+                    newTypes[i] = new GenericsType(fromSpec, upper, null);
+                } else {
+                    newTypes[i] = new GenericsType(fromSpec);
+                }
             } else {
                 ClassNode[] upper = old.getUpperBounds();
                 ClassNode[] newUpper = upper;
