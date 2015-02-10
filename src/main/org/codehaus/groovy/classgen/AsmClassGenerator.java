@@ -899,7 +899,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (isSuperExpression(objectExpression)) {
                 String prefix;
                 if (controller.getCompileStack().isLHS()) {
-                    prefix = "set";
+                    throw new GroovyBugError("Unexpected super property set for:"+expression.getText());
                 } else {
                     prefix = "get";
                 }
