@@ -461,4 +461,47 @@ public class GenericsUtils {
             }
         }
     }
+
+    /**
+     * transforms generics types from an old context to a new context using the given spec. This method assumes
+     * all generics types will be placeholders. WARNING: The resulting generics types may or may not be placeholders
+     * after the transformation.
+     * @param genericsSpec the generics context information spec
+     * @param oldPlaceHolders the old placeholders
+     * @return the new generics types
+     */
+    public static GenericsType[] applyGenericsContextToPlaceHolders(Map<String, ClassNode> genericsSpec, GenericsType[] oldPlaceHolders) {
+        if (oldPlaceHolders==null || oldPlaceHolders.length==0) return oldPlaceHolders;
+        if (genericsSpec.isEmpty()) return oldPlaceHolders;
+        GenericsType[] newTypes = new GenericsType[oldPlaceHolders.length];
+        for (int i=0; i<oldPlaceHolders.length; i++) {
+            GenericsType old = oldPlaceHolders[i];
+            if (!old.isPlaceholder()) throw new GroovyBugError("Given generics type "+old+" must be a placeholder!");
+            ClassNode fromSpec = genericsSpec.get(old.getName());
+            if (fromSpec!=null) {
+                newTypes[i] = new GenericsType(fromSpec);
+            } else {
+                ClassNode[] upper = old.getUpperBounds();
+                ClassNode[] newUpper = upper;
+                if (upper!=null && upper.length>0) {
+                    ClassNode[] upperCorrected = new ClassNode[upper.length];
+                    for (int j=0;j<upper.length;j++) {
+                        upperCorrected[i] = correctToGenericsSpecRecurse(genericsSpec,upper[j]);
+                    }
+                    upper = upperCorrected;
+                }
+                ClassNode lower = old.getLowerBound();
+                ClassNode newLower = correctToGenericsSpecRecurse(genericsSpec,lower);
+                if (lower==newLower && upper==newUpper) {
+                    newTypes[i] = oldPlaceHolders[i];
+                } else {
+                    ClassNode newPlaceHolder = ClassHelper.make(old.getName());
+                    GenericsType gt = new GenericsType(newPlaceHolder, newUpper, newLower);
+                    gt.setPlaceholder(true);
+                    newTypes[i] = gt;
+                }
+            }
+        }
+        return newTypes;
+    }
 }
