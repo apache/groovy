@@ -22,6 +22,7 @@ import groovy.json.JsonException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * @author Rick Hightower
@@ -169,7 +170,7 @@ public class Exceptions {
             if (message == null) {
                 buf.add("<NULL>");
             } else if (message.getClass().isArray()) {
-                buf.add(Arrays.asList(message).toString());
+                buf.add(Collections.singletonList(message).toString());
             } else {
                 buf.add(message.toString());
             }

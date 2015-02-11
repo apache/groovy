@@ -890,7 +890,7 @@ public abstract class Selector {
                     if (LOG_ENABLED) LOG.info("added same class check at pos "+i);
                 }
                 Class[] drops = new Class[i];
-                for (int j=0; j<drops.length; j++) drops[j] = pt[j];
+                System.arraycopy(pt, 0, drops, 0, drops.length);
                 test = MethodHandles.dropArguments(test, 0, drops);
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
             }
@@ -1023,9 +1023,7 @@ public abstract class Selector {
      */
     private static Object[] removeRealReceiver(Object[] args) {
         Object[] ar = new Object[args.length-1];
-        for (int i=1; i<args.length; i++) {
-            ar[i-1] = args[i];
-        }
+        System.arraycopy(args, 1, ar, 0, args.length - 1);
         return ar;
     }
 }

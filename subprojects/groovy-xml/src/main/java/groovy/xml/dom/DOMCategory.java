@@ -36,6 +36,7 @@ import javax.xml.xpath.XPathFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -225,7 +226,7 @@ public class DOMCategory {
 
         // If the range is of size 1, then we can use the existing
         // xgetAt() that takes an integer index.
-        if (from == to) return new NodesHolder(Arrays.asList(xgetAt(nodeList, from)));
+        if (from == to) return new NodesHolder(Collections.singletonList(xgetAt(nodeList, from)));
 
         // Normalise negative indices.
         if (from < 0) from = from + nodeList.getLength();

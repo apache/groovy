@@ -77,9 +77,7 @@ public class GroovyStarter {
         
         // copy arguments for main class 
         String[] newArgs = new String[args.length-argsOffset];
-        for (int i=0; i<newArgs.length; i++) {
-            newArgs[i] = args[i+argsOffset];
-        }        
+        System.arraycopy(args, 0 + argsOffset, newArgs, 0, newArgs.length);
         // load configuration file
         if (conf!=null) {
             try {

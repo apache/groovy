@@ -31,6 +31,7 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
@@ -105,7 +106,7 @@ public class SynchronizedASTTransformation extends AbstractASTTransformation {
     }
 
     private Expression zeroLengthObjectArray() {
-        return new ArrayExpression(ClassHelper.OBJECT_TYPE, null, Arrays.asList((Expression)constX(0)));
+        return new ArrayExpression(ClassHelper.OBJECT_TYPE, null, Collections.singletonList((Expression) constX(0)));
     }
 
 }
