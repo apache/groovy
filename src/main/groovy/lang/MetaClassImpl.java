@@ -332,7 +332,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     private void fillMethodIndex() {
         mainClassMethodHeader = metaMethodIndex.getHeader(theClass);
-        LinkedList superClasses = getSuperClasses();
+        LinkedList<CachedClass> superClasses = getSuperClasses();
         CachedClass firstGroovySuper = calcFirstGroovySuperClass(superClasses);
 
         Set<CachedClass> interfaces = theCachedClass.getInterfaces();
@@ -351,13 +351,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private void populateMethods(LinkedList superClasses, CachedClass firstGroovySuper) {
-        Iterator iter = superClasses.iterator();
+    private void populateMethods(LinkedList<CachedClass> superClasses, CachedClass firstGroovySuper) {
 
         MetaMethodIndex.Header header = metaMethodIndex.getHeader(firstGroovySuper.getTheClass());
         CachedClass c;
+        Iterator<CachedClass> iter = superClasses.iterator();
         for (; iter.hasNext();) {
-            c = (CachedClass) iter.next();
+            c = iter.next();
 
             CachedMethod[] cachedMethods = c.getMethods();
             for (CachedMethod metaMethod : cachedMethods) {
@@ -380,7 +380,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         MetaMethodIndex.Header last = header;
         for (;iter.hasNext();) {
-            c = (CachedClass) iter.next();
+            c = iter.next();
             header = metaMethodIndex.getHeader(c.getTheClass());
 
             if (last != null) {
@@ -632,11 +632,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private void connectMultimethods(List superClasses, CachedClass firstGroovyClass) {
+    private void connectMultimethods(List<CachedClass> superClasses, CachedClass firstGroovyClass) {
         superClasses = DefaultGroovyMethods.reverse(superClasses);
         MetaMethodIndex.Header last = null;
-        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
-            CachedClass c = (CachedClass) iter.next();
+        for (final CachedClass c : superClasses) {
             MetaMethodIndex.Header methodIndex = metaMethodIndex.getHeader(c.getTheClass());
             // We don't copy DGM methods to superclasses' indexes
             // The reason we can do that is particular set of DGM methods in use,
@@ -647,7 +646,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             last = methodIndex;
 
             if (c == firstGroovyClass)
-              break;
+                break;
         }
     }
 
