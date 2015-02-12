@@ -487,6 +487,51 @@ class DelegateTransformTest extends CompilableTestSupport {
         """
     }
 
+    // GROOVY-7243
+    void testIncludeProperties() {
+        assertScript '''
+            class Book {
+                String title
+                String author
+
+                String getTitleAndAuthor() {
+                    "${title} : ${author}"
+                }
+
+                String getAuthorAndTitle() {
+                    "${author} : ${title}"
+                }
+            }
+
+            class OwnedBook {
+                String owner
+
+                @Delegate(includes=['author', 'getTitleAndAuthor'])
+                Book book
+            }
+            
+            Book book = new Book(title: 'Ulysses', author: 'James Joyce')
+            OwnedBook ownedBook = new OwnedBook(owner: 'John Smith', book: book)
+
+            ownedBook.author = 'John Smith'
+            assert book.author == 'John Smith'
+
+            assert ownedBook.getTitleAndAuthor() == 'Ulysses : John Smith'
+
+            try {
+                ownedBook.getAuthorAndTitle()
+                assert false, 'Non-included methods should not be delegated'
+            } catch(groovy.lang.MissingMethodException expected) {
+            }
+
+            try {
+                ownedBook.title = 'Finnegans Wake'
+                assert false, 'Non-included properties should not be delegated'
+            } catch(groovy.lang.MissingPropertyException expected) {
+            }
+        '''
+    }
+    
     // GROOVY-6329
     void testIncludeAndExcludeByType() {
         assertScript """
