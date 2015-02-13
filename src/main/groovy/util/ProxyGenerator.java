@@ -19,6 +19,7 @@ import groovy.lang.*;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
+import org.codehaus.groovy.transform.trait.Traits;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Modifier;
@@ -235,8 +236,12 @@ public class ProxyGenerator {
     }
     
     private static final class CacheKey {
-        private static final Comparator<Class> CLASSNAME_COMPARATOR = new Comparator<Class>() {
+        private static final Comparator<Class> INTERFACE_COMPARATOR = new Comparator<Class>() {
             public int compare(final Class o1, final Class o2) {
+                // Traits order *must* be preserved
+                // See GROOVY-7285
+                if (Traits.isTrait(o1)) return -1;
+                if (Traits.isTrait(o2)) return 1;
                 return o1.getName().compareTo(o2.getName());
             }
         };
@@ -254,9 +259,11 @@ public class ProxyGenerator {
             this.emptyMethods = emptyMethods;
             this.interfaces = interfaces == null ? null : new ClassReference[interfaces.length];
             if (interfaces != null) {
-                Arrays.sort(interfaces, CLASSNAME_COMPARATOR);
-                for (int i = 0; i < interfaces.length; i++) {
-                    Class anInterface = interfaces[i];
+                Class[] interfacesCopy = new Class[interfaces.length];
+                System.arraycopy(interfaces, 0, interfacesCopy, 0, interfaces.length);
+                Arrays.sort(interfacesCopy, INTERFACE_COMPARATOR);
+                for (int i = 0; i < interfacesCopy.length; i++) {
+                    Class anInterface = interfacesCopy[i];
                     this.interfaces[i] = new ClassReference(anInterface);
                 }
             }
