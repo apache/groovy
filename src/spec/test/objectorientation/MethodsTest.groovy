@@ -17,6 +17,35 @@ package objectorientation
 
 class MethodsTests extends GroovyTestCase {
 
+    void testMethodDefinition() {
+        assertScript '''
+            // tag::method_definition[]
+            def someMethod() { 'method called' }                           //<1>
+            String anotherMethod() { 'another method called' }             //<2>
+            def thirdMethod(param1) { "$param1 passed" }                   //<3>
+            static String fourthMethod(String param1) { "$param1 passed" } //<4>
+            // end::method_definition[]
+        '''
+    }
+
+    void testNamedArguments() {
+        assertScript '''
+            // tag::named_arguments[]
+            def foo(Map args) { "${args.name}: ${args.age}" }
+            foo(name: 'Marie', age: 1)
+            // end::named_arguments[]
+        '''
+    }
+
+    void testDefaultArguments() {
+        assertScript '''
+            // tag::default_arguments[]
+            def foo(String par1, Integer par2 = 1) { [name: par1, age: par2] }
+            assert foo('Marie').age == 1
+            // end::default_arguments[]
+        '''
+    }
+
     void testVarargs() {
         assertScript '''
             // tag::varargs_example[]
@@ -69,4 +98,5 @@ class MethodsTests extends GroovyTestCase {
             // end::varargs_method_overloading[]
         '''
     }
+
 }
