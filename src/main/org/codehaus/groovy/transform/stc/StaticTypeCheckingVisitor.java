@@ -325,30 +325,31 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @SuppressWarnings("unchecked")
-    private void addPrivateFieldOrMethodAccess(ClassNode cn, StaticTypesMarker type, ASTNode accessedMember) {
+    private void addPrivateFieldOrMethodAccess(Expression source, ClassNode cn, StaticTypesMarker type, ASTNode accessedMember) {
         Set<ASTNode> set = (Set<ASTNode>) cn.getNodeMetaData(type);
         if (set==null) {
             set = new LinkedHashSet<ASTNode>();
             cn.putNodeMetaData(type, set);
         }
         set.add(accessedMember);
+        source.putNodeMetaData(type, accessedMember);
     }
 
     /**
      * Given a field node, checks if we are calling a private field from an inner class.
      */
-    private void checkOrMarkPrivateAccess(FieldNode fn) {
+    private void checkOrMarkPrivateAccess(Expression source, FieldNode fn) {
         if (fn!=null && Modifier.isPrivate(fn.getModifiers()) &&
             (fn.getDeclaringClass() != typeCheckingContext.getEnclosingClassNode() || typeCheckingContext.getEnclosingClosure()!=null) &&
             fn.getDeclaringClass().getModule() == typeCheckingContext.getEnclosingClassNode().getModule()) {
-            addPrivateFieldOrMethodAccess(fn.getDeclaringClass(), StaticTypesMarker.PV_FIELDS_ACCESS, fn);
+            addPrivateFieldOrMethodAccess(source, fn.getDeclaringClass(), StaticTypesMarker.PV_FIELDS_ACCESS, fn);
         }
     }
 
     /**
      * Given a method node, checks if we are calling a private method from an inner class.
      */
-    private void checkOrMarkPrivateAccess(MethodNode mn) {
+    private void checkOrMarkPrivateAccess(Expression source, MethodNode mn) {
         if (mn==null) {
             return;
         }
@@ -363,7 +364,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if ((Modifier.isPrivate(mods) && sameModule)
                     || (Modifier.isProtected(mods) && !packageName.equals(enclosingClassNode.getPackageName()))) {
-                addPrivateFieldOrMethodAccess(sameModule? declaringClass : enclosingClassNode, StaticTypesMarker.PV_METHODS_ACCESS, mn);
+                addPrivateFieldOrMethodAccess(source, sameModule? declaringClass : enclosingClassNode, StaticTypesMarker.PV_METHODS_ACCESS, mn);
             }
         }
     }
@@ -1433,7 +1434,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (field==null || !returnTrueIfFieldExists) return false;
         if (visitor != null) visitor.visitField(field);
         storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
-        checkOrMarkPrivateAccess(field);
+        checkOrMarkPrivateAccess(expressionToStoreOn, field);
         if (delegationData!=null) {
             expressionToStoreOn.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
         }
@@ -3077,7 +3078,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected void storeTargetMethod(final Expression call, final MethodNode directMethodCallCandidate) {
         call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
-        checkOrMarkPrivateAccess(directMethodCallCandidate);
+        checkOrMarkPrivateAccess(call, directMethodCallCandidate);
         checkSuperCallFromClosure(call, directMethodCallCandidate);
         extension.onMethodSelection(call, directMethodCallCandidate);
     }
@@ -3862,7 +3863,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (selfTrait!=null) return makeSelf(selfTrait);
             final Variable variable = vexp.getAccessedVariable();
             if (variable instanceof FieldNode) {
-                checkOrMarkPrivateAccess((FieldNode) variable);
+                checkOrMarkPrivateAccess(vexp, (FieldNode) variable);
                 return getType((FieldNode) variable);
             }
             if (variable != null && variable != vexp && variable instanceof VariableExpression) {
