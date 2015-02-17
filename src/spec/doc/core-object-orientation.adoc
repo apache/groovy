@@ -101,15 +101,82 @@ Abstract classes are commonly compared to interfaces. But there are at least two
 ==== Meta-annotations (TBD)
 ==== Annotation placement (TBD)
 
-=== Constructors (TBD)
+=== Constructors
 
-==== Named argument constructor (TBD)
+Constructors are special methods used to initialize an object with a specific state. As in normal methods, it is possible for a class to declare more than one constructor. In Groovy there are two ways to invoke constructors: with positional parameters or named parameters. The former one is like we invoke Java constructors, while the second way allows one to specify the parameter names when invonking the constructor.
 
-=== Methods (TBD)
+==== Positional argument constructor
 
-==== Method definition (TBD)
-==== Named arguments (TBD)
-==== Default arguments (TBD)
+To create an object by using positional argument constructors, the respective class needs to declare each of the constructors it allows being called. A side effect of this is that, once at least one constructor is declared, the class can only be instatiated by getting one of its constructors called. It is worth noting that, in this case, there is no way to create the class with named parameters.
+
+There is three forms of using a declared constructor. The first one is the normal Java way, with the `new` keyword. The others rely on coercion of lists into the desired types. In this case, it is possible to coerce with the `as` keyword and by statically typing the variable.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=constructor_positional_parameters,indent=0]
+----
+<1> Constructor declaration
+<2> Constructor invocation, classic Java way
+<3> Constructor usage, using coercion with `as` keyword
+<4> Constructor usage, using coercion in assignment
+
+
+==== Named argument constructor
+
+If no constructor is declared, it is possible to create objects by passing parameters in the form of a map (property/value pairs). This can be in handy in cases where one wants to allow several combinations of parameters. Otherwise, by using traditional positional parameters it would be necessary to declare all possible constructors.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=constructor_named_parameters,indent=0]
+----
+<1> No constructor declared
+<2> No parameters given in the instantiation
+<3> `name` parameter given in the instantiation
+<4> `age` parameter given in the instantiation
+<5> `name` and `age` parameters given in the instantiation
+
+It is important to highlight, however, that this approach gives more power to the constructor caller, while imposes a major responsibility to it. Thus, if a restriction is needed, one can just declare one or more construtors, and the instantiation by named parameters will no longer be available.
+
+
+=== Methods
+
+Groovy methods are quite similar to other languages. Some peculiarities will be shown in the next subsections. 
+
+==== Method definition
+
+A method is defined with a return type or with the `def` keyword, to make the return type untyped. A method can also receive any number of arguments, which may not have their types explicitly declared. Java modifiers can be used normally, and if no visibility modifier is provided, the method is public.
+
+Methods in Groovy always return some value. If no `return` statement is provided, the value evaluated in the last line executed will be returned. For instance, note that none of the following methods uses the `return` keyword.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=method_definition ,indent=0]
+----
+<1> Method with no return type declared and no parameter
+<2> Method with explicit return type and no parameter
+<3> Method with a parameter with no type defined
+<4> Static method with a String parameter
+
+==== Named arguments
+
+Like constructors, normal methods can also be called with named arguments. They need to receive the parameters as a map. In the method body, the values can be accessed as in normal maps (`map.key`).
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=named_arguments ,indent=0]
+----
+
+==== Default arguments
+
+Default arguments make parameters optional. If the argument is not supplied, the method assumes a default value.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=default_arguments ,indent=0]
+----
+
+Note that no mandatory parameter can be defined after a default parameter is present, only other default parameters.
+
 ==== Varargs
 
 Groovy supports methods with a variable number of arguments. They are defined like this: `def foo(p1, ..., pn, T... args)`.
