@@ -488,7 +488,7 @@ class DelegateTransformTest extends CompilableTestSupport {
     }
 
     // GROOVY-7243
-    void testIncludeProperties() {
+    void testInclude() {
         assertScript '''
             class Book {
                 String title
