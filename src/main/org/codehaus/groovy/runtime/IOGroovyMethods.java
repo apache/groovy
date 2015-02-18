@@ -1126,7 +1126,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withWriter(Writer writer, @ClosureParams(value=SimpleType.class, options="java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriter(Writer writer, @ClosureParams(FirstParam.class) Closure<T> closure) throws IOException {
         try {
             T result = closure.call(writer);
 
@@ -1154,7 +1154,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withReader(Reader reader, @ClosureParams(value=SimpleType.class, options="java.io.Reader") Closure<T> closure) throws IOException {
+    public static <T> T withReader(Reader reader, @ClosureParams(FirstParam.class) Closure<T> closure) throws IOException {
         try {
             T result = closure.call(reader);
 
@@ -1362,7 +1362,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Transforms each character from this reader by passing it to the given
      * closure.  The Closure should return each transformed character, which
-     * will be passed to the Writer.  The reader and writer will be both be
+     * will be passed to the Writer.  The reader and writer will both be
      * closed before this method returns.
      *
      * @param self    a Reader object
@@ -1377,7 +1377,10 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
             char[] chars = new char[1];
             while ((c = self.read()) != -1) {
                 chars[0] = (char) c;
-                writer.write((String) closure.call(new String(chars)));
+                Object o = closure.call(new String(chars));
+                if (o != null) {
+                    writer.write(o.toString());
+                }
             }
             writer.flush();
 
