@@ -28,6 +28,8 @@ import java.util.*;
  */
 public class LazyMap extends AbstractMap<String, Object> {
 
+    private static final String JDK_MAP_ALTHASHING_SYSPROP = System.getProperty("jdk.map.althashing.threshold");
+
     /* Holds the actual map that will be lazily created. */
     private Map<String, Object> map;
     /* The size of the map. */
@@ -50,6 +52,16 @@ public class LazyMap extends AbstractMap<String, Object> {
 
     public Object put(String key, Object value) {
         if (map == null) {
+            for (int i=0;i<size;i++) {
+                String curKey = keys[i];
+                if ((key==null && curKey ==null)
+                    || (key!=null && key.equals(curKey))) {
+                    Object val = values[i];
+                    keys[i] = key;
+                    values[i] = value;
+                    return val;
+                }
+            }
             keys[size] = key;
             values[size] = value;
             size++;
@@ -103,7 +115,7 @@ public class LazyMap extends AbstractMap<String, Object> {
         if (map == null) {
 
             /** added to avoid hash collision attack. */
-            if (Sys.is1_7OrLater() && System.getProperty("jdk.map.althashing.threshold") != null) {
+            if (Sys.is1_7OrLater() && JDK_MAP_ALTHASHING_SYSPROP != null) {
                 map = new LinkedHashMap<String, Object>(size, 0.01f);
             } else {
                 map = new TreeMap<String, Object>();
