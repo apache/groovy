@@ -1732,10 +1732,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 List<String> methods = new ArrayList();
                 MethodVisitor oldMv = mv;
                 int index = 0;
-                int methodIndex = 0;
                 while (index<size) {
-                    methodIndex++;
-                    String methodName = "$createListEntry_" + methodIndex;
+                    String methodName = "$createListEntry_" + controller.getNextHelperMethodIndex();
                     methods.add(methodName);
                     mv = controller.getClassVisitor().visitMethod(
                             ACC_PRIVATE+ACC_STATIC+ACC_SYNTHETIC,
