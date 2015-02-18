@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -550,7 +550,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param list     the command line arguments to pass in
      */
     public Object run(final Reader in, final String fileName, List list) throws CompilationFailedException {
-        return run(in, fileName, new String[list.size()]);
+        return run(in, fileName, list.toArray(new String[list.size()]));
     }
 
     /**
