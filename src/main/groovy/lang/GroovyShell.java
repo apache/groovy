@@ -550,7 +550,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param list     the command line arguments to pass in
      */
     public Object run(final Reader in, final String fileName, List list) throws CompilationFailedException {
-        return run(in, fileName, list.toArray(new String[list.size()]));
+        return run(in, fileName, (String[]) list.toArray(new String[list.size()]));
     }
 
     /**
