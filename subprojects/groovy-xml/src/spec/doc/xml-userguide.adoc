@@ -11,9 +11,9 @@ one of:
 * `groovy.util.XmlSlurper`
 
 Both have the same approach to parse an xml. Both come with a bunch of
-overloaded parse methods plus some special methods such as parseText,
-parseFile and others. For the next example we will use the parseText
-method. It parses a XML String and recursively converts it to a list
+overloaded parse methods plus some special methods such as `parseText`,
+parseFile and others. For the next example we will use the `parseText`
+method. It parses a XML `String` and recursively converts it to a list
 or map of objects.
 
 [source,groovy]
@@ -36,27 +36,27 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParse
 <2> Checking we're using a Node
 <3> Traversing the tree in a GPath style
 
-Well lets see the *similarities* first:
+Let's see the *similarities* between `XMLParser` and `XMLSlurper` first:
 
 * Both are based on `SAX` so they both are low memory footprint
 * Both can update/transform the XML
 
-*Differences* then:
+But they have key *differences*:
 
 * `XmlSlurper` evaluates the structure lazily. So if you update the xml
 you'll have to evaluate the whole tree again.
-* `XmlSlurper` returns `GPathResult` instances when parsing an xml
-* `XmlParser` returns `Node` objects when parsing an xml
+* `XmlSlurper` returns `GPathResult` instances when parsing XML
+* `XmlParser` returns `Node` objects when parsing XML
 
 When to use one or the another?
 
 NOTE: There is a discussion at
 http://stackoverflow.com/questions/7558019/groovy-xmlslurper-vs-xmlparser[StackOverflow]. The
-conclusions written here are based partially in this entry:
+conclusions written here are based partially in this entry.
 
 * *If you want to transform an existing document to another* then
-XmlSlurper will be the choice
-* *If you want to update and read at the same time* then XmlParser is
+`XmlSlurper` will be the choice
+* *If you want to update and read at the same time* then `XmlParser` is
 the choice.
 
 The rationale behind this is that every time you create a node with
@@ -69,8 +69,8 @@ choice, since it will not have to create a complete structure in
 memory"
 
 In general both classes perform similar way. Even the way of using
-GPath expressions with them are the same (both use breadFirst() and
-depthFirst() expressions). So I guess it depends on the write/read
+GPath expressions with them are the same (both use `breadthFirst()` and
+`depthFirst()` expressions). So I guess it depends on the write/read
 frequency.
 
 === DOMCategory
@@ -80,8 +80,8 @@ used of `groovy.xml.dom.DOMCategory` which is a category class which
 adds GPath style operations to Java's DOM classes.
 
 NOTE: Java has in-built support for DOM processing of XML using classes
-representing the various parts of XML documents, e.g. Document,
-Element, NodeList, Attr etc. For more information about these classes,
+representing the various parts of XML documents, e.g. `Document`,
+`Element`, `NodeList`, `Attr` etc. For more information about these classes,
 refer to the respective JavaDocs.
 
 Having a XML like the following:
@@ -112,9 +112,9 @@ sense, it has similar aims and scope as XPath does for XML. The two
 main places where you use GPath expressions is when dealing with
 nested POJOs or when dealing with XML__
 
-So it's similar to http://en.wikipedia.org/wiki/XPath[XPath]
+It is similar to http://en.wikipedia.org/wiki/XPath[XPath]
 expressions and you can use it not only with XML but also with POJO
-classes.As an example, you can specify a path to an object or element
+classes. As an example, you can specify a path to an object or element
 of interest:
 
 * `a.b.c` -> for XML, yields all the `<c>` elements inside `<b>` inside `<a>`
@@ -127,7 +127,7 @@ For XML, you can also specify attributes, e.g.:
 * `a.'@href'` -> an alternative way of expressing this
 * `a.@href` -> an alternative way of expressing this when using XmlSlurper
 
-Ok, so lets see an example:
+Let's illustrate this with an example:
 
 [source,groovy]
 ----
@@ -136,7 +136,7 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurp
 
 === Simply traversing the tree
 
-First thing we could do is to get a value using POJO's notation. Lets
+First thing we could do is to get a value using POJO's notation. Let's
 get the first book's author's name
 
 [source,groovy]
@@ -145,18 +145,18 @@ get the first book's author's name
 include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testGettingANodeText,indent=0]
 ----
 
-So first we parse the document with `XmlSlurper` and the we have to
+First we parse the document with `XmlSlurper` and the we have to
 consider the returning value as the root of the XML document, so in
 this case is "response".
 
-So that's why we start traversing the document from response and then
+That's why we start traversing the document from response and then
 `value.books.book[0].author`. Note that in `XPath` the node arrays starts
 in [1] instead of [0], but because `GPath` is Java-based it begins at
-[0] index.
+index 0.
 
-In the end we'll have the instance of the "author" node and because we
+In the end we'll have the instance of the `author` node and because we
 wanted the text inside that node we should be calling the `text()`
-method.  The "author" node is an instance of `GPathResult` type and
+method.  The `author` node is an instance of `GPathResult` type and
 `text()` a method giving us the content of that node as a String.
 
 When using `GPath` with an xml parsed with `XmlSlurper` we'll have as a
@@ -168,14 +168,15 @@ methods to convert the text inside a node to any other type such as:
 * `toBigInteger()`
 * ...
 
-All these methods try to convert an String to a certain type.
+All these methods try to convert a `String` to the appropriate type.
 
 If we were using a XML parsed with `XmlParser` we could be dealing with
 instances of type `Node`. But still all the actions applied to
 `GPathResult` in these examples could be applied to a Node as
 well. Creators of both parsers took into account `GPath` compatibility.
 
-Next step is to get the some values from a given node's attribute. In the following sample we want to get the first book's author's id. We'll be using two different approaches. Let's see the code first:
+Next step is to get the some values from a given node's attribute. In the following sample
+we want to get the first book's author's id. We'll be using two different approaches. Let's see the code first:
 
 [source,groovy]
 .Getting an attribute's value
@@ -189,15 +190,15 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurp
 <4> Getting the value as a String
 <5> Getting the value of the attribute as an `Integer`
 
-As you could see there are to types of notations to get attributes,
+As you can see there are to types of notations to get attributes,
 the
 
-* `direct notation` with `@nameoftheattribute`
-* `map notation` using `['@nameoftheattribute']`
+* _direct notation_ with `@nameoftheattribute`
+* _map notation_ using `['@nameoftheattribute']`
 
 Both of them are equally valid.
 
-=== Speed things up with breadfirst() and depthfirst()
+=== Speed things up with breadthFirst and depthfirst
 
 If you ever have used XPath you may have used expressions like
 
@@ -205,13 +206,13 @@ If you ever have used XPath you may have used expressions like
 * `/following-sibling::othernode` : Look for a node "othernode" in the same level
 
 More or less we have their counterparts in `Gpath` with the methods
-`breadfirst()` and `depthfirst()`.
+`breadthFirst()` and `depthfirst()`.
 
-The first example shows a simple use of breadfirst(). The creators of
+The first example shows a simple use of `breadthFirst()`. The creators of
 this methods created a shorter syntax for it using the symbol `*`.
 
 [source,groovy]
-.breadFirst()
+.breadthFirst()
 ----
 include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testBreadFirst1,indent=0]
 ----
@@ -221,13 +222,13 @@ first, and *only if* it couldn't find the node we were looking for,
 then it will look deeper in the tree, always taking into account the
 given the expression inside the closure.
 
-So to speak the expression says *_Look for any node with a tag name
+The expression says *_Look for any node with a tag name
 equals 'book' having an id with a value of '2'_*.
 
-But what if I woke up very lazy and I'd like to look for a given value
-without having to know exactly where it might be. Lets say that the
-only thing I may know is the id of the author "Lewis Carroll" . How am
-I gonna be able to find that book ? `depthFirst()` to the rescue!.
+But what if we would like to look for a given value
+without having to know exactly where it is. Let's say that the
+only thing we know is the id of the author "Lewis Carroll" . How are
+we going to be able to find that book? `depthFirst()` is the solution:
 
 [source,groovy]
 .depthFirst()
@@ -235,9 +236,8 @@ I gonna be able to find that book ? `depthFirst()` to the rescue!.
 include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testDepthFirst1,indent=0]
 ----
 
-Definitely is shorter that using the POJO notation isn't it?
-`depthfirst()` is the same as looking something *_everywhere in the
-tree from this point down_*. In this case we've used the method
+`depthfirst()` is the same as looking something *everywhere in the
+tree from this point down*. In this case we've used the method
 `find(Closure cl)` to find just the first occurrence.
 
 What if we want to collect all book's titles?
@@ -284,7 +284,7 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBu
 <3> Create an instance of `XmlSlurper` to traverse and test the
 generated XML
 
-Lets take a look a little bit closer:
+Let's take a look a little bit closer:
 
 [source,groovy]
 .Creating XML elements
@@ -293,7 +293,7 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBu
 ----
 
 <1> We're creating a reference string to compare against
-<2> The xmlWriter instance is used by `MarkupBuilder` to convert the
+<2> The `xmlWriter` instance is used by `MarkupBuilder` to convert the
 xml representation to a String instance eventually
 <3> The `xmlMarkup.movie(...)` call will create a XML node with a tag
 called `movie` and with content `the godfather`.
@@ -308,8 +308,8 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBu
 can create as many map entries as you like and finally add a value
 to set the node's content
 
-NOTE: The value could be any Object, the value will be serialized to its
-String representation.
+NOTE: The value could be any `Object`, the value will be serialized to its
+`String` representation.
 
 [source,groovy]
 .Creating XML nested elements
@@ -482,7 +482,7 @@ Anyway you won't normally be creating a node from the parser instance
 but from the parsed XML instance. That is from a `Node` or a
 `GPathResult` instance.
 
-Take a look at the next example. We are parsing the xml with XmlParser
+Take a look at the next example. We are parsing the xml with `XmlParser`
 and then creating a new node from the parsed document's instance
 (Notice the method here is slightly different in the way it receives
 the parameters):
@@ -492,13 +492,13 @@ the parameters):
 include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=testAddingNodes2,indent=0]
 ----
 
-When using XmlSlurper GPathResult instances don't have createNode()
+When using `XmlSlurper`, `GPathResult` instances don't have `createNode()`
 method.
 
 === Modifying / Removing nodes
 
 We know how to parse the document, add new nodes, now I want to change
-a given node's content. Let's start using XmlParser and Node. This
+a given node's content. Let's start using `XmlParser` and `Node`. This
 example changes the first book information to actually another book.
 
 [source,groovy]
@@ -523,7 +523,7 @@ could be a little bit annoying isn't it?
 Finally both parsers also use the same approach for adding a new
 attribute to a given attribute. This time again the difference is
 whether you want the new nodes to be available right away or
-not. First XmlParser:
+not. First `XmlParser`:
 
 [source,groovy]
 ----
@@ -537,9 +537,7 @@ And `XmlSlurper`:
 include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testSettingAttributes1,indent=0]
 ----
 
-But, hold on a second! The XmlSlurper example didn't need to evaluate
-again the transformation did it? You're right. When adding a new
-attribute doing a new evaluation is not necessary either way.
+When using `XmlSlurper`, adding a new attribute does *not* require you to perform a new evaluation.
 
 === Printing XML
 
