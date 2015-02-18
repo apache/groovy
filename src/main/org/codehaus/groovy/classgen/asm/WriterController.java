@@ -79,6 +79,7 @@ public class WriterController {
     private TypeChooser typeChooser;
     private int bytecodeVersion = Opcodes.V1_5;
     private int lineNumber = -1;
+    private int helperMethodIndex = 0;
 
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         CompilerConfiguration config = cn.getCompileUnit().getConfig();
@@ -398,4 +399,8 @@ public class WriterController {
 	public void resetLineNumber() {
 		setLineNumber(-1);
 	}
+
+    public int getNextHelperMethodIndex() {
+        return helperMethodIndex++;
+    }
 }

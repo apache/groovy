@@ -820,4 +820,10 @@ class ListTest extends GroovyTestCase {
         assert !list.removeElement(4)
         assert [1, 3, 2] == list
     }
+
+    // GROOVY-7299
+    void testMultipleVeryLongLlists() {
+        def script = "def a = ["+'1000,'*2000+"];def b = ["+'1000,'*2000+"]; def c=(a+b).sum(); assert c==4_000_000";
+        assertScript script
+    }
 }
