@@ -690,11 +690,11 @@ class SyntaxTest extends CompilableTestSupport {
         String[] arrStr = ['Ananas', 'Banana', 'Kiwi']  // <1>
 
         assert arrStr instanceof String[]    // <2>
-        assert !(arrStr instanceof List)     // <3>
+        assert !(arrStr instanceof List)
 
-        def numArr = [1, 2, 3] as int[]      // <4>
+        def numArr = [1, 2, 3] as int[]      // <3>
 
-        assert numArr instanceof int[]       // <5>
+        assert numArr instanceof int[]       // <4>
         assert numArr.size() == 3
         // end::array_1[]
 
