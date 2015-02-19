@@ -48,7 +48,9 @@ include::{projectdir}/src/spec/doc/core-testing-guide.adoc[leveloffset=+2]
 include::{projectdir}/subprojects/groovy-json/{specfolder}/json-userguide.adoc[leveloffset=+2]
 
 === Interacting with a SQL database (TBD)
-=== Processing XML (TBD)
+
+include::{projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc[leveloffset=+2]
+
 === Scripting Ant tasks (TBD)
 
 include::{projectdir}/src/spec/doc/template-engines.adoc[leveloffset=+2]

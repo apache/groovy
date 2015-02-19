@@ -5797,6 +5797,222 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Concatenates the string representation of each
+     * items in this array, with the given String as a separator between each
+     * item.
+     *
+     * @param self      an array of boolean
+     * @param separator a String separator
+     * @return the joined String
+     * @since 2.4.1
+     */
+    public static String join(boolean[] self, String separator) {
+        StringBuilder buffer = new StringBuilder();
+        boolean first = true;
+
+        if (separator == null) separator = "";
+
+        for (boolean next : self) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(separator);
+            }
+            buffer.append(next);
+        }
+        return buffer.toString();
+    }
+
+    /**
+     * Concatenates the string representation of each
+     * items in this array, with the given String as a separator between each
+     * item.
+     *
+     * @param self      an array of byte
+     * @param separator a String separator
+     * @return the joined String
+     * @since 2.4.1
+     */
+    public static String join(byte[] self, String separator) {
+        StringBuilder buffer = new StringBuilder();
+        boolean first = true;
+
+        if (separator == null) separator = "";
+
+        for (byte next : self) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(separator);
+            }
+            buffer.append(next);
+        }
+        return buffer.toString();
+    }
+
+    /**
+     * Concatenates the string representation of each
+     * items in this array, with the given String as a separator between each
+     * item.
+     *
+     * @param self      an array of char
+     * @param separator a String separator
+     * @return the joined String
+     * @since 2.4.1
+     */
+    public static String join(char[] self, String separator) {
+        StringBuilder buffer = new StringBuilder();
+        boolean first = true;
+
+        if (separator == null) separator = "";
+
+        for (char next : self) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(separator);
+            }
+            buffer.append(next);
+        }
+        return buffer.toString();
+    }
+
+    /**
+     * Concatenates the string representation of each
+     * items in this array, with the given String as a separator between each
+     * item.
+     *
+     * @param self      an array of double
+     * @param separator a String separator
+     * @return the joined String
+     * @since 2.4.1
+     */
+    public static String join(double[] self, String separator) {
+        StringBuilder buffer = new StringBuilder();
+        boolean first = true;
+
+        if (separator == null) separator = "";
+
+        for (double next : self) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(separator);
+            }
+            buffer.append(next);
+        }
+        return buffer.toString();
+    }
+
+    /**
+     * Concatenates the string representation of each
+     * items in this array, with the given String as a separator between each
+     * item.
+     *
+     * @param self      an array of float
+     * @param separator a String separator
+     * @return the joined String
+     * @since 2.4.1
+     */
+    public static String join(float[] self, String separator) {
+        StringBuilder buffer = new StringBuilder();
+        boolean first = true;
+
+        if (separator == null) separator = "";
+
+        for (float next : self) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(separator);
+            }
+            buffer.append(next);
+        }
+        return buffer.toString();
+    }
+
+    /**
+     * Concatenates the string representation of each
+     * items in this array, with the given String as a separator between each
+     * item.
+     *
+     * @param self      an array of int
+     * @param separator a String separator
+     * @return the joined String
+     * @since 2.4.1
+     */
+    public static String join(int[] self, String separator) {
+        StringBuilder buffer = new StringBuilder();
+        boolean first = true;
+
+        if (separator == null) separator = "";
+
+        for (int next : self) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(separator);
+            }
+            buffer.append(next);
+        }
+        return buffer.toString();
+    }
+
+    /**
+     * Concatenates the string representation of each
+     * items in this array, with the given String as a separator between each
+     * item.
+     *
+     * @param self      an array of long
+     * @param separator a String separator
+     * @return the joined String
+     * @since 2.4.1
+     */
+    public static String join(long[] self, String separator) {
+        StringBuilder buffer = new StringBuilder();
+        boolean first = true;
+
+        if (separator == null) separator = "";
+
+        for (long next : self) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(separator);
+            }
+            buffer.append(next);
+        }
+        return buffer.toString();
+    }
+
+    /**
+     * Concatenates the string representation of each
+     * items in this array, with the given String as a separator between each
+     * item.
+     *
+     * @param self      an array of short
+     * @param separator a String separator
+     * @return the joined String
+     * @since 2.4.1
+     */
+    public static String join(short[] self, String separator) {
+        StringBuilder buffer = new StringBuilder();
+        boolean first = true;
+
+        if (separator == null) separator = "";
+
+        for (short next : self) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(separator);
+            }
+            buffer.append(next);
+        }
+        return buffer.toString();
+    }
+
+    /**
      * @deprecated Use the Iterable version of min instead
      * @see #min(Iterable)
      * @since 1.0
@@ -11407,7 +11623,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 boolean elementRemoved = false;
                 for (Iterator<?> iterator = removeMe.iterator(); iterator.hasNext() && !elementRemoved;) {
                     Object elt = iterator.next();
-                    if (numberComparator.compare(element, (T)elt) == 0) {
+                    if (DefaultTypeTransformation.compareEqual(element, elt)) {
                         iter.remove();
                         elementRemoved = true;
                     }

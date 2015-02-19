@@ -2981,7 +2981,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             ret.add(gt);
             typeParameter = typeParameter.getNextSibling();
         }
-        return (GenericsType[]) ret.toArray(new GenericsType[0]);
+        return (GenericsType[]) ret.toArray(new GenericsType[ret.size()]);
     }
 
     protected ClassNode makeType(AST typeNode) {

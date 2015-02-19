@@ -37,6 +37,7 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -68,7 +69,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         Expression value = node.getMember("value");
         if (parent instanceof ClassNode) {
             List<groovy.transform.PackageScopeTarget> targets;
-            if (value == null) targets = Arrays.asList(legacyMode ? PackageScopeTarget.FIELDS: PackageScopeTarget.CLASS);
+            if (value == null) targets = Collections.singletonList(legacyMode ? PackageScopeTarget.FIELDS : PackageScopeTarget.CLASS);
             else targets = determineTargets(value);
             visitClassNode((ClassNode) parent, targets);
             parent.getAnnotations();

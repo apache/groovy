@@ -29,7 +29,7 @@ import org.objectweb.asm.MethodVisitor;
 public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
 
     public BinaryFloatExpressionHelper(WriterController controller) {
-        super(controller);
+        super(controller, floatArraySet, floatArrayGet);
     }
     
     protected void doubleTwoOperands(MethodVisitor mv) {
@@ -40,15 +40,6 @@ public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
         floatArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "fArrayGet"),
         floatArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "fArraySet");
 
-    
-    protected MethodCaller getArrayGetCaller() {
-        return floatArrayGet;
-    }
-    
-    protected MethodCaller getArraySetCaller() {
-        return floatArraySet;
-    }
-    
     protected boolean writeBitwiseOp(int type, boolean simulate) {
         if (!simulate) throw new GroovyBugError("should not reach here");
         return false;   

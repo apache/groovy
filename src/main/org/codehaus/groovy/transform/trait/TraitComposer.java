@@ -57,8 +57,10 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -155,14 +157,8 @@ public abstract class TraitComposer {
                 Map<String,ClassNode> methodGenericsSpec = new LinkedHashMap<String, ClassNode>(genericsSpec);
                 MethodNode originalMethod = trait.getMethod(name, params);
                 // Original method may be null in case of a private method
-                GenericsType[] originalMethodGenericsTypes = originalMethod!=null?originalMethod.getGenericsTypes():null;
-                if (originalMethodGenericsTypes!=null) {
-                    for (GenericsType type : originalMethodGenericsTypes) {
-                        String gtTypeName = type.getName();
-                        if (!methodGenericsSpec.containsKey(gtTypeName)) {
-                            methodGenericsSpec.put(gtTypeName, type.getType());
-                        }
-                    }
+                if (originalMethod!=null) {
+                    methodGenericsSpec = GenericsUtils.addMethodGenerics(originalMethod, methodGenericsSpec);
                 }
                 for (int i = 1; i < helperMethodParams.length; i++) {
                     Parameter parameter = helperMethodParams[i];
@@ -286,13 +282,16 @@ public abstract class TraitComposer {
             Parameter[] traitMethodParams,
             Parameter[] forwarderParams,
             ArgumentListExpression helperMethodArgList) {
-        ClassNode[] exceptionNodes = copyExceptions(helperMethod.getExceptions());
         MethodCallExpression mce = new MethodCallExpression(
                 new ClassExpression(helperClassNode),
                 helperMethod.getName(),
                 helperMethodArgList
         );
         mce.setImplicitThis(false);
+
+        genericsSpec = GenericsUtils.addMethodGenerics(helperMethod,genericsSpec);
+
+        ClassNode[] exceptionNodes = correctToGenericsSpecRecurse(genericsSpec, copyExceptions(helperMethod.getExceptions()));
         ClassNode fixedReturnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
         Expression forwardExpression = genericsSpec.isEmpty()?mce:new CastExpression(fixedReturnType,mce);
         int access = helperMethod.getModifiers();
@@ -322,7 +321,9 @@ public abstract class TraitComposer {
             forwarder.addAnnotations(copied);
         }
         if (originalMethod!=null) {
-            forwarder.setGenericsTypes(originalMethod.getGenericsTypes());
+            GenericsType[] newGt = GenericsUtils.applyGenericsContextToPlaceHolders(genericsSpec, originalMethod.getGenericsTypes());
+            newGt = removeNonPlaceHolders(newGt);
+            forwarder.setGenericsTypes(newGt);
         }
         // add a helper annotation indicating that it is a bridge method
         AnnotationNode bridgeAnnotation = new AnnotationNode(Traits.TRAITBRIDGE_CLASSNODE);
@@ -337,6 +338,23 @@ public abstract class TraitComposer {
         }
 
         createSuperForwarder(targetNode, forwarder, genericsSpec);
+    }
+
+    private static GenericsType[] removeNonPlaceHolders(GenericsType[] oldTypes) {
+        if (oldTypes==null || oldTypes.length==0) return oldTypes;
+        ArrayList<GenericsType> l = new ArrayList<GenericsType>(Arrays.asList(oldTypes));
+        Iterator<GenericsType> it = l.iterator();
+        boolean modified = false;
+        while (it.hasNext()) {
+            GenericsType gt = it.next();
+            if (!gt.isPlaceholder()) {
+                it.remove();
+                modified = true;
+            }
+        }
+        if (!modified) return oldTypes;
+        if (l.size()==0) return null;
+        return l.toArray(new GenericsType[l.size()]);
     }
 
     /**

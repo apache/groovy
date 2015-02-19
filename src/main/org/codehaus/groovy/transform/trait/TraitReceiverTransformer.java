@@ -101,31 +101,20 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 } else if (leftExpression instanceof PropertyExpression
                         && (((PropertyExpression) leftExpression).isImplicitThis() || "this".equals(((PropertyExpression) leftExpression).getObjectExpression().getText()))) {
                     leftFieldName = ((PropertyExpression) leftExpression).getPropertyAsString();
-                    FieldNode fn = weavedType.getDeclaredField(leftFieldName);
-                    if (fn==null && ClassHelper.CLASS_Type.equals(weavedType)) {
-                        GenericsType[] genericsTypes = weavedType.getGenericsTypes();
-                        if (genericsTypes !=null && genericsTypes.length==1) {
-                            // for static properties
-                            fn = genericsTypes[0].getType().getDeclaredField(leftFieldName);
-                        }
-                    }
+                    FieldNode fn = tryGetFieldNode(weavedType, leftFieldName);
                     if (fieldHelper == null || fn==null && !fieldHelper.hasPossibleMethod(Traits.helperSetterName(new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null)), rightExpression)) {
-                        return new BinaryExpression(
-                                new PropertyExpression(
-                                        new VariableExpression(weaved),
-                                        leftFieldName
-                                ),
-                                operation,
-                                transform(rightExpression));
+                        return createAssignmentToField(rightExpression, operation, leftFieldName);
                     }
                 }
                 if (leftFieldName!=null) {
                     FieldNode fn = weavedType.getDeclaredField(leftFieldName);
+                    FieldNode staticField = tryGetFieldNode(weavedType, leftFieldName);
                     if (fn==null) {
                         fn = new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null);
                     }
                     Expression receiver = createFieldHelperReceiver();
-                    if (fn.isStatic()) {
+                    boolean isStatic = staticField!=null && staticField.isStatic();
+                    if (fn.isStatic()) { // DO NOT USE isStatic variable here!
                         receiver = new PropertyExpression(receiver, "class");
                     }
                     String method = Traits.helperSetterName(fn);
@@ -136,6 +125,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     );
                     mce.setSourcePosition(exp);
                     mce.setImplicitThis(false);
+                    markDynamicCall(mce, staticField, isStatic);
                     return mce;
                 }
             }
@@ -181,6 +171,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             );
             mce.setSourcePosition(exp);
             mce.setImplicitThis(false);
+            markDynamicCall(mce, field, field.isStatic());
             return mce;
         } else if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;
@@ -189,24 +180,18 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 FieldNode fn = (FieldNode) accessedVariable;
                 Expression receiver = createFieldHelperReceiver();
                 MethodCallExpression mce;
-                if (fn.isStatic()) {
-                    receiver = new TernaryExpression(
-                            new BooleanExpression(new BinaryExpression(
-                                    receiver,
-                                    Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1),
-                                    new ClassExpression(ClassHelper.CLASS_Type)
-                            )),
-                            receiver,
-                            new MethodCallExpression(createFieldHelperReceiver(), "getClass", ArgumentListExpression.EMPTY_ARGUMENTS)
-                    );
+                boolean isStatic = fn.isStatic();
+                if (isStatic) {
+                    receiver = createStaticReceiver(receiver);
                 }
                 mce = new MethodCallExpression(
                             receiver,
-                            Traits.helperGetterName((FieldNode) accessedVariable),
+                            Traits.helperGetterName(fn),
                             ArgumentListExpression.EMPTY_ARGUMENTS
                 );
                 mce.setSourcePosition(exp);
                 mce.setImplicitThis(false);
+                markDynamicCall(mce, fn, isStatic);
                 return mce;
             } else if (accessedVariable instanceof PropertyNode) {
                 String propName = accessedVariable.getName();
@@ -274,6 +259,46 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
         // todo: unary expressions (field++, field+=, ...)
         return super.transform(exp);
+    }
+
+    private void markDynamicCall(final MethodCallExpression mce, final FieldNode fn, final boolean isStatic) {
+        if (isStatic) {
+            mce.putNodeMetaData(TraitASTTransformation.DO_DYNAMIC, fn.getOriginType());
+        }
+    }
+
+    private TernaryExpression createStaticReceiver(final Expression receiver) {
+        return new TernaryExpression(
+                new BooleanExpression(new BinaryExpression(
+                        receiver,
+                        Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1),
+                        new ClassExpression(ClassHelper.CLASS_Type)
+                )),
+                receiver,
+                new MethodCallExpression(createFieldHelperReceiver(), "getClass", ArgumentListExpression.EMPTY_ARGUMENTS)
+        );
+    }
+
+    private BinaryExpression createAssignmentToField(final Expression rightExpression, final Token operation, final String fieldName) {
+        return new BinaryExpression(
+                new PropertyExpression(
+                        new VariableExpression(weaved),
+                        fieldName
+                ),
+                operation,
+                transform(rightExpression));
+    }
+
+    private FieldNode tryGetFieldNode(final ClassNode weavedType, final String fieldName) {
+        FieldNode fn = weavedType.getDeclaredField(fieldName);
+        if (fn==null && ClassHelper.CLASS_Type.equals(weavedType)) {
+            GenericsType[] genericsTypes = weavedType.getGenericsTypes();
+            if (genericsTypes !=null && genericsTypes.length==1) {
+                // for static properties
+                fn = genericsTypes[0].getType().getDeclaredField(fieldName);
+            }
+        }
+        return fn;
     }
 
     private void throwSuperError(final ASTNode node) {

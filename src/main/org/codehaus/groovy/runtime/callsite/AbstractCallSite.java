@@ -23,6 +23,8 @@ import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Method;
@@ -292,7 +294,15 @@ public class AbstractCallSite implements CallSite {
     }
 
     public Object callGroovyObjectGetProperty(Object receiver) throws Throwable {
-        return acceptGroovyObjectGetProperty(receiver).getProperty(receiver);
+        if (receiver == null) {
+            try {
+                return InvokerHelper.getProperty(NullObject.getNullObject(), name);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
+        } else {
+            return acceptGroovyObjectGetProperty(receiver).getProperty(receiver);
+        }
     }
 
     public CallSite acceptGetProperty(Object receiver) {

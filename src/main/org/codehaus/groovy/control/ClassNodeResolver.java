@@ -123,7 +123,6 @@ public class ClassNodeResolver {
         ClassNode res = getFromClassCache(name);
         if (res==NO_CLASS) return null;
         if (res!=null) return new LookupResult(null,res);
-        
         LookupResult lr = findClassNode(name, compilationUnit);
         if (lr != null) {
             if (lr.isClassNode()) cacheClass(name, lr.getClassNode());
@@ -213,7 +212,7 @@ public class ClassNodeResolver {
             LookupResult lr = tryAsScript(name, compilationUnit, null);
             return lr;
         } catch (CompilationFailedException cfe) {
-            throw new GroovyBugError("The lookup for "+name+" caused a failed compilaton. There should not have been any compilation from this call.");
+            throw new GroovyBugError("The lookup for "+name+" caused a failed compilaton. There should not have been any compilation from this call.", cfe);
         }
         //TODO: the case of a NoClassDefFoundError needs a bit more research
         // a simple recompilation is not possible it seems. The current class

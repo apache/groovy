@@ -87,7 +87,7 @@ class RecursiveList {
     static int count(Map rlist, int result = 0) {
         if (!rlist)
             return result
-        count(tail(rlist), ++result)
+        count(tail(rlist), result+1)
     }
 
     @TailRecursive

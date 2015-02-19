@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.ClassNodeSkip;
@@ -202,6 +203,36 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         node.visitContents(this);
         checkForDuplicateMethods(node);
         addCovariantMethods(node);
+
+        checkFinalVariables(node);
+    }
+
+    private void checkFinalVariables(ClassNode node) {
+        FinalVariableAnalyzer analyzer = new FinalVariableAnalyzer(null, getFinalVariablesCallback());
+        analyzer.visitClass(node);
+
+    }
+
+    protected FinalVariableAnalyzer.VariableNotFinalCallback getFinalVariablesCallback() {
+        return new FinalVariableAnalyzer.VariableNotFinalCallback() {
+            @Override
+            public void variableNotFinal(Variable var, Expression bexp) {
+                if (var instanceof VariableExpression) {
+                    var = ((VariableExpression) var).getAccessedVariable();
+                }
+                if (var instanceof VariableExpression && Modifier.isFinal(var.getModifiers())) {
+                    throw new RuntimeParserException("The variable ["+var.getName()+"] is declared final but is reassigned",bexp);
+                }
+                if (var instanceof Parameter && Modifier.isFinal(var.getModifiers())) {
+                    throw new RuntimeParserException("The parameter ["+var.getName()+"] is declared final but is reassigned",bexp);
+                }
+            }
+
+            @Override
+            public void variableNotAlwaysInitialized(final VariableExpression var) {
+                throw new RuntimeParserException("The variable ["+var.getName()+"] may be uninitialized", var);
+            }
+        };
     }
 
     private void checkForDuplicateMethods(ClassNode cn) {
@@ -1247,6 +1278,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         boolean genericEqualParameters = equalParametersWithGenerics(overridingMethod, oldMethod, genericsSpec);
         if (!normalEqualParameters && !genericEqualParameters) return null;
 
+        //correct to method level generics for the overriding method
+        genericsSpec = GenericsUtils.addMethodGenerics(overridingMethod, genericsSpec);
+
         // return type
         ClassNode mr = overridingMethod.getReturnType();
         ClassNode omr = oldMethod.getReturnType();
@@ -1421,6 +1455,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             final FieldExpression fe = new FieldExpression(fn);
             if (fn.getType().equals(ClassHelper.REFERENCE_TYPE)) fe.setUseReferenceDirectly(true);
             ConstantExpression init = (ConstantExpression) fn.getInitialExpression();
+            init = new ConstantExpression(init.getValue(), true);
             ExpressionStatement statement =
                     new ExpressionStatement(
                             new BinaryExpression(
@@ -1428,7 +1463,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                     Token.newSymbol(Types.EQUAL, fn.getLineNumber(), fn.getColumnNumber()),
                                     init));
             fn.setInitialValueExpression(null);
-            init.setConstantName(null);
             methodCode.addStatement(statement);
             swapInitRequired = true;
         }

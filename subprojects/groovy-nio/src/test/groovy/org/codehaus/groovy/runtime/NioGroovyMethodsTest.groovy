@@ -117,7 +117,7 @@ class NioGroovyMethodsTest extends Specification {
     def testNewReader() {
 
         setup:
-        final str = 'Hello world!'
+        def str = 'Hello world!'
         def file = new File('test_new_reader')
         file.text = str
 
@@ -362,10 +362,10 @@ class NioGroovyMethodsTest extends Specification {
     def testAppendUTF16LE() {
 
         setup:
-        final temp = Files.createTempDirectory('utf-test')
-        final path = temp.resolve('path_UTF-16LE.txt')
-        final file = new File( temp.toFile(), 'file_UTF-LE.txt')
-        final HELLO = 'Hello world!'
+        def temp = Files.createTempDirectory('utf-test')
+        def path = temp.resolve('path_UTF-16LE.txt')
+        def file = new File( temp.toFile(), 'file_UTF-LE.txt')
+        def HELLO = 'Hello world!'
 
         // save using a File, thus uses ResourcesGroovyMethods
         when:
@@ -395,9 +395,9 @@ class NioGroovyMethodsTest extends Specification {
     def testWriteUTF16BE() {
 
         setup:
-        final temp = Files.createTempDirectory('utf-test')
-        final path = temp.resolve('path_UTF-16BE.txt')
-        final HELLO = 'Hello world!'
+        def temp = Files.createTempDirectory('utf-test')
+        def path = temp.resolve('path_UTF-16BE.txt')
+        def HELLO = 'Hello world!'
 
         when:
         path.write(HELLO, 'UTF-16BE')
@@ -412,7 +412,7 @@ class NioGroovyMethodsTest extends Specification {
     def testWithCloseable() {
 
         setup:
-        final closeable = new DummyCloseable()
+        def closeable = new DummyCloseable()
 
         when:
         def closeableParam = null
@@ -430,7 +430,7 @@ class NioGroovyMethodsTest extends Specification {
     def testWithCloseableAndException() {
 
         setup:
-        final closeable = new ExceptionDummyCloseable()
+        def closeable = new ExceptionDummyCloseable()
 
         when:
         closeable.close()

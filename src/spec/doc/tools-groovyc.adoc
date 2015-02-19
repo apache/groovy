@@ -1,6 +1,6 @@
 = Compiling Groovy
 
-
+[[section-groovyc-compiler]]
 == groovyc, the Groovy compiler
 
 `groovyc` is the Groovy compiler command line tool. It allows you to compile Groovy sources into bytecode. It plays
@@ -379,3 +379,58 @@ It is important to know that if you don't enable joint compilation and try to co
 Java source files with the Groovy compiler, the Java source files will be compiled as
 if they were Groovy sources. In some situations, this might work since most of the Java
 syntax is compatible with Groovy, but semantics would be different.
+
+[[section-android]]
+== Android support
+
+It is possible to write an Android application in Groovy. However this requires a special
+version of the compiler, meaning that you cannot use the regular
+<<section-groovyc-compiler,groovyc tool>> to target Android bytecode. In particular, Groovy
+provides specific JAR files for Android, which have a classifier of `grooid`. In order to make
+things easier, a https://github.com/groovy/groovy-android-gradle-plugin[Gradle plugin] adds
+support for the Groovy language in the Android Gradle toolchain.
+
+The plugin can be applied like this:
+
+```groovy
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        // ...
+        classpath 'org.codehaus.groovy:gradle-groovy-android-plugin:0.3.5'
+    }
+}
+
+apply plugin: 'groovyx.grooid.groovy-android'
+```
+
+Then you will need to add a dependency on the `grooid` version of the Groovy compiler:
+
+```groovy
+dependencies {
+    compile 'org.codehaus.groovy:groovy:2.4.0:grooid'
+}
+```
+
+Note that if a Groovy jar does not provide a `grooid` classifier alternative, then it means
+that the jar is directly compatible with Android. In that case, you can add the dependency directly
+like this:
+
+```groovy
+dependencies {
+    compile 'org.codehaus.groovy:groovy:2.4.0:grooid'       // requires the grooid classifier
+    compile ('org.codehaus.groovy:groovy-json:2.4.0') {     // no grooid version available
+        transitive = false                                  // so do not depend on non-grooid version
+    }
+}
+```
+
+Note that the `transitive=false` parameter for `groovy-json` will let Gradle download the JSON support jar
+without adding a dependency onto the normal jar of Groovy.
+
+Please make sure to go to the https://github.com/groovy/groovy-android-gradle-plugin[plugin homepage] in order to
+find the latest documentation and version.
+

@@ -441,4 +441,24 @@ class ArrayTest extends GroovyTestCase {
         assert l[0]==1
         assert l[1]==5
     }
+
+    void testJoin() {
+        def a1 = [false, true] as boolean[]
+        def a2 = [1 as byte, 2 as byte] as byte[]
+        def a3 = ["a".charAt(0), "b".charAt(0)] as char[]
+        def a4 = [1 as double, 2 as double] as double[]
+        def a5 = [1 as float, 2 as float] as float[]
+        def a6 = [1 as int, 2 as int] as int[]
+        def a7 = [1 as long, 2 as long] as long[]
+        def a8 = [1 as short, 2 as short] as short[]
+
+        assert "false, true" == a1.join(", ")
+        assert "1, 2" == a2.join(", ")
+        assert "a, b" == a3.join(", ")
+        assert "1.0, 2.0" == a4.join(", ")
+        assert "1.0, 2.0" == a5.join(", ")
+        assert "1, 2" == a6.join(", ")
+        assert "1, 2" == a7.join(", ")
+        assert "1, 2" == a8.join(", ")
+    }
 }

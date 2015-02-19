@@ -98,11 +98,17 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
     public static final int BITWISE_NEGATION            = REGEX_PATTERN;    // ~
     */
     
-    private WriterController controller;
     public BinaryIntExpressionHelper(WriterController wc) {
-        super(wc);
-        controller = wc;
+        this(wc, intArraySet, intArrayGet);
     }
+
+    /**
+     * @since 2.5.0
+     */
+    public BinaryIntExpressionHelper(WriterController wc, MethodCaller arraySet, MethodCaller arrayGet) {
+        super(wc, arraySet, arrayGet);
+    }
+
     
     /**
      * writes a std compare. This involves the tokens IF_ICMPEQ, IF_ICMPNE, 
@@ -116,14 +122,14 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
         if (type<0||type>7) return false;
 
         if (!simulate) {
-            MethodVisitor mv = controller.getMethodVisitor();
-            OperandStack operandStack = controller.getOperandStack();
+            MethodVisitor mv = getController().getMethodVisitor();
+            OperandStack operandStack = getController().getOperandStack();
             // operands are on the stack already
             int bytecode = stdCompareCodes[type];
             Label l1 = new Label();
             mv.visitJumpInsn(bytecode,l1);
             mv.visitInsn(ICONST_1);
-            Label l2 = new Label();;
+            Label l2 = new Label();
             mv.visitJumpInsn(GOTO, l2);
             mv.visitLabel(l1);
             mv.visitInsn(ICONST_0);
@@ -186,7 +192,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
           
         */
         if (!simulate) {
-            MethodVisitor mv = controller.getMethodVisitor();
+            MethodVisitor mv = getController().getMethodVisitor();
             // duplicate int arguments
             mv.visitInsn(DUP2);
             
@@ -195,7 +201,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
             // no jump, so -1, need to pop off surplus II
             mv.visitInsn(POP2);
             mv.visitInsn(ICONST_M1);
-            Label l2 = new Label();;
+            Label l2 = new Label();
             mv.visitJumpInsn(GOTO, l2);
             
             mv.visitLabel(l1);
@@ -206,22 +212,14 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
             
             mv.visitLabel(l3);
             mv.visitInsn(ICONST_1);
-            
-            controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
+
+            getController().getOperandStack().replace(ClassHelper.int_TYPE, 2);
         }
         return true;
     }
 
     protected void doubleTwoOperands(MethodVisitor mv) {
         mv.visitInsn(DUP2);
-    }
-
-    protected MethodCaller getArrayGetCaller() {
-        return intArrayGet;
-    }
-
-    protected MethodCaller getArraySetCaller() {
-        return intArraySet;
     }
 
     protected int getBitwiseOperationBytecode(int type) {

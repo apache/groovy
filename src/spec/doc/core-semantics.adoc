@@ -102,7 +102,7 @@ include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=destructuring,inde
 <2> then, we use a multiple assignment to get the individual longitude and latitude values
 <3> and we can finally assert their values.
 
-=== Control structures (WIP)
+=== Control structures
 ==== Conditional structures
 ===== if / else
 
@@ -227,6 +227,8 @@ try {
 == Promotion and coercion (TBD)
 
 === Number promotion (TBD)
+
+[[closure-coercion]]
 === Closure to type coercion
 ==== Assigning a closure to a SAM type
 A SAM type is a type which defines a single abstract method. This includes:
@@ -491,8 +493,47 @@ Parentheses are required for method calls without parameters or ambiguous method
 include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=required_parentheses,indent=0]
 ----
 
-=== Optional semicolons (TBD)
-=== Optional return keyword (TBD)
+=== Optional semicolons
+
+In Groovy semicolons at the end of the line can be omitted, if the line contains only a single statement.
+
+This means that:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=single_statement_with_semicolon,indent=0]
+----
+
+can be more idiomatically written as:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=single_statement_without_semicolon,indent=0]
+----
+
+Multiple statements in a line require semicolons to separate them:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=statements_separated_by_semicolon,indent=0]
+----
+
+=== Optional return keyword
+
+In Groovy, the last expression evaluated in the body of a method or a closure is returned. This means that the `return` keyword is optional.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=return_keyword,indent=0]
+----
+
+Can be shortend to:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=omitted_return_keyword,indent=0]
+----
+
 === Optional public keyword (TBD)
 
 [[Groovy-Truth]]
@@ -558,7 +599,7 @@ include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=obj
 
 === Customizing the truth with asBoolean() methods (TBD)
 
-== Typing (WIP)
+== Typing
 
 === Optional typing
 
@@ -600,7 +641,7 @@ include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=option
 ----
 <1> both the return type and the parameter types use `def`
 <2> it makes it possible to use the method with `String`
-<3> but also with `int`s since the `plus` method is defined
+<3> but also with `int` since the `plus` method is defined
 
 TIP: Using the `def` keyword here is recommanded to describe the intent of a method which is supposed to work on any
 type, but technically, we could use `Object` instead and the result would be the same: `def` is, in Groovy, strictly
@@ -616,7 +657,7 @@ include::{projectdir}/src/spec/test/typing/OptionalTypingTest.groovy[tags=option
 ----
 <1> if we want to omit the return type, an explicit modifier has to be set.
 <2> it is still possible to use the method with `String`
-<3> and also with `int`s
+<3> and also with `int`
 
 TIP: Omitting types is in general considered a bad practice in method parameters or method return types for public APIs.
 While using `def` in a local variable is not really a problem because the visibility of the variable is limited to the
@@ -652,7 +693,8 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_intr
 
 This means that in general, in Groovy, you can't make any assumption about the type of an object beyond its declaration
 type, and even if you know it, you can't determine at compile time what method will be called, or which property will
-be retrieved, and this is *perfectly fine*. This is how dynamic languages work, and it has a lot of interest.
+be retrieved. It has a lot of interest, going from writing DSLs to testing, which is discussed in other sections of this
+manual.
 
 However, if your program doesn't rely on dynamic features and that you come from the static world (in particular, from
 a Java mindset), not catching such "errors" at compile time can be surprising. As we have seen in the previous example,
@@ -753,7 +795,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assi
 ----
 ====
 
-* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
+* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `T`
 
 +
 
@@ -766,7 +808,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_assi
 ----
 ====
 
-* _or_ `T` is an array and `A` is a list and the component type of `A` is assignable to the component type of `B`
+* _or_ `T` is an array and `A` is a list and the component type of `A` is assignable to the component type of `T`
 
 +
 
@@ -965,7 +1007,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=stc_argp
 ----
 ====
 
-* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `B`
+* _or_ `T` is an array and `A` is an array and the component type of `A` is assignable to the component type of `T`
 
 +
 
@@ -1694,7 +1736,7 @@ The `@DelegatesTo` annotation is used by the type checker to infer the type of t
 to instruct the compiler what is the type of the delegate and the delegation strategy. The `@DelegatesTo` annotation is
 discussed in a link:core-domain-specific-languages.html#section-delegatesto[specific section].
 
-=== Static compilation (WIP)
+=== Static compilation
 
 ==== Dynamic vs static
 
@@ -1774,4 +1816,6 @@ of the dynamic code should be very close to the performance of statically compil
 There is only one way to determine which version you should choose: measuring. The reason is that depending on your program
 *and* the JVM that you use, the performance can be significantly different. In particular, the _invokedynamic_ version of
 Groovy is very sensitive to the JVM version in use.
+
+=== Type checking extensions (TBD)
 

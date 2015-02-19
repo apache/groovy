@@ -20,6 +20,8 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.MethodCall;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 
 import java.util.Arrays;
@@ -55,6 +57,12 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
         String[] decomposed = Traits.decomposeSuperCallName(name);
         if (decomposed != null) {
             return convertToDynamicCall(call, receiver, decomposed, argumentTypes);
+        }
+        if (call instanceof MethodCallExpression) {
+            ClassNode dynamic = ((MethodCallExpression) call).getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
+            if (dynamic!=null) {
+                return Collections.singletonList(makeDynamic(call, dynamic));
+            }
         }
         return NOTFOUND;
     }

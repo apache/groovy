@@ -8,11 +8,11 @@ For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http:/
 
 === Stable
 
-- **Download zip**: http://dist.groovy.codehaus.org/distributions/groovy-binary-{groovy-full-version}.zip[**Binary Release**] | http://dist.groovy.codehaus.org/distributions/groovy-src-{groovy-full-version}.zip[Source Release]
-- **Download documentation**: http://dist.groovy.codehaus.org/distributions/groovy-docs-{groovy-full-version}.zip[**JavaDoc and zipped online documentation**]
-- **Combined binary / source / documentation bundle**: http://dist.groovy.codehaus.org/distributions/groovy-sdk-{groovy-full-version}.zip[**Distribution bundle**]
+- **Download zip**: https://bintray.com/artifact/download/groovy/maven/groovy-binary-{groovy-full-version}.zip[**Binary Release**] | https://bintray.com/artifact/download/groovy/maven/groovy-src-{groovy-full-version}.zip[Source Release]
+- **Download documentation**: https://bintray.com/artifact/download/groovy/maven/groovy-docs-{groovy-full-version}.zip[**JavaDoc and zipped online documentation**]
+- **Combined binary / source / documentation bundle**: https://bintray.com/artifact/download/groovy/maven/groovy-sdk-{groovy-full-version}.zip[**Distribution bundle**]
 
-You can learn more about this version in the http://groovy.codehaus.org/Groovy+{groovy-short-version}+release+notes[release notes] or in the http://jira.codehaus.org/secure/ReleaseNote.jspa?projectId=10242&version=19074[JIRA release notes].
+You can learn more about this version in the http://groovy-lang.org/releasenotes/groovy-{groovy-short-version}.html[release notes] or in the http://groovy-lang.org/changelogs/changelog-{groovy-full-version}.html[changelog].
 
 If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
 
@@ -22,7 +22,7 @@ For those who want to test the very latest versions of Groovy and live on the bl
 
 == Maven Repository
 
-If you wish to embed Groovy in your application, you may just prefer to point to your favourite maven repositories or the http://repository.codehaus.org/org/codehaus/groovy[codehaus maven repository].
+If you wish to embed Groovy in your application, you may just prefer to point to your favourite maven repositories or the https://oss.jfrog.org/oss-release-local/org/codehaus/groovy[JCenter maven repository].
 
 === Stable Release
 
@@ -117,7 +117,7 @@ If you're on Windows, you can also use the link:TODO-Windows+NSIS-Installer[NSIS
 
 === Other Distributions
 
-You may download other distributions of Groovy from http://dist.codehaus.org/groovy/distributions/[this site].
+You may download other distributions of Groovy from https://bintray.com/groovy/maven[this site].
 
 === Source Code
 
@@ -125,7 +125,7 @@ If you prefer to live on the bleeding edge, you can also grab the https://github
 
 === IDE plugin
 
-If you are an IDE user, you can just grab the latest link:tools/tools-ide.html[IDE plugin] and follow the plugin installation instructions.
+If you are an IDE user, you can just grab the latest link:tools-ide.html[IDE plugin] and follow the plugin installation instructions.
 
 == Install Binary
 
@@ -143,7 +143,7 @@ You should now have Groovy installed properly. You can test this by typing the f
 groovysh
 ----
 
-Which should create an interactive groovy shell where you can type Groovy statements. Or to run the link:tools/tools-groovyconsole.html[Swing interactive console] type:
+Which should create an interactive groovy shell where you can type Groovy statements. Or to run the link:tools-groovyconsole.html[Swing interactive console] type:
 
 [source,shell]
 ----

@@ -91,9 +91,9 @@ pre-defined rules for defining extension methods.
 There are a few categories that are included in the system for adding functionality to classes that make them more
 usable within the Groovy environment:
 
-* http://groovy.codehaus.org/api/groovy/time/TimeCategory.html[groovy.time.TimeCategory]
-* http://groovy.codehaus.org/api/groovy/servlet/ServletCategory.html[groovy.servlet.ServletCategory]
-* http://groovy.codehaus.org/api/groovy/xml/dom/DOMCategory.html[groovy.xml.dom.DOMCategory]
+* gapi::groovy.time.TimeCategory
+* gapi::groovy.servlet.ServletCategory
+* gapi::groovy.xml.dom.DOMCategory
 
 Category classes aren't enabled by default. To use the methods defined in a category class it is necessary to apply
 the scoped `use` method that is provided by the GDK and available from inside every Groovy object instance:
@@ -841,7 +841,7 @@ written like this:
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=oldstyle_category,indent=0]
 ----
 
-The `@Category` transformation lets you write the same using an instance-style class, rather that a static class style.
+The `@Category` transformation lets you write the same using an instance-style class, rather than a static class style.
 This removes the need for having the first argument of each method being the receiver. The category can be written like
 this:
 

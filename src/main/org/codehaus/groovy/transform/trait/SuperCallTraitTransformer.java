@@ -15,9 +15,13 @@
  */
 package org.codehaus.groovy.transform.trait;
 
+import groovy.lang.MetaProperty;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -25,6 +29,8 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
 import java.util.List;
 
@@ -54,7 +60,47 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
         if (exp instanceof MethodCallExpression) {
             return transformMethodCallExpression((MethodCallExpression)exp);
         }
+        if (exp instanceof BinaryExpression) {
+            return transformBinaryExpression((BinaryExpression) exp);
+        }
         return super.transform(exp);
+    }
+
+    private Expression transformBinaryExpression(final BinaryExpression exp) {
+        Expression trn = super.transform(exp);
+        if (trn instanceof BinaryExpression) {
+            BinaryExpression bin = (BinaryExpression) trn;
+            Expression leftExpression = bin.getLeftExpression();
+            if (bin.getOperation().getType() == Types.EQUAL && leftExpression instanceof PropertyExpression) {
+                ClassNode traitReceiver = ((PropertyExpression) leftExpression).getObjectExpression().getNodeMetaData(SuperCallTraitTransformer.class);
+                if (traitReceiver!=null) {
+                    // A.super.foo = ...
+                    TraitHelpersTuple helpers = Traits.findHelpers(traitReceiver);
+                    ClassNode helper = helpers.getHelper();
+                    String setterName = MetaProperty.getSetterName(((PropertyExpression) leftExpression).getPropertyAsString());
+                    List<MethodNode> methods = helper.getMethods(setterName);
+                    for (MethodNode method : methods) {
+                        Parameter[] parameters = method.getParameters();
+                        if (parameters.length==2 && parameters[0].getType().equals(traitReceiver)) {
+                            ArgumentListExpression args = new ArgumentListExpression(
+                                    new VariableExpression("this"),
+                                    transform(exp.getRightExpression())
+                            );
+                            MethodCallExpression setterCall = new MethodCallExpression(
+                                    new ClassExpression(helper),
+                                    setterName,
+                                    args
+                            );
+                            setterCall.setMethodTarget(method);
+                            setterCall.setImplicitThis(false);
+                            return setterCall;
+                        }
+                    }
+                    return bin;
+                }
+            }
+        }
+        return trn;
     }
 
     private Expression transformMethodCallExpression(final MethodCallExpression exp) {

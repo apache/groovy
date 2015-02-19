@@ -35,6 +35,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.*;
 
+import static org.codehaus.groovy.ast.tools.GenericsUtils.*;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -214,10 +215,21 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         final int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
         for (MethodNode method : methods) {
             if (accessedMethods.contains(method)) {
+                List<String> methodSpecificGenerics = methodSpecificGenerics(method);
                 i++;
+                ClassNode declaringClass = method.getDeclaringClass();
+                Map<String,ClassNode> genericsSpec = createGenericsSpec(node);
+                genericsSpec = addMethodGenerics(method, genericsSpec);
+                extractSuperClassGenerics(node, declaringClass, genericsSpec);
                 Parameter[] methodParameters = method.getParameters();
                 Parameter[] newParams = new Parameter[methodParameters.length+1];
-                System.arraycopy(methodParameters, 0, newParams, 1, methodParameters.length);
+                for (int j = 1; j < newParams.length; j++) {
+                    Parameter orig = methodParameters[j-1];
+                    newParams[j] = new Parameter(
+                            correctToGenericsSpecRecurse(genericsSpec, orig.getOriginType(), methodSpecificGenerics),
+                            orig.getName()
+                    );
+                }
                 newParams[0] = new Parameter(node.getPlainNodeReference(), "$that");
                 Expression arguments;
                 if (method.getParameters()==null || method.getParameters().length==0) {
@@ -234,7 +246,16 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 mce.setMethodTarget(method);
 
                 ExpressionStatement returnStatement = new ExpressionStatement(mce);
-                MethodNode bridge = node.addMethod("access$"+i, access, method.getReturnType(), newParams, method.getExceptions(), returnStatement);
+                MethodNode bridge = node.addMethod(
+                        "access$"+i, access,
+                        correctToGenericsSpecRecurse(genericsSpec, method.getReturnType(), methodSpecificGenerics),
+                        newParams,
+                        method.getExceptions(),
+                        returnStatement);
+                GenericsType[] origGenericsTypes = method.getGenericsTypes();
+                if (origGenericsTypes !=null) {
+                    bridge.setGenericsTypes(applyGenericsContextToPlaceHolders(genericsSpec,origGenericsTypes));
+                }
                 privateBridgeMethods.put(method, bridge);
                 bridge.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
             }
@@ -242,6 +263,17 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         if (!privateBridgeMethods.isEmpty()) {
             node.setNodeMetaData(PRIVATE_BRIDGE_METHODS, privateBridgeMethods);
         }
+    }
+
+    private static List<String> methodSpecificGenerics(final MethodNode method) {
+        List<String> genericTypeTokens = new ArrayList<String>();
+        GenericsType[] candidateGenericsTypes = method.getGenericsTypes();
+        if (candidateGenericsTypes != null) {
+            for (GenericsType gt : candidateGenericsTypes) {
+                genericTypeTokens.add(gt.getName());
+            }
+        }
+        return genericTypeTokens;
     }
 
     private void memorizeInitialExpressions(final MethodNode node) {

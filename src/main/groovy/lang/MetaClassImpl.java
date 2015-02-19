@@ -100,16 +100,18 @@ import java.util.*;
  */
 public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
-    private static final String CLOSURE_CALL_METHOD = "call";
-    private static final String CLOSURE_DO_CALL_METHOD = "doCall";
+    public static final Object[] EMPTY_ARGUMENTS = {};
+
     protected static final String STATIC_METHOD_MISSING = "$static_methodMissing";
     protected static final String STATIC_PROPERTY_MISSING = "$static_propertyMissing";
     protected static final String METHOD_MISSING = "methodMissing";
     protected static final String PROPERTY_MISSING = "propertyMissing";
-    private static final String GET_PROPERTY_METHOD = "getProperty";
-    private static final String SET_PROPERTY_METHOD = "setProperty";
     protected static final String INVOKE_METHOD_METHOD = "invokeMethod";
 
+    private static final String CLOSURE_CALL_METHOD = "call";
+    private static final String CLOSURE_DO_CALL_METHOD = "doCall";
+    private static final String GET_PROPERTY_METHOD = "getProperty";
+    private static final String SET_PROPERTY_METHOD = "setProperty";
     private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
     private static final Class[] GETTER_MISSING_ARGS = new Class[]{String.class};
     private static final Class[] SETTER_MISSING_ARGS = METHOD_MISSING_ARGS;
@@ -118,53 +120,39 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return o1.getName().compareTo(o2.getName());
         }
     };
+    private static final MetaMethod[] EMPTY = new MetaMethod[0];
+    private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
 
     protected final Class theClass;
     protected final CachedClass theCachedClass;
-    private static final MetaMethod[] EMPTY = new MetaMethod[0];
+    protected final boolean isGroovyObject;
+    protected final boolean isMap;
+    protected final MetaMethodIndex metaMethodIndex;
+
+    private final Index classPropertyIndex = new MethodIndex();
+    private final SingleKeyHashMap staticPropertyIndex = new SingleKeyHashMap();
+    private final Map<String, MetaMethod> listeners = new HashMap<String, MetaMethod>();
+    private final List<MetaMethod> allMethods = new ArrayList<MetaMethod>();
+    // we only need one of these that can be reused over and over.
+    private final MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
+    private final Index classPropertyIndexForSuper = new MethodIndex();
+    private final Set<MetaMethod> newGroovyMethodsSet = new HashSet<MetaMethod>();
+    private final MetaMethod [] myNewMetaMethods;
+    private final MetaMethod [] additionalMetaMethods;
+
     protected MetaMethod getPropertyMethod;
     protected MetaMethod invokeMethodMethod;
     protected MetaMethod setPropertyMethod;
-
-    /**
-     * Returns the cached class for this metaclass
-     *
-     * @return The cached class.
-     */
-    public final CachedClass getTheCachedClass() {
-        return theCachedClass;
-    }
-
     protected MetaClassRegistry registry;
-    protected final boolean isGroovyObject;
-    protected final boolean isMap;
     private ClassNode classNode;
-
-    private final Index classPropertyIndex = new MethodIndex();
-    private Index classPropertyIndexForSuper = new MethodIndex();
-    private final SingleKeyHashMap staticPropertyIndex = new SingleKeyHashMap();
-
-    private final Map<String, MetaMethod> listeners = new HashMap<String, MetaMethod>();
     private FastArray constructors;
-    private final List<MetaMethod> allMethods = new ArrayList<MetaMethod>();
     private boolean initialized;
-    // we only need one of these that can be reused over and over.
-    private final MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
-    private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
-    public static final Object[] EMPTY_ARGUMENTS = {};
-    private final Set<MetaMethod> newGroovyMethodsSet = new HashSet<MetaMethod>();
-
     private MetaMethod genericGetMethod;
     private MetaMethod genericSetMethod;
     private MetaMethod propertyMissingGet;
     private MetaMethod propertyMissingSet;
     private MetaMethod methodMissing;
     private MetaMethodIndex.Header mainClassMethodHeader;
-    protected final MetaMethodIndex metaMethodIndex;
-
-    private final MetaMethod [] myNewMetaMethods;
-    private final MetaMethod [] additionalMetaMethods;
-
 
      /**
       * Constructor
@@ -223,6 +211,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     public MetaClassImpl(MetaClassRegistry registry, final Class theClass) {
         this(registry, theClass, null);
+    }
+
+    /**
+     * Returns the cached class for this metaclass
+     *
+     * @return The cached class.
+     */
+    public final CachedClass getTheCachedClass() {
+        return theCachedClass;
     }
 
     /**
@@ -332,7 +329,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     private void fillMethodIndex() {
         mainClassMethodHeader = metaMethodIndex.getHeader(theClass);
-        LinkedList superClasses = getSuperClasses();
+        LinkedList<CachedClass> superClasses = getSuperClasses();
         CachedClass firstGroovySuper = calcFirstGroovySuperClass(superClasses);
 
         Set<CachedClass> interfaces = theCachedClass.getInterfaces();
@@ -351,13 +348,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private void populateMethods(LinkedList superClasses, CachedClass firstGroovySuper) {
-        Iterator iter = superClasses.iterator();
+    private void populateMethods(LinkedList<CachedClass> superClasses, CachedClass firstGroovySuper) {
 
         MetaMethodIndex.Header header = metaMethodIndex.getHeader(firstGroovySuper.getTheClass());
         CachedClass c;
+        Iterator<CachedClass> iter = superClasses.iterator();
         for (; iter.hasNext();) {
-            c = (CachedClass) iter.next();
+            c = iter.next();
 
             CachedMethod[] cachedMethods = c.getMethods();
             for (CachedMethod metaMethod : cachedMethods) {
@@ -380,7 +377,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         MetaMethodIndex.Header last = header;
         for (;iter.hasNext();) {
-            c = (CachedClass) iter.next();
+            c = iter.next();
             header = metaMethodIndex.getHeader(c.getTheClass());
 
             if (last != null) {
@@ -632,11 +629,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private void connectMultimethods(List superClasses, CachedClass firstGroovyClass) {
+    private void connectMultimethods(List<CachedClass> superClasses, CachedClass firstGroovyClass) {
         superClasses = DefaultGroovyMethods.reverse(superClasses);
         MetaMethodIndex.Header last = null;
-        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
-            CachedClass c = (CachedClass) iter.next();
+        for (final CachedClass c : superClasses) {
             MetaMethodIndex.Header methodIndex = metaMethodIndex.getHeader(c.getTheClass());
             // We don't copy DGM methods to superclasses' indexes
             // The reason we can do that is particular set of DGM methods in use,
@@ -647,7 +643,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             last = methodIndex;
 
             if (c == firstGroovyClass)
-              break;
+                break;
         }
     }
 

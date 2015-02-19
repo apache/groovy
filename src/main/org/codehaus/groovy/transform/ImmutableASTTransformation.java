@@ -157,7 +157,19 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             for (FieldNode fNode : fList) {
                 ensureNotPublic(cName, fNode);
             }
-            createConstructors(cNode, knownImmutableClasses, knownImmutables);
+            boolean includeSuperProperties = false;
+            if (hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
+                AnnotationNode tupleCons = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
+                includeSuperProperties = memberHasValue(tupleCons, "includeSuperProperties", true);
+                if (unsupportedTupleAttribute(tupleCons, "excludes")) return;
+                if (unsupportedTupleAttribute(tupleCons, "includes")) return;
+                if (unsupportedTupleAttribute(tupleCons, "includeFields")) return;
+                if (unsupportedTupleAttribute(tupleCons, "includeProperties")) return;
+                if (unsupportedTupleAttribute(tupleCons, "includeSuperFields")) return;
+                if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
+                if (unsupportedTupleAttribute(tupleCons, "force")) return;
+            }
+            createConstructors(cNode, knownImmutableClasses, knownImmutables, includeSuperProperties);
             if (!hasAnnotation(cNode, EqualsAndHashCodeASTTransformation.MY_TYPE)) {
                 createHashCode(cNode, true, false, false, null, null);
                 createEquals(cNode, false, false, false, null, null);
@@ -171,6 +183,16 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 createCopyWith( cNode, pList ) ;
             }
         }
+    }
+
+    protected boolean unsupportedTupleAttribute(AnnotationNode anno, String memberName) {
+        if (getMemberValue(anno, memberName) != null) {
+            String tname = TupleConstructorASTTransformation.MY_TYPE_NAME;
+            addError("Error during " + MY_TYPE_NAME + " processing: Annotation attribute '" + memberName +
+                    "' not supported for " + tname + " when used with " + MY_TYPE_NAME, anno);
+            return true;
+        }
+        return false;
     }
 
     private void doAddConstructor(final ClassNode cNode, final ConstructorNode constructorNode) {
@@ -251,10 +273,19 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void createConstructors(ClassNode cNode, List<String> knownImmutableClasses, List<String> knownImmutables) {
+    private void createConstructors(ClassNode cNode, List<String> knownImmutableClasses, List<String> knownImmutables, boolean includeSuperProperties) {
         if (!validateConstructors(cNode)) return;
 
         List<PropertyNode> list = getInstanceProperties(cNode);
+        if (includeSuperProperties) {
+            ClassNode next = cNode.getSuperClass();
+            while (next != null) {
+                List<PropertyNode> tail = list;
+                list = getInstanceProperties(next);
+                list.addAll(tail);
+                next = next.getSuperClass();
+            }
+        }
         boolean specialHashMapCase = list.size() == 1 && list.get(0).getField().getType().equals(HASHMAP_TYPE);
         if (specialHashMapCase) {
             createConstructorMapSpecial(cNode, list);

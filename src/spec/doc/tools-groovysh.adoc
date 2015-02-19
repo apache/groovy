@@ -156,7 +156,7 @@ The Command List
 groovy:000> :help
 
 For information about Groovy, visit:
-    http://groovy.codehaus.org
+    http://groovy-lang.org
 
 Available commands:
   :help      (:h ) Display this help message

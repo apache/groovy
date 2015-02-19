@@ -3,7 +3,7 @@
 == Command chains
 
 Groovy lets you omit parentheses around the arguments of a
-method call for top-level statements. ``command chain'' feature extends this by allowing us to chain such
+method call for top-level statements. "command chain" feature extends this by allowing us to chain such
 parentheses-free method calls, requiring neither parentheses around arguments, nor dots between the chained calls.
 The general idea is that a call like `a b c d` will actually be equivalent to `a(b).c(d)`. This
 also works with multiple arguments, closure arguments, and even named arguments. Furthermore, such command chains can
@@ -875,15 +875,64 @@ hence why we suggest using the `src/main` and `src/conf` directories above.
 ==== BuilderSupport (TBD)
 ==== FactoryBuilderSupport (TBD)
 === Existing builders (TBD)
-==== MarkupBuilder (TBD)
+==== MarkupBuilder
+
+Groovys `MarkupBuilder` can be used to create any kind of markup, e.g. XML. For example to create this xml string:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_string,indent=0]
+----
+
+you can use a `MarkupBuilder` like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_builder,indent=0]
+----
+
+We use http://xmlunit.sourceforge.net[XMLUnit] to check that the builder produced the expected result:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_assert,indent=0]
+----
+
+`MarkupBuilder` can also handle namespaces and namespace prefixes. To create this xml string:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_string_namespaces,indent=0]
+----
+
+you use it like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_builder_namespaces,indent=0]
+----
+<1> declare and use rec namespace prefix
+<2> change the default namespace to http://www.acme.com/cars
+
+Again we use http://xmlunit.sourceforge.net[XMLUnit] to check that the builder output matches the expected result:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_assert_namespaces,indent=0]
+----
+
 ==== StreamingMarkupBuilder (TBD)
 ==== SaxBuilder (TBD)
 ==== StaxBuilder (TBD)
 ==== DomBuilder (TBD)
 ==== NodeBuilder (TBD)
-==== JsonBuilder (TBD)
+
+include::{projectdir}/subprojects/groovy-json/{specfolder}/json-builder.adoc[leveloffset=+2]
+
 ==== StreamingJsonBuilder (TBD)
-==== SwingBuilder (TBD)
+
+include::{projectdir}/subprojects/groovy-swing/{specfolder}/swing-builder.adoc[leveloffset=+2]
+
 ==== AntBuilder (TBD)
 ==== CliBuilder (TBD)
 ==== ObjectGraphBuilder (TBD)

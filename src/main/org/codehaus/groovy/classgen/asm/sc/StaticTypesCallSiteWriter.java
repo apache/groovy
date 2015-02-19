@@ -77,21 +77,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     public void makeGetPropertySite(Expression receiver, final String methodName, final boolean safe, final boolean implicitThis) {
         Object dynamic = receiver.getNodeMetaData(StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY);
         if (dynamic !=null) {
-            MethodNode target = safe?INVOKERHELPER_GETPROPERTYSAFE_METHOD:INVOKERHELPER_GETPROPERTY_METHOD;
-            MethodCallExpression mce = new MethodCallExpression(
-                    new ClassExpression(INVOKERHELPER_TYPE),
-                    target.getName(),
-                    new ArgumentListExpression(receiver, new ConstantExpression(methodName))
-            );
-            mce.setSafe(false);
-            mce.setImplicitThis(false);
-            mce.setMethodTarget(target);
-            mce.visit(controller.getAcg());
+            makeDynamicGetProperty(receiver, methodName, safe);
             return;
         }
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
-        ClassNode receiverType = (ClassNode) receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+        ClassNode receiverType = receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
         if (receiverType==null) {
             receiverType = typeChooser.resolveType(receiver, classNode);
         }
@@ -112,6 +103,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             isClassReceiver = true;
             receiverType = receiverType.getGenericsTypes()[0].getType();
         }
+
+        if (isPrimitiveType(receiverType)) {
+            // GROOVY-6590: wrap primitive types
+            receiverType = getWrapper(receiverType);
+        }
+
         MethodVisitor mv = controller.getMethodVisitor();
 
         if (receiverType.isArray() && methodName.equals("length")) {
@@ -229,6 +226,19 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         controller.getOperandStack().push(OBJECT_TYPE);
     }
 
+    private void makeDynamicGetProperty(final Expression receiver, final String methodName, final boolean safe) {
+        MethodNode target = safe?INVOKERHELPER_GETPROPERTYSAFE_METHOD:INVOKERHELPER_GETPROPERTY_METHOD;
+        MethodCallExpression mce = new MethodCallExpression(
+                new ClassExpression(INVOKERHELPER_TYPE),
+                target.getName(),
+                new ArgumentListExpression(receiver, new ConstantExpression(methodName))
+        );
+        mce.setSafe(false);
+        mce.setImplicitThis(false);
+        mce.setMethodTarget(target);
+        mce.visit(controller.getAcg());
+    }
+
     private void writeMapDotProperty(final Expression receiver, final String methodName, final MethodVisitor mv, final boolean safe) {
         receiver.visit(controller.getAcg()); // load receiver
 
@@ -340,6 +350,16 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     @SuppressWarnings("unchecked")
     private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
         FieldNode field = receiverType.getField(fieldName);
+        ClassNode outerClass = receiverType.getOuterClass();
+        if (field==null && implicitThis && outerClass !=null && !receiverType.isStaticClass()) {
+            PropertyExpression pexp = new PropertyExpression(
+                    new ClassExpression(outerClass),
+                    "this"
+            );
+            pexp.setImplicitThis(true);
+            pexp.setSourcePosition(receiver);
+            return makeGetPrivateFieldWithBridgeMethod(pexp, outerClass, fieldName, safe, true);
+        }
         ClassNode classNode = controller.getClassNode();
         if (field!=null && Modifier.isPrivate(field.getModifiers())
                 && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))
@@ -396,8 +416,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             }
         }
 
-
         if (makeGetPropertyWithGetter(receiver, receiverType, property, safe, implicitThis)) return;
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, property, safe, true)) return;
         if (makeGetField(receiver, receiverType, property, safe, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
 
         MethodCallExpression call = new MethodCallExpression(

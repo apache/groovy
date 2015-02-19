@@ -474,7 +474,7 @@ script, and cache them. We’re creating a new Jetty Server on port 8080,
 then expose Groovy’s TemplateServlet at the root of the context — Groovy
 comes with its own powerful template engine mechanism. We start the
 server and let it run for a certain duration. Each time someone will hit
-http://localhost:8080/somepage.gsp, it will display the somepage.gsp
++http://localhost:8080/somepage.gsp+, it will display the somepage.gsp
 template to the user — those template pages should be situated in the
 same directory as this server script.
 
