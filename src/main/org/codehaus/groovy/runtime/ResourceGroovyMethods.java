@@ -37,7 +37,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -85,6 +87,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.get;
  * @author Cedric Champeau
  * @author Tim Yates
  * @author Dinko Srkoc
+ * @author Sergei Egorov
  */
 public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -1488,6 +1491,56 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Relative path to file. Implementation was borrowed from {@link org.apache.tools.ant.util.FileUtils#getRelativePath(File, File)}
+     *
+     * @param self  the <code>File</code> to calculate the path from
+     * @param to    the <code>File</code> to calculate the path to
+     * @return the relative path between the files
+     */
+    public static String relativePath(File self, File to) throws IOException {
+        String fromPath = self.getCanonicalPath();
+        String toPath = to.getCanonicalPath();
+
+        // build the path stack info to compare
+        String[] fromPathStack = getPathStack(fromPath);
+        String[] toPathStack = getPathStack(toPath);
+
+        if (0 < toPathStack.length && 0 < fromPathStack.length) {
+            if (!fromPathStack[0].equals(toPathStack[0])) {
+                // not the same device (would be "" on Linux/Unix)
+
+                return getPath(Arrays.asList(toPathStack));
+            }
+        } else {
+            // no comparison possible
+            return getPath(Arrays.asList(toPathStack));
+        }
+
+        int minLength = Math.min(fromPathStack.length, toPathStack.length);
+        int same = 1; // Used outside the for loop
+
+        // get index of parts which are equal
+        while (same < minLength && fromPathStack[same].equals(toPathStack[same])) {
+            same++;
+        }
+
+        List<String> relativePathStack = new ArrayList<String>();
+
+        // if "from" part is longer, fill it up with ".."
+        // to reach path which is equal to both paths
+        for (int i = same; i < fromPathStack.length; i++) {
+            relativePathStack.add("..");
+        }
+
+        // fill it up path with parts which were not equal
+        for (int i = same; i < toPathStack.length; i++) {
+            relativePathStack.add(toPathStack[i]);
+        }
+
+        return getPath(relativePathStack);
+    }
+
+    /**
      * Converts this File to a {@link groovy.lang.Writable}.
      *
      * @param file a File
@@ -2356,4 +2409,47 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         return new URL(self);
     }
 
+    /**
+     * Gets all names of the path as an array of <code>String</code>s.
+     *
+     * @param path to get names from
+     * @return <code>String</code>s, never <code>null</code>
+     */
+    private static String[] getPathStack(String path) {
+        String normalizedPath = path.replace(File.separatorChar, '/');
+
+        return normalizedPath.split("/");
+    }
+
+    /**
+     * Gets path from a <code>List</code> of <code>String</code>s.
+     *
+     * @param pathStack <code>List</code> of <code>String</code>s to be concatenated as a path.
+     * @return <code>String</code>, never <code>null</code>
+     */
+    private static String getPath(List pathStack) {
+        // can safely use '/' because Windows understands '/' as separator
+        return getPath(pathStack, '/');
+    }
+
+    /**
+     * Gets path from a <code>List</code> of <code>String</code>s.
+     *
+     * @param pathStack     <code>List</code> of <code>String</code>s to be concated as a path.
+     * @param separatorChar <code>char</code> to be used as separator between names in path
+     * @return <code>String</code>, never <code>null</code>
+     */
+    private static String getPath(final List pathStack, final char separatorChar) {
+        final StringBuilder buffer = new StringBuilder();
+
+        final Iterator iter = pathStack.iterator();
+        if (iter.hasNext()) {
+            buffer.append(iter.next());
+        }
+        while (iter.hasNext()) {
+            buffer.append(separatorChar);
+            buffer.append(iter.next());
+        }
+        return buffer.toString();
+    }
 }
