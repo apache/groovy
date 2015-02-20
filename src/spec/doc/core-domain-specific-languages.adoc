@@ -826,7 +826,13 @@ We strongly recommand you to separate configuration files from classes,
 hence why we suggest using the `src/main` and `src/conf` directories above.
 
 === AST transformations (TBD)
-== Custom type checking extensions (TBD)
+== Custom type checking extensions
+
+It may be interesting, in some circumstances, to provide feedback about wrong code to the user as soon as possible,
+that is to say when the DSL script is compiled, rather than having to wait for the execution of the script. However,
+this is not often possible with dynamic code. Groovy actually provides a practical answer to this known as
+link:type-checking-extensions.html[type checking extensions].
+
 == Builders (TBD)
 === Creating a builder (TBD)
 ==== BuilderSupport (TBD)
