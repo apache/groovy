@@ -17,7 +17,7 @@ Included with Groovy are several template engines:
 
 == SimpleTemplateEngine
 
-Shown here is the `SimpleTemplateEngine` that allows you to use JSP-like scriptlets (see example below), script, and EL expressions in your template in order to generate parameterized text. Here is an example of using the system:
+Shown here is the `SimpleTemplateEngine` that allows you to use JSP-like scriptlets (see example below), script, and EL expressions in your template in order to generate parametrized text. Here is an example of using the system:
 
 [source,groovy]
 ----

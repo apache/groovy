@@ -404,7 +404,7 @@ This works but this approach has drawbacks:
 . the logging logic is bound to a "concrete" handler
 . we have an explicit reference to `DefaultHandler` in the `on` method, meaning that if we happen to change the trait that our class implements, code will be broken
 
-As an alternative, we can write another trait which responsability is limited to logging:
+As an alternative, we can write another trait which responsibility is limited to logging:
 
 [source,groovy]
 -----
@@ -592,7 +592,7 @@ the trait in its interface list, the behavior will be borrowed from the trait im
 
 This feature is in particular useful when you don't have access to the super class source code. It can be used to
 mock methods or force a particular implementation of a method in a subclass. It lets you refactor your code to keep
-the overriden logic in a single trait and inherit a new behavior just by implementing it. The alternative, of course,
+the overridden logic in a single trait and inherit a new behavior just by implementing it. The alternative, of course,
 is to override the method in *every* place you would have used the new code.
 
 
@@ -720,7 +720,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcoupl
 ----
 
 The reason is that the `sum` method accesses the _fields_ of the trait. So it is using the `x` and `y` values defined
-in the trait. If you want to use the values from the implementing class, then you need to derefencence fields by using
+in the trait. If you want to use the values from the implementing class, then you need to dereference fields by using
 getters and setters, like in this last example:
 
 [source,groovy]

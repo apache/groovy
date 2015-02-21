@@ -22,7 +22,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.JdbcTemplate
 --------------------------------------------------------------------
 
-Note that we are using an annotated import here, which is the recommanded way. You can also search for
+Note that we are using an annotated import here, which is the recommended way. You can also search for
 dependencies on http://mvnrepository.com[mvnrepository.com] and it will
 provide you the `@Grab` annotation form of the `pom.xml` entry.
 

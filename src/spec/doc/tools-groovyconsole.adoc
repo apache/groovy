@@ -30,7 +30,7 @@ the output area.
 There are several shortcuts that you can use to run scripts or code snippets:
 
 * `Ctrl+Enter` and `Ctrl+R` are both shortcut keys for `Run Script`.
-* If you highight just part of the text in the input area, then Groovy
+* If you highlight just part of the text in the input area, then Groovy
 runs just that text.
 * The result of a script is the the value of the last expression
 executed.
@@ -70,7 +70,7 @@ the last run is `__[-1]`, the result of the second to last run is
 The Groovy console is a very handy tool to develop scripts. Often, you will
 find yourself running a script multiple times until it works the way you want
 it to. However, what if your code takes too long to finish or worse, creates
-an infinite loop? Interrupting script execution can be acheived by clicking
+an infinite loop? Interrupting script execution can be achieved by clicking
 the `interrupt` button on the small dialog box that pops up when a script
 is executing or through the `interrupt` icon in the tool bar.
 
@@ -92,7 +92,7 @@ handle interruption, at the cost of extra execution time.
 Font` from the `Actions menu`
 * The console can be run as an Applet thanks to `groovy.ui.ConsoleApplet`
 * Code is auto indented when you hit return
-* You can drag’n drop a Groovy script over the text area to open a file
+* You can drag'n'drop a Groovy script over the text area to open a file
 * You can modify the classpath with which the script in the console is
 being run by adding a new JAR or a directory to the classpath from the
 `Script` menu
