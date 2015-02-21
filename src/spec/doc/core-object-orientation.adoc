@@ -12,7 +12,7 @@ Groovy classes are very similar to Java classes, being compatible to those ones 
 
 Here are key aspects of Groovy classes, that are different from their Java counterparts:
 
- * Public fields are turned into properties automatically, which results in less verbose code, whithout so many getter and setter methods. More on this aspect will be covered in the Section "Fields and properties".
+ * Public fields are turned into properties automatically, which results in less verbose code, without so many getter and setter methods. More on this aspect will be covered in the Section "Fields and properties".
  * Their declarations and any property or method without an access modifier are public.
  * Classes do not need to have the same name of the files where they are defined.
  * One file may contain one or more classes (but if a file contains no classes, it is considered a script).
@@ -30,7 +30,7 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_definition,inden
 
 ==== Normal class
 
-Normal classes refer to classes which are top level and concrete. This means they can be instantiated whithout restrictions from any other classes or scripts. This way, they can only be public (even though the `public` keyword may be supressed). Classes are instantiated by calling their constructors, using the `new` keywork, as in the following snippet.
+Normal classes refer to classes which are top level and concrete. This means they can be instantiated without restrictions from any other classes or scripts. This way, they can only be public (even though the `public` keyword may be supressed). Classes are instantiated by calling their constructors, using the `new` keywork, as in the following snippet.
 
 [source,groovy]
 ----
@@ -54,7 +54,7 @@ There are some reasons for using inner classes:
 
  * They increase encapsulation by hiding the inner class from other classes, which do not need to know about it. This also leads to cleaner packages and workspaces.
  * They provide a good organization, by grouping classes that are used by only one class.
- * They lead to more mantainable codes, since inner classes are near the classes that use them.
+ * They lead to more maintainable codes, since inner classes are near the classes that use them.
 
 In several cases, inner classes are implementation of interfaces whose methods are needed by the outer class. The code below illustrates this with the usage of threads, which are very common.
 
@@ -63,7 +63,7 @@ In several cases, inner classes are implementation of interfaces whose methods a
 include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_class2,indent=0]
 ----
 
-Note that the class `Inner2` is defined whith the only purpose of providing an implementation of the method `run` to class `Outer2`. Anonymous inner classes help to eliminate verbosity in this case.
+Note that the class `Inner2` is defined only to provide an implementation of the method `run` to class `Outer2`. Anonymous inner classes help to eliminate verbosity in this case.
 
 
 ===== Anonymous inner class
@@ -82,7 +82,7 @@ Thus, there was no need to define a new class to be used just once.
 
 ==== Abstract class
 
-Abstract classes represent generic concepts, thus, they cannot be instantiated, being created to be subclassed. Their members incluide fields/properties and abstract or concrete methods. Abstract methods do not have implementation, and must be implemented by concrete subclasses.
+Abstract classes represent generic concepts, thus, they cannot be instantiated, being created to be subclassed. Their members include fields/properties and abstract or concrete methods. Abstract methods do not have implementation, and must be implemented by concrete subclasses.
 
 [source,groovy]
 ----
@@ -103,7 +103,7 @@ Abstract classes are commonly compared to interfaces. But there are at least two
 
 === Constructors
 
-Constructors are special methods used to initialize an object with a specific state. As in normal methods, it is possible for a class to declare more than one constructor. In Groovy there are two ways to invoke constructors: with positional parameters or named parameters. The former one is like we invoke Java constructors, while the second way allows one to specify the parameter names when invonking the constructor.
+Constructors are special methods used to initialize an object with a specific state. As in normal methods, it is possible for a class to declare more than one constructor. In Groovy there are two ways to invoke constructors: with positional parameters or named parameters. The former one is like we invoke Java constructors, while the second way allows one to specify the parameter names when invoking the constructor.
 
 ==== Positional argument constructor
 
