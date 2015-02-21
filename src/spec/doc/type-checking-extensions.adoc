@@ -40,7 +40,7 @@ extending a base script,…). Often, user written scripts come to
 production without testing because the DSL logic comes to a point
 where *any* user may write code using the DSL syntax. In the end, a user
 may just ignore that what he writes is actually *code*. This adds some
-challenges for the DSL implementor, such as securing execution of user
+challenges for the DSL implementer, such as securing execution of user
 code or, in this case, early reporting of errors.
 
 For example, imagine a DSL which goal is to drive a rover on Mars
@@ -89,7 +89,7 @@ In that case, the _foo_ methods would be type checked with the rules of
 the normal type checker completed by those found in
 the _myextension.groovy_ script. Note that while internally the type
 checker supports multiple mechanisms to implement type checking
-extensions (including plain old java code), the recommanded way is to
+extensions (including plain old java code), the recommended way is to
 use those type checking extension scripts.
 
 === A DSL for type checking
@@ -374,7 +374,7 @@ sent when the type checker cannot find a target method for a method call
 before it is sent to the user, but also set the target method.For this,
 you need to return a list of `MethodNode`. In most situations, you would
 either return: an empty list, meaning that you didn’t find a
-corresponding methoda list with exactly one element, saying that there’s
+corresponding method, a list with exactly one element, saying that there’s
 no doubt about the target methodIf you return more than one MethodNode,
 then the compiler would throw an error to the user stating that the
 method call is ambiguous, listing the possible methods.For convenience,
@@ -497,7 +497,7 @@ include::{projectdir}/src/spec/test-resources/incompatibleassignment.groovy[tags
 ----
 
 Gives the
-developper the ability to handle incorrect assignments. This is for
+developer the ability to handle incorrect assignments. This is for
 example useful if a class overrides `setProperty`, because in that case it
 is possible that assigning a variable of one type to a property of
 another type is handled through that runtime mechanism. In that case, you
@@ -522,7 +522,7 @@ include::{projectdir}/src/spec/test-resources/ambiguousmethods.groovy[tags=event
 ----
 
 Gives the
-developper the ability to handle incorrect assignments. This is for
+developer the ability to handle incorrect assignments. This is for
 example useful if a class overrides `setProperty`, because in that case it
 is possible that assigning a variable of one type to a property of
 another type is handled through that runtime mechanism. In that case, you
@@ -698,7 +698,7 @@ return type when the type checker actually needs it. This is interesting
 because in some circumstances, you may not know the actual return type
 when the type checker demands it, so you can use a closure that will be
 called each time `getReturnType` is called by the type checker on this
-method node. If you combine this with deferred checks, you can acheive
+method node. If you combine this with deferred checks, you can achieve
 pretty complex type checking including handling of forward references.
 
 [source,groovy]
@@ -738,7 +738,7 @@ builder.foo {
 
 Your extension, then, should only be active once you’ve entered
 the `foo` method, and inactive outside of this scope. But you could have
-complex situations like mutiple builders in the same file or embedded
+complex situations like multiple builders in the same file or embedded
 builders (builders in builders). While you should not try to fix all
 this from start (you must accept limitations to type checking), the type
 checker does offer a nice mechanism to handle this: a scoping stack,
@@ -1038,10 +1038,10 @@ transformations.
 Type checking extensions look very attractive from an AST transformation design point of view: extensions have access
 to context like inferred types, which is often nice to have. And an extension has a direct access to the abstract
 syntax tree. Since you have access to the AST, there is nothing in theory that prevents
-you from modifying the AST. However, we do not recommand you to do so, unless you are an advanced AST transformation
+you from modifying the AST. However, we do not recommend you to do so, unless you are an advanced AST transformation
 designer and well aware of the compiler internals:
 
-* First of all, you would explicitely break the contract of type checking, which is to annotate,
+* First of all, you would explicitly break the contract of type checking, which is to annotate,
 and only annotate the AST. Type checking should *not* modify the AST tree because you wouldn’t be able to
 guarantee anymore that code without the _@TypeChecked_ annotation
 behaves the same without the annotation.
@@ -1056,7 +1056,7 @@ WARNING: The type checking phase is the last phase running in the compiler befor
 transformations run before that and the compiler does a very good job at "fixing" incorrect AST generated before the
 type checking phase. As soon as you perform a transformation during type checking, for example directly in a type
 checking extension, then you have to do all this work of generating a 100% compiler compliant abstract syntax tree by
-yourself, which can easily become complex. That's why we do not recommand to go that way if you are beginning with
+yourself, which can easily become complex. That's why we do not recommend to go that way if you are beginning with
 type checking extensions and AST transformations.
 
 === Examples

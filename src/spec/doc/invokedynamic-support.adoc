@@ -3,7 +3,7 @@
 
 == Foreword
 
-Since Groovy 2.0, we added support for the JVM http://docs.oracle.com/javase/7/docs/technotes/guides/vm/multiple-language-support.html#invokedynamic[invokedynamic] instruction. This instruction is supported since Java 7 and is a new bytecode instruction in the JVM that allows easier implementation of dynamic languages. This instruction will also be used internally, by the JVM, for the upcoming lamdba support in Java 8.
+Since Groovy 2.0, we added support for the JVM http://docs.oracle.com/javase/7/docs/technotes/guides/vm/multiple-language-support.html#invokedynamic[invokedynamic] instruction. This instruction is supported since Java 7 and is a new bytecode instruction in the JVM that allows easier implementation of dynamic languages. This instruction will also be used internally, by the JVM, for the lambda support in Java 8.
 
 This means that unlike APIs, AST transformations or syntactic sugar, this feature is **not visible** to the developer or the end user. It is a compilation and runtime feature only. This means that given two programs written in Groovy, you have the choice to compile it with or without invokedynamic support. Whatever you choose, it comes with pros and cons:
 

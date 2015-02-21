@@ -371,10 +371,10 @@ The code behaves as you would expect, but what happens if you add:
 include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_eager_outro,indent=0]
 ----
 
-You will see that the assert fails! There are two reaons for this:
+You will see that the assert fails! There are two reasons for this:
 
 * a GString only evaluates lazily the `toString` representation of values
-* the syntax `${x}` in a GString does *not* represent a closure but an *expression* to `$x`, evalutated when the GString
+* the syntax `${x}` in a GString does *not* represent a closure but an *expression* to `$x`, evaluated when the GString
 is created.
 
 In our example, the `GString` is created with an expression referencing `x`. When the `GString` is created, the *value*

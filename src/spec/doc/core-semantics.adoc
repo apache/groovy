@@ -1328,7 +1328,7 @@ cast is *not* necessary. The compiler embeds _instanceof_ inference that makes t
 ===== Flow typing
 
 Flow typing is an important concept of Groovy in type checked mode and an extension of type inference. The idea is that
-the compiler is capable of infering the type of variables in the flow of the code, not just at initialization:
+the compiler is capable of inferring the type of variables in the flow of the code, not just at initialization:
 
 [source,groovy]
 ----
@@ -1487,7 +1487,7 @@ on the other side.
 
 ===== Return type inference
 
-The first thing that the type checker is capable of doing is infering the _return type_ of a closure. This is simply
+The first thing that the type checker is capable of doing is inferring the _return type_ of a closure. This is simply
  illustrated in the following example:
 
 [source,groovy]
@@ -1609,7 +1609,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=cl_pt_wo
 <2> it's not necessary to use an explicit type for `it`, which is inferred
 
 The `@ClosureParams` annotation minimally accepts one argument, which is named a _type hint_. A type hint is a class which
-is reponsible for completing type information at compile time for the closure. In this example, the type hint being used
+is responsible for completing type information at compile time for the closure. In this example, the type hint being used
 is `groovy.transform.stc.FirstParam` which indicated to the type checker that the closure will accept one parameter
 whose type is the type of the first parameter of the method. In this case, the first parameter of the method is `Person`,
 so it indicates to the type checker that the first parameter of the closure is in fact a `Person`.
@@ -1692,7 +1692,7 @@ the arguments if the arity of each method is different. In the example above, `f
 
 |`FromString`
 |Yes
-|Infers the closure parameter typs from the `options` argument. The `options` argument consists of an array of comma-separated
+|Infers the closure parameter types from the `options` argument. The `options` argument consists of an array of comma-separated
 non-primitive types. Each element of the array corresponds to a single signature, and each comma in an element separate
 parameters of the signature. In short, this is the most generic type hint, and each string of the `options` map is *parsed*
 as if it was a signature literal. While being very powerful, this type hint must be avoided if you can because it increases
@@ -1721,14 +1721,14 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingHintsTest.groovy[tags=typ
 
 |===
 
-TIP: Even though you use `FirstParam`, `SecondParam` or `ThirdParam` as a type hint, it doesn't stricly mean that the
+TIP: Even though you use `FirstParam`, `SecondParam` or `ThirdParam` as a type hint, it doesn't strictly mean that the
 argument which will be passed to the closure *will* be the first (resp. second, third) argument of the method call. It
 only means that the *type* of the parameter of the closure will be the *same* as the type of the first (resp.  second,
  third) argument of the method call.
 
 In short, the lack of the `@ClosureParams` annotation on a method accepting a `Closure` will *not* fail compilation. If
  present (and it can be present in Java sources as well as Groovy sources), then the type checker has *more* information
- and can perform additional type inference. This makes this feature particularily interesting for framework developers.
+ and can perform additional type inference. This makes this feature particularly interesting for framework developers.
 
 ===== `@DelegatesTo`
 

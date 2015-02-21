@@ -414,7 +414,7 @@ resulting in an updated string containing the new number value.
 
 [NOTE]
 An embedded closure expression taking more than one parameter will generate an exception at runtime.
-Only closures with zero or one paramaters are allowed.
+Only closures with zero or one parameters are allowed.
 
 ==== Inteoperability with Java
 
@@ -857,7 +857,7 @@ The following table summarizes those rules:
 
 [NOTE]
 Thanks Groovy's operator overloading, the usual arithmetic operators work as well with `BigInteger` and `BigDecimal`,
-unlike in Java where you have to use explict methods for operating on those numbers.
+unlike in Java where you have to use explicit methods for operating on those numbers.
 
 [[integer_division]]
 ==== The case of the division operator
@@ -966,7 +966,7 @@ and use the `<<` leftShift operator to append elements to a list:
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=subscript_and_leftshift,indent=0]
 ----
-<1> Access the first element of the list (zeroth-based counting)
+<1> Access the first element of the list (zero-based counting)
 <2> Access the last element of the list with a negative index: -1 is the first element from the end of the list
 <3> Use an assignment to set a new value for the third element of the list
 <4> Use the `<<` leftShift operator to append an element at the end of the list

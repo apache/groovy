@@ -34,7 +34,7 @@ As you can see in the screen shots (they are clickable thumbnails), currently en
 
 Oh, and whatever you do, do not use the command line option -russel.
 
-The french translation has been contributed by Xavier Mehaut and Tugduall Grall, the spanisch translation by Andres Almiray, and the tranlation to brazilian portuguese has been provided by Marcos Silva Pereira.
+The french translation has been contributed by Xavier Mehaut and Tugduall Grall, the spanish translation by Andres Almiray, and the translation to brazilian portuguese has been provided by Marcos Silva Pereira.
 
 Thank you very much for your help.
 
