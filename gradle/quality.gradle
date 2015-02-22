@@ -91,6 +91,7 @@ allprojects {
         sourceSets = [sourceSets.main]
     }
     tasks.withType(FindBugs) {
+        effort = 'max'
         reports {
             xml.enabled = false
             html.enabled = true
