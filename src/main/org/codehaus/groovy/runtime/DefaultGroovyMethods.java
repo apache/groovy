@@ -5798,7 +5798,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sums the result of apply a closure to each item of an Iterable.
      * <code>coll.sum(closure)</code> is equivalent to:
      * <code>coll.collect(closure).sum()</code>.
-     * <pre class="groovyTestCase">assert 4+6+10+12 == [2,3,5,6].sum() { it * 2 }</pre>
+     * <pre class="groovyTestCase">assert 4+6+10+12 == [2,3,5,6].sum { it * 2 }</pre>
      *
      * @param self    an Iterable
      * @param closure a single parameter closure that returns a numeric value.
