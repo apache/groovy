@@ -152,8 +152,8 @@ class Groovysh extends Shell {
         if (isExecutable(line)) {
             result = executeCommand(line)
 
-            // For commands, only set the last result when its non-null/true
-            if (result) {
+            // For commands, only set the last result when its non-null
+            if (result != null) {
                 setLastResult(result)
             }
 
