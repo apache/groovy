@@ -93,7 +93,7 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
             Object handle = handleCache.get(method);
             if (handle == null) {
                 handle = plugin.getInvokeSpecialHandle(method, proxy);
-                handleCache.put(method, handle);
+                handleCache.putIfAbsent(method, handle);
             }
             return plugin.invokeHandle(handle, args);
         }
