@@ -453,7 +453,7 @@ Similarily to left currying, it is possible to set the right-most parameter of a
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=left_curry,indent=0]
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=right_curry,indent=0]
 ----
 <1> the `nCopies` closure defines two parameters
 <2> `rcurry` will set the last parameter to `bla`, creating a new closure (function) which accepts a single `int`
