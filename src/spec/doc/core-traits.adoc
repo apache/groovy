@@ -174,7 +174,7 @@ in the implementing class, the public field will appear as:
 String my_package_Foo__bar
 ----
 
-WARNING: While traits support public fields, it is not recommanded to use them and considered as a bad practice.
+WARNING: While traits support public fields, it is not recommended to use them and considered as a bad practice.
 
 == Composition of behaviors
 
@@ -665,7 +665,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfi
 <4> a static method _init_ is made available to the implementing class
 <5> the static field is _remapped_ to avoid the diamond issue
 
-As usual, it is not recommanded to use public fields. Anyway, should you want this, you must understand that the following code would fail:
+As usual, it is not recommended to use public fields. Anyway, should you want this, you must understand that the following code would fail:
 
 [source,groovy]
 -----
