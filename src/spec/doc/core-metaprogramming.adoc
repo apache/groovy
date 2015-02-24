@@ -80,6 +80,7 @@ the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>.
 
 === GroovyInterceptable (TBD)
 
+[[categories]]
 === Categories
 
 There are situations where it is useful if a class _not_ under control had additional methods. In order to enable this
