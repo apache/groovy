@@ -139,7 +139,7 @@ include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=switch_case_exampl
 
 Switch supports the following kinds of comparisons:
 
-* Class case values matches if the switch value is an instance of the class
+* Class case values match if the switch value is an instance of the class
 * Regular expression case values match if the `toString()` representation of the switch value matches the regex
 * Collection case values match if the switch value is contained in the collection. This also includes ranges (since they are Lists)
 * Closure case values match if the calling the closure returns a result which is true according to the <<Groovy-Truth,Groovy truth>>
