@@ -131,8 +131,102 @@ This allows you to provide your own Java or Groovy objects which can take advant
 | `a \<= b` | a.compareTo(b) \<= 0
 |======================
 
-== Script base classes (TBD)
+== Script base classes
+=== The Script class
+Groovy scripts are always compiled to classes. For example, a script as simple as:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=simple_script,indent=0]
+----
+
+is compiled to a class extending the abstract gapi::groovy.lang.Script class. This class contains a single abstract
+method called _run_. When a script is compiled, then its body will become the _run_ method, while the other methods
+found in the script are found in the implementing class. The `Script` class provides base support for integration
+with your application through the `Binding` object, as illustrated in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=integ_binding,indent=0]
+----
+<1> a binding is used to share data between the script and the calling class
+<2> a `GroovyShell` can be used with this binding
+<3> input variables are set from the calling class inside the binding
+<4> then the script is evaluated
+<5> and the `z` variable has been "exported" into the binding
+
+This is a very practical way to share data between the caller and the script, however it may be insufficient or not
+practical in some cases. For that purpose, Groovy allows you to set your own base script class. A base script class
+has to extend gapi::groovy.lang.Script and be a single abstract method type:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=baseclass_def,indent=0]
+----
+
+Then the custom script base class can be declared in the compiler configuration, for example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=use_custom_conf,indent=0]
+----
+<1> create a custom compiler configuration
+<2> set the base script class to our custom base script class
+<3> then create a `GroovyShell` using that configuration
+<4> the script will then extend the base script class, giving direct access to the `name` property and `greet` method
+
+=== The @BaseScript annotation
+
+As an alternative, it is also possible to use the `@BaseScript` annotation directly into a script:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=use_basescript,indent=0]
+----
+
+where `@BaseScript` should annotate a variable which type is the class of the base script. Alternatively, you can set
+the base script class as a member of the `@BaseScript` annotation itself:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=use_basescript_alt,indent=0]
+----
+
+=== Alternate abstract method
+
+We have seen that the base script class is a single abstract method type that needs to implement the `run` method. The
+`run` method is executed by the script engine automatically. In some circumstances it may be interesting to have a base
+class which implements the `run` method, but provides an alternative abstract method to be used for the script body.
+For example, the base script `run` method might perform some initialization before the `run` method is executed. This
+is possible by doing this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=custom_run_method,indent=0]
+----
+<1> the base script class should define one (and only one) abstract method
+<2> the `run` method can be overriden and perform a task before executing the script body
+<3> `run` calls the abstract `scriptBody` method which will delegate to the user script
+<4> then it can return something else than the value from the script
+
+If you execute this code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=custom_run_eval,indent=0]
+----
+
+Then you will see that the script is executed, but the result of the evaluation is `1` as returned by the `run`
+method of the base class. It is even clearer if you use `parse` instead of `evaluate`, because it would allow you to
+execute the `run` method several times on the same script instance:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=custom_run_parse,indent=0]
+----
+
 == Adding properties to numbers (TBD)
+
 [[section-delegatesto]]
 == @DelegatesTo
 
