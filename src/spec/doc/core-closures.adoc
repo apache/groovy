@@ -353,7 +353,7 @@ instance of `Thing`, it fails with a `groovy.lang.MissingPropertyException`. Des
 the `Person` class, the owner is not used.
 
 NOTE: A comprehensive explanation about how to use this feature to develop DSLs can be found in a
-link:dsls.html[dedicated section of the manual].
+link:core-domain-specific-languages.html[dedicated section of the manual].
 
 == Closures in GStrings
 
