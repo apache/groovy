@@ -225,7 +225,23 @@ execute the `run` method several times on the same script instance:
 include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=custom_run_parse,indent=0]
 ----
 
-== Adding properties to numbers (TBD)
+== Adding properties to numbers
+
+In Groovy number types are considered equal to any other types. As such, it is possible to enhance numbers by adding
+properties or methods to them. This can be very handy when dealing with measurable quantities for example. Details about
+how existing classes can be enhanced in Groovy are found in the link:core-metaprogramming.html#_extension_modules[extension
+modules] section or the link:core-metaprogramming.html#categories[categories] section.
+
+An illustration of this can be found in Groovy using the `TimeCategory`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/CategoryTest.groovy[tags=time_category,indent=0]
+----
+<1> using the `TimeCategory`, a property `minute` is added to the `Integer` class
+<2> similarily, the `months` method returns a `groovy.time.DatumDependentDuration` which can be used in calculus
+
+Categories are lexically bound, making them a great fit for internal DSLs.
 
 [[section-delegatesto]]
 == @DelegatesTo
@@ -963,6 +979,7 @@ We strongly recommand you to separate configuration files from classes,
 hence why we suggest using the `src/main` and `src/conf` directories above.
 
 === AST transformations (TBD)
+
 == Custom type checking extensions
 
 It may be interesting, in some circumstances, to provide feedback about wrong code to the user as soon as possible,
