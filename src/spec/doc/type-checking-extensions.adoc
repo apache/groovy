@@ -852,16 +852,6 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[
 The difference is that instead of using a path in classpath, you just specify the fully qualified class name of the
 precompiled extension.
 
-In case you really want to write an extension in Java, then you will not benefit from the type checking extension DSL.
-The extension above can be rewritten in Java this way:
-
-[source,java]
-----
-include::{projectdir}/src/spec/test/typing/PrecompiledJavaExtension.java[tags=precompiled_java_extension,indent=0]
-----
-<1> extend the `AbstractTypeCheckingExtension` class
-<2> then override the `handleXXX` methods as required
-
 === Using @Grab in a type checking extension
 
 It is totally possible to use the `@Grab` annotation in a type checking extension.

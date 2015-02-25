@@ -315,27 +315,6 @@ def robot = new Robot()
 shell.setVariable('robot', robot)
 shell.evaluate(script)
 '''
-
-        assertScript '''import groovy.transform.TypeChecked
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import typing.Robot
-
-def script = """
-robot.move 100
-"""
-
-def config = new CompilerConfiguration()
-config.addCompilationCustomizers(
-    new ASTTransformationCustomizer(
-        TypeChecked,
-        extensions:['typing.PrecompiledJavaExtension'])
-)
-def shell = new GroovyShell(this.class.classLoader, new Binding(),config)
-def robot = new Robot()
-shell.setVariable('robot', robot)
-shell.evaluate(script)
-'''
     }
 
     void testRobotExamplePassWithCompileStatic() {
