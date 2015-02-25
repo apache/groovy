@@ -1241,7 +1241,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=map_lite
 
 |[source,groovy]
 ----
-include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_simple,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_gstring,indent=0]
 ----
 |`java.util.LinkedHashMap<GString,String>` be careful, the key is a `GString`!
 
