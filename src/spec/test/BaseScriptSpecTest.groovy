@@ -53,7 +53,8 @@ assert (this instanceof Script)
             // tag::use_custom_conf[]
             def config = new CompilerConfiguration()                                // <1>
             config.scriptBaseClass = 'MyBaseClass'                                  // <2>
-            def shell = new GroovyShell(this.class.classLoader, config)             // <3>
+            def b = new Binding()
+            def shell = new GroovyShell(this.class.classLoader, b, config)          // <3>
             shell.evaluate """
                 setName 'Judith'                                                    // <4>
                 greet()
@@ -119,7 +120,10 @@ assert (this instanceof Script)
 
             def conf = new CompilerConfiguration()
             conf.scriptBaseClass = 'MyBaseClass'
-            def shell = new GroovyShell(this.class.classLoader, conf)
+            def shell = new GroovyShell(
+                this.class.classLoader,
+                new Binding(),
+                conf)
 
             // tag::custom_run_eval[]
             def result = shell.evaluate """
