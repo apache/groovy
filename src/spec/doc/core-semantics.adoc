@@ -1806,7 +1806,7 @@ There are several benefits of using `@CompileStatic` on your code:
 * immunity to <<compilestatic-annotation,monkey patching>>
 * performance improvements
 
-The performance improvements depend on the kind of program you are executing. It it is I/O bound, the difference between
+The performance improvements depend on the kind of program you are executing. If it is I/O bound, the difference between
 statically compiled code and dynamic code is barely noticeable. On highly CPU intensive code, since the bytecode which
 is generated is very close, if not equal, to the one that Java would produce for an equivalent program, the performance
 is greatly improved.
