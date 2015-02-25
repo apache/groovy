@@ -331,7 +331,7 @@ config.addCompilationCustomizers(
         TypeChecked,
         extensions:['typing.PrecompiledJavaExtension'])
 )
-def shell = new GroovyShell(config)
+def shell = new GroovyShell(this.class.classLoader, new Binding(),config)
 def robot = new Robot()
 shell.setVariable('robot', robot)
 shell.evaluate(script)
