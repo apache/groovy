@@ -1317,7 +1317,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=least_up
 <5> but `B` defines an additional `exit` method
 <6> the type of `list` is inferred as "list of the LUB of `A` and `B`"
 <7> so it is possible to call `greet` which is defined on both `A` and `B` through the `Greeter` interface
-<8> and it is possible to call `salut` which is defined on both `A` and `B` through the `Salut` interface
+<8> and it is possible to call `salute` which is defined on both `A` and `B` through the `Salute` interface
 <9> yet calling `exit` is a compile time error because it doesn't belong to the LUB of `A` and `B` (only defined in `B`)
 
 The error message will look like:
