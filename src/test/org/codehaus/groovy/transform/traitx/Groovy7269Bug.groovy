@@ -35,5 +35,24 @@ class Groovy7269Bug extends GroovyTestCase {
             assert w.title == 'Some Default Title'
         '''
     }
+
+    // GROOVY-7308
+    void testMixOfStaticAndNotStaticPropertiesOfSameName() {
+        assertScript '''class Widget {
+
+    static Integer someNumber = 42
+}
+
+Widget.metaClass.getSomeNumber = {
+    2112
+}
+
+def widget = new Widget()
+
+assert widget.someNumber == 2112
+
+
+        '''
+    }
 }
 

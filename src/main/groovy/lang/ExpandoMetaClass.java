@@ -52,6 +52,7 @@ import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.OwnedMetaClass;
 import org.codehaus.groovy.runtime.metaclass.ThreadManagedMetaBeanProperty;
 import org.codehaus.groovy.util.FastArray;
+import org.objectweb.asm.Opcodes;
 
 /**
  * ExpandoMetaClass is a MetaClass that behaves like an Expando, allowing the addition or replacement
@@ -953,7 +954,10 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         if (beanProperty==null) {
             MetaProperty metaProperty = super.getMetaProperty(propertyName);
             if (metaProperty instanceof MetaBeanProperty) {
-                beanProperty = (MetaBeanProperty) metaProperty;
+                boolean staticProp = Modifier.isStatic(metaProperty.getModifiers());
+                if (isStatic==staticProp) {
+                    beanProperty = (MetaBeanProperty) metaProperty;
+                }
             }
         }
         if (beanProperty == null) {
