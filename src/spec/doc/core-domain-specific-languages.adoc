@@ -1044,12 +1044,100 @@ include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_as
 ==== DomBuilder (TBD)
 ==== NodeBuilder (TBD)
 
-include::{projectdir}/subprojects/groovy-json/{specfolder}/json-builder.adoc[leveloffset=+2]
+include::{projectdir}/subprojects/groovy-json/{specfolder}/json-builder.adoc[leveloffset=+3]
 
 ==== StreamingJsonBuilder (TBD)
 
-include::{projectdir}/subprojects/groovy-swing/{specfolder}/swing-builder.adoc[leveloffset=+2]
+include::{projectdir}/subprojects/groovy-swing/{specfolder}/swing-builder.adoc[leveloffset=+3]
 
 ==== AntBuilder (TBD)
+
 ==== CliBuilder (TBD)
-==== ObjectGraphBuilder (TBD)
+
+==== ObjectGraphBuilder
+
+`ObjectGraphBuilder` is a builder for an arbitrary graph of beans that
+follow the JavaBean convention. It is in particular useful for creating test data.
+
+Let's start with a list of classes that belong to your domain:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=domain_classes,indent=0]
+----
+
+Then using `ObjectGraphBuilder` building a `Company` with three employees is as
+easy as:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=builder_example,indent=0]
+----
+<1> creates a new object graph builder
+<2> sets the classloader where the classes will be resolved
+<3> sets the base package name for classes to be resolved
+<4> creates a `Company` instance
+<5> with 3 `Employee` instances
+<6> each of them having a distinct `Address`
+
+Behind the scenes, the object graph builder:
+
+* will try to match a node name into a `Class`, using a default `ClassNameResolver` strategy that requires a package name
+* then will create an instance of the appropriate class using a default `NewInstanceResolver` strategy that calls a no-arg constructor
+* resolves the parent/child relationship for nested nodes, involving two other strategies:
+** `RelationNameResolver` will yield the name of the child property in the parent, and the name of the parent property
+in the child (if any, in this case, `Employee` has a parent property aptly named `company`)
+** `ChildPropertySetter` will insert the child into the parent taking into account if the child belongs to a `Collection`
+ or not (in this case `employees` should be a list of `Employee` instances in `Company`).
+
+All 4 strategies have a default implementation that work as expected if
+the code follows the usual conventions for writing JavaBeans. In case any of your beans or objects do not follow the convention
+you may plug your own implementation of each strategy. For example imagine that you need to build a class which is
+immutable:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=immutable_class,indent=0]
+----
+
+Then if you try to create a `Person` with the builder:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=immutable_fail_runtime,indent=0]
+----
+
+It will fail at runtime with:
+
+----
+include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=expected_error_immutable,indent=0]
+----
+
+Fixing this can be done by changing the new instance strategy:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=newinstanceresolver,indent=0]
+----
+
+`ObjectGraphBuilder` supports ids per node, meaning
+that you can store a reference to a node in the builder. This is
+useful when multiple objects reference the same instance. Because a
+property named `id` may be of business meaning in some domain models
+`ObjectGraphBuilder` has a strategy named `IdentifierResolver` that you
+may configure to change the default name value. The same may
+happen with the property used for referencing a previously saved
+instance, a strategy named `ReferenceResolver` will yield the
+appropriate value (default is `refId'):
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=test_id,indent=0]
+----
+<1> an address can be created with an `id`
+<2> an employee can reference the address directly with its id
+<3> or use the `refId` attribute corresponding to the `id` of the corresponding address
+
+Its worth mentioning that you cannot modify the properties of a
+referenced bean.
+
