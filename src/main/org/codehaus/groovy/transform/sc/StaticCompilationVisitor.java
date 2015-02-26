@@ -351,20 +351,54 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             public void visitField(final FieldNode node) {
                 if (visitor!=null) visitor.visitField(node);
                 ClassNode declaringClass = node.getDeclaringClass();
-                if (declaringClass!=null) rType.set(declaringClass);
+                if (declaringClass!=null) {
+                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, ClassHelper.LIST_TYPE)) {
+                        boolean spread = declaringClass.getDeclaredField(node.getName()) != node;
+                        pexp.setSpreadSafe(spread);
+                    }
+                    rType.set(declaringClass);
+                }
             }
 
             public void visitMethod(final MethodNode node) {
                 if (visitor!=null) visitor.visitMethod(node);
                 ClassNode declaringClass = node.getDeclaringClass();
-                if (declaringClass!=null) rType.set(declaringClass);
+                if (declaringClass!=null){
+                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, ClassHelper.LIST_TYPE)) {
+                        List<MethodNode> properties = declaringClass.getDeclaredMethods(node.getName());
+                        boolean spread = true;
+                        for (MethodNode mn : properties) {
+                            if (node==mn) {
+                                spread = false;
+                                break;
+                            }
+                        }
+                        // it's no real property but a property of the component
+                        pexp.setSpreadSafe(spread);
+                    }
+                    rType.set(declaringClass);
+                }
             }
 
             @Override
             public void visitProperty(final PropertyNode node) {
                 if (visitor!=null) visitor.visitProperty(node);
                 ClassNode declaringClass = node.getDeclaringClass();
-                if (declaringClass!=null) rType.set(declaringClass);
+                if (declaringClass!=null) {
+                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, ClassHelper.LIST_TYPE)) {
+                        List<PropertyNode> properties = declaringClass.getProperties();
+                        boolean spread = true;
+                        for (PropertyNode propertyNode : properties) {
+                            if (propertyNode==node) {
+                                spread = false;
+                                break;
+                            }
+                        }
+                        // it's no real property but a property of the component
+                        pexp.setSpreadSafe(spread);
+                    }
+                    rType.set(declaringClass);
+                }
             }
         };
         boolean exists = super.existsProperty(pexp, checkForReadOnly, receiverMemoizer);
