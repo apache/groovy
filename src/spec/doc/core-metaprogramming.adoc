@@ -4,14 +4,29 @@ The Groovy language supports two flavors of metaprogramming: runtime metaprogram
 The first one allows altering the class model and the behavior of a program at runtime, while the second only occurs
 at compile-time. Both have pros and cons, that we will detail in this section.
 
-== Runtime metaprogramming (TBD)
+== Runtime metaprogramming
+
+(TBD)
+
 
 === GroovyObject interface (MaksymStavytskyi)
-==== invokeMethod (TBD)
-==== get/setProperty (TBD)
-==== get/setMetaClass (TBD)
+==== invokeMethod
 
-=== get/setAttribute (TBD)
+(TBD)
+
+==== get/setProperty
+
+(TBD)
+
+==== get/setMetaClass
+
+(TBD)
+
+
+=== get/setAttribute
+
+(TBD)
+
 
 === methodMissing
 
@@ -78,7 +93,10 @@ performance.
 `methodMissing` and `propertyMissing` that deal with static methods and properties can be added via
 the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>.
 
-=== GroovyInterceptable (TBD)
+=== GroovyInterceptable
+
+(TBD)
+
 
 [[categories]]
 === Categories
@@ -194,11 +212,26 @@ first parameter. The target type class is given as an argument to the annotation
 [NOTE]
 There is a distinct section on `@Category` in the <<core-metaprogramming.adoc#xform-Category,compile-time metaprogramming section>>.
 
-=== Metaclasses (TBD)
-==== Custom metaclasses (TBD)
-===== Delegating metaclass (TBD)
-===== Magic package (TBD)
-==== Per instance metaclass (TBD)
+=== Metaclasses
+
+(TBD)
+
+==== Custom metaclasses
+
+(TBD)
+
+===== Delegating metaclass
+
+(TBD)
+
+===== Magic package
+
+(TBD)
+
+==== Per instance metaclass
+
+(TBD)
+
 
 [[metaprogramming_emc]]
 ==== ExpandoMetaClass
@@ -2158,9 +2191,27 @@ include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=memoriz
 thoroughly in this <<section-grape,section of the guide>>.
 
 [[developing-ast-xforms]]
-=== Developing AST transformations (TBD)
-==== Compilation phases guide (TBD)
-==== Local transformations (TBD)
-==== Global transformations (TBD)
-==== AST API guide (TBD)
-==== Testing AST transformations (TBD)
+=== Developing AST transformations
+
+(TBD)
+
+==== Compilation phases guide
+
+(TBD)
+
+==== Local transformations
+
+(TBD)
+
+==== Global transformations
+
+(TBD)
+
+==== AST API guide
+
+(TBD)
+
+==== Testing AST transformations
+
+(TBD)
+

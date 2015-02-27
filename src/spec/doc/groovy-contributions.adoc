@@ -588,16 +588,28 @@ Then if you look below, you can see different topics like :
 [source,role="console",options="nowrap"]
 .Asciidoctor Heading One Titles
 ----
- == Operator overloading (TBD)
- == Script base classes (TBD)
- == Adding properties to numbers (TBD)
+ == Operator overloading
+
+(TBD)
+
+ == Script base classes
+
+(TBD)
+
+ == Adding properties to numbers
+
+(TBD)
+
 ----
 
-Since these titles are marked as *(TBD)* or *To Be Done* they need some work. 
+Since these titles are marked as *(TBD)* or *To Be Done* they need some work.
 
 === Ready To Start ?
 
-So now you know how and where to look, you can review our [blue]#Groovy# documents depending on your area of interest. Find a subject title marked something like +== Operator overloading (TBD)+ in one of our *.adoc* files, or whatever takes your fancy. 
+So now you know how and where to look, you can review our [blue]#Groovy# documents depending on your area of interest. Find a subject title marked something like +== Operator overloading
+
+(TBD)
++ in one of our *.adoc* files, or whatever takes your fancy.
 
 Then after you decide how/where to donate, register your interest in that area and claim it as yours. Read on to learn how you do that.
 
@@ -622,7 +634,10 @@ NOTE: After you are finished writing, editing, updating and placing your changes
 .Raw Asciidoctor Markup for a Groovy Topic
 image::assets/img/console2.png[Sample Markup, align="center"] 
 
-Here's a demo we did earlier. Notice the line +==== MarkupBuilder (TBD) - assigned to JNorthr 1July14+ assigned to one of our documentation team ?
+Here's a demo we did earlier. Notice the line +==== MarkupBuilder
+
+(TBD)
+ - assigned to JNorthr 1July14+ assigned to one of our documentation team ?
 
 You need to do the same, to an +.adoc+ document in your own GitHub copy. Look in a folder named something like +./groovy-core/groovy-core/src/spec/doc+ to see where your topic has been discussed. Then edit it, adding your id and, if necessary, save as plain text format using the *UTF-8* character set.
 
