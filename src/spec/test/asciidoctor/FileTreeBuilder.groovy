@@ -21,12 +21,12 @@ package asciidoctor
  * specification. For example, imagine that you want to create the following tree:
  * <pre>
  * src/
- * ├── main
- * │   └── groovy
- * │       └── Foo.groovy
- * └── test
- * └── groovy
- * └── FooTest.groovy
+ *  |--- main
+ *  |     |--- groovy
+ *  |            |--- Foo.groovy
+ *  |--- test
+ *        |--- groovy
+ *               |--- FooTest.groovy
  *
  * </pre>
  *
