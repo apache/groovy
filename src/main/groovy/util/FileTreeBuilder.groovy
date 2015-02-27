@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package asciidoctor
+package groovy.util
 
 /**
  * A builder dedicated at generating a file directory structure from a
