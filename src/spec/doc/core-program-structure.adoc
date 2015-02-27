@@ -143,10 +143,22 @@ Thats it! Notice how Groovy allowed us to use the `as` keyword to rename our imp
 
 Type aliasing is also useful to solve name collision problems which can occur with `*` imports.
 
-== Scripts versus classes (TBD)
+== Scripts versus classes
 
-== Initializers (TBD)
+(TBD)
 
-=== Static initializers (TBD)
-=== Instance initializers (TBD)
+
+== Initializers
+
+(TBD)
+
+
+=== Static initializers
+
+(TBD)
+
+=== Instance initializers
+
+(TBD)
+
 

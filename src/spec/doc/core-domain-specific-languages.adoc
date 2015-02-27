@@ -978,7 +978,10 @@ groovyc -configscript src/conf/config.groovy src/main/groovy/MyClass.groovy
 We strongly recommand you to separate configuration files from classes,
 hence why we suggest using the `src/main` and `src/conf` directories above.
 
-=== AST transformations (TBD)
+=== AST transformations
+
+(TBD)
+
 
 == Custom type checking extensions
 
@@ -987,11 +990,26 @@ that is to say when the DSL script is compiled, rather than having to wait for t
 this is not often possible with dynamic code. Groovy actually provides a practical answer to this known as
 link:type-checking-extensions.html[type checking extensions].
 
-== Builders (TBD)
-=== Creating a builder (TBD)
-==== BuilderSupport (TBD)
-==== FactoryBuilderSupport (TBD)
-=== Existing builders (TBD)
+== Builders
+
+(TBD)
+
+=== Creating a builder
+
+(TBD)
+
+==== BuilderSupport
+
+(TBD)
+
+==== FactoryBuilderSupport
+
+(TBD)
+
+=== Existing builders
+
+(TBD)
+
 ==== MarkupBuilder
 
 Groovys `MarkupBuilder` can be used to create any kind of markup, e.g. XML. For example to create this xml string:
@@ -1038,15 +1056,33 @@ Again we use http://xmlunit.sourceforge.net[XMLUnit] to check that the builder o
 include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_assert_namespaces,indent=0]
 ----
 
-==== StreamingMarkupBuilder (TBD)
-==== SaxBuilder (TBD)
-==== StaxBuilder (TBD)
-==== DomBuilder (TBD)
-==== NodeBuilder (TBD)
+==== StreamingMarkupBuilder
+
+(TBD)
+
+==== SaxBuilder
+
+(TBD)
+
+==== StaxBuilder
+
+(TBD)
+
+==== DomBuilder
+
+(TBD)
+
+==== NodeBuilder
+
+(TBD)
+
 
 include::{projectdir}/subprojects/groovy-json/{specfolder}/json-builder.adoc[leveloffset=+3]
 
-==== StreamingJsonBuilder (TBD)
+==== StreamingJsonBuilder
+
+(TBD)
+
 
 include::{projectdir}/subprojects/groovy-swing/{specfolder}/swing-builder.adoc[leveloffset=+3]
 
@@ -1122,7 +1158,10 @@ It is worth mentionning that `AntBuilder` is included in http://gradle.org/[Grad
 just like you would in Groovy. Additional documentation can be found in the
 http://gradle.org/docs/current/userguide/ant.html[Gradle manual].
 
-==== CliBuilder (TBD)
+==== CliBuilder
+
+(TBD)
+
 
 ==== ObjectGraphBuilder
 

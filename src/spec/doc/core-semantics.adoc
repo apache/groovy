@@ -216,17 +216,35 @@ try {
 }
 ----
 
-=== Power assertion (TBD)
-=== Labeled statements (TBD)
+=== Power assertion
 
-== Expressions (TBD)
+(TBD)
+
+=== Labeled statements
+
+(TBD)
+
+
+== Expressions
+
+(TBD)
+
 
 [[gpath_expressions]]
-=== GPath expressions (TBD)
+=== GPath expressions
 
-== Promotion and coercion (TBD)
+(TBD)
 
-=== Number promotion (TBD)
+
+== Promotion and coercion
+
+(TBD)
+
+
+=== Number promotion
+
+(TBD)
+
 
 [[closure-coercion]]
 === Closure to type coercion
@@ -475,7 +493,10 @@ It is failing because the `as` keyword only works with class literals. Instead, 
 include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=fixed_as_usage,indent=0]
 ----
 
-== Optionality (TBD)
+== Optionality
+
+(TBD)
+
 
 === Optional parentheses
 
@@ -534,7 +555,10 @@ Can be shortend to:
 include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=omitted_return_keyword,indent=0]
 ----
 
-=== Optional public keyword (TBD)
+=== Optional public keyword
+
+(TBD)
+
 
 [[Groovy-Truth]]
 == The Groovy Truth
@@ -597,7 +621,10 @@ Non-null object references are coerced to true.
 include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=object_truth,indent=0]
 ----
 
-=== Customizing the truth with asBoolean() methods (TBD)
+=== Customizing the truth with asBoolean() methods
+
+(TBD)
+
 
 == Typing
 

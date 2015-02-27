@@ -1,6 +1,12 @@
-= Groovy Development Kit (TBD)
+= Groovy Development Kit
 
-== Working with IO (TBD)
+(TBD)
+
+
+== Working with IO
+
+(TBD)
+
 
 include::{projectdir}/src/spec/doc/working-with-collections.adoc[leveloffset=+1]
 

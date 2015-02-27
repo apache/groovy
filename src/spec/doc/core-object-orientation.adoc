@@ -2,9 +2,15 @@
 
 This chapter covers the object orientation of the Groovy programming language.
 
-== Types (TBD)
+== Types
 
-=== Primitive types (TBD)
+(TBD)
+
+
+=== Primitive types
+
+(TBD)
+
 
 === Class
 
@@ -93,13 +99,28 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=abstract_class,indent=
 
 Abstract classes are commonly compared to interfaces. But there are at least two important differences of choosing one or another. First, while abstract classes may contain fields/properties and concrete methods, interfaces may contain only abstract methods (method signatures). Moreover, one class can implement several interfaces, whereas it can extend just one class, abstract or not. 
 
-=== Interface (TBD)
+=== Interface
 
-=== Annotation (TBD)
+(TBD)
 
-==== Closure annotation parameters (TBD)
-==== Meta-annotations (TBD)
-==== Annotation placement (TBD)
+
+=== Annotation
+
+(TBD)
+
+
+==== Closure annotation parameters
+
+(TBD)
+
+==== Meta-annotations
+
+(TBD)
+
+==== Annotation placement
+
+(TBD)
+
 
 === Constructors
 
@@ -218,18 +239,39 @@ For example if a method `foo` takes a varargs argument of type `T` and another m
 include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_method_overloading,indent=0]
 ----
 
-==== Method selection algorithm (TBD)
-==== Exception declaration (TBD)
+==== Method selection algorithm
 
-=== Fields and properties (TBD)
+(TBD)
 
-==== Fields (TBD)
-==== Properties (TBD)
+==== Exception declaration
 
-=== Inheritance (TBD)
+(TBD)
+
+
+=== Fields and properties
+
+(TBD)
+
+
+==== Fields
+
+(TBD)
+
+==== Properties
+
+(TBD)
+
+
+=== Inheritance
+
+(TBD)
+
 
 [[generics]]
-=== Generics (TBD)
+=== Generics
+
+(TBD)
+
 
 include::{projectdir}/src/spec/doc/core-traits.adoc[leveloffset=+1]
 
