@@ -15,9 +15,6 @@
  */
 
 package builder
-
-import asciidoctor.FileTreeBuilder
-
 /**
  * Test cases for the Ant builder documentation.
  */
