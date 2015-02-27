@@ -237,7 +237,8 @@ include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags
 ----
 
 Another alternative is to register a `MetaClassRegistryChangeEventListener`, track the changed classes and remove
-the changes in the cleanup method of your chosen testing runtime. A good example can be found https://github.com/grails/grails-core/blob/master/grails-bootstrap/src/main/groovy/org/codehaus/groovy/grails/cli/support/MetaClassRegistryCleaner.java[in the Grails web
+the changes in the cleanup method of your chosen testing runtime. A good example can be found
+https://github.com/grails/grails-core/blob/master/grails-bootstrap/src/main/groovy/grails/build/support/MetaClassRegistryCleaner.java[in the Grails web
 development framework].
 
 Besides using the `ExpandoMetaClass` on a class-level, there is also support for using the meta-class on a per-object
