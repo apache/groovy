@@ -1241,7 +1241,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=map_lite
 
 |[source,groovy]
 ----
-include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_simple,indent=0]
+include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_gstring,indent=0]
 ----
 |`java.util.LinkedHashMap<GString,String>` be careful, the key is a `GString`!
 
@@ -1317,7 +1317,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingTest.groovy[tags=least_up
 <5> but `B` defines an additional `exit` method
 <6> the type of `list` is inferred as "list of the LUB of `A` and `B`"
 <7> so it is possible to call `greet` which is defined on both `A` and `B` through the `Greeter` interface
-<8> and it is possible to call `salut` which is defined on both `A` and `B` through the `Salut` interface
+<8> and it is possible to call `salute` which is defined on both `A` and `B` through the `Salute` interface
 <9> yet calling `exit` is a compile time error because it doesn't belong to the LUB of `A` and `B` (only defined in `B`)
 
 The error message will look like:
@@ -1833,7 +1833,7 @@ There are several benefits of using `@CompileStatic` on your code:
 * immunity to <<compilestatic-annotation,monkey patching>>
 * performance improvements
 
-The performance improvements depend on the kind of program you are executing. It it is I/O bound, the difference between
+The performance improvements depend on the kind of program you are executing. If it is I/O bound, the difference between
 statically compiled code and dynamic code is barely noticeable. On highly CPU intensive code, since the bytecode which
 is generated is very close, if not equal, to the one that Java would produce for an equivalent program, the performance
 is greatly improved.
