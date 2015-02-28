@@ -549,7 +549,7 @@ or
 jmx.export(regPolicy:"replace|ignore|error")
 ----
 
-- **replace** - JmxBuilder.export() will replance any bean already registered with the MBean during export.
+- **replace** - JmxBuilder.export() will replace any bean already registered with the MBean during export.
 - **ignore** - The bean being exported will be ignored if the same bean is already registered.
 - **error** - JmxBuilder.export() throws an error upon bean name collision during registration.
 
@@ -792,7 +792,7 @@ The snippet above shows all of the ways JmxBuilder allows you to describe an ope
 
 === Embedding Descriptor
 
-JmxBuilder supports the ability to **embed descriptors directly in your Groovy class**. So, instead of wrapping your description around the declared object (as we've seen here), you can ebmed your JMX descriptors directly in your class.
+JmxBuilder supports the ability to **embed descriptors directly in your Groovy class**. So, instead of wrapping your description around the declared object (as we've seen here), you can embed your JMX descriptors directly in your class.
 
 **RequestControllerGroovy**
 
@@ -808,7 +808,7 @@ There are two things going on in the code above:
 
 === Timer Export
 
-JMX standards mandate that the implementation of the API makes available a timer service. Since JMX is a component-based architecture, timers provide an excellent signaling mechanism to communicate to registered listener components in the MBeanServer. JmxBuilder supports the creation and export of timers using the same easy syntax we've seen so far.
+JMX standards mandate that the implementation of the API makes available a timer service. Since JMX is a component-based architecture, timers provide an excellent signalling mechanism to communicate to registered listener components in the MBeanServer. JmxBuilder supports the creation and export of timers using the same easy syntax we've seen so far.
 
 ==== Timer Node Syntax
 
@@ -820,7 +820,7 @@ timer(
     data:dataValue
     startDate:"now"|dateValue
     period:"99d"|"99h"|"99m"|"99s"|99
-    occurences:long
+    occurrences:long
 )
 ----
 
@@ -828,11 +828,11 @@ The timer() node supports several attributes:
 
 - **name**: - Required The qualified JMX ObjectName instance (or String) for the timer.
 - **event**: - The JMX event type string that will be broadcast with every timing signal (default **"jmx.builder.event"**).
-- **message**: - An optional string value that can be sent to listneners.
+- **message**: - An optional string value that can be sent to listeners.
 - **data**: - An optional object that can be sent to listeners of timing signal.
 - **startDate**: - When to start timer. Set of valid values [ "now", date object ]. Default is "now"
 - **period**: - A timer's period expressed as either a number of millisecond or time unit (day, hour, minute, second). See description below.
-- **occurences**: - A number indicating the number of time to repeat timer. Default is forever.
+- **occurrences**: - A number indicating the number of time to repeat timer. Default is forever.
 
 ==== Exporting a Timer
 
@@ -905,14 +905,14 @@ When handling the attribute onChange event, the handler closure will receive an 
 
 - event.**oldValue** - the previous attribute value before the change event.
 - event.**newValue** - the new value of the attribute after the change.
-- event.**attribute** - the name of the attribute on which the event occured.
+- event.**attribute** - the name of the attribute on which the event occurred.
 - event.**attributeType** - the data type of the attribute that causes the event.
 - event.**sequenceNumber** - a numeric value representing the sequence number of event.
-- event.**timeStamp** - a time stamp for the event occurence.
+- event.**timeStamp** - a time stamp for the event occurrence.
 
 ==== Handling Operation onCall Event
 
-Similar to mbean attributes, JmxBuilder affords developers the **ability to listen for operation invokation** on an MBean registered in the MBeaServer. JmxBuilder accepts a **callback closure that will be executed after the MBean method has invoked**.
+Similar to mbean attributes, JmxBuilder affords developers the **ability to listen for operation invocation** on an MBean registered in the MBeaServer. JmxBuilder accepts a **callback closure that will be executed after the MBean method has invoked**.
 
 [source,groovy]
 ----
@@ -934,7 +934,7 @@ When handling the operation onCall event, the callback closure will receive an e
 - event.**source** - The object on which the method was invoked.
 - event.**data** - the data type of the attribute that causes the event.
 - event.**sequenceNumber** - a numeric value representing the sequence number of event.
-- event.**timeStamp** - a time stamp for the event occurence.
+- event.**timeStamp** - a time stamp for the event occurrence.
 
 === Listener MBean
 
@@ -956,7 +956,7 @@ You can also specify an **event type** you are interested in receiving from a br
 
 ==== Listening to JMX Events
 
-In some cases, you will want to create stand-alone event listensers (not attached to exported MBeans). JmxBuilder provides the Listener() node to let you create JMX listeners that can listen to MBeanServer events. This is useful when creating JMX client applications to monitor/manage JMX agents on remote JMX MBeanServers.
+In some cases, you will want to create stand-alone event listeners (not attached to exported MBeans). JmxBuilder provides the Listener() node to let you create JMX listeners that can listen to MBeanServer events. This is useful when creating JMX client applications to monitor/manage JMX agents on remote JMX MBeanServers.
 
 ==== Listener Node Syntax
 
@@ -968,7 +968,7 @@ jmx.listener(
 )
 ----
 
-Here is the description of the **lisetener()** node attributes:
+Here is the description of the **listener()** node attributes:
 
 - event: An optional string that identifies the JMX event type to listen for.
 - from (required): The JMX ObjectName of the component to listen to. This can be specified as a string or an instance of ObjectName
@@ -1033,7 +1033,7 @@ You can optionally pass data to the receiver when you send the message.
 include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=emitter_broadcast_event_with_objects,indent=0]
 ----
 
-If you use an **event listener closure (see above) that accpets a parameter**, you can access that value.
+If you use an **event listener closure (see above) that accepts a parameter**, you can access that value.
 
 == Further JMX Information
 

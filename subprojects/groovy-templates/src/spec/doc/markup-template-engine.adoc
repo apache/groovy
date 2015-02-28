@@ -475,7 +475,7 @@ By default, the template engine will render output without any specific formatti
 * `autoIndent` is responsible for auto-indenting after a new line is inserted
 * `autoNewLine` is responsible for automatically inserting new lines based on the original formatting of the template source
 
-In general, it is recommanded to set both `autoIndent` and `autoNewLine` to true if you want human-readable, pretty printed, output:
+In general, it is recommended to set both `autoIndent` and `autoNewLine` to true if you want human-readable, pretty printed, output:
 
 [source,java]
 ----
