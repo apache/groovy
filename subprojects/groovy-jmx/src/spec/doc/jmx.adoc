@@ -363,7 +363,7 @@ You can even attach to the process while it is running with http://docs.oracle.c
 
 image:assets/img/jconsole.gif[]
 
-We started the Groovy application with the `-Dcom.sun.management.jmxremote` JVM argument using a Java 5 JVM.
+We started the Groovy application with the `-Dcom.sun.management.jmxremote` JVM argument.
 
 See also:
 
@@ -372,25 +372,6 @@ See also:
 - http://static.springsource.org/spring/docs/3.2.x/spring-framework-reference/html/jmx.html[Spring JMX Documentation]
 
 == Troubleshooting
-
-=== groovy.lang.MissingMethodException or groovy.lang.GroovyRuntimeException
-
-If you get an error like this:
-
-----
-groovy.lang.MissingMethodException: No signature of method:
-javax.management.remote.rmi.RMIConnector$RemoteMBeanServerConnection.queryMBeans()
-is applicable for argument types: (javax.management.ObjectName, null)
-values: {Catalina:*, null}
-----
-
-or like this:
-
-----
-Caught: groovy.lang.GroovyRuntimeException: Could not find matching constructor for: groovy.util.GroovyMBean(javax.management.remote.rmi.RMIConnector$RemoteMBeanServerConnection, java.lang.String)
-----
-
-you have to move away or delete "mx4j-*.jar" from `$GROOVY_HOME/lib`. MX4J is designed to add `javax.management` classes to 1.4 JVMs. If you already have a newer JMX jar on your classpath or are using a Java 5 or higher JVM, the MX4J classes will be incompatible with the ones from the newer Sun JVMs or newer versions of JMX.
 
 === java.lang.SecurityException
 
