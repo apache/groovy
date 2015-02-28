@@ -454,7 +454,7 @@ Which means:
 
 * messages will first go through the logging handler
 * the logging handler calls `super` which will delegate to the next handler, which is the `SayHandler`
-* if the message starts with `say`, then the hanlder consumes the message
+* if the message starts with `say`, then the handler consumes the message
 * if not, the `say` handler delegates to the next handler in the chain
 
 This approach is very powerful because it allows you to write handlers that do not know each other and yet let you

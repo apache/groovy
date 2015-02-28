@@ -356,7 +356,7 @@ include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_method
 What we’ve done here is telling the compiler (or the IDE) that when the
 method will be called with a closure, the delegate of this closure will
 be set to an object of type `email`. But there is still a problem: the
-defaut delegation strategy is not the one which is used in our method.
+default delegation strategy is not the one which is used in our method.
 So we will give more information and tell the compiler (or the IDE) that
 the delegation strategy is also changed:
 

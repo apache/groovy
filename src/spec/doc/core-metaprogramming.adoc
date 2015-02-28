@@ -802,7 +802,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_callSuper,indent=0]
 ----
 |force|False|By default, the transformation will do nothing if a constructor is already defined. Setting this property
-to true, the constructor will be generated and it's your responsability to ensure that no duplicate constructor
+to true, the constructor will be generated and it's your responsibility to ensure that no duplicate constructor
 is defined|See javadocs
 |=======================================================================
 
@@ -1921,7 +1921,7 @@ equivalent to this:
 include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=field_missing_property_equiv,indent=0]
 ----
 
-So `def x` is effectiveley interpreted as a local variable, outside of the scope of the `line` method. The `@Field` AST transformation aims at fixing this
+So `def x` is effectively interpreted as a local variable, outside of the scope of the `line` method. The `@Field` AST transformation aims at fixing this
 by changing the scope of the variable to a field of the enclosing script:
 
 [source,groovy]
