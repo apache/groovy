@@ -297,7 +297,7 @@ Ultimately, it is possible to perform more operations during compilation by rely
 compilation and would let you introduce new steps or even stop compilation at various phases. This is for example how
 stub generation is done, for the joint compiler.
 
-However, overriding `CompilationUnit` is not recommanded and should only be done if no other standard solution works.
+However, overriding `CompilationUnit` is not recommended and should only be done if no other standard solution works.
 
 include::{projectdir}/subprojects/groovy-bsf/{specfolder}/integrating-bsf.adoc[leveloffset=+1]
 
