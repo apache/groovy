@@ -623,8 +623,18 @@ include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=obj
 
 === Customizing the truth with asBoolean() methods
 
-(TBD)
+In order to customize whether groovy evaluates your object to `true` or `false` implement the `asBoolean()` method:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=asBoolean_object,indent=0]
+----
 
+Groovy will call this method to coerce your object to a boolean value, e.g.:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/TheGroovyTruthTest.groovy[tags=asBoolean_usage,indent=0]
+----
 
 == Typing
 
