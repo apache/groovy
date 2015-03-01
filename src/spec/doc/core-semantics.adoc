@@ -548,7 +548,7 @@ In Groovy, the last expression evaluated in the body of a method or a closure is
 include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=return_keyword,indent=0]
 ----
 
-Can be shortend to:
+Can be shortened to:
 
 [source,groovy]
 ----
@@ -557,8 +557,19 @@ include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=omitte
 
 === Optional public keyword
 
-(TBD)
+By default, Groovy classes and methods are `public`. Therefore this class: 
 
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=public_keyword,indent=0]
+----
+
+is identical to this class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/OptionalityTest.groovy[tags=omitted_public,indent=0]
+----
 
 [[Groovy-Truth]]
 == The Groovy Truth

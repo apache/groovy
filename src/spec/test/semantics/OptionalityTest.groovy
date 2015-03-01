@@ -65,4 +65,21 @@ class OptionalityTest extends GroovyTestCase {
             // end::omitted_return_keyword[]
         '''
     }
+    
+    void testOptionalPublic() {
+        assertScript '''
+            // tag::public_keyword[]
+            public class Server {
+                public String toString() { "a server" }
+            }
+            // end::public_keyword[]
+        '''
+        assertScript '''
+            // tag::omitted_public[]
+            class Server {
+                String toString() { "a server" }
+            }
+            // end::omitted_public[]
+        '''
+    }
 }
