@@ -15,7 +15,9 @@
  */
 package semantics
 
-class OptionalityTest extends GroovyTestCase {
+import gls.CompilableTestSupport
+
+class OptionalityTest extends CompilableTestSupport {
 
     void testOptionalParentheses() {
         // tag::optional_parentheses[]
@@ -67,14 +69,14 @@ class OptionalityTest extends GroovyTestCase {
     }
     
     void testOptionalPublic() {
-        assertScript '''
+        shouldCompile '''
             // tag::public_keyword[]
             public class Server {
                 public String toString() { "a server" }
             }
             // end::public_keyword[]
         '''
-        assertScript '''
+        shouldCompile '''
             // tag::omitted_public[]
             class Server {
                 String toString() { "a server" }
