@@ -1079,10 +1079,7 @@ include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_as
 
 include::{projectdir}/subprojects/groovy-json/{specfolder}/json-builder.adoc[leveloffset=+3]
 
-==== StreamingJsonBuilder
-
-(TBD)
-
+include::{projectdir}/subprojects/groovy-json/{specfolder}/streaming-jason-builder.adoc[leveloffset=+3]
 
 include::{projectdir}/subprojects/groovy-swing/{specfolder}/swing-builder.adoc[leveloffset=+3]
 
