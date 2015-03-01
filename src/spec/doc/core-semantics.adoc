@@ -495,9 +495,6 @@ include::{projectdir}/src/spec/test/CoercionTest.groovy[tags=fixed_as_usage,inde
 
 == Optionality
 
-(TBD)
-
-
 === Optional parentheses
 
 Method calls can omit the parentheses if there is at least one parameter and there is no ambiguity:
