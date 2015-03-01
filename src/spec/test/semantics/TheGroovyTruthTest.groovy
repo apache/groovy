@@ -68,4 +68,22 @@ class TheGroovyTruthTest extends GroovyTestCase {
         assert !null
         // end::object_truth[]
     }
+    
+    void testAsBoolean() {
+        assertScript '''
+            // tag::asBoolean_object[]
+            class Color {
+                String name
+                
+                boolean asBoolean(){
+                    name == 'green' ? true : false 
+                }
+            }
+            // end::asBoolean_object[]
+            // tag::asBoolean_usage[]
+            assert new Color(name: 'green')
+            assert !new Color(name: 'red')
+            // end::asBoolean_usage[]
+        '''
+    }
 }
