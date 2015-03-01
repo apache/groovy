@@ -61,10 +61,7 @@ include::{projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc[lev
 
 include::{projectdir}/src/spec/doc/template-engines.adoc[leveloffset=+2]
 
-=== Servlet support
-
-(TBD)
-
+include::{projectdir}/subprojects/groovy-servlet/{specfolder}/servlet-userguide.adoc[leveloffset=+2]
 
 include::{projectdir}/src/spec/doc/guide-integrating.adoc[leveloffset=+2]
 
