@@ -22,6 +22,7 @@ import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 class Groovy7325Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
     void testGenericIdentityWithClosure() {
         assertScript '''
 public static <T> T identity(T self) { self }
@@ -36,5 +37,20 @@ Integer i = identity(2)
 })
 Closure c = identity {'foo'}
 '''
+    }
+
+    void testShouldNotThrowIllegalAccessToProtectedData() {
+        shouldFailWithMessages('''
+            class Test {
+              final Set<String> HISTORY = [] as HashSet
+
+              Set<String> getHistory() {
+                return HISTORY.clone() as HashSet<String>
+              }
+            }
+
+            Test test = new Test()
+            println test.history
+        ''', 'Method clone is protected in java.lang.Object')
     }
 }

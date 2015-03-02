@@ -2867,16 +2867,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         if (chosenReceiver==null) {
                             chosenReceiver = Receiver.make(directMethodCallCandidate.getDeclaringClass());
-                            if (chosenReceiver==null) {
-                                chosenReceiver = owners.get(0);
-                            }
                         }
 
-                        ClassNode returnType = null;
-
-                        if (returnType == null) {
-                            returnType = getType(directMethodCallCandidate);
-                        }
+                        ClassNode returnType = getType(directMethodCallCandidate);
 
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, directMethodCallCandidate);
@@ -2895,7 +2888,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             returnType = adjustWithTraits(directMethodCallCandidate,chosenReceiver.getType(), args, returnType);
                             storeType(call, returnType);
                             storeTargetMethod(call, directMethodCallCandidate);
-                            String data = chosenReceiver != null ? chosenReceiver.getData() : null;
+                            String data = chosenReceiver.getData();
                             if (data != null) {
                                 // the method which has been chosen is supposed to be a call on delegate or owner
                                 // so we store the information so that the static compiler may reuse it
