@@ -4002,7 +4002,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     actualType = actualType.getComponentType();
                 }
                 if (isUsingGenericsOrIsArrayUsingGenerics(type)) {
-                    if (implementsInterfaceOrIsSubclassOf(actualType, CLOSURE_TYPE) && !implementsInterfaceOrIsSubclassOf(type, CLOSURE_TYPE)) {
+                    if (implementsInterfaceOrIsSubclassOf(actualType, CLOSURE_TYPE) &&
+                            isSAMType(type)) {
                         // implicit closure coercion in action!
                         Map<String,GenericsType> pholders = applyGenericsContextToParameterClass(resolvedPlaceholders, type);
                         actualType = convertClosureTypeToSAMType(expressions.get(i), actualType, type, pholders);
