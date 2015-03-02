@@ -26,7 +26,7 @@ include::{rootProjectDir}/subprojects/groovy-servlet/src/spec/test/servlet/Groov
 
 The following variables are ready for use in Groovlets:
 
-[options="header"]
+[options="header",cols="1,1,1a"]
 |============================================
 |variable name|bound to|note
 |request|ServletRequest|-
@@ -41,9 +41,8 @@ The following variables are ready for use in Groovlets:
 |html|new MarkupBuilder(out)|see <2>
 |json|new StreamingJsonBuilder(out)|see <2>
 |============================================
-
-<1> The session variable is only set, if there was already a session object. See the `if (session == null)` checks in the examples above.
-<2> These variables cannot be re-assigned inside a `Groovlet`. They are bound on first access, allowing to e.g. calling methods on the `response` object before using `out`.
+1. The session variable is only set, if there was already a session object. See the `if (session == null)` checks in the examples above.
+2. These variables cannot be re-assigned inside a `Groovlet`. They are bound on first access, allowing to e.g. calling methods on the `response` object before using `out`.
 
 == Setting up groovylets
 
