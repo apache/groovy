@@ -277,8 +277,27 @@ include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert
 
 === Labeled statements
 
-(TBD)
+Any statement can be associated with a label. Labels do not impact the semantics of the code and can be used to make
+the code easier to read like in the following example:
 
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/LabelsTest.groovy[tags=test_labels,indent=0]
+----
+
+Despite not changing the semantics of the the labelled statement, it is possible to use labels in the `break` instruction
+as a target for jump, as in the next example. However, even if this is allowed, this coding style is in general considered
+a bad practice:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/LabelsTest.groovy[tags=label_bad_practice,indent=0]
+----
+
+It is important to understand that by default labels have no impact on the semantics of the code, however they belong to the abstract
+syntax tree (AST) so it is possible for an AST transformation to use that information to perform transformations over
+the code, hence leading to different semantics. This is in particular what the http://spockframework.github.io/spock/docs/current/index.html[Spock Framework]
+does to make testing easier.
 
 == Expressions
 
