@@ -1,3 +1,4 @@
+[[swingbuilder]]
 = SwingBuilder
 
 `SwingBuilder` allows you to create full-fledged Swing GUIs in a declarative and concise fashion. It accomplishes this by employing a common idiom in Groovy, builders.
