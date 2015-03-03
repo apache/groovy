@@ -55,7 +55,7 @@ include::{projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc[lev
 
 === Scripting Ant tasks
 
-include::{projectdir}/subprojects/groovy-ant/{specfolder}/ant-builder.adoc[leveloffset=+2,lines=2..-1]
+Groovy integrates very well with http://ant.apache.org[Apache Ant] thanks to <<_antbuilder,AntBuilder>>.
 
 include::{projectdir}/src/spec/doc/template-engines.adoc[leveloffset=+2]
 
@@ -69,7 +69,7 @@ include::{projectdir}/subprojects/groovy-jmx/src/spec/doc/jmx.adoc[leveloffset=+
 
 === Creating Swing UIs
 
-(TBD)
+Creating Swing UIs is made easy thanks to the use of <<swingbuilder,SwingBuilder>>.
 
 === Security
 
