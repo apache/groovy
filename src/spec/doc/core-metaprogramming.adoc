@@ -2195,7 +2195,7 @@ thoroughly in this <<section-grape,section of the guide>>.
 
 There are two kinds of transformations: global and local transformations.
 
-* <<Global transformations,transforms-global>> are applied to by the compiler on the code being compiled,
+* <<transforms-global,Global transformations>> are applied to by the compiler on the code being compiled,
 wherever the transformation apply. Compiled classes that implement global tranasformations
 are in a JAR added to the classpath of the compiler and contain service locator file
 `META-INF/services/org.codehaus.groovy.transform.ASTTransformation` with a line with the name of the
@@ -2203,7 +2203,7 @@ transformation class. The transformation class must have a no-args constructor a
 `org.codehaus.groovy.transform.ASTTransformation` interface.
 It will be run against *every source in the compilation*, so be sure to not create transformations which
 scan all the AST in an expansive and time-consuming manner, to keep the compiler fast.
-* <<Local transformations,transforms-local>> are transformations applied locally by annotating code elements you want to
+* <<transforms-local,Local transformations>> are transformations applied locally by annotating code elements you want to
 transform. For this, we reuse the annotation notation, and those annotations should implement
 `org.codehaus.groovy.transform.ASTTransformation`. The compiler will discover them and apply the
 transformation on these code elements.
@@ -2238,7 +2238,122 @@ earlier phase where the tree is more sparse might be more convenient.
 [[transforms-local]]
 ==== Local transformations
 
-(TBD)
+Local AST transformations are relative to the context they are applied to. In
+most cases, the context is defined by an annotation that will define the scope
+of the transform. For example, annotating a field would mean that the transformation
+_applies to_ the field, while annotating the class would mean that the transformation
+_applies to_ the whole class.
+
+As a naive and simple example, consider wanting to write a `@WithLogging`
+transformation that would add console messages at the start and end of a
+method invocation. So the following "Hello World" example would
+actually print "Hello World" along with a start and stop message:
+
+[source,groovy]
+.Poor man's aspect oriented programming
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_example,indent=0]
+----
+
+A local AST transformation is an easy way to do this. It requires two things:
+
+* a definition of the `@WithLogging` annotation
+* an implementation of gapi::org.codehaus.groovy.transform.ASTTransformation that adds the logging
+expressions to the method
+
+An `ASTTransformation` is a callback that gives you access to the
+gapi::org.codehaus.groovy.control.SourceUnit,
+through which you can get a reference to the
+gapi::org.codehaus.groovy.ast.ModuleNode (AST).
+
+The AST (Abstract Syntax Tree) is a tree structure constisting mostly of
+gapi::org.codehaus.groovy.ast.expr.Expression (expressions) or
+gapi::org.codehaus.groovy.ast.expr.Statement (statements). An easy way to
+learn about the AST is to explore it in a debugger. Once you have the AST,
+you can analyze it to find out information about the code or rewrite it to add
+new functionality.
+
+The local transformation annotation is the simple part. Here is the
+`@WithLogging` one:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_ann,indent=0]
+----
+
+The annotation retention can be `SOURCE` because you won’t need the annotation
+past that. The element type here is `METHOD`, the `@WithLogging` because the annotation
+applies to methods.
+
+But the most important part is the
+`@GroovyASTTransformationClass` annotation. This links the `@WithLogging`
+annotation to the `ASTTransformation` class you will write.
+`gep.WithLoggingASTTransformation` is the fully qualified class name of the
+`ASTTransformation` we are going to write. This line wires the annotation to the transformation.
+
+With this in place, the Groovy compiler is going to invoke
+`gep.WithLoggingASTTransformation` every time an `@WithLogging` is found in a
+source unit. Any breakpoint set within `LoggingASTTransformation` will now
+be hit within the IDE when running the sample script.
+
+The `ASTTransformation` class is a little more complex. Here is the
+very simple, and very naive, transformation to add a method start and
+stop message for `@WithLogging`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_xform,indent=0]
+----
+<1> even if not mandatory, if you write an AST transformation in Groovy, it is highly recommanded to use `CompileStatic`
+because it will improve performance of the compiler.
+<2> annotate with gapi:org.codehaus.groovy.transform/GroovyASTTransformation to tell at which compilation phase the
+transform needs to run. Here, it's at the _semantic analysis_ phase.
+<3> implement the `ASTTransformation` interface
+<4> which only has a single `visit` method
+<5> the `nodes` parameter is a 2 AST node array, for which the first one is the annotation node (`@WithLogging`) and
+the second one is the annotated node (the method node)
+<6> create a statement that will print a message when we enter the method
+<7> create a statement that will print a message when we exit the method
+<8> get the method body, which in this case is a `BlockStatement`
+<9> add the enter method message before the first statement of existing code
+<10> append the exit method message after the last statement of existing code
+<11> creates an `ExpressionStatement` wrapping a `MethodCallExpression` corresponding to `this.println("message")`
+
+It is important to notice that for the brevity of this example, we didn't make the necessary checks, such as checking
+that the annotated node is really a `MethodNode`, or that the method body is an instance of `BlockStatement`. This
+exercise is left to the reader.
+
+Note the creation of the new println statements in the
+`createPrintlnAst(String)` method. Creating AST for code is not always
+simple. In this case we need to construct a new method call, passing in
+the receiver/variable, the name of the method, and an argument list.
+When creating AST, it might be helpful to write the code you’re trying
+to create in a Groovy file and then inspect the AST of that code in the
+debugger to learn what to create. Then write a function like
+`createPrintlnAst` using what you learned through the debugger.
+
+In the end:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_example,indent=0]
+----
+
+Produces:
+
+--------------
+Starting greet
+Hello World
+Ending greet
+--------------
+
+NOTE: It is important to note that an AST transformation participates directly in the compilation process. A common
+error by beginners is to have the AST transformation code in the same source tree as a class that uses the transformation.
+Being in the same source tree in general means that they are compiled at the same time. Since the transformation itself
+is going to be compiled in phases and that each compile phase processes all files of the same source unit before going
+to the next one, there's a direct consequence: the transformation will not be compiled before the class that uses it! In
+conclusion, AST transformations need to be precompiled before you can use them. In general, it is as easy as having them
+in a separate source tree.
 
 [[transforms-global]]
 ==== Global transformations
