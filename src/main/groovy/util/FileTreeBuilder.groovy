@@ -110,7 +110,7 @@ class FileTreeBuilder {
      * @param cl specification of the subdirectory structure
      * @return the created directory
      */
-    File dir(String name, Closure cl) {
+    File dir(String name, @DelegatesTo(FileTreeBuilder) Closure cl) {
         def oldBase = baseDir
         def newBase = dir(name)
         try {
@@ -122,6 +122,14 @@ class FileTreeBuilder {
             baseDir = oldBase
         }
         newBase
+    }
+
+    File call(@DelegatesTo(FileTreeBuilder) Closure spec) {
+        def clone = spec.clone()
+        clone.delegate = this
+        clone.resolveStrategy = Closure.DELEGATE_FIRST
+        clone.call()
+        baseDir
     }
 
 

@@ -2358,7 +2358,55 @@ in a separate source tree.
 [[transforms-global]]
 ==== Global transformations
 
-(TBD)
+Global AST transformation are similar to local one with a major difference: they do not need an annotation, meaning that
+they are applied _globally_, that is to say on each class being compiled. It is therefore very important to limit their
+use to last resort, because it can have a significant impact on the compiler performance.
+
+Following the example of the <<transform-local, local AST transformation>>, imagine that we would like to trace all
+methods, and not only those which are annotated with `@WithLogging`. Basically, we need this code to behave the same
+as the one annotated with `@WithLogging` before:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_example_global,indent=0]
+----
+
+To make this work, there are two steps:
+
+. create the `org.codehaus.groovy.transform.ASTTransformation` descriptor inside the `META-INF/services` directory
+. create the `ASTTransformation` implementation
+
+The descriptor file is required and must be found on classpath. It will contain a single line:
+
+[source,groovy]
+.META-INF/services/org.codehaus.groovy.transform.ASTTransformation
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=xform_descriptor_file,indent=0]
+----
+
+The code for the transformation looks similar to the local case, but instead of using the `ASTNode[]` parameter, we need
+to use the `SourceUnit` instead:
+
+[source,groovy]
+.gep/WithLoggingASTTransformation.groovy
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_xform_global,indent=0]
+----
+<1> even if not mandatory, if you write an AST transformation in Groovy, it is highly recommanded to use `CompileStatic`
+because it will improve performance of the compiler.
+<2> annotate with gapi:org.codehaus.groovy.transform/GroovyASTTransformation to tell at which compilation phase the
+transform needs to run. Here, it's at the _semantic analysis_ phase.
+<3> implement the `ASTTransformation` interface
+<4> which only has a single `visit` method
+<5> the `sourceUnit` parameter gives access to the source being compiled, so we get the AST of the current source
+and retrieve the list of methods from this file
+<6> we iterate on each method from the source file
+<7> create a statement that will print a message when we enter the method
+<8> create a statement that will print a message when we exit the method
+<9> get the method body, which in this case is a `BlockStatement`
+<10> add the enter method message before the first statement of existing code
+<11> append the exit method message after the last statement of existing code
+<12> creates an `ExpressionStatement` wrapping a `MethodCallExpression` corresponding to `this.println("message")`
 
 ==== AST API guide
 
