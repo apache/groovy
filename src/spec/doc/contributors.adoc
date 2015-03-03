@@ -3,6 +3,7 @@
 The Groovy team would like to thank the contributors of this documentation (by alphabetical order):
 
 * https://github.com/mojavelinux[Dan Allen]
+* http://hamletdarcy.blogspot.fr/[Hamlet D'Arcy]
 * https://github.com/bura[Andrey Bloschetsov]
 * https://github.com/JBrownVisualSpection[J Brown]
 * https://github.com/jeffbrown[Jeff Scott Brown]
