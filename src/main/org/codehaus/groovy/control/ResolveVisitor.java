@@ -831,7 +831,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                         currentClass.getName() + "' when using '.this' or '.super'.", expression);
             }
             if ((currentClass.getModifiers() & Opcodes.ACC_STATIC) == 0) return;
-            if (!currentScope.isInStaticContext()) return;
+            if (currentScope != null && !currentScope.isInStaticContext()) return;
             addError("The usage of 'Class.this' and 'Class.super' within static nested class '" +
                     currentClass.getName() + "' is not allowed in a static context.", expression);
         }
