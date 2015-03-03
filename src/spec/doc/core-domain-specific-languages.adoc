@@ -980,8 +980,19 @@ hence why we suggest using the `src/main` and `src/conf` directories above.
 
 === AST transformations
 
-(TBD)
+If:
 
+* runtime metaprogramming doesn't allow you do do what you want
+* you need to improve the performance of the execution of your DSLs
+* you want to leverage the same syntax as Groovy but with different semantics
+* you want to improve support for type checking in your DSLs
+
+Then AST transformations are the way to go. Unlike the techniques used so far, AST transformations are meant to
+change or generate code before it is compiled to bytecode. AST transformations are capable of adding new methods at
+compile time for example, or totally changing the body of a method based on your needs. They are a very powerful tool
+but also come at the price of not being easy to write. For more information about AST transformations, please take
+a look at the http://docs.groovy-lang.org/latest/html/documentation/index.html#_compile_time_metaprogramming[compile-time
+metaprogramming] section of this manual.
 
 == Custom type checking extensions
 
