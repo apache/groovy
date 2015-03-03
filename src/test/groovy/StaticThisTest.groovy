@@ -128,4 +128,17 @@ class StaticThisTest extends CompilableTestSupport {
             """
     }
 
+    /**
+     * GROOVY-7047: Static inner class crashes compiler when it references parent's this
+     */
+    void testParentThisShouldNotBeReferredInsideStaticClass() {
+        shouldNotCompile """
+            class Foo {
+                static class Bar {
+                    def parent = Foo.this
+                }
+            }
+        """
+    }
+
 }
