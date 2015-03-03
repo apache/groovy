@@ -2193,16 +2193,54 @@ thoroughly in this <<section-grape,section of the guide>>.
 [[developing-ast-xforms]]
 === Developing AST transformations
 
-(TBD)
+There are two kinds of transformations: global and local transformations.
+
+* <<Global transformations,transforms-global>> are applied to by the compiler on the code being compiled,
+wherever the transformation apply. Compiled classes that implement global tranasformations
+are in a JAR added to the classpath of the compiler and contain service locator file
+`META-INF/services/org.codehaus.groovy.transform.ASTTransformation` with a line with the name of the
+transformation class. The transformation class must have a no-args constructor and implement the
+`org.codehaus.groovy.transform.ASTTransformation` interface.
+It will be run against *every source in the compilation*, so be sure to not create transformations which
+scan all the AST in an expansive and time-consuming manner, to keep the compiler fast.
+* <<Local transformations,transforms-local>> are transformations applied locally by annotating code elements you want to
+transform. For this, we reuse the annotation notation, and those annotations should implement
+`org.codehaus.groovy.transform.ASTTransformation`. The compiler will discover them and apply the
+transformation on these code elements.
 
 ==== Compilation phases guide
 
-(TBD)
+Groovy AST transformations must be performed in one of the nine defined
+compilation phases (gapi:org.codehaus.groovy.control.CompilePhase).
 
+Global transformations may be applied in any phase, but local
+transformations may only be applied in the semantic analysis phase or
+later. Briefly, the compiler phases are:
+
+* _Initialization_: source files are opened and environment configured
+* _Parsing_: the grammar is used to to produce tree of tokens representing
+the source code
+* _Conversion_: An abstract syntax tree (AST) is created from token trees.
+* _Semantic Analysis_: Performs consistency and validity checks that the
+grammar can’t check for, and resolves classes.
+* _Canonicalization_: Complete building the AST
+* _Instruction Selection_: instruction set is chosen, for example Java 6 or Java 7 bytecode level
+* _Class Generation_: creates the bytecode of the class in memory
+* _Output_: write the binary output to the file system
+* _Finalization_: Perform any last cleanup
+
+Generally speaking, there is more type information available later in
+the phases. If your transformation is concerned with reading the AST,
+then a later phase where information is more plentiful might be a good
+choice. If your transformation is concerned with writing AST, then an
+earlier phase where the tree is more sparse might be more convenient.
+
+[[transforms-local]]
 ==== Local transformations
 
 (TBD)
 
+[[transforms-global]]
 ==== Global transformations
 
 (TBD)
@@ -2215,3 +2253,7 @@ thoroughly in this <<section-grape,section of the guide>>.
 
 (TBD)
 
+==== External references
+
+If you are interested in a step-by-step tutorial about writing AST transformations, you can follow
+http://melix.github.io/ast-workshop/[this workshop].
