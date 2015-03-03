@@ -131,7 +131,7 @@ class FileTreeBuilder {
             if (arg instanceof Closure) {
                 dir(name, arg)
             } else if (arg instanceof CharSequence) {
-                file(name, args.toString())
+                file(name, arg.toString())
             } else if (arg instanceof byte[]) {
                 file(name, arg)
             }
