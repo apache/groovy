@@ -39,7 +39,8 @@ asciidoctor {
                     stylesheet: "assets/css/style.css",
                     encoding: 'utf-8',
                     toclevels: 10,
-                    numbered: ''
+                    numbered: '',
+                    sectanchors: ''
             ]
     ]
 }
