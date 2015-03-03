@@ -218,7 +218,62 @@ try {
 
 === Power assertion
 
-(TBD)
+Unlike Java with which Groovy shares the `assert` keyword, the latter in Groovy behaves very differently. First of all,
+an assertion in Groovy is always executed, independently of the `-ea` flag of the JVM. It makes this a first class choice
+for unit tests. The notion of "power asserts" is directly related to how the Groovy `assert` behaves.
+
+A power assertion is decomposed into 3 parts:
+
+----
+assert [left expression] == [right expression] : (optional message)
+----
+
+The result of the assertion is very different from what you would get in Java. If the assertion is true, then nothing
+happens. If the assertion is false, then it provides a visual representation of the value of each sub-expressions of the
+expression being asserted. For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_code_1,indent=0]
+----
+
+Will yield:
+
+----
+Caught: Assertion failed:
+
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_error_1,indent=0]
+----
+
+Power asserts become very interesting when the expressions are more complex, like in the next example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_code_2,indent=0]
+----
+
+Which will print the value for each sub-expression:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_error_2,indent=0]
+----
+
+In case you don't want a pretty printed error message like above, you can fallback to a custom error message by
+changing the optional message part of the assertion, like in this example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_code_3,indent=0]
+----
+
+Which will print the following error message:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/PowerAssertTest.groovy[tags=assert_error_3,indent=0]
+----
+
 
 === Labeled statements
 
