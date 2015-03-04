@@ -140,7 +140,7 @@ Groovy scripts are always compiled to classes. For example, a script as simple a
 include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=simple_script,indent=0]
 ----
 
-is compiled to a class extending the abstract gapi::groovy.lang.Script class. This class contains a single abstract
+is compiled to a class extending the abstract gapi:groovy.lang.Script[] class. This class contains a single abstract
 method called _run_. When a script is compiled, then its body will become the _run_ method, while the other methods
 found in the script are found in the implementing class. The `Script` class provides base support for integration
 with your application through the `Binding` object, as illustrated in this example:
@@ -157,7 +157,7 @@ include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=integ_binding
 
 This is a very practical way to share data between the caller and the script, however it may be insufficient or not
 practical in some cases. For that purpose, Groovy allows you to set your own base script class. A base script class
-has to extend gapi::groovy.lang.Script and be a single abstract method type:
+has to extend gapi:groovy.lang.Script[] and be a single abstract method type:
 
 [source,groovy]
 ----
@@ -629,7 +629,7 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=import_cz,indent=0]
 -----------------------------------------------------------------------------------------------------
 
-A detailed description of all shortcuts can be found in gapi::org.codehaus.groovy.control.customizers.ImportCustomizer
+A detailed description of all shortcuts can be found in gapi:org.codehaus.groovy.control.customizers.ImportCustomizer[]
 
 === AST transformation customizer
 
@@ -680,7 +680,7 @@ give it a `ClosureExpression`, like in the following example:
 include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_closure,indent=0]
 --------------------------------------------------------------------------------------------------------------
 
-For a complete list of options, please refer to gapi::org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+For a complete list of options, please refer to gapi:org.codehaus.groovy.control.customizers.ASTTransformationCustomizer[]
 
 === Secure AST customizer
 
@@ -719,7 +719,7 @@ import static org.codehaus.groovy.syntax.Types.* <1>
 
 include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz,indent=0]
 -------------------------------------------------------------------------------------
-<1> use for token types from gapi::org.codehaus.groovy.syntax.Types
+<1> use for token types from gapi:org.codehaus.groovy.syntax.Types[]
 <2> you can use class literals here
 
 If what the secure AST customizer provides out of the box isn’t enough
@@ -755,8 +755,8 @@ include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz_custom
 ----
 <1> will fail compilation
 
-Statements can be checked using gapi::org.codehaus.groovy.control.customizers.SecureASTCustomizer.StatementChecker
-Expressions can be checked using gapi::org.codehaus.groovy.control.customizers.SecureASTCustomizer.ExpressionChecker
+Statements can be checked using gapi:org.codehaus.groovy.control.customizers.SecureASTCustomizer.StatementChecker[]
+Expressions can be checked using gapi:org.codehaus.groovy.control.customizers.SecureASTCustomizer.ExpressionChecker[]
 
 === Source aware customizer
 
