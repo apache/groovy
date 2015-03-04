@@ -79,7 +79,7 @@ class FileTreeBuilder {
      * @param contents the contents of the file, written using the system default encoding
      * @return the file being created
      */
-    File file(String name, String contents) {
+    File file(String name, CharSequence contents) {
         new File(baseDir, name) << contents
     }
 
@@ -105,6 +105,22 @@ class FileTreeBuilder {
     }
 
     /**
+     * Creates a new file in the current directory, whose contents is going to be generated in the
+     * closure. The delegate of the closure is the file being created.
+     * @param name name of the file to create
+     * @param spec closure for generating the file contents
+     * @return the created file
+     */
+    File file(String name, @DelegatesTo(value = File, strategy = Closure.DELEGATE_FIRST) Closure spec) {
+        def file = new File(baseDir, name)
+        def clone = spec.clone()
+        clone.delegate = file
+        clone.resolveStrategy = Closure.DELEGATE_FIRST
+        clone(file)
+        file
+    }
+
+    /**
      * Creates a new empty directory
      * @param name the name of the directory to create
      * @return the created directory
@@ -121,7 +137,7 @@ class FileTreeBuilder {
      * @param cl specification of the subdirectory structure
      * @return the created directory
      */
-    File dir(String name, @DelegatesTo(FileTreeBuilder) Closure cl) {
+    File dir(String name, @DelegatesTo(value = FileTreeBuilder, strategy = Closure.DELEGATE_FIRST) Closure cl) {
         def oldBase = baseDir
         def newBase = dir(name)
         try {
@@ -135,7 +151,7 @@ class FileTreeBuilder {
         newBase
     }
 
-    File call(@DelegatesTo(FileTreeBuilder) Closure spec) {
+    File call(@DelegatesTo(value = FileTreeBuilder, strategy = Closure.DELEGATE_FIRST) Closure spec) {
         def clone = spec.clone()
         clone.delegate = this
         clone.resolveStrategy = Closure.DELEGATE_FIRST
@@ -145,13 +161,13 @@ class FileTreeBuilder {
 
 
     def methodMissing(String name, args) {
-        if (args.length==1) {
+        if (args.length == 1) {
             def arg = args[0]
             if (arg instanceof Closure) {
                 dir(name, arg)
             } else if (arg instanceof CharSequence) {
                 file(name, arg.toString())
-            } else if (arg instanceof byte[]) {
+            } else if (arg instanceof byte[] || arg instanceof File) {
                 file(name, arg)
             }
         }
