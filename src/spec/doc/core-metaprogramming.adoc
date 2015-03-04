@@ -2459,8 +2459,49 @@ resource for learning is the https://github.com/groovy/groovy-core/tree/master/s
 test suite.
 
 ==== Testing AST transformations
+===== Separating source trees
 
-(TBD)
+This section is about good practices with regards to testing AST transformations. Previous sections highlighted the fact
+that to be able to execute an AST transformation, it has to be precompiled. It might sound obvious but a lot of people
+get caught on this, trying to use an AST transformation in the same source tree as where it is defined.
+
+The first tip for testing AST transformation is therefore to separate test sources from the sources of the transform.
+Again, this is nothing but best practices, but you must make sure that your build too does actually compile them separately.
+This is the case by default with both http://maven.apache.org[Apache Maven] and http://gradle.org[Gradle].
+
+===== Debugging AST transformations
+
+It is very handy to be able to put a breakpoint in an AST transformation, so that you can debug your code in the IDE.
+However, you might be surprised to see that your IDE doesn't stop on the breakpoint. The reason is actually simple: if
+your IDE uses the Groovy compiler to compile the unit tests for your AST transformation, then the compilation is triggered
+from the IDE, but the process which will compile the files doesn't have debugging options. It's only when the test case
+is executed that the debugging options are set on the virtual machine. In short: it is too late, the class has been compiled
+already, and your transformation is already applied.
+
+A very easy workaround is to use the `GroovyTestCase` class which provides an `assertScript` method. This means that
+instead of writing this in a test case:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=breakpoint_missed,indent=0]
+----
+
+You should write:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=breakpoint_hit,indent=0]
+----
+
+The difference is that when you use `assertScript`, the code in the `assertScript` block is compiled *when the
+unit test is executed*. That is to say that this time, the `Subject` class will be compiled with debugging active, and
+the breakpoint is going to be hit.
+
+===== ASTTest
+
+Last but not least, testing an AST transformation is also about testing the state of the AST *during compilation*. Groovy
+provides a tool named `@ASTTest` for this: it is an annotation that will let you add assertions on an abstract syntax
+tree. Please check the <<xform-ASTTest,documentation for ASTTest>> for more details.
 
 ==== External references
 
