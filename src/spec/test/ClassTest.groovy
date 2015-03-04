@@ -140,4 +140,74 @@ class ClassTest extends GroovyTestCase {
             assert person4.name == null
         '''
     }
+
+    void testInterfaceDefinition() {
+        assertScript '''
+            // tag::interface_def_1[]
+            interface Greeter {                                         // <1>
+                void greet(String name)                                 // <2>
+            }
+            // end::interface_def_1[]
+
+            // tag::class_implements[]
+            class SystemGreeter implements Greeter {                    // <1>
+                void greet(String name) {                               // <2>
+                    println "Hello $name"
+                }
+            }
+
+            def greeter = new SystemGreeter()
+            assert greeter instanceof Greeter                           // <3>
+            // end::class_implements[]
+            greeter.greet('Laura')
+
+            // tag::extended_interface[]
+            interface ExtendedGreeter extends Greeter {                 // <4>
+                void sayBye(String name)
+            }
+            // end::extended_interface[]
+
+            // tag::no_structural_interface[]
+            class DefaultGreeter {
+                void greet(String name) { println "Hello" }
+            }
+
+            greeter = new DefaultGreeter()
+            assert !(greeter instanceof Greeter)
+            // end::no_structural_interface[]
+
+            def coerced
+            // tag::interface_coercion[]
+            greeter = new DefaultGreeter()                              // <1>
+            coerced = greeter as Greeter                                // <2>
+            assert coerced instanceof Greeter                           // <3>
+            // end::interface_coercion[]
+        '''
+
+        def err = shouldFail {
+            assertScript '''
+                // tag::protected_forbidden[]
+                interface Greeter {
+                    protected void greet(String name)           // <1>
+                }
+                // end::protected_forbidden[]
+                1
+            '''
+        }
+        assert err.contains("Method 'greet' is protected but should be public in interface 'Greeter'")
+
+        err = shouldFail {
+            assertScript '''
+                // tag::private_forbidden[]
+                interface Greeter {
+                    private void greet(String name)
+                }
+                // end::private_forbidden[]
+                1
+            '''
+        }
+        assert err.contains("Method 'greet' is private but should be public in interface 'Greeter'")
+    }
+
+
 }
