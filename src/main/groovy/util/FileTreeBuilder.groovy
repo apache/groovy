@@ -94,6 +94,17 @@ class FileTreeBuilder {
     }
 
     /**
+     * Creates a file with the specified name and the contents from the source file (copy).
+     * @param name name of the file to be created
+     * @param contents the contents of the file
+     * @return the file being created
+     */
+    File file(String name, File source) {
+        // TODO: Avoid using bytes and prefer streaming copy
+        file(name, source.bytes)
+    }
+
+    /**
      * Creates a new empty directory
      * @param name the name of the directory to create
      * @return the created directory
