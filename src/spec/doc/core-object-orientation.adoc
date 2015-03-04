@@ -106,8 +106,69 @@ Abstract classes are commonly compared to interfaces. But there are at least two
 
 === Interface
 
-(TBD)
+An interface defines a contract that a class needs to conform to. An interface only defines a list of methods that need
+to be implemented, but does not define the methods implementation.
 
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=interface_def_1,indent=0]
+----
+<1> an interface needs to be declared using the `interface` keyword
+<2> an interface only defines method signatures
+
+Methods of an interface are always *public*. It is an error to use `protected` or `private` methods in interfaces:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=protected_forbidden,indent=0]
+----
+<1> Using `protected` is a compile-time error
+
+A class _implements_ an interface if it defines the interface in its `implements` list or if any of its superclasses
+does:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_implements,indent=0]
+----
+<1> The `SystemGreeter` declares the `Greeter` interface using the `implements` keyword
+<2> Then implements the required `greet` method
+<3> Any instance of `SystemGreeter` is also an instance of the `Greeter` interface
+
+An interface can extend another interface:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_implements,indent=0]
+----
+<1> the `ExtendedGreeter` interface extends the `Greeter` interface using the `extends` keyword
+
+It is worth noting that for a class to be an instance of an interface, it has to be explicit. For example, the following
+class defines the `greet` method as it is declared in the `Greeter` interface, but does not declare `Greeter` in its
+interfaces:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=no_structural_interface,indent=0]
+----
+
+In other words, Groovy does not define structural typing. It is however possible to make an instance of an object
+implement an interface at runtime, using the `as` coercion operator:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=interface_coercion,indent=0]
+----
+<1> create an instance of `DefaultGreeter` that does not implement the interface
+<2> coerce the instance into a `Greeter` at runtime
+<3> the coerced instance implements the `Greeter` interface
+
+You can see that there are two distinct objects: one is the source object, a `DefaultGreeter` instance, which does not
+implement the interface. The other is an instance of `Greeter` that delegates to the coerced object.
+
+TIP: Groovy interfaces do not support default implementation like Java 8 interfaces. If you are looking for something
+similar (but not equal), <<_traits,traits>> are close to interfaces, but allow default implementation as well as other
+important features described in this manual.
 
 === Annotation
 
