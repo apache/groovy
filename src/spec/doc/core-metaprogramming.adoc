@@ -2394,7 +2394,7 @@ include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags
 ----
 <1> even if not mandatory, if you write an AST transformation in Groovy, it is highly recommanded to use `CompileStatic`
 because it will improve performance of the compiler.
-<2> annotate with gapi:org.codehaus.groovy.transform/GroovyASTTransformation to tell at which compilation phase the
+<2> annotate with gapi:org.codehaus.groovy.transform.GroovyASTTransformation to tell at which compilation phase the
 transform needs to run. Here, it's at the _semantic analysis_ phase.
 <3> implement the `ASTTransformation` interface
 <4> which only has a single `visit` method
@@ -2409,8 +2409,54 @@ and retrieve the list of methods from this file
 <12> creates an `ExpressionStatement` wrapping a `MethodCallExpression` corresponding to `this.println("message")`
 
 ==== AST API guide
+===== AbstractASTTransformation
 
-(TBD)
+While you have seen that you can directly implement the `ASTTransformation` interface, in almost all cases you will not
+do this but extend the gapi:org.codehaus.groovy.transform.AbstractASTTransformation class. This class provides several
+utility methods that make AST transformations easier to write. Almost all AST transformations included in Groovy
+extend this class.
+
+===== ClassCodeExpressionTransformer
+
+It is a common use case to be able to transform an expression into another. Groovy provides a class which makes it
+very easy to do this: gapi:org.codehaus.groovy.ast.ClassCodeExpressionTransformer
+
+To illustrate this, let's create a `@Shout` transformation that will transform all `String` constants in method call
+arguments into their uppercase version. For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=shout_example,indent=0]
+----
+
+should print:
+
+----
+HELLO WORLD
+----
+
+Then the code for the transformation can use the `ClassCodeExpressionTransformer` to make this easier:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=shout_xform,indent=0]
+----
+<1> Internally the transformation creates a `ClassCodeExpressionTransformer`
+<2> The transformer needs to return the source unit
+<3> if a constant expression of type string is detected inside an argument list, transform it into its upper case version
+<4> call the transformer on the method being annotated
+
+===== AST Nodes
+
+WARNING: Writing an AST transformation requires a deep knowledge of the internal Groovy API. In particular it requires
+knowledge about the AST classes. Since those classes are internal, there are chances that the API will change in the
+future, meaning that your transformations _could_ break. Despite that warning, the AST has been very stable over time
+and such a thing rarely happens.
+
+Classes of the Abstract Syntax Tree belong to the `org.codehaus.groovy.ast` package. It is recommended to the reader
+to use the Groovy Console, in particular the AST browser tool, to gain knowledge about those classes. However, a good
+resource for learning is the https://github.com/groovy/groovy-core/tree/master/src/test/org/codehaus/groovy/ast/builder[AST Builder]
+test suite.
 
 ==== Testing AST transformations
 
