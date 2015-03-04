@@ -127,7 +127,7 @@ asciidoctor {
     doLast {
 
         def scripts = '''<link rel="stylesheet" href="assets/css/view-example.css">
-<script src='assets/js/jquery-min.js'></script>
+<script src='assets/js/jquery-min-2.1.1.js'></script>
 <script src='assets/js/view-example.js'></script>'''
 
         // gapi macro expansion
