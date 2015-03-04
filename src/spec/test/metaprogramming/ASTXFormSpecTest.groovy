@@ -22,6 +22,9 @@ import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 
+import java.lang.annotation.ElementType
+import java.lang.annotation.Target
+
 class ASTXFormSpecTest extends GroovyTestCase {
     void testLocalTransform() {
         def gcl = new GroovyClassLoader()
@@ -187,6 +190,33 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
             // end::shout_example[]
         '''
     }
+
+    // tag::breakpoint_missed[]
+    static class Subject {
+        @MyTransformToDebug
+        void methodToBeTested() {}
+    }
+
+    void testMyTransform() {
+        def c = new Subject()
+        c.methodToBeTested()
+    }
+    // end::breakpoint_missed[]
+
+    // tag::breakpoint_hit[]
+    void testMyTransformWithBreakpoint() {
+        assertScript '''
+            import metaprogramming.MyTransformToDebug
+
+            class Subject {
+                @MyTransformToDebug
+                void methodToBeTested() {}
+            }
+            def c = new Subject()
+            c.methodToBeTested()
+        '''
+    }
+    // end::breakpoint_hit[]
 
     @CompileStatic
     private void doInTmpDir(Closure cl) {
