@@ -544,9 +544,9 @@ make things easier.
 ==== Support classes
 
 The DSL relies on a support class
-called gapi::org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport .
+called gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] .
 This class itself
-extends gapi::org.codehaus.groovy.transform.stc.TypeCheckingExtension . Those
+extends gapi:org.codehaus.groovy.transform.stc.TypeCheckingExtension[] . Those
 two classes define a number of _helper_ methods that will make working
 with the AST easier, especially regarding type checking. One interesting
 thing to know is that you *have access to the type checker*. This means
@@ -554,11 +554,11 @@ that you can programmatically call methods of the type checker,
 including those that allow you to *throw compilation errors*.
 
 The extension script delegates to
-the gapi::org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport class, meaning that you have
+the gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] class, meaning that you have
 direct access to the following variables:
 
-* _context_: the type checker context, of type gapi::org.codehaus.groovy.transform.stc.TypeCheckingContext
-* _typeCheckingVisitor_: the type checker itself, a gapi::org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor instance
+* _context_: the type checker context, of type gapi:org.codehaus.groovy.transform.stc.TypeCheckingContext[]
+* _typeCheckingVisitor_: the type checker itself, a gapi:org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor[] instance
 * _generatedMethods_: a list of "generated methods", which is in fact the list of "dummy" methods that you can create
 inside a type checking extension using the `newMethod` calls
 
@@ -753,7 +753,7 @@ A scope consists of:
 * a map of custom data
 
 If you want to look at the implementation, it’s simply a `LinkedHashMap`
-(gapi::org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport.TypeCheckingScope),
+(gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport.TypeCheckingScope[]),
 but it’s quite powerful. For example, you can use such a scope to store
 a list of closures to be executed when you exit the scope. This is how
 you would handle forward references: 
@@ -796,8 +796,8 @@ and eventually perform additional checks
 ==== Other useful methods
 
 For the complete list of helper methods, please refer to
-the gapi::org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport and 
-gapi::org.codehaus.groovy.transform.stc.TypeCheckingExtension classes. However,
+the gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] and 
+gapi:org.codehaus.groovy.transform.stc.TypeCheckingExtension[] classes. However,
 take special attention to those methods:
 
 * `isDynamic`: takes a VariableExpression as argument and returns true
@@ -948,7 +948,7 @@ include::{projectdir}/src/spec/test/typing/TypeCheckingExtensionSpecTest.groovy[
 
 Here you can notice that there is no reference to `robot` anymore. Our extension will not help then because we will not
 be able to instruct the compiler that `move` is done on a `Robot` instance. This example of code can be executed in a
-totally dynamic way thanks to the help of a gapi::groovy.util.DelegatingScript:
+totally dynamic way thanks to the help of a gapi:groovy.util.DelegatingScript[]:
 
 [source,groovy]
 ----

@@ -110,9 +110,9 @@ pre-defined rules for defining extension methods.
 There are a few categories that are included in the system for adding functionality to classes that make them more
 usable within the Groovy environment:
 
-* gapi::groovy.time.TimeCategory
-* gapi::groovy.servlet.ServletCategory
-* gapi::groovy.xml.dom.DOMCategory
+* gapi:groovy.time.TimeCategory[]
+* gapi:groovy.servlet.ServletCategory[]
+* gapi:groovy.xml.dom.DOMCategory[]
 
 Category classes aren't enabled by default. To use the methods defined in a category class it is necessary to apply
 the scoped `use` method that is provided by the GDK and available from inside every Groovy object instance:
@@ -1558,8 +1558,8 @@ include::{projectdir}/src/spec/test/DeclarativeConcurrencyASTTransformsTest.groo
 
 For details
 
-* See Javadoc for gapi::groovy.transform.WithReadLock
-* See Javadoc for gapi::groovy.transform.WithWriteLock
+* See Javadoc for gapi:groovy.transform.WithReadLock[]
+* See Javadoc for gapi:groovy.transform.WithWriteLock[]
 
 ==== Easier cloning and externalizing
 
@@ -1576,7 +1576,7 @@ The `@AutoClone` annotation is aimed at implementing the `@java.lang.Cloneable` 
 * the `AutoCloneStyle.COPY_CONSTRUCTOR` strategy creates and uses a copy constructor
 * the `AutoCloneStyle.SERIALIZATION` strategy uses serialization (or externalization) to clone the object
 
-Each of those strategies have pros and cons which are discussed in the Javadoc for gapi::groovy.transform.AutoClone and gapi::groovy.transform.AutoCloneStyle .
+Each of those strategies have pros and cons which are discussed in the Javadoc for gapi:groovy.transform.AutoClone[] and gapi:groovy.transform.AutoCloneStyle[] .
 
 For example, the following example:
 
@@ -1600,7 +1600,7 @@ In addition to cloning styles, `@AutoClone` supports multiple options:
 |=======================================================================
 |Attribute|Default value|Description|Example
 |excludes|Empty list|A list of property or field names that need to be excluded from cloning. A string consisting of a comma-separated field/property names is also allowed.
-See gapi::groovy.transform.AutoClone#excludes for details|
+See gapi:groovy.transform.AutoClone#excludes[] for details|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoclone_excludes,indent=0]
@@ -1637,7 +1637,7 @@ The `@AutoExternalize` annotation supports two parameters which will let you sli
 |=======================================================================
 |Attribute|Default value|Description|Example
 |excludes|Empty list|A list of property or field names that need to be excluded from externalizing. A string consisting of a comma-separated field/property names is also allowed.
-See gapi::groovy.transform.AutoExternalize#excludes for details|
+See gapi:groovy.transform.AutoExternalize#excludes[] for details|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoext_excludes,indent=0]
@@ -1652,7 +1652,7 @@ include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example
 
 ==== Safer scripting
 
-The Groovy language makes it easy to execute user scripts at runtime (for example using gapi::groovy.lang.GroovyShell),
+The Groovy language makes it easy to execute user scripts at runtime (for example using gapi:groovy.lang.GroovyShell[]),
 but how do you make sure that a script won't eat all CPU (infinite loops) or that concurrent scripts won't slowly consume
 all available threads of a thread pool? Groovy provides several annotations which are aimed towards safer scripting,
 generating code which will for example allow you to interrupt execution automatically.
@@ -1719,19 +1719,19 @@ exception will be thrown, interrupting the execution of the thread.
 ----
 include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=threadinterrupt_thrown,indent=0]
 ----
-|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi::groovy.transform.ThreadInterrupt for details.|
+|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi:groovy.transform.ThreadInterrupt[] for details.|
 [source,groovy]
 ----
 @ThreadInterrupt(checkOnMethodStart=false)
 ----
-|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi::groovy.transform.ThreadInterrupt for details.|
+|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi:groovy.transform.ThreadInterrupt[] for details.|
 [source,groovy]
 ----
 @ThreadInterrupt(applyToAllClasses=false)
 class A { ... } // interrupt checks added
 class B { ... } // no interrupt checks
 ----
-|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi::groovy.transform.ThreadInterrupt for details.|
+|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi:groovy.transform.ThreadInterrupt[] for details.|
 [source,groovy]
 ----
 class A {
@@ -1798,19 +1798,19 @@ include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=timedinterrupt_thrown,indent=0]
 ----
-|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi::groovy.transform.TimedInterrupt for details.|
+|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi:groovy.transform.TimedInterrupt[] for details.|
 [source,groovy]
 ----
 @TimedInterrupt(checkOnMethodStart=false)
 ----
-|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi::groovy.transform.TimedInterrupt for details.|
+|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi:groovy.transform.TimedInterrupt[] for details.|
 [source,groovy]
 ----
 @TimedInterrupt(applyToAllClasses=false)
 class A { ... } // interrupt checks added
 class B { ... } // no interrupt checks
 ----
-|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi::groovy.transform.TimedInterrupt for details.|
+|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi:groovy.transform.TimedInterrupt[] for details.|
 [source,groovy]
 ----
 class A {
@@ -1850,7 +1850,7 @@ include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=
 ----
 
 Of course, in practice, it is unlikely that `@ConditionalInterrupt` will be itself added by hand on user code. It can be injected in a similar manner as the example shown in the
-<<xform-ThreadInterrupt,ThreadInterrupt>> section, using the gapi::org.codehaus.groovy.control.customizers.ASTTransformationCustomizer :
+<<xform-ThreadInterrupt,ThreadInterrupt>> section, using the gapi:org.codehaus.groovy.control.customizers.ASTTransformationCustomizer[] :
 
 [source,groovy]
 ----
@@ -1872,19 +1872,19 @@ include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=conditionalinterrupt_thrown,indent=0]
 ----
-|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi::groovy.transform.ConditionalInterrupt for details.|
+|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi:groovy.transform.ConditionalInterrupt[] for details.|
 [source,groovy]
 ----
 @ConditionalInterrupt(checkOnMethodStart=false)
 ----
-|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi::groovy.transform.ConditionalInterrupt for details.|
+|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi:groovy.transform.ConditionalInterrupt[] for details.|
 [source,groovy]
 ----
 @ConditionalInterrupt(applyToAllClasses=false)
 class A { ... } // interrupt checks added
 class B { ... } // no interrupt checks
 ----
-|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi::groovy.transform.ConditionalInterrupt for details.|
+|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi:groovy.transform.ConditionalInterrupt[] for details.|
 [source,groovy]
 ----
 class A {
@@ -2105,7 +2105,7 @@ placed on any annotable node and requires two parameters:
 * _phase_: sets at which phase at which `@ASTTest` will be triggered. The test code will work on the AST tree at the end of this phase.
 * _value_: the code which will be executed once the phase is reached, on the annotated node
 
-TIP: Compile phase has to be chosen from one of gapi::org.codehaus.groovy.control.CompilePhase . However, since it is not possible to annotate a node twice with the same annotation, you will
+TIP: Compile phase has to be chosen from one of gapi:org.codehaus.groovy.control.CompilePhase[] . However, since it is not possible to annotate a node twice with the same annotation, you will
 not be able to use `@ASTTest` on the same node at two distinct compile phases.
 
 `value` is a closure expression which has access to a special variable `node` corresponding to the annotated node, and a helper `lookup` method which will be discussed <<asttest-lookup,here>>.
@@ -2121,7 +2121,7 @@ include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=asttest
 
 One interesting feature of `@ASTTest` is that if an assertion fails, then *compilation will fail*. Now imagine that we want to check the behavior of an AST transformation at compile time.
 We will take `@PackageScope` here, and we will want to verify that a property annotated with `@PackageScope` becomes a package private field. For this, we have to know at which phase the
-transform runs, which can be found in gapi::org.codehaus.groovy.transform.PackageScopeASTTransformation : semantic analysis. Then a test can be written like this:
+transform runs, which can be found in gapi:org.codehaus.groovy.transform.PackageScopeASTTransformation[] : semantic analysis. Then a test can be written like this:
 
 [source,groovy]
 ----
@@ -2211,7 +2211,7 @@ transformation on these code elements.
 ==== Compilation phases guide
 
 Groovy AST transformations must be performed in one of the nine defined
-compilation phases (gapi:org.codehaus.groovy.control.CompilePhase).
+compilation phases (gapi:org.codehaus.groovy.control.CompilePhase[]).
 
 Global transformations may be applied in any phase, but local
 transformations may only be applied in the semantic analysis phase or
@@ -2258,17 +2258,17 @@ include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags
 A local AST transformation is an easy way to do this. It requires two things:
 
 * a definition of the `@WithLogging` annotation
-* an implementation of gapi::org.codehaus.groovy.transform.ASTTransformation that adds the logging
+* an implementation of gapi:org.codehaus.groovy.transform.ASTTransformation[] that adds the logging
 expressions to the method
 
 An `ASTTransformation` is a callback that gives you access to the
-gapi::org.codehaus.groovy.control.SourceUnit,
+gapi:org.codehaus.groovy.control.SourceUnit[],
 through which you can get a reference to the
-gapi::org.codehaus.groovy.ast.ModuleNode (AST).
+gapi:org.codehaus.groovy.ast.ModuleNode[] (AST).
 
 The AST (Abstract Syntax Tree) is a tree structure constisting mostly of
-gapi::org.codehaus.groovy.ast.expr.Expression (expressions) or
-gapi::org.codehaus.groovy.ast.expr.Statement (statements). An easy way to
+gapi:org.codehaus.groovy.ast.expr.Expression[] (expressions) or
+gapi:org.codehaus.groovy.ast.expr.Statement[] (statements). An easy way to
 learn about the AST is to explore it in a debugger. Once you have the AST,
 you can analyze it to find out information about the code or rewrite it to add
 new functionality.
@@ -2306,7 +2306,7 @@ include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags
 ----
 <1> even if not mandatory, if you write an AST transformation in Groovy, it is highly recommanded to use `CompileStatic`
 because it will improve performance of the compiler.
-<2> annotate with gapi:org.codehaus.groovy.transform/GroovyASTTransformation to tell at which compilation phase the
+<2> annotate with gapi:org.codehaus.groovy.transform.GroovyASTTransformation[] to tell at which compilation phase the
 transform needs to run. Here, it's at the _semantic analysis_ phase.
 <3> implement the `ASTTransformation` interface
 <4> which only has a single `visit` method
@@ -2394,7 +2394,7 @@ include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags
 ----
 <1> even if not mandatory, if you write an AST transformation in Groovy, it is highly recommanded to use `CompileStatic`
 because it will improve performance of the compiler.
-<2> annotate with gapi:org.codehaus.groovy.transform.GroovyASTTransformation to tell at which compilation phase the
+<2> annotate with gapi:org.codehaus.groovy.transform.GroovyASTTransformation[] to tell at which compilation phase the
 transform needs to run. Here, it's at the _semantic analysis_ phase.
 <3> implement the `ASTTransformation` interface
 <4> which only has a single `visit` method
@@ -2412,14 +2412,14 @@ and retrieve the list of methods from this file
 ===== AbstractASTTransformation
 
 While you have seen that you can directly implement the `ASTTransformation` interface, in almost all cases you will not
-do this but extend the gapi:org.codehaus.groovy.transform.AbstractASTTransformation class. This class provides several
+do this but extend the gapi:org.codehaus.groovy.transform.AbstractASTTransformation[] class. This class provides several
 utility methods that make AST transformations easier to write. Almost all AST transformations included in Groovy
 extend this class.
 
 ===== ClassCodeExpressionTransformer
 
 It is a common use case to be able to transform an expression into another. Groovy provides a class which makes it
-very easy to do this: gapi:org.codehaus.groovy.ast.ClassCodeExpressionTransformer
+very easy to do this: gapi:org.codehaus.groovy.ast.ClassCodeExpressionTransformer[]
 
 To illustrate this, let's create a `@Shout` transformation that will transform all `String` constants in method call
 arguments into their uppercase version. For example:
