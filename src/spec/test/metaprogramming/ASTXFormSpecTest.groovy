@@ -105,6 +105,89 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
         '''
     }
 
+    void testClassCodeTransformer() {
+        def gcl = new GroovyClassLoader()
+        def gse = new GroovyShell(gcl)
+
+        gse.parse '''package gep
+
+            import groovy.transform.CompileStatic
+import org.codehaus.groovy.ast.ASTNode
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.transform.ASTTransformation
+import org.codehaus.groovy.transform.GroovyASTTransformation
+
+
+            import org.codehaus.groovy.transform.GroovyASTTransformationClass
+
+            import java.lang.annotation.ElementType
+            import java.lang.annotation.Retention
+            import java.lang.annotation.RetentionPolicy
+            import java.lang.annotation.Target
+
+            @Retention(RetentionPolicy.SOURCE)
+            @Target([ElementType.METHOD])
+            @GroovyASTTransformationClass(["gep.ShoutASTTransformation"])
+            public @interface Shout {
+            }
+
+            // tag::shout_xform[]
+            @CompileStatic
+            @GroovyASTTransformation(phase=CompilePhase.SEMANTIC_ANALYSIS)
+            class ShoutASTTransformation implements ASTTransformation {
+
+                @Override
+                void visit(ASTNode[] nodes, SourceUnit sourceUnit) {
+                    ClassCodeExpressionTransformer trn = new ClassCodeExpressionTransformer() {         // <1>
+                        private boolean inArgList = false
+                        @Override
+                        protected SourceUnit getSourceUnit() {
+                            sourceUnit                                                                  // <2>
+                        }
+
+                        @Override
+                        Expression transform(final Expression exp) {
+                            if (exp instanceof ArgumentListExpression) {
+                                inArgList = true
+                            } else if (inArgList &&
+                                exp instanceof ConstantExpression && exp.value instanceof String) {
+                                return new ConstantExpression(exp.value.toUpperCase())                  // <3>
+                            }
+                            def trn = super.transform(exp)
+                            inArgList = false
+                            trn
+                        }
+                    }
+                    trn.visitMethod((MethodNode)nodes[1])                                               // <4>
+                }
+            }
+            // end::shout_xform[]
+            Shout
+        '''
+
+        gse.evaluate '''package gep
+            // tag::shout_example[]
+            @Shout
+            def greet() {
+                println "Hello World"
+            }
+
+            greet()
+            // end::shout_example[]
+        '''
+    }
+
     @CompileStatic
     private void doInTmpDir(Closure cl) {
         def baseDir = File.createTempDir()
