@@ -348,6 +348,7 @@ class ClassTest extends GroovyTestCase {
             // tag::define_annotation[]
             @interface SomeAnnotation {}
             // end::define_annotation[]
+            SomeAnnotation
         '''
     }
 
@@ -358,6 +359,7 @@ class ClassTest extends GroovyTestCase {
                 String value()                          // <1>
             }
             // end::ann_member_string[]
+            SomeAnnotation
         '''
         assertScript '''
             // tag::ann_member_string_default[]
@@ -365,6 +367,7 @@ class ClassTest extends GroovyTestCase {
                 String value() default 'something'      // <2>
             }
             // end::ann_member_string_default[]
+            SomeAnnotation
         '''
         assertScript '''
             // tag::ann_member_int[]
@@ -372,6 +375,7 @@ class ClassTest extends GroovyTestCase {
                 int step()                              // <3>
             }
             // end::ann_member_int[]
+            SomeAnnotation
         '''
        assertScript '''
             // tag::ann_member_class[]
@@ -379,6 +383,7 @@ class ClassTest extends GroovyTestCase {
                 Class appliesTo()                       // <4>
             }
             // end::ann_member_class[]
+            SomeAnnotation
         '''
        assertScript '''
             // tag::ann_member_annotation[]
@@ -387,6 +392,7 @@ class ClassTest extends GroovyTestCase {
                 SomeAnnotation[] value()                // <5>
             }
             // end::ann_member_annotation[]
+            SomeAnnotation
         '''
         assertScript '''
             // tag::ann_member_enum[]
@@ -395,6 +401,7 @@ class ClassTest extends GroovyTestCase {
                 DayOfWeek dayOfWeek()                   // <6>
             }
             // end::ann_member_enum[]
+            Scheduled
         '''
     }
 
@@ -468,6 +475,7 @@ class ClassTest extends GroovyTestCase {
             @Target([ElementType.METHOD, ElementType.TYPE])     // <1>
             @interface SomeAnnotation {}                        // <2>
             // end::ann_target[]
+            SomeAnnotation
         '''
     }
 
@@ -480,6 +488,67 @@ class ClassTest extends GroovyTestCase {
             @Retention(RetentionPolicy.SOURCE)                   // <1>
             @interface SomeAnnotation {}                         // <2>
             // end::ann_retention[]
+            SomeAnnotation
+        '''
+    }
+
+    void testClosureAsAnnotationValue() {
+        assertScript '''
+            import java.lang.annotation.Retention
+            import java.lang.annotation.RetentionPolicy
+            import java.lang.reflect.Modifier
+            // tag::closure_ann_def[]
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface OnlyIf {
+                Class value()                    // <1>
+            }
+            // end::closure_ann_def[]
+
+            // tag::closure_ann_example[]
+            class Tasks {
+                List result = []
+                void alwaysExecuted() {
+                    result << 1
+                }
+                @OnlyIf({ jdk>=6 })
+                void supportedOnlyInJDK6() {
+                    result << 'JDK 6'
+                }
+                @OnlyIf({ jdk>=7 && windows })
+                void requiresJDK7AndWindows() {
+                    result << 'JDK 7 Windows'
+                }
+            }
+            // end::closure_ann_example[]
+
+            // tag::closure_ann_runner[]
+            class Runner {
+                static <T> T run(Class<T> taskClass) {
+                    def tasks = taskClass.newInstance()                                 // <1>
+                    def params = [jdk:6, windows: false]                                // <2>
+                    tasks.class.declaredMethods.each { m ->                             // <3>
+                        if (Modifier.isPublic(m.modifiers) && m.parameterCount == 0) {  // <4>
+                            def onlyIf = m.getDeclaredAnnotation(OnlyIf)                // <5>
+                            if (onlyIf) {
+                                Closure cl = onlyIf.value().newInstance(tasks,tasks)    // <6>
+                                cl.delegate = params                                    // <7>
+                                if (cl()) {                                             // <8>
+                                    m.invoke(tasks)                                     // <9>
+                                }
+                            } else {
+                                m.invoke(tasks)                                         // <10>
+                            }
+                        }
+                    }
+                    tasks                                                               // <11>
+                }
+            }
+            // end::closure_ann_runner[]
+
+            // tag::closure_ann_runner_exec[]
+            def tasks = Runner.run(Tasks)
+            assert tasks.result == [1, 'JDK 6']
+            // end::closure_ann_runner_exec[]
         '''
     }
 }
