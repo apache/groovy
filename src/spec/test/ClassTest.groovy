@@ -210,4 +210,136 @@ class ClassTest extends GroovyTestCase {
     }
 
 
+    void testFields() {
+        assertScript '''
+            // tag::field_declaration[]
+            class Data {
+                private int id                                  // <1>
+                protected String description                    // <2>
+                public static final boolean DEBUG = false       // <3>
+            }
+            // end::field_declaration[]
+            def d = new Data()
+        '''
+        assertScript '''
+            class IDGenerator { static int next() {0} }
+            // tag::field_initialization[]
+            class Data {
+                private String id = IDGenerator.next() // <1>
+                // ...
+            }
+            // end::field_initialization[]
+            new Data()
+        '''
+
+        assertScript '''
+            // tag::typing_fields[]
+            class BadPractice {
+                private mapping                         // <1>
+            }
+            class GoodPractice {
+                private Map<String,String> mapping      // <2>
+            }
+            // end::typing_fields[]
+            BadPractice
+        '''
+    }
+
+    void testProperties() {
+        assertScript '''
+            // tag::properties_definition[]
+            class Person {
+                String name                             // <1>
+                int age                                 // <2>
+            }
+            // end::properties_definition[]
+
+            assert Person.declaredFields.name.containsAll (['name','age'])
+            assert Person.getDeclaredMethod('getName')
+            assert Person.getDeclaredMethod('getAge')
+            assert Person.getDeclaredMethod('setName',String)
+            assert Person.getDeclaredMethod('setAge',int)
+        '''
+
+        assertScript '''
+            // tag::readonly_property[]
+            class Person {
+                final String name                   // <1>
+                final int age                       // <2>
+                Person(String name, int age) {
+                    this.name = name                // <3>
+                    this.age = age                  // <4>
+                }
+            }
+            // end::readonly_property[]
+
+            def p = new Person('Bob', 42)
+            assert Person.declaredFields.name.containsAll (['name','age'])
+            assert Person.getDeclaredMethod('getName')
+            assert Person.getDeclaredMethod('getAge')
+            try {
+                assert Person.getDeclaredMethod('setName',String) == null
+            } catch (NoSuchMethodException e) {
+
+            }
+            try {
+                assert Person.getDeclaredMethod('setAge',int) == null
+            } catch (NoSuchMethodException e) {
+
+            }
+
+        '''
+
+        assertScript '''
+            // tag::property_access[]
+            class Person {
+                String name
+                void name(String name) {
+                    this.name = "Wonder$name"       // <1>
+                }
+                String wonder() {
+                    this.name                       // <2>
+                }
+            }
+            def p = new Person()
+            p.name = 'Marge'                        // <3>
+            assert p.name == 'Marge'                // <4>
+            p.name('Marge')                         // <5>
+            assert p.wonder() == 'WonderMarge'      // <6>
+            // end::property_access[]
+        '''
+
+        assertScript '''
+            // tag::properties_meta[]
+            class Person {
+                String name
+                int age
+            }
+            def p = new Person()
+            assert p.properties.keySet().containsAll(['name','age'])
+            // end::properties_meta[]
+
+        '''
+
+        assertScript '''
+            // tag::pseudo_properties[]
+            class PseudoProperties {
+                // a pseudo property "name"
+                void setName(String name) {}
+                String getName() {}
+
+                // a pseudo read-only property "age"
+                int getAge() { 42 }
+
+                // a pseudo write-only property "groovy"
+                void setGroovy(boolean groovy) {  }
+            }
+            def p = new PseudoProperties()
+            p.name = 'Foo'                      // <1>
+            assert p.age == 42                  // <2>
+            p.groovy = true                     // <3>
+            // end::pseudo_properties[]
+        '''
+    }
+
 }
