@@ -524,23 +524,23 @@ class ClassTest extends GroovyTestCase {
             // tag::closure_ann_runner[]
             class Runner {
                 static <T> T run(Class<T> taskClass) {
-                    def tasks = taskClass.newInstance()                                 // <1>
-                    def params = [jdk:6, windows: false]                                // <2>
-                    tasks.class.declaredMethods.each { m ->                             // <3>
-                        if (Modifier.isPublic(m.modifiers) && m.parameterCount == 0) {  // <4>
-                            def onlyIf = m.getDeclaredAnnotation(OnlyIf)                // <5>
+                    def tasks = taskClass.newInstance()                                         // <1>
+                    def params = [jdk:6, windows: false]                                        // <2>
+                    tasks.class.declaredMethods.each { m ->                                     // <3>
+                        if (Modifier.isPublic(m.modifiers) && m.parameterTypes.length == 0) {   // <4>
+                            def onlyIf = m.getDeclaredAnnotation(OnlyIf)                        // <5>
                             if (onlyIf) {
-                                Closure cl = onlyIf.value().newInstance(tasks,tasks)    // <6>
-                                cl.delegate = params                                    // <7>
-                                if (cl()) {                                             // <8>
-                                    m.invoke(tasks)                                     // <9>
+                                Closure cl = onlyIf.value().newInstance(tasks,tasks)            // <6>
+                                cl.delegate = params                                            // <7>
+                                if (cl()) {                                                     // <8>
+                                    m.invoke(tasks)                                             // <9>
                                 }
                             } else {
-                                m.invoke(tasks)                                         // <10>
+                                m.invoke(tasks)                                                 // <10>
                             }
                         }
                     }
-                    tasks                                                               // <11>
+                    tasks                                                                       // <11>
                 }
             }
             // end::closure_ann_runner[]
