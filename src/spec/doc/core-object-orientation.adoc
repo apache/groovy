@@ -386,14 +386,14 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=readonly_property,inde
 <1> defines a read-only property of type `String`
 <2> defines a read-only property of type `int`
 <3> assigns the `name` parameter to the `name` field
-<3> assigns the `age` parameter to the `age` field
+<4> assigns the `age` parameter to the `age` field
 
 Properties are accessed by name and will call the getter or setter transparently, unless the code is in the class
 which defines the property:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=readonly_property,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=property_access,indent=0]
 ----
 <1> `this.name` will directly access the field because the property is accessed from within the class that defines it
 <2> similarily a read access is done directly on the `name` field
