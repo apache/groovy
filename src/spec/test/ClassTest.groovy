@@ -528,7 +528,7 @@ class ClassTest extends GroovyTestCase {
                     def params = [jdk:6, windows: false]                                        // <2>
                     tasks.class.declaredMethods.each { m ->                                     // <3>
                         if (Modifier.isPublic(m.modifiers) && m.parameterTypes.length == 0) {   // <4>
-                            def onlyIf = m.getDeclaredAnnotation(OnlyIf)                        // <5>
+                            def onlyIf = m.getAnnotation(OnlyIf)                                // <5>
                             if (onlyIf) {
                                 Closure cl = onlyIf.value().newInstance(tasks,tasks)            // <6>
                                 cl.delegate = params                                            // <7>
