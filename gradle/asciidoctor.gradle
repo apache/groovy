@@ -60,7 +60,7 @@ asciidoctor {
                             "target": calculateDocUrl(baseURL, className, anchor)
                     ]
 
-                    createInline(parent, "anchor", target, attributes, options).render()
+                    createInline(parent, "anchor", attributes.text?:target, attributes, options).render()
             }
         }
     }
