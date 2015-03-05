@@ -58,7 +58,7 @@ public class ShortTypeHandling {
     public static Character castToChar(Object object) {
         if (object==null) return null;
         if (object instanceof Character) {
-            return ((Character) object).charValue();
+            return (Character) object;
         } else if (object instanceof Number) {
             Number value = (Number) object;
             return (char) value.intValue();
