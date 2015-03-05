@@ -506,7 +506,7 @@ class ClassTest extends GroovyTestCase {
 
             // tag::closure_ann_example[]
             class Tasks {
-                List result = []
+                Set result = []
                 void alwaysExecuted() {
                     result << 1
                 }
@@ -547,7 +547,7 @@ class ClassTest extends GroovyTestCase {
 
             // tag::closure_ann_runner_exec[]
             def tasks = Runner.run(Tasks)
-            assert tasks.result == [1, 'JDK 6']
+            assert tasks.result == [1, 'JDK 6'] as Set
             // end::closure_ann_runner_exec[]
         '''
     }
