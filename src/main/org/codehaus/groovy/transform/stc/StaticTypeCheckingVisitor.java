@@ -2603,7 +2603,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                     Expression actualArgument = expressions.get(j);
                                     ClassNode actualType = getType(actualArgument);
                                     if (genericTypeIndex!=null && genericTypeIndex instanceof ConstantExpression) {
-                                        int gti = Integer.valueOf(genericTypeIndex.getText());
+                                        int gti = Integer.parseInt(genericTypeIndex.getText());
                                         ClassNode paramType = methodParam.getType(); // type annotated with @DelegatesTo.Target
                                         GenericsType[] genericsTypes = paramType.getGenericsTypes();
                                         if (genericsTypes==null) {
