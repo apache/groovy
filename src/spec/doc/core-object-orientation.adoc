@@ -318,15 +318,112 @@ include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=va
 
 (TBD)
 
-
+[[fields]]
 ==== Fields
 
-(TBD)
+A field is a member of a class or a trait which:
 
+* a mandatory _access modifier_ (`public`, `protected`, or `private`)
+* one or more optional _modifiers_ (`static`, `final`, `synchronized`)
+* an optional _type_
+* a mandatory _name_
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=field_declaration,indent=0]
+----
+<1> a `private` field named `id`, of type `int`
+<2> a `protected` field named `description`, of type `String`
+<3> a `public static final` field named _DEBUG_ of type `boolean`
+
+A field may be initialized directly at declaration:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=field_initialization,indent=0]
+----
+<1> the private field `id` is initialized with `IDGenerator.next()`
+
+It is possible to omit the type declaration of a field. This is however considered a bad practice and in general it
+is a good idea to use strong typing for fields:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=typing_fields,indent=0]
+----
+<1> the field `mapping` doesn't declare a type
+<2> the field `mapping` has a strong type
+
+The difference between the two is important if you want to use optional type checking later. It is also important
+for documentation. However in some cases like scripting or if you want to rely on duck typing it may be interesting
+to omit the type.
+
+[[properties]]
 ==== Properties
 
-(TBD)
+A property is a combination of a private field and getters/setters. You can define a property with:
 
+* an *absent* access modifier (no `public`, `protected` or `final`)
+* one or more optional _modifiers_ (`static`, `final`, `synchronized`)
+* an optional _type_
+* a mandatory _name_
+
+Groovy will then generate the getters/setters appropriately. For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=properties_definition,indent=0]
+----
+<1> creates a backing `private String name` field, a `getName` and a `setName` method
+<2> creates a backing `private int age` field, a `getAge` and a `setAge` method
+
+If a property is declared `final`, no setter is generated:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=readonly_property,indent=0]
+----
+<1> defines a read-only property of type `String`
+<2> defines a read-only property of type `int`
+<3> assigns the `name` parameter to the `name` field
+<3> assigns the `age` parameter to the `age` field
+
+Properties are accessed by name and will call the getter or setter transparently, unless the code is in the class
+which defines the property:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=readonly_property,indent=0]
+----
+<1> `this.name` will directly access the field because the property is accessed from within the class that defines it
+<2> similarily a read access is done directly on the `name` field
+<3> write access to the property is done outside of the `Person` class so it will implicitly call `setName`
+<4> read access to the property is done outside of the `Person` class so it will implicitly call `getName`
+<5> this will call the `name` method on `Person` which performs a direct access to the field
+<6> this will call the `wonder` method on `Person` which perfoms a direct read access to the field
+
+It is worth noting that this behavior of accessing the backing field directly is done in order to prevent a stack
+overflow when using the property access syntax within a class that defines the property.
+
+It is possible to list the properties of a class thanks to the meta `properties` field of an instance:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=properties_meta,indent=0]
+----
+
+By convention, Groovy will recognize properties even if there is no backing field, if there are getters or setters
+that follow the Java Beans specification. For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=pseudo_properties,indent=0]
+----
+<1> reading `p.name` is allowed because there is a pseudo-property `name`
+<2> reading `p.age` is allowed because there is a pseudo-readonly property `age`
+<3> writing `p.groovy` is allowed because there is a pseudo-writeonly property `groovy`
+
+This syntactic sugar is at the core of many DSLs written in Groovy.
 
 === Inheritance
 
