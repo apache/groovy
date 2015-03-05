@@ -460,8 +460,6 @@ include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=va
 
 === Fields and properties
 
-(TBD)
-
 [[fields]]
 ==== Fields
 
