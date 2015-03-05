@@ -202,7 +202,7 @@ assemble all script bodies into the `run` method:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=method_in_script,indent=0]
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly,indent=0]
 ----
 <1> script begins
 <2> a method is defined within the script body
@@ -212,7 +212,7 @@ This code is internally converted into:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=method_in_script,indent=0]
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly_equiv,indent=0]
 ----
 <1> the `power` method is copied as is into the generated script class
 <2> first statement is copied into the `run` method
