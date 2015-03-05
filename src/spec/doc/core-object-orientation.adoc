@@ -5,9 +5,6 @@ This chapter covers the object orientation of the Groovy programming language.
 
 == Types
 
-(TBD)
-
-
 === Primitive types
 
 Groovy supports the same primitive types as those defined by the {jsl}[Java Language Specification]:
@@ -172,8 +169,114 @@ important features described in this manual.
 
 === Annotation
 
-(TBD)
+[[ann-definition]]
+==== Annotation definition
 
+An annotation is a kind of special interface dedicated at annotating elements of the code. An annotation is a type which
+superinterface is the jdk:java.lang.annotation.Annotation[Annotation] interface. Annotations are declared in a very
+similar way to interfaces, using the `@interface` keyword:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=define_annotation,indent=0]
+----
+
+An annotation may define members in the form of methods without bodies and an optional default value. The possible
+member types are limited to:
+
+* primitive types
+* jdk:java.lang.String[Strings]
+* jdk:java.lang.Class[Classes]
+* an jdk:java.lang.Enum[enumeration]
+* another jdk:java.lang.annotation.Annotation[annotation type]
+* or any array of the above
+
+For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_string,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_string_default,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_int,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_class,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_annotation,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_enum,indent=0]
+----
+<1> an annotation defining a `value` member of type `String`
+<2> an annotation defining a `value` member of type `String` with a default value of `something`
+<3> an annotation defining a `step` member of type the primitive type `int`
+<4> an annotation defining a `appliesTo` member of type `Class`
+<5> an annotation defining a `value` member which type is an array of another annotation type
+<6> an annotation defining a `dayOfWeek` member which type is the enumeration type `DayOfWeek`
+
+Unlike in the Java language, in Groovy, an annotation can be used to alter the semantics of the language. It is especially
+true of AST transformations which will generate code based on annotations.
+
+[[ann-placement]]
+==== Annotation placement
+
+An annotation can be applied on various elements of the code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=apply_annotation_1,indent=0]
+----
+<1> `@SomeAnnotation` applies to the `someMethod` method
+<2> `@SomeAnnotation` applies to the `SomeClass` class
+<3> `@SomeAnnotation` applies to the `var` variable
+
+In order to limit the scope where an annotation can be applied, it is necessary to declare it on the annotation
+definition, using the jdk:java.lang.annotation.Target[Target] annotation. For example, here is how you would
+declare that an annotation can be applied to a class or a method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_target,indent=0]
+----
+<1> the `@Target` annotation is meant to annotate an annotation with a scope.
+<2> `@SomeAnnotation` will therefore only be allowed on `TYPE` or `METHOD`
+
+The list of possible targets is available in the jdk:java.lang.annotation.ElementType[ElementType enumeration].
+
+WARNING: Groovy does not support the jdk:java.lang.annotation.ElementType#TYPE_PARAMETER[TYPE_PARAMETER] and
+jdk:java.lang.annotation.ElementType#TYPE_PARAMETER[TYPE_USE] element types which were introduced in Java 8.
+
+==== Annotation member values
+
+When an annotation is used, it is required to set at least all members that do not have a default value. For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set,indent=0]
+----
+
+However it is possible to omit `value=` in the declaration of the value of an annotation if the member `value` is the
+only one being set:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set_option,indent=0]
+----
+<1> we can omit the `statusCode` because it has a default value, but `value` needs to be set
+<2> since `value` is the only mandatory member without a default, we can omit `value=`
+<3> if both `value` and `statusCode` need to be set, it is required to use `value=` for the default `value` member
+
+==== Retention policy
+
+The visibility of an annotation depends on its retention policy. The retention policy of an annotation is set using
+the jdk:java.lang.annotation.Retention[Retention] annotation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set,indent=0]
+----
+<1> the `@Retention` annotation annotates the `@SomeAnnotation` annotation
+<2> so `@SomeAnnotation` will have a `SOURCE` retention
+
+The list of possible retention targets and description is available in the
+jdk:java.lang.annotation.RetentionPolicy[RetentionPolicy] enumeration. The
+choice usually depends on whether you want an annotation to be visible at
+compile time or runtime.
 
 ==== Closure annotation parameters
 
@@ -182,6 +285,7 @@ important features described in this manual.
 ==== Meta-annotations
 
 (TBD)
+
 
 ==== Annotation placement
 

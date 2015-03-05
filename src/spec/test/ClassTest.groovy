@@ -342,4 +342,144 @@ class ClassTest extends GroovyTestCase {
         '''
     }
 
+
+    void testDefineAnnotation() {
+        assertScript '''
+            // tag::define_annotation[]
+            @interface SomeAnnotation {}
+            // end::define_annotation[]
+        '''
+    }
+
+    void testAnnotationMembers() {
+        assertScript '''
+            // tag::ann_member_string[]
+            @interface SomeAnnotation {
+                String value()                          // <1>
+            }
+            // end::ann_member_string[]
+        '''
+        assertScript '''
+            // tag::ann_member_string_default[]
+            @interface SomeAnnotation {
+                String value() default 'something'      // <2>
+            }
+            // end::ann_member_string_default[]
+        '''
+        assertScript '''
+            // tag::ann_member_int[]
+            @interface SomeAnnotation {
+                int step()                              // <3>
+            }
+            // end::ann_member_int[]
+        '''
+       assertScript '''
+            // tag::ann_member_class[]
+            @interface SomeAnnotation {
+                Class appliesTo()                       // <4>
+            }
+            // end::ann_member_class[]
+        '''
+       assertScript '''
+            // tag::ann_member_annotation[]
+            @interface SomeAnnotation {}
+            @interface SomeAnnotations {
+                SomeAnnotation[] value()                // <5>
+            }
+            // end::ann_member_annotation[]
+        '''
+        assertScript '''
+            // tag::ann_member_enum[]
+            enum DayOfWeek { mon, tue, wed, thu, fri, sat, sun }
+            @interface Scheduled {
+                DayOfWeek dayOfWeek()                   // <6>
+            }
+            // end::ann_member_enum[]
+        '''
+    }
+
+    void testApplyAnnotation() {
+        assertScript '''
+            @interface SomeAnnotation {
+                int value() default 0
+            }
+
+            // tag::apply_annotation_1[]
+            @SomeAnnotation                 // <1>
+            void someMethod() {
+                // ...
+            }
+
+            @SomeAnnotation                 // <2>
+            class SomeClass {}
+
+            @SomeAnnotation String var      // <3>
+
+            // end::apply_annotation_1[]
+            someMethod()
+        '''
+
+        assertScript '''
+            // tag::annotation_value_set[]
+            @interface Page {
+                int statusCode()
+            }
+
+            @Page(statusCode=404)
+            void notFound() {
+                // ...
+            }
+            // end::annotation_value_set[]
+        '''
+
+        assertScript '''
+            // tag::annotation_value_set_option[]
+            @interface Page {
+                String value()
+                int statusCode() default 200
+            }
+
+            @Page(value='/home')                    // <1>
+            void home() {
+                // ...
+            }
+
+            @Page('/users')                         // <2>
+            void userList() {
+                // ...
+            }
+
+            @Page(value='error',statusCode=404)     // <3>
+            void notFound() {
+                // ...
+            }
+            // end::annotation_value_set_option[]
+        '''
+
+
+    }
+
+    void testAnnotationTarget() {
+        assertScript '''
+            // tag::ann_target[]
+            import java.lang.annotation.ElementType
+            import java.lang.annotation.Target
+
+            @Target([ElementType.METHOD, ElementType.TYPE])     // <1>
+            @interface SomeAnnotation {}                        // <2>
+            // end::ann_target[]
+        '''
+    }
+
+    void testAnnotationRetention() {
+        assertScript '''
+            // tag::ann_retention[]
+            import java.lang.annotation.Retention
+            import java.lang.annotation.RetentionPolicy
+
+            @Retention(RetentionPolicy.SOURCE)                   // <1>
+            @interface SomeAnnotation {}                         // <2>
+            // end::ann_retention[]
+        '''
+    }
 }
