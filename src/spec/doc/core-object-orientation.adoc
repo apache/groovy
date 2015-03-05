@@ -268,7 +268,7 @@ the jdk:java.lang.annotation.Retention[Retention] annotation:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_retention,indent=0]
 ----
 <1> the `@Retention` annotation annotates the `@SomeAnnotation` annotation
 <2> so `@SomeAnnotation` will have a `SOURCE` retention
@@ -280,7 +280,47 @@ compile time or runtime.
 
 ==== Closure annotation parameters
 
-(TBD)
+An interesting feature of annotations in Groovy is that you can use a closure as an annotation value. Therefore
+annotations may be used with a wide variety of expressions and still have IDE support. For example, imagine a
+framework where you want to execute some methods based on environmental contraints like the JDK version or the OS.
+One could write the following code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_example,indent=0]
+----
+
+For the `@OnlyIf` annotation to accept a `Closure` as an argument, you only have to declare the `value` as a `Class`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_def,indent=0]
+----
+
+To complete the example, let's write a sample runner that would use that information:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_runner,indent=0]
+----
+<1> create a new instance of the class passed as an argument (the task class)
+<2> emulate an environment which is JDK 6 and not Windows
+<3> iterate on all declared methods of the task class
+<4> if the method is public and takes no-argument
+<5> try to find the `@OnlyIf` annotation
+<6> if it is found get the `value` and create a new `Closure` out of it
+<7> set the `delegate` of the closure to our environment variable
+<8> call the closure, which is the annotation closure. It will return a `boolean`
+<9> if it is `true`, call the method
+<10> if the method is not annotated with `@OnlyIf`, execute the method anyway
+<11> after that, return the task object
+
+Then the runner can be used this way:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_runner_exec,indent=0]
+----
 
 ==== Meta-annotations
 
