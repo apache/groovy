@@ -22,7 +22,7 @@ import javax.swing.SwingConstants
 statusPanel = panel(constraints: BorderLayout.SOUTH) {
     gridBagLayout()
     separator(gridwidth:GridBagConstraints.REMAINDER, fill:GridBagConstraints.HORIZONTAL)
-    status = label('Welcome to Groovy.',
+    status = label("Welcome to Groovy ${GroovySystem.version}.",
         weightx:1.0,
         anchor:GridBagConstraints.WEST,
         fill:GridBagConstraints.HORIZONTAL,
