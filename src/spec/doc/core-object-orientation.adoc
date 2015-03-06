@@ -167,171 +167,6 @@ TIP: Groovy interfaces do not support default implementation like Java 8 interfa
 similar (but not equal), <<_traits,traits>> are close to interfaces, but allow default implementation as well as other
 important features described in this manual.
 
-=== Annotation
-
-[[ann-definition]]
-==== Annotation definition
-
-An annotation is a kind of special interface dedicated at annotating elements of the code. An annotation is a type which
-superinterface is the jdk:java.lang.annotation.Annotation[Annotation] interface. Annotations are declared in a very
-similar way to interfaces, using the `@interface` keyword:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=define_annotation,indent=0]
-----
-
-An annotation may define members in the form of methods without bodies and an optional default value. The possible
-member types are limited to:
-
-* primitive types
-* jdk:java.lang.String[Strings]
-* jdk:java.lang.Class[Classes]
-* an jdk:java.lang.Enum[enumeration]
-* another jdk:java.lang.annotation.Annotation[annotation type]
-* or any array of the above
-
-For example:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_string,indent=0]
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_string_default,indent=0]
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_int,indent=0]
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_class,indent=0]
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_annotation,indent=0]
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_enum,indent=0]
-----
-<1> an annotation defining a `value` member of type `String`
-<2> an annotation defining a `value` member of type `String` with a default value of `something`
-<3> an annotation defining a `step` member of type the primitive type `int`
-<4> an annotation defining a `appliesTo` member of type `Class`
-<5> an annotation defining a `value` member which type is an array of another annotation type
-<6> an annotation defining a `dayOfWeek` member which type is the enumeration type `DayOfWeek`
-
-Unlike in the Java language, in Groovy, an annotation can be used to alter the semantics of the language. It is especially
-true of AST transformations which will generate code based on annotations.
-
-[[ann-placement]]
-==== Annotation placement
-
-An annotation can be applied on various elements of the code:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=apply_annotation_1,indent=0]
-----
-<1> `@SomeAnnotation` applies to the `someMethod` method
-<2> `@SomeAnnotation` applies to the `SomeClass` class
-<3> `@SomeAnnotation` applies to the `var` variable
-
-In order to limit the scope where an annotation can be applied, it is necessary to declare it on the annotation
-definition, using the jdk:java.lang.annotation.Target[Target] annotation. For example, here is how you would
-declare that an annotation can be applied to a class or a method:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_target,indent=0]
-----
-<1> the `@Target` annotation is meant to annotate an annotation with a scope.
-<2> `@SomeAnnotation` will therefore only be allowed on `TYPE` or `METHOD`
-
-The list of possible targets is available in the jdk:java.lang.annotation.ElementType[ElementType enumeration].
-
-WARNING: Groovy does not support the jdk:java.lang.annotation.ElementType#TYPE_PARAMETER[TYPE_PARAMETER] and
-jdk:java.lang.annotation.ElementType#TYPE_PARAMETER[TYPE_USE] element types which were introduced in Java 8.
-
-==== Annotation member values
-
-When an annotation is used, it is required to set at least all members that do not have a default value. For example:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set,indent=0]
-----
-
-However it is possible to omit `value=` in the declaration of the value of an annotation if the member `value` is the
-only one being set:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set_option,indent=0]
-----
-<1> we can omit the `statusCode` because it has a default value, but `value` needs to be set
-<2> since `value` is the only mandatory member without a default, we can omit `value=`
-<3> if both `value` and `statusCode` need to be set, it is required to use `value=` for the default `value` member
-
-==== Retention policy
-
-The visibility of an annotation depends on its retention policy. The retention policy of an annotation is set using
-the jdk:java.lang.annotation.Retention[Retention] annotation:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_retention,indent=0]
-----
-<1> the `@Retention` annotation annotates the `@SomeAnnotation` annotation
-<2> so `@SomeAnnotation` will have a `SOURCE` retention
-
-The list of possible retention targets and description is available in the
-jdk:java.lang.annotation.RetentionPolicy[RetentionPolicy] enumeration. The
-choice usually depends on whether you want an annotation to be visible at
-compile time or runtime.
-
-==== Closure annotation parameters
-
-An interesting feature of annotations in Groovy is that you can use a closure as an annotation value. Therefore
-annotations may be used with a wide variety of expressions and still have IDE support. For example, imagine a
-framework where you want to execute some methods based on environmental contraints like the JDK version or the OS.
-One could write the following code:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_example,indent=0]
-----
-
-For the `@OnlyIf` annotation to accept a `Closure` as an argument, you only have to declare the `value` as a `Class`:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_def,indent=0]
-----
-
-To complete the example, let's write a sample runner that would use that information:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_runner,indent=0]
-----
-<1> create a new instance of the class passed as an argument (the task class)
-<2> emulate an environment which is JDK 6 and not Windows
-<3> iterate on all declared methods of the task class
-<4> if the method is public and takes no-argument
-<5> try to find the `@OnlyIf` annotation
-<6> if it is found get the `value` and create a new `Closure` out of it
-<7> set the `delegate` of the closure to our environment variable
-<8> call the closure, which is the annotation closure. It will return a `boolean`
-<9> if it is `true`, call the method
-<10> if the method is not annotated with `@OnlyIf`, execute the method anyway
-<11> after that, return the task object
-
-Then the runner can be used this way:
-
-[source,groovy]
-----
-include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_runner_exec,indent=0]
-----
-
-==== Meta-annotations
-
-(TBD)
-
-
-==== Annotation placement
-
-(TBD)
-
-
 === Constructors
 
 Constructors are special methods used to initialize an object with a specific state. As in normal methods, it is possible for a class to declare more than one constructor. In Groovy there are two ways to invoke constructors: with positional parameters or named parameters. The former one is like we invoke Java constructors, while the second way allows one to specify the parameter names when invoking the constructor.
@@ -566,6 +401,347 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=pseudo_properties,inde
 <3> writing `p.groovy` is allowed because there is a pseudo-writeonly property `groovy`
 
 This syntactic sugar is at the core of many DSLs written in Groovy.
+
+=== Annotation
+
+[[ann-definition]]
+==== Annotation definition
+
+An annotation is a kind of special interface dedicated at annotating elements of the code. An annotation is a type which
+superinterface is the jdk:java.lang.annotation.Annotation[Annotation] interface. Annotations are declared in a very
+similar way to interfaces, using the `@interface` keyword:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=define_annotation,indent=0]
+----
+
+An annotation may define members in the form of methods without bodies and an optional default value. The possible
+member types are limited to:
+
+* primitive types
+* jdk:java.lang.String[Strings]
+* jdk:java.lang.Class[Classes]
+* an jdk:java.lang.Enum[enumeration]
+* another jdk:java.lang.annotation.Annotation[annotation type]
+* or any array of the above
+
+For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_string,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_string_default,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_int,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_class,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_annotation,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_enum,indent=0]
+----
+<1> an annotation defining a `value` member of type `String`
+<2> an annotation defining a `value` member of type `String` with a default value of `something`
+<3> an annotation defining a `step` member of type the primitive type `int`
+<4> an annotation defining a `appliesTo` member of type `Class`
+<5> an annotation defining a `value` member which type is an array of another annotation type
+<6> an annotation defining a `dayOfWeek` member which type is the enumeration type `DayOfWeek`
+
+Unlike in the Java language, in Groovy, an annotation can be used to alter the semantics of the language. It is especially
+true of AST transformations which will generate code based on annotations.
+
+[[ann-placement]]
+==== Annotation placement
+
+An annotation can be applied on various elements of the code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=apply_annotation_1,indent=0]
+----
+<1> `@SomeAnnotation` applies to the `someMethod` method
+<2> `@SomeAnnotation` applies to the `SomeClass` class
+<3> `@SomeAnnotation` applies to the `var` variable
+
+In order to limit the scope where an annotation can be applied, it is necessary to declare it on the annotation
+definition, using the jdk:java.lang.annotation.Target[Target] annotation. For example, here is how you would
+declare that an annotation can be applied to a class or a method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_target,indent=0]
+----
+<1> the `@Target` annotation is meant to annotate an annotation with a scope.
+<2> `@SomeAnnotation` will therefore only be allowed on `TYPE` or `METHOD`
+
+The list of possible targets is available in the jdk:java.lang.annotation.ElementType[ElementType enumeration].
+
+WARNING: Groovy does not support the jdk:java.lang.annotation.ElementType#TYPE_PARAMETER[TYPE_PARAMETER] and
+jdk:java.lang.annotation.ElementType#TYPE_PARAMETER[TYPE_USE] element types which were introduced in Java 8.
+
+==== Annotation member values
+
+When an annotation is used, it is required to set at least all members that do not have a default value. For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set,indent=0]
+----
+
+However it is possible to omit `value=` in the declaration of the value of an annotation if the member `value` is the
+only one being set:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set_option,indent=0]
+----
+<1> we can omit the `statusCode` because it has a default value, but `value` needs to be set
+<2> since `value` is the only mandatory member without a default, we can omit `value=`
+<3> if both `value` and `statusCode` need to be set, it is required to use `value=` for the default `value` member
+
+==== Retention policy
+
+The visibility of an annotation depends on its retention policy. The retention policy of an annotation is set using
+the jdk:java.lang.annotation.Retention[Retention] annotation:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_retention,indent=0]
+----
+<1> the `@Retention` annotation annotates the `@SomeAnnotation` annotation
+<2> so `@SomeAnnotation` will have a `SOURCE` retention
+
+The list of possible retention targets and description is available in the
+jdk:java.lang.annotation.RetentionPolicy[RetentionPolicy] enumeration. The
+choice usually depends on whether you want an annotation to be visible at
+compile time or runtime.
+
+==== Closure annotation parameters
+
+An interesting feature of annotations in Groovy is that you can use a closure as an annotation value. Therefore
+annotations may be used with a wide variety of expressions and still have IDE support. For example, imagine a
+framework where you want to execute some methods based on environmental contraints like the JDK version or the OS.
+One could write the following code:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_example,indent=0]
+----
+
+For the `@OnlyIf` annotation to accept a `Closure` as an argument, you only have to declare the `value` as a `Class`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_def,indent=0]
+----
+
+To complete the example, let's write a sample runner that would use that information:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_runner,indent=0]
+----
+<1> create a new instance of the class passed as an argument (the task class)
+<2> emulate an environment which is JDK 6 and not Windows
+<3> iterate on all declared methods of the task class
+<4> if the method is public and takes no-argument
+<5> try to find the `@OnlyIf` annotation
+<6> if it is found get the `value` and create a new `Closure` out of it
+<7> set the `delegate` of the closure to our environment variable
+<8> call the closure, which is the annotation closure. It will return a `boolean`
+<9> if it is `true`, call the method
+<10> if the method is not annotated with `@OnlyIf`, execute the method anyway
+<11> after that, return the task object
+
+Then the runner can be used this way:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_runner_exec,indent=0]
+----
+
+==== Meta-annotations
+
+===== Declaring meta-annotations
+
+Meta-annotations, also known as annotation aliases are annotations that
+are replaced at compile time by other annotations (one meta-annotation
+is an alias for one or more annotations). Meta-annotations can be used to
+reduce the size of code involving multiple annotations.
+
+Let’s start with a simple example. Imagine you have the `@Service`
+and `@Transactional` annotations and that you want to annotate a class
+with both:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=transactionalservice_class,indent=0]
+----
+
+Given the multiplication of annotations that you could add to the same class, a meta-annotation
+could help by reducing the two annotations with a single one having the very same semantics. For example,
+we might want to write this instead:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=transactionalservice_class2,indent=0]
+----
+<1> `@TransactionalService` is a meta-annotation
+
+A meta-annotation is declared as a regular annotation but annotated with `@AnnotationCollector` and the
+list of annotations it is collecting. In our case, the `@TransactionalService` annotation can be written:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=metaann_ts,indent=0]
+----
+<1> annotate the meta-annotation with `@Service`
+<2> annotate the meta-annotation with `@Transactional`
+<3> annotate the meta-annotation with `@AnnotationCollector`
+
+[[meta-ann-behavior]]
+===== Behavior of meta-annotations
+
+Groovy supports both _precompiled_ and _source form_
+meta-annotations. This means that your meta-annotation _may_ be
+precompiled, or you can have it in the same source tree as the one you
+are currently compiling.
+
+INFO: Meta-annotations are a Groovy feature only. There is
+no chance for you to annotate a Java class with a meta-annotation and
+hope it will do the same as in Groovy. Likewise, you cannot write a
+meta-annotation in Java: both the meta-annotation definition *and* usage
+have to be Groovy code.
+
+When the Groovy compiler encounters a class annotated with a
+meta-annotation, it *replaces* it with the collected annotations. That
+is, in our previous example, that it will
+replace `@TransactionalService` with `@Transactional` and `@Service`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotations_expanded,indent=0]
+----
+
+The conversion from a meta-annotation to the collected annotations is performed during the
+_semantic analysis_ compilation phase. 
+
+In addition to replacing the alias with the collected annotations, a meta-annotation is capable of
+processing them, including arguments.
+
+[[meta-ann-members]]
+===== Meta-annotation parameters
+
+Meta-annotations can collect annotations which have parameters. To illustrate this, we will imagine two annotations,
+each of them accepting one argument:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collected_ann_explosive,indent=0]
+----
+
+And that you want create a meta-annotation named `@Explosive`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collected_ann_explosive,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collector_ann_explosive,indent=0]
+----
+
+By default, when the annotations are replaced, they will get the
+values *as they were defined in the alias*. More interesting, the meta-annotation
+supports overriding specific values:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=example_bomb,indent=0]
+----
+<1> the `after` value provided as a parameter to `@Explosive` overrides the one defined in the `@Timeout` annotation
+
+If two annotations define the same parameter name, the
+default processor will copy the annotation value to all annotations that
+accept this parameter:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collector_ann_same_values,indent=0]
+----
+<1> the `@Foo` annotation defines the `value` member of type `String`
+<2> the `@Bar` annotation also defines the `value` member of type `String`
+<3> the `@FooBar` meta-annotation aggregates `@Foo` and `@Bar`
+<4> class `Bob` is annotated with `@Foo` and `@Bar`
+<5> the value of the `@Foo` annotation on `Bob` is `a`
+<6> while the value of the `@Bar` annotation on `Bob` is `b`
+<7> class `Joe` is annotated with `@FooBar`
+<8> then the value of the `@Foo` annotation on `Joe` is `a`
+<9> and the value of the `@Bar` annotation on `Joe` is also `a`
+
+In the second case, the meta-annotation value was copied in
+both `@Foo` and `@Bar` annotations.
+
+WARNING: It is a compile time error if the collected annotations define the same members
+with incompatible types. For example if on the previous example `@Foo` defined a value of
+type `String` but `@Bar` defined a value of type `int`.
+
+It is however possible to customize the behavior of meta-annotations and describe how collected
+annotations are expanded.
+
+[[meta-ann-processor]]
+===== Custom annotation processors
+
+A custom annotation processor will let you choose how to expand a
+meta-annotation into collected annotations. The behaviour of the meta-annotation is,
+in this case, totally up to you. To do this, you must:
+
+* create a meta-annotation processor, extending gapi:org.codehaus.groovy.transform.AnnotationCollectorTransform[AnnotationCollectorTransform]
+* declare the processor to be used in the meta-annotation declaration
+
+To illustrate this, we are going to explore how the meta-annotation `@CompileDynamic` is implemented.
+
+`@CompileDynamic` is a meta-annotation that expands itself
+to `@CompileStatic(TypeCheckingMode.SKIP)`. The problem is that the
+default meta annotation processor doesn’t support enums and the
+annotation value `TypeCheckingMode.SKIP` is one.
+
+The naive implementation here would not work:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=compiledynamic_naive,indent=0]
+----
+
+Instead, we will define it like this:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=compiledynamic_def_fixed,indent=0]
+----
+
+The first thing you may notice is that our interface is no longer
+annotated with `@CompileStatic`. The reason for this is that we rely on
+the `processor` parameter instead, that references a class which
+will *generate* the annotation.
+
+Here is how the custom processor is implemented:
+
+[source,groovy]
+.CompileDynamicProcessor.groovy
+----
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=compiledynamic_processor,indent=0]
+----
+<1> our custom processor is written in Groovy, and for better compilation performance, we use static compilation
+<2> the custom processor has to extend gapi:org.codehaus.groovy.transform.AnnotationCollectorTransform[AnnotationCollectorTransform]
+<3> create a class node representing the `@CompileStatic` annotation type
+<4> create a class node representing the `TypeCheckingMode` enum type
+<5> `collector` is the `@AnnotationCollector` node found in the meta-annotation. Usually unused.
+<6> `aliasAnnotationUsage` is the meta-annotation being expanded, here it is `@CompileDynamic`
+<7> `aliasAnnotated` is the node being annotated with the meta-annotation
+<8> `sourceUnit` is the `SourceUnit` being compiled
+<9> we create a new annotation node for `@CompileStatic`
+<10> we create an expression equivalent to `TypeCheckingMode.SKIP`
+<11> we add that expression to the annotation node, which is now `@CompileStatic(TypeCheckingMode.SKIP)`
+<12> return the generated annotation
+
+In the example, the `visit` method is the only method which has to be overriden. It is meant to return a list of
+annotation nodes that will be added to the node annotated with the meta-annotation. In this example, we return a
+single one corresponding to `@CompileStatic(TypeCheckingMode.SKIP)`.
 
 === Inheritance
 

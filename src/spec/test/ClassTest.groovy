@@ -551,4 +551,209 @@ class ClassTest extends GroovyTestCase {
             // end::closure_ann_runner_exec[]
         '''
     }
+
+    void testAnnotationCollector() {
+        assertScript '''import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface Service {}
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface Transactional {}
+
+            // tag::transactionalservice_class[]
+            @Service
+            @Transactional
+            class MyTransactionalService {}
+            // end::transactionalservice_class[]
+
+            MyTransactionalService
+        '''
+
+        assertScript '''import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface Service {}
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface Transactional {}
+
+            // tag::metaann_ts[]
+            import groovy.transform.AnnotationCollector
+
+            @Service                                        // <1>
+            @Transactional                                  // <2>
+            @AnnotationCollector                            // <3>
+            @interface TransactionalService {
+            }
+            // end::metaann_ts[]
+
+            // tag::transactionalservice_class2[]
+            @TransactionalService                           // <1>
+            class MyTransactionalService {}
+            // end::transactionalservice_class2[]
+
+            // tag::annotations_expanded[]
+            def annotations = MyTransactionalService.annotations*.annotationType()
+            assert (Service in annotations)
+            assert (Transactional in annotations)
+            // end::annotations_expanded[]
+        '''
+    }
+
+    void testAnnotationCollectorWithParams() {
+        assertScript '''
+            import java.lang.annotation.Retention
+            import java.lang.annotation.RetentionPolicy
+            import groovy.transform.AnnotationCollector
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface Timeout { int after() }
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface Dangerous { String type() }
+
+            // tag::collected_ann_explosive[]
+            @Timeout(after=3600)
+            @Dangerous(type='explosive')
+            // end::collected_ann_explosive[]
+            // tag::collector_ann_explosive[]
+            @AnnotationCollector
+            public @interface Explosive {}
+            // end::collector_ann_explosive[]
+
+            // tag::example_bomb[]
+            @Explosive(after=0)                 // <1>
+            class Bomb {}
+            // end::example_bomb[]
+            @Explosive
+            class ReferenceBomb {}
+
+            assert Bomb.getAnnotation(Timeout).after() == 0
+            assert ReferenceBomb.getAnnotation(Timeout).after() == 3600
+        '''
+    }
+
+    void testAnnotationCollectorWithSameParamNames() {
+        assertScript '''
+
+import groovy.transform.AnnotationCollector
+
+import java.lang.annotation.Retention
+            import java.lang.annotation.RetentionPolicy
+
+            // tag::collector_ann_same_values[]
+            @Retention(RetentionPolicy.RUNTIME)
+            public @interface Foo {
+               String value()                                   // <1>
+            }
+            @Retention(RetentionPolicy.RUNTIME)
+            public @interface Bar {
+                String value()                                  // <2>
+            }
+
+            @Foo
+            @Bar
+            @AnnotationCollector
+            public @interface FooBar {}                         // <3>
+
+            @Foo('a')
+            @Bar('b')
+            class Bob {}                                        // <4>
+
+            assert Bob.getAnnotation(Foo).value() == 'a'        // <5>
+            println Bob.getAnnotation(Bar).value() == 'b'       // <6>
+
+            @FooBar('a')
+            class Joe {}                                        // <7>
+            assert Joe.getAnnotation(Foo).value() == 'a'        // <8>
+            println Joe.getAnnotation(Bar).value() == 'a'       // <9>
+            // end::collector_ann_same_values[]
+        '''
+
+        def err = shouldFail '''
+
+            import groovy.transform.AnnotationCollector
+
+            import java.lang.annotation.Retention
+            import java.lang.annotation.RetentionPolicy
+
+            @Retention(RetentionPolicy.RUNTIME)
+            public @interface Foo {
+               String value()
+            }
+            @Retention(RetentionPolicy.RUNTIME)
+            public @interface Bar {
+                int value()
+            }
+
+            @Foo
+            @Bar
+            @AnnotationCollector
+            public @interface FooBar {}
+
+            @FooBar(666)
+            class Evil {}
+            Evil
+        '''
+        assert err =~ /Attribute 'value' should have type 'java.lang.String'; but found type 'int' in @Foo/
+    }
+
+    void testCustomProcessor() {
+        assertScript '''import groovy.transform.AnnotationCollector
+            import groovy.transform.CompileStatic
+            import groovy.transform.TypeCheckingMode
+
+            // tag::compiledynamic_naive[]
+            @CompileStatic(TypeCheckingMode.SKIP)
+            @AnnotationCollector
+            public @interface CompileDynamic {}
+            // end::compiledynamic_naive[]
+
+            @CompileDynamic
+            class Foo {}
+            Foo
+        '''
+
+        assertScript '''import groovy.transform.AnnotationCollector
+            import groovy.transform.CompileStatic
+            import groovy.transform.TypeCheckingMode
+            import org.codehaus.groovy.ast.AnnotatedNode
+            import org.codehaus.groovy.ast.AnnotationNode
+            import org.codehaus.groovy.ast.ClassHelper
+            import org.codehaus.groovy.ast.ClassNode
+            import org.codehaus.groovy.ast.expr.ClassExpression
+            import org.codehaus.groovy.ast.expr.PropertyExpression
+            import org.codehaus.groovy.control.SourceUnit
+            import org.codehaus.groovy.transform.AnnotationCollectorTransform
+
+            // tag::compiledynamic_def_fixed[]
+            @AnnotationCollector(processor = "org.codehaus.groovy.transform.CompileDynamicProcessor")
+            public @interface CompileDynamic {
+            }
+            // end::compiledynamic_def_fixed[]
+
+            // tag::compiledynamic_processor[]
+            @CompileStatic                                                                  // <1>
+            class CompileDynamicProcessor extends AnnotationCollectorTransform {            // <2>
+                private static final ClassNode CS_NODE = ClassHelper.make(CompileStatic)    // <3>
+                private static final ClassNode TC_NODE = ClassHelper.make(TypeCheckingMode) // <4>
+
+                List<AnnotationNode> visit(AnnotationNode collector,                        // <5>
+                                           AnnotationNode aliasAnnotationUsage,             // <6>
+                                           AnnotatedNode aliasAnnotated,                    // <7>
+                                           SourceUnit source) {                             // <8>
+                    def node = new AnnotationNode(CS_NODE)                                  // <9>
+                    def enumRef = new PropertyExpression(
+                        new ClassExpression(TC_NODE), "SKIP")                               // <10>
+                    node.addMember("value", enumRef)                                        // <11>
+                    Collections.singletonList(node)                                         // <12>
+                }
+            }
+            // end::compiledynamic_processor[]
+
+            @CompileDynamic
+            class Foo {}
+            Foo
+        '''
+    }
 }
