@@ -222,7 +222,7 @@ include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=type_dep
 
 Groovy will automatically cast a single-character `String` to `char` when assigning to
 a variable of type `char`. When calling methods with arguments of type `char` we need
-to either cast explicitly or make sure the value has been casted in advance.
+to either cast explicitly or make sure the value has been cast in advance.
 
 [source,groovy]
 ----
@@ -238,3 +238,19 @@ with exception.
 ----
 include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=chars_c_vs_groovy_cast,indent=0]
 ----
+
+== Behaviour of `==`
+
+In Java `==` means equality of primitive types or identity for objects.  In
+Groovy `==` translates to `a.compareTo(b)==0`, iff they are `Comparable`, and
+`a.equals(b)` otherwise.  To check for identity, there is `is`.  E.g.
+`a.is(b)`.
+
+
+== Different keywords
+
+There are a few more keywords in Groovy than in Java.  Don't use them for
+variable names etc.
+
+* `in` 
+* `trait` 

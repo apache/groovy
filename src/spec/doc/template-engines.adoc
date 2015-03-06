@@ -11,13 +11,13 @@ The template framework in Groovy consists of a `TemplateEngine` abstract base cl
 Included with Groovy are several template engines:
 
 - `SimpleTemplateEngine` - for basic templates
-- `GStringTemplateEngine` - stores the template as writable closures (useful for streaming scenarios)
+- `GStringTemplateEngine` - stores the template as writeable closures (useful for streaming scenarios)
 - `XmlTemplateEngine` - works well when the template and output are valid XML
 - `MarkupTemplateEngine` - a very complete, optimized, template engine
 
 == SimpleTemplateEngine
 
-Shown here is the `SimpleTemplateEngine` that allows you to use JSP-like scriptlets (see example below), script, and EL expressions in your template in order to generate parameterized text. Here is an example of using the system:
+Shown here is the `SimpleTemplateEngine` that allows you to use JSP-like scriptlets (see example below), script, and EL expressions in your template in order to generate parametrized text. Here is an example of using the system:
 
 [source,groovy]
 ----

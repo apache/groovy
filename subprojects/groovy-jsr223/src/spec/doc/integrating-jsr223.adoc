@@ -3,7 +3,7 @@
 
 WARNING: JSR-223 is a standard API for calling scripting frameworks in Java. It is available since Java 6 and aims at
 providing a common framework for calling multiple languages from Java. Groovy provides its own richer integration mechanisms,
-and if you don't plan to use multiple languages in the same application, it is recommanded that you use the Groovy
+and if you don't plan to use multiple languages in the same application, it is recommended that you use the Groovy
 integration mechanisms instead of the limited JSR-223 API.
 
 Here is how you need to initialize the JSR-223 engine to talk to Groovy from Java:

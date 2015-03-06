@@ -160,7 +160,7 @@ class Server {
 
 == Omitting parentheses
 
-Groovy allows you to omit the parentheses for top-level expressions, like with the println command:
+Groovy allows you to omit the parentheses for top-level expressions, like with the `println` command:
 
 [source,groovy]
 ----

@@ -143,10 +143,110 @@ Thats it! Notice how Groovy allowed us to use the `as` keyword to rename our imp
 
 Type aliasing is also useful to solve name collision problems which can occur with `*` imports.
 
-== Scripts versus classes (TBD)
+== Scripts versus classes
 
-== Initializers (TBD)
+=== public static void main vs script
+Groovy supports both scripts and classes. Take the following code for example:
 
-=== Static initializers (TBD)
-=== Instance initializers (TBD)
+[source,groovy]
+.Main.groovy
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=groovy_class_with_main_method,indent=0]
+----
+<1> define a `Main` class, the name is arbitrary
+<2> the `public static void main(String[])` method is usable as the main method of the class
+<3> the main body of the method
 
+This is typical code that you would find coming from Java, where code *has* to be embedded into a class to be executable.
+Groovy makes it easier, the following code is equivalent:
+
+[source,groovy]
+.Main.groovy
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=groovy_script,indent=0]
+----
+
+A script can be considered as a class without needing to declare it, with some differences.
+
+=== Script class
+
+A gapi:groovy.lang.Script[script] is always compiled into a class. The Groovy compiler will compile the class for you,
+with the body of the script copied into a `run` method. The previous example is therefore compiled as if it was the
+following:
+
+[source,groovy]
+.Main.groovy
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=groovy_script_equiv,indent=0]
+----
+<1> The `Main` class extends the `groovy.lang.Script` class
+<2> `groovy.lang.Script` requires a `run` method returning a value
+<3> the script body goes into the `run` method
+<4> the `main` method it automatically generated
+<5> and delegates the execution of the script on the `run` method
+
+If the script is in a file, then the base name of the file is used to determine the name of the generated script class.
+In this example, if the name of the file is `Main.groovy`, then the script class is going to be `Main`.
+
+=== Methods
+
+It is possible to define methods into a script, as illustrated here:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=method_in_script,indent=0]
+----
+
+You can also mix methods and code. The generated script class will carry all methods into the script class, and
+assemble all script bodies into the `run` method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly,indent=0]
+----
+<1> script begins
+<2> a method is defined within the script body
+<3> and script continues
+
+This code is internally converted into:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly_equiv,indent=0]
+----
+<1> the `power` method is copied as is into the generated script class
+<2> first statement is copied into the `run` method
+<3> second statement is copied into the `run` method
+
+TIP: Even if Groovy creates a class from your script, it is totally transparent for the user. In particular, scripts
+are compiled to bytecode, and line numbers are preserved. This implies that if an exception is thrown in a script,
+the stack trace will show line numbers corresponding to the original script, not the generated code that we have shown.
+
+=== Variables
+
+Variables in a script do not require a type definition. This means that this script:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=script_with_variables,indent=0]
+----
+
+will behave the same as:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=script_with_untyped_variables,indent=0]
+----
+
+However there is a semantic difference between the two:
+
+* if the variable is declared as in the first example, it is a _local variable_. It will be declared in the `run`
+method that the compiler will generate and will *not* be visible outside of the script main body. In particular, such
+a variable will *not* be visible in other methods of the script
+* if the variable is undeclared, it goes into the gapi:groovy.lang.Script#getBinding()[script binding]. The binding is
+visible from the methods, and is especially important if you use a script to interact with an application and need to
+share data between the script and the application. Readers might refer to the link:integrating.html[integration guide]
+for more information.
+
+TIP: If you want a variable to become a field of the class without going into the `Binding`, you can use the
+link:metaprogramming.html#xform-Field[@Field annotation].

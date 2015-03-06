@@ -1,6 +1,6 @@
-= Groovy Development Kit (TBD)
+= Groovy Development Kit
 
-== Working with IO (TBD)
+include::{projectdir}/src/spec/doc/working-with-io.adoc[leveloffset=+1]
 
 include::{projectdir}/src/spec/doc/working-with-collections.adoc[leveloffset=+1]
 
@@ -90,7 +90,7 @@ include::{projectdir}/src/spec/test/gdk/ExpandoTest.groovy[tags=expando_method,i
 === Observable list, map and set
 
 Groovy comes with observable lists, maps and sets. Each of these collections trigger `java.beans.PropertyChangeEvent` events when elements
-are added, removed or changed. Note that a `PropertyChangeEvent` is not only signaling that a certain event has
+are added, removed or changed. Note that a `PropertyChangeEvent` is not only signalling that a certain event has
  occurred, moreover, it holds information on the property name and the old/new value a certain property has been changed to.
 
 Depending on the type of change that has happened, observable collections might fire more specialized `PropertyChangeEvent`

@@ -268,20 +268,18 @@ public class StaticInvocationWriter extends InvocationWriter {
                 return true;
             }
             if (target.isPrivate()) {
-                ClassNode declaringClass = target.getDeclaringClass();
-                if ((isPrivateBridgeMethodsCallAllowed(declaringClass, classNode) || isPrivateBridgeMethodsCallAllowed(classNode, declaringClass))
-                        && declaringClass.getNodeMetaData(PRIVATE_BRIDGE_METHODS) != null
-                        && !declaringClass.equals(classNode)) {
-                    if (tryBridgeMethod(target, receiver, implicitThis, args)) {
-                        return true;
-                    } else if (declaringClass != classNode) {
-                        controller.getSourceUnit().addError(new SyntaxException("Cannot call private method " + (target.isStatic() ? "static " : "") +
-                                declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false), receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
-                    }
+                if (tryPrivateMethod(target, implicitThis, receiver, args, classNode)) return true;
+            } else if (target.isProtected()) {
+                ClassNode node = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+                boolean isThisOrSuper = false;
+                if (receiver instanceof VariableExpression) {
+                    isThisOrSuper = ((VariableExpression) receiver).isThisExpression() || ((VariableExpression) receiver).isSuperExpression();
                 }
-                if (declaringClass != classNode) {
-                    controller.getSourceUnit().addError(new SyntaxException("Cannot call private method " + (target.isStatic() ? "static " : "") +
-                                                        declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false), receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
+                if (!implicitThis && !isThisOrSuper
+                        && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node,target.getDeclaringClass())) {
+                    controller.getSourceUnit().addError(
+                            new SyntaxException("Method " + target.getName() + " is protected in " + target.getDeclaringClass().toString(false),
+                                    receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
                 }
             }
             if (receiver != null) {
@@ -294,6 +292,25 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             return super.writeDirectMethodCall(target, implicitThis, receiver, args);
         }
+    }
+
+    private boolean tryPrivateMethod(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args, final ClassNode classNode) {
+        ClassNode declaringClass = target.getDeclaringClass();
+        if ((isPrivateBridgeMethodsCallAllowed(declaringClass, classNode) || isPrivateBridgeMethodsCallAllowed(classNode, declaringClass))
+                && declaringClass.getNodeMetaData(PRIVATE_BRIDGE_METHODS) != null
+                && !declaringClass.equals(classNode)) {
+            if (tryBridgeMethod(target, receiver, implicitThis, args)) {
+                return true;
+            } else if (declaringClass != classNode) {
+                controller.getSourceUnit().addError(new SyntaxException("Cannot call private method " + (target.isStatic() ? "static " : "") +
+                        declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false), receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
+            }
+        }
+        if (declaringClass != classNode) {
+            controller.getSourceUnit().addError(new SyntaxException("Cannot call private method " + (target.isStatic() ? "static " : "") +
+                                                declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false), receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
+        }
+        return false;
     }
 
     protected static boolean isPrivateBridgeMethodsCallAllowed(ClassNode receiver, ClassNode caller) {

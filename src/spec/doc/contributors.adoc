@@ -3,12 +3,15 @@
 The Groovy team would like to thank the contributors of this documentation (by alphabetical order):
 
 * https://github.com/mojavelinux[Dan Allen]
+* http://hamletdarcy.blogspot.fr/[Hamlet D'Arcy]
 * https://github.com/bura[Andrey Bloschetsov]
+* https://github.com/JBrownVisualSpection[J Brown]
 * https://github.com/jeffbrown[Jeff Scott Brown]
 * http://twitter.com/CedricChampeau[Cédric Champeau]
 * https://github.com/tobia[Tobia Conforto]
 * https://github.com/ddimtirov[Dimitar Dimitrov]
 * http://twitter.com/werdnagreb[Andrew Eisenberg]
+* https://github.com/christoph-frick[Christoph Frick]
 * http://twitter.com/marioggar[Mario García]
 * https://github.com/davidmichaelkarr[David Michael Karr]
 * http://twitter.com/paulk_asert[Paul King]

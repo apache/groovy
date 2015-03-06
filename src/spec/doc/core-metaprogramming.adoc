@@ -4,14 +4,29 @@ The Groovy language supports two flavors of metaprogramming: runtime metaprogram
 The first one allows altering the class model and the behavior of a program at runtime, while the second only occurs
 at compile-time. Both have pros and cons, that we will detail in this section.
 
-== Runtime metaprogramming (TBD)
+== Runtime metaprogramming
+
+(TBD)
+
 
 === GroovyObject interface (MaksymStavytskyi)
-==== invokeMethod (TBD)
-==== get/setProperty (TBD)
-==== get/setMetaClass (TBD)
+==== invokeMethod
 
-=== get/setAttribute (TBD)
+(TBD)
+
+==== get/setProperty
+
+(TBD)
+
+==== get/setMetaClass
+
+(TBD)
+
+
+=== get/setAttribute
+
+(TBD)
+
 
 === methodMissing
 
@@ -78,8 +93,12 @@ performance.
 `methodMissing` and `propertyMissing` that deal with static methods and properties can be added via
 the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>.
 
-=== GroovyInterceptable (TBD)
+=== GroovyInterceptable
 
+(TBD)
+
+
+[[categories]]
 === Categories
 
 There are situations where it is useful if a class _not_ under control had additional methods. In order to enable this
@@ -91,9 +110,9 @@ pre-defined rules for defining extension methods.
 There are a few categories that are included in the system for adding functionality to classes that make them more
 usable within the Groovy environment:
 
-* gapi::groovy.time.TimeCategory
-* gapi::groovy.servlet.ServletCategory
-* gapi::groovy.xml.dom.DOMCategory
+* gapi:groovy.time.TimeCategory[]
+* gapi:groovy.servlet.ServletCategory[]
+* gapi:groovy.xml.dom.DOMCategory[]
 
 Category classes aren't enabled by default. To use the methods defined in a category class it is necessary to apply
 the scoped `use` method that is provided by the GDK and available from inside every Groovy object instance:
@@ -193,11 +212,26 @@ first parameter. The target type class is given as an argument to the annotation
 [NOTE]
 There is a distinct section on `@Category` in the <<core-metaprogramming.adoc#xform-Category,compile-time metaprogramming section>>.
 
-=== Metaclasses (TBD)
-==== Custom metaclasses (TBD)
-===== Delegating metaclass (TBD)
-===== Magic package (TBD)
-==== Per instance metaclass (TBD)
+=== Metaclasses
+
+(TBD)
+
+==== Custom metaclasses
+
+(TBD)
+
+===== Delegating metaclass
+
+(TBD)
+
+===== Magic package
+
+(TBD)
+
+==== Per instance metaclass
+
+(TBD)
+
 
 [[metaprogramming_emc]]
 ==== ExpandoMetaClass
@@ -768,7 +802,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_callSuper,indent=0]
 ----
 |force|False|By default, the transformation will do nothing if a constructor is already defined. Setting this property
-to true, the constructor will be generated and it's your responsability to ensure that no duplicate constructor
+to true, the constructor will be generated and it's your responsibility to ensure that no duplicate constructor
 is defined|See javadocs
 |=======================================================================
 
@@ -1524,8 +1558,8 @@ include::{projectdir}/src/spec/test/DeclarativeConcurrencyASTTransformsTest.groo
 
 For details
 
-* See Javadoc for gapi::groovy.transform.WithReadLock
-* See Javadoc for gapi::groovy.transform.WithWriteLock
+* See Javadoc for gapi:groovy.transform.WithReadLock[]
+* See Javadoc for gapi:groovy.transform.WithWriteLock[]
 
 ==== Easier cloning and externalizing
 
@@ -1542,7 +1576,7 @@ The `@AutoClone` annotation is aimed at implementing the `@java.lang.Cloneable` 
 * the `AutoCloneStyle.COPY_CONSTRUCTOR` strategy creates and uses a copy constructor
 * the `AutoCloneStyle.SERIALIZATION` strategy uses serialization (or externalization) to clone the object
 
-Each of those strategies have pros and cons which are discussed in the Javadoc for gapi::groovy.transform.AutoClone and gapi::groovy.transform.AutoCloneStyle .
+Each of those strategies have pros and cons which are discussed in the Javadoc for gapi:groovy.transform.AutoClone[] and gapi:groovy.transform.AutoCloneStyle[] .
 
 For example, the following example:
 
@@ -1566,7 +1600,7 @@ In addition to cloning styles, `@AutoClone` supports multiple options:
 |=======================================================================
 |Attribute|Default value|Description|Example
 |excludes|Empty list|A list of property or field names that need to be excluded from cloning. A string consisting of a comma-separated field/property names is also allowed.
-See gapi::groovy.transform.AutoClone#excludes for details|
+See gapi:groovy.transform.AutoClone#excludes[] for details|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoclone_excludes,indent=0]
@@ -1603,7 +1637,7 @@ The `@AutoExternalize` annotation supports two parameters which will let you sli
 |=======================================================================
 |Attribute|Default value|Description|Example
 |excludes|Empty list|A list of property or field names that need to be excluded from externalizing. A string consisting of a comma-separated field/property names is also allowed.
-See gapi::groovy.transform.AutoExternalize#excludes for details|
+See gapi:groovy.transform.AutoExternalize#excludes[] for details|
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example_autoext_excludes,indent=0]
@@ -1618,7 +1652,7 @@ include::{projectdir}/src/spec/test/CloningASTTransformsTest.groovy[tags=example
 
 ==== Safer scripting
 
-The Groovy language makes it easy to execute user scripts at runtime (for example using gapi::groovy.lang.GroovyShell),
+The Groovy language makes it easy to execute user scripts at runtime (for example using gapi:groovy.lang.GroovyShell[]),
 but how do you make sure that a script won't eat all CPU (infinite loops) or that concurrent scripts won't slowly consume
 all available threads of a thread pool? Groovy provides several annotations which are aimed towards safer scripting,
 generating code which will for example allow you to interrupt execution automatically.
@@ -1685,19 +1719,19 @@ exception will be thrown, interrupting the execution of the thread.
 ----
 include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=threadinterrupt_thrown,indent=0]
 ----
-|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi::groovy.transform.ThreadInterrupt for details.|
+|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi:groovy.transform.ThreadInterrupt[] for details.|
 [source,groovy]
 ----
 @ThreadInterrupt(checkOnMethodStart=false)
 ----
-|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi::groovy.transform.ThreadInterrupt for details.|
+|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi:groovy.transform.ThreadInterrupt[] for details.|
 [source,groovy]
 ----
 @ThreadInterrupt(applyToAllClasses=false)
 class A { ... } // interrupt checks added
 class B { ... } // no interrupt checks
 ----
-|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi::groovy.transform.ThreadInterrupt for details.|
+|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi:groovy.transform.ThreadInterrupt[] for details.|
 [source,groovy]
 ----
 class A {
@@ -1764,19 +1798,19 @@ include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=timedinterrupt_thrown,indent=0]
 ----
-|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi::groovy.transform.TimedInterrupt for details.|
+|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi:groovy.transform.TimedInterrupt[] for details.|
 [source,groovy]
 ----
 @TimedInterrupt(checkOnMethodStart=false)
 ----
-|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi::groovy.transform.TimedInterrupt for details.|
+|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi:groovy.transform.TimedInterrupt[] for details.|
 [source,groovy]
 ----
 @TimedInterrupt(applyToAllClasses=false)
 class A { ... } // interrupt checks added
 class B { ... } // no interrupt checks
 ----
-|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi::groovy.transform.TimedInterrupt for details.|
+|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi:groovy.transform.TimedInterrupt[] for details.|
 [source,groovy]
 ----
 class A {
@@ -1816,7 +1850,7 @@ include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=
 ----
 
 Of course, in practice, it is unlikely that `@ConditionalInterrupt` will be itself added by hand on user code. It can be injected in a similar manner as the example shown in the
-<<xform-ThreadInterrupt,ThreadInterrupt>> section, using the gapi::org.codehaus.groovy.control.customizers.ASTTransformationCustomizer :
+<<xform-ThreadInterrupt,ThreadInterrupt>> section, using the gapi:org.codehaus.groovy.control.customizers.ASTTransformationCustomizer[] :
 
 [source,groovy]
 ----
@@ -1838,19 +1872,19 @@ include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/SaferScriptingASTTransformsTest.groovy[tags=conditionalinterrupt_thrown,indent=0]
 ----
-|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi::groovy.transform.ConditionalInterrupt for details.|
+|checkOnMethodStart|true|Should an interruption check be inserted at the beginning of each method body. See gapi:groovy.transform.ConditionalInterrupt[] for details.|
 [source,groovy]
 ----
 @ConditionalInterrupt(checkOnMethodStart=false)
 ----
-|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi::groovy.transform.ConditionalInterrupt for details.|
+|applyToAllClasses|true|Should the transformation be applied on all classes of the same source unit (in the same source file). See gapi:groovy.transform.ConditionalInterrupt[] for details.|
 [source,groovy]
 ----
 @ConditionalInterrupt(applyToAllClasses=false)
 class A { ... } // interrupt checks added
 class B { ... } // no interrupt checks
 ----
-|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi::groovy.transform.ConditionalInterrupt for details.|
+|applyToAllMembers|true|Should the transformation be applied on all members of class. See gapi:groovy.transform.ConditionalInterrupt[] for details.|
 [source,groovy]
 ----
 class A {
@@ -1887,7 +1921,7 @@ equivalent to this:
 include::{projectdir}/src/spec/test/CompilerDirectivesASTTransformsTest.groovy[tags=field_missing_property_equiv,indent=0]
 ----
 
-So `def x` is effectiveley interpreted as a local variable, outside of the scope of the `line` method. The `@Field` AST transformation aims at fixing this
+So `def x` is effectively interpreted as a local variable, outside of the scope of the `line` method. The `@Field` AST transformation aims at fixing this
 by changing the scope of the variable to a field of the enclosing script:
 
 [source,groovy]
@@ -2071,7 +2105,7 @@ placed on any annotable node and requires two parameters:
 * _phase_: sets at which phase at which `@ASTTest` will be triggered. The test code will work on the AST tree at the end of this phase.
 * _value_: the code which will be executed once the phase is reached, on the annotated node
 
-TIP: Compile phase has to be chosen from one of gapi::org.codehaus.groovy.control.CompilePhase . However, since it is not possible to annotate a node twice with the same annotation, you will
+TIP: Compile phase has to be chosen from one of gapi:org.codehaus.groovy.control.CompilePhase[] . However, since it is not possible to annotate a node twice with the same annotation, you will
 not be able to use `@ASTTest` on the same node at two distinct compile phases.
 
 `value` is a closure expression which has access to a special variable `node` corresponding to the annotated node, and a helper `lookup` method which will be discussed <<asttest-lookup,here>>.
@@ -2087,7 +2121,7 @@ include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=asttest
 
 One interesting feature of `@ASTTest` is that if an assertion fails, then *compilation will fail*. Now imagine that we want to check the behavior of an AST transformation at compile time.
 We will take `@PackageScope` here, and we will want to verify that a property annotated with `@PackageScope` becomes a package private field. For this, we have to know at which phase the
-transform runs, which can be found in gapi::org.codehaus.groovy.transform.PackageScopeASTTransformation : semantic analysis. Then a test can be written like this:
+transform runs, which can be found in gapi:org.codehaus.groovy.transform.PackageScopeASTTransformation[] : semantic analysis. Then a test can be written like this:
 
 [source,groovy]
 ----
@@ -2157,9 +2191,319 @@ include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=memoriz
 thoroughly in this <<section-grape,section of the guide>>.
 
 [[developing-ast-xforms]]
-=== Developing AST transformations (TBD)
-==== Compilation phases guide (TBD)
-==== Local transformations (TBD)
-==== Global transformations (TBD)
-==== AST API guide (TBD)
-==== Testing AST transformations (TBD)
+=== Developing AST transformations
+
+There are two kinds of transformations: global and local transformations.
+
+* <<transforms-global,Global transformations>> are applied to by the compiler on the code being compiled,
+wherever the transformation apply. Compiled classes that implement global tranasformations
+are in a JAR added to the classpath of the compiler and contain service locator file
+`META-INF/services/org.codehaus.groovy.transform.ASTTransformation` with a line with the name of the
+transformation class. The transformation class must have a no-args constructor and implement the
+`org.codehaus.groovy.transform.ASTTransformation` interface.
+It will be run against *every source in the compilation*, so be sure to not create transformations which
+scan all the AST in an expansive and time-consuming manner, to keep the compiler fast.
+* <<transforms-local,Local transformations>> are transformations applied locally by annotating code elements you want to
+transform. For this, we reuse the annotation notation, and those annotations should implement
+`org.codehaus.groovy.transform.ASTTransformation`. The compiler will discover them and apply the
+transformation on these code elements.
+
+==== Compilation phases guide
+
+Groovy AST transformations must be performed in one of the nine defined
+compilation phases (gapi:org.codehaus.groovy.control.CompilePhase[]).
+
+Global transformations may be applied in any phase, but local
+transformations may only be applied in the semantic analysis phase or
+later. Briefly, the compiler phases are:
+
+* _Initialization_: source files are opened and environment configured
+* _Parsing_: the grammar is used to to produce tree of tokens representing
+the source code
+* _Conversion_: An abstract syntax tree (AST) is created from token trees.
+* _Semantic Analysis_: Performs consistency and validity checks that the
+grammar can’t check for, and resolves classes.
+* _Canonicalization_: Complete building the AST
+* _Instruction Selection_: instruction set is chosen, for example Java 6 or Java 7 bytecode level
+* _Class Generation_: creates the bytecode of the class in memory
+* _Output_: write the binary output to the file system
+* _Finalization_: Perform any last cleanup
+
+Generally speaking, there is more type information available later in
+the phases. If your transformation is concerned with reading the AST,
+then a later phase where information is more plentiful might be a good
+choice. If your transformation is concerned with writing AST, then an
+earlier phase where the tree is more sparse might be more convenient.
+
+[[transforms-local]]
+==== Local transformations
+
+Local AST transformations are relative to the context they are applied to. In
+most cases, the context is defined by an annotation that will define the scope
+of the transform. For example, annotating a field would mean that the transformation
+_applies to_ the field, while annotating the class would mean that the transformation
+_applies to_ the whole class.
+
+As a naive and simple example, consider wanting to write a `@WithLogging`
+transformation that would add console messages at the start and end of a
+method invocation. So the following "Hello World" example would
+actually print "Hello World" along with a start and stop message:
+
+[source,groovy]
+.Poor man's aspect oriented programming
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_example,indent=0]
+----
+
+A local AST transformation is an easy way to do this. It requires two things:
+
+* a definition of the `@WithLogging` annotation
+* an implementation of gapi:org.codehaus.groovy.transform.ASTTransformation[] that adds the logging
+expressions to the method
+
+An `ASTTransformation` is a callback that gives you access to the
+gapi:org.codehaus.groovy.control.SourceUnit[],
+through which you can get a reference to the
+gapi:org.codehaus.groovy.ast.ModuleNode[] (AST).
+
+The AST (Abstract Syntax Tree) is a tree structure constisting mostly of
+gapi:org.codehaus.groovy.ast.expr.Expression[] (expressions) or
+gapi:org.codehaus.groovy.ast.expr.Statement[] (statements). An easy way to
+learn about the AST is to explore it in a debugger. Once you have the AST,
+you can analyze it to find out information about the code or rewrite it to add
+new functionality.
+
+The local transformation annotation is the simple part. Here is the
+`@WithLogging` one:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_ann,indent=0]
+----
+
+The annotation retention can be `SOURCE` because you won’t need the annotation
+past that. The element type here is `METHOD`, the `@WithLogging` because the annotation
+applies to methods.
+
+But the most important part is the
+`@GroovyASTTransformationClass` annotation. This links the `@WithLogging`
+annotation to the `ASTTransformation` class you will write.
+`gep.WithLoggingASTTransformation` is the fully qualified class name of the
+`ASTTransformation` we are going to write. This line wires the annotation to the transformation.
+
+With this in place, the Groovy compiler is going to invoke
+`gep.WithLoggingASTTransformation` every time an `@WithLogging` is found in a
+source unit. Any breakpoint set within `LoggingASTTransformation` will now
+be hit within the IDE when running the sample script.
+
+The `ASTTransformation` class is a little more complex. Here is the
+very simple, and very naive, transformation to add a method start and
+stop message for `@WithLogging`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_xform,indent=0]
+----
+<1> even if not mandatory, if you write an AST transformation in Groovy, it is highly recommanded to use `CompileStatic`
+because it will improve performance of the compiler.
+<2> annotate with gapi:org.codehaus.groovy.transform.GroovyASTTransformation[] to tell at which compilation phase the
+transform needs to run. Here, it's at the _semantic analysis_ phase.
+<3> implement the `ASTTransformation` interface
+<4> which only has a single `visit` method
+<5> the `nodes` parameter is a 2 AST node array, for which the first one is the annotation node (`@WithLogging`) and
+the second one is the annotated node (the method node)
+<6> create a statement that will print a message when we enter the method
+<7> create a statement that will print a message when we exit the method
+<8> get the method body, which in this case is a `BlockStatement`
+<9> add the enter method message before the first statement of existing code
+<10> append the exit method message after the last statement of existing code
+<11> creates an `ExpressionStatement` wrapping a `MethodCallExpression` corresponding to `this.println("message")`
+
+It is important to notice that for the brevity of this example, we didn't make the necessary checks, such as checking
+that the annotated node is really a `MethodNode`, or that the method body is an instance of `BlockStatement`. This
+exercise is left to the reader.
+
+Note the creation of the new println statements in the
+`createPrintlnAst(String)` method. Creating AST for code is not always
+simple. In this case we need to construct a new method call, passing in
+the receiver/variable, the name of the method, and an argument list.
+When creating AST, it might be helpful to write the code you’re trying
+to create in a Groovy file and then inspect the AST of that code in the
+debugger to learn what to create. Then write a function like
+`createPrintlnAst` using what you learned through the debugger.
+
+In the end:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_example,indent=0]
+----
+
+Produces:
+
+--------------
+Starting greet
+Hello World
+Ending greet
+--------------
+
+NOTE: It is important to note that an AST transformation participates directly in the compilation process. A common
+error by beginners is to have the AST transformation code in the same source tree as a class that uses the transformation.
+Being in the same source tree in general means that they are compiled at the same time. Since the transformation itself
+is going to be compiled in phases and that each compile phase processes all files of the same source unit before going
+to the next one, there's a direct consequence: the transformation will not be compiled before the class that uses it! In
+conclusion, AST transformations need to be precompiled before you can use them. In general, it is as easy as having them
+in a separate source tree.
+
+[[transforms-global]]
+==== Global transformations
+
+Global AST transformation are similar to local one with a major difference: they do not need an annotation, meaning that
+they are applied _globally_, that is to say on each class being compiled. It is therefore very important to limit their
+use to last resort, because it can have a significant impact on the compiler performance.
+
+Following the example of the <<transform-local, local AST transformation>>, imagine that we would like to trace all
+methods, and not only those which are annotated with `@WithLogging`. Basically, we need this code to behave the same
+as the one annotated with `@WithLogging` before:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_example_global,indent=0]
+----
+
+To make this work, there are two steps:
+
+. create the `org.codehaus.groovy.transform.ASTTransformation` descriptor inside the `META-INF/services` directory
+. create the `ASTTransformation` implementation
+
+The descriptor file is required and must be found on classpath. It will contain a single line:
+
+[source,groovy]
+.META-INF/services/org.codehaus.groovy.transform.ASTTransformation
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=xform_descriptor_file,indent=0]
+----
+
+The code for the transformation looks similar to the local case, but instead of using the `ASTNode[]` parameter, we need
+to use the `SourceUnit` instead:
+
+[source,groovy]
+.gep/WithLoggingASTTransformation.groovy
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_xform_global,indent=0]
+----
+<1> even if not mandatory, if you write an AST transformation in Groovy, it is highly recommanded to use `CompileStatic`
+because it will improve performance of the compiler.
+<2> annotate with gapi:org.codehaus.groovy.transform.GroovyASTTransformation[] to tell at which compilation phase the
+transform needs to run. Here, it's at the _semantic analysis_ phase.
+<3> implement the `ASTTransformation` interface
+<4> which only has a single `visit` method
+<5> the `sourceUnit` parameter gives access to the source being compiled, so we get the AST of the current source
+and retrieve the list of methods from this file
+<6> we iterate on each method from the source file
+<7> create a statement that will print a message when we enter the method
+<8> create a statement that will print a message when we exit the method
+<9> get the method body, which in this case is a `BlockStatement`
+<10> add the enter method message before the first statement of existing code
+<11> append the exit method message after the last statement of existing code
+<12> creates an `ExpressionStatement` wrapping a `MethodCallExpression` corresponding to `this.println("message")`
+
+==== AST API guide
+===== AbstractASTTransformation
+
+While you have seen that you can directly implement the `ASTTransformation` interface, in almost all cases you will not
+do this but extend the gapi:org.codehaus.groovy.transform.AbstractASTTransformation[] class. This class provides several
+utility methods that make AST transformations easier to write. Almost all AST transformations included in Groovy
+extend this class.
+
+===== ClassCodeExpressionTransformer
+
+It is a common use case to be able to transform an expression into another. Groovy provides a class which makes it
+very easy to do this: gapi:org.codehaus.groovy.ast.ClassCodeExpressionTransformer[]
+
+To illustrate this, let's create a `@Shout` transformation that will transform all `String` constants in method call
+arguments into their uppercase version. For example:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=shout_example,indent=0]
+----
+
+should print:
+
+----
+HELLO WORLD
+----
+
+Then the code for the transformation can use the `ClassCodeExpressionTransformer` to make this easier:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=shout_xform,indent=0]
+----
+<1> Internally the transformation creates a `ClassCodeExpressionTransformer`
+<2> The transformer needs to return the source unit
+<3> if a constant expression of type string is detected inside an argument list, transform it into its upper case version
+<4> call the transformer on the method being annotated
+
+===== AST Nodes
+
+WARNING: Writing an AST transformation requires a deep knowledge of the internal Groovy API. In particular it requires
+knowledge about the AST classes. Since those classes are internal, there are chances that the API will change in the
+future, meaning that your transformations _could_ break. Despite that warning, the AST has been very stable over time
+and such a thing rarely happens.
+
+Classes of the Abstract Syntax Tree belong to the `org.codehaus.groovy.ast` package. It is recommended to the reader
+to use the Groovy Console, in particular the AST browser tool, to gain knowledge about those classes. However, a good
+resource for learning is the https://github.com/groovy/groovy-core/tree/master/src/test/org/codehaus/groovy/ast/builder[AST Builder]
+test suite.
+
+==== Testing AST transformations
+===== Separating source trees
+
+This section is about good practices with regards to testing AST transformations. Previous sections highlighted the fact
+that to be able to execute an AST transformation, it has to be precompiled. It might sound obvious but a lot of people
+get caught on this, trying to use an AST transformation in the same source tree as where it is defined.
+
+The first tip for testing AST transformation is therefore to separate test sources from the sources of the transform.
+Again, this is nothing but best practices, but you must make sure that your build too does actually compile them separately.
+This is the case by default with both http://maven.apache.org[Apache Maven] and http://gradle.org[Gradle].
+
+===== Debugging AST transformations
+
+It is very handy to be able to put a breakpoint in an AST transformation, so that you can debug your code in the IDE.
+However, you might be surprised to see that your IDE doesn't stop on the breakpoint. The reason is actually simple: if
+your IDE uses the Groovy compiler to compile the unit tests for your AST transformation, then the compilation is triggered
+from the IDE, but the process which will compile the files doesn't have debugging options. It's only when the test case
+is executed that the debugging options are set on the virtual machine. In short: it is too late, the class has been compiled
+already, and your transformation is already applied.
+
+A very easy workaround is to use the `GroovyTestCase` class which provides an `assertScript` method. This means that
+instead of writing this in a test case:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=breakpoint_missed,indent=0]
+----
+
+You should write:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=breakpoint_hit,indent=0]
+----
+
+The difference is that when you use `assertScript`, the code in the `assertScript` block is compiled *when the
+unit test is executed*. That is to say that this time, the `Subject` class will be compiled with debugging active, and
+the breakpoint is going to be hit.
+
+===== ASTTest
+
+Last but not least, testing an AST transformation is also about testing the state of the AST *during compilation*. Groovy
+provides a tool named `@ASTTest` for this: it is an annotation that will let you add assertions on an abstract syntax
+tree. Please check the <<xform-ASTTest,documentation for ASTTest>> for more details.
+
+==== External references
+
+If you are interested in a step-by-step tutorial about writing AST transformations, you can follow
+http://melix.github.io/ast-workshop/[this workshop].

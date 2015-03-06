@@ -1351,7 +1351,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         AtomicReference<ClassNode> result = new AtomicReference<ClassNode>();
         if (existsProperty(subExp, true, new PropertyLookupVisitor(result))) {
             intf = LIST_TYPE.getPlainNodeReference();
-            intf.setGenericsTypes(new GenericsType[] { new GenericsType(getWrapper(result.get()))});
+            ClassNode itemType = result.get();
+            intf.setGenericsTypes(new GenericsType[] { new GenericsType(wrapTypeIfNecessary(itemType))});
             return intf;
         }
         return null;
@@ -2602,7 +2603,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                     Expression actualArgument = expressions.get(j);
                                     ClassNode actualType = getType(actualArgument);
                                     if (genericTypeIndex!=null && genericTypeIndex instanceof ConstantExpression) {
-                                        int gti = Integer.valueOf(genericTypeIndex.getText());
+                                        int gti = Integer.parseInt(genericTypeIndex.getText());
                                         ClassNode paramType = methodParam.getType(); // type annotated with @DelegatesTo.Target
                                         GenericsType[] genericsTypes = paramType.getGenericsTypes();
                                         if (genericsTypes==null) {
@@ -2866,16 +2867,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         if (chosenReceiver==null) {
                             chosenReceiver = Receiver.make(directMethodCallCandidate.getDeclaringClass());
-                            if (chosenReceiver==null) {
-                                chosenReceiver = owners.get(0);
-                            }
                         }
 
-                        ClassNode returnType = null;
-
-                        if (returnType == null) {
-                            returnType = getType(directMethodCallCandidate);
-                        }
+                        ClassNode returnType = getType(directMethodCallCandidate);
 
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, directMethodCallCandidate);
@@ -2894,7 +2888,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             returnType = adjustWithTraits(directMethodCallCandidate,chosenReceiver.getType(), args, returnType);
                             storeType(call, returnType);
                             storeTargetMethod(call, directMethodCallCandidate);
-                            String data = chosenReceiver != null ? chosenReceiver.getData() : null;
+                            String data = chosenReceiver.getData();
                             if (data != null) {
                                 // the method which has been chosen is supposed to be a call on delegate or owner
                                 // so we store the information so that the static compiler may reuse it
@@ -4129,8 +4123,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         if (!isUsingGenericsOrIsArrayUsingGenerics(returnType)) return returnType;
         if (getGenericsWithoutArray(returnType)==null) return returnType;
-
         Map<String, GenericsType> resolvedPlaceholders = resolvePlaceHoldersFromDeclaration(receiver, getDeclaringClass(method, arguments), method, method.isStatic());
+        GenericsUtils.extractPlaceholders(receiver, resolvedPlaceholders);
         if (resolvedPlaceholders.isEmpty()) return returnType;
         Map<String, GenericsType> placeholdersFromContext = extractGenericsParameterMapOfThis(typeCheckingContext.getEnclosingMethod());
         applyGenericsConnections(placeholdersFromContext,resolvedPlaceholders);
@@ -4151,7 +4145,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     actualType = actualType.getComponentType();
                 }
                 if (isUsingGenericsOrIsArrayUsingGenerics(type)) {
-                    if (implementsInterfaceOrIsSubclassOf(actualType, CLOSURE_TYPE) && !implementsInterfaceOrIsSubclassOf(type, CLOSURE_TYPE)) {
+                    if (implementsInterfaceOrIsSubclassOf(actualType, CLOSURE_TYPE) &&
+                            isSAMType(type)) {
                         // implicit closure coercion in action!
                         Map<String,GenericsType> pholders = applyGenericsContextToParameterClass(resolvedPlaceholders, type);
                         actualType = convertClosureTypeToSAMType(expressions.get(i), actualType, type, pholders);

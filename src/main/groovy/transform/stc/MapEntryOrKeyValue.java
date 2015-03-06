@@ -101,7 +101,7 @@ public class MapEntryOrKeyValue extends ClosureSignatureHint {
                     String key = keyValue[0];
                     String value = keyValue[1];
                     if ("argNum".equals(key)) {
-                        pIndex = Integer.valueOf(value);
+                        pIndex = Integer.parseInt(value);
                     } else if ("index".equals(key)) {
                         generateIndex = Boolean.valueOf(value);
                     } else {

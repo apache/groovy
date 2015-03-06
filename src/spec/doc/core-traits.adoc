@@ -174,7 +174,7 @@ in the implementing class, the public field will appear as:
 String my_package_Foo__bar
 ----
 
-WARNING: While traits support public fields, it is not recommanded to use them and considered as a bad practice.
+WARNING: While traits support public fields, it is not recommended to use them and considered as a bad practice.
 
 == Composition of behaviors
 
@@ -404,7 +404,7 @@ This works but this approach has drawbacks:
 . the logging logic is bound to a "concrete" handler
 . we have an explicit reference to `DefaultHandler` in the `on` method, meaning that if we happen to change the trait that our class implements, code will be broken
 
-As an alternative, we can write another trait which responsability is limited to logging:
+As an alternative, we can write another trait which responsibility is limited to logging:
 
 [source,groovy]
 -----
@@ -454,7 +454,7 @@ Which means:
 
 * messages will first go through the logging handler
 * the logging handler calls `super` which will delegate to the next handler, which is the `SayHandler`
-* if the message starts with `say`, then the hanlder consumes the message
+* if the message starts with `say`, then the handler consumes the message
 * if not, the `say` handler delegates to the next handler in the chain
 
 This approach is very powerful because it allows you to write handlers that do not know each other and yet let you
@@ -592,7 +592,7 @@ the trait in its interface list, the behavior will be borrowed from the trait im
 
 This feature is in particular useful when you don't have access to the super class source code. It can be used to
 mock methods or force a particular implementation of a method in a subclass. It lets you refactor your code to keep
-the overriden logic in a single trait and inherit a new behavior just by implementing it. The alternative, of course,
+the overridden logic in a single trait and inherit a new behavior just by implementing it. The alternative, of course,
 is to override the method in *every* place you would have used the new code.
 
 
@@ -665,7 +665,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfi
 <4> a static method _init_ is made available to the implementing class
 <5> the static field is _remapped_ to avoid the diamond issue
 
-As usual, it is not recommanded to use public fields. Anyway, should you want this, you must understand that the following code would fail:
+As usual, it is not recommended to use public fields. Anyway, should you want this, you must understand that the following code would fail:
 
 [source,groovy]
 -----
@@ -720,7 +720,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcoupl
 ----
 
 The reason is that the `sum` method accesses the _fields_ of the trait. So it is using the `x` and `y` values defined
-in the trait. If you want to use the values from the implementing class, then you need to derefencence fields by using
+in the trait. If you want to use the values from the implementing class, then you need to dereference fields by using
 getters and setters, like in this last example:
 
 [source,groovy]

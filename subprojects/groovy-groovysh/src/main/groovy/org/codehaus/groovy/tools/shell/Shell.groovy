@@ -69,16 +69,18 @@ class Shell
         //       then ask the registry for the command for a given line?
         //
 
-        List<String> args = CommandArgumentParser.parseLine(line, parsedArgs == null ? 1 : -1)
+        // command id is first word, unless empty
+        Command command = null;
+        List<String> linetokens = line.trim().tokenize()
+        assert linetokens.size() > 0
 
-        assert args.size() > 0
-
-        Command command = registry.find(args[0])
-
-        if (command != null && args.size() > 1 && parsedArgs != null) {
-            parsedArgs.addAll(args[1..-1])
+        if (linetokens[0].length() > 0) {
+            command = registry.find(linetokens[0])
+            if (command != null && linetokens.size() > 1 && parsedArgs != null) {
+                List<String> args = CommandArgumentParser.parseLine(line, parsedArgs == null ? 1 : -1)
+                parsedArgs.addAll(args[1..-1])
+            }
         }
-
         return command
     }
 

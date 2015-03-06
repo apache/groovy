@@ -461,4 +461,30 @@ class ArrayTest extends GroovyTestCase {
         assert "1, 2" == a7.join(", ")
         assert "1, 2" == a8.join(", ")
     }
+
+    void testSum() {
+        def a1 = [1, 2, 3] as byte[]
+        def a2 = [1, 2, 3] as short[]
+        def a3 = [1, 2, 3] as int[]
+        def a4 = [1, 2, 3] as long[]
+        def a5 = [1, 2, 3] as char[]
+        def a6 = [1, 2, 3] as float[]
+        def a7 = [1, 2, 3] as double[]
+
+        assert ((byte) 6) == a1.sum()
+        assert ((short) 6) == a2.sum()
+        assert ((int) 6) == a3.sum()
+        assert ((long) 6) == a4.sum()
+        assert ((char) 6) == a5.sum()
+        assert ((float) 6) == a6.sum()
+        assert ((double) 6) == a7.sum()
+
+        assert ((byte) 10) == a1.sum((byte) 4)
+        assert ((short) 10) == a2.sum((short) 4)
+        assert ((int) 10) == a3.sum(4)
+        assert ((long) 10) == a4.sum(4)
+        assert ((char) 10) == a5.sum((char) 4)
+        assert ((float) 10) == a6.sum(4)
+        assert ((double) 10) == a7.sum(4)
+    }
 }

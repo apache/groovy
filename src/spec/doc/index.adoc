@@ -1,6 +1,5 @@
 = Groovy Language Documentation
 :doctype: book
-:sectanchors:
 ifndef::projectdir[:projectdir: ../../..]
 
 include::{projectdir}/src/spec/doc/core-introduction.adoc[]
@@ -47,15 +46,20 @@ include::{projectdir}/src/spec/doc/core-testing-guide.adoc[leveloffset=+2]
 
 include::{projectdir}/subprojects/groovy-json/{specfolder}/json-userguide.adoc[leveloffset=+2]
 
-=== Interacting with a SQL database (TBD)
+=== Interacting with a SQL database
+
+(TBD)
+
 
 include::{projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc[leveloffset=+2]
 
-=== Scripting Ant tasks (TBD)
+=== Scripting Ant tasks
+
+Groovy integrates very well with http://ant.apache.org[Apache Ant] thanks to <<_antbuilder,AntBuilder>>.
 
 include::{projectdir}/src/spec/doc/template-engines.adoc[leveloffset=+2]
 
-=== Servlet support (TBD)
+include::{projectdir}/subprojects/groovy-servlet/{specfolder}/servlet-userguide.adoc[leveloffset=+2]
 
 include::{projectdir}/src/spec/doc/guide-integrating.adoc[leveloffset=+2]
 
@@ -63,8 +67,14 @@ include::{projectdir}/src/spec/doc/core-domain-specific-languages.adoc[leveloffs
 
 include::{projectdir}/subprojects/groovy-jmx/src/spec/doc/jmx.adoc[leveloffset=+2]
 
-=== Creating Swing UIs (TBD)
-=== Security (TBD)
+=== Creating Swing UIs
+
+Creating Swing UIs is made easy thanks to the use of <<swingbuilder,SwingBuilder>>.
+
+=== Security
+
+(TBD)
+
 
 include::{projectdir}/src/spec/doc/design-pattern-in-groovy.adoc[leveloffset=+2]
 

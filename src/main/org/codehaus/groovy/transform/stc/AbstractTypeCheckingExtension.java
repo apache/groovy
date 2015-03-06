@@ -404,6 +404,10 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         context.pushEnclosingMethod(methodNode);
     }
 
+    public Set<MethodNode> getGeneratedMethods() {
+        return generatedMethods;
+    }
+
     public List<BinaryExpression> getEnclosingBinaryExpressionStack() {
         return context.getEnclosingBinaryExpressionStack();
     }

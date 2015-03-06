@@ -353,7 +353,7 @@ instance of `Thing`, it fails with a `groovy.lang.MissingPropertyException`. Des
 the `Person` class, the owner is not used.
 
 NOTE: A comprehensive explanation about how to use this feature to develop DSLs can be found in a
-link:dsls.html[dedicated section of the manual].
+link:core-domain-specific-languages.html[dedicated section of the manual].
 
 == Closures in GStrings
 
@@ -371,10 +371,10 @@ The code behaves as you would expect, but what happens if you add:
 include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_eager_outro,indent=0]
 ----
 
-You will see that the assert fails! There are two reaons for this:
+You will see that the assert fails! There are two reasons for this:
 
 * a GString only evaluates lazily the `toString` representation of values
-* the syntax `${x}` in a GString does *not* represent a closure but an *expression* to `$x`, evalutated when the GString
+* the syntax `${x}` in a GString does *not* represent a closure but an *expression* to `$x`, evaluated when the GString
 is created.
 
 In our example, the `GString` is created with an expression referencing `x`. When the `GString` is created, the *value*
@@ -453,7 +453,7 @@ Similarily to left currying, it is possible to set the right-most parameter of a
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=left_curry,indent=0]
+include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=right_curry,indent=0]
 ----
 <1> the `nCopies` closure defines two parameters
 <2> `rcurry` will set the last parameter to `bla`, creating a new closure (function) which accepts a single `int`

@@ -259,7 +259,7 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurp
 ----
 
 In this case the number 2 has been hardcoded but imagine that value
-could have come from any other source (Database...etc)
+could have come from any other source (database...etc).
 
 == Creating XML
 
@@ -405,7 +405,7 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBu
 <2> Using `mkp` to generate an escaped value
 <3> Checking both assumptions were true
 
-Here is another example to show the use of `mkp` property accesible
+Here is another example to show the use of `mkp` property accessible
 from within the `bind` method scope when using
 `StreamingMarkupBuilder`:
 

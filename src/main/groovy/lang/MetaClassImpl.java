@@ -541,7 +541,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         // GROOVY-4922: Due to a numbering scheme change, we must find the super$X$method which exists
                         // with the highest number. If we don't, no method may be found, leading to a stack overflow
                         String[] decomposedMopName = decomposeMopName(mopName);
-                        int distance = Integer.valueOf(decomposedMopName[1]);
+                        int distance = Integer.parseInt(decomposedMopName[1]);
                         while (distance>0) {
                             String fixedMopName = decomposedMopName[0] + distance + decomposedMopName[2];
                             int index = Arrays.binarySearch(mopMethods, fixedMopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);

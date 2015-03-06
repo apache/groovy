@@ -1,7 +1,7 @@
 = Bean Scripting Framework
 
 WARNING: The http://commons.apache.org/proper/commons-bsf/[Bean Scripting Framework] is an attempt to create an API
-to allow calling scripting languages from Java. It hasn't been updated for long and abandonned in favor of the
+to allow calling scripting languages from Java. It hasn't been updated for long and abandoned in favor of the
 standard <<jsr223,JSR-223>> API.
 
 The BSF engine for Groovy is implemented by the `org.codehaus.groovy.bsf.GroovyEngine` class. However, that fact is

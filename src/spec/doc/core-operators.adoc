@@ -585,7 +585,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=identity_op,indent
 === Coercion operator
 
 The coercion operator (`as`) is a variant of casting. Coercion converts object from one type to another *without* them
-being compatible for assignement. Let's take an example:
+being compatible for assignment. Let's take an example:
 
 [source,groovy]
 ----

@@ -158,6 +158,14 @@ class ResourceGroovyMethodsTest extends GroovyTestCase {
 		assertEquals(totalSize, ResourceGroovyMethods.directorySize(testDir))
 		delete(testDir)
 	}
+    
+    void testRelativePath() {
+        assertEquals("b", ResourceGroovyMethods.relativePath(new File("a"), new File("a/b")))
+        assertEquals("b/a", ResourceGroovyMethods.relativePath(new File("a"), new File("a/b/a")))
+        assertEquals("../b", ResourceGroovyMethods.relativePath(new File("a"), new File("b")))
+        assertEquals("../../b", ResourceGroovyMethods.relativePath(new File("a/b"), new File("b")))
+        assertEquals("", ResourceGroovyMethods.relativePath(new File("a"), new File("a")))
+    }
 
 	/**
 	 * Creates empty file of size specified.

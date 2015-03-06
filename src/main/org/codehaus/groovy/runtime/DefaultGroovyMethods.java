@@ -5515,6 +5515,90 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sums the items in an array.
+     * <pre class="groovyTestCase">assert (1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum()</pre>
+     *
+     * @param self The array of values to add together
+     * @return The sum of all of the items
+     * @since 2.4.2
+     */
+    public static byte sum(byte[] self) {
+        return sum(self, (byte) 0);
+    }
+
+    /**
+     * Sums the items in an array.
+     * <pre class="groovyTestCase">assert (1+2+3+4 as short) == ([1,2,3,4] as short[]).sum()</pre>
+     *
+     * @param self The array of values to add together
+     * @return The sum of all of the items
+     * @since 2.4.2
+     */
+    public static short sum(short[] self) {
+        return sum(self, (short) 0);
+    }
+
+    /**
+     * Sums the items in an array.
+     * <pre class="groovyTestCase">assert 1+2+3+4 == ([1,2,3,4] as int[]).sum()</pre>
+     *
+     * @param self The array of values to add together
+     * @return The sum of all of the items
+     * @since 2.4.2
+     */
+    public static int sum(int[] self) {
+        return sum(self, 0);
+    }
+
+    /**
+     * Sums the items in an array.
+     * <pre class="groovyTestCase">assert (1+2+3+4 as long) == ([1,2,3,4] as long[]).sum()</pre>
+     *
+     * @param self The array of values to add together
+     * @return The sum of all of the items
+     * @since 2.4.2
+     */
+    public static long sum(long[] self) {
+        return sum(self, (long) 0);
+    }
+
+    /**
+     * Sums the items in an array.
+     * <pre class="groovyTestCase">assert (1+2+3+4 as char) == ([1,2,3,4] as char[]).sum()</pre>
+     *
+     * @param self The array of values to add together
+     * @return The sum of all of the items
+     * @since 2.4.2
+     */
+    public static char sum(char[] self) {
+        return sum(self, (char) 0);
+    }
+
+    /**
+     * Sums the items in an array.
+     * <pre class="groovyTestCase">assert (1+2+3+4 as float) == ([1,2,3,4] as float[]).sum()</pre>
+     *
+     * @param self The array of values to add together
+     * @return The sum of all of the items
+     * @since 2.4.2
+     */
+    public static float sum(float[] self) {
+        return sum(self, (float) 0);
+    }
+
+    /**
+     * Sums the items in an array.
+     * <pre class="groovyTestCase">assert (1+2+3+4 as double) == ([1,2,3,4] as double[]).sum()</pre>
+     *
+     * @param self The array of values to add together
+     * @return The sum of all of the items
+     * @since 2.4.2
+     */
+    public static double sum(double[] self) {
+        return sum(self, (double) 0);
+    }
+
+    /**
      * @deprecated Use the Iterable version of sum instead
      * @see #sum(Iterable, Object)
      * @since 1.5.0
@@ -5582,6 +5666,125 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sums the items in an array, adding the result to some initial value.
+     * <pre class="groovyTestCase">assert (5+1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum(5)</pre>
+     *
+     * @param self         an array of values to sum
+     * @param initialValue the items in the array will be summed to this initial value
+     * @return The sum of all of the items.
+     * @since 2.4.2
+     */
+    public static byte sum(byte[] self, byte initialValue) {
+        byte s = initialValue;
+        for (byte v : self) {
+            s += v;
+        }
+        return s;
+    }
+
+    /**
+     * Sums the items in an array, adding the result to some initial value.
+     * <pre class="groovyTestCase">assert (5+1+2+3+4 as short) == ([1,2,3,4] as short[]).sum(5)</pre>
+     *
+     * @param self         an array of values to sum
+     * @param initialValue the items in the array will be summed to this initial value
+     * @return The sum of all of the items.
+     * @since 2.4.2
+     */
+    public static short sum(short[] self, short initialValue) {
+        short s = initialValue;
+        for (short v : self) {
+            s += v;
+        }
+        return s;
+    }
+
+    /**
+     * Sums the items in an array, adding the result to some initial value.
+     * <pre class="groovyTestCase">assert 5+1+2+3+4 == ([1,2,3,4] as int[]).sum(5)</pre>
+     *
+     * @param self         an array of values to sum
+     * @param initialValue the items in the array will be summed to this initial value
+     * @return The sum of all of the items.
+     * @since 2.4.2
+     */
+    public static int sum(int[] self, int initialValue) {
+        int s = initialValue;
+        for (int v : self) {
+            s += v;
+        }
+        return s;
+    }
+
+    /**
+     * Sums the items in an array, adding the result to some initial value.
+     * <pre class="groovyTestCase">assert (5+1+2+3+4 as long) == ([1,2,3,4] as long[]).sum(5)</pre>
+     *
+     * @param self         an array of values to sum
+     * @param initialValue the items in the array will be summed to this initial value
+     * @return The sum of all of the items.
+     * @since 2.4.2
+     */
+    public static long sum(long[] self, long initialValue) {
+        long s = initialValue;
+        for (long v : self) {
+            s += v;
+        }
+        return s;
+    }
+
+    /**
+     * Sums the items in an array, adding the result to some initial value.
+     * <pre class="groovyTestCase">assert (5+1+2+3+4 as char) == ([1,2,3,4] as char[]).sum(5)</pre>
+     *
+     * @param self         an array of values to sum
+     * @param initialValue the items in the array will be summed to this initial value
+     * @return The sum of all of the items.
+     * @since 2.4.2
+     */
+    public static char sum(char[] self, char initialValue) {
+        char s = initialValue;
+        for (char v : self) {
+            s += v;
+        }
+        return s;
+    }
+
+    /**
+     * Sums the items in an array, adding the result to some initial value.
+     * <pre class="groovyTestCase">assert (5+1+2+3+4 as float) == ([1,2,3,4] as float[]).sum(5)</pre>
+     *
+     * @param self         an array of values to sum
+     * @param initialValue the items in the array will be summed to this initial value
+     * @return The sum of all of the items.
+     * @since 2.4.2
+     */
+    public static float sum(float[] self, float initialValue) {
+        float s = initialValue;
+        for (float v : self) {
+            s += v;
+        }
+        return s;
+    }
+
+    /**
+     * Sums the items in an array, adding the result to some initial value.
+     * <pre class="groovyTestCase">assert (5+1+2+3+4 as double) == ([1,2,3,4] as double[]).sum(5)</pre>
+     *
+     * @param self         an array of values to sum
+     * @param initialValue the items in the array will be summed to this initial value
+     * @return The sum of all of the items.
+     * @since 2.4.2
+     */
+    public static double sum(double[] self, double initialValue) {
+        double s = initialValue;
+        for (double v : self) {
+            s += v;
+        }
+        return s;
+    }
+
+    /**
      * @deprecated Use the Iterable version of sum instead
      * @see #sum(Iterable, Closure)
      * @since 1.0
@@ -5595,7 +5798,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sums the result of apply a closure to each item of an Iterable.
      * <code>coll.sum(closure)</code> is equivalent to:
      * <code>coll.collect(closure).sum()</code>.
-     * <pre class="groovyTestCase">assert 4+6+10+12 == [2,3,5,6].sum() { it * 2 }</pre>
+     * <pre class="groovyTestCase">assert 4+6+10+12 == [2,3,5,6].sum { it * 2 }</pre>
      *
      * @param self    an Iterable
      * @param closure a single parameter closure that returns a numeric value.

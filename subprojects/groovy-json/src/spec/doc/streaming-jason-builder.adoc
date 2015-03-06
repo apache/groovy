@@ -1,0 +1,26 @@
+= StreamingJsonBuilder
+
+Unlike `JsonBuilder` which creates a data structure in memory, which is handy in those situations where you want to alter the structure programmatically before output,
+`StreamingJsonBuilder` directly streams to a writer without any intermediate memory data structure.
+If you do not need to modify the structure and want a more memory-efficient approach, use `StreamingJsonBuilder`.
+
+The usage of `StreamingJsonBuilder` is similar to `JsonBuilder`. In order to create this Json string:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/StreamingJsonBuilderTest.groovy[tags=json_string,indent=0]
+----
+
+you use a `StreamingJsonBuilder` like this:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/StreamingJsonBuilderTest.groovy[tags=streaming_json_builder,indent=0]
+----
+
+We use https://github.com/lukas-krecan/JsonUnit[JsonUnit] to check the expected result:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/StreamingJsonBuilderTest.groovy[tags=json_assert,indent=0]
+----
