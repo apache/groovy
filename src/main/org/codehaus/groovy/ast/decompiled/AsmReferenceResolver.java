@@ -49,6 +49,11 @@ public class AsmReferenceResolver {
     }
 
     public ClassNode resolveClassNullable(String className) {
+        ClassNode beingCompiled = unit.getAST().getClass(className);
+        if (beingCompiled != null) {
+            return beingCompiled;
+        }
+
         ClassNodeResolver.LookupResult lookupResult = resolver.resolveName(className, unit);
         return lookupResult == null ? null :lookupResult.getClassNode();
     }
