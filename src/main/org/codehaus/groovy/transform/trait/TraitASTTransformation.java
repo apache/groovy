@@ -19,6 +19,7 @@ import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -40,8 +41,10 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
+import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -74,6 +77,8 @@ import java.util.Set;
 public class TraitASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
     public static final String DO_DYNAMIC = TraitReceiverTransformer.class+".doDynamic";
+    public static final String POST_TYPECHECKING_REPLACEMENT = TraitReceiverTransformer.class+".replacement";
+
     private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
 
     private static final ClassNode OVERRIDE_CLASSNODE = ClassHelper.make(Override.class);
@@ -218,6 +223,12 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         if (fieldHelper != null) {
             unit.getAST().addClass(fieldHelper);
         }
+
+        // resolve scope (for closures)
+        resolveScope(helper);
+        if (fieldHelper!=null) {
+            resolveScope(fieldHelper);
+        }
     }
 
     private MethodNode createInitMethod(final boolean isStatic, final ClassNode cNode, final ClassNode helper) {
@@ -244,6 +255,16 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 unit, compilationUnit.getTransformLoader()
         );
         collector.visitClass(helper);
+        // Perform an additional phase which has to be done *after* type checking
+        compilationUnit.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
+            @Override
+            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
+                if (classNode==helper) {
+                    PostTypeCheckingExpressionReplacer replacer = new PostTypeCheckingExpressionReplacer(source);
+                    replacer.visitClass(helper);
+                }
+            }
+        }, CompilePhase.INSTRUCTION_SELECTION.getPhaseNumber());
     }
 
     /**
@@ -515,4 +536,27 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             super.addDefaultParameterMethods(node);
         }
     }
+
+    private static class PostTypeCheckingExpressionReplacer extends ClassCodeExpressionTransformer {
+        private final SourceUnit sourceUnit;
+
+        private PostTypeCheckingExpressionReplacer(final SourceUnit sourceUnit) {
+            this.sourceUnit = sourceUnit;
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return sourceUnit;
+        }
+
+        @Override
+        public Expression transform(final Expression exp) {
+            Expression replacement = exp.getNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT);
+            if (replacement!=null) {
+                return replacement;
+            }
+            return super.transform(exp);
+        }
+    }
+
 }
