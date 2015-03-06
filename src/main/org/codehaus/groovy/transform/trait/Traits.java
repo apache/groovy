@@ -64,7 +64,7 @@ public abstract class Traits {
     static final String INIT_METHOD = "$init$";
     static final String STATIC_INIT_METHOD = "$static$init$";
     public static final String THIS_OBJECT = "$self";
-    static final String STATIC_THIS_OBJECT = "$static$self";
+    public static final String STATIC_THIS_OBJECT = "$static$self";
     static final String STATIC_FIELD_PREFIX = "$static";
     static final String FIELD_PREFIX = "$ins";
     static final String PUBLIC_FIELD_PREFIX = "$0";
@@ -96,6 +96,14 @@ public abstract class Traits {
             return owner.getGenericsTypes()[0].getType();
         }
         return owner;
+    }
+
+    public static ClassNode findHelper(final ClassNode trait) {
+        return findHelpers(trait).getHelper();
+    }
+
+    public static ClassNode findFieldHelper(final ClassNode trait) {
+        return findHelpers(trait).getFieldHelper();
     }
 
     static TraitHelpersTuple findHelpers(final ClassNode trait) {
