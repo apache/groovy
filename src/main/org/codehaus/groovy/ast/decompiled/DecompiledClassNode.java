@@ -17,7 +17,9 @@
 package org.codehaus.groovy.ast.decompiled;
 
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.classgen.Verifier;
 
+import java.lang.reflect.Modifier;
 import java.util.List;
 
 /**
@@ -61,6 +63,20 @@ public class DecompiledClassNode extends ClassNode {
             bound = idx - 1;
         }
         return data.accessModifiers;
+    }
+
+    public long getCompilationTimeStamp() {
+        if (classData.fields != null) {
+            for (FieldStub field : classData.fields) {
+                if (Modifier.isStatic(field.accessModifiers)) {
+                    Long timestamp = Verifier.getTimestampFromFieldName(field.fieldName);
+                    if (timestamp != null) {
+                        return timestamp;
+                    }
+                }
+            }
+        }
+        return Long.MAX_VALUE;
     }
 
     @Override

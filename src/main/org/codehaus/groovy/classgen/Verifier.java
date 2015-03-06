@@ -1140,6 +1140,17 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     }
 
+    public static Long getTimestampFromFieldName(String fieldName) {
+        if (fieldName.startsWith(__TIMESTAMP__)) {
+            try {
+                return Long.decode(fieldName.substring(__TIMESTAMP__.length()));
+            } catch (NumberFormatException e) {
+                return Long.MAX_VALUE;
+            }
+        }
+        return null;
+    }
+
     public static long getTimestamp(Class clazz) {
         if (clazz.getClassLoader() instanceof GroovyClassLoader.InnerLoader) {
             GroovyClassLoader.InnerLoader innerLoader = (GroovyClassLoader.InnerLoader) clazz.getClassLoader();
@@ -1149,13 +1160,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         final Field[] fields = clazz.getFields();
         for (int i = 0; i != fields.length; ++i) {
             if (Modifier.isStatic(fields[i].getModifiers())) {
-                final String name = fields[i].getName();
-                if (name.startsWith(__TIMESTAMP__)) {
-                    try {
-                        return Long.decode(name.substring(__TIMESTAMP__.length())).longValue();
-                    } catch (NumberFormatException e) {
-                        return Long.MAX_VALUE;
-                    }
+                Long timestamp = getTimestampFromFieldName(fields[i].getName());
+                if (timestamp != null) {
+                    return timestamp;
                 }
             }
         }

@@ -19,15 +19,14 @@ import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.decompiled.AsmDecompiler;
 import org.codehaus.groovy.ast.decompiled.AsmReferenceResolver;
 import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.classgen.Verifier;
 import org.objectweb.asm.Opcodes;
 
-import java.io.*;
-import java.lang.reflect.Modifier;
+import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -307,20 +306,7 @@ public class ClassNodeResolver {
             return Verifier.getTimestamp(cls.getTypeClass());
         }
 
-        for (FieldNode field : cls.getFields()) {
-            if (Modifier.isStatic(field.getModifiers())) {
-                final String name = field.getName();
-                if (name.startsWith(Verifier.__TIMESTAMP__)) {
-                    try {
-                        return Long.decode(name.substring(Verifier.__TIMESTAMP__.length()));
-                    } catch (NumberFormatException e) {
-                        return Long.MAX_VALUE;
-                    }
-                }
-            }
-        }
-
-        return Long.MAX_VALUE;
+        return ((DecompiledClassNode) cls).getCompilationTimeStamp();
     }
 
     /**
