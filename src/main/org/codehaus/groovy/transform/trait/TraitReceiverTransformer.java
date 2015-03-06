@@ -88,57 +88,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     public Expression transform(final Expression exp) {
         ClassNode weavedType = weaved.getOriginType();
         if (exp instanceof BinaryExpression) {
-            Expression leftExpression = ((BinaryExpression) exp).getLeftExpression();
-            Expression rightExpression = ((BinaryExpression) exp).getRightExpression();
-            Token operation = ((BinaryExpression) exp).getOperation();
-            if (operation.getText().equals("=")) {
-                String leftFieldName = null;
-                // it's an assignment
-                if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).getAccessedVariable() instanceof FieldNode) {
-                    leftFieldName = ((VariableExpression) leftExpression).getAccessedVariable().getName();
-                } else if (leftExpression instanceof FieldExpression) {
-                    leftFieldName = ((FieldExpression) leftExpression).getFieldName();
-                } else if (leftExpression instanceof PropertyExpression
-                        && (((PropertyExpression) leftExpression).isImplicitThis() || "this".equals(((PropertyExpression) leftExpression).getObjectExpression().getText()))) {
-                    leftFieldName = ((PropertyExpression) leftExpression).getPropertyAsString();
-                    FieldNode fn = tryGetFieldNode(weavedType, leftFieldName);
-                    if (fieldHelper == null || fn==null && !fieldHelper.hasPossibleMethod(Traits.helperSetterName(new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null)), rightExpression)) {
-                        return createAssignmentToField(rightExpression, operation, leftFieldName);
-                    }
-                }
-                if (leftFieldName!=null) {
-                    FieldNode fn = weavedType.getDeclaredField(leftFieldName);
-                    FieldNode staticField = tryGetFieldNode(weavedType, leftFieldName);
-                    if (fn==null) {
-                        fn = new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null);
-                    }
-                    Expression receiver = createFieldHelperReceiver();
-                    boolean isStatic = staticField!=null && staticField.isStatic();
-                    if (fn.isStatic()) { // DO NOT USE isStatic variable here!
-                        receiver = new PropertyExpression(receiver, "class");
-                    }
-                    String method = Traits.helperSetterName(fn);
-                    MethodCallExpression mce = new MethodCallExpression(
-                            receiver,
-                            method,
-                            new ArgumentListExpression(super.transform(rightExpression))
-                    );
-                    mce.setSourcePosition(exp);
-                    mce.setImplicitThis(false);
-                    markDynamicCall(mce, staticField, isStatic);
-                    return mce;
-                }
-            }
-            Expression leftTransform = transform(leftExpression);
-            Expression rightTransform = transform(rightExpression);
-            Expression ret =
-                    exp instanceof DeclarationExpression ?new DeclarationExpression(
-                            leftTransform, operation, rightTransform
-                    ):
-                    new BinaryExpression(leftTransform, operation, rightTransform);
-            ret.setSourcePosition(exp);
-            ret.copyNodeMetaData(exp);
-            return ret;
+            return transformBinaryExpression((BinaryExpression)exp, weavedType);
         } else if (exp instanceof StaticMethodCallExpression) {
             StaticMethodCallExpression call = (StaticMethodCallExpression) exp;
             ClassNode ownerType = call.getOwnerType();
@@ -163,16 +113,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 return transformSuperMethodCall(call);
             }
         } else if (exp instanceof FieldExpression) {
-            FieldNode field = ((FieldExpression) exp).getField();
-            MethodCallExpression mce = new MethodCallExpression(
-                    createFieldHelperReceiver(),
-                    Traits.helperGetterName(field),
-                    ArgumentListExpression.EMPTY_ARGUMENTS
-            );
-            mce.setSourcePosition(exp);
-            mce.setImplicitThis(false);
-            markDynamicCall(mce, field, field.isStatic());
-            return mce;
+            return transformFieldExpression((FieldExpression)exp);
         } else if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;
             Variable accessedVariable = vexp.getAccessedVariable();
@@ -254,11 +195,83 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             );
             mce.setImplicitThis(false);
             mce.setSourcePosition(exp);
-            return mce;
+            ((ClosureExpression) exp).getCode().visit(this);
+            // The rewrite we do is causing some troubles with type checking, which will
+            // not be able to perform closure parameter type inference
+            // so we store the replacement, which will be done *after* type checking.
+            exp.putNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT, mce);
+            return exp;
         }
 
         // todo: unary expressions (field++, field+=, ...)
         return super.transform(exp);
+    }
+
+    private Expression transformFieldExpression(final FieldExpression exp) {
+        FieldNode field = exp.getField();
+        MethodCallExpression mce = new MethodCallExpression(
+                createFieldHelperReceiver(),
+                Traits.helperGetterName(field),
+                ArgumentListExpression.EMPTY_ARGUMENTS
+        );
+        mce.setSourcePosition(exp);
+        mce.setImplicitThis(false);
+        markDynamicCall(mce, field, field.isStatic());
+        return mce;
+    }
+
+    private Expression transformBinaryExpression(final BinaryExpression exp, final ClassNode weavedType) {
+        Expression leftExpression = exp.getLeftExpression();
+        Expression rightExpression = exp.getRightExpression();
+        Token operation = exp.getOperation();
+        if (operation.getText().equals("=")) {
+            String leftFieldName = null;
+            // it's an assignment
+            if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).getAccessedVariable() instanceof FieldNode) {
+                leftFieldName = ((VariableExpression) leftExpression).getAccessedVariable().getName();
+            } else if (leftExpression instanceof FieldExpression) {
+                leftFieldName = ((FieldExpression) leftExpression).getFieldName();
+            } else if (leftExpression instanceof PropertyExpression
+                    && (((PropertyExpression) leftExpression).isImplicitThis() || "this".equals(((PropertyExpression) leftExpression).getObjectExpression().getText()))) {
+                leftFieldName = ((PropertyExpression) leftExpression).getPropertyAsString();
+                FieldNode fn = tryGetFieldNode(weavedType, leftFieldName);
+                if (fieldHelper == null || fn==null && !fieldHelper.hasPossibleMethod(Traits.helperSetterName(new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null)), rightExpression)) {
+                    return createAssignmentToField(rightExpression, operation, leftFieldName);
+                }
+            }
+            if (leftFieldName!=null) {
+                FieldNode fn = weavedType.getDeclaredField(leftFieldName);
+                FieldNode staticField = tryGetFieldNode(weavedType, leftFieldName);
+                if (fn==null) {
+                    fn = new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null);
+                }
+                Expression receiver = createFieldHelperReceiver();
+                boolean isStatic = staticField!=null && staticField.isStatic();
+                if (fn.isStatic()) { // DO NOT USE isStatic variable here!
+                    receiver = new PropertyExpression(receiver, "class");
+                }
+                String method = Traits.helperSetterName(fn);
+                MethodCallExpression mce = new MethodCallExpression(
+                        receiver,
+                        method,
+                        new ArgumentListExpression(super.transform(rightExpression))
+                );
+                mce.setSourcePosition(exp);
+                mce.setImplicitThis(false);
+                markDynamicCall(mce, staticField, isStatic);
+                return mce;
+            }
+        }
+        Expression leftTransform = transform(leftExpression);
+        Expression rightTransform = transform(rightExpression);
+        Expression ret =
+                exp instanceof DeclarationExpression ?new DeclarationExpression(
+                        leftTransform, operation, rightTransform
+                ):
+                new BinaryExpression(leftTransform, operation, rightTransform);
+        ret.setSourcePosition(exp);
+        ret.copyNodeMetaData(exp);
+        return ret;
     }
 
     private void markDynamicCall(final MethodCallExpression mce, final FieldNode fn, final boolean isStatic) {
