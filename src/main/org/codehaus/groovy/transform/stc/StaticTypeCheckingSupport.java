@@ -1468,7 +1468,11 @@ public abstract class StaticTypeCheckingSupport {
             compareNode = getCombinedBoundType(resolved);
             compareNode = compareNode.redirect().getPlainNodeReference();
         } else {
-            compareNode = resolved.getType().getPlainNodeReference();
+            if (!resolved.isPlaceholder()) {
+                compareNode = resolved.getType().getPlainNodeReference();
+            } else {
+                return true;
+            }
         }
         return gt.isCompatibleWith(compareNode);
     }
