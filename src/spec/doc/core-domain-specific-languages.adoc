@@ -457,7 +457,7 @@ with `@DelegatesTo`. However, to make the IDE aware of the delegate
 type, or the *type checker* aware of it, we need to add `@DelegatesTo`.
 And in this case, it will now that the `Greeter` variable is of
 type `Greeter`, so it will not report errors on the _sayHello_
-method *even if the exec method doesn’t explicitely define the target as
+method *even if the exec method doesn’t explicitly define the target as
 of type Greeter*. This is a very powerful feature, because it prevents
 you from writing multiple versions of the same `exec` method for
 different receiver types!
@@ -975,7 +975,7 @@ exposed in the script. Then, compile your files using the following command line
 groovyc -configscript src/conf/config.groovy src/main/groovy/MyClass.groovy
 ---------------------------------------------------------------------------
 
-We strongly recommand you to separate configuration files from classes,
+We strongly recommend you to separate configuration files from classes,
 hence why we suggest using the `src/main` and `src/conf` directories above.
 
 === AST transformations

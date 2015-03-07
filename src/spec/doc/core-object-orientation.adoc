@@ -174,7 +174,7 @@ Constructors are special methods used to initialize an object with a specific st
 
 ==== Positional argument constructor
 
-To create an object by using positional argument constructors, the respective class needs to declare each of the constructors it allows being called. A side effect of this is that, once at least one constructor is declared, the class can only be instatiated by getting one of its constructors called. It is worth noting that, in this case, there is no way to create the class with named parameters.
+To create an object by using positional argument constructors, the respective class needs to declare each of the constructors it allows being called. A side effect of this is that, once at least one constructor is declared, the class can only be instantiated by getting one of its constructors called. It is worth noting that, in this case, there is no way to create the class with named parameters.
 
 There is three forms of using a declared constructor. The first one is the normal Java way, with the `new` keyword. The others rely on coercion of lists into the desired types. In this case, it is possible to coerce with the `as` keyword and by statically typing the variable.
 
@@ -202,7 +202,7 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=constructor_named_para
 <4> `age` parameter given in the instantiation
 <5> `name` and `age` parameters given in the instantiation
 
-It is important to highlight, however, that this approach gives more power to the constructor caller, while imposes a major responsibility to it. Thus, if a restriction is needed, one can just declare one or more construtors, and the instantiation by named parameters will no longer be available.
+It is important to highlight, however, that this approach gives more power to the constructor caller, while imposes a major responsibility to it. Thus, if a restriction is needed, one can just declare one or more constructors, and the instantiation by named parameters will no longer be available.
 
 
 === Methods
@@ -518,7 +518,7 @@ compile time or runtime.
 
 An interesting feature of annotations in Groovy is that you can use a closure as an annotation value. Therefore
 annotations may be used with a wide variety of expressions and still have IDE support. For example, imagine a
-framework where you want to execute some methods based on environmental contraints like the JDK version or the OS.
+framework where you want to execute some methods based on environmental constraints like the JDK version or the OS.
 One could write the following code:
 
 [source,groovy]

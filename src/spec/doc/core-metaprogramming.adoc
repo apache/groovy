@@ -637,7 +637,7 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tostring_simple,indent=0]
 ----
 
-With this definition, then the following assertion passes, meaning that a `toString` method taking the field valuess from
+With this definition, then the following assertion passes, meaning that a `toString` method taking the field values from
 the class and printing them out has been generated:
 
 [source,groovy]
@@ -2196,7 +2196,7 @@ thoroughly in this <<section-grape,section of the guide>>.
 There are two kinds of transformations: global and local transformations.
 
 * <<transforms-global,Global transformations>> are applied to by the compiler on the code being compiled,
-wherever the transformation apply. Compiled classes that implement global tranasformations
+wherever the transformation apply. Compiled classes that implement global transformations
 are in a JAR added to the classpath of the compiler and contain service locator file
 `META-INF/services/org.codehaus.groovy.transform.ASTTransformation` with a line with the name of the
 transformation class. The transformation class must have a no-args constructor and implement the
@@ -2266,7 +2266,7 @@ gapi:org.codehaus.groovy.control.SourceUnit[],
 through which you can get a reference to the
 gapi:org.codehaus.groovy.ast.ModuleNode[] (AST).
 
-The AST (Abstract Syntax Tree) is a tree structure constisting mostly of
+The AST (Abstract Syntax Tree) is a tree structure consisting mostly of
 gapi:org.codehaus.groovy.ast.expr.Expression[] (expressions) or
 gapi:org.codehaus.groovy.ast.expr.Statement[] (statements). An easy way to
 learn about the AST is to explore it in a debugger. Once you have the AST,
@@ -2304,7 +2304,7 @@ stop message for `@WithLogging`:
 ----
 include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_xform,indent=0]
 ----
-<1> even if not mandatory, if you write an AST transformation in Groovy, it is highly recommanded to use `CompileStatic`
+<1> even if not mandatory, if you write an AST transformation in Groovy, it is highly recommended to use `CompileStatic`
 because it will improve performance of the compiler.
 <2> annotate with gapi:org.codehaus.groovy.transform.GroovyASTTransformation[] to tell at which compilation phase the
 transform needs to run. Here, it's at the _semantic analysis_ phase.
@@ -2392,7 +2392,7 @@ to use the `SourceUnit` instead:
 ----
 include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=withlogging_xform_global,indent=0]
 ----
-<1> even if not mandatory, if you write an AST transformation in Groovy, it is highly recommanded to use `CompileStatic`
+<1> even if not mandatory, if you write an AST transformation in Groovy, it is highly recommended to use `CompileStatic`
 because it will improve performance of the compiler.
 <2> annotate with gapi:org.codehaus.groovy.transform.GroovyASTTransformation[] to tell at which compilation phase the
 transform needs to run. Here, it's at the _semantic analysis_ phase.

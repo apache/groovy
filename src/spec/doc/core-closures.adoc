@@ -24,7 +24,7 @@ look similar to a method parameter list, and these parameters may be
 typed or untyped.
 
 When a parameter list is specified, the `+->+` character
-is required and serves to seperate the arguments from the closure body.
+is required and serves to separate the arguments from the closure body.
 The _statements_ portion consists of 0, 1, or many Groovy statements.
 
 Some examples of valid closure definitions:
@@ -337,7 +337,7 @@ By changing the `resolveStrategy`, we are modifying the way Groovy will resolve 
 case, `name` will first be looked in the delegate, then if not found, on the owner. Since `name` is defined in the
 delegate, an instance of `Thing`, then this value is used.
 
-The differene between "delegate first" and "delegate only" or "owner first" and "owner only" can be illustrated if one
+The difference between "delegate first" and "delegate only" or "owner first" and "owner only" can be illustrated if one
 of the delegate (resp. owner) does *not* have such a method or property:
 
 [source,groovy]

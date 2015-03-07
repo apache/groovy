@@ -233,9 +233,9 @@ can’t be run as a simple executable. Instead, you will need to write:
 include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=dir_windows_fixed,indent=0]
 ----------------------------------
 
-Also, because this functionality currently make use of
-`java.lang.Process` undercovers, the deficiencies of that class
-must currently be taken into consideration. In particular, the javadoc
+Also, because this functionality currently makes use of
+`java.lang.Process` undercover, the deficiencies of that class
+must be taken into consideration. In particular, the javadoc
 for this class says:
 
 ________________________________________________________________________
