@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ * Copyright 2003-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -549,8 +549,13 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 currentModifier = currentModifier.getNextSibling();
             }
             if (!hasNonPublicVisibility && isGroovy && !(memberOrClass instanceof GroovyFieldDoc)) {
-                // in groovy methods and classes are assumed public, unless informed otherwise
-                memberOrClass.setPublic(true);
+                // in groovy, methods and classes are assumed public, unless informed otherwise
+                if (isPackageScope(modifiers)) {
+                    memberOrClass.setPackagePrivate(true);
+                    hasNonPublicVisibility = true;
+                } else {
+                    memberOrClass.setPublic(true);
+                }
             } else if (!hasNonPublicVisibility && !hasPublicVisibility && !isGroovy) {
                 if (insideInterface(memberOrClass) || insideAnnotationDef(memberOrClass)) {
                     memberOrClass.setPublic(true);
@@ -558,9 +563,15 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                     memberOrClass.setPackagePrivate(true);
                 }
             }
+            if (memberOrClass instanceof GroovyFieldDoc && isGroovy && !hasNonPublicVisibility & !hasPublicVisibility) {
+                if (isPackageScope(modifiers)) {
+                    memberOrClass.setPackagePrivate(true);
+                    hasNonPublicVisibility = true;
+                }
+            }
             if (memberOrClass instanceof GroovyFieldDoc && !hasNonPublicVisibility && !hasPublicVisibility && isGroovy) return true;
         } else if (isGroovy && !(memberOrClass instanceof GroovyFieldDoc)) {
-            // in groovy methods and classes are assumed public, unless informed otherwise
+            // in groovy, methods and classes are assumed public, unless informed otherwise
             memberOrClass.setPublic(true);
         } else if (!isGroovy) {
             if (insideInterface(memberOrClass) || insideAnnotationDef(memberOrClass)) {
@@ -570,6 +581,20 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             }
         }
         return memberOrClass instanceof GroovyFieldDoc && isGroovy && !hasNonPublicVisibility & !hasPublicVisibility;
+    }
+
+    private boolean isPackageScope(GroovySourceAST modifiers) {
+        List<String> names = getAnnotationNames(modifiers);
+        return names.contains("groovy/transform/PackageScope") || names.contains("PackageScope");
+    }
+
+    private List<String> getAnnotationNames(GroovySourceAST modifiers) {
+        List<String> annotationNames = new ArrayList<String>();
+        List<GroovySourceAST> annotations = modifiers.childrenOfType(ANNOTATION);
+        for (GroovySourceAST annotation : annotations) {
+            annotationNames.add(buildName((GroovySourceAST) annotation.getFirstChild()));
+        }
+        return annotationNames;
     }
 
     private boolean insideInterface(SimpleGroovyAbstractableElementDoc memberOrClass) {
