@@ -370,6 +370,48 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(1 as char) == '"\\u0001"'
         assert toJson('\u0002' as char) == '"\\u0002"'
     }
+
+    void testEmptyValue() {
+        assert toJson('') == '""'
+        assert toJson(['']) == '[""]'
+        assert toJson(['': '']) == '{"":""}'
+        assert toJson(new Expando('': '')) == '{"":""}'
+    }
+
+    void testSpecialCharEscape() {
+        // Map
+        assert toJson(['"': 0]) == '{"\\"":0}'
+        assert toJson(['\b': 0]) == '{"\\b":0}'
+        assert toJson(['\f': 0]) == '{"\\f":0}'
+        assert toJson(['\n': 0]) == '{"\\n":0}'
+        assert toJson(['\r': 0]) == '{"\\r":0}'
+        assert toJson(['\t': 0]) == '{"\\t":0}'
+        assert toJson(['\\': 0]) == '{"\\\\":0}'
+        assert toJson([(1 as char): 0]) == '{"\\u0001":0}'
+        assert toJson(['\u0002': 0]) == '{"\\u0002":0}'
+
+        // Expando
+        assert toJson(new Expando('"': 0)) == '{"\\"":0}'
+        assert toJson(new Expando('\b': 0)) == '{"\\b":0}'
+        assert toJson(new Expando('\f': 0)) == '{"\\f":0}'
+        assert toJson(new Expando('\n': 0)) == '{"\\n":0}'
+        assert toJson(new Expando('\r': 0)) == '{"\\r":0}'
+        assert toJson(new Expando('\t': 0)) == '{"\\t":0}'
+        assert toJson(new Expando('\\': 0)) == '{"\\\\":0}'
+        assert toJson(new Expando((1 as char): 0)) == '{"\\u0001":0}'
+        assert toJson(new Expando('\u0002': 0)) == '{"\\u0002":0}'
+
+        // Closure
+        assert toJson({'"' 0}) == '{"\\"":0}'
+        assert toJson({'\b' 0}) == '{"\\b":0}'
+        assert toJson({'\f' 0}) == '{"\\f":0}'
+        assert toJson({'\n' 0}) == '{"\\n":0}'
+        assert toJson({'\r' 0}) == '{"\\r":0}'
+        assert toJson({'\t' 0}) == '{"\\t":0}'
+        assert toJson({'\\' 0}) == '{"\\\\":0}'
+        assert toJson({'\1' 0}) == '{"\\u0001":0}'
+        assert toJson({'\u0002' 0}) == '{"\\u0002":0}'
+    }
 }
 
 @Canonical

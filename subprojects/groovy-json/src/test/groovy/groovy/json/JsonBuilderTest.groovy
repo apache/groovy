@@ -325,4 +325,16 @@ class JsonBuilderTest extends GroovyTestCase {
         deserialized = (new JsonSlurper()).parseText(serialized)
         assert original.elem == deserialized.elem
     }
+
+    void testSpecialCharEscape() {
+        assert new JsonBuilder({'"' 0}).toString() == '{"\\"":0}'
+        assert new JsonBuilder({'\b' 0}).toString() == '{"\\b":0}'
+        assert new JsonBuilder({'\f' 0}).toString() == '{"\\f":0}'
+        assert new JsonBuilder({'\n' 0}).toString() == '{"\\n":0}'
+        assert new JsonBuilder({'\r' 0}).toString() == '{"\\r":0}'
+        assert new JsonBuilder({'\t' 0}).toString() == '{"\\t":0}'
+        assert new JsonBuilder({'\\' 0}).toString() == '{"\\\\":0}'
+        assert new JsonBuilder({'\1' 0}).toString() == '{"\\u0001":0}'
+        assert new JsonBuilder({'\u0002' 0}).toString() == '{"\\u0002":0}'
+    }
 }
