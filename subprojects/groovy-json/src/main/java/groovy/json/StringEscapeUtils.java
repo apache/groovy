@@ -54,7 +54,7 @@ public class StringEscapeUtils {
      * instance to operate.
      */
     public StringEscapeUtils() {
-      super();
+        super();
     }
 
     // Java and JavaScript
@@ -191,27 +191,27 @@ public class StringEscapeUtils {
                 out.write("\\u00" + hex(ch));
             } else if (ch < 32) {
                 switch (ch) {
-                    case '\b' :
+                    case '\b':
                         out.write('\\');
                         out.write('b');
                         break;
-                    case '\n' :
+                    case '\n':
                         out.write('\\');
                         out.write('n');
                         break;
-                    case '\t' :
+                    case '\t':
                         out.write('\\');
                         out.write('t');
                         break;
-                    case '\f' :
+                    case '\f':
                         out.write('\\');
                         out.write('f');
                         break;
-                    case '\r' :
+                    case '\r':
                         out.write('\\');
                         out.write('r');
                         break;
-                    default :
+                    default:
                         if (ch > 0xf) {
                             out.write("\\u00" + hex(ch));
                         } else {
@@ -221,27 +221,27 @@ public class StringEscapeUtils {
                 }
             } else {
                 switch (ch) {
-                    case '\'' :
+                    case '\'':
                         if (escapeSingleQuote) {
                             out.write('\\');
                         }
                         out.write('\'');
                         break;
-                    case '"' :
+                    case '"':
                         out.write('\\');
                         out.write('"');
                         break;
-                    case '\\' :
+                    case '\\':
                         out.write('\\');
                         out.write('\\');
                         break;
-                    case '/' :
+                    case '/':
                         if (escapeForwardSlash) {
                             out.write('\\');
                         }
                         out.write('/');
                         break;
-                    default :
+                    default:
                         out.write(ch);
                         break;
                 }
@@ -252,7 +252,7 @@ public class StringEscapeUtils {
     /**
      * Returns an upper case hexadecimal <code>String</code> for the given
      * character.
-     * 
+     *
      * @param ch The character to convert.
      * @return An upper case hexadecimal <code>String</code>
      */
@@ -416,6 +416,4 @@ public class StringEscapeUtils {
     public static void unescapeJavaScript(Writer out, String str) throws IOException {
         unescapeJava(out, str);
     }
-
-
 }

@@ -73,7 +73,6 @@ public class ValueContainer implements CharSequence, Value {
     }
 
     public boolean booleanValue() {
-
         switch (type) {
             case FALSE:
                 return false;
@@ -82,7 +81,6 @@ public class ValueContainer implements CharSequence, Value {
         }
         die();
         return false;
-
     }
 
     public String stringValue() {
@@ -116,7 +114,6 @@ public class ValueContainer implements CharSequence, Value {
         }
         die();
         return null;
-
     }
 
     public <T extends Enum> T toEnum(Class<T> cls) {
@@ -173,6 +170,4 @@ public class ValueContainer implements CharSequence, Value {
     public float floatValue() {
         return 0;
     }
-
 }
-

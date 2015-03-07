@@ -47,13 +47,11 @@ public class MapItemValue implements Map.Entry<String, Value> {
     public MapItemValue(Value name, Value value) {
         this.name = name;
         this.value = value;
-
     }
 
     public String getKey() {
         if (key == null) {
             if (internKeys) {
-
                 key = name.toString();
 
                 String keyPrime = internedKeysCache.get(key);
@@ -64,7 +62,6 @@ public class MapItemValue implements Map.Entry<String, Value> {
                     key = keyPrime;
                 }
             } else {
-
                 key = name.toString();
             }
         }
@@ -79,5 +76,4 @@ public class MapItemValue implements Map.Entry<String, Value> {
         die("not that kind of Entry");
         return null;
     }
-
 }

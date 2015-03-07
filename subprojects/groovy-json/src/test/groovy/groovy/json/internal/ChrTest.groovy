@@ -109,7 +109,6 @@ class ChrTest extends GroovyTestCase {
     }
 
     void testByteCopyIntoCharArray() {
-
         def charArray = new char[1000]
         def bytes = "0123456789000".bytes
 

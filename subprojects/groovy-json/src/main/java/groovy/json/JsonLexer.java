@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
  * @since 1.8.0
  */
 public class JsonLexer implements Iterator<JsonToken> {
+
     private static final char SPACE    = ' ';
     private static final char DOT      = '.';
     private static final char MINUS    = '-';
@@ -55,7 +56,6 @@ public class JsonLexer implements Iterator<JsonToken> {
 
     private JsonToken currentToken = null;
 
-
     /**
      * Instanciates a lexer with a reader from which to read JSON tokens.
      * Under the hood, the reader is wrapped in a <code>LineColumnReader</code>,
@@ -64,7 +64,7 @@ public class JsonLexer implements Iterator<JsonToken> {
      * @param reader underlying reader
      */
     public JsonLexer(Reader reader) {
-        this.reader = reader instanceof LineColumnReader ? (LineColumnReader)reader : new LineColumnReader(reader);
+        this.reader = reader instanceof LineColumnReader ? (LineColumnReader) reader : new LineColumnReader(reader);
     }
 
     /**
@@ -186,7 +186,7 @@ public class JsonLexer implements Iterator<JsonToken> {
      */
     private JsonToken readingConstant(JsonTokenType type, JsonToken token) {
         try {
-            int numCharsToRead = ((String)type.getValidator()).length();
+            int numCharsToRead = ((String) type.getValidator()).length();
             char[] chars = new char[numCharsToRead];
             reader.read(chars);
             String stringRead = new String(chars);
@@ -211,10 +211,10 @@ public class JsonLexer implements Iterator<JsonToken> {
         try {
             int readChar = 20;
             char c = SPACE;
-            while(Character.isWhitespace(c)) {
+            while (Character.isWhitespace(c)) {
                 reader.mark(1);
                 readChar = reader.read();
-                c = (char)readChar;
+                c = (char) readChar;
             }
             reader.reset();
             return readChar;
@@ -251,5 +251,4 @@ public class JsonLexer implements Iterator<JsonToken> {
     public void remove() {
         throw new UnsupportedOperationException("The method remove() is not supported on this lexer.");
     }
-
 }

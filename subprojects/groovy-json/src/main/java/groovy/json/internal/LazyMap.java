@@ -47,15 +47,14 @@ public class LazyMap extends AbstractMap<String, Object> {
     public LazyMap(int initialSize) {
         keys = new String[initialSize];
         values = new Object[initialSize];
-
     }
 
     public Object put(String key, Object value) {
         if (map == null) {
-            for (int i=0;i<size;i++) {
+            for (int i = 0; i < size; i++) {
                 String curKey = keys[i];
-                if ((key==null && curKey ==null)
-                    || (key!=null && key.equals(curKey))) {
+                if ((key == null && curKey == null)
+                     || (key != null && key.equals(curKey))) {
                     Object val = values[i];
                     keys[i] = key;
                     values[i] = value;
@@ -113,7 +112,6 @@ public class LazyMap extends AbstractMap<String, Object> {
 
     private void buildIfNeeded() {
         if (map == null) {
-
             /** added to avoid hash collision attack. */
             if (Sys.is1_7OrLater() && JDK_MAP_ALTHASHING_SYSPROP != null) {
                 map = new LinkedHashMap<String, Object>(size, 0.01f);
@@ -150,15 +148,11 @@ public class LazyMap extends AbstractMap<String, Object> {
     public Set<String> keySet() {
         buildIfNeeded();
         return map.keySet();
-
     }
 
     public Collection<Object> values() {
-
         buildIfNeeded();
-
         return map.values();
-
     }
 
     public boolean equals(Object o) {
@@ -172,13 +166,11 @@ public class LazyMap extends AbstractMap<String, Object> {
     }
 
     public String toString() {
-
         buildIfNeeded();
         return map.toString();
     }
 
     protected Object clone() throws CloneNotSupportedException {
-
         if (map == null) {
             return null;
         } else {
@@ -200,11 +192,8 @@ public class LazyMap extends AbstractMap<String, Object> {
     }
 
     public static <V> V[] grow(V[] array) {
-        Object newArray = Array.newInstance(array.getClass().getComponentType(),
-                array.length * 2);
+        Object newArray = Array.newInstance(array.getClass().getComponentType(), array.length * 2);
         System.arraycopy(array, 0, newArray, 0, array.length);
         return (V[]) newArray;
     }
-
 }
-

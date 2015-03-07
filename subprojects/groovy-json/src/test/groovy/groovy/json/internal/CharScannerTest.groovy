@@ -60,7 +60,6 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testParseIntMax() {
-
         int i = 0
         i = CharScanner.parseInt(("" + Integer.MAX_VALUE).toCharArray())
         assert i == Integer.MAX_VALUE
@@ -85,7 +84,6 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testParseDouble() {
-
         String str = "123456789"
         double num =
             CharScanner.parseJsonNumber(str.toCharArray(), 0, str.length()).doubleValue()
@@ -93,7 +91,6 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testParseDoubleNegative() {
-
         String str = "-1.23456789E8"
         double num =
             (Double) CharScanner.parseJsonNumber(str.toCharArray(), 0, str.length())
@@ -227,7 +224,6 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testParseLong() {
-
         String str = "12345678910"
         long l1 = CharScanner.parseLongFromTo(str.toCharArray(), 0, str.length())
         assert l1 == 12345678910L
@@ -246,7 +242,6 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testAutoSplitThisEndsInSpace() {
-
         def letters = chars("This is a string ")
         def splitted = CharScanner.split(letters, ' ' as char)
 
@@ -260,18 +255,15 @@ class CharScannerTest extends GroovyTestCase {
                 splitted[0] as char[]
         )
 
-
         assertArrayEquals(
                 chars("is"),
                 splitted[1] as char[]
         )
 
-
         assertArrayEquals(
                 chars("a"),
                 splitted[2] as char[]
         )
-
 
         assertArrayEquals(
                 chars("string"),
@@ -285,9 +277,7 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testAutoSplitThis() {
-
-        def letters =
-            chars("This is a string")
+        def letters = chars("This is a string")
 
         def splitted = CharScanner.split(letters, ' ' as char)
 
@@ -301,18 +291,15 @@ class CharScannerTest extends GroovyTestCase {
                 splitted[0] as char[]
         )
 
-
         assertArrayEquals(
                 chars("is"),
                 splitted[1] as char[]
         )
 
-
         assertArrayEquals(
                 chars("a"),
                 splitted[2] as char[]
         )
-
 
         assertArrayEquals(
                 chars("string"),
@@ -326,8 +313,7 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testAutoSplitThisStartSpace() {
-        def letters =
-            chars(" This is a string")
+        def letters = chars(" This is a string")
 
         def splitted = CharScanner.split(letters, ' ' as char)
 
@@ -368,9 +354,8 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testAutoSplitThisByTabOrSpace() {
+        def letters = chars("This\tis a string")
 
-        def letters =
-            chars("This\tis a string")
         def splitted = CharScanner.splitByChars(letters, '\t' as char, ' ' as char)
 
         assertEquals(
@@ -405,10 +390,7 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testAutoSplitThis3DoubleSpaceAfterA() {
-
-        def letters =
-            chars("This is a  string")
-
+        def letters = chars("This is a  string")
 
         def splitted = CharScanner.split(letters, ' ' as char)
 
@@ -449,9 +431,7 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testSplitThisEndsInSpace() {
-
-        def letters =
-            chars("This is a string ")
+        def letters = chars("This is a string ")
 
         def splitted = CharScanner.splitExact(letters, ' ' as char, 10)
 
@@ -487,9 +467,7 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testSplitThis() {
-
-        def letters =
-            chars("This is a string")
+        def letters = chars("This is a string")
 
         def splitted = CharScanner.splitExact(letters, ' ' as char, 10)
 
@@ -526,8 +504,7 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testSplitThisStartSpace() {
-        def letters =
-            chars(" This is a string")
+        def letters = chars(" This is a string")
 
         def splitted = CharScanner.splitExact(letters, ' ' as char, 10)
 
@@ -568,8 +545,7 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testSplitThisByTabOrSpace() {
-        def letters =
-            chars("This\tis a string")
+        def letters = chars("This\tis a string")
 
         def splitted = CharScanner.splitExact(letters, 10, '\t' as char, ' ' as char)
 
@@ -605,8 +581,7 @@ class CharScannerTest extends GroovyTestCase {
     }
 
     void testSplitThis3DoubleSpaceAfterA() {
-        def letters =
-            chars("This is a  string")
+        def letters = chars("This is a  string")
 
         def splitted = CharScanner.splitExact(letters, ' ' as char, 10)
 

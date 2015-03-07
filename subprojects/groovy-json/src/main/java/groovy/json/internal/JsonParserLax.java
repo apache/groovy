@@ -54,7 +54,6 @@ public class JsonParserLax extends JsonParserCharArray {
     }
 
     private Value decodeJsonObjectLax() {
-
         if (__currentChar == '{')
             this.nextChar();
 
@@ -69,7 +68,6 @@ public class JsonParserLax extends JsonParserCharArray {
 
         done:
         for (; __index < this.charArray.length; __index++) {
-
             skipWhiteSpace();
 
             switch (__currentChar) {
@@ -110,18 +108,17 @@ public class JsonParserLax extends JsonParserCharArray {
                 case '\'':
                     key = decodeStringSingle();
 
-                    //puts ( "key with quote", key );
+                    //puts ("key with quote", key);
 
                     skipWhiteSpace();
 
                     if (__currentChar != ':') {
-
                         complain("expecting current character to be ':' but got " + charDescription(__currentChar) + "\n");
                     }
                     __index++;
                     item = decodeValueInternal();
 
-                    //puts ( "key", "#" + key + "#", value );
+                    //puts ("key", "#" + key + "#", value);
 
                     skipWhiteSpace();
 
@@ -139,18 +136,17 @@ public class JsonParserLax extends JsonParserCharArray {
                 case '"':
                     key = decodeStringDouble();
 
-                    //puts ( "key with quote", key );
+                    //puts ("key with quote", key);
 
                     skipWhiteSpace();
 
                     if (__currentChar != ':') {
-
                         complain("expecting current character to be ':' but got " + charDescription(__currentChar) + "\n");
                     }
                     __index++;
                     item = decodeValueInternal();
 
-                    //puts ( "key", "#" + key + "#", value );
+                    //puts ("key", "#" + key + "#", value);
 
                     skipWhiteSpace();
 
@@ -331,7 +327,6 @@ public class JsonParserLax extends JsonParserCharArray {
     }
 
     private void handleComment() {
-
         if (hasMore()) {
             __index++;
             __currentChar = charArray[__index];
@@ -375,7 +370,6 @@ public class JsonParserLax extends JsonParserCharArray {
     }
 
     protected final Value decodeNumberLax(boolean minus) {
-
         char[] array = charArray;
 
         final int startIndex = __index;
@@ -471,7 +465,6 @@ public class JsonParserLax extends JsonParserCharArray {
     }
 
     private Value decodeStringDouble() {
-
         __currentChar = charArray[__index];
 
         if (__index < charArray.length && __currentChar == '"') {
@@ -518,7 +511,6 @@ public class JsonParserLax extends JsonParserCharArray {
     }
 
     private Value decodeStringSingle() {
-
         __currentChar = charArray[__index];
 
         if (__index < charArray.length && __currentChar == '\'') {
@@ -536,7 +528,6 @@ public class JsonParserLax extends JsonParserCharArray {
         for (; __index < this.charArray.length; __index++) {
             __currentChar = charArray[__index];
             switch (__currentChar) {
-
                 case '\'':
                     if (!escape) {
                         break done;
@@ -553,6 +544,7 @@ public class JsonParserLax extends JsonParserCharArray {
                 case '-':
                     minusCount++;
                     break;
+
                 case ':':
                     colonCount++;
                     break;
@@ -572,7 +564,6 @@ public class JsonParserLax extends JsonParserCharArray {
     }
 
     private Value decodeJsonArrayLax() {
-
         if (__currentChar == '[') {
             __index++;
         }
@@ -595,7 +586,6 @@ public class JsonParserLax extends JsonParserCharArray {
         Value value = new ValueContainer(list);
 
         do {
-
             skipWhiteSpace();
 
             Object arrayItem = decodeValueInternal();
@@ -606,7 +596,6 @@ public class JsonParserLax extends JsonParserCharArray {
 
             done:
             do { // Find either next array element or end of array while ignoring comments
-
                 skipWhiteSpace();
 
                 switch (__currentChar) {
@@ -650,4 +639,3 @@ public class JsonParserLax extends JsonParserCharArray {
         }
     }
 }
-

@@ -135,7 +135,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * assert result instanceof List
      * assert json.toString() == "[1,2,3]"
      * </code></pre>
-
+     *
      * @param args an array of values
      * @return a list of values
      */
@@ -274,7 +274,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
                 } else if (arr[0] instanceof Map) {
                     return setAndGetContent(name, arr[0]);
                 }
-            } else if (arr.length == 2)  {
+            } else if (arr.length == 2) {
                 if (arr[0] instanceof Map && arr[1] instanceof Closure) {
                     Map subMap = new LinkedHashMap();
                     subMap.putAll((Map) arr[0]);

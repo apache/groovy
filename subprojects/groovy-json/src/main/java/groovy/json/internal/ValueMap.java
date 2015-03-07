@@ -42,5 +42,4 @@ public interface ValueMap<K, V> extends Map<K, V> {
      * Realize that the array is likely larger than the length so array items can be null.
      */
     Entry<String, Value>[] items();
-
 }

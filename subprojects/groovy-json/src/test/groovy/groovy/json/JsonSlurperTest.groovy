@@ -31,7 +31,6 @@ class JsonSlurperTest extends GroovyTestCase {
     void testJsonShouldStartWithCurlyOrBracket() {
         /* We can handle parsing boolean, numbers, and such. */
         parser.parseText("true")
-
     }
 
     void testEmptyStructures() {
@@ -55,7 +54,7 @@ class JsonSlurperTest extends GroovyTestCase {
         def list = parser.parseText('[]')
         list << "Hello"
         list << "World"
-        assert list == [ "Hello", "World" ]
+        assert list == ["Hello", "World"]
     }
 
     void testParseNum() {
@@ -68,56 +67,48 @@ class JsonSlurperTest extends GroovyTestCase {
         int i = parser.parseText('-123')
         int i2 = -123
         assert i == i2
-
     }
 
     void testNegNumWithSpace() {
         int i = parser.parseText('   -123')
         int i2 = -123
         assert i == i2
-
     }
 
     void testLargeNegNumWithSpace() {
         int i = parser.parseText('   -1234567891')
         int i2 = -1234567891
         assert i == i2
-
     }
 
     void testWithSpaces() {
-        int num = ((Number)parser.parseText( "           123")).intValue()
+        int num = ((Number) parser.parseText("           123")).intValue()
         int num2 = 123
-        boolean ok = num == num2 || die ( "" + num)
-
+        boolean ok = num == num2 || die("" + num)
     }
 
     void testParseLargeNum() {
-        long num = parser.parseText(""+Long.MAX_VALUE)
+        long num = parser.parseText("" + Long.MAX_VALUE)
         long num2 = Long.MAX_VALUE
         assert num == num2
-
     }
 
     void testParseSmallNum() {
-        long num = parser.parseText(""+Long.MIN_VALUE)
+        long num = parser.parseText("" + Long.MIN_VALUE)
         long num2 = Long.MIN_VALUE
         assert num == num2
-
     }
 
     void testParseLargeDecimal() {
-        double num  = parser.parseText(""+Double.MAX_VALUE)
+        double num = parser.parseText("" + Double.MAX_VALUE)
         double num2 = Double.MAX_VALUE
         assert num == num2
-
     }
 
     void testParseSmallDecimal() {
-        double num  = parser.parseText(""+Double.MIN_VALUE)
+        double num = parser.parseText("" + Double.MIN_VALUE)
         double num2 = Double.MIN_VALUE
         assert num == num2
-
     }
 
     void testOutputTypes() {
@@ -306,11 +297,11 @@ class JsonSlurperTest extends GroovyTestCase {
             parser.parseText('{"a":"c:\\\"}')
         }
     }
-  
+
     void testParseWithByteArray() {
         def slurper = new JsonSlurper()
-        
+
         assert slurper.parse('{"a":true}'.bytes) == [a: true]
-        
+
     }
 }

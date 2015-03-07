@@ -68,7 +68,6 @@ public class ReaderCharacterSource implements CharacterSource {
     }
 
     private void ensureBuffer() {
-
         try {
             if (index >= length && !done) {
                 readNextBuffer();
@@ -114,7 +113,6 @@ public class ReaderCharacterSource implements CharacterSource {
 
     public final boolean consumeIfMatch(char[] match) {
         try {
-
             char[] _chars = readBuf;
             int i = 0;
             int idx = index;
@@ -139,7 +137,6 @@ public class ReaderCharacterSource implements CharacterSource {
             String str = CharScanner.errorDetails("consumeIfMatch issue", readBuf, index, ch);
             return Exceptions.handle(boolean.class, str, ex);
         }
-
     }
 
     public final int location() {
@@ -226,12 +223,11 @@ public class ReaderCharacterSource implements CharacterSource {
                 }
                 return results;
             } else {
-
                 if (index >= length && !done) {
                     ensureBuffer();
                     boolean hasAlreadyFoundEscape = foundEscape;
                     char results2[] = findNextChar(match, esc);
-                    if(hasAlreadyFoundEscape){
+                    if (hasAlreadyFoundEscape) {
                         foundEscape = true; //restore foundEscapeState
                     }
                     return Chr.add(results, results2);
@@ -243,7 +239,6 @@ public class ReaderCharacterSource implements CharacterSource {
             String str = CharScanner.errorDetails("findNextChar issue", readBuf, index, ch);
             return Exceptions.handle(char[].class, str, ex);
         }
-
     }
 
     public boolean hadEscape() {
@@ -254,7 +249,6 @@ public class ReaderCharacterSource implements CharacterSource {
         try {
             index = CharScanner.skipWhiteSpace(readBuf, index, length);
             if (index >= length && more) {
-
                 ensureBuffer();
 
                 skipWhiteSpace();
@@ -287,12 +281,9 @@ public class ReaderCharacterSource implements CharacterSource {
             String str = CharScanner.errorDetails("readNumber issue", readBuf, index, ch);
             return Exceptions.handle(char[].class, str, ex);
         }
-
     }
 
     public String errorDetails(String message) {
-
         return CharScanner.errorDetails(message, readBuf, index, ch);
     }
-
 }

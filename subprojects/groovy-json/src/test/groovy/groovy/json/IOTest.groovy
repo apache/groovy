@@ -10,33 +10,32 @@ import groovy.json.internal.IO
  */
 class IOTest extends GroovyTestCase {
 
-	public static final String TEST_STRING = '{"results":[{"columns":["n"],"data":[{"row":[{"name":"Alin Coen Band","type":"group"}]}]}],"errors":[]}'
-	
-	int bufSize = 256
-	
-	void testReadProper() {
-		IO io = new IO()
-		ProperReader reader = new ProperReader();
-		CharBuf buffer = io.read(reader, null, bufSize)
-		int len = buffer.len()
-		char[] rbuf = buffer.readForRecycle()
-		String result = new String(rbuf, 0, len)
-		assertEquals(TEST_STRING,result) 
-	}
+    public static final String TEST_STRING = '{"results":[{"columns":["n"],"data":[{"row":[{"name":"Alin Coen Band","type":"group"}]}]}],"errors":[]}'
 
-	/**
-	 * See https://jira.codehaus.org/browse/GROOVY-7132
-	 */
-	void testReadBumpy() {
-		IO io = new IO()
-		BumpyReader reader = new BumpyReader();
-		CharBuf buffer = io.read(reader, null, bufSize)
-		int len = buffer.len()
-		char[] rbuf = buffer.readForRecycle()
-		String result = new String(rbuf,0,len)
-		assertEquals(TEST_STRING,result) 
-	}
+    int bufSize = 256
 
+    void testReadProper() {
+        IO io = new IO()
+        ProperReader reader = new ProperReader();
+        CharBuf buffer = io.read(reader, null, bufSize)
+        int len = buffer.len()
+        char[] rbuf = buffer.readForRecycle()
+        String result = new String(rbuf, 0, len)
+        assertEquals(TEST_STRING, result)
+    }
+
+    /**
+     * See https://jira.codehaus.org/browse/GROOVY-7132
+     */
+    void testReadBumpy() {
+        IO io = new IO()
+        BumpyReader reader = new BumpyReader();
+        CharBuf buffer = io.read(reader, null, bufSize)
+        int len = buffer.len()
+        char[] rbuf = buffer.readForRecycle()
+        String result = new String(rbuf, 0, len)
+        assertEquals(TEST_STRING, result)
+    }
 }
 
 /**
@@ -45,30 +44,30 @@ class IOTest extends GroovyTestCase {
  */
 class BumpyReader extends Reader {
 
-	int index = 0;
-	def stopIndex = [69, 84, 500]
-	int nextStop=0;
+    int index = 0;
+    def stopIndex = [69, 84, 500]
+    int nextStop = 0;
 
-	@Override
-	public int read(char[] cbuf, int off, int len) throws IOException {
-		if (index>=IOTest.TEST_STRING.size()) {
-			return -1
-		}
-		int num=0
-		while(num<len && index < stopIndex[nextStop] && index<IOTest.TEST_STRING.size()) {
-			cbuf[off+num]=IOTest.TEST_STRING[index]
-			num++
-			index++
-		}
-		if(index==stopIndex[nextStop]) {
-			nextStop++
-		}
-		return num;
-	}
+    @Override
+    public int read(char[] cbuf, int off, int len) throws IOException {
+        if (index >= IOTest.TEST_STRING.size()) {
+            return -1
+        }
+        int num = 0
+        while (num < len && index < stopIndex[nextStop] && index < IOTest.TEST_STRING.size()) {
+            cbuf[off + num] = IOTest.TEST_STRING[index]
+            num++
+            index++
+        }
+        if (index == stopIndex[nextStop]) {
+            nextStop++
+        }
+        return num;
+    }
 
-	@Override
-	public void close() throws IOException {
-	}
+    @Override
+    public void close() throws IOException {
+    }
 }
 
 /**
@@ -77,23 +76,23 @@ class BumpyReader extends Reader {
  */
 class ProperReader extends Reader {
 
-	int index = 0;
+    int index = 0;
 
-	@Override
-	public int read(char[] cbuf, int off, int len) throws IOException {
-		if (index>=IOTest.TEST_STRING.size()) {
-			return -1
-		}
-		int num=0
-		while(num<len && index<IOTest.TEST_STRING.size()) {
-			cbuf[off+num]=IOTest.TEST_STRING[index]
-			num++
-			index++
-		}
-		return num;
-	}
+    @Override
+    public int read(char[] cbuf, int off, int len) throws IOException {
+        if (index >= IOTest.TEST_STRING.size()) {
+            return -1
+        }
+        int num = 0
+        while (num < len && index < IOTest.TEST_STRING.size()) {
+            cbuf[off + num] = IOTest.TEST_STRING[index]
+            num++
+            index++
+        }
+        return num;
+    }
 
-	@Override
-	public void close() throws IOException {
-	}
+    @Override
+    public void close() throws IOException {
+    }
 }

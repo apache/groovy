@@ -1,7 +1,5 @@
 package groovy.json
 
-
-
 /**
  * Created by Richard on 2/2/14.
  */

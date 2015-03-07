@@ -31,7 +31,6 @@ public class IO {
     private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 
     public static CharBuf read(Reader input, CharBuf charBuf, final int bufSize) {
-
         if (charBuf == null) {
             charBuf = CharBuf.create(bufSize);
         } else {
@@ -39,18 +38,16 @@ public class IO {
         }
 
         try {
-
             char[] buffer = charBuf.toCharArray();
             int size = input.read(buffer);
             if (size != -1) {
                 charBuf._len(size);
             }
-            if (size < 0 ) {
+            if (size < 0) {
                 return charBuf;
             }
 
             copy(input, charBuf);
-
         } catch (IOException e) {
             Exceptions.handle(e);
         } finally {
@@ -62,7 +59,6 @@ public class IO {
         }
 
         return charBuf;
-
     }
 
     public static int copy(Reader input, Writer output) {
@@ -91,5 +87,4 @@ public class IO {
         }
         return count;
     }
-
 }

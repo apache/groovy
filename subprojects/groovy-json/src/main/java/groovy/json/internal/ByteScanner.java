@@ -31,7 +31,6 @@ public class ByteScanner {
      * @return the encoded nibble (1/2 byte).
      */
     protected static int encodeNibbleToHexAsciiCharByte(final int nibble) {
-
         switch (nibble) {
             case 0x00:
             case 0x01:
@@ -64,9 +63,7 @@ public class ByteScanner {
      * @param encoded the array to which each encoded nibbles are now ascii hex representations.
      */
     public static void encodeByteIntoTwoAsciiCharBytes(final int decoded, final byte[] encoded) {
-
         encoded[0] = (byte) encodeNibbleToHexAsciiCharByte((decoded >> 4) & 0x0F);
         encoded[1] = (byte) encodeNibbleToHexAsciiCharByte(decoded & 0x0F);
     }
-
 }

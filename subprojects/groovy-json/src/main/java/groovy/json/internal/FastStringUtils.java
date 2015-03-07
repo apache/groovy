@@ -32,6 +32,7 @@ public class FastStringUtils {
     public static final long STRING_OFFSET_FIELD_OFFSET;
     public static final long STRING_COUNT_FIELD_OFFSET;
     public static final boolean ENABLED;
+
     private static final boolean WRITE_TO_FINAL_FIELDS = Boolean.parseBoolean(System.getProperty("groovy.json.faststringutils.write.to.final.fields", "false"));
     private static final boolean DISABLE = Boolean.parseBoolean(System.getProperty("groovy.json.faststringutils.disable", "false"));
 
@@ -151,11 +152,9 @@ public class FastStringUtils {
      * @return correct string implementation
      */
     private static StringImplementation computeStringImplementation() {
-
         if (STRING_VALUE_FIELD_OFFSET != -1L) {
             if (STRING_OFFSET_FIELD_OFFSET != -1L && STRING_COUNT_FIELD_OFFSET != -1L) {
                 return StringImplementation.OFFSET;
-
             } else if (STRING_OFFSET_FIELD_OFFSET == -1L && STRING_COUNT_FIELD_OFFSET == -1L) {
                 return StringImplementation.DIRECT_CHARS;
             } else {
@@ -173,7 +172,6 @@ public class FastStringUtils {
      */
     public static char[] toCharArray(final String string) {
         return STRING_IMPLEMENTATION.toCharArray(string);
-
     }
 
     /**

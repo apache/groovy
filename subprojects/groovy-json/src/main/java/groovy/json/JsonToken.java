@@ -27,6 +27,7 @@ import static groovy.json.JsonTokenType.*;
  * @since 1.8.0
  */
 public class JsonToken {
+
     private static final BigInteger MAX_LONG    = BigInteger.valueOf(Long.MAX_VALUE);
     private static final BigInteger MIN_LONG    = BigInteger.valueOf(Long.MIN_VALUE);
     private static final BigInteger MAX_INTEGER = BigInteger.valueOf(Integer.MAX_VALUE);
@@ -72,9 +73,9 @@ public class JsonToken {
             } else {
                 // an integer number
                 BigInteger v = new BigInteger(text);
-                if(v.compareTo(MAX_INTEGER) <= 0 && v.compareTo(MIN_INTEGER) >= 0 ) {
+                if (v.compareTo(MAX_INTEGER) <= 0 && v.compareTo(MIN_INTEGER) >= 0) {
                     return v.intValue();
-                } else if (v.compareTo(MAX_LONG) <= 0 && v.compareTo(MIN_LONG) >= 0 ) {
+                } else if (v.compareTo(MAX_LONG) <= 0 && v.compareTo(MIN_LONG) >= 0) {
                     return v.longValue();
                 } else {
                     return v;

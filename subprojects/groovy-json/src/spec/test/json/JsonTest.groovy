@@ -98,7 +98,7 @@ class JsonTest extends GroovyTestCase {
 
         assert json == '{"name":"John Doe","age":42}'
 
-        assert JsonOutput.prettyPrint(json) ==  '''\
+        assert JsonOutput.prettyPrint(json) == '''\
         {
             "name": "John Doe",
             "age": 42
