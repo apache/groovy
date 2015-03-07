@@ -371,7 +371,7 @@ if (classDoc.isInterface()) {
                         <% visibleProperties.eachWithIndex { prop, i -> %>
                         <tr class="${i%2==0?'altColor':'rowColor'}">
                             <td class="colFirst"><code><strong>${modifiersBrief(prop) + linkable(prop.type())}</strong></code>&nbsp;</td>
-                            <td class="colLast"><code><a href="#${prop.name()}"></a>${prop.name()}</code><br>${prop.firstSentenceCommentText()}</td>
+                            <td class="colLast"><code><a href="#${prop.name()}">${prop.name()}</a></code><br>${prop.firstSentenceCommentText()}</td>
                         </tr>
                         <% } %>
                     </table>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2013 the original author or authors.
+ * Copyright 2007-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,14 +73,18 @@ public class GroovyDocToolTest extends GroovyTestCase {
         link.setPackages("java.,org.xml.,javax.,org.xml.");
         links.add(link);
 
-        htmlTool = new GroovyDocTool(
+        htmlTool = makeHtmltool(links, new Properties());
+    }
+
+    private GroovyDocTool makeHtmltool(ArrayList<LinkArgument> links, Properties props) {
+        return new GroovyDocTool(
                 new FileSystemResourceManager("src/main/resources"), // template storage
                 new String[] {"src/test/groovy", "../../src/test"}, // source file dirs
                 GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
                 links,
-                new Properties()
+                props
         );
     }
 
@@ -306,6 +310,66 @@ public class GroovyDocToolTest extends GroovyTestCase {
         String classWithAnonymousInnerClassDoc = output.getText(MOCK_DIR + "/" + base + ".html");
         assertNotNull("No GroovyDoc found for " + base, classWithAnonymousInnerClassDoc);
         assertTrue("innerClassMethod found in: \"" + classWithAnonymousInnerClassDoc + "\"", !classWithAnonymousInnerClassDoc.contains("innerClassMethod"));
+    }
+
+    public void testVisibilityPublic() throws Exception {
+        Properties props = new Properties();
+        props.put("publicScope", "true");
+        testVisibility(props, true, false, false, false);
+    }
+
+    public void testVisibilityProtected() throws Exception {
+        Properties props = new Properties();
+        props.put("protectedScope", "true");
+        testVisibility(props, true, true, false, false);
+    }
+
+    public void testVisibilityPackage() throws Exception {
+        Properties props = new Properties();
+        props.put("packageScope", "true");
+        testVisibility(props, true, true, true, false);
+    }
+
+    public void testVisibilityPrivate() throws Exception {
+        Properties props = new Properties();
+        props.put("privateScope", "true");
+        testVisibility(props, true, true, true, true);
+    }
+
+    private void testVisibility(Properties props, boolean a, boolean b, boolean c, boolean d) throws Exception {
+        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), props);
+        List<String> srcList = new ArrayList<String>();
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/ExampleVisibility";
+        srcList.add(base + "G.groovy");
+        srcList.add(base + "J.java");
+        htmlTool.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        String javaExampleClass = output.getText(MOCK_DIR + "/" + base + "J.html");
+        assertMethodVisibility(base, output, javaExampleClass, a, b, c, d);
+        String groovyExampleClass = output.getText(MOCK_DIR + "/" + base + "G.html");
+        assertMethodVisibility(base, output, groovyExampleClass, a, b, c, d);
+    }
+
+    private void assertMethodVisibility(String base, MockOutputTool output, String text, boolean a, boolean b, boolean c, boolean d) {
+        assertNotNull("No GroovyDoc found for " + base + "\nFound: " + output, text);
+        assertTrue("method a1" + (a ? " not" : "") + " found in: \"" + text + "\"", a ^ !text.contains("<a href=\"#a1()\">a1</a>"));
+        assertTrue("method a2" + (a ? " not" : "") + " found in: \"" + text + "\"", a ^ !text.contains("<a href=\"#a2()\">a2</a>"));
+        assertTrue("method b" + (b ? " not" : "") + " found in: \"" + text + "\"", b ^ !text.contains("<a href=\"#b()\">b</a>"));
+        assertTrue("method c1" + (c ? " not" : "") + " found in: \"" + text + "\"", c ^ !text.contains("<a href=\"#c1()\">c1</a>"));
+        assertTrue("method c2" + (c ? " not" : "") + " found in: \"" + text + "\"", c ^ !text.contains("<a href=\"#c2()\">c2</a>"));
+        assertTrue("method d" + (d ? " not" : "") + " found in: \"" + text + "\"", d ^ !text.contains("<a href=\"#d()\">d</a>"));
+
+        assertTrue("field _a" + (a ? " not" : "") + " found in: \"" + text + "\"", a ^ !text.contains("<a href=\"#_a\">_a</a>"));
+        assertTrue("field _b" + (b ? " not" : "") + " found in: \"" + text + "\"", b ^ !text.contains("<a href=\"#_b\">_b</a>"));
+        assertTrue("field _c" + (c ? " not" : "") + " found in: \"" + text + "\"", c ^ !text.contains("<a href=\"#_c\">_c</a>"));
+        assertTrue("field _d" + (d ? " not" : "") + " found in: \"" + text + "\"", d ^ !text.contains("<a href=\"#_d\">_d</a>"));
+
+        assertTrue("class A1" + (a ? " not" : "") + " found in: \"" + text + "\"", a ^ !text.contains(".A1</a></code>"));
+        assertTrue("class A2" + (a ? " not" : "") + " found in: \"" + text + "\"", a ^ !text.contains(".A2</a></code>"));
+        assertTrue("class B" + (b ? " not" : "") + " found in: \"" + text + "\"", b ^ !text.contains(".B</a></code>"));
+        assertTrue("class C" + (c ? " not" : "") + " found in: \"" + text + "\"", c ^ !text.contains(".C</a></code>"));
+        assertTrue("class D" + (d ? " not" : "") + " found in: \"" + text + "\"", d ^ !text.contains(".D</a></code>"));
     }
 
     public void testMultipleConstructorErrorBug() throws Exception {
