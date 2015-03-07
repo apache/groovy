@@ -300,7 +300,7 @@ Some special characters also use the backslash as escape character:
 
 ==== Unicode escape sequence
 
-For characters that are not present on your keyboard, you can use unicode escape sequances: 
+For characters that are not present on your keyboard, you can use unicode escape sequences: 
 a backslash, followed by 'u', then 4 hexadecimal digits.
 
 For example, the Euro currency symbol can be represented with:
