@@ -76,7 +76,7 @@ import java.util.*;
  * To enable the INDEX_OVERLAY parser do this:
  *
  * <code><pre>
- *             parser = new JsonSlurper().setType( JsonParserType.INDEX_OVERLAY );
+ *             parser = new JsonSlurper().setType(JsonParserType.INDEX_OVERLAY);
  * </pre></code>
  *
  * @see groovy.json.JsonParserType
@@ -86,7 +86,6 @@ import java.util.*;
  * @since 1.8.0
  */
 public class JsonSlurper {
-
 
     private int maxSizeForInMemory = 2000000;
     private boolean chop = false;
@@ -104,13 +103,12 @@ public class JsonSlurper {
         return maxSizeForInMemory;
     }
 
-
     /**
      * Max size before Slurper starts to use windowing buffer parser.
      * @since 2.3
      * @return JsonSlurper
      */
-    public JsonSlurper setMaxSizeForInMemory( int maxSizeForInMemory ) {
+    public JsonSlurper setMaxSizeForInMemory(int maxSizeForInMemory) {
         this.maxSizeForInMemory = maxSizeForInMemory;
         return this;
     }
@@ -124,13 +122,12 @@ public class JsonSlurper {
         return type;
     }
 
-
     /** Parser type.
      * @since 2.3
      * @see groovy.json.JsonParserType
      * @return  JsonSlurper
      */
-    public JsonSlurper setType( JsonParserType type ) {
+    public JsonSlurper setType(JsonParserType type) {
         this.type = type;
         return this;
     }
@@ -149,11 +146,10 @@ public class JsonSlurper {
      * @see groovy.json.JsonParserType
      * @return  JsonSlurper
      */
-    public JsonSlurper setChop( boolean chop ) {
+    public JsonSlurper setChop(boolean chop) {
         this.chop = chop;
         return this;
     }
-
 
     /** Turns on buffer lazy chopping for index overlay.
      * @see groovy.json.JsonParserType
@@ -164,13 +160,12 @@ public class JsonSlurper {
         return lazyChop;
     }
 
-
     /** Turns on buffer lazy chopping for index overlay.
      * @see groovy.json.JsonParserType
      * @return  JsonSlurper
      * @since 2.3
      */
-    public JsonSlurper setLazyChop( boolean lazyChop ) {
+    public JsonSlurper setLazyChop(boolean lazyChop) {
         this.lazyChop = lazyChop;
         return this;
     }
@@ -184,13 +179,12 @@ public class JsonSlurper {
         return checkDates;
     }
 
-
     /**
      * Determine if slurper will automatically parse strings it recognizes as dates. Index overlay only.
      * @return on or off
      * @since 2.3
      */
-    public JsonSlurper setCheckDates( boolean checkDates ) {
+    public JsonSlurper setCheckDates(boolean checkDates) {
         this.checkDates = checkDates;
         return this;
     }
@@ -202,10 +196,10 @@ public class JsonSlurper {
      * @return a data structure of lists and maps
      */
     public Object parseText(String text) {
-        if (text == null || "".equals ( text )) {
-            throw new IllegalArgumentException ( "Text must not be null"  );
+        if (text == null || "".equals(text)) {
+            throw new IllegalArgumentException("Text must not be null");
         }
-        return createParser().parse( text );
+        return createParser().parse(text);
     }
 
     /**
@@ -215,8 +209,8 @@ public class JsonSlurper {
      * @return a data structure of lists and maps
      */
     public Object parse(Reader reader) {
-        if (reader == null ) {
-            throw new IllegalArgumentException ( "Reader must not be null"  );
+        if (reader == null) {
+            throw new IllegalArgumentException("Reader must not be null");
         }
 
         Object content;
@@ -224,8 +218,6 @@ public class JsonSlurper {
         content = parser.parse(reader);
         return content;
     }
-
-
 
     /**
      * Parse a JSON data structure from content from an inputStream
@@ -235,13 +227,13 @@ public class JsonSlurper {
      * @since 2.3
      */
     public Object parse(InputStream inputStream) {
-        if (inputStream == null ) {
-            throw new IllegalArgumentException ( "inputStream must not be null"  );
+        if (inputStream == null) {
+            throw new IllegalArgumentException("inputStream must not be null");
         }
 
         Object content;
         JsonParser parser = createParser();
-        content = parser.parse( inputStream );
+        content = parser.parse(inputStream);
         return content;
     }
 
@@ -254,18 +246,17 @@ public class JsonSlurper {
      * @since 2.3
      */
     public Object parse(InputStream inputStream, String charset) {
-        if (inputStream == null ) {
-            throw new IllegalArgumentException ( "inputStream must not be null"  );
+        if (inputStream == null) {
+            throw new IllegalArgumentException("inputStream must not be null");
         }
-        if ( charset == null ) {
-            throw new IllegalArgumentException ( "charset must not be null"  );
+        if (charset == null) {
+            throw new IllegalArgumentException("charset must not be null");
         }
 
         Object content;
         content = createParser().parse(inputStream, charset);
         return content;
     }
-
 
     /**
      * Parse a JSON data structure from content from a byte array.
@@ -276,20 +267,18 @@ public class JsonSlurper {
      * @since 2.3
      */
     public Object parse(byte [] bytes, String charset) {
-        if ( bytes == null ) {
-            throw new IllegalArgumentException ( "bytes must not be null"  );
+        if (bytes == null) {
+            throw new IllegalArgumentException("bytes must not be null");
         }
 
-        if ( charset == null ) {
-            throw new IllegalArgumentException ( "charset must not be null"  );
+        if (charset == null) {
+            throw new IllegalArgumentException("charset must not be null");
         }
-
 
         Object content;
         content = createParser().parse(bytes, charset);
         return content;
     }
-
 
     /**
      * Parse a JSON data structure from content from a byte array.
@@ -299,8 +288,8 @@ public class JsonSlurper {
      * @since 2.3
      */
     public Object parse(byte [] bytes) {
-        if ( bytes == null ) {
-            throw new IllegalArgumentException ( "bytes must not be null"  );
+        if (bytes == null) {
+            throw new IllegalArgumentException("bytes must not be null");
         }
 
         Object content;
@@ -316,8 +305,8 @@ public class JsonSlurper {
      * @since 2.3
      */
     public Object parse(char [] chars) {
-        if ( chars == null ) {
-            throw new IllegalArgumentException ( "chars must not be null"  );
+        if (chars == null) {
+            throw new IllegalArgumentException("chars must not be null");
         }
 
         Object content;
@@ -325,10 +314,8 @@ public class JsonSlurper {
         return content;
     }
 
-
     private JsonParser createParser() {
         switch (type) {
-
             case LAX:
                 return new JsonParserLax(false, chop, lazyChop, checkDates);
 
@@ -371,11 +358,10 @@ public class JsonSlurper {
     }
 
     private Object parseFile(File file, String charset) {
-
-        if (file.length() < maxSizeForInMemory)  {
+        if (file.length() < maxSizeForInMemory) {
             return createParser().parse(file, charset);
         } else {
-            return new JsonParserUsingCharacterSource().parse ( file, charset );
+            return new JsonParserUsingCharacterSource().parse(file, charset);
         }
     }
 
@@ -422,8 +408,8 @@ public class JsonSlurper {
             } else {
                 reader = ResourceGroovyMethods.newReader(url, params);
             }
-            return createParser ().parse ( reader );
-        } catch(IOException ioe) {
+            return createParser().parse(reader);
+        } catch (IOException ioe) {
             throw new JsonException("Unable to process url: " + url.toString(), ioe);
         } finally {
             if (reader != null) {
@@ -479,7 +465,7 @@ public class JsonSlurper {
                 reader = ResourceGroovyMethods.newReader(url, params, charset);
             }
             return parse(reader);
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw new JsonException("Unable to process url: " + url.toString(), ioe);
         } finally {
             if (reader != null) {

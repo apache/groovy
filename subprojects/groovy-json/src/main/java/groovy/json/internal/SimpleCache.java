@@ -41,7 +41,6 @@ public class SimpleCache<K, V> implements Cache<K, V> {
     }
 
     public SimpleCache(final int limit, CacheType type) {
-
         if (type.equals(CacheType.LRU)) {
             map = new InternalCacheLinkedList<K, V>(limit, true);
         } else {
@@ -50,9 +49,7 @@ public class SimpleCache<K, V> implements Cache<K, V> {
     }
 
     public SimpleCache(final int limit) {
-
         map = new InternalCacheLinkedList<K, V>(limit, true);
-
     }
 
     public void put(K key, V value) {
@@ -85,5 +82,4 @@ public class SimpleCache<K, V> implements Cache<K, V> {
     public String toString() {
         return map.toString();
     }
-
 }

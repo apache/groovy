@@ -18,21 +18,21 @@ package groovy.json.internal;
 
 class ReaderCharacterSourceTest extends GroovyTestCase {
 
-	void testFindNextCharWithRecursionHadEscape() {
-		int[] control = '"\\'.toCharArray() as int[]
+    void testFindNextCharWithRecursionHadEscape() {
+        int[] control = '"\\'.toCharArray() as int[]
 
-		// create a ReaderCharacterSource with a very small buffer, findNextChar must be invoked recursive
+        // create a ReaderCharacterSource with a very small buffer, findNextChar must be invoked recursive
 
         // use a string where escape-character is in last invocation
-		ReaderCharacterSource cs = new ReaderCharacterSource(new StringReader('"value\\u0026"'), 6)
-		cs.findNextChar(control[0], control[1])
+        ReaderCharacterSource cs = new ReaderCharacterSource(new StringReader('"value\\u0026"'), 6)
+        cs.findNextChar(control[0], control[1])
 
-		assert cs.hadEscape()
+        assert cs.hadEscape()
 
-		// use a string where escape-character is in first invocation
-		cs = new ReaderCharacterSource(new StringReader('"\\u0026value"'), 6)
-		cs.findNextChar(control[0], control[1])
+        // use a string where escape-character is in first invocation
+        cs = new ReaderCharacterSource(new StringReader('"\\u0026value"'), 6)
+        cs.findNextChar(control[0], control[1])
 
-		assert cs.hadEscape()
-	}
+        assert cs.hadEscape()
+    }
 }

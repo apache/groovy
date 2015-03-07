@@ -51,7 +51,6 @@ public class NumberValue extends java.lang.Number implements Value {
 
         try {
             if (chop) {
-
                 this.buffer = ArrayUtils.copyRange(buffer, startIndex, endIndex);
                 this.startIndex = 0;
                 this.endIndex = this.buffer.length;
@@ -62,9 +61,7 @@ public class NumberValue extends java.lang.Number implements Value {
                 this.buffer = buffer;
             }
         } catch (Exception ex) {
-            Exceptions.handle(sputs("exception", ex, "start", startIndex, "end", endIndex),
-                    ex);
-
+            Exceptions.handle(sputs("exception", ex, "start", startIndex, "end", endIndex), ex);
         }
     }
 
@@ -81,12 +78,10 @@ public class NumberValue extends java.lang.Number implements Value {
     }
 
     public <T extends Enum> T toEnum(Class<T> cls) {
-
         return toEnum(cls, intValue());
     }
 
     public static <T extends Enum> T toEnum(Class<T> cls, int value) {
-
         T[] enumConstants = cls.getEnumConstants();
         for (T e : enumConstants) {
             if (e.ordinal() == value) {
@@ -102,12 +97,10 @@ public class NumberValue extends java.lang.Number implements Value {
     }
 
     private final Object doToValue() {
-
         switch (type) {
             case DOUBLE:
                 return bigDecimalValue();
             case INTEGER:
-
                 int sign = 1;
                 boolean negative = false;
                 if (buffer[startIndex] == '-') {
@@ -176,13 +169,11 @@ public class NumberValue extends java.lang.Number implements Value {
         if (buffer[startIndex] == '-') {
             startIndex++;
             sign = -1;
-
         }
         return parseIntFromTo(buffer, startIndex, endIndex) * sign;
     }
 
     public long longValue() {
-
         if (isInteger(buffer, startIndex, endIndex - startIndex)) {
             return parseIntFromTo(buffer, startIndex, endIndex);
         } else {
@@ -235,6 +226,4 @@ public class NumberValue extends java.lang.Number implements Value {
     public char charValue() {
         return buffer[startIndex];
     }
-
 }
-

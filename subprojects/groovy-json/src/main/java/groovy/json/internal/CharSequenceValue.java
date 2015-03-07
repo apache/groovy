@@ -57,7 +57,6 @@ public class CharSequenceValue implements Value, CharSequence {
             this.startIndex = 0;
             this.endIndex = this.buffer.length;
             this.chopped = true;
-
         } else {
             this.startIndex = startIndex;
             this.endIndex = endIndex;
@@ -78,7 +77,6 @@ public class CharSequenceValue implements Value, CharSequence {
     }
 
     public <T extends Enum> T toEnum(Class<T> cls) {
-
         switch (type) {
             case STRING:
                 return toEnum(cls, stringValue());
@@ -100,7 +98,6 @@ public class CharSequenceValue implements Value, CharSequence {
     }
 
     public static <T extends Enum> T toEnum(Class<T> cls, int value) {
-
         T[] enumConstants = cls.getEnumConstants();
         for (T e : enumConstants) {
             if (e.ordinal() == value) {
@@ -116,12 +113,10 @@ public class CharSequenceValue implements Value, CharSequence {
     }
 
     private final Object doToValue() {
-
         switch (type) {
             case DOUBLE:
                 return doubleValue();
             case INTEGER:
-
                 if (isInteger(buffer, startIndex, endIndex - startIndex)) {
                     return intValue();
                 } else {
@@ -209,7 +204,6 @@ public class CharSequenceValue implements Value, CharSequence {
     }
 
     public Date dateValue() {
-
         if (type == Type.STRING) {
 
             if (Dates.isISO8601QuickCheck(buffer, startIndex, endIndex)) {
@@ -223,11 +217,9 @@ public class CharSequenceValue implements Value, CharSequence {
                     throw new JsonException("Unable to convert " + stringValue() + " to date ");
                 }
             } else {
-
                 throw new JsonException("Unable to convert " + stringValue() + " to date ");
             }
         } else {
-
             return new Date(Dates.utc(longValue()));
         }
     }
@@ -237,13 +229,11 @@ public class CharSequenceValue implements Value, CharSequence {
         if (buffer[startIndex] == '-') {
             startIndex++;
             sign = -1;
-
         }
         return parseIntFromTo(buffer, startIndex, endIndex) * sign;
     }
 
     public long longValue() {
-
         if (isInteger(buffer, startIndex, endIndex - startIndex)) {
             return parseIntFromTo(buffer, startIndex, endIndex);
         } else {
@@ -268,7 +258,6 @@ public class CharSequenceValue implements Value, CharSequence {
     }
 
     public float floatValue() {
-
         return CharScanner.parseFloat(this.buffer, startIndex, endIndex);
     }
 
@@ -285,4 +274,3 @@ public class CharSequenceValue implements Value, CharSequence {
         return buffer[startIndex];
     }
 }
-

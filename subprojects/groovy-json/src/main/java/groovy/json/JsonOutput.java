@@ -250,7 +250,7 @@ public class JsonOutput {
         } else {
             Class<?> objectClass = object.getClass();
 
-            if (CharSequence.class.isAssignableFrom(objectClass)) { // Handle String, StringBuilder, GString and other CharSequence implemenations
+            if (CharSequence.class.isAssignableFrom(objectClass)) { // Handle String, StringBuilder, GString and other CharSequence implementations
                 writeCharSequence((CharSequence) object, buffer);
             } else if (objectClass == Boolean.class) {
                 buffer.addBoolean((Boolean) object);

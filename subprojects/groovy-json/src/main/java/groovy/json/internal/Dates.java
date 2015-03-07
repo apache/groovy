@@ -37,7 +37,6 @@ public class Dates {
     }
 
     private static Date internalDate(TimeZone tz, int year, int month, int day, int hour, int minute, int second) {
-
         Calendar calendar = Calendar.getInstance();
 
         calendar.set(Calendar.YEAR, year);
@@ -84,7 +83,6 @@ public class Dates {
     public static final int JSON_TIME_LENGTH = "2013-12-14T01:55:33.412Z".length();
 
     public static Date fromISO8601(char[] charArray, int from, int to) {
-
         try {
             if (isISO8601(charArray, from, to)) {
                 int year = CharScanner.parseIntFromTo(charArray, from + 0, from + 4);
@@ -98,27 +96,21 @@ public class Dates {
                 TimeZone tz = null;
 
                 if (charArray[from + 19] == 'Z') {
-
                     tz = TimeZone.getTimeZone("GMT");
-
                 } else {
-
                     StringBuilder builder = new StringBuilder(9);
                     builder.append("GMT");
                     builder.append(charArray, from + 19, 6);
                     String tzStr = builder.toString();
                     tz = TimeZone.getTimeZone(tzStr);
-
                 }
                 return toDate(tz, year, month, day, hour, minute, second);
-
             } else {
                 return null;
             }
         } catch (Exception ex) {
             return null;
         }
-
     }
 
     public static Date fromJsonDate(char[] charArray, int from, int to) {
@@ -138,14 +130,12 @@ public class Dates {
                 TimeZone tz = TimeZone.getTimeZone("GMT");
 
                 return toDate(tz, year, month, day, hour, minute, second, miliseconds);
-
             } else {
                 return null;
             }
         } catch (Exception ex) {
             return null;
         }
-
     }
 
     public static boolean isISO8601(char[] charArray, int start, int to) {
@@ -154,11 +144,9 @@ public class Dates {
 
         if (length == SHORT_ISO_8601_TIME_LENGTH) {
             valid &= (charArray[start + 19] == 'Z');
-
         } else if (length == LONG_ISO_8601_TIME_LENGTH) {
             valid &= (charArray[start + 19] == '-' || charArray[start + 19] == '+');
             valid &= (charArray[start + 22] == ':');
-
         } else {
             return false;
         }
@@ -179,7 +167,6 @@ public class Dates {
         final int length = to - start;
 
         try {
-
             if (length == JSON_TIME_LENGTH || length == LONG_ISO_8601_TIME_LENGTH
                     || length == SHORT_ISO_8601_TIME_LENGTH || (length >= 17 && (charArray[start + 16] == ':'))
                     ) {
@@ -191,7 +178,6 @@ public class Dates {
             ex.printStackTrace();
             return false;
         }
-
     }
 
     public static boolean isJsonDate(char[] charArray, int start, int to) {
@@ -216,5 +202,4 @@ public class Dates {
 
         return valid;
     }
-
 }

@@ -46,7 +46,6 @@ public class Exceptions {
     }
 
     public static <T> T handle(Class<T> clazz, java.lang.Exception e) {
-
         if (e instanceof JsonInternalException) {
             throw (JsonInternalException) e;
         }
@@ -54,7 +53,6 @@ public class Exceptions {
     }
 
     public static <T> T handle(Class<T> clazz, String message, Throwable e) {
-
         throw new JsonInternalException(message, e);
     }
 
@@ -77,7 +75,6 @@ public class Exceptions {
         }
 
         public void printStackTrace(PrintStream s) {
-
             s.println(this.getMessage());
             if (getCause() != null) {
                 s.println("This Exception was wrapped, the original exception\n" +
@@ -86,7 +83,6 @@ public class Exceptions {
             } else {
                 super.printStackTrace(s);
             }
-
         }
 
         public String getMessage() {
@@ -109,7 +105,6 @@ public class Exceptions {
             } else {
                 return super.getStackTrace();
             }
-
         }
 
         public Throwable getCause() {
@@ -117,7 +112,6 @@ public class Exceptions {
         }
 
         public void printStackTrace(PrintWriter s) {
-
             s.println(this.getMessage());
 
             if (getCause() != null) {
@@ -130,7 +124,6 @@ public class Exceptions {
         }
 
         public void printStackTrace() {
-
             System.err.println(this.getMessage());
 
             if (getCause() != null) {
@@ -155,11 +148,9 @@ public class Exceptions {
         }
 
         return buffer.toString();
-
     }
 
     public static String sputs(CharBuf buf, Object... messages) {
-
         int index = 0;
         for (Object message : messages) {
             if (index != 0) {
@@ -178,13 +169,10 @@ public class Exceptions {
         buf.add('\n');
 
         return buf.toString();
-
     }
 
     public static String sputs(Object... messages) {
         CharBuf buf = CharBuf.create(100);
         return sputs(buf, messages);
     }
-
 }
-
