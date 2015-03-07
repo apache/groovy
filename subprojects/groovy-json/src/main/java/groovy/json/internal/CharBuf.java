@@ -515,35 +515,16 @@ public class CharBuf extends Writer implements CharSequence {
         return addJsonFieldName(FastStringUtils.toCharArray(str));
     }
 
+    private static final char[] EMPTY_STRING_CHARS = Chr.array('"', '"');
+
     public final CharBuf addJsonFieldName(char[] chars) {
-        int _location = location;
-        char[] _buffer = buffer;
-        int _capacity = capacity;
-
-        try {
-            int sizeNeeded = chars.length + 3 + _location;
-            if (sizeNeeded > _capacity) {
-                _buffer = Chr.grow(_buffer, sizeNeeded * 2);
-                _capacity = _buffer.length;
-            }
-            _buffer[_location] = '"';
-            _location++;
-
-            arraycopy(chars, 0, _buffer, _location, chars.length);
-
-            _location += (chars.length);
-            _buffer[_location] = '"';
-            _location++;
-            _buffer[_location] = ':';
-            _location++;
-
-            location = _location;
-            buffer = _buffer;
-            capacity = _capacity;
-            return this;
-        } catch (Exception ex) {
-            return Exceptions.handle(CharBuf.class, Exceptions.sputs(toDebugString(), new String(chars), "_location", _location), ex);
+        if (chars.length > 0) {
+            addJsonEscapedString(chars);
+        } else {
+            addChars(EMPTY_STRING_CHARS);
         }
+        addChar(':');
+        return this;
     }
 
     public final CharBuf addQuoted(String str) {
