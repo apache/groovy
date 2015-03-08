@@ -36,58 +36,35 @@ class DocCommandTest extends CommandTestSupport
     }
 
     void testUrlsForJavaOnlyClass() {
-        def urlsToLookup = []
-        def command = new DocCommand(new Groovysh()) {
-            @Override
-            protected boolean sendHEADRequest(final URL url) {
-                !url.host.contains('docs.groovy-lang.org')
-            }
-        }
+        def command = docCommandWithSendHEADRequestReturnValueOf { !it.host.contains('docs.groovy-lang.org') }
 
         def urls = command.urlsFor('org.ietf.jgss.GSSContext')
 
         assert urls ==
-            [new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/org/ietf/jgss/GSSContext.html")]
+            [new URL("http://docs.oracle.com/javase/${simpleJavaVersion()}/docs/api/org/ietf/jgss/GSSContext.html")]
     }
 
     void testUrlsForJavaClass() {
-        def urlsToLookup = []
-        def command = new DocCommand(new Groovysh()) {
-            boolean sendHEADRequest(URL url) {
-                urlsToLookup << url
-                true
-            }
-        }
+        def command = docCommandWithSendHEADRequestReturnValueOf { true }
 
         def urls = command.urlsFor('java.util.List')
 
         assert urls ==
-                [new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html"),
+                [new URL("http://docs.oracle.com/javase/${simpleJavaVersion()}/docs/api/java/util/List.html"),
                  new URL("http://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")]
-
-        assert urls == urlsToLookup
     }
 
     void testUrlsForGroovyClass() {
-        def urlsToLookup = []
-        def command = new DocCommand(new Groovysh()) {
-            boolean sendHEADRequest(URL url) {
-                urlsToLookup << url
-                true
-            }
-        }
+        def command = docCommandWithSendHEADRequestReturnValueOf { true }
 
         def urls = command.urlsFor('groovy.Dummy')
 
         assert urls ==
                 [new URL("http://docs.groovy-lang.org/$GroovySystem.version/html/gapi/groovy/Dummy.html")]
-
-        assert urls == urlsToLookup
     }
 
     void testUrlsForWithUnknownClass() {
-        def urlsToLookup = []
-        def command = new DocCommand(new Groovysh())
+        def command = docCommandWithSendHEADRequestReturnValueOf { false }
 
         def urls = command.urlsFor('com.dummy.List')
 
@@ -112,7 +89,7 @@ class DocCommandTest extends CommandTestSupport
         DocCommand.hasAWTDesktopPlatformSupport = true
         DocCommand.desktop = [:]
 
-        command.browse([new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html")])
+        command.browse([new URL("http://docs.oracle.com/javase/${simpleJavaVersion()}/docs/api/java/util/List.html")])
 
         assert browseWithAWT
     }
@@ -133,7 +110,7 @@ class DocCommandTest extends CommandTestSupport
             }
         }
 
-        command.browse([new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html")])
+        command.browse([new URL("http://docs.oracle.com/javase/${simpleJavaVersion()}/docs/api/java/util/List.html")])
 
         assert browseWithNativeBrowser
     }
@@ -162,7 +139,16 @@ class DocCommandTest extends CommandTestSupport
         assert command.browserEnvironmentVariable == 'chrome'
     }
 
-    private static simpleVersion() {
+    private DocCommand docCommandWithSendHEADRequestReturnValueOf(Closure returnValue) {
+        new DocCommand(new Groovysh()) {
+            @Override
+            boolean sendHEADRequest(URL url) {
+                returnValue(url)
+            }
+        }
+    }
+
+    private simpleJavaVersion() {
         System.getProperty('java.version').split(/\./)[1]
     }
 }
