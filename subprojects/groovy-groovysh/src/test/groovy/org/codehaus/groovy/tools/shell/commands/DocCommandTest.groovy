@@ -47,7 +47,7 @@ class DocCommandTest extends CommandTestSupport
         def command = new DocCommand(new Groovysh()) {
             @Override
             protected boolean sendHEADRequest(final URL url) {
-                !url.host.contains('groovy.codehaus.org')
+                !url.host.contains('docs.groovy-lang.org')
             }
         }
 
@@ -70,7 +70,7 @@ class DocCommandTest extends CommandTestSupport
 
         assert urls ==
                 [new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/java/util/List.html"),
-                 new URL("http://groovy.codehaus.org/groovy-jdk/java/util/List.html")]
+                 new URL("http://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")]
 
         assert urls == urlsToLookup
     }
@@ -87,7 +87,7 @@ class DocCommandTest extends CommandTestSupport
         def urls = command.urlsFor('groovy.Dummy')
 
         assert urls ==
-                [new URL('http://groovy.codehaus.org/gapi/groovy/Dummy.html')]
+                [new URL("http://docs.groovy-lang.org/$GroovySystem.version/html/gapi/groovy/Dummy.html")]
 
         assert urls == urlsToLookup
     }

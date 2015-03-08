@@ -145,11 +145,12 @@ class DocCommand extends CommandSupport {
     }
 
     protected List urlsFor(String className) {
+        String groovyVersion = GroovySystem.version
         def path = className.replaceAll(/\./, '/') + ".html"
 
         def urls = []
         if (className.matches(/^(groovy|org\.codehaus\.groovy|)\..+/)) {
-            def url = new URL("http://groovy.codehaus.org/gapi/$path")
+            def url = new URL("http://docs.groovy-lang.org/$groovyVersion/html/gapi/$path")
             if (sendHEADRequest(url)) {
                 urls << url
             }
@@ -160,7 +161,7 @@ class DocCommand extends CommandSupport {
             def url = new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/$path")
             if (sendHEADRequest(url)) {
                 urls << url
-                url = new URL("http://groovy.codehaus.org/groovy-jdk/$path")
+                url = new URL("http://docs.groovy-lang.org/$groovyVersion/html/groovy-jdk/$path")
                 if (sendHEADRequest(url)) {
                     urls << url
                 }
