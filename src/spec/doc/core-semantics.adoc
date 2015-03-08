@@ -305,7 +305,7 @@ does to make testing easier.
 
 
 [[gpath_expressions]]
-=== GPath expressions
+=== GPath expressions (MarcPaquette)
 
 (TBD)
 
