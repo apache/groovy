@@ -390,6 +390,7 @@ include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[ta
 
 Details for the software you are trying to monitor/manage may differ slightly. Check out the other examples using credentials above if appropriate (e.g. OC4J and WebLogic). If you still have troubles, you will have to consult the documentation for the software you are trying to monitor/manage for details on how to provide credentials.
 
+[[jmx_jmxbuilder]]
 == JmxBuilder
 
 **JmxBuilder is a Groovy-based domain specific language for the Java Management Extension (JMX) API**. It uses the builder pattern (FactoryBuilder) to create an internal DSL that facilitates the exposure of POJO's and Groovy beans as management components via the MBean server. JmxBuilder hides the complexity of creating and exporting management beans via the JMX API and provides a set of natural Groovy constructs to interact with the JMX infrastructure.

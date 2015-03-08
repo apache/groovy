@@ -1188,3 +1188,6 @@ include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=t
 Its worth mentioning that you cannot modify the properties of a
 referenced bean.
 
+==== JmxBuilder
+
+See <<jmx_jmxbuilder,Working with JMX - JmxBuilder>> for details.
