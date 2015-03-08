@@ -1,5 +1,5 @@
 [[jsr223]]
-= JSR 223 javax.script API (TBD)
+= JSR 223 javax.script API
 
 WARNING: JSR-223 is a standard API for calling scripting frameworks in Java. It is available since Java 6 and aims at
 providing a common framework for calling multiple languages from Java. Groovy provides its own richer integration mechanisms,
