@@ -72,7 +72,7 @@ public class JsonSlurperClassic {
             throw new IllegalArgumentException("The JSON input text should neither be null nor empty.");
         }
 
-        return parse(new LineColumnReader (new StringReader (text)));
+        return parse(new LineColumnReader(new StringReader(text)));
     }
 
     /**
@@ -131,16 +131,16 @@ public class JsonSlurperClassic {
         Reader reader = null;
         try {
             if (charset == null || charset.length() == 0) {
-                reader = ResourceGroovyMethods.newReader ( file );
+                reader = ResourceGroovyMethods.newReader(file);
             } else {
                 reader = ResourceGroovyMethods.newReader(file, charset);
             }
             return parse(reader);
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw new JsonException("Unable to process file: " + file.getPath(), ioe);
         } finally {
             if (reader != null) {
-                DefaultGroovyMethodsSupport.closeWithWarning ( reader );
+                DefaultGroovyMethodsSupport.closeWithWarning(reader);
             }
         }
     }
@@ -189,7 +189,7 @@ public class JsonSlurperClassic {
                 reader = ResourceGroovyMethods.newReader(url, params);
             }
             return parse(reader);
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw new JsonException("Unable to process url: " + url.toString(), ioe);
         } finally {
             if (reader != null) {
@@ -245,7 +245,7 @@ public class JsonSlurperClassic {
                 reader = ResourceGroovyMethods.newReader(url, params, charset);
             }
             return parse(reader);
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw new JsonException("Unable to process url: " + url.toString(), ioe);
         } finally {
             if (reader != null) {
@@ -261,7 +261,7 @@ public class JsonSlurperClassic {
      * @return a list of JSON values
      */
     private List parseArray(JsonLexer lexer) {
-        List content = new ArrayList ();
+        List content = new ArrayList();
 
         JsonToken currentToken;
 
@@ -329,7 +329,7 @@ public class JsonSlurperClassic {
      * @return a Map representing a JSON object
      */
     private Map parseObject(JsonLexer lexer) {
-        Map content = new HashMap ();
+        Map content = new HashMap();
 
         JsonToken previousToken = null;
         JsonToken currentToken = null;
@@ -378,7 +378,7 @@ public class JsonSlurperClassic {
                         "Expected " + COLON.getLabel() + " " +
                                 "on line: " + currentToken.getStartLine() + ", " +
                                 "column: " + currentToken.getStartColumn() + ".\n" +
-                                "But got '" + currentToken.getText() +  "' instead."
+                                "But got '" + currentToken.getText() + "' instead."
                 );
             }
 

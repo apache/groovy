@@ -88,10 +88,10 @@ public enum JsonTokenType {
      */
     public boolean matching(String input) {
         if (validator instanceof Pattern) {
-            Matcher matcher = ((Pattern)validator).matcher(input);
+            Matcher matcher = ((Pattern) validator).matcher(input);
             return matcher.matches();
         } else if (validator instanceof Closure) {
-            return (Boolean)((Closure) validator).call(input);
+            return (Boolean) ((Closure) validator).call(input);
         } else if (validator instanceof String) {
             return input.equals(validator);
         } else {

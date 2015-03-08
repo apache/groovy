@@ -124,7 +124,6 @@ public class Chr {
     }
 
     public static char[] lpad(final char[] in, final int size, char pad) {
-
         if (in.length >= size) {
             return in;
         }
@@ -165,7 +164,6 @@ public class Chr {
 
     public static void _idx(final char[] array, int startIndex, char[] input) {
         try {
-
             arraycopy(input, 0, array, startIndex, input.length);
         } catch (Exception ex) {
             Exceptions.handle(String.format("array size %d, startIndex %d, input length %d",
@@ -179,7 +177,6 @@ public class Chr {
 
     public static void _idx(final char[] array, int startIndex, char[] input, final int inputLength) {
         try {
-
             arraycopy(input, 0, array, startIndex, inputLength);
         } catch (Exception ex) {
             Exceptions.handle(String.format("array size %d, startIndex %d, input length %d",
@@ -188,13 +185,11 @@ public class Chr {
     }
 
     public static void _idx(char[] buffer, int location, byte[] chars, int start, int end) {
-
         int index2 = start;
         int endLocation = (location + (end - start));
         for (int index = location; index < endLocation; index++, index2++) {
             buffer[index] = (char) chars[index2];
         }
-
     }
 
     public static char[] add(char[]... strings) {

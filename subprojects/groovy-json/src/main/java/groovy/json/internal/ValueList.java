@@ -37,7 +37,6 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
     }
 
     public Object get(int index) {
-
         Object obj = list.get(index);
 
         if (obj instanceof Value) {
@@ -47,7 +46,6 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
 
         chopIfNeeded(obj);
         return obj;
-
     }
 
     private Object convert(Value value) {
@@ -70,7 +68,6 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
                 this.get(index);
             }
         }
-
     }
 
     public void clear() {
@@ -82,7 +79,6 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
     }
 
     public void chopList() {
-
         for (Object obj : list) {
             if (obj == null) continue;
 
@@ -107,7 +103,6 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
                 list.chopList();
             }
         }
-
     }
 
     void chopContainer(Value value) {
@@ -125,4 +120,3 @@ public class ValueList extends AbstractList<Object> implements List<Object> {
         return this.list;
     }
 }
-

@@ -21,7 +21,7 @@ package groovy.json;
  * To enable the INDEX_OVERLAY parser do this:
  *
  * <code><pre>
- *             parser = new JsonSlurper().setType( JsonParserType.INDEX_OVERLAY );
+ *             parser = new JsonSlurper().setType(JsonParserType.INDEX_OVERLAY);
  * </pre></code>
  *
  * INDEX_OVERLAY should be your parser of choice.
@@ -54,7 +54,8 @@ package groovy.json;
  */
 public enum JsonParserType {
 
-    /** Fastest parser, but has pointers (indexes really) to original char buffer.
+    /**
+     * Fastest parser, but has pointers (indexes really) to original char buffer.
      * Care must be used if putting parse maps into a long term cache as members of map
      * maybe index overlay objects pointing to original buffer.
      * You can mitigate these risks by using chop and lazy chop.
@@ -66,7 +67,7 @@ public enum JsonParserType {
      * You do not need chop or lazy chop if you are not putting the map into a long term cache.
      * You do not need chop or lazy chop if you are doing object de-serialization.
      * Recommendation is to use this for JSON buffers under 2MB.
-     * */
+     */
     INDEX_OVERLAY,
     /**
      * Parser uses an abstraction that allows it to handle any size file by using a char [] windowing,

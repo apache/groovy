@@ -17,6 +17,7 @@
 package groovy.json.internal
 
 class LazyMapTest extends GroovyTestCase {
+
     // GROOVY-7302
     void testSizeWhenNoBackingMapCreated() {
         def map = new LazyMap()
@@ -31,17 +32,17 @@ class LazyMapTest extends GroovyTestCase {
     void testSizeWhenLazyCreated() {
         def map = new LazyMap()
         map.someProperty1 = '1'
-        assert map.@map==null
+        assert map.@map == null
         map.someProperty2 = '2'
-        assert map.@map==null
+        assert map.@map == null
         map.someProperty3 = '3'
-        assert map.@map==null
+        assert map.@map == null
         map.someProperty4 = '4'
-        assert map.@map==null
+        assert map.@map == null
         map.someProperty5 = '5'
-        assert map.@map==null
+        assert map.@map == null
         map.someProperty6 = '6'
-        assert map.@map==null
+        assert map.@map == null
         map.someProperty7 = '7'
         assert map.someProperty6 == '6'
         assert map.@map?.size() == 7

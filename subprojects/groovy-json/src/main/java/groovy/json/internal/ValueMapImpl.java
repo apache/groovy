@@ -139,6 +139,4 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
         this.buildIfNeededMap();
         return map.size();
     }
-
 }
-

@@ -57,7 +57,6 @@ public class JsonFastParser extends JsonParserCharArray {
     }
 
     protected final Value decodeJsonObjectLazyFinalParse() {
-
         char[] array = charArray;
 
         if (__currentChar == '{')
@@ -102,7 +101,6 @@ public class JsonFastParser extends JsonParserCharArray {
 
                     complain(
                             "expecting '}' or ',' but got current char " + charDescription(__currentChar));
-
             }
         }
         return value;
@@ -113,11 +111,9 @@ public class JsonFastParser extends JsonParserCharArray {
     }
 
     private Value decodeValueOverlay() {
-
         skipWhiteSpace();
 
         switch (__currentChar) {
-
             case '"':
                 return decodeStringOverlay();
 
@@ -159,7 +155,6 @@ public class JsonFastParser extends JsonParserCharArray {
     }
 
     private final Value decodeNumberOverlay(final boolean minus) {
-
         char[] array = charArray;
 
         final int startIndex = __index;
@@ -197,7 +192,6 @@ public class JsonFastParser extends JsonParserCharArray {
     }
 
     private Value decodeStringOverlay() {
-
         char[] array = charArray;
         int index = __index;
         char currentChar = charArray[index];
@@ -226,7 +220,6 @@ public class JsonFastParser extends JsonParserCharArray {
     }
 
     private Value decodeJsonArrayOverlay() {
-
         char[] array = charArray;
         if (__currentChar == '[') {
             __index++;

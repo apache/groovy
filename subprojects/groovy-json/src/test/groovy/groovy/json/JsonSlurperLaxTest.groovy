@@ -1,6 +1,5 @@
 package groovy.json
 
-
 /**
  * Created by Richard on 2/2/14.
  */
@@ -11,27 +10,26 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
     }
 
     void testNullEmptyMalformedPayloads() {
-        shouldFail(IllegalArgumentException) { parser.parseText(null)   }
-        shouldFail(IllegalArgumentException) { parser.parseText("")     }
+        shouldFail(IllegalArgumentException) { parser.parseText(null) }
+        shouldFail(IllegalArgumentException) { parser.parseText("") }
 
-        shouldFail(JsonException) { parser.parseText("[")           }
-        shouldFail(JsonException) { parser.parseText('{"')          }
-        shouldFail(JsonException) { parser.parseText("[a")           }
-        shouldFail(JsonException) { parser.parseText('{a"')          }
-        shouldFail(JsonException) { parser.parseText("[\"a\"")           }
-        shouldFail(JsonException) { parser.parseText('{"a"')          }
-
+        shouldFail(JsonException) { parser.parseText("[") }
+        shouldFail(JsonException) { parser.parseText('{"') }
+        shouldFail(JsonException) { parser.parseText("[a") }
+        shouldFail(JsonException) { parser.parseText('{a"') }
+        shouldFail(JsonException) { parser.parseText("[\"a\"") }
+        shouldFail(JsonException) { parser.parseText('{"a"') }
     }
 
     void testObjectWithSimpleValues() {
         assert parser.parseText('{"a": 1, "b" : true , "c":false, "d": null}') == [a: 1, b: true, c: false, d: null]
 
-         parser.parseText('{true}')
-         shouldFail { parser.parseText('{"a"}') }
-         parser.parseText('{"a":true')
-         parser.parseText('{"a":}')
-         shouldFail {parser.parseText('{"a":"b":"c"}') }
-         parser.parseText('{:true}')
+        parser.parseText('{true}')
+        shouldFail { parser.parseText('{"a"}') }
+        parser.parseText('{"a":true')
+        parser.parseText('{"a":}')
+        shouldFail {parser.parseText('{"a":"b":"c"}') }
+        parser.parseText('{:true}')
     }
 
     void testArrayOfArrayWithSimpleValues() {
@@ -69,9 +67,7 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
     }
 
     void testLaxCommentsAndKeys() {
-
         String jsonString = """
-
             {
             foo:bar,    //look mom no quotes
             'foo1': 'bar1',  //I can do single quotes if I want to
@@ -95,7 +91,7 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
             }
         """
 
-        Map <String, Object> map = parser.parseText(jsonString)
+        Map<String, Object> map = parser.parseText(jsonString)
         assert map.foo == "bar"
         assert map.foo1 == "bar1"
         assert map.foo2 == "bar2"

@@ -25,6 +25,7 @@ package groovy.json.internal;
  * @author Rick Hightower
  */
 public interface Cache<KEY, VALUE> {
+
     void put(KEY key, VALUE value);
 
     VALUE get(KEY key);

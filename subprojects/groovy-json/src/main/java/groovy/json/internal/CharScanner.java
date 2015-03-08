@@ -26,6 +26,7 @@ import static groovy.json.internal.Exceptions.handle;
  * @author Richard Hightower
  */
 public class CharScanner {
+
     protected static final int COMMA = ',';
     protected static final int CLOSED_CURLY = '}';
     protected static final int CLOSED_BRACKET = ']';
@@ -46,10 +47,12 @@ public class CharScanner {
     protected static final int PLUS = '+';
     protected static final int DOUBLE_QUOTE = '"';
     protected static final int ESCAPE = '\\';
+
     static final String MIN_LONG_STR_NO_SIGN = String.valueOf(Long.MIN_VALUE);
     static final String MAX_LONG_STR = String.valueOf(Long.MAX_VALUE);
     static final String MIN_INT_STR_NO_SIGN = String.valueOf(Integer.MIN_VALUE);
     static final String MAX_INT_STR = String.valueOf(Integer.MAX_VALUE);
+
     private static double powersOf10[] = {
             1.0,
             10.0,
@@ -70,7 +73,6 @@ public class CharScanner {
             10000000000000000.0,
             100000000000000000.0,
             1000000000000000000.0,
-
     };
 
     public static boolean isDigit(int c) {
@@ -109,7 +111,6 @@ public class CharScanner {
             }
         }
         return false;
-
     }
 
     public static boolean isDigits(final char[] inputArray) {
@@ -149,7 +150,6 @@ public class CharScanner {
         }
 
         if (c != split) {
-
             results[resultIndex] = Chr.copy(
                     inputArray, startCurrentLineIndex, currentLineLength - 1);
             resultIndex++;
@@ -183,8 +183,8 @@ public class CharScanner {
             inner:
             for (j = 0; j < delims.length; j++) {
                 split = delims[j];
-                if (c == split) {
 
+                if (c == split) {
                     results[resultIndex] = Chr.copy(
                             inputArray, startCurrentLineIndex, currentLineLength - 1);
                     startCurrentLineIndex = index + 1; //skip the char
@@ -197,7 +197,6 @@ public class CharScanner {
         }
 
         if (!Chr.in(c, delims)) {
-
             results[resultIndex] = Chr.copy(
                     inputArray, startCurrentLineIndex, currentLineLength - 1);
             resultIndex++;
@@ -226,9 +225,7 @@ public class CharScanner {
         for (; index < inputArray.length; index++, currentLineLength++) {
             c = inputArray[index];
             if (c == split) {
-
                 if (resultIndex == results.length) {
-
                     results = _grow(results);
                 }
 
@@ -242,7 +239,6 @@ public class CharScanner {
         }
 
         if (c != split) {
-
             results[resultIndex] = Chr.copy(
                     inputArray, startCurrentLineIndex, currentLineLength - 1);
             resultIndex++;
@@ -271,16 +267,13 @@ public class CharScanner {
         char split;
 
         for (; index < inputArray.length; index++, currentLineLength++) {
-
             c = inputArray[index];
 
             inner:
             for (j = 0; j < delims.length; j++) {
                 split = delims[j];
                 if (c == split) {
-
                     if (resultIndex == results.length) {
-
                         results = _grow(results);
                     }
 
@@ -296,7 +289,6 @@ public class CharScanner {
         }
 
         if (!Chr.in(c, delims)) {
-
             results[resultIndex] = Chr.copy(
                     inputArray, startCurrentLineIndex, currentLineLength - 1);
             resultIndex++;
@@ -327,16 +319,13 @@ public class CharScanner {
         char split;
 
         for (; index < length; index++, currentLineLength++) {
-
             c = inputArray[index];
 
             inner:
             for (j = 0; j < delims.length; j++) {
                 split = delims[j];
                 if (c == split) {
-
                     if (resultIndex == results.length) {
-
                         results = _grow(results);
                     }
 
@@ -352,7 +341,6 @@ public class CharScanner {
         }
 
         if (!Chr.in(c, delims)) {
-
             results[resultIndex] = Chr.copy(
                     inputArray, startCurrentLineIndex, currentLineLength - 1);
             resultIndex++;
@@ -381,10 +369,8 @@ public class CharScanner {
     }
 
     public static char[][] compact(char[][] array) {
-
         int nullCount = 0;
         for (char[] ch : array) {
-
             if (ch == null || ch.length == 0) {
                 nullCount++;
             }
@@ -393,7 +379,6 @@ public class CharScanner {
 
         int j = 0;
         for (char[] ch : array) {
-
             if (ch == null || ch.length == 0) {
                 continue;
             }
@@ -405,7 +390,6 @@ public class CharScanner {
     }
 
     private static char[][] _grow(char[][] array) {
-
         char[][] newArray = new char[array.length * 2][];
         System.arraycopy(array, 0, newArray, 0, array.length);
         return newArray;
@@ -413,7 +397,6 @@ public class CharScanner {
 
     private static char[][] __shrink(char[][] array, int size) {
         char[][] newArray = new char[array.length - size][];
-
         System.arraycopy(array, 0, (char[][]) newArray, 0, array.length - size);
         return newArray;
     }
@@ -422,8 +405,7 @@ public class CharScanner {
         return isLong(digitChars, 0, digitChars.length);
     }
 
-    public static boolean isLong(char[] digitChars, int offset, int len
-    ) {
+    public static boolean isLong(char[] digitChars, int offset, int len) {
         String cmpStr = digitChars[offset] == '-' ? MIN_LONG_STR_NO_SIGN : MAX_LONG_STR;
         int cmpLen = cmpStr.length();
         if (len < cmpLen) return true;
@@ -443,7 +425,6 @@ public class CharScanner {
     }
 
     public static boolean isInteger(char[] digitChars, int offset, int len) {
-
         String cmpStr = (digitChars[offset] == '-') ? MIN_INT_STR_NO_SIGN : MAX_INT_STR;
         int cmpLen = cmpStr.length();
         if (len < cmpLen) return true;
@@ -463,9 +444,7 @@ public class CharScanner {
     }
 
     public static int parseIntFromTo(char[] digitChars, int offset, int to) {
-
         try {
-
             int num;
             boolean negative = false;
             char c = digitChars[offset];
@@ -540,7 +519,6 @@ public class CharScanner {
     }
 
     public static int parseIntFromToIgnoreDot(char[] digitChars, int offset, int to) {
-
         int num;
         boolean negative = false;
         char c = digitChars[offset];
@@ -558,14 +536,12 @@ public class CharScanner {
             if (c != '.') {
                 num = (num * 10) + (c - '0');
             }
-
         }
 
         return negative ? num * -1 : num;
     }
 
     public static long parseLongFromToIgnoreDot(char[] digitChars, int offset, int to) {
-
         long num;
         boolean negative = false;
         char c = digitChars[offset];
@@ -583,14 +559,12 @@ public class CharScanner {
             if (c != '.') {
                 num = (num * 10) + (c - '0');
             }
-
         }
 
         return negative ? num * -1 : num;
     }
 
     public static long parseLongFromTo(char[] digitChars, int offset, int to) {
-
         long num;
         boolean negative = false;
         char c = digitChars[offset];
@@ -612,7 +586,6 @@ public class CharScanner {
         }
 
         return negative ? num * -1 : num;
-
     }
 
     public static long parseLong(char[] digitChars) {
@@ -632,7 +605,6 @@ public class CharScanner {
     }
 
     protected static boolean isDelimiter(int c) {
-
         return c == COMMA || c == CLOSED_CURLY || c == CLOSED_BRACKET;
     }
 
@@ -651,7 +623,6 @@ public class CharScanner {
         for (; index < max; index++) {
             char ch = buffer[index];
             if (isNumberDigit(ch)) {
-
                 if (foundDot == true) {
                     digitsPastPoint++;
                 }
@@ -682,7 +653,6 @@ public class CharScanner {
             BigDecimal lvalue;
 
             if (length < powersOf10.length) {
-
                 if (isInteger(buffer, from, length)) {
                     lvalue = new BigDecimal(parseIntFromToIgnoreDot(buffer, from, index));
                 } else {
@@ -691,12 +661,9 @@ public class CharScanner {
 
                 BigDecimal power = new BigDecimal(powersOf10[digitsPastPoint]);
                 value = lvalue.divide(power);
-
             } else {
                 value = new BigDecimal(new String(buffer, from, length));
-
             }
-
         } else {
             value = new BigDecimal(new String(buffer, from, index - from));
         }
@@ -739,7 +706,6 @@ public class CharScanner {
         for (; index < to; index++) {
             char ch = buffer[index];
             if (isNumberDigit(ch)) {
-
                 if (foundDot == true) {
                     digitsPastPoint++;
                 }
@@ -768,7 +734,6 @@ public class CharScanner {
             long lvalue;
 
             if (length < powersOf10.length) {
-
                 if (isInteger(buffer, from, length)) {
                     lvalue = parseIntFromToIgnoreDot(buffer, from, index);
                 } else {
@@ -777,12 +742,9 @@ public class CharScanner {
 
                 double power = powersOf10[digitsPastPoint];
                 value = lvalue / power;
-
             } else {
                 value = Double.parseDouble(new String(buffer, from, length));
-
             }
-
         } else {
             value = Double.parseDouble(new String(buffer, from, index - from));
         }
@@ -795,7 +757,6 @@ public class CharScanner {
         for (; index < array.length; index++) {
             c = array[index];
             if (c > 32) {
-
                 return index;
             }
         }
@@ -807,7 +768,6 @@ public class CharScanner {
         for (; index < length; index++) {
             c = array[index];
             if (c > 32) {
-
                 return index;
             }
         }
@@ -827,7 +787,6 @@ public class CharScanner {
         }
 
         return ArrayUtils.copyRange(array, startIndex, idx);
-
     }
 
     public static char[] readNumber(char[] array, int idx, final int len) {
@@ -843,7 +802,6 @@ public class CharScanner {
         }
 
         return ArrayUtils.copyRange(array, startIndex, idx);
-
     }
 
     public static int skipWhiteSpaceFast(char[] array) {
@@ -852,7 +810,6 @@ public class CharScanner {
         for (; index < array.length; index++) {
             c = array[index];
             if (c > 32) {
-
                 return index;
             }
         }
@@ -864,7 +821,6 @@ public class CharScanner {
         for (; index < array.length; index++) {
             c = array[index];
             if (c > 32) {
-
                 return index;
             }
         }
@@ -905,7 +861,6 @@ public class CharScanner {
         try {
             buf.addLine(new String(array, lastLineIndex, count));
         } catch (Exception ex) {
-
             try {
                 int start = index = (index - 10 < 0) ? 0 : index - 10;
 
@@ -928,10 +883,8 @@ public class CharScanner {
             charString = "[SPACE]";
         } else if (c == '\t') {
             charString = "[TAB]";
-
         } else if (c == '\n') {
             charString = "[NEWLINE]";
-
         } else {
             charString = "'" + (char) c + "'";
         }
@@ -939,5 +892,4 @@ public class CharScanner {
         charString = charString + " with an int value of " + ((int) c);
         return charString;
     }
-
 }

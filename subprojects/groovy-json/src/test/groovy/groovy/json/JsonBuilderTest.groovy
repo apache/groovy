@@ -138,7 +138,7 @@ class JsonBuilderTest extends GroovyTestCase {
     }
 
     void testCollectionAndClosure() {
-        def authors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
+        def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
         def json = new JsonBuilder()
         json authors, { Author author ->
@@ -149,7 +149,7 @@ class JsonBuilderTest extends GroovyTestCase {
     }
 
     void testMethodWithCollectionAndClosure() {
-        def authors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
+        def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
         def json = new JsonBuilder()
         json.authors authors, { Author author ->
@@ -160,7 +160,7 @@ class JsonBuilderTest extends GroovyTestCase {
     }
 
     void testNestedMethodWithCollectionAndClosure() {
-        def theAuthors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
+        def theAuthors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
         def json = new JsonBuilder()
         json {
@@ -210,7 +210,7 @@ class JsonBuilderTest extends GroovyTestCase {
     void testNestedListMap() {
         def json = new JsonBuilder()
         json.content {
-            list([:],[another:[a:[1,2,3]]])
+            list([:], [another: [a: [1, 2, 3]]])
         }
 
         assert json.toString() == '''{"content":{"list":[{},{"another":{"a":[1,2,3]}}]}}'''
@@ -305,7 +305,7 @@ class JsonBuilderTest extends GroovyTestCase {
     void testStringEscape() {
         def original, serialized, deserialized
 
-        original = [elem:"\\n"]
+        original = [elem: "\\n"]
         serialized = (new JsonBuilder(original)).toString()
         deserialized = (new JsonSlurper()).parseText(serialized)
         assert original.elem == deserialized.elem
@@ -324,6 +324,17 @@ class JsonBuilderTest extends GroovyTestCase {
         serialized = (new JsonBuilder(original)).toString()
         deserialized = (new JsonSlurper()).parseText(serialized)
         assert original.elem == deserialized.elem
+    }
 
+    void testSpecialCharEscape() {
+        assert new JsonBuilder({'"' 0}).toString() == '{"\\"":0}'
+        assert new JsonBuilder({'\b' 0}).toString() == '{"\\b":0}'
+        assert new JsonBuilder({'\f' 0}).toString() == '{"\\f":0}'
+        assert new JsonBuilder({'\n' 0}).toString() == '{"\\n":0}'
+        assert new JsonBuilder({'\r' 0}).toString() == '{"\\r":0}'
+        assert new JsonBuilder({'\t' 0}).toString() == '{"\\t":0}'
+        assert new JsonBuilder({'\\' 0}).toString() == '{"\\\\":0}'
+        assert new JsonBuilder({'\1' 0}).toString() == '{"\\u0001":0}'
+        assert new JsonBuilder({'\u0002' 0}).toString() == '{"\\u0002":0}'
     }
 }

@@ -16,6 +16,7 @@
 package groovy.json.internal
 
 class FastStringUtilsUnsafeDisabledTest extends GroovyTestCase {
+
     FastStringUtils.StringImplementation oldStringImplementation
 
     void setUp() {
