@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.codehaus.groovy.tools.shell.completion.CommandNameCompleter
 /**
  * The 'help' command.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class HelpCommand
@@ -99,7 +98,7 @@ class HelpCommand
 
         io.out.println()
         io.out.println('For information about @|green Groovy|@, visit:') // TODO: i18n
-        io.out.println('    @|cyan http://groovy.codehaus.org|@ ') // FIXME: parsing freaks out if end tok is at the last char...
+        io.out.println('    @|cyan http://groovy-lang.org|@ ') // FIXME: parsing freaks out if end tok is at the last char...
         io.out.println()
 
         // List the commands we know about

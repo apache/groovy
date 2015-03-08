@@ -134,32 +134,31 @@ class DocCommand extends CommandSupport {
     protected void browseWithNativeBrowser(String browser, List urls) {
         try {
             "$browser ${urls.join(' ')}".execute()
-
         } catch (Exception e) {
             // we could be here caused by a IOException, SecurityException or NP Exception
-
             fail "Browser could not be opened (${e}). Please check the $ENV_BROWSER_GROOVYSH or $ENV_BROWSER " +
                  "environment variable."
         }
     }
 
     protected List urlsFor(String className) {
+        String groovyVersion = GroovySystem.version
         def path = className.replaceAll(/\./, '/') + '.html'
 
         def urls = []
         if (className.matches(/^(groovy|org\.codehaus\.groovy|)\..+/)) {
-            def url = new URL("http://groovy.codehaus.org/gapi/$path")
+            def url = new URL("http://docs.groovy-lang.org/$groovyVersion/html/gapi/$path")
             if (sendHEADRequest(url)) {
                 urls << url
             }
         } else {
-            // Don't specify package names not to depend on a version of Java SE.
-            // Java SE includes none-java(x) packages such as org.w3m.*, org.omg.*. org.xml.* for now
-            // and new packages might be added in a future.
+            // Don't specify package names to not depend on a specific version of Java SE.
+            // Java SE includes non-java(x) packages such as org.w3m.*, org.omg.*. org.xml.* for now
+            // and new packages might be added in the future.
             def url = new URL("http://docs.oracle.com/javase/${simpleVersion()}/docs/api/$path")
             if (sendHEADRequest(url)) {
                 urls << url
-                url = new URL("http://groovy.codehaus.org/groovy-jdk/$path")
+                url = new URL("http://docs.groovy-lang.org/$groovyVersion/html/groovy-jdk/$path")
                 if (sendHEADRequest(url)) {
                     urls << url
                 }
