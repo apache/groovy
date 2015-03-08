@@ -128,8 +128,8 @@ public class ServletBinding extends Binding {
             this.response = response;
         }
         private ServletOutputStream getResponseStream() throws IOException {
-            if (writer!=null) throw new IllegalStateException("The variable 'out' or 'html' have been used already. Use either out/html or sout, not both.");
-            if (outputStream==null) outputStream = response.getOutputStream();
+            if (writer != null) throw new IllegalStateException("The variable 'out' or 'html' have been used already. Use either out/html or sout, not both.");
+            if (outputStream == null) outputStream = response.getOutputStream();
             return outputStream;
         }
         public ServletOutputStream getOutputStream() {
@@ -152,8 +152,8 @@ public class ServletBinding extends Binding {
             };
         }
         private PrintWriter getResponseWriter() {
-            if (outputStream!=null) throw new IllegalStateException("The variable 'sout' have been used already. Use either out/html or sout, not both.");
-            if (writer==null) {
+            if (outputStream != null) throw new IllegalStateException("The variable 'sout' have been used already. Use either out/html or sout, not both.");
+            if (writer == null) {
                 try {
                     writer = response.getWriter();
                 } catch (IOException ioe) {
@@ -360,4 +360,3 @@ public class ServletBinding extends Binding {
         response.sendRedirect(location);
     }    
 }
-
