@@ -88,5 +88,4 @@ public class ServletCategory {
     public static void putAt(PageContext context, String key, Object value) {
         context.setAttribute(key, value);
     }
-
 }
