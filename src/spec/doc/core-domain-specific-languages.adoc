@@ -1037,7 +1037,7 @@ you can use a `MarkupBuilder` like this:
 include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_builder,indent=0]
 ----
 
-We use http://xmlunit.sourceforge.net[XMLUnit] to check that the builder produced the expected result:
+We use http://www.xmlunit.org[XMLUnit] to check that the builder produced the expected result:
 
 [source,groovy]
 ----
@@ -1060,7 +1060,7 @@ include::{projectdir}/src/spec/test/builder/MarkupBuilderTest.groovy[tags=xml_bu
 <1> declare and use rec namespace prefix
 <2> change the default namespace to http://www.acme.com/cars
 
-Again we use http://xmlunit.sourceforge.net[XMLUnit] to check that the builder output matches the expected result:
+Again we use http://www.xmlunit.org[XMLUnit] to check that the builder output matches the expected result:
 
 [source,groovy]
 ----
