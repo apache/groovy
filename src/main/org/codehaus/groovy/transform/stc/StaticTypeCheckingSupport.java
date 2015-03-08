@@ -1895,13 +1895,6 @@ public abstract class StaticTypeCheckingSupport {
             return methods;
         }
 
-        /**
-         * 
-         * @return
-         * @param accumulator
-         * @param allClasses
-         * @param isStatic
-         */
         private static void scanClassesForDGMMethods(Map<String, List<MethodNode>> accumulator,
                                                     Iterable<Class> allClasses, boolean isStatic) {
             for (Class dgmLikeClass : allClasses) {
