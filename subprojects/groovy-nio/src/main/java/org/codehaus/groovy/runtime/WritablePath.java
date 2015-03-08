@@ -68,8 +68,7 @@ public class WritablePath implements Path, Writable {
                 out.write(c);
                 c = reader.read();
             }
-        }
-        finally {
+        } finally {
             reader.close();
         }
         return out;
@@ -187,12 +186,12 @@ public class WritablePath implements Path, Writable {
 
     @Override
     public WatchKey register(WatchService watcher, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers) throws IOException {
-        return delegate.register(watcher,events,modifiers);
+        return delegate.register(watcher, events, modifiers);
     }
 
     @Override
     public WatchKey register(WatchService watcher, WatchEvent.Kind<?>... events) throws IOException {
-        return delegate.register(watcher,events);
+        return delegate.register(watcher, events);
     }
 
     @Override
@@ -219,5 +218,4 @@ public class WritablePath implements Path, Writable {
     public String toString() {
         return delegate.toString();
     }
-
 }
