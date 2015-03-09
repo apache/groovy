@@ -16,6 +16,8 @@
 
 package groovy.util
 
+import groovy.transform.CompileStatic
+
 /**
  * A builder dedicated at generating a file directory structure from a
  * specification. For example, imagine that you want to create the following tree:
@@ -63,8 +65,10 @@ package groovy.util
  *        }
  *     }
  * </code></pre>
-
+ *
+ * @since 2.4.2
  */
+@CompileStatic
 class FileTreeBuilder {
 
     File baseDir
@@ -113,7 +117,7 @@ class FileTreeBuilder {
      */
     File file(String name, @DelegatesTo(value = File, strategy = Closure.DELEGATE_FIRST) Closure spec) {
         def file = new File(baseDir, name)
-        def clone = spec.clone()
+        def clone = (Closure) spec.clone()
         clone.delegate = file
         clone.resolveStrategy = Closure.DELEGATE_FIRST
         clone(file)
@@ -152,7 +156,7 @@ class FileTreeBuilder {
     }
 
     File call(@DelegatesTo(value = FileTreeBuilder, strategy = Closure.DELEGATE_FIRST) Closure spec) {
-        def clone = spec.clone()
+        def clone = (Closure) spec.clone()
         clone.delegate = this
         clone.resolveStrategy = Closure.DELEGATE_FIRST
         clone.call()
@@ -161,16 +165,17 @@ class FileTreeBuilder {
 
 
     def methodMissing(String name, args) {
-        if (args.length == 1) {
-            def arg = args[0]
+        if (args instanceof Object[] && ((Object[]) args).length == 1) {
+            def arg = ((Object[]) args)[0]
             if (arg instanceof Closure) {
                 dir(name, arg)
             } else if (arg instanceof CharSequence) {
                 file(name, arg.toString())
-            } else if (arg instanceof byte[] || arg instanceof File) {
+            } else if (arg instanceof byte[]) {
+                file(name, arg)
+            } else if (arg instanceof File) {
                 file(name, arg)
             }
         }
-
     }
 }

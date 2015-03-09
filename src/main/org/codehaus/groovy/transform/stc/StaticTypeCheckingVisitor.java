@@ -1898,7 +1898,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         ArrayList<ClassNode> arr = new ArrayList<ClassNode>(classNodes.size() + 1);
                         arr.add(ret[i]);
                         arr.addAll(classNodes);
-                        ret[i] = new UnionTypeClassNode(arr.toArray(new ClassNode[arr.size()]));
+                        // GROOVY-7333: filter out Object
+                        Iterator<ClassNode> iterator = arr.iterator();
+                        while (iterator.hasNext()) {
+                            ClassNode next = iterator.next();
+                            if (ClassHelper.OBJECT_TYPE.equals(next)) {
+                                iterator.remove();
+                            }
+                        }
+                        if (arr.isEmpty()) {
+                            ret[i] = ClassHelper.OBJECT_TYPE.getPlainNodeReference();
+                        } else if (arr.size()==1) {
+                            ret[i] = arr.get(0);
+                        } else {
+                            ret[i] = new UnionTypeClassNode(arr.toArray(new ClassNode[arr.size()]));
+                        }
                     }
                 }
             }
