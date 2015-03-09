@@ -167,7 +167,6 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         this.logGROOVY861 = false;
     }
 
-
     protected void generateNamePrefixOnce () {
         URI uri = null;
 
@@ -176,7 +175,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
         try {
             URL res = servletContext.getResource("/");
-            if (res != null) { uri = res.toURI();}
+            if (res != null) { uri = res.toURI(); }
         } catch (MalformedURLException ignore) {
         } catch (URISyntaxException ignore) {
         }
@@ -195,14 +194,14 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
     protected String removeNamePrefix(String name) throws ResourceException {
         if (namePrefix == null) {
-          generateNamePrefixOnce();
+            generateNamePrefixOnce();
         }
         if (name.startsWith(namePrefix)) {//usualy name has text
-          return name.substring(namePrefix.length());
-        }//i else
+            return name.substring(namePrefix.length());
+        }
         return name;
     }
-    
+
     /**
      * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
      */
@@ -210,8 +209,11 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         name = removeNamePrefix(name).replace('\\', '/');
 
         //remove the leading / as we are trying with a leading / now
-        if (name.startsWith("WEB-INF/groovy/")) { name = name.substring(15);//just for uniformity
-        } else if (name.startsWith("/")) { name = name.substring(1);}
+        if (name.startsWith("WEB-INF/groovy/")) {
+            name = name.substring(15);//just for uniformity
+        } else if (name.startsWith("/")) {
+            name = name.substring(1);
+        }
 
         /*
         * Try to locate the resource and return an opened connection to it.

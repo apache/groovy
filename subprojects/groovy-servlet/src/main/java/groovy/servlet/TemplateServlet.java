@@ -167,7 +167,6 @@ public class TemplateServlet extends AbstractHttpServlet {
             }
             return "Hit #" + hit + " since " + date;
         }
-
     }
 
     /**
@@ -300,7 +299,6 @@ public class TemplateServlet extends AbstractHttpServlet {
      * @throws ServletException If the request specified an invalid template source file
      */
     protected Template getTemplate(File file) throws ServletException {
-
         String key = file.getAbsolutePath();
         Template template = findCachedTemplate(key, file);
 
@@ -332,7 +330,6 @@ public class TemplateServlet extends AbstractHttpServlet {
      * @throws ServletException If the request specified an invalid template source URL
      */
     protected Template getTemplate(URL url) throws ServletException {
-
         String key = url.toString();
         Template template = findCachedTemplate(key, null);
 
@@ -418,7 +415,6 @@ public class TemplateServlet extends AbstractHttpServlet {
      * @throws ServletException if the HTTP request cannot be handled
      */
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
         if (verbose) {
             log("Creating/getting cached template...");
         }
@@ -503,6 +499,5 @@ public class TemplateServlet extends AbstractHttpServlet {
         if (verbose) {
             log("Template \"" + name + "\" request responded. [create/get=" + getMillis + " ms, make=" + makeMillis + " ms]");
         }
-
     }
 }
