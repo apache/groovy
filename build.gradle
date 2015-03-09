@@ -394,8 +394,13 @@ compileGroovy.dependsOn bootstrapJar
 
 allprojects {
 
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+
     tasks.withType(GroovyCompile) {
         groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
+        groovyOptions.encoding = 'UTF-8'
         groovyClasspath = files(
                 rootProject.compileJava.classpath,
                 rootProject.bootstrapJar.archivePath
