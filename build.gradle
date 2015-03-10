@@ -118,7 +118,7 @@ ext {
     openejbVersion = '1.0'
     qdoxVersion = '1.12.1'
     simianVersion = '2.2.4'
-    slf4jVersion = '1.7.6'
+    slf4jVersion = '1.7.10'
     xmlunitVersion = '1.5'
     xstreamVersion = '1.4.7'
     spockVersion = '1.0-groovy-2.4'
