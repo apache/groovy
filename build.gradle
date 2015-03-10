@@ -121,6 +121,7 @@ ext {
     slf4jVersion = '1.7.6'
     xmlunitVersion = '1.5'
     xstreamVersion = '1.4.7'
+    spockVersion = '1.0-groovy-2.4'
 }
 
 dependencies {
