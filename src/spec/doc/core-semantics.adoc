@@ -306,9 +306,113 @@ does to make testing easier.
 
 [[gpath_expressions]]
 === GPath expressions (MarcPaquette)
+////
+This is covered in {projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc, where the legacy codehaus GPath wiki page
+have been converted.
+Current section should explain what is an GPath expression (not just example, but more like a formal language specification, but kept simple).
 
-(TBD)
+////
 
+`GPath` is a path expression language integrated into Groovy which allows parts of nested structured data to be identified. In this
+sense, it has similar aims and scope as XPath does for XML.  GPath is often used in the context of processing XML, but it really applies
+to any object graph.  Where XPath uses a filesystem-like path notation, a tree hierarchy with parts separated by a slash `/`, GPath *use a
+dot-object notation* to perform object navigation.
+
+As an example, you can specify a path to an object or element of interest:
+
+* `a.b.c` -> for XML, yields all the `c` elements inside `b` inside `a`
+* `a.b.c` -> for POJOs, yields the `c` properties for all the `b` properties of `a` (sort of like `a.getB().getC()` in JavaBeans)
+
+In both cases, the GPath expression can be viewed as a query on an object graph.  For POJOs, the object graph is most often built by the
+program being written through object instantiation and composition; for XML processing, the object graph is the result of `parsing`
+the XML text, most often with classes like XmlParser or XmlSlurper.  See <<Processing XML>> for more in-depth details on consuming XML in Groovy.
+
+[TIP]
+====
+When querying the object graph generated from XmlParser or XmlSlurper, a GPath expression can refer to attributes defined on elements with
+the `@` notation:
+
+* `a["@href"]` -> map-like notation : the href attribute of all the a elements
+* `a.'@href'`  -> property notation : an alternative way of expressing this
+* `a.@href`    -> direct notation : yet another alternative way of expressing this
+====
+
+==== Object navigation
+
+Let's see an example of a GPath expression on a simple _object graph_, the one obtained using java reflection.  Suppose you are in a non-static method of a
+class having another method named `aMethodFoo`
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_reflection_1,indent=0]
+----
+
+the following GPath expression will get the name of that method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_reflection_2,indent=0]
+----
+
+_*More precisely*_, the above GPath expression produces a list of String, each being the name of an existing method on `this` where that name ends with `Foo`.
+
+Now, given the following methods also defined in that class:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_reflection_3,indent=0]
+----
+
+then the following GPath expression will get the names of *(1)* and *(3)*, but not *(2)* or *(0)*:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_reflection_4,indent=0]
+----
+
+==== Expression Deconstruction
+
+We can decompose the expression `this.class.methods.name.grep(~/.*Bar/)` to get an idea of how a GPath is evaluated:
+
+`this.class`:: property accessor, equivalent to `this.getClass()` in Java, yields a `Class` object.
+`this.class.methods`:: property accessor, equivalent to `this.getClass().getMethods()`, yields an array of `Method` objects.
+`this.class.methods.name`:: apply a property accessor on each element of an array and produce a list of the results.
+`this.class.methods.name.grep(...)`:: call method `grep` on each element of the list yielded by `this.class.methods.name` and produce a list of the results.
+
+WARNING: a sub-expression like `this.class.methods` yields an array because this is what calling `this.getClass().getMethods()` in Java
+would produce : `GPath` expressions have not invented a convention where a `s` means a list or anything like that.
+
+One powerful feature of GPath expression is that property access on a collection is converted to a _property access on each element of the collection_ with
+the results collected into a collection.  Therefore, the expression `this.class.methods.name` could be expressed as follows in Java:
+[source,java]
+----
+List<String> methodNames = new ArrayList<String>();
+for (Method method : this.getClass().getMethods()) {
+   methodNames.add(method.getName());
+}
+return methodNames;
+----
+
+Array access notation can also be used in a GPath expression where a collection is present :
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_array_access_1,indent=0]
+----
+
+NOTE: array access are zero-based in GPath expressions
+
+==== GPath for XML navigation
+
+Here is an example with a XML document and various form of GPath expressions:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_xml_1,indent=0]
+----
+
+<1> There is one `level` node under `root`
+<2> There are two `sublevel` nodes under `root/level`
+<3> There is one element `sublevel` having an attribute `id` with value `1`
+<4> Text value of `key` element of first `keyVal` element of second `sublevel` element under `root/level` is 'anotherKey'
 
 == Promotion and coercion
 
