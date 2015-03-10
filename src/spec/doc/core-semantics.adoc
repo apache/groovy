@@ -354,7 +354,7 @@ the following GPath expression will get the name of that method:
 include::{projectdir}/src/spec/test/semantics/GPathTest.groovy[tags=gpath_on_reflection_2,indent=0]
 ----
 
-_*More precisely*_, the above GPath expression produces a list of String, each being the name of an existing method on `this` where that name ends with `Foo`.
+_More precisely_, the above GPath expression produces a list of String, each being the name of an existing method on `this` where that name ends with `Foo`.
 
 Now, given the following methods also defined in that class:
 
