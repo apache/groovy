@@ -20,6 +20,7 @@ import groovy.lang.Closure;
 import groovy.lang.StringWriterIOException;
 import groovy.lang.Writable;
 import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
@@ -1198,7 +1199,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withStream(InputStream stream, @ClosureParams(value=SimpleType.class, options="java.io.InputStream") Closure<T> closure) throws IOException {
+    public static <T, U extends InputStream> T withStream(U stream, @ClosureParams(value=FirstParam.class) Closure<T> closure) throws IOException {
         try {
             T result = closure.call(stream);
 
@@ -1310,7 +1311,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static <T> T withStream(OutputStream os, @ClosureParams(value=SimpleType.class, options="java.io.OutputStream") Closure<T> closure) throws IOException {
+    public static <T, U extends OutputStream> T withStream(U os, @ClosureParams(value=FirstParam.class) Closure<T> closure) throws IOException {
         try {
             T result = closure.call(os);
             os.flush();
@@ -1613,7 +1614,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 2.4.0
      */
-    public static <T> T withCloseable(Closeable self, @ClosureParams(value=SimpleType.class, options="java.io.Closeable") Closure<T> action) throws IOException {
+    public static <T, U extends Closeable> T withCloseable(U self, @ClosureParams(value=FirstParam.class) Closure<T> action) throws IOException {
         try {
             T result = action.call(self);
 
