@@ -305,7 +305,7 @@ does to make testing easier.
 
 
 [[gpath_expressions]]
-=== GPath expressions (MarcPaquette)
+=== GPath expressions
 ////
 This is covered in {projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc, where the legacy codehaus GPath wiki page
 have been converted.
