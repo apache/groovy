@@ -38,13 +38,13 @@ class GPathTest extends GroovyTestCase {
 
     void testGPathOnReflectionWithBarMethods() {
         //tag::gpath_on_reflection_4[]
-        assert ['aMethodBar', 'aSecondMethodBar'] == this.class.methods.name.grep(~/.*Bar/)
+        assert ['aMethodBar', 'aSecondMethodBar'] as Set == this.class.methods.name.grep(~/.*Bar/) as Set
         //end::gpath_on_reflection_4[]
     }
 
     void testGPathArrayAccess() {
         //tag::gpath_array_access_1[]
-        assert 'aSecondMethodBar' == this.class.methods.name.grep(~/.*Bar/)[1]
+        assert 'aSecondMethodBar' == this.class.methods.name.grep(~/.*Bar/).sort()[1]
         //end::gpath_array_access_1[]
     }
 
