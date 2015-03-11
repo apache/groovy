@@ -20,6 +20,7 @@ The Groovy team would like to thank the contributors of this documentation (by a
 * http://grantmcconnaughey.github.io/[Grant McConnaughey]
 * https://github.com/dnahodil[David Nahodil]
 * https://github.com/jnorthr[James Northrop]
+* https://github.com/marcpa00[Marc Paquette]
 * https://github.com/michaelss[Michael Schuenck]
 * https://github.com/PascalSchumacher[Pascal Schumacher]
 * https://twitter.com/asteingr[André Steingreß]
