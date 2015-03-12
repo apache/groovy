@@ -122,4 +122,12 @@ public @interface Builder {
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
     String[] includes() default {};
+
+    /**
+     * By default, properties are set directly using their respective field.
+     * By setting {@code useSetters=true} then a writable property will be set using its setter.
+     * If turning on this flag we recommend that setters that might be called are
+     * made null-safe wrt the parameter.
+     */
+    boolean useSetters() default false;
 }

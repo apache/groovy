@@ -95,6 +95,36 @@ class BuilderTransformTest extends CompilableTestSupport {
         """
     }
 
+    void testSimpleBuilderSetters() {
+        assertScript """
+            import groovy.transform.builder.*
+            import groovy.transform.*
+
+            @TupleConstructor(useSetters=true)
+            @Builder(builderStrategy=SimpleStrategy, prefix="", useSetters=true)
+            class Person {
+                String name
+                void setName(String name) { this.name = name?.toLowerCase() }
+                Integer age
+                void setAge(Integer age) { this.age = (age ?: 0) * 2 }
+            }
+
+            def person = new Person()
+            person.name("John").age(21)
+            assert person.name == "john"
+            assert person.age == 42
+
+            def p2 = new Person(name: 'Mary', age: 5)
+            assert p2.name == "mary"
+            assert p2.age == 10
+
+            def p3 = new Person(name: 'TOM')
+            p3.age = 15
+            assert p3.name == "tom"
+            assert p3.age == 30
+        """
+    }
+
     void testSimpleBuilderWithCanonicalAndExcludes() {
         assertScript '''
             import groovy.transform.builder.*
@@ -501,4 +531,25 @@ class BuilderTransformTest extends CompilableTestSupport {
             test()
         '''
     }
+
+    void testInitializerStrategySetters() {
+        assertScript '''
+            import groovy.transform.builder.*
+            import groovy.transform.*
+
+            @Canonical
+            @Builder(builderStrategy=InitializerStrategy, useSetters=true)
+            class Person {
+                String name
+                void setName(String name) { this.name = name?.toUpperCase() }
+            }
+
+            @CompileStatic
+            def make() {
+                assert new Person(Person.createInitializer().name("John")).toString() == 'Person(JOHN)'
+            }
+            make()
+        '''
+    }
+
 }

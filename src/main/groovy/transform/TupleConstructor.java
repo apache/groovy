@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 the original author or authors.
+ * Copyright 2008-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,4 +111,12 @@ public @interface TupleConstructor {
      * whether existing constructors exist. It is up to you to avoid creating duplicate constructors.
      */
     boolean force() default false;
+
+    /**
+     * By default, properties are set directly using their respective field.
+     * By setting {@code useSetters=true} then a writable property will be set using its setter.
+     * If turning on this flag we recommend that setters that might be called are
+     * made null-safe wrt the parameter.
+     */
+    boolean useSetters() default false;
 }

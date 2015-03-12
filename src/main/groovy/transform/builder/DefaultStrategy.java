@@ -157,6 +157,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * </pre>
  *
  * The 'forClass' annotation attribute for the {@code @Builder} transform isn't applicable for this strategy.
+ * The 'useSetters' annotation attribute for the {@code @Builder} transform is ignored by this strategy which always uses setters.
  *
  * @author Paul King
  */

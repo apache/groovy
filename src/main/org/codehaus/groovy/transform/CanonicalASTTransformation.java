@@ -61,7 +61,7 @@ public class CanonicalASTTransformation extends AbstractASTTransformation {
             List<String> includes = getMemberList(anno, "includes");
             if (!checkIncludeExclude(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
-                createConstructor(cNode, false, true, false, false, false, false, excludes, includes);
+                createConstructor(cNode, false, true, false, false, false, false, excludes, includes, false);
             }
             if (!hasAnnotation(cNode, EqualsAndHashCodeASTTransformation.MY_TYPE)) {
                 createHashCode(cNode, false, false, false, excludes, includes);

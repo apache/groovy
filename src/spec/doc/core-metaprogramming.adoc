@@ -801,9 +801,20 @@ include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_callSuper,indent=0]
 ----
-|force|False|By default, the transformation will do nothing if a constructor is already defined. Setting this property
-to true, the constructor will be generated and it's your responsibility to ensure that no duplicate constructor
-is defined|See javadocs
+|force|False|By default, the transformation will do nothing if a constructor is already defined. Setting this property to
+true, the constructor will be generated and it's your responsibility to ensure that no duplicate constructor is defined.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_force,indent=0]
+----
+|useSetters|False|By default, the transformation will include code which directly sets the backing field for each property
+from its corresponding constructor parameter. Setting this property to true, the constructor will instead call setters if
+they exist. It's usually deemed bad style from within a constructor to call setters that can be overridden. It's your
+responsibility to avoid such bad style.|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=tupleconstructor_example_useSetters,indent=0]
+----
 |=======================================================================
 
 [[xform-Canonical]]
@@ -1074,6 +1085,9 @@ You can use the `SimpleStrategy` in conjunction with `@Canonical`. If your `@Bui
 explicit `includes` or `excludes` annotation attributes but your `@Canonical` annotation does, the ones
 from `@Canonical` will be re-used for `@Builder`.
 
+The annotation attribute `useSetters` can be used if you have a setter which you want called as part of the
+construction process. See the JavaDoc for details.
+
 The annotation attributes `builderClassName`, `buildMethodName`, `builderMethodName` and `forClass` are not supported for this strategy.
 
 NOTE: Groovy already has built-in building mechanisms. Don't rush to using `@Builder` if the built-in mechanisms meet your needs. Some examples:
@@ -1187,6 +1201,9 @@ from `@Canonical` will be re-used for `@Builder`. Here is an example using `@Bui
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=builder_initializer_immutable,indent=0]
 ----
+
+The annotation attribute `useSetters` can be used if you have a setter which you want called as part of the
+construction process. See the JavaDoc for details.
 
 This strategy also supports annotating static methods and constructors. In this case, the static method or constructor
 parameters become the properties to use for building purposes and in the case of static methods, the return type
