@@ -79,7 +79,7 @@ include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=packagep
 ----
 
 Instead, it is used to create a _property_, that is to say a _private field_, an associated _getter_ and an associated
-_setter.
+_setter_.
 
 It is possible to create a package-private field by annotating it with `@PackageScope`:
 
