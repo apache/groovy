@@ -389,6 +389,7 @@ Allows the use of typed variables (i.e. `def` or other type information):
 groovy:000> def x = 3
 ===> 3
 groovy:000> x
+===> 3
 ----
 
 It's especially useful for copy&pasting code from tutorials etc. into the running session.
