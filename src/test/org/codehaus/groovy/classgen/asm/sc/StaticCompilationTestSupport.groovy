@@ -43,8 +43,7 @@ import org.codehaus.groovy.tools.GroovyClass
  *
  * @author Cedric Champeau
  */
-@Trait
-class StaticCompilationTestSupport {
+trait StaticCompilationTestSupport {
     Map<String, Object[]> astTrees
     CustomCompilationUnit compilationUnit
 
@@ -65,6 +64,12 @@ class StaticCompilationTestSupport {
         // trick because GroovyShell doesn't allow to provide our own GroovyClassLoader
         // to be fixed when this will be possible
         shell.loader = new CompilationUnitAwareGroovyClassLoader(this.getClass().classLoader, config, this)
+    }
+
+    void tearDown() {
+        astTrees = null
+        compilationUnit = null
+        super.tearDown()
     }
 
     void assertAndDump(String script) {
