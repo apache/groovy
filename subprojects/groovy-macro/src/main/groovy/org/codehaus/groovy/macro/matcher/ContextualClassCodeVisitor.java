@@ -59,7 +59,7 @@ import java.util.List;
  * performing some operations.
  *
  * @author Cedric Champeau
- * @since 2.4.0
+ * @since 2.5.0
  */
 public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport {
     private final Deque<TreeContext> treeContextStack = new ArrayDeque<TreeContext>();

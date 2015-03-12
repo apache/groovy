@@ -27,7 +27,7 @@ import org.codehaus.groovy.syntax.Token
  * Represents constraints in AST pattern matching.
  *
  * @author Cedric Champeau
- * @since 2.4.0
+ * @since 2.5.0
  */
 @CompileStatic
 @Immutable(knownImmutableClasses = [ConstraintPredicate])
