@@ -16,6 +16,8 @@
 package gls.annotations.closures
 
 import gls.CompilableTestSupport
+import groovy.transform.NotYetImplemented
+
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Retention
 import java.lang.reflect.Modifier
@@ -140,6 +142,22 @@ import java.lang.annotation.*
 @AnnWithClassRetention(elem = { 1 + 2 })
 class Foo {}
         """
+    }
+    
+    @NotYetImplemented
+    void testAnnotationOnAnonymousMethod() {
+        shouldCompile """        
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.METHOD)
+            @interface Bar{Class value();}
+
+            return new Object() {
+              @Bar({})
+              String toString() {}
+            }
+"""
     }
 }
 
