@@ -22,7 +22,7 @@ include::{projectdir}/src/spec/doc/core-semantics.adoc[leveloffset=+2]
 
 include::{projectdir}/src/spec/doc/tools-groovyc.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/tools-groovysh.adoc[leveloffset=+2]
+include::{projectdir}/subprojects/groovy-groovysh/{specfolder}/groovysh.adoc[leveloffset=+2]
 
 include::{projectdir}/src/spec/doc/tools-groovyconsole.adoc[leveloffset=+2]
 
