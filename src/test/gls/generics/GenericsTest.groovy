@@ -436,4 +436,12 @@ import java.util.concurrent.atomic.AtomicInteger
             }
         '''
     }
+
+    public void "test method with generic return type defined at class level"() {
+        // class Bar should compile successfully
+
+        // the classes it references should be available as class files to check for ASM resolving
+        //  so they're defined in compiled GenericsTestData and not loaded from text in the test
+        createClassInfo 'class Bar extends gls.generics.GenericsTestData.Abstract<String> {}'
+    }
 }

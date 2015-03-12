@@ -16,6 +16,7 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.objectweb.asm.Label;
@@ -37,7 +38,7 @@ public class BytecodeHelper implements Opcodes {
     private static String DTT_CLASSNAME = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class.getName());
 
     public static String getClassInternalName(ClassNode t) {
-        if (t.isPrimaryClassNode()) {
+        if (t.isPrimaryClassNode() || t instanceof DecompiledClassNode) {
             if (t.isArray()) return "[L"+getClassInternalName(t.getComponentType())+";";
             return getClassInternalName(t.getName());
         }
