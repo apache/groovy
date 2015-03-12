@@ -1,4 +1,4 @@
-= groovysh, the Groovy shell
+= Groovysh, the Groovy shell
 
 == Groovy : Groovy Shell
 
@@ -90,7 +90,7 @@ foo.bar()
 [[GroovyShell-Variables]]
 ==== Variables
 
-Shell variables are *all* untyped (ie. no `def` or other type information).
+Shell variables are *all* untyped (i.e. no `def` or other type information).
 
 This *will* set a shell variable:
 
@@ -105,6 +105,8 @@ But, this will evaluate a local variable and will *not* be saved to the shell’
 ---------------
 def foo = "bar"
 ---------------
+
+This behavior can be changed by activating <<GroovyShell-InterpreterMode,interpreter mode>>.
 
 [[GroovyShell-Functions]]
 ==== Functions
@@ -354,8 +356,8 @@ Opens a browser with documentation for the provided class. For example:
 
 ----
 groovy:000> :doc java.util.List
-http://docs.oracle.com/javase/1.7.0/docs/api/java/util/List.html
-http://groovy.codehaus.org/groovy-jdk/java/util/List.html
+http://docs.oracle.com/javase/7/docs/api/java/util/List.html
+http://docs.groovy-lang.org/2.4.2-SNAPSHOT/html/groovy-jdk/java/util/List.html
 ----
 
 will open two windows (or tabs, depending on your browser):
@@ -378,6 +380,19 @@ shortcut.
 [[GroovyShell-RecognizedPreferences]]
 ==== Recognized Preferences
 
+[[GroovyShell-InterpreterMode]]
+===== `interpreterMode`
+
+Allows the use of typed variables (i.e. `def` or other type information):
+
+----
+groovy:000> def x = 3
+===> 3
+groovy:000> x
+----
+
+It's especially useful for copy&pasting code from tutorials etc. into the running session.
+
 [[GroovyShell-verbosity]]
 ===== `verbosity`
 
@@ -393,6 +408,12 @@ Default is `INFO`.
 If this preference is set to an invalid value, then the previous setting
 will be used, or if there is none, then the preference is removed and
 the default is used.
+
+===== `colors`
+
+Set the shell’s use of colors.
+
+Default is `true`.
 
 [[GroovyShell-show-last-result]]
 ===== `show-last-result`
@@ -434,11 +455,11 @@ To list the current _set_ preferences (and their values):
 groovy:000> :show preferences
 ----------------
 
-LimitationAt the moment, there is no way to list all of the
+Limitation: At the moment, there is no way to list all of the
 known/available preferences to be set.
 
 [[GroovyShell-ClearingPreferencesieResettingtoDefaults]]
-==== Clearing Preferences (ie. Resetting to Defaults)
+==== Clearing Preferences (i.e. Resetting to Defaults)
 
 -----------------
 groovy:000> :purge preferences
@@ -543,7 +564,7 @@ groovysh --terminal=none
 
 [[GroovyShell-ProblemswithCygwinonWindows]]
 ===== Problems with Cygwin on Windows
-as
+
 Some people have issues when running groovysh with cygwin. If you have
 troubles, the following may help:
 
@@ -555,7 +576,7 @@ stty icanon echo
 
 [[GroovyShell-GMavenPlus]]
 == GMavenPlus Maven Plugin
-http://gmavenplus.codehaus.org[GMavenPlus] is a Maven plugin with goals
+https://github.com/groovy/GMavenPlus[GMavenPlus] is a Maven plugin with goals
 that support launching a Groovy Shell or Groovy Console bound to a Maven
 project.
 
