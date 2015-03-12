@@ -818,7 +818,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 addError("The usage of 'Class.this' and 'Class.super' is only allowed in nested/inner classes.", expression);
                 return;
             }
-            if (!currentScope.isInStaticContext() && Traits.isTrait(type) && "super".equals(prop) && directlyImplementsTrait(type)) {
+            if (currentScope != null && !currentScope.isInStaticContext() && Traits.isTrait(type) && "super".equals(prop) && directlyImplementsTrait(type)) {
                 return;
             }
             ClassNode iterType = currentClass;
