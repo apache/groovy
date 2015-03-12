@@ -30,7 +30,6 @@ import org.codehaus.groovy.GroovyBugError;
  * @version $Revision$
  */
 public class AnnotationNode extends ASTNode {
-    public static final int TYPE_TARGET = 1;
     public static final int CONSTRUCTOR_TARGET = 1 << 1;
     public static final int METHOD_TARGET = 1 << 2;
     public static final int FIELD_TARGET = 1 << 3;
@@ -38,6 +37,7 @@ public class AnnotationNode extends ASTNode {
     public static final int LOCAL_VARIABLE_TARGET = 1 << 5;
     public static final int ANNOTATION_TARGET = 1 << 6;
     public static final int PACKAGE_TARGET = 1 << 7;
+    public static final int TYPE_TARGET = 1 + ANNOTATION_TARGET;    //GROOVY-7151
     private static final int ALL_TARGETS = TYPE_TARGET | CONSTRUCTOR_TARGET | METHOD_TARGET
         | FIELD_TARGET | PARAMETER_TARGET | LOCAL_VARIABLE_TARGET | ANNOTATION_TARGET | PACKAGE_TARGET;
     
