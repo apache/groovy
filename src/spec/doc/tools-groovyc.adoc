@@ -202,7 +202,7 @@ More details about joint compilation can be found in the <<section-jointcompilat
 
 [[Gant]]
 == Gant
-http://gant.codehaus.org/[Gant] is a tool for scripting Ant tasks using Groovy
+https://github.com/Gant/Gant[Gant] is a tool for scripting Ant tasks using Groovy
 instead of XML to specify the logic. As such, it has exactly the same features
 as the Groovyc Ant task.
 
@@ -328,7 +328,7 @@ Maven build phases consult the Maven2 documentation.
 === GMaven and GMavenPlus
 [[section-gmaven]]
 ==== GMaven
-http://docs.codehaus.org/display/GMAVEN[GMaven] is the original Maven plugin
+https://github.com/groovy/gmaven[GMaven] is the original Maven plugin
 for Groovy, supporting both compiling and scripting Groovy.
 
 *Important:*
@@ -342,7 +342,7 @@ are having problems with joint compilation, you might consider the
 [[section-gmavenplus]]
 ==== GMavenPlus
 
-http://gmavenplus.codehaus.org[GMavenPlus] is a rewrite of
+https://github.com/groovy/GMavenPlus[GMavenPlus] is a rewrite of
 <<section-gmaven,GMaven>> and is in active development. It supports most of the
 features of GMaven (a couple notable exceptions being
 http://maven.apache.org/plugin-tools/maven-plugin-tools-java/index.html[mojo Javadoc tags]
