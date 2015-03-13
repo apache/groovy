@@ -629,6 +629,9 @@ public class CharScanner {
             } else if (ch <= 32 || isDelimiter(ch)) {
                 break;
             } else if (ch == '.') {
+                if (foundDot) {
+                    die("unexpected character " + ch);
+                }
                 foundDot = true;
             } else if (ch == 'E' || ch == 'e' || ch == '-' || ch == '+') {
                 simple = false;
@@ -710,6 +713,9 @@ public class CharScanner {
                     digitsPastPoint++;
                 }
             } else if (ch == '.') {
+                if (foundDot) {
+                    die("unexpected character " + ch);
+                }
                 foundDot = true;
             } else if (ch == 'E' || ch == 'e' || ch == '-' || ch == '+') {
                 simple = false;
