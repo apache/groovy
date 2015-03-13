@@ -17,6 +17,8 @@
  */
 package groovy.json.internal;
 
+import groovy.json.JsonException;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -145,7 +147,11 @@ public class NumberValue extends java.lang.Number implements Value {
     }
 
     public BigDecimal bigDecimalValue() {
-        return new BigDecimal(buffer, startIndex, endIndex - startIndex);
+        try {
+            return new BigDecimal(buffer, startIndex, endIndex - startIndex);
+        } catch (NumberFormatException e) {
+            throw new JsonException("unable to parse " + new String(buffer, startIndex, endIndex - startIndex), e);
+        }
     }
 
     public BigInteger bigIntegerValue() {
