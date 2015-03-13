@@ -518,7 +518,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=charrange,indent=0
 
 === Spaceship operator
 
-The spaceship operator (`<=>`) delegates to the `compareTo` method:
+The spaceship operator (`pass:[<=>]`) delegates to the `compareTo` method:
 
 [source,groovy]
 ----
