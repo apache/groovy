@@ -74,6 +74,8 @@ an infinite loop? Interrupting script execution can be achieved by clicking
 the `interrupt` button on the small dialog box that pops up when a script
 is executing or through the `interrupt` icon in the tool bar.
 
+image:assets/img/gconsole-toolbar.png[Toolbar]
+
 However, this may not be sufficient to interrupt a script: clicking the button
 will interrupt the execution thread, but if your code doesn't handle the interrupt
 flag, the script is likely to keep running without you being able to effectively
