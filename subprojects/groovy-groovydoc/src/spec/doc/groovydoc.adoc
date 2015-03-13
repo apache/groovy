@@ -213,6 +213,6 @@ fragile feature.
 
 [[Groovydoc-GMavenPlus]]
 == GMavenPlus Maven Plugin
-http://gmavenplus.codehaus.org[GMavenPlus] is a Maven plugin with goals that
+https://github.com/groovy/GMavenPlus[GMavenPlus] is a Maven plugin with goals that
 support GroovyDoc generation.
 
