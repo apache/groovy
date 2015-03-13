@@ -22,9 +22,21 @@ import java.lang.annotation.*;
 /**
  * This will let the Groovy compiler use compile time checks in the style of Java
  * then perform static compilation, thus bypassing the Groovy meta object protocol.
+ * <p>
+ * When a class is annotated, all methods, properties, files, inner classes, etc.
+ * of the annotated class will be type checked. When a method is annotated, static
+ * compilation applies only to items (closures and anonymous inner clsses) within
+ * the method.
+ * <p>
+ * By using {@link TypeCheckingMode#SKIP}, static compilation can be skipped on an
+ * element within a class or method otherwise marked with CompileStatic. For example
+ * a class can be annotated with CompileStatic, and a method within can be marked
+ * to skip static checking to use dynamic language features.
  *
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  * @author Cedric Champeau
+ *
+ * @see CompileDynamic
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)
