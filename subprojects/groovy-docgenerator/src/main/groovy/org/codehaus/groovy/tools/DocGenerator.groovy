@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2014 the original author or authors.
+ * Copyright 2003-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ class DocGenerator {
     }
 
     /**
-     * Parse the DefaultGroovyMethods class to build a graph representing the structure of the class,
+     * Parse the *GroovyMethods (DGM) classes to build a graph representing the structure of the class,
      * with its methods, javadoc comments and tags.
      */
     private static DocSource parseSource(List<File> sourceFiles) {
@@ -78,10 +78,9 @@ class DocGenerator {
             if (!method.isPublic() || !method.isStatic()) {
                 return // skip it
             }
-            def firstParamType = method.parameters[0].type
-            if (firstParamType.javaClass.fullyQualifiedName.startsWith('groovy')) {
-                return // nothing, skip it
-            }
+
+            def firstParam = method.parameters[0]
+            def firstParamType = firstParam.resolvedValue.isEmpty() ? firstParam.type : new Type(firstParam.resolvedValue, 0, firstParam.parentClass)
             docSource.add(firstParamType, method)
         }
         docSource.populateInheritedMethods()
